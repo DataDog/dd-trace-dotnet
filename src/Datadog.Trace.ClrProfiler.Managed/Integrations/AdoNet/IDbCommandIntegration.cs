@@ -44,10 +44,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(IDbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, IDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(IDbCommand))
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.IDataReader)
                        .Build();
             }
@@ -109,10 +111,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(IDbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, CommandBehavior, IDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(IDbCommand))
+                       .WithConcreteType(targetType)
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.IDataReader, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
@@ -171,10 +175,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(IDbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, int>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(IDbCommand))
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
@@ -232,10 +238,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(IDbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(IDbCommand))
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }

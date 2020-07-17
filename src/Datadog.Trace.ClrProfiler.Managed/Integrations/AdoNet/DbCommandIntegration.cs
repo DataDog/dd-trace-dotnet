@@ -46,10 +46,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, DbDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.DbDataReader)
                        .Build();
             }
@@ -111,10 +113,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, DbDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.DbDataReader, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
@@ -196,10 +200,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
@@ -257,10 +263,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
@@ -337,10 +345,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
@@ -398,10 +408,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
@@ -478,10 +490,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
