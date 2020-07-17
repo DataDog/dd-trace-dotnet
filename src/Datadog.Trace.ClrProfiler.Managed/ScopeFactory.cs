@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
-using Datadog.Trace.Abstractions;
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -82,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler
             return scope;
         }
 
-        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, string integrationName)
+        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, string integrationName, string methodName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationName))
             {
@@ -122,6 +119,7 @@ namespace Datadog.Trace.ClrProfiler
                 var span = scope.Span;
                 span.SetTag(Tags.DbType, dbType);
                 span.SetTag(Tags.InstrumentationName, integrationName);
+                span.SetTag(Tags.InstrumentedMethod, methodName);
                 span.AddTagsFromDbCommand(command);
 
                 // set analytics sample rate if enabled

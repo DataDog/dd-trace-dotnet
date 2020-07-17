@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
 
+        // ReSharper disable once InconsistentNaming
         private const string IDbCommandTypeName = AdoNetConstants.TypeNames.IDbCommand;
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(IDbCommandIntegration));
@@ -65,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             var dbCommand = command as IDbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
             {
                 try
                 {
@@ -131,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             var dbCommand = command as IDbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
             {
                 try
                 {
@@ -192,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             var dbCommand = command as IDbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
             {
                 try
                 {
@@ -253,7 +254,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             var dbCommand = command as IDbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
             {
                 try
                 {

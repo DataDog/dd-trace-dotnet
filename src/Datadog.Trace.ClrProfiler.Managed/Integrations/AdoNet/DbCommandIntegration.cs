@@ -41,13 +41,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             Func<DbCommand, DbDataReader> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, DbDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(DbCommand))
                        .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.DbDataReader)
                        .Build();
@@ -60,14 +61,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: AdoNetConstants.MethodNames.ExecuteReader,
+                    methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
             var dbCommand = command as DbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
             {
                 try
                 {
@@ -104,15 +105,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             var commandBehavior = (CommandBehavior)behavior;
-
             Func<DbCommand, CommandBehavior, DbDataReader> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, DbDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(DbCommand))
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.DbDataReader, AdoNetConstants.TypeNames.CommandBehavior)
@@ -126,14 +127,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: AdoNetConstants.MethodNames.ExecuteReader,
+                    methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
             var dbCommand = command as DbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
             {
                 try
                 {
@@ -216,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName, methodName))
             {
                 try
                 {
@@ -251,13 +252,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteNonQuery;
             Func<DbCommand, int> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(DbCommand))
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
@@ -270,14 +272,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: AdoNetConstants.MethodNames.ExecuteNonQuery,
+                    methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
             var dbCommand = command as DbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
             {
                 try
                 {
@@ -356,7 +358,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName, methodName))
             {
                 try
                 {
@@ -391,13 +393,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteScalar;
             Func<DbCommand, object> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(DbCommand))
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
@@ -410,14 +413,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: AdoNetConstants.MethodNames.ExecuteScalar,
+                    methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
             var dbCommand = command as DbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
             {
                 try
                 {
@@ -496,7 +499,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName, methodName))
             {
                 try
                 {
