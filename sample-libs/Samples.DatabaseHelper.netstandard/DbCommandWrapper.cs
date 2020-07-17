@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 namespace Samples.DatabaseHelper
 {
     /// <summary>
-    /// Light wrapper around <see cref="DbCommand"/> used to target calls in <c>netstandard.dll</c>
-    /// when this project targets netstandard2.0
+    /// Light wrapper around <see cref="DbCommand"/> used to target calls in <c>netstandard.dll</c>.
+    /// This project MUST target <c>netstandard2.0</c>.
     /// </summary>
     public class DbCommandWrapper
     {

@@ -282,25 +282,6 @@ namespace Samples.DatabaseHelper
 
     public static class DbCommandExecutor
     {
-#if !NET45
-        public static DbCommandExecutor<DbCommand, DbDataReader> GetDbWrapperExecutor()
-        {
-            return new DbCommandExecutor<DbCommand, DbDataReader>(
-                command => new DbCommandWrapper(command).ExecuteNonQuery(),
-                command => new DbCommandWrapper(command).ExecuteScalar(),
-                command => new DbCommandWrapper(command).ExecuteReader(),
-                (command, behavior) => new DbCommandWrapper(command).ExecuteReader(behavior),
-                command => new DbCommandWrapper(command).ExecuteNonQueryAsync(),
-                (command, ct) => new DbCommandWrapper(command).ExecuteNonQueryAsync(ct),
-                command => new DbCommandWrapper(command).ExecuteScalarAsync(),
-                (command, ct) => new DbCommandWrapper(command).ExecuteScalarAsync(ct),
-                command => new DbCommandWrapper(command).ExecuteReaderAsync(),
-                (command, behavior) => new DbCommandWrapper(command).ExecuteReaderAsync(behavior),
-                (command, ct) => new DbCommandWrapper(command).ExecuteReaderAsync(ct),
-                (command, behavior, ct) => new DbCommandWrapper(command).ExecuteReaderAsync(behavior, ct));
-        }
-#endif
-
         public static DbCommandExecutor<DbCommand, DbDataReader> GetDbCommandExecutor()
         {
             return new DbCommandExecutor<DbCommand, DbDataReader>(
@@ -334,5 +315,41 @@ namespace Samples.DatabaseHelper
                 null,
                 null);
         }
+
+#if !NET45
+        public static DbCommandExecutor<DbCommand, DbDataReader> GetDbWrapperExecutor()
+        {
+            return new DbCommandExecutor<DbCommand, DbDataReader>(
+                command => new DbCommandWrapper(command).ExecuteNonQuery(),
+                command => new DbCommandWrapper(command).ExecuteScalar(),
+                command => new DbCommandWrapper(command).ExecuteReader(),
+                (command, behavior) => new DbCommandWrapper(command).ExecuteReader(behavior),
+                command => new DbCommandWrapper(command).ExecuteNonQueryAsync(),
+                (command, ct) => new DbCommandWrapper(command).ExecuteNonQueryAsync(ct),
+                command => new DbCommandWrapper(command).ExecuteScalarAsync(),
+                (command, ct) => new DbCommandWrapper(command).ExecuteScalarAsync(ct),
+                command => new DbCommandWrapper(command).ExecuteReaderAsync(),
+                (command, behavior) => new DbCommandWrapper(command).ExecuteReaderAsync(behavior),
+                (command, ct) => new DbCommandWrapper(command).ExecuteReaderAsync(ct),
+                (command, behavior, ct) => new DbCommandWrapper(command).ExecuteReaderAsync(behavior, ct));
+        }
+
+        public static DbCommandExecutor<IDbCommand, IDataReader> GetIDbWrapperExecutor()
+        {
+            return new DbCommandExecutor<IDbCommand, IDataReader>(
+                command => new IDbCommandWrapper(command).ExecuteNonQuery(),
+                command => new IDbCommandWrapper(command).ExecuteScalar(),
+                command => new IDbCommandWrapper(command).ExecuteReader(),
+                (command, behavior) => new IDbCommandWrapper(command).ExecuteReader(behavior),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+        }
+#endif
     }
 }

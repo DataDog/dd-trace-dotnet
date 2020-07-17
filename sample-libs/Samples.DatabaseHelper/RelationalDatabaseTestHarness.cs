@@ -25,19 +25,24 @@ namespace Samples.DatabaseHelper
                 await RunAsync(connection, commandFactory, commandExecutor, commandType, cancellationToken);
                 await Task.Delay(100, cancellationToken);
 
-#if !NET45
-                // use DbCommandWrapper to reference DbCommand in netstandard.dll
-                var dbCommandWrapperExecutor = DbCommandExecutor.GetDbWrapperExecutor();
-                await RunAsync(connection, commandFactory, dbCommandWrapperExecutor, "DbCommandWrapper", cancellationToken);
-                await Task.Delay(100, cancellationToken);
-#endif
-
                 var dbCommandExecutor = DbCommandExecutor.GetDbCommandExecutor();
                 await RunAsync(connection, commandFactory, dbCommandExecutor, "DbCommand", cancellationToken);
                 await Task.Delay(100, cancellationToken);
 
                 var idbCommandExecutor = DbCommandExecutor.GetIDbCommandExecutor();
                 await RunAsync(connection, commandFactory, idbCommandExecutor, "IDbCommand", cancellationToken);
+
+#if !NET45
+                // use DbCommandWrapper to reference DbCommand in netstandard.dll
+                var dbCommandWrapperExecutor = DbCommandExecutor.GetDbWrapperExecutor();
+                await RunAsync(connection, commandFactory, dbCommandWrapperExecutor, "DbCommandWrapper", cancellationToken);
+                await Task.Delay(100, cancellationToken);
+
+                // use IDbCommandWrapper to reference IDbCommand in netstandard.dll
+                var idbCommandWrapperExecutor = DbCommandExecutor.GetDbWrapperExecutor();
+                await RunAsync(connection, commandFactory, idbCommandWrapperExecutor, "IDbCommandWrapper", cancellationToken);
+                await Task.Delay(100, cancellationToken);
+#endif
             }
         }
 
