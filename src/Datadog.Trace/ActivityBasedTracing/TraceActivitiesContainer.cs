@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace
 {
     internal struct TraceActivitiesContainer
     {

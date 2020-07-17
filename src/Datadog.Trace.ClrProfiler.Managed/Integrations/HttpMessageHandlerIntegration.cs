@@ -219,11 +219,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var httpMethod = request.GetProperty("Method").GetProperty<string>("Method").GetValueOrDefault();
             var requestUri = request.GetProperty<Uri>("RequestUri").GetValueOrDefault();
 
-            using (var activity = ActivityCollector.Default.StartActivity("Datadog.Trace.HttpMessageHandler", System.Diagnostics.ActivityKind.Client))
+            using (var activity = ActivityFactory.CreateOutboundHttpActivity(Tracer.Instance, httpMethod, requestUri, IntegrationName))
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationName))
             {
                 try
                 {
+                    if (activity != null)
+                    {
+                        activity.AddTag("http-client-handler-type", reportedType.FullName);
+
+                        // TODO: Activity - add distributed tracing headers to the HTTP request
+                    }
+
                     if (scope != null)
                     {
                         scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
@@ -238,6 +245,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // this tag can only be set after the response is returned
                     int statusCode = response.GetProperty<int>("StatusCode").GetValueOrDefault();
                     scope?.Span.SetTag(Tags.HttpStatusCode, (statusCode).ToString());
+                    activity?.AddTag(Tags.HttpStatusCode, (statusCode).ToString());
 
                     return response;
                 }

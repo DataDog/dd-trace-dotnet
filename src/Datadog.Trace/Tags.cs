@@ -210,5 +210,10 @@ namespace Datadog.Trace
         /// Configures the origin of the trace
         /// </summary>
         public const string Origin = "_dd.origin";
+
+        /// <summary>
+        /// Configures the origin of the trace
+        /// </summary>
+        internal const string SpanSource = "span.source";
     }
 }
