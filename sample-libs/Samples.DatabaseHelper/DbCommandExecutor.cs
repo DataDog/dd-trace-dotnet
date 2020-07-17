@@ -156,13 +156,16 @@ namespace Samples.DatabaseHelper
 
             if (func != null)
             {
-                TDataReader reader = func(command);
-                int count = reader.AsDataRecords().Count();
+                using (TDataReader reader = func(command))
+                {
+                    int count = reader.AsDataRecords().Count();
 
-                Console.WriteLine($"{GetCurrentMethod(1)}");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"Returned {count} records");
-                Console.WriteLine();
+
+                    Console.WriteLine($"{GetCurrentMethod(1)}");
+                    Console.WriteLine($"{command.CommandText}");
+                    Console.WriteLine($"Returned {count} records");
+                    Console.WriteLine();
+                }
             }
         }
 
@@ -172,13 +175,15 @@ namespace Samples.DatabaseHelper
 
             if (func != null)
             {
-                TDataReader reader = func(command, behavior);
-                int count = reader.AsDataRecords().Count();
+                using (TDataReader reader = func(command, behavior))
+                {
+                    int count = reader.AsDataRecords().Count();
 
-                Console.WriteLine($"{GetCurrentMethod(1)}");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"Returned {count} records");
-                Console.WriteLine();
+                    Console.WriteLine($"{GetCurrentMethod(1)}");
+                    Console.WriteLine($"{command.CommandText}");
+                    Console.WriteLine($"Returned {count} records");
+                    Console.WriteLine();
+                }
             }
         }
 
@@ -188,13 +193,15 @@ namespace Samples.DatabaseHelper
 
             if (func != null)
             {
-                TDataReader reader = await func(command);
-                int count = reader.AsDataRecords().Count();
+                using (TDataReader reader = await func(command))
+                {
+                    int count = reader.AsDataRecords().Count();
 
-                Console.WriteLine($"{GetCurrentMethod(1)}");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"Returned {count} records");
-                Console.WriteLine();
+                    Console.WriteLine($"{GetCurrentMethod(1)}");
+                    Console.WriteLine($"{command.CommandText}");
+                    Console.WriteLine($"Returned {count} records");
+                    Console.WriteLine();
+                }
             }
         }
 
@@ -204,13 +211,15 @@ namespace Samples.DatabaseHelper
 
             if (func != null)
             {
-                TDataReader reader = await func(command, behavior);
-                int count = reader.AsDataRecords().Count();
+                using (TDataReader reader = await func(command, behavior))
+                {
+                    int count = reader.AsDataRecords().Count();
 
-                Console.WriteLine($"{GetCurrentMethod(1)}");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"Returned {count} records");
-                Console.WriteLine();
+                    Console.WriteLine($"{GetCurrentMethod(1)}");
+                    Console.WriteLine($"{command.CommandText}");
+                    Console.WriteLine($"Returned {count} records");
+                    Console.WriteLine();
+                }
             }
         }
 
@@ -220,13 +229,15 @@ namespace Samples.DatabaseHelper
 
             if (func != null)
             {
-                TDataReader reader = await func(command, cancellationToken);
-                int count = reader.AsDataRecords().Count();
+                using (TDataReader reader = await func(command, cancellationToken))
+                {
+                    int count = reader.AsDataRecords().Count();
 
-                Console.WriteLine($"{GetCurrentMethod(1)}");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"Returned {count} records");
-                Console.WriteLine();
+                    Console.WriteLine($"{GetCurrentMethod(1)}");
+                    Console.WriteLine($"{command.CommandText}");
+                    Console.WriteLine($"Returned {count} records");
+                    Console.WriteLine();
+                }
             }
         }
 
@@ -236,13 +247,15 @@ namespace Samples.DatabaseHelper
 
             if (func != null)
             {
-                TDataReader reader = await func(command, behavior, cancellationToken);
-                int count = reader.AsDataRecords().Count();
+                using (TDataReader reader = await func(command, behavior, cancellationToken))
+                {
+                    int count = reader.AsDataRecords().Count();
 
-                Console.WriteLine($"{GetCurrentMethod(1)}");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"Returned {count} records");
-                Console.WriteLine();
+                    Console.WriteLine($"{GetCurrentMethod(1)}");
+                    Console.WriteLine($"{command.CommandText}");
+                    Console.WriteLine($"Returned {count} records");
+                    Console.WriteLine();
+                }
             }
         }
 
