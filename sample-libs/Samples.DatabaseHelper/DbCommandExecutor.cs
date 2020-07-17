@@ -7,14 +7,13 @@ using System.Threading.Tasks;
 
 namespace Samples.DatabaseHelper
 {
-    // ReSharper disable MethodSupportsCancellation
-    // ReSharper disable MethodHasAsyncOverloadWithCancellation
     public class DbCommandExecutor<TCommand, TDataReader>
         where TCommand : class, IDbCommand
         where TDataReader : class, IDataReader
     {
-        private readonly Func<TCommand, int> _executeNonQuery;
+        private static readonly string CommandTypeName = typeof(TCommand).Name;
 
+        private readonly Func<TCommand, int> _executeNonQuery;
         private readonly Func<TCommand, object> _executeScalar;
         private readonly Func<TCommand, TDataReader> _executeReader;
         private readonly Func<TCommand, CommandBehavior, TDataReader> _executeReaderWithBehavior;
@@ -27,6 +26,8 @@ namespace Samples.DatabaseHelper
         private readonly Func<TCommand, CommandBehavior, Task<TDataReader>> _executeReaderWithBehaviorAsync;
         private readonly Func<TCommand, CancellationToken, Task<TDataReader>> _executeReaderWithCancellationAsync;
         private readonly Func<TCommand, CommandBehavior, CancellationToken, Task<TDataReader>> _executeReaderWithBehaviorAndCancellationAsync;
+
+        public Type DbCommandType { get; } = typeof(TCommand);
 
         public DbCommandExecutor(
             Func<TCommand, int> executeNonQuery,
@@ -64,11 +65,7 @@ namespace Samples.DatabaseHelper
             if (func != null)
             {
                 int count = func(command);
-
-                Console.WriteLine("ExecuteNonQuery()");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"{count} rows affected");
-                Console.WriteLine();
+                WriteOutput("ExecuteNonQuery()", command.CommandText, $"{count} rows affected");
             }
         }
 
@@ -79,11 +76,7 @@ namespace Samples.DatabaseHelper
             if (func != null)
             {
                 int count = await func(command);
-
-                Console.WriteLine("ExecuteNonQueryAsync()");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"{count} rows affected");
-                Console.WriteLine();
+                WriteOutput("ExecuteNonQueryAsync()", command.CommandText, $"{count} rows affected");
             }
         }
 
@@ -94,11 +87,7 @@ namespace Samples.DatabaseHelper
             if (func != null)
             {
                 int count = await func(command, cancellationToken);
-
-                Console.WriteLine("ExecuteNonQueryAsync(CancellationToken)");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"{count} rows affected");
-                Console.WriteLine();
+                WriteOutput("ExecuteNonQueryAsync(CancellationToken)", command.CommandText, $"{count} rows affected");
             }
         }
 
@@ -109,11 +98,7 @@ namespace Samples.DatabaseHelper
             if (func != null)
             {
                 object result = func(command);
-
-                Console.WriteLine("ExecuteScalar()");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"Returned: {result}");
-                Console.WriteLine();
+                WriteOutput("ExecuteScalar()", command.CommandText, $"Returned: {result}");
             }
         }
 
@@ -124,11 +109,7 @@ namespace Samples.DatabaseHelper
             if (func != null)
             {
                 object result = await func(command);
-
-                Console.WriteLine("ExecuteScalarAsync()");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"Returned: {result}");
-                Console.WriteLine();
+                WriteOutput("ExecuteScalarAsync()", command.CommandText, $"Returned: {result}");
             }
         }
 
@@ -139,11 +120,7 @@ namespace Samples.DatabaseHelper
             if (func != null)
             {
                 object result = await func(command, cancellationToken);
-
-                Console.WriteLine("ExecuteScalarAsync(CancellationToken)");
-                Console.WriteLine($"{command.CommandText}");
-                Console.WriteLine($"Returned: {result}");
-                Console.WriteLine();
+                WriteOutput("ExecuteScalarAsync(CancellationToken)", command.CommandText, $"Returned: {result}");
             }
         }
 
@@ -156,12 +133,7 @@ namespace Samples.DatabaseHelper
                 using (TDataReader reader = func(command))
                 {
                     int count = reader.AsDataRecords().Count();
-
-
-                    Console.WriteLine("ExecuteReader()");
-                    Console.WriteLine($"{command.CommandText}");
-                    Console.WriteLine($"Returned {count} records");
-                    Console.WriteLine();
+                    WriteOutput("ExecuteReader()", command.CommandText, $"Returned {count} records");
                 }
             }
         }
@@ -175,11 +147,7 @@ namespace Samples.DatabaseHelper
                 using (TDataReader reader = func(command, behavior))
                 {
                     int count = reader.AsDataRecords().Count();
-
-                    Console.WriteLine("ExecuteReader(CommandBehavior)");
-                    Console.WriteLine($"{command.CommandText}");
-                    Console.WriteLine($"Returned {count} records");
-                    Console.WriteLine();
+                    WriteOutput("ExecuteReader(CommandBehavior)", command.CommandText, $"Returned {count} records");
                 }
             }
         }
@@ -193,11 +161,7 @@ namespace Samples.DatabaseHelper
                 using (TDataReader reader = await func(command))
                 {
                     int count = reader.AsDataRecords().Count();
-
-                    Console.WriteLine("ExecuteReaderAsync()");
-                    Console.WriteLine($"{command.CommandText}");
-                    Console.WriteLine($"Returned {count} records");
-                    Console.WriteLine();
+                    WriteOutput("ExecuteReaderAsync()", command.CommandText, $"Returned {count} records");
                 }
             }
         }
@@ -211,11 +175,7 @@ namespace Samples.DatabaseHelper
                 using (TDataReader reader = await func(command, behavior))
                 {
                     int count = reader.AsDataRecords().Count();
-
-                    Console.WriteLine("ExecuteReaderAsync(CommandBehavior)");
-                    Console.WriteLine($"{command.CommandText}");
-                    Console.WriteLine($"Returned {count} records");
-                    Console.WriteLine();
+                    WriteOutput("ExecuteReaderAsync(CommandBehavior)", command.CommandText, $"Returned {count} records");
                 }
             }
         }
@@ -229,11 +189,7 @@ namespace Samples.DatabaseHelper
                 using (TDataReader reader = await func(command, cancellationToken))
                 {
                     int count = reader.AsDataRecords().Count();
-
-                    Console.WriteLine("ExecuteReaderAsync(CancellationToken)");
-                    Console.WriteLine($"{command.CommandText}");
-                    Console.WriteLine($"Returned {count} records");
-                    Console.WriteLine();
+                    WriteOutput("ExecuteReaderAsync(CancellationToken)", command.CommandText, $"Returned {count} records");
                 }
             }
         }
@@ -247,13 +203,17 @@ namespace Samples.DatabaseHelper
                 using (TDataReader reader = await func(command, behavior, cancellationToken))
                 {
                     int count = reader.AsDataRecords().Count();
-
-                    Console.WriteLine("ExecuteReaderAsync(CommandBehavior, CancellationToken)");
-                    Console.WriteLine($"{command.CommandText}");
-                    Console.WriteLine($"Returned {count} records");
-                    Console.WriteLine();
+                    WriteOutput("ExecuteReaderAsync(CommandBehavior, CancellationToken)", command.CommandText, $"Returned {count} records");
                 }
             }
+        }
+
+        private void WriteOutput(string method, string commandText, string message)
+        {
+            Console.WriteLine($"    {CommandTypeName}.{method}");
+            Console.WriteLine($"    {commandText}");
+            Console.WriteLine($"    {message}");
+            Console.WriteLine();
         }
     }
 

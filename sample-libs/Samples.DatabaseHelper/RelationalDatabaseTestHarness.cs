@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,30 +19,24 @@ namespace Samples.DatabaseHelper
             where TCommand : class, IDbCommand
             where TDataReader : class, IDataReader
         {
-            var commandType = typeof(TCommand).Name;
-
             using (var root = Tracer.Instance.StartActive("root"))
             {
-                await RunAsync(connection, commandFactory, commandExecutor, commandType, cancellationToken);
-                await Task.Delay(100, cancellationToken);
+                await RunAsync(connection, commandFactory, commandExecutor, cancellationToken);
 
                 var dbCommandExecutor = DbCommandExecutor.GetDbCommandExecutor();
-                await RunAsync(connection, commandFactory, dbCommandExecutor, "DbCommand", cancellationToken);
-                await Task.Delay(100, cancellationToken);
+                await RunAsync(connection, commandFactory, dbCommandExecutor, cancellationToken);
 
                 var idbCommandExecutor = DbCommandExecutor.GetIDbCommandExecutor();
-                await RunAsync(connection, commandFactory, idbCommandExecutor, "IDbCommand", cancellationToken);
+                await RunAsync(connection, commandFactory, idbCommandExecutor, cancellationToken);
 
 #if !NET45
                 // use DbCommandWrapper to reference DbCommand in netstandard.dll
                 var dbCommandWrapperExecutor = DbCommandExecutor.GetDbWrapperExecutor();
-                await RunAsync(connection, commandFactory, dbCommandWrapperExecutor, "DbCommandWrapper", cancellationToken);
-                await Task.Delay(100, cancellationToken);
+                await RunAsync(connection, commandFactory, dbCommandWrapperExecutor, cancellationToken);
 
                 // use IDbCommandWrapper to reference IDbCommand in netstandard.dll
                 var idbCommandWrapperExecutor = DbCommandExecutor.GetDbWrapperExecutor();
-                await RunAsync(connection, commandFactory, idbCommandWrapperExecutor, "IDbCommandWrapper", cancellationToken);
-                await Task.Delay(100, cancellationToken);
+                await RunAsync(connection, commandFactory, idbCommandWrapperExecutor, cancellationToken);
 #endif
             }
         }
@@ -50,12 +45,14 @@ namespace Samples.DatabaseHelper
             TConnection connection,
             DbCommandFactory commandFactory,
             DbCommandExecutor<TCommand, TDataReader> commandExecutor,
-            string commandType,
             CancellationToken cancellationToken)
             where TConnection : class, IDbConnection
             where TCommand : class, IDbCommand
             where TDataReader : class, IDataReader
         {
+            string commandType = typeof(TCommand).Name;
+            Console.WriteLine(commandExecutor.DbCommandType.AssemblyQualifiedName);
+
             using (var parentScope = Tracer.Instance.StartActive(commandType))
             {
                 parentScope.Span.SetTag("command-type", commandType);
@@ -64,6 +61,8 @@ namespace Samples.DatabaseHelper
 
                 using (var scope = Tracer.Instance.StartActive("run.sync"))
                 {
+                    Console.WriteLine("  Synchronous");
+                    Console.WriteLine();
                     scope.Span.SetTag("command-type", commandType);
                     await Task.Delay(100, cancellationToken);
 
@@ -93,6 +92,8 @@ namespace Samples.DatabaseHelper
 
                 using (var scope = Tracer.Instance.StartActive("run.async"))
                 {
+                    Console.WriteLine("  Asynchronous");
+                    Console.WriteLine();
                     scope.Span.SetTag("command-type", commandType);
                     await Task.Delay(100, cancellationToken);
 
@@ -122,6 +123,8 @@ namespace Samples.DatabaseHelper
 
                 using (var scope = Tracer.Instance.StartActive("run.async.with-cancellation"))
                 {
+                    Console.WriteLine(" Asynchronous with cancellation");
+                    Console.WriteLine();
                     scope.Span.SetTag("command-type", commandType);
                     await Task.Delay(100, cancellationToken);
 
@@ -149,6 +152,9 @@ namespace Samples.DatabaseHelper
 
                 connection.Close();
             }
+
+            Console.WriteLine();
+            await Task.Delay(100, cancellationToken);
         }
     }
 }

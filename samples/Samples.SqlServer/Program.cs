@@ -33,7 +33,7 @@ namespace Samples.SqlServer
             }
 
             // allow time to flush
-            await Task.Delay(2000);
+            await Task.Delay(2000, cts.Token);
         }
 
         private static SqlConnection CreateConnection()
