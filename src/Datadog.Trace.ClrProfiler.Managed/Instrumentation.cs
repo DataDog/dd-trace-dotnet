@@ -45,6 +45,12 @@ namespace Datadog.Trace.ClrProfiler
         {
             try
             {
+                ActivityCollector.Default.LogState();
+            }
+            catch { }
+
+            try
+            {
                 var tracer = Tracer.Instance;
 
                 if (tracer.Settings.DiagnosticSourceEnabled)

@@ -1,3 +1,4 @@
+﻿
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -19,6 +20,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
     <!-- Remove the Datadog.Trace.ClrProfiler.Managed.dll assembly from the output and hide inapplicable warning (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128) -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
@@ -46,6 +48,12 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
     <PackageReference Include="Sigil-vNext" Version="4.8.41" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Diagnostics.DiagnosticSource">
+      <HintPath>ActivityBasedTracing\System.Diagnostics.DiagnosticSource.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
