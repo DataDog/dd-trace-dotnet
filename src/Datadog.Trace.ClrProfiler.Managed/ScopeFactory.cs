@@ -142,6 +142,10 @@ namespace Datadog.Trace.ClrProfiler
                     return "sql-server";
                 case "NpgsqlCommand":
                     return "postgres";
+                case "MySqlCommand":
+                    return "mysql";
+                case "OracleCommand":
+                    return "oracle";
                 case "InterceptableDbCommand":
                 case "ProfiledDbCommand":
                     // don't create spans for these
