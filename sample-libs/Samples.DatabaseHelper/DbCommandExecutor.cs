@@ -1,10 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -62,14 +59,13 @@ namespace Samples.DatabaseHelper
 
         public void ExecuteNonQuery(TCommand command)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeNonQuery;
 
             if (func != null)
             {
                 int count = func(command);
 
-                Console.WriteLine($"{currentMethodName}");
+                Console.WriteLine("ExecuteNonQuery()");
                 Console.WriteLine($"{command.CommandText}");
                 Console.WriteLine($"{count} rows affected");
                 Console.WriteLine();
@@ -78,14 +74,13 @@ namespace Samples.DatabaseHelper
 
         public async Task ExecuteNonQueryAsync(TCommand command)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeNonQueryAsync;
 
             if (func != null)
             {
                 int count = await func(command);
 
-                Console.WriteLine($"{currentMethodName}");
+                Console.WriteLine("ExecuteNonQueryAsync()");
                 Console.WriteLine($"{command.CommandText}");
                 Console.WriteLine($"{count} rows affected");
                 Console.WriteLine();
@@ -94,14 +89,13 @@ namespace Samples.DatabaseHelper
 
         public async Task ExecuteNonQueryAsync(TCommand command, CancellationToken cancellationToken)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeNonQueryWithCancellationAsync;
 
             if (func != null)
             {
                 int count = await func(command, cancellationToken);
 
-                Console.WriteLine($"{currentMethodName}");
+                Console.WriteLine("ExecuteNonQueryAsync(CancellationToken)");
                 Console.WriteLine($"{command.CommandText}");
                 Console.WriteLine($"{count} rows affected");
                 Console.WriteLine();
@@ -110,14 +104,13 @@ namespace Samples.DatabaseHelper
 
         public void ExecuteScalar(TCommand command)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeScalar;
 
             if (func != null)
             {
                 object result = func(command);
 
-                Console.WriteLine($"{currentMethodName}");
+                Console.WriteLine("ExecuteScalar()");
                 Console.WriteLine($"{command.CommandText}");
                 Console.WriteLine($"Returned: {result}");
                 Console.WriteLine();
@@ -126,14 +119,13 @@ namespace Samples.DatabaseHelper
 
         public async Task ExecuteScalarAsync(TCommand command)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeScalarAsync;
 
             if (func != null)
             {
                 object result = await func(command);
 
-                Console.WriteLine($"{currentMethodName}");
+                Console.WriteLine("ExecuteScalarAsync()");
                 Console.WriteLine($"{command.CommandText}");
                 Console.WriteLine($"Returned: {result}");
                 Console.WriteLine();
@@ -142,14 +134,13 @@ namespace Samples.DatabaseHelper
 
         public async Task ExecuteScalarAsync(TCommand command, CancellationToken cancellationToken)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeScalarWithCancellationAsync;
 
             if (func != null)
             {
                 object result = await func(command, cancellationToken);
 
-                Console.WriteLine($"{currentMethodName}");
+                Console.WriteLine("ExecuteScalarAsync(CancellationToken)");
                 Console.WriteLine($"{command.CommandText}");
                 Console.WriteLine($"Returned: {result}");
                 Console.WriteLine();
@@ -158,7 +149,6 @@ namespace Samples.DatabaseHelper
 
         public void ExecuteReader(TCommand command)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeReader;
 
             if (func != null)
@@ -168,7 +158,7 @@ namespace Samples.DatabaseHelper
                     int count = reader.AsDataRecords().Count();
 
 
-                    Console.WriteLine($"{currentMethodName}");
+                    Console.WriteLine("ExecuteReader()");
                     Console.WriteLine($"{command.CommandText}");
                     Console.WriteLine($"Returned {count} records");
                     Console.WriteLine();
@@ -178,7 +168,6 @@ namespace Samples.DatabaseHelper
 
         public void ExecuteReader(TCommand command, CommandBehavior behavior)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeReaderWithBehavior;
 
             if (func != null)
@@ -187,7 +176,7 @@ namespace Samples.DatabaseHelper
                 {
                     int count = reader.AsDataRecords().Count();
 
-                    Console.WriteLine($"{currentMethodName}");
+                    Console.WriteLine("ExecuteReader(CommandBehavior)");
                     Console.WriteLine($"{command.CommandText}");
                     Console.WriteLine($"Returned {count} records");
                     Console.WriteLine();
@@ -197,7 +186,6 @@ namespace Samples.DatabaseHelper
 
         public async Task ExecuteReaderAsync(TCommand command)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeReaderAsync;
 
             if (func != null)
@@ -206,7 +194,7 @@ namespace Samples.DatabaseHelper
                 {
                     int count = reader.AsDataRecords().Count();
 
-                    Console.WriteLine($"{currentMethodName}");
+                    Console.WriteLine("ExecuteReaderAsync()");
                     Console.WriteLine($"{command.CommandText}");
                     Console.WriteLine($"Returned {count} records");
                     Console.WriteLine();
@@ -216,7 +204,6 @@ namespace Samples.DatabaseHelper
 
         public async Task ExecuteReaderAsync(TCommand command, CommandBehavior behavior)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeReaderWithBehaviorAsync;
 
             if (func != null)
@@ -225,7 +212,7 @@ namespace Samples.DatabaseHelper
                 {
                     int count = reader.AsDataRecords().Count();
 
-                    Console.WriteLine($"{currentMethodName}");
+                    Console.WriteLine("ExecuteReaderAsync(CommandBehavior)");
                     Console.WriteLine($"{command.CommandText}");
                     Console.WriteLine($"Returned {count} records");
                     Console.WriteLine();
@@ -235,7 +222,6 @@ namespace Samples.DatabaseHelper
 
         public async Task ExecuteReaderAsync(TCommand command, CancellationToken cancellationToken)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeReaderWithCancellationAsync;
 
             if (func != null)
@@ -244,7 +230,7 @@ namespace Samples.DatabaseHelper
                 {
                     int count = reader.AsDataRecords().Count();
 
-                    Console.WriteLine($"{currentMethodName}");
+                    Console.WriteLine("ExecuteReaderAsync(CancellationToken)");
                     Console.WriteLine($"{command.CommandText}");
                     Console.WriteLine($"Returned {count} records");
                     Console.WriteLine();
@@ -254,7 +240,6 @@ namespace Samples.DatabaseHelper
 
         public async Task ExecuteReaderAsync(TCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
         {
-            var currentMethodName = GetCurrentMethodName(1);
             var func = _executeReaderWithBehaviorAndCancellationAsync;
 
             if (func != null)
@@ -263,20 +248,12 @@ namespace Samples.DatabaseHelper
                 {
                     int count = reader.AsDataRecords().Count();
 
-                    Console.WriteLine($"{currentMethodName}");
+                    Console.WriteLine("ExecuteReaderAsync(CommandBehavior, CancellationToken)");
                     Console.WriteLine($"{command.CommandText}");
                     Console.WriteLine($"Returned {count} records");
                     Console.WriteLine();
                 }
             }
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private string GetCurrentMethodName(int skipParameters)
-        {
-            MethodBase method = new StackTrace(1, false).GetFrame(0).GetMethod();
-            var parameterNames = method.GetParameters().Skip(skipParameters).Select(p => p.ParameterType.Name);
-            return $"{method.Name}({string.Join(", ", parameterNames)})";
         }
     }
 
