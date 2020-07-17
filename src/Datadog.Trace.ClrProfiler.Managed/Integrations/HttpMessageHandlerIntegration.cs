@@ -219,6 +219,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var httpMethod = request.GetProperty("Method").GetProperty<string>("Method").GetValueOrDefault();
             var requestUri = request.GetProperty<Uri>("RequestUri").GetValueOrDefault();
 
+            using (var activity = ActivityCollector.Default.StartActivity("Datadog.Trace.HttpMessageHandler", System.Diagnostics.ActivityKind.Client))
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationName))
             {
                 try
