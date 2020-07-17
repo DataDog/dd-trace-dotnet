@@ -1112,8 +1112,10 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
     orig_sstream << "0x";
     orig_sstream << std::setw(2) << std::setfill('0') << std::hex
                  << cInstr->m_opcode;
-    orig_sstream << "-";
-    orig_sstream << cInstr->m_Arg64;
+    if (cInstr->m_Arg64 != 0) {
+      orig_sstream << "-";
+      orig_sstream << cInstr->m_Arg64;
+    }
     orig_sstream << " ";
   }
   return orig_sstream.str();
