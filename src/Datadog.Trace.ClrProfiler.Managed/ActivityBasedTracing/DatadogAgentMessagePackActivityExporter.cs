@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public bool IsSendTracesSupported
         {
-            get { return false; }
+            get { return true; }
         }
 
         public bool IsSendActivitiesSupported

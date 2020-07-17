@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler
         private bool _aggregateActivitiesIntoTraces = Defaults.AggregateActivitiesIntoTraces;
         private TimeSpan _completedItemsBufferSendInterval = Defaults.CompletedItemsBufferSendInterval;
         private int _completedItemsBufferMaxSize = Defaults.CompletedItemsBufferMaxSize;
-        private Func<ActivityCollectorConfiguration, IActivityExporter> _traceExporterFactory;
+        private Func<ActivityCollectorConfiguration, IActivityExporter> _traceExporterFactory = Defaults.TraceExporterFactory;
 
         public string ActivitySourceName
         {

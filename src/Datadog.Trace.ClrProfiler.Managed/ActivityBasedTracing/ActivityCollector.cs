@@ -164,8 +164,8 @@ namespace Datadog.Trace.ClrProfiler
                 ActivityStarted = OnActivityStarted,
                 ActivityStopped = OnActivityStopped,
                 ShouldListenTo = (_) => true,
-                // GetRequestedDataUsingParentId = null,
-                // GetRequestedDataUsingContext = null,
+                GetRequestedDataUsingParentId = (ref ActivityCreationOptions<string> options) => ActivityDataRequest.AllDataAndRecorded,
+                GetRequestedDataUsingContext = (ref ActivityCreationOptions<ActivityContext> options) => ActivityDataRequest.AllDataAndRecorded,
             };
 
             ActivitySource.AddActivityListener(_activityListenerHandle);
@@ -235,7 +235,7 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            if (_config.AggregateActivitiesIntoTraces)
+            if (!_config.AggregateActivitiesIntoTraces)
             {
                 _completedActivities.Add(activity);
 
