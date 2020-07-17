@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             NotNullOrEmpty(value, name);
 
-            if (String.IsNullOrWhiteSpace(value))
+            if (string.IsNullOrWhiteSpace(value))
             {
                 throw new ArgumentException((name ?? Validate.FallbackParameterName) + " may not be whitespace only.");
             }

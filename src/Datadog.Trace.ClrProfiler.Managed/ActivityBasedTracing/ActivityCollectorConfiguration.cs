@@ -1,5 +1,8 @@
-﻿using System;
+using System;
 
+#pragma warning disable SA1131 // Use readable conditions
+#pragma warning disable SA1203 // Constants must appear before fields
+#pragma warning disable SA1201 // Elements must appear in the correct order
 namespace Datadog.Trace.ClrProfiler
 {
     internal class ActivityCollectorConfiguration

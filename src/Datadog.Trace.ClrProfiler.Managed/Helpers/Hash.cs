@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 for (int p = 0; p < strLen; p++)
                 {
-                    currChar = (uint) str[p];
+                    currChar = (uint)str[p];
                     hash = (hash << 5) - hash + currChar;   // 31 * hash + currChar
                 }
             }
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 for (int p = 0; p < strLen; p++)
                 {
-                    currChar = (ulong) str[p];
+                    currChar = (ulong)str[p];
                     hash = (hash << 5) - hash + currChar;   // 31 * hash + currChar
                 }
             }
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 for (int p = 0; p < guidBytes.Length; p++)
                 {
-                    currByte = (uint) guidBytes[p];
+                    currByte = (uint)guidBytes[p];
                     hash = (hash << 5) - hash + currByte;   // 31 * hash + currByte
                 }
             }

@@ -1,10 +1,12 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
+#pragma warning disable SA1124 // Do not use regions
+#pragma warning disable SA1131 // Use readable conditions
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>A very fast, lock free, unordered collection to which items can be added, but never removed.</summary>
@@ -77,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler
             return this.GetEnumerator();
         }
 
-        #region class Enumerator 
+        #region class Enumerator
 
         /// <summary>An enumerator implementation for a <see cref="GrowingCollection{T}"/>.
         /// The enumerator is resilient to concurrent additions to the collection.

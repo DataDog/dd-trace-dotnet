@@ -6,6 +6,9 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+#pragma warning disable SA1124 // Do not use regions
+#pragma warning disable SA1201 // Elements must appear in the correct order
+#pragma warning disable SA1214 // Readonly fields must appear before non-readonly fields
 namespace Datadog.Trace.ClrProfiler
 {
     internal class ActivityCollector : IDisposable
@@ -427,7 +430,7 @@ namespace Datadog.Trace.ClrProfiler
 
         /// <summary>
         /// The normal Dispose methos can take a long time, becasue it waits for the send loop to shut down.
-        /// Call DisposeAsync, in order to perform the wait on the threadpool instead of the current thread. 
+        /// Call DisposeAsync, in order to perform the wait on the threadpool instead of the current thread.
         /// </summary>
         /// <returns>A task representing the completion of the Dispose.</returns>
         public Task DisposeAsync()
