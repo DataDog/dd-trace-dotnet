@@ -18,7 +18,7 @@ namespace Samples.DatabaseHelper
             where TCommand : class, IDbCommand
             where TDataReader : class, IDataReader
         {
-            var commandType = typeof(TCommand).FullName;
+            var commandType = typeof(TCommand).Name;
 
             using (var root = Tracer.Instance.StartActive("root"))
             {

@@ -2,7 +2,6 @@ using System;
 using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace;
 using Samples.DatabaseHelper;
 
 namespace Samples.SqlServer
@@ -14,25 +13,23 @@ namespace Samples.SqlServer
             var cts = new CancellationTokenSource();
             var commandFactory = new DbCommandFactory();
 
-            using (var connection = CreateConnection())
-            using (var root = Tracer.Instance.StartActive("root"))
-            {
-                var commandExecutor = new DbCommandExecutor<SqlCommand, SqlDataReader>(
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    (command, ct) => command.ExecuteNonQueryAsync(ct),
-                    command => command.ExecuteScalarAsync(),
-                    (command, ct) => command.ExecuteScalarAsync(ct),
-                    command => command.ExecuteReaderAsync(),
-                    (command, behavior) => command.ExecuteReaderAsync(behavior),
-                    (command, ct) => command.ExecuteReaderAsync(ct),
-                    (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
+            var commandExecutor = new DbCommandExecutor<SqlCommand, SqlDataReader>(
+                command => command.ExecuteNonQuery(),
+                command => command.ExecuteScalar(),
+                command => command.ExecuteReader(),
+                (command, behavior) => command.ExecuteReader(behavior),
+                command => command.ExecuteNonQueryAsync(),
+                (command, ct) => command.ExecuteNonQueryAsync(ct),
+                command => command.ExecuteScalarAsync(),
+                (command, ct) => command.ExecuteScalarAsync(ct),
+                command => command.ExecuteReaderAsync(),
+                (command, behavior) => command.ExecuteReaderAsync(behavior),
+                (command, ct) => command.ExecuteReaderAsync(ct),
+                (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
 
+            using (var connection = CreateConnection())
+            {
                 await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, cts.Token);
-                await Task.Delay(100);
             }
 
             // allow time to flush

@@ -16,27 +16,25 @@ namespace Samples.MySql
             var cts = new CancellationTokenSource();
             var commandFactory = new DbCommandFactory();
 
-            using (var connection = CreateConnection())
-            using (var root = Tracer.Instance.StartActive("root"))
-            {
-                // using DbDataReader here (instead of MySqlDataReader)
-                // let's us run the ExecuteReaderAsync() overloads
-                var commandExecutor = new DbCommandExecutor<MySqlCommand, DbDataReader>(
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    (command, ct) => command.ExecuteNonQueryAsync(ct),
-                    command => command.ExecuteScalarAsync(),
-                    (command, ct) => command.ExecuteScalarAsync(ct),
-                    command => command.ExecuteReaderAsync(),
-                    (command, behavior) => command.ExecuteReaderAsync(behavior),
-                    (command, ct) => command.ExecuteReaderAsync(ct),
-                    (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
+            // using DbDataReader here (instead of MySqlDataReader)
+            // let's us run the ExecuteReaderAsync() overloads
+            var commandExecutor = new DbCommandExecutor<MySqlCommand, DbDataReader>(
+                command => command.ExecuteNonQuery(),
+                command => command.ExecuteScalar(),
+                command => command.ExecuteReader(),
+                (command, behavior) => command.ExecuteReader(behavior),
+                command => command.ExecuteNonQueryAsync(),
+                (command, ct) => command.ExecuteNonQueryAsync(ct),
+                command => command.ExecuteScalarAsync(),
+                (command, ct) => command.ExecuteScalarAsync(ct),
+                command => command.ExecuteReaderAsync(),
+                (command, behavior) => command.ExecuteReaderAsync(behavior),
+                (command, ct) => command.ExecuteReaderAsync(ct),
+                (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
 
+            using (var connection = CreateConnection())
+            {
                 await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, cts.Token);
-                await Task.Delay(100);
             }
 
             // allow time to flush
