@@ -94,9 +94,9 @@ namespace Datadog.Trace.ClrProfiler
             return _defaultActivitySource.StartActivity(name);
         }
 
-        public Activity StartActivity(string name, ActivityKind kind, string parentId = null)
+        public Activity StartActivity(string name, ActivityKind kind)
         {
-            return _defaultActivitySource.StartActivity(name, kind, parentId);
+            return _defaultActivitySource.StartActivity(name, kind);
         }
 
         public void LogState()

@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
                 string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
-                activity = ActivityCollector.Default.StartActivity(OperationName, System.Diagnostics.ActivityKind.Client, Activity.Current?.Id);
+                activity = ActivityCollector.Default.StartActivity(OperationName, System.Diagnostics.ActivityKind.Client);
                 activity.SetCustomProperty("ServiceName", tracer.DefaultServiceName + ServiceName);
                 SetDefaultTags(tracer, activity);
 

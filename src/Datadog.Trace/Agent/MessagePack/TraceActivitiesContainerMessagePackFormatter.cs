@@ -90,7 +90,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (activity.Parent != null)
                 {
                     offset += MessagePackBinary.WriteString(ref bytes, offset, "parent_id");
-                    offset += MessagePackBinary.WriteUInt64(ref bytes, offset, ToUInt63(activity.ParentSpanId));
+                    offset += MessagePackBinary.WriteUInt64(ref bytes, offset, ToUInt63(activity.Parent.SpanId));
                 }
 
                 if (error != null && error.Value)
