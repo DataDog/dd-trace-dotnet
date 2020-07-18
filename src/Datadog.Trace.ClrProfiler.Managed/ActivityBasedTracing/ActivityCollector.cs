@@ -1,10 +1,10 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ExtensionMethods;
 
 #pragma warning disable SA1124 // Do not use regions
 #pragma warning disable SA1201 // Elements must appear in the correct order
@@ -235,6 +235,14 @@ namespace Datadog.Trace.ClrProfiler
             {
                 return;
             }
+
+            // Add values controlled by the Tracer configuration
+            Tracer tracer = Tracer.Instance;
+            activity.AddServiceName(tracer.DefaultServiceName)
+                    .AddTags(tracer.Settings.GlobalTags) // Add global tags first so service unification tags added later can override them
+                    .AddEnvironment(tracer.Settings.Environment)
+                    .AddVersion(tracer.Settings.ServiceVersion)
+                    .AddAnalyticsSampleRate(tracer.Settings);
 
             if (!_config.AggregateActivitiesIntoTraces)
             {
