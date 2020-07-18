@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
-using Datadog.Trace.Abstractions;
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -64,6 +61,7 @@ namespace Datadog.Trace.ClrProfiler
                 span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
                 span.SetTag(Tags.HttpUrl, httpUrl);
                 span.SetTag(Tags.InstrumentationName, integrationName);
+                span.SetTag(Tags.SpanSource, "Datadog.Trace.Span");
 
                 // set analytics sample rate if enabled
                 if (integrationName != null)

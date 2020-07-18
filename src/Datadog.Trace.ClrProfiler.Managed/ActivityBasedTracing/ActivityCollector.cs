@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             var config = new ActivityCollectorConfiguration();
             _defaultActivityCollector = new ActivityCollector(config);
+            Activity.DefaultIdFormat = ActivityIdFormat.W3C;
         }
 
         public static ActivityCollector Default
@@ -93,9 +94,9 @@ namespace Datadog.Trace.ClrProfiler
             return _defaultActivitySource.StartActivity(name);
         }
 
-        public Activity StartActivity(string name, ActivityKind kind)
+        public Activity StartActivity(string name, ActivityKind kind, string parentId = null)
         {
-            return _defaultActivitySource.StartActivity(name, kind);
+            return _defaultActivitySource.StartActivity(name, kind, parentId);
         }
 
         public void LogState()
@@ -164,8 +165,8 @@ namespace Datadog.Trace.ClrProfiler
                 ActivityStarted = OnActivityStarted,
                 ActivityStopped = OnActivityStopped,
                 ShouldListenTo = (_) => true,
-                // GetRequestedDataUsingParentId = null,
-                // GetRequestedDataUsingContext = null,
+                GetRequestedDataUsingParentId = (ref ActivityCreationOptions<string> options) => ActivityDataRequest.AllDataAndRecorded,
+                GetRequestedDataUsingContext = (ref ActivityCreationOptions<ActivityContext> options) => ActivityDataRequest.AllDataAndRecorded,
             };
 
             ActivitySource.AddActivityListener(_activityListenerHandle);
@@ -235,7 +236,7 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            if (_config.AggregateActivitiesIntoTraces)
+            if (!_config.AggregateActivitiesIntoTraces)
             {
                 _completedActivities.Add(activity);
 
