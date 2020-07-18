@@ -49,11 +49,9 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
   <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
     <PackageReference Include="Sigil-vNext" Version="4.8.41" />
   </ItemGroup>
-
+  
   <ItemGroup>
-    <Reference Include="System.Diagnostics.DiagnosticSource">
-      <HintPath>ActivityBasedTracing\System.Diagnostics.DiagnosticSource.dll</HintPath>
-    </Reference>
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="5.0.0-preview.7.20308.13" />
   </ItemGroup>
 
 </Project>
