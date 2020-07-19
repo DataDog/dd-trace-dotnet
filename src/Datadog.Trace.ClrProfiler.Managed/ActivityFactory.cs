@@ -17,11 +17,12 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Creates a scope for outbound http requests and populates some common details.
         /// </summary>
+        /// <param name="activitySource">The activity source that will start the Activity</param>
         /// <param name="httpMethod">The HTTP method used by the request.</param>
         /// <param name="requestUri">The URI requested by the request.</param>
         /// <param name="integrationName">The name of the integration creating this scope.</param>
         /// <returns>A new pre-populated scope.</returns>
-        public static Activity CreateOutboundHttpActivity(string httpMethod, Uri requestUri, string integrationName)
+        public static Activity CreateOutboundHttpActivity(ActivitySource activitySource, string httpMethod, Uri requestUri, string integrationName)
         {
             /*
             if (!tracer.Settings.IsIntegrationEnabled(integrationName))
@@ -52,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
                 string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
-                activity = ActivityCollector.Default.StartActivity(OperationName, System.Diagnostics.ActivityKind.Client);
+                activity = activitySource.StartActivity(OperationName, System.Diagnostics.ActivityKind.Client);
                 activity.SetCustomProperty("Type", SpanTypes.Http);
                 activity.DisplayName = $"{httpMethod} {resourceUrl}";
 

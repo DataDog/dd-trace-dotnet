@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpMessageHandler = "System.Net.Http.HttpMessageHandler";
         private const string HttpClientHandler = "System.Net.Http.HttpClientHandler";
         private const string SendAsync = "SendAsync";
+
+        private static readonly string ActivitySourceName = "Datadog.Trace.ClrProfiler.Integrations." + IntegrationName;
+        private static readonly string ActivitySourceVersion = typeof(HttpMessageHandlerIntegration).Assembly.GetName().Version.ToString();
+        private static readonly ActivitySource _activitySource = new ActivitySource(ActivitySourceName, ActivitySourceVersion);
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpMessageHandlerIntegration));
 
@@ -219,7 +224,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var httpMethod = request.GetProperty("Method").GetProperty<string>("Method").GetValueOrDefault();
             var requestUri = request.GetProperty<Uri>("RequestUri").GetValueOrDefault();
 
-            using (var activity = ActivityFactory.CreateOutboundHttpActivity(httpMethod, requestUri, IntegrationName))
+            using (var activity = ActivityFactory.CreateOutboundHttpActivity(_activitySource, httpMethod, requestUri, IntegrationName))
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationName))
             {
                 try
