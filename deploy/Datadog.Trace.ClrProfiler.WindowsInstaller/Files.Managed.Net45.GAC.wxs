@@ -41,8 +41,18 @@
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net45_GAC_System.Buffers.dll"
+              Source="$(var.TracerHomeDirectory)\net45\System.Buffers.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net45_GAC_System.Diagnostics.DiagnosticSource.dll"
               Source="$(var.TracerHomeDirectory)\net45\System.Diagnostics.DiagnosticSource.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net45_GAC_System.Memory.dll"
+              Source="$(var.TracerHomeDirectory)\net45\System.Memory.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">

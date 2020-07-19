@@ -56,6 +56,11 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Buffers.dll"
+              Source="$(var.TracerHomeDirectory)\net461\System.Buffers.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_System.Collections.Concurrent.dll"
               Source="$(var.TracerHomeDirectory)\net461\System.Collections.Concurrent.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -256,6 +261,11 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Memory.dll"
+              Source="$(var.TracerHomeDirectory)\net461\System.Memory.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_System.Net.Http.dll"
               Source="$(var.TracerHomeDirectory)\net461\System.Net.Http.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -308,6 +318,11 @@
       <Component Win64="$(var.Win64)">
         <File Id="net461_System.Net.WebSockets.dll"
               Source="$(var.TracerHomeDirectory)\net461\System.Net.WebSockets.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Numerics.Vectors.dll"
+              Source="$(var.TracerHomeDirectory)\net461\System.Numerics.Vectors.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
