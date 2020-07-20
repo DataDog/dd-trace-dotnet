@@ -85,6 +85,11 @@
               Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Threading.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Datadog.Trace.Build.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.Build.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>

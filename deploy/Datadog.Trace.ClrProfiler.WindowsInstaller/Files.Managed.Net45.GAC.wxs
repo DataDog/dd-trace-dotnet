@@ -45,6 +45,11 @@
               Source="$(var.TracerHomeDirectory)\net45\System.Runtime.InteropServices.RuntimeInformation.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net45_GAC_Datadog.Trace.Build.dll"
+              Source="$(var.TracerHomeDirectory)\net45\Datadog.Trace.Build.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>
