@@ -152,10 +152,10 @@
           "signature_types": [
             "System.Data.Common.DbDataReader"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -227,10 +227,10 @@
             "System.Data.Common.DbDataReader",
             "System.Data.CommandBehavior"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -305,10 +305,10 @@
             "System.Data.CommandBehavior",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -377,10 +377,10 @@
           "signature_types": [
             "System.Int32"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -452,10 +452,10 @@
             "System.Threading.Tasks.Task`1<System.Int32>",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -524,10 +524,10 @@
           "signature_types": [
             "System.Object"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -599,10 +599,10 @@
             "System.Threading.Tasks.Task`1<System.Object>",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -913,10 +913,10 @@
           "signature_types": [
             "System.Data.IDataReader"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -988,10 +988,10 @@
             "System.Data.IDataReader",
             "System.Data.CommandBehavior"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -1060,10 +1060,10 @@
           "signature_types": [
             "System.Int32"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -1132,10 +1132,10 @@
           "signature_types": [
             "System.Object"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
