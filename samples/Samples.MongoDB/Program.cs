@@ -16,7 +16,7 @@ namespace Samples.MongoDB
     {
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "10.37.129.2";
+            return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
         }
 
         public static void Main(string[] args)
