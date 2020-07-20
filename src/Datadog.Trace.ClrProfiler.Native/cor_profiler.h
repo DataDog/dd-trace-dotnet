@@ -13,7 +13,6 @@
 #include "integration.h"
 #include "module_metadata.h"
 #include "pal.h"
-#include "il_rewriter.h"
 
 namespace trace {
 
@@ -62,8 +61,6 @@ class CorProfiler : public CorProfilerBase {
                                          const std::vector<MethodReplacement> method_replacements);
   bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
 
-  std::string GetILCodes(std::string title, ILRewriter* rewriter,
-                         const FunctionInfo& caller);
   //
   // Startup methods
   //
