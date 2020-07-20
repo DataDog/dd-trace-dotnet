@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         {
             if (returnValue is Task returnTask && ex is null)
             {
-                generator = generator ?? GetContinuationFrom(returnTask.GetType());
+                generator ??= GetContinuationFrom(returnTask.GetType());
                 return generator.SetTaskContinuation(returnTask, continuation, state);
             }
 
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         {
             if (returnValue is Task returnTask && ex is null)
             {
-                generator = generator ?? GetContinuationFrom(returnTask.GetType());
+                generator ??= GetContinuationFrom(returnTask.GetType());
                 return generator.SetTaskContinuationAsync(returnTask, continuation, state);
             }
 
@@ -160,6 +160,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 {
                     continuation(null, null, state);
 #if NET45
+                    // "If the supplied array/enumerable contains no tasks, the returned task will immediately transition to a RanToCompletion state before it's returned to the caller."
+                    // https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall?redirectedfrom=MSDN&view=netframework-4.5.2#System_Threading_Tasks_Task_WhenAll_System_Threading_Tasks_Task___
                     return Task.WhenAll();
 #else
                     return Task.CompletedTask;
