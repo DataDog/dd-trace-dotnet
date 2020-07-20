@@ -248,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object ExecuteReaderAsyncTwoParams(
+        public static object ExecuteReaderAsyncWithBehaviorAndCancellation(
             object command,
             int behavior,
             object boxedCancellationToken,
@@ -258,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         {
             var cancellationToken = (CancellationToken)boxedCancellationToken;
 
-            return ExecuteReaderAsyncInternalTwoParams(
+            return ExecuteReaderAsyncWithBehaviorAndCancellationInternal(
                 (DbCommand)command,
                 (CommandBehavior)behavior,
                 cancellationToken,
@@ -267,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 moduleVersionPtr);
         }
 
-        private static async Task<DbDataReader> ExecuteReaderAsyncInternalTwoParams(
+        private static async Task<DbDataReader> ExecuteReaderAsyncWithBehaviorAndCancellationInternal(
             DbCommand command,
             CommandBehavior commandBehavior,
             CancellationToken cancellationToken,
