@@ -8,6 +8,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 using Microsoft.Build.Framework;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Build
 {
@@ -122,7 +123,7 @@ namespace Datadog.Trace.Build
         {
             if (e.TargetNames.StartsWith("_"))
             {
-                // return;
+                return;
             }
 
             Log.Information("Project Started");
@@ -176,90 +177,106 @@ namespace Datadog.Trace.Build
 
         private void EventSource_ErrorRaised(object sender, BuildErrorEventArgs e)
         {
+            if (e.BuildEventContext == null)
+            {
+                return;
+            }
+
             Log.Information("Error Raised");
 
             int context = e.BuildEventContext.ProjectContextId;
             if (_projects.TryGetValue(context, out Span projectSpan))
             {
+                string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
+                string message = e.Message;
+                string type = e.SenderName?.ToUpperInvariant() + " Error";
+                string code = e.Code;
+                int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
+                int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
+                int? endLineNumber = e.EndLineNumber > 0 ? (int?)e.EndLineNumber : null;
+                int? endColumnNumber = e.EndColumnNumber > 0 ? (int?)e.EndColumnNumber : null;
+                string projectFile = e.ProjectFile;
+                string filePath = null;
+                string stack = null;
+                string subCategory = e.Subcategory;
+
                 projectSpan.Error = true;
-                projectSpan.SetTag(BuildTags.ErrorMessage, e.Message);
-                projectSpan.SetTag(BuildTags.ErrorType, e.SenderName?.ToUpperInvariant() + " Error");
-                projectSpan.SetTag(BuildTags.ErrorCode, e.Code);
-                projectSpan.SetTag(BuildTags.ErrorStartLine, e.LineNumber.ToString());
-                projectSpan.SetTag(BuildTags.ErrorStartColumn, e.ColumnNumber.ToString());
-                projectSpan.SetTag(BuildTags.ErrorProjectFile, e.ProjectFile);
+                projectSpan.SetTag(BuildTags.ErrorMessage, message);
+                projectSpan.SetTag(BuildTags.ErrorType, type);
+                projectSpan.SetTag(BuildTags.ErrorCode, code);
+                projectSpan.SetTag(BuildTags.ErrorStartLine, lineNumber.ToString());
+                projectSpan.SetTag(BuildTags.ErrorStartColumn, columnNumber.ToString());
+                projectSpan.SetTag(BuildTags.ErrorProjectFile, projectFile);
 
                 if (!string.IsNullOrEmpty(e.File))
                 {
-                    var filePath = Path.Combine(Path.GetDirectoryName(e.ProjectFile), e.File);
-
+                    filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
                     projectSpan.SetTag(BuildTags.ErrorFile, filePath);
-                    if (e.LineNumber != 0)
+                    if (lineNumber.HasValue && lineNumber != 0)
                     {
-                        projectSpan.SetTag(BuildTags.ErrorStack, $" at Source code in {filePath}:line {e.LineNumber}");
+                        stack = $" at Source code in {filePath}:line {e.LineNumber}";
+                        projectSpan.SetTag(BuildTags.ErrorStack, stack);
                     }
                 }
 
-                if (!string.IsNullOrEmpty(e.Subcategory))
+                if (!string.IsNullOrEmpty(subCategory))
                 {
-                    projectSpan.SetTag(BuildTags.ErrorSubCategory, e.Subcategory);
+                    projectSpan.SetTag(BuildTags.ErrorSubCategory, subCategory);
                 }
 
-                if (e.EndLineNumber != 0)
+                if (endLineNumber.HasValue && endLineNumber != 0)
                 {
-                    projectSpan.SetTag(BuildTags.ErrorEndLine, e.EndLineNumber.ToString());
+                    projectSpan.SetTag(BuildTags.ErrorEndLine, endLineNumber.ToString());
                 }
 
-                if (e.EndColumnNumber != 0)
+                if (endColumnNumber.HasValue && endColumnNumber != 0)
                 {
-                    projectSpan.SetTag(BuildTags.ErrorEndColumn, e.EndColumnNumber.ToString());
+                    projectSpan.SetTag(BuildTags.ErrorEndColumn, endColumnNumber.ToString());
                 }
+
+                LogItem logItem = new LogItem("error", message, type, code, lineNumber, columnNumber, endLineNumber, endColumnNumber, projectFile, filePath, stack, subCategory);
+                string logMessage = correlation + JsonConvert.SerializeObject(logItem);
+                Console.WriteLine(logMessage);
             }
         }
 
         private void EventSource_WarningRaised(object sender, BuildWarningEventArgs e)
         {
+            if (e.BuildEventContext == null)
+            {
+                return;
+            }
+
             Log.Information("Warning Raised");
 
             int context = e.BuildEventContext.ProjectContextId;
             if (_projects.TryGetValue(context, out Span projectSpan))
             {
-                Span warningSpan = _tracer.StartSpan("build.warning-event", projectSpan.Context);
-
-                warningSpan.SetTag(BuildTags.WarningMessage, e.Message);
-                warningSpan.SetTag(BuildTags.WarningType, e.SenderName?.ToUpperInvariant() + " Warning");
-                warningSpan.SetTag(BuildTags.WarningCode, e.Code);
-                warningSpan.SetTag(BuildTags.WarningStartLine, e.LineNumber.ToString());
-                warningSpan.SetTag(BuildTags.WarningStartColumn, e.ColumnNumber.ToString());
-                warningSpan.SetTag(BuildTags.WarningProjectFile, e.ProjectFile);
+                string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
+                string message = e.Message;
+                string type = e.SenderName?.ToUpperInvariant() + " Warning";
+                string code = e.Code;
+                int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
+                int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
+                int? endLineNumber = e.EndLineNumber > 0 ? (int?)e.EndLineNumber : null;
+                int? endColumnNumber = e.EndColumnNumber > 0 ? (int?)e.EndColumnNumber : null;
+                string projectFile = e.ProjectFile;
+                string filePath = null;
+                string stack = null;
+                string subCategory = e.Subcategory;
 
                 if (!string.IsNullOrEmpty(e.File))
                 {
-                    var filePath = Path.Combine(Path.GetDirectoryName(e.ProjectFile), e.File);
-
-                    warningSpan.SetTag(BuildTags.WarningFile, filePath);
-                    if (e.LineNumber != 0)
+                    filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
+                    if (lineNumber.HasValue && lineNumber != 0)
                     {
-                        warningSpan.SetTag(BuildTags.WarningStack, $" at Source code in {filePath}:line {e.LineNumber}");
+                        stack = $" at Source code in {filePath}:line {e.LineNumber}";
                     }
                 }
 
-                if (!string.IsNullOrEmpty(e.Subcategory))
-                {
-                    warningSpan.SetTag(BuildTags.WarningSubCategory, e.Subcategory);
-                }
-
-                if (e.EndLineNumber != 0)
-                {
-                    warningSpan.SetTag(BuildTags.WarningEndLine, e.EndLineNumber.ToString());
-                }
-
-                if (e.EndColumnNumber != 0)
-                {
-                    warningSpan.SetTag(BuildTags.WarningEndColumn, e.EndColumnNumber.ToString());
-                }
-
-                warningSpan.Finish();
+                LogItem logItem = new LogItem("warn", message, type, code, lineNumber, columnNumber, endLineNumber, endColumnNumber, projectFile, filePath, stack, subCategory);
+                string logMessage = correlation + JsonConvert.SerializeObject(logItem);
+                Console.WriteLine(logMessage);
             }
         }
     }
