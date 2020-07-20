@@ -51,6 +51,7 @@ namespace trace {
 
   WSTRING skip_assemblies[]{
       "mscorlib"_W,
+      "netstandard"_W,
       "System.Configuration"_W,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
