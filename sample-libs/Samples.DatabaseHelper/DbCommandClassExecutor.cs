@@ -9,6 +9,8 @@ namespace Samples.DatabaseHelper
     {
         public override string CommandTypeName => nameof(DbCommand);
 
+        public override bool SupportsAsyncMethods => true;
+
         public override void ExecuteNonQuery(DbCommand command) => command.ExecuteNonQuery();
 
         public override Task ExecuteNonQueryAsync(DbCommand command) => command.ExecuteNonQueryAsync();

@@ -15,7 +15,7 @@ namespace Samples.MySql
             var cts = new CancellationTokenSource();
 
 
-            using (var connection = CreateConnection())
+            using (var connection = OpenConnection())
             {
                 await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, cts.Token);
             }
@@ -24,7 +24,7 @@ namespace Samples.MySql
             await Task.Delay(2000, cts.Token);
         }
 
-        private static MySqlConnection CreateConnection()
+        private static MySqlConnection OpenConnection()
         {
             var connectionString = Environment.GetEnvironmentVariable("MYSQL_CONNECTION_STRING");
 
@@ -35,7 +35,9 @@ namespace Samples.MySql
                 connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world";
             }
 
-            return new MySqlConnection(connectionString);
+            var connection = new MySqlConnection(connectionString);
+            connection.Open();
+            return connection;
         }
     }
 }

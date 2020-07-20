@@ -11,6 +11,8 @@ namespace Samples.SqlServer
     {
         public override string CommandTypeName => nameof(SqlCommand);
 
+        public override bool SupportsAsyncMethods => true;
+
         public override void ExecuteNonQuery(SqlCommand command) => command.ExecuteNonQuery();
 
         public override Task ExecuteNonQueryAsync(SqlCommand command) => command.ExecuteNonQueryAsync();

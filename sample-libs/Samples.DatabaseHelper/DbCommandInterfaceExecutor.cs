@@ -10,6 +10,8 @@ namespace Samples.DatabaseHelper
 
         public override string CommandTypeName => nameof(IDbCommand);
 
+        public override bool SupportsAsyncMethods => false;
+
         public override void ExecuteNonQuery(IDbCommand command) => command.ExecuteNonQuery();
 
         public override Task ExecuteNonQueryAsync(IDbCommand command) => CompletedTask;

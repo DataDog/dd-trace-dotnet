@@ -8,6 +8,8 @@ namespace Samples.DatabaseHelper
     {
         public string CommandTypeName => nameof(IDbCommand) + "-netstandard";
 
+        public bool SupportsAsyncMethods => false;
+
         public void ExecuteNonQuery(IDbCommand command) => command.ExecuteNonQuery();
 
         public Task ExecuteNonQueryAsync(IDbCommand command) => Task.CompletedTask;

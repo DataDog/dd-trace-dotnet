@@ -5,48 +5,50 @@ using System.Threading.Tasks;
 
 namespace Samples.DatabaseHelper
 {
-    public class DbCommandNetStandardClassExecutor : DbCommandExecutor<DbCommand>
+    public class DbCommandNetStandardClassExecutor : IDbCommandExecutor
     {
-        public override string CommandTypeName => nameof(DbCommand) + "-netstandard";
+        public string CommandTypeName => nameof(DbCommand) + "-netstandard";
 
-        public override void ExecuteNonQuery(DbCommand command) => command.ExecuteNonQuery();
+        public bool SupportsAsyncMethods => true;
 
-        public override Task ExecuteNonQueryAsync(DbCommand command) => command.ExecuteNonQueryAsync();
+        public void ExecuteNonQuery(DbCommand command) => command.ExecuteNonQuery();
 
-        public override Task ExecuteNonQueryAsync(DbCommand command, CancellationToken cancellationToken) => command.ExecuteNonQueryAsync(cancellationToken);
+        public Task ExecuteNonQueryAsync(DbCommand command) => command.ExecuteNonQueryAsync();
 
-        public override void ExecuteScalar(DbCommand command) => command.ExecuteScalar();
+        public Task ExecuteNonQueryAsync(DbCommand command, CancellationToken cancellationToken) => command.ExecuteNonQueryAsync(cancellationToken);
 
-        public override Task ExecuteScalarAsync(DbCommand command) => command.ExecuteScalarAsync();
+        public void ExecuteScalar(DbCommand command) => command.ExecuteScalar();
 
-        public override Task ExecuteScalarAsync(DbCommand command, CancellationToken cancellationToken) => command.ExecuteScalarAsync(cancellationToken);
+        public Task ExecuteScalarAsync(DbCommand command) => command.ExecuteScalarAsync();
 
-        public override void ExecuteReader(DbCommand command)
+        public Task ExecuteScalarAsync(DbCommand command, CancellationToken cancellationToken) => command.ExecuteScalarAsync(cancellationToken);
+
+        public void ExecuteReader(DbCommand command)
         {
             using DbDataReader reader = command.ExecuteReader();
         }
 
-        public override void ExecuteReader(DbCommand command, CommandBehavior behavior)
+        public void ExecuteReader(DbCommand command, CommandBehavior behavior)
         {
             using DbDataReader reader = command.ExecuteReader(behavior);
         }
 
-        public override async Task ExecuteReaderAsync(DbCommand command)
+        public async Task ExecuteReaderAsync(DbCommand command)
         {
             using DbDataReader reader = await command.ExecuteReaderAsync();
         }
 
-        public override async Task ExecuteReaderAsync(DbCommand command, CommandBehavior behavior)
+        public async Task ExecuteReaderAsync(DbCommand command, CommandBehavior behavior)
         {
             using DbDataReader reader = await command.ExecuteReaderAsync(behavior);
         }
 
-        public override async Task ExecuteReaderAsync(DbCommand command, CancellationToken cancellationToken)
+        public async Task ExecuteReaderAsync(DbCommand command, CancellationToken cancellationToken)
         {
             using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
         }
 
-        public override async Task ExecuteReaderAsync(DbCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
+        public async Task ExecuteReaderAsync(DbCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
         {
             using DbDataReader reader = await command.ExecuteReaderAsync(behavior, cancellationToken);
         }

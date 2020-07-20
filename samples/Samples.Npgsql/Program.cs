@@ -1,6 +1,4 @@
 using System;
-using System.Data;
-using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
@@ -16,7 +14,7 @@ namespace Samples.Npgsql
             var commandExecutor = new NpgsqlCommandExecutor();
             var cts = new CancellationTokenSource();
 
-            using (var connection = CreateConnection())
+            using (var connection = OpenConnection())
             {
                 await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, cts.Token);
             }
@@ -25,7 +23,7 @@ namespace Samples.Npgsql
             await Task.Delay(2000, cts.Token);
         }
 
-        private static NpgsqlConnection CreateConnection()
+        private static NpgsqlConnection OpenConnection()
         {
             var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
 
@@ -35,7 +33,9 @@ namespace Samples.Npgsql
                 connectionString = $"Host={host};Username=postgres;Password=postgres;Database=postgres";
             }
 
-            return new NpgsqlConnection(connectionString);
+            var connection = new NpgsqlConnection(connectionString);
+            connection.Open();
+            return connection;
         }
     }
 }

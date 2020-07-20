@@ -11,6 +11,8 @@ namespace Samples.Npgsql
     {
         public override string CommandTypeName => nameof(NpgsqlCommand);
 
+        public override bool SupportsAsyncMethods => true;
+
         public override void ExecuteNonQuery(NpgsqlCommand command) => command.ExecuteNonQuery();
 
         public override Task ExecuteNonQueryAsync(NpgsqlCommand command) => command.ExecuteNonQueryAsync();

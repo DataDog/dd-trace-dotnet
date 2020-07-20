@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,27 +18,24 @@ namespace Samples.DatabaseHelper
             IDbCommandExecutor commandExecutor,
             CancellationToken cancellationToken)
         {
+            var executors = new List<IDbCommandExecutor>
+                            {
+                                commandExecutor,
+                                new DbCommandClassExecutor(),
+                                new DbCommandInterfaceExecutor(),
+#if !NET45
+                                // these ones reference types in netstandard.dll
+                                new DbCommandNetStandardClassExecutor(),
+                                new DbCommandNetStandardInterfaceExecutor(),
+#endif
+                            };
+
             using (var root = Tracer.Instance.StartActive("root"))
             {
-                root.Span.ResourceName = commandExecutor.CommandTypeName;
-
-                await RunAsync(connection, commandFactory, commandExecutor, runAsyncMethods: true, cancellationToken);
-
-                var dbCommandExecutor = new DbCommandClassExecutor();
-                await RunAsync(connection, commandFactory, dbCommandExecutor, runAsyncMethods: true, cancellationToken);
-
-                var idbCommandExecutor = new DbCommandInterfaceExecutor();
-                await RunAsync(connection, commandFactory, idbCommandExecutor, runAsyncMethods: false, cancellationToken);
-
-#if !NET45
-                // use DbCommandWrapper to reference DbCommand in netstandard.dll
-                var dbCommandWrapperExecutor = new DbCommandNetStandardClassExecutor();
-                await RunAsync(connection, commandFactory, dbCommandWrapperExecutor, runAsyncMethods: true, cancellationToken);
-
-                // use IDbCommandWrapper to reference IDbCommand in netstandard.dll
-                var idbCommandWrapperExecutor = new DbCommandNetStandardInterfaceExecutor();
-                await RunAsync(connection, commandFactory, idbCommandWrapperExecutor, runAsyncMethods: false, cancellationToken);
-#endif
+                foreach (var executor in executors)
+                {
+                    await RunAsync(connection, commandFactory, executor, cancellationToken);
+                }
             }
         }
 
@@ -45,13 +43,10 @@ namespace Samples.DatabaseHelper
             IDbConnection connection,
             DbCommandFactory commandFactory,
             IDbCommandExecutor commandExecutor,
-            bool runAsyncMethods,
             CancellationToken cancellationToken)
         {
             string commandName = commandExecutor.CommandTypeName;
             Console.WriteLine(commandName);
-
-            connection.Open();
 
             using (var parentScope = Tracer.Instance.StartActive("command"))
             {
@@ -88,7 +83,7 @@ namespace Samples.DatabaseHelper
                     commandExecutor.ExecuteNonQuery(command);
                 }
 
-                if (runAsyncMethods)
+                if (commandExecutor.SupportsAsyncMethods)
                 {
                     await Task.Delay(100, cancellationToken);
 
@@ -156,7 +151,6 @@ namespace Samples.DatabaseHelper
                 }
             }
 
-            connection.Close();
             await Task.Delay(100, cancellationToken);
         }
     }

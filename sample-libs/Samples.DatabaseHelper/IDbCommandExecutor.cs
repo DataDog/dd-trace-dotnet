@@ -7,6 +7,7 @@ namespace Samples.DatabaseHelper
     public interface IDbCommandExecutor
     {
         string CommandTypeName { get; }
+        bool SupportsAsyncMethods { get; }
 
         void ExecuteNonQuery(IDbCommand command);
         Task ExecuteNonQueryAsync(IDbCommand command);

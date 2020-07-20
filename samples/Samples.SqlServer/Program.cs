@@ -14,7 +14,7 @@ namespace Samples.SqlServer
             var commandExecutor = new SqlCommandExecutor();
             var cts = new CancellationTokenSource();
 
-            using (var connection = CreateConnection())
+            using (var connection = OpenConnection())
             {
                 await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, cts.Token);
             }
@@ -23,12 +23,14 @@ namespace Samples.SqlServer
             await Task.Delay(2000, cts.Token);
         }
 
-        private static SqlConnection CreateConnection()
+        private static SqlConnection OpenConnection()
         {
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
                                    @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=30";
 
-            return new SqlConnection(connectionString);
+            var connection = new SqlConnection(connectionString);
+            connection.Open();
+            return connection;
         }
     }
 }

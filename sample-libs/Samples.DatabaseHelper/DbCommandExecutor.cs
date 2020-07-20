@@ -9,6 +9,8 @@ namespace Samples.DatabaseHelper
     {
         public abstract string CommandTypeName { get; }
 
+        public abstract bool SupportsAsyncMethods { get; }
+
         public abstract void ExecuteNonQuery(TDbCommand command);
 
         public abstract Task ExecuteNonQueryAsync(TDbCommand command);

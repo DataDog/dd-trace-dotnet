@@ -11,6 +11,8 @@ namespace Samples.MySql
     {
         public override string CommandTypeName => nameof(MySqlCommand);
 
+        public override bool SupportsAsyncMethods => true;
+
         public override void ExecuteNonQuery(MySqlCommand command) => command.ExecuteNonQuery();
 
         public override Task ExecuteNonQueryAsync(MySqlCommand command) => command.ExecuteNonQueryAsync();
