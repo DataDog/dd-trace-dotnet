@@ -10,22 +10,9 @@ namespace Samples.SqlServer
     {
         private static async Task Main()
         {
-            var cts = new CancellationTokenSource();
             var commandFactory = new DbCommandFactory();
-
-            var commandExecutor = new DbCommandExecutor<SqlCommand, SqlDataReader>(
-                command => command.ExecuteNonQuery(),
-                command => command.ExecuteScalar(),
-                command => command.ExecuteReader(),
-                (command, behavior) => command.ExecuteReader(behavior),
-                command => command.ExecuteNonQueryAsync(),
-                (command, ct) => command.ExecuteNonQueryAsync(ct),
-                command => command.ExecuteScalarAsync(),
-                (command, ct) => command.ExecuteScalarAsync(ct),
-                command => command.ExecuteReaderAsync(),
-                (command, behavior) => command.ExecuteReaderAsync(behavior),
-                (command, ct) => command.ExecuteReaderAsync(ct),
-                (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
+            var commandExecutor = new SqlCommandExecutor();
+            var cts = new CancellationTokenSource();
 
             using (var connection = CreateConnection())
             {

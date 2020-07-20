@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,24 +12,9 @@ namespace Samples.Npgsql
     {
         private static async Task Main()
         {
-            var cts = new CancellationTokenSource();
             var commandFactory = new DbCommandFactory();
-
-            // using DbDataReader here (instead of NpgsqlDataReader)
-            // let's us run the ExecuteReaderAsync() overloads
-            var commandExecutor = new DbCommandExecutor<NpgsqlCommand, DbDataReader>(
-                command => command.ExecuteNonQuery(),
-                command => command.ExecuteScalar(),
-                command => command.ExecuteReader(),
-                (command, behavior) => command.ExecuteReader(behavior),
-                command => command.ExecuteNonQueryAsync(),
-                (command, ct) => command.ExecuteNonQueryAsync(ct),
-                command => command.ExecuteScalarAsync(),
-                (command, ct) => command.ExecuteScalarAsync(ct),
-                command => command.ExecuteReaderAsync(),
-                (command, behavior) => command.ExecuteReaderAsync(behavior),
-                (command, ct) => command.ExecuteReaderAsync(ct),
-                (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
+            var commandExecutor = new NpgsqlCommandExecutor();
+            var cts = new CancellationTokenSource();
 
             using (var connection = CreateConnection())
             {
@@ -36,7 +22,7 @@ namespace Samples.Npgsql
             }
 
             // allow time to flush
-            await Task.Delay(2000);
+            await Task.Delay(2000, cts.Token);
         }
 
         private static NpgsqlConnection CreateConnection()

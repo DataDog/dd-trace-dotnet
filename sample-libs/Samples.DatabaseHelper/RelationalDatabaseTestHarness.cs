@@ -4,156 +4,159 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 
+// ReSharper disable MethodHasAsyncOverloadWithCancellation
+// ReSharper disable MethodSupportsCancellation
+
 namespace Samples.DatabaseHelper
 {
-    // ReSharper disable MethodSupportsCancellation
-    // ReSharper disable MethodHasAsyncOverloadWithCancellation
     public static class RelationalDatabaseTestHarness
     {
-        public static async Task RunAllAsync<TConnection, TCommand, TDataReader>(
-            TConnection connection,
+        public static async Task RunAllAsync(
+            IDbConnection connection,
             DbCommandFactory commandFactory,
-            DbCommandExecutor<TCommand, TDataReader> commandExecutor,
+            IDbCommandExecutor commandExecutor,
             CancellationToken cancellationToken)
-            where TConnection : class, IDbConnection
-            where TCommand : class, IDbCommand
-            where TDataReader : class, IDataReader
         {
             using (var root = Tracer.Instance.StartActive("root"))
             {
-                await RunAsync(connection, commandFactory, commandExecutor, cancellationToken);
+                root.Span.ResourceName = commandExecutor.CommandTypeName;
 
-                var dbCommandExecutor = DbCommandExecutor.GetDbCommandExecutor();
-                await RunAsync(connection, commandFactory, dbCommandExecutor, cancellationToken);
+                await RunAsync(connection, commandFactory, commandExecutor, runAsyncMethods: true, cancellationToken);
 
-                var idbCommandExecutor = DbCommandExecutor.GetIDbCommandExecutor();
-                await RunAsync(connection, commandFactory, idbCommandExecutor, cancellationToken);
+                var dbCommandExecutor = new DbCommandClassExecutor();
+                await RunAsync(connection, commandFactory, dbCommandExecutor, runAsyncMethods: true, cancellationToken);
+
+                var idbCommandExecutor = new DbCommandInterfaceExecutor();
+                await RunAsync(connection, commandFactory, idbCommandExecutor, runAsyncMethods: false, cancellationToken);
 
 #if !NET45
                 // use DbCommandWrapper to reference DbCommand in netstandard.dll
-                var dbCommandWrapperExecutor = DbCommandExecutor.GetDbWrapperExecutor();
-                await RunAsync(connection, commandFactory, dbCommandWrapperExecutor, cancellationToken);
+                var dbCommandWrapperExecutor = new DbCommandNetStandardClassExecutor();
+                await RunAsync(connection, commandFactory, dbCommandWrapperExecutor, runAsyncMethods: true, cancellationToken);
 
                 // use IDbCommandWrapper to reference IDbCommand in netstandard.dll
-                var idbCommandWrapperExecutor = DbCommandExecutor.GetDbWrapperExecutor();
-                await RunAsync(connection, commandFactory, idbCommandWrapperExecutor, cancellationToken);
+                var idbCommandWrapperExecutor = new DbCommandNetStandardInterfaceExecutor();
+                await RunAsync(connection, commandFactory, idbCommandWrapperExecutor, runAsyncMethods: false, cancellationToken);
 #endif
             }
         }
 
-        private static async Task RunAsync<TConnection, TCommand, TDataReader>(
-            TConnection connection,
+        private static async Task RunAsync(
+            IDbConnection connection,
             DbCommandFactory commandFactory,
-            DbCommandExecutor<TCommand, TDataReader> commandExecutor,
+            IDbCommandExecutor commandExecutor,
+            bool runAsyncMethods,
             CancellationToken cancellationToken)
-            where TConnection : class, IDbConnection
-            where TCommand : class, IDbCommand
-            where TDataReader : class, IDataReader
         {
-            string commandType = typeof(TCommand).Name;
-            Console.WriteLine(commandExecutor.DbCommandType.AssemblyQualifiedName);
+            string commandName = commandExecutor.CommandTypeName;
+            Console.WriteLine(commandName);
 
-            using (var parentScope = Tracer.Instance.StartActive(commandType))
+            connection.Open();
+
+            using (var parentScope = Tracer.Instance.StartActive("command"))
             {
-                parentScope.Span.SetTag("command-type", commandType);
-                connection.Open();
-                TCommand command;
+                parentScope.Span.ResourceName = commandName;
+                IDbCommand command;
 
-                using (var scope = Tracer.Instance.StartActive("run.sync"))
+                using (var scope = Tracer.Instance.StartActive("sync"))
                 {
+                    scope.Span.ResourceName = commandName;
+
                     Console.WriteLine("  Synchronous");
                     Console.WriteLine();
-                    scope.Span.SetTag("command-type", commandType);
                     await Task.Delay(100, cancellationToken);
 
-                    command = (TCommand)commandFactory.GetCreateTableCommand(connection);
+                    command = commandFactory.GetCreateTableCommand(connection);
                     commandExecutor.ExecuteNonQuery(command);
 
-                    command = (TCommand)commandFactory.GetInsertRowCommand(connection);
+                    command = commandFactory.GetInsertRowCommand(connection);
                     commandExecutor.ExecuteNonQuery(command);
 
-                    command = (TCommand)commandFactory.GetSelectScalarCommand(connection);
+                    command = commandFactory.GetSelectScalarCommand(connection);
                     commandExecutor.ExecuteScalar(command);
 
-                    command = (TCommand)commandFactory.GetUpdateRowCommand(connection);
+                    command = commandFactory.GetUpdateRowCommand(connection);
                     commandExecutor.ExecuteNonQuery(command);
 
-                    command = (TCommand)commandFactory.GetSelectRowCommand(connection);
+                    command = commandFactory.GetSelectRowCommand(connection);
                     commandExecutor.ExecuteReader(command);
 
-                    command = (TCommand)commandFactory.GetSelectRowCommand(connection);
+                    command = commandFactory.GetSelectRowCommand(connection);
                     commandExecutor.ExecuteReader(command, CommandBehavior.Default);
 
-                    command = (TCommand)commandFactory.GetDeleteRowCommand(connection);
+                    command = commandFactory.GetDeleteRowCommand(connection);
                     commandExecutor.ExecuteNonQuery(command);
                 }
 
-                await Task.Delay(100, cancellationToken);
-
-                using (var scope = Tracer.Instance.StartActive("run.async"))
+                if (runAsyncMethods)
                 {
-                    Console.WriteLine("  Asynchronous");
-                    Console.WriteLine();
-                    scope.Span.SetTag("command-type", commandType);
                     await Task.Delay(100, cancellationToken);
 
-                    command = (TCommand)commandFactory.GetCreateTableCommand(connection);
-                    await commandExecutor.ExecuteNonQueryAsync(command);
+                    using (var scope = Tracer.Instance.StartActive("async"))
+                    {
+                        scope.Span.ResourceName = commandName;
 
-                    command = (TCommand)commandFactory.GetInsertRowCommand(connection);
-                    await commandExecutor.ExecuteNonQueryAsync(command);
+                        Console.WriteLine("  Asynchronous");
+                        Console.WriteLine();
+                        await Task.Delay(100, cancellationToken);
 
-                    command = (TCommand)commandFactory.GetSelectScalarCommand(connection);
-                    await commandExecutor.ExecuteScalarAsync(command);
+                        command = commandFactory.GetCreateTableCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command);
 
-                    command = (TCommand)commandFactory.GetUpdateRowCommand(connection);
-                    await commandExecutor.ExecuteNonQueryAsync(command);
+                        command = commandFactory.GetInsertRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command);
 
-                    command = (TCommand)commandFactory.GetSelectRowCommand(connection);
-                    await commandExecutor.ExecuteReaderAsync(command);
+                        command = commandFactory.GetSelectScalarCommand(connection);
+                        await commandExecutor.ExecuteScalarAsync(command);
 
-                    command = (TCommand)commandFactory.GetSelectRowCommand(connection);
-                    await commandExecutor.ExecuteReaderAsync(command, CommandBehavior.Default);
+                        command = commandFactory.GetUpdateRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command);
 
-                    command = (TCommand)commandFactory.GetDeleteRowCommand(connection);
-                    await commandExecutor.ExecuteNonQueryAsync(command);
-                }
+                        command = commandFactory.GetSelectRowCommand(connection);
+                        await commandExecutor.ExecuteReaderAsync(command);
 
-                await Task.Delay(100, cancellationToken);
+                        command = commandFactory.GetSelectRowCommand(connection);
+                        await commandExecutor.ExecuteReaderAsync(command, CommandBehavior.Default);
 
-                using (var scope = Tracer.Instance.StartActive("run.async.with-cancellation"))
-                {
-                    Console.WriteLine(" Asynchronous with cancellation");
-                    Console.WriteLine();
-                    scope.Span.SetTag("command-type", commandType);
+                        command = commandFactory.GetDeleteRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command);
+                    }
+
                     await Task.Delay(100, cancellationToken);
 
-                    command = (TCommand)commandFactory.GetCreateTableCommand(connection);
-                    await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
+                    using (var scope = Tracer.Instance.StartActive("async-with-cancellation"))
+                    {
+                        scope.Span.ResourceName = commandName;
 
-                    command = (TCommand)commandFactory.GetInsertRowCommand(connection);
-                    await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
+                        Console.WriteLine("  Asynchronous with cancellation");
+                        Console.WriteLine();
+                        await Task.Delay(100, cancellationToken);
 
-                    command = (TCommand)commandFactory.GetSelectScalarCommand(connection);
-                    await commandExecutor.ExecuteScalarAsync(command, cancellationToken);
+                        command = commandFactory.GetCreateTableCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
 
-                    command = (TCommand)commandFactory.GetUpdateRowCommand(connection);
-                    await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
+                        command = commandFactory.GetInsertRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
 
-                    command = (TCommand)commandFactory.GetSelectRowCommand(connection);
-                    await commandExecutor.ExecuteReaderAsync(command, cancellationToken);
+                        command = commandFactory.GetSelectScalarCommand(connection);
+                        await commandExecutor.ExecuteScalarAsync(command, cancellationToken);
 
-                    command = (TCommand)commandFactory.GetSelectRowCommand(connection);
-                    await commandExecutor.ExecuteReaderAsync(command, CommandBehavior.Default, cancellationToken);
+                        command = commandFactory.GetUpdateRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
 
-                    command = (TCommand)commandFactory.GetDeleteRowCommand(connection);
-                    await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
+                        command = commandFactory.GetSelectRowCommand(connection);
+                        await commandExecutor.ExecuteReaderAsync(command, cancellationToken);
+
+                        command = commandFactory.GetSelectRowCommand(connection);
+                        await commandExecutor.ExecuteReaderAsync(command, CommandBehavior.Default, cancellationToken);
+
+                        command = commandFactory.GetDeleteRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
+                    }
                 }
-
-                connection.Close();
             }
 
-            Console.WriteLine();
+            connection.Close();
             await Task.Delay(100, cancellationToken);
         }
     }

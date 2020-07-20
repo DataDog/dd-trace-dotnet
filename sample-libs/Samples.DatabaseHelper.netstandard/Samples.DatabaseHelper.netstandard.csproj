@@ -1,8 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Samples.DatabaseHelper</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Samples.DatabaseHelper\DbCommandExecutor.cs" Link="DbCommandExecutor.cs" />
+    <Compile Include="..\Samples.DatabaseHelper\IDbCommandExecutor.cs" Link="IDbCommandExecutor.cs" />
+  </ItemGroup>
 
 </Project>

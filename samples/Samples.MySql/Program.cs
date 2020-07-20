@@ -1,9 +1,6 @@
 using System;
-using System.Data;
-using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace;
 using MySql.Data.MySqlClient;
 using Samples.DatabaseHelper;
 
@@ -13,24 +10,10 @@ namespace Samples.MySql
     {
         private static async Task Main()
         {
-            var cts = new CancellationTokenSource();
             var commandFactory = new DbCommandFactory();
+            var commandExecutor = new MySqlCommandExecutor();
+            var cts = new CancellationTokenSource();
 
-            // using DbDataReader here (instead of MySqlDataReader)
-            // let's us run the ExecuteReaderAsync() overloads
-            var commandExecutor = new DbCommandExecutor<MySqlCommand, DbDataReader>(
-                command => command.ExecuteNonQuery(),
-                command => command.ExecuteScalar(),
-                command => command.ExecuteReader(),
-                (command, behavior) => command.ExecuteReader(behavior),
-                command => command.ExecuteNonQueryAsync(),
-                (command, ct) => command.ExecuteNonQueryAsync(ct),
-                command => command.ExecuteScalarAsync(),
-                (command, ct) => command.ExecuteScalarAsync(ct),
-                command => command.ExecuteReaderAsync(),
-                (command, behavior) => command.ExecuteReaderAsync(behavior),
-                (command, ct) => command.ExecuteReaderAsync(ct),
-                (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
 
             using (var connection = CreateConnection())
             {
@@ -38,7 +21,7 @@ namespace Samples.MySql
             }
 
             // allow time to flush
-            await Task.Delay(2000);
+            await Task.Delay(2000, cts.Token);
         }
 
         private static MySqlConnection CreateConnection()
