@@ -1356,7 +1356,7 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.18.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
-          "method": "ExecuteReaderAsyncTwoParams",
+          "method": "ExecuteReaderAsyncWithBehaviorAndCancellation",
           "signature": "00 06 1C 1C 08 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
