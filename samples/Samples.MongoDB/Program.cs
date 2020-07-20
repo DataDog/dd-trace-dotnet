@@ -49,7 +49,9 @@ namespace Samples.MongoDB
                 Run(collection, newDocument);
                 RunAsync(collection, newDocument).Wait();
 
+#if MONGODB_2_2
                 WireProtocolExecuteIntegrationTest(client);
+#endif
             }
         }
 
@@ -115,6 +117,7 @@ namespace Samples.MongoDB
                 Console.WriteLine(allDocuments.FirstOrDefault());
             }
         }
+#if MONGODB_2_2
 
         public static void WireProtocolExecuteIntegrationTest(MongoClient client)
         {
@@ -133,5 +136,6 @@ namespace Samples.MongoDB
                 return servers;
             }
         }
+#endif
     }
 }
