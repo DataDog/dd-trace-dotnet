@@ -1,8 +1,6 @@
 <Project>
   <!--
-  NOTE: The presence of this file stops msbuild from looking up the folder hierarchy
+  This file intentionally left blank...
+  to stop msbuild from looking up the folder hierarchy
   -->
-  <PropertyGroup>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
 </Project>
