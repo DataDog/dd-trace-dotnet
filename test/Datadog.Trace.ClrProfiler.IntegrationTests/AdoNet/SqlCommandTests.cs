@@ -19,7 +19,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces(string packageVersion)
         {
-            const int expectedSpanCount = 47;
+#if NET452
+            var expectedSpanCount = 49; // 7 queries * 7 groups
+#else
+            var expectedSpanCount = 77; // 7 queries * 11 groups
+#endif
+
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.SqlServer-" + dbType;
