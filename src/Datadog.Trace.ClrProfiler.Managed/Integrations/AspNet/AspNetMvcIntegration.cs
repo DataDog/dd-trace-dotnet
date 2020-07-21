@@ -361,7 +361,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
-                scope?.Span?.SetTag(Tags.HttpStatusCode, statusCode.ToString());
+                scope.Span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
+
+                if (500 <= statusCode && statusCode <= 599)
+                {
+                    scope.Span.Error = true;
+                }
             }
             catch (Exception ex)
             {
