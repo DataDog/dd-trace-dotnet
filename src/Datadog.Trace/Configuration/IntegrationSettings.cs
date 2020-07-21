@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.Configuration
 {
@@ -21,12 +22,11 @@ namespace Datadog.Trace.Configuration
                 return;
             }
 
-            Enabled = source.GetBool(string.Format(ConfigurationKeys.Integrations.Enabled, integrationName));
+            Enabled = source.GetBool(GetIntegrationSettingNames(ConfigurationKeys.Integrations.EnabledFallbacks, integrationName));
 
-            AnalyticsEnabled = source.GetBool(string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName));
+            AnalyticsEnabled = source.GetBool(GetIntegrationSettingNames(ConfigurationKeys.Integrations.AnalyticsEnabledFallbacks, integrationName));
 
-            AnalyticsSampleRate = source.GetDouble(string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName)) ??
-                                  1.0;
+            AnalyticsSampleRate = source.GetDouble(GetIntegrationSettingNames(ConfigurationKeys.Integrations.AnalyticsSampleRateFallbacks, integrationName)) ?? 1.0;
         }
 
         /// <summary>
@@ -51,5 +51,13 @@ namespace Datadog.Trace.Configuration
         /// that determines the sampling rate for this integration.
         /// </summary>
         public double AnalyticsSampleRate { get; set; }
+
+        private static IEnumerable<string> GetIntegrationSettingNames(IEnumerable<string> settingsKeyFormat, string integrationName)
+        {
+            foreach (var f in settingsKeyFormat)
+            {
+                yield return string.Format(f, integrationName);
+            }
+        }
     }
 }
