@@ -1,15 +1,10 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
@@ -59,6 +54,32 @@ namespace Datadog.Trace.Tests
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(tagKey), envValue);
+        }
+
+        [Theory]
+        [InlineData("", true)]
+        [InlineData("1", true)]
+        [InlineData("0", false)]
+        public void TraceEnabled(string value, bool areTracesEnabled)
+        {
+            var settings = new NameValueCollection
+            {
+                { ConfigurationKeys.TraceEnabled, value }
+            };
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
+
+            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
+
+            _writerMock.ResetCalls();
+
+            var tracer = new Tracer(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var span = tracer.StartSpan("TestTracerDisabled");
+            span.Dispose();
+
+            var assertion = areTracesEnabled ? Times.Once() : Times.Never();
+
+            _writerMock.Verify(w => w.WriteTrace(It.IsAny<Span[]>()), assertion);
         }
     }
 }
