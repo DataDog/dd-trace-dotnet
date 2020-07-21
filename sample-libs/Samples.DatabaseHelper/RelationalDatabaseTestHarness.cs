@@ -12,20 +12,36 @@ namespace Samples.DatabaseHelper
 {
     public static class RelationalDatabaseTestHarness
     {
+        /// <summary>
+        /// Helper method that runs ADO.NET test suite for the specified <see cref="IDbCommandExecutor"/>
+        /// in addition to other built-in implementations.
+        /// </summary>
+        /// <param name="connection">The <see cref="IDbConnection"/> to use to connect to the database.</param>
+        /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
+        /// <param name="providerSpecificCommandExecutor">A <see cref="IDbCommandExecutor"/> specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand, used to call DbCommand methods.</param>
+        /// <param name="cancellationToken">A cancellation token passed into downstream async methods.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task RunAllAsync(
             IDbConnection connection,
             DbCommandFactory commandFactory,
-            IDbCommandExecutor commandExecutor,
+            IDbCommandExecutor providerSpecificCommandExecutor,
             CancellationToken cancellationToken)
         {
             var executors = new List<IDbCommandExecutor>
                             {
-                                commandExecutor,
+                                // call methods directly like SqlCommand.ExecuteScalar(), provided by caller
+                                providerSpecificCommandExecutor,
+
+                                // call methods through DbCommand reference
                                 new DbCommandClassExecutor(),
+
+                                // call methods through IDbCommand reference
                                 new DbCommandInterfaceExecutor(),
 #if !NET45
-                                // these ones reference types in netstandard.dll
+                                // call methods through DbCommand reference (referencing netstandard.dll)
                                 new DbCommandNetStandardClassExecutor(),
+
+                                // call methods through IDbCommand reference (referencing netstandard.dll)
                                 new DbCommandNetStandardInterfaceExecutor(),
 #endif
                             };
@@ -39,6 +55,14 @@ namespace Samples.DatabaseHelper
             }
         }
 
+        /// <summary>
+        /// Runs ADO.NET test suite for the specified <see cref="IDbCommandExecutor"/>.
+        /// </summary>
+        /// <param name="connection">The <see cref="IDbConnection"/> to use to connect to the database.</param>
+        /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
+        /// <param name="commandExecutor">A <see cref="IDbCommandExecutor"/> used to call DbCommand methods.</param>
+        /// <param name="cancellationToken">A cancellation token passed into downstream async methods.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task RunAsync(
             IDbConnection connection,
             DbCommandFactory commandFactory,
