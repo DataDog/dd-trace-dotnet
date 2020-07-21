@@ -24,7 +24,7 @@ namespace Datadog.Trace.Configuration
                   { ConfigurationKeys.ConfigurationFileName, "DD_DOTNET_TRACER_CONFIG_FILE" },
                   { ConfigurationKeys.Integrations.Enabled, "DD_{0}_ENABLED" },
                   { ConfigurationKeys.Integrations.AnalyticsEnabled, "DD_{0}_ANALYTICS_ENABLED" },
-                  { ConfigurationKeys.Integrations.AnalyticsSampleRate, "DD_{0}_ANALYTICS_SAMPLING_RATE" }
+                  { ConfigurationKeys.Integrations.AnalyticsSampleRate, "DD_{0}_ANALYTICS_SAMPLE_RATE" }
               };
 
         /// <summary>
