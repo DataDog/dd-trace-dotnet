@@ -26,6 +26,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         public const string Id = "test.id";
 
         /// <summary>
+        /// Test type
+        /// </summary>
+        public const string Type = "test.type";
+
+        /// <summary>
+        /// Test type test
+        /// </summary>
+        public const string TypeTest = "test";
+
+        /// <summary>
+        /// Test type benchmark
+        /// </summary>
+        public const string TypeBenchmark = "benchmark";
+
+        /// <summary>
         /// Test fqn
         /// </summary>
         public const string ProcessId = "test.processId";
@@ -53,17 +68,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <summary>
         /// Test Pass status
         /// </summary>
-        public const string StatusPass = "PASS";
+        public const string StatusPass = "pass";
 
         /// <summary>
         /// Test Fail status
         /// </summary>
-        public const string StatusFail = "FAIL";
+        public const string StatusFail = "fail";
 
         /// <summary>
         /// Test Skip status
         /// </summary>
-        public const string StatusSkip = "SKIP";
+        public const string StatusSkip = "skip";
 
         /// <summary>
         /// Test skip reason

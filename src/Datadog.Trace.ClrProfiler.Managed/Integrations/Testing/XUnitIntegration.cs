@@ -417,7 +417,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 }
 
                 Tracer tracer = Tracer.Instance;
-                string serviceName = testClassInstanceAssemblyName?.Name ?? tracer.DefaultServiceName;
+                string serviceName = !string.IsNullOrEmpty(tracer.DefaultServiceName) ? tracer.DefaultServiceName : testClassInstanceAssemblyName?.Name + ".test";
                 string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
                 scope = tracer.StartActive("xunit.test", serviceName: serviceName);
@@ -430,6 +430,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 span.SetTag(TestTags.Suite, testSuite);
                 span.SetTag(TestTags.Name, testName);
                 span.SetTag(TestTags.Framework, testFramework);
+                span.SetTag(TestTags.Type, TestTags.TypeTest);
                 CIEnvironmentValues.DecorateSpan(span);
 
                 span.SetTag(TestTags.BuildInContainer, _inContainer ? "true" : "false");
