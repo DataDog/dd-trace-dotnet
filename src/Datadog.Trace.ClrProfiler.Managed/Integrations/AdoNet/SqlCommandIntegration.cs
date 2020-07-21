@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand, IntegrationName, methodName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand, IntegrationName))
             {
                 try
                 {
@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand, IntegrationName, methodName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand, IntegrationName))
             {
                 try
                 {
@@ -218,7 +218,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName, methodName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName))
             {
                 try
                 {
@@ -281,7 +281,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             var dbCommand = command as DbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
             {
                 try
                 {
@@ -360,7 +360,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName, methodName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName))
             {
                 try
                 {
@@ -423,7 +423,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             var dbCommand = command as DbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName, methodName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
             {
                 try
                 {
@@ -502,7 +502,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName, methodName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName))
             {
                 try
                 {
