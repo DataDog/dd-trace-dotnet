@@ -329,8 +329,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 scope.Span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
 
-                if (500 <= statusCode && statusCode <= 599)
+                if (statusCode / 100 == 5)
                 {
+                    // 5xx codes are server-side errors
                     scope.Span.Error = true;
                 }
             }
