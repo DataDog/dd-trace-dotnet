@@ -19,7 +19,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             // In .NET Framework, the MySQL client injects
             // a few extra queries the first time it connects to a database
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 21 : 24;
+#if NET452
+            var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
+#else
+            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
+#endif
+
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.MySql-" + dbType;

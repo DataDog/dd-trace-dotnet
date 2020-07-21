@@ -1,6 +1,5 @@
 using System;
-using System.Data;
-using System.Data.Common;
+using System.Threading;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using Samples.DatabaseHelper;
@@ -11,62 +10,21 @@ namespace Samples.MySql
     {
         private static async Task Main()
         {
-            /* TODO: enable this after adding a MySql-specific integration
-            using (var connection = CreateConnection())
+            var commandFactory = new DbCommandFactory();
+            var commandExecutor = new MySqlCommandExecutor();
+            var cts = new CancellationTokenSource();
+
+
+            using (var connection = OpenConnection())
             {
-                var testQueries = new RelationalDatabaseTestHarness<MySqlConnection, MySqlCommand, MySqlDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    command => command.ExecuteScalarAsync(),
-                    executeReaderAsync: null,
-                    executeReaderWithBehaviorAsync: null
-                );
-
-
-                await testQueries.RunAsync();
-            }
-            */
-
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    command => command.ExecuteScalarAsync(),
-                    command => command.ExecuteReaderAsync(),
-                    (command, behavior) => command.ExecuteReaderAsync(behavior)
-                );
-
-                await testQueries.RunAsync();
+                await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, cts.Token);
             }
 
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    executeNonQueryAsync: null,
-                    executeScalarAsync: null,
-                    executeReaderAsync: null,
-                    executeReaderWithBehaviorAsync: null
-                );
-
-                await testQueries.RunAsync();
-            }
+            // allow time to flush
+            await Task.Delay(2000, cts.Token);
         }
 
-        private static MySqlConnection CreateConnection()
+        private static MySqlConnection OpenConnection()
         {
             var connectionString = Environment.GetEnvironmentVariable("MYSQL_CONNECTION_STRING");
 
@@ -77,7 +35,9 @@ namespace Samples.MySql
                 connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world";
             }
 
-            return new MySqlConnection(connectionString);
+            var connection = new MySqlConnection(connectionString);
+            connection.Open();
+            return connection;
         }
     }
 }
