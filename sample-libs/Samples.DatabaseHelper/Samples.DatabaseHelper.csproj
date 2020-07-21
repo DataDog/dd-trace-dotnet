@@ -18,7 +18,7 @@
     <ProjectReference Include="..\..\sample-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj" />
 
     <!-- include this files when targetting net45,
-         otherwise remove them and use the types is defined the referenced project Samples.DatabaseHelper.netstandard -->
+         otherwise remove them and use the types defined in the referenced project Samples.DatabaseHelper.netstandard -->
     <Compile Remove="DbCommandExecutor.cs" />
     <Compile Remove="IDbCommandExecutor.cs" />
   </ItemGroup>
