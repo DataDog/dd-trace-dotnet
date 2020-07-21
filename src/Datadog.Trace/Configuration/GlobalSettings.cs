@@ -111,7 +111,7 @@ namespace Datadog.Trace.Configuration
 #endif
 
             // if environment variable is not set, look for default file name in the current directory
-            var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
+            var configurationFileName = configurationSource.GetStringWithFallbacks(ConfigurationKeys.ConfigurationFileName) ??
                                         Path.Combine(currentDirectory, "datadog.json");
 
             if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
