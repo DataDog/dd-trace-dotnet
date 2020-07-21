@@ -35,14 +35,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
-        /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
             TargetSignatureTypes = new[] { ClrNames.Void, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
             TargetMinimumVersion = Major2Minor2,
             TargetMaximumVersion = Major2)]
-        public static object Execute(
+        public static void Execute(
             object wireProtocol,
             object connection,
             object boxedCancellationToken,
@@ -53,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 
             const string methodName = nameof(Execute);
-            Func<object, object, CancellationToken, object> execute;
+            Action<object, object, CancellationToken> execute;
             var wireProtocolType = wireProtocol.GetType();
 
             var cancellationToken = (CancellationToken)boxedCancellationToken;
@@ -61,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 execute =
-                    MethodBuilder<Func<object, object, CancellationToken, object>>
+                    MethodBuilder<Action<object, object, CancellationToken>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
@@ -85,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    return execute(wireProtocol, connection, cancellationToken);
+                    execute(wireProtocol, connection, cancellationToken);
                 }
                 catch (Exception ex)
                 {

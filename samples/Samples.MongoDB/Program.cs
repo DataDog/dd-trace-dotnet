@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using MongoDB.Driver.Core.Operations;
+using MongoDB.Driver.Core.Clusters;
+using MongoDB.Driver.Core.Servers;
 
 namespace Samples.MongoDB
 {
@@ -45,8 +48,13 @@ namespace Samples.MongoDB
 
                 Run(collection, newDocument);
                 RunAsync(collection, newDocument).Wait();
+
+#if MONGODB_2_2
+                WireProtocolExecuteIntegrationTest(client);
+#endif
             }
         }
+
 
         public static void Run(IMongoCollection<BsonDocument> collection, BsonDocument newDocument)
         {
@@ -109,5 +117,25 @@ namespace Samples.MongoDB
                 Console.WriteLine(allDocuments.FirstOrDefault());
             }
         }
+#if MONGODB_2_2
+
+        public static void WireProtocolExecuteIntegrationTest(MongoClient client)
+        {
+            using (var syncScope = Tracer.Instance.StartActive("sync-calls-execute", serviceName: "Samples.MongoDB"))
+            {
+                var server = client.Cluster.SelectServer(new ServerSelector(), CancellationToken.None);
+                var channel = server.GetChannel(CancellationToken.None);
+                channel.KillCursors(new long[] { 0, 1, 2 }, new global::MongoDB.Driver.Core.WireProtocol.Messages.Encoders.MessageEncoderSettings(), CancellationToken.None);
+            }
+        }
+
+        internal class ServerSelector : global::MongoDB.Driver.Core.Clusters.ServerSelectors.IServerSelector
+        {
+            public IEnumerable<ServerDescription> SelectServers(ClusterDescription cluster, IEnumerable<ServerDescription> servers)
+            {
+                return servers;
+            }
+        }
+#endif
     }
 }
