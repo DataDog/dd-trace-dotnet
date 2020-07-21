@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler
             return scope;
         }
 
-        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, string integrationName, string methodName)
+        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, string integrationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationName))
             {
@@ -119,7 +119,6 @@ namespace Datadog.Trace.ClrProfiler
                 var span = scope.Span;
                 span.SetTag(Tags.DbType, dbType);
                 span.SetTag(Tags.InstrumentationName, integrationName);
-                span.SetTag(Tags.InstrumentedMethod, methodName);
                 span.AddTagsFromDbCommand(command);
 
                 // set analytics sample rate if enabled
