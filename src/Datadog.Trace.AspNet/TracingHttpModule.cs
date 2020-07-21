@@ -157,6 +157,7 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
+                    SetStatusCode(scope, app.Context.Response.StatusCode);
                     scope.Dispose();
                 }
             }
@@ -185,6 +186,26 @@ namespace Datadog.Trace.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+            }
+        }
+
+        private void SetStatusCode(Scope scope, int statusCode)
+        {
+            try
+            {
+                if (scope?.Span != null)
+                {
+                    scope.Span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
+
+                    if (500 <= statusCode && statusCode <= 599)
+                    {
+                        scope.Span.Error = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while setting span tag with status code");
             }
         }
     }
