@@ -23,16 +23,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [InlineData("/Home/Index", "GET /home/index")]
+        [InlineData("/Home/Index", "GET /home/index", HttpStatusCode.OK)]
+        [InlineData("/Home/BadRequest", "GET /home/badrequest", HttpStatusCode.InternalServerError)]
+        [InlineData("/Home/StatusCode?value=201", "GET /home/statuscode", HttpStatusCode.Created)]
         public async Task SubmitsTraces(
             string path,
-            string expectedResourceName)
+            string expectedResourceName,
+            HttpStatusCode expectedStatusCode)
         {
             await AssertWebServerSpan(
                 path,
                 _iisFixture.Agent,
                 _iisFixture.HttpPort,
-                HttpStatusCode.OK,
+                expectedStatusCode,
                 "web",
                 "aspnet-mvc.request",
                 expectedResourceName,

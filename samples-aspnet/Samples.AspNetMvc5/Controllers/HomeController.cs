@@ -38,5 +38,18 @@ namespace Samples.AspNetMvc5.Controllers
             await Task.Delay(TimeSpan.FromSeconds(seconds));
             return View("Delay", seconds);
         }
+
+        [Route("statuscode/{value}")]
+        public ActionResult StatusCode(int value)
+        {
+            Response.StatusCode = value;
+            return Content("Status code set to " + value);
+        }
+
+        [Route("badrequest")]
+        public ActionResult BadRequest()
+        {
+            throw new Exception("Oops, it broke.");
+        }
     }
 }

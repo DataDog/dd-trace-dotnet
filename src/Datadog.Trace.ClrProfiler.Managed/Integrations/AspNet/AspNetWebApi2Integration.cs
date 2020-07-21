@@ -150,33 +150,53 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object controllerContext,
             CancellationToken cancellationToken)
         {
-            using (Scope scope = CreateScope(controllerContext))
+            Scope scope = CreateScope(controllerContext);
+
+            try
             {
-                try
+                // call the original method, inspecting (and rethrowing) any unhandled exceptions
+                var task = (Task<T>)instrumentedMethod(apiController, controllerContext, cancellationToken);
+                var responseMessage = await task;
+
+                if (scope != null)
                 {
-                    // call the original method, inspecting (but not catching) any unhandled exceptions
-                    var task = (Task<T>)instrumentedMethod(apiController, controllerContext, cancellationToken);
-                    var responseMessage = await task.ConfigureAwait(false);
+                    // some fields aren't set till after execution, so populate anything missing
+                    UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
 
-                    if (scope != null)
-                    {
-                        // some fields aren't set till after execution, so populate anything missing
-                        UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
-                    }
-
-                    return responseMessage;
+                    var statusCode = responseMessage.GetProperty("StatusCode");
+                    scope.Span.SetTag(Tags.HttpStatusCode, ((int)statusCode.Value).ToString());
+                    scope.Dispose();
                 }
-                catch (Exception ex)
+
+                return responseMessage;
+            }
+            catch (Exception ex)
+            {
+                if (scope != null)
                 {
-                    if (scope != null)
-                    {
-                        // some fields aren't set till after execution, so populate anything missing
-                        UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
-                    }
+                    // some fields aren't set till after execution, so populate anything missing
+                    UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
+                    scope.Span.SetException(ex);
 
-                    scope?.Span.SetException(ex);
-                    throw;
+                    // We don't have access to the final status code at this point
+                    // Ask the HttpContext to call us back to that we can get it
+                    var httpContext = System.Web.HttpContext.Current;
+
+                    if (httpContext != null)
+                    {
+                        // We don't know how long it'll take for ASP.NET to invoke the callback,
+                        // so we store the real finish time
+                        var now = scope.Span.Context.TraceContext.UtcNow;
+                        httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
+                    }
+                    else
+                    {
+                        // Looks like we won't be able to get the final status code
+                        scope.Dispose();
+                    }
                 }
+
+                throw;
             }
         }
 
@@ -293,6 +313,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 Log.Error(ex, "Error populating scope data.");
+            }
+        }
+
+        private static void OnRequestCompleted(System.Web.HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
+        {
+            SetStatusCode(scope, httpContext.Response.StatusCode);
+            scope.Span.Finish(finishTime);
+            scope.Dispose();
+        }
+
+        private static void SetStatusCode(Scope scope, int statusCode)
+        {
+            try
+            {
+                scope.Span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while setting span tag with status code");
             }
         }
     }
