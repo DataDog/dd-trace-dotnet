@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-
-#pragma warning disable SA1202 // Elements must be ordered by access
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
@@ -224,21 +221,15 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             public const string Enabled = "DD_TRACE_{0}_ENABLED";
 
-            internal static readonly IReadOnlyList<string> EnabledFallbacks = new[] { Enabled, "DD_{0}_ENABLED" };
-
             /// <summary>
             /// Configuration key pattern for enabling or disabling Analytics in an integration.
             /// </summary>
             public const string AnalyticsEnabled = "DD_TRACE_{0}_ANALYTICS_ENABLED";
 
-            internal static readonly IReadOnlyList<string> AnalyticsEnabledFallbacks = new[] { AnalyticsEnabled, "DD_{0}_ANALYTICS_ENABLED" };
-
             /// <summary>
             /// Configuration key pattern for setting Analytics sampling rate in an integration.
             /// </summary>
             public const string AnalyticsSampleRate = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
-
-            internal static readonly IReadOnlyList<string> AnalyticsSampleRateFallbacks = new[] { AnalyticsSampleRate, "DD_{0}_ANALYTICS_SAMPLE_RATE" };
         }
 
         /// <summary>
@@ -258,4 +249,3 @@ namespace Datadog.Trace.Configuration
         }
     }
 }
-#pragma warning restore SA1202 // Elements must be ordered by access

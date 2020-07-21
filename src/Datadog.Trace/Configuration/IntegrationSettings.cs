@@ -22,11 +22,11 @@ namespace Datadog.Trace.Configuration
                 return;
             }
 
-            Enabled = source.GetBool(GetIntegrationSettingNames(ConfigurationKeys.Integrations.EnabledFallbacks, integrationName));
+            Enabled = source.GetBoolWithFallbacks(ConfigurationKeys.Integrations.Enabled, integrationName);
 
-            AnalyticsEnabled = source.GetBool(GetIntegrationSettingNames(ConfigurationKeys.Integrations.AnalyticsEnabledFallbacks, integrationName));
+            AnalyticsEnabled = source.GetBoolWithFallbacks(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName);
 
-            AnalyticsSampleRate = source.GetDouble(GetIntegrationSettingNames(ConfigurationKeys.Integrations.AnalyticsSampleRateFallbacks, integrationName)) ?? 1.0;
+            AnalyticsSampleRate = source.GetDoubleWithFallbacks(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName) ?? 1.0;
         }
 
         /// <summary>
@@ -51,13 +51,5 @@ namespace Datadog.Trace.Configuration
         /// that determines the sampling rate for this integration.
         /// </summary>
         public double AnalyticsSampleRate { get; set; }
-
-        private static IEnumerable<string> GetIntegrationSettingNames(IEnumerable<string> settingsKeyFormat, string integrationName)
-        {
-            foreach (var f in settingsKeyFormat)
-            {
-                yield return string.Format(f, integrationName);
-            }
-        }
     }
 }
