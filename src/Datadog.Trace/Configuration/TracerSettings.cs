@@ -104,9 +104,17 @@ namespace Datadog.Trace.Configuration
                          // default value (empty)
                          new ConcurrentDictionary<string, string>();
 
-            // Filter out tags with empty keys or empty values
+            // Filter out tags with empty keys or empty values, and trim whitespace
             GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
-                                   .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+
+            HeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags) ??
+                         // default value (empty)
+                         new ConcurrentDictionary<string, string>();
+
+            // Filter out tags with empty keys or empty values, and trim whitespace
+            HeaderTags = HeaderTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
+                                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             DogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort) ??
                             // default value
@@ -123,6 +131,10 @@ namespace Datadog.Trace.Configuration
             DiagnosticSourceEnabled = source?.GetBool(ConfigurationKeys.DiagnosticSourceEnabled) ??
                                       // default value
                                       true;
+
+            StartupDiagnosticLogEnabled = source?.GetBool(ConfigurationKeys.StartupDiagnosticLogEnabled) ??
+                                          // default value
+                                          true;
         }
 
         /// <summary>
@@ -220,6 +232,11 @@ namespace Datadog.Trace.Configuration
         public IDictionary<string, string> GlobalTags { get; set; }
 
         /// <summary>
+        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// </summary>
+        public IDictionary<string, string> HeaderTags { get; set; }
+
+        /// <summary>
         /// Gets or sets the port where the DogStatsd server is listening for connections.
         /// Default is <c>8125</c>.
         /// </summary>
@@ -237,6 +254,11 @@ namespace Datadog.Trace.Configuration
         /// of <see cref="System.Diagnostics.DiagnosticSource"/> is enabled.
         /// </summary>
         public bool DiagnosticSourceEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
+        /// </summary>
+        public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

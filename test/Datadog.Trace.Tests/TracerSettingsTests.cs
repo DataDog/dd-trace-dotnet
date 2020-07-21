@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Agent;
@@ -27,18 +26,13 @@ namespace Datadog.Trace.Tests
         [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, "custom-version")]
         public void ConfiguredTracerSettings_DefaultTagsSetFromEnvironmentVariable(string environmentVariableKey, string tagKey, string value)
         {
-            // save original value so we can restore later
-            var originalValue = Environment.GetEnvironmentVariable(environmentVariableKey);
+            var collection = new NameValueCollection { { environmentVariableKey, value } };
 
-            Environment.SetEnvironmentVariable(environmentVariableKey, value, EnvironmentVariableTarget.Process);
-            IConfigurationSource source = new EnvironmentConfigurationSource();
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
-
-            // restore original value
-            Environment.SetEnvironmentVariable(environmentVariableKey, originalValue, EnvironmentVariableTarget.Process);
 
             Assert.Equal(span.GetTag(tagKey), value);
         }
@@ -50,24 +44,14 @@ namespace Datadog.Trace.Tests
         {
             string envValue = $"ddenv-custom-{tagKey}";
             string tagsLine = $"{tagKey}:ddtags-custom-{tagKey}";
+            var collection = new NameValueCollection { { envKey, envValue }, { ConfigurationKeys.GlobalTags, tagsLine } };
 
-            // save original values so we can restore later
-            var originalEnvValue = Environment.GetEnvironmentVariable(envKey);
-            var originalTagsValue = Environment.GetEnvironmentVariable(ConfigurationKeys.GlobalTags);
-
-            Environment.SetEnvironmentVariable(envKey, envValue, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GlobalTags, tagsLine, EnvironmentVariableTarget.Process);
-
-            IConfigurationSource source = new EnvironmentConfigurationSource();
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
             Assert.True(settings.GlobalTags.Any());
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
-
-            // restore original value
-            Environment.SetEnvironmentVariable(envKey, originalEnvValue, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GlobalTags, originalTagsValue, EnvironmentVariableTarget.Process);
 
             Assert.Equal(span.GetTag(tagKey), envValue);
         }

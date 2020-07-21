@@ -1,6 +1,8 @@
 using System;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.ServiceModel.Description;
+using System.ServiceModel.Dispatcher;
 
 namespace Samples.WcfClient
 {
@@ -38,14 +40,15 @@ namespace Samples.WcfClient
 #if NETFRAMEWORK
                 throw new Exception("Binding type required: WSHttpBinding, BasicHttpBinding, or NetTcpBinding");
 #else
-                throw new ApplicationException("Binding type required: BasicHttpBinding or NetTcpBinding");
+                throw new ApplicationException("Binding type required: WSHttpBinding, BasicHttpBinding or NetTcpBinding");
 #endif
             }
 
             var address = new EndpointAddress(baseAddress);
-
             using (var calculator = new CalculatorClient(binding, address))
             {
+                // Add the CustomEndpointBehavior / ClientMessageInspector to add headers on calls to the service
+                calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
                 double result = calculator.Add(1, 2);
                 Console.WriteLine($"Result: {result}");
             }

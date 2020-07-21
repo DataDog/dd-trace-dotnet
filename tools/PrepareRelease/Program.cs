@@ -16,7 +16,7 @@ namespace PrepareRelease
         {
             if (args.Length == 0)
             {
-                throw new ArgumentException("You must specify at least one job name");
+                throw new ArgumentException($@"You must specify at least one job name from [""{Versions}"", ""{Integrations}, ""{Msi}""].");
             }
 
             var solutionDir = EnvironmentTools.GetSolutionDirectory();
