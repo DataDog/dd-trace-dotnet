@@ -106,7 +106,7 @@ namespace Datadog.Trace.Configuration
             // as default path when looking for datadog.json
             if (System.Web.Hosting.HostingEnvironment.IsHosted)
             {
-                currentDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~");
+                currentDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~") ?? string.Empty;
             }
 #endif
 
