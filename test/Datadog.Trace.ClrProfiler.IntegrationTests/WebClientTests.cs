@@ -1,5 +1,7 @@
+using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
@@ -8,12 +10,11 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class HttpClientTests : TestHelper
+    public class WebClientTests : TestHelper
     {
-        public HttpClientTests(ITestOutputHelper output)
-            : base("HttpClientDriver", output)
+        public WebClientTests(ITestOutputHelper output)
+            : base("WebClientDriver", output)
         {
-            SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
             SetServiceVersion("1.0.0");
         }
 
@@ -22,9 +23,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 34 : 30;
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 68 : 24; // .NET Framework automatic instrumentation doesn't cover Async / TaskAsync operations
             const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.HttpClientDriver-http-client";
+            const string expectedServiceName = "Samples.WebClientDriver-http-client";
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
@@ -45,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(expectedOperationName, span.Name);
                     Assert.Equal(expectedServiceName, span.Service);
                     Assert.Equal(SpanTypes.Http, span.Type);
-                    Assert.Equal("HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
+                    Assert.True(string.Equals(span.Tags[Tags.InstrumentationName], "WebRequest") || string.Equals(span.Tags[Tags.InstrumentationName], "HttpMessageHandler"));
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
@@ -73,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(1, 2000, operationName: expectedOperationName);
+                var spans = agent.WaitForSpans(1, 3000, operationName: expectedOperationName);
                 Assert.Equal(0, spans.Count);
 
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
