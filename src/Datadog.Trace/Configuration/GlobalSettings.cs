@@ -144,7 +144,7 @@ namespace Datadog.Trace.Configuration
                 // TODO: can we log yet?
             }
 
-            return compositeSource;
+            return fallbacksSource;
         }
     }
 }
