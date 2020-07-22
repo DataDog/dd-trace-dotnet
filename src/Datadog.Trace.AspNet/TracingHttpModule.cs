@@ -157,7 +157,7 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    SetStatusCode(scope, app.Context.Response.StatusCode);
+                    scope.Span.SetServerStatusCode(app.Context.Response.StatusCode);
                     scope.Dispose();
                 }
             }
@@ -186,32 +186,6 @@ namespace Datadog.Trace.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
-            }
-        }
-
-        private void SetStatusCode(Scope scope, int statusCode)
-        {
-            try
-            {
-                if (scope?.Span != null)
-                {
-                    scope.Span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
-
-                    if (statusCode / 100 == 5)
-                    {
-                        // 5xx codes are server-side errors
-                        scope.Span.Error = true;
-
-                        if (scope.Span.GetTag(Tags.ErrorMsg) == null)
-                        {
-                            scope.Span.SetTag(Tags.ErrorMsg, $"Datadog detected StatusCode={statusCode} that is within the range of server errors: 500-599");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error while setting span tag with status code");
             }
         }
     }

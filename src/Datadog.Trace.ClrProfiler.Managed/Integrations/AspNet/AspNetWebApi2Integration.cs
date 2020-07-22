@@ -164,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
 
                     var statusCode = responseMessage.GetProperty("StatusCode");
-                    scope.Span.SetTag(Tags.HttpStatusCode, ((int)statusCode.Value).ToString());
+                    scope.Span.SetServerStatusCode((int)statusCode.Value);
                     scope.Dispose();
                 }
 
@@ -318,32 +318,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(System.Web.HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
-            SetStatusCode(scope, httpContext.Response.StatusCode);
+            scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
             scope.Span.Finish(finishTime);
             scope.Dispose();
-        }
-
-        private static void SetStatusCode(Scope scope, int statusCode)
-        {
-            try
-            {
-                scope.Span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
-
-                if (statusCode / 100 == 5)
-                {
-                    // 5xx codes are server-side errors
-                    scope.Span.Error = true;
-
-                    if (scope.Span.GetTag(Tags.ErrorMsg) == null)
-                    {
-                        scope.Span.SetTag(Tags.ErrorMsg, $"Datadog detected StatusCode={statusCode} that is within the range of server errors: 500-599");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error while setting span tag with status code");
-            }
         }
     }
 }
