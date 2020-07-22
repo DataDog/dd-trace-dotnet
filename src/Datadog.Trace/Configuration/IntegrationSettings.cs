@@ -22,11 +22,14 @@ namespace Datadog.Trace.Configuration
                 return;
             }
 
-            Enabled = source.GetBoolWithFallbacks(ConfigurationKeys.Integrations.Enabled, integrationName);
+            // wrap IConfigurationSource with fallbacks if not done already
+            var fallbacks = source as FallbacksConfigurationSource ?? new FallbacksConfigurationSource(source);
 
-            AnalyticsEnabled = source.GetBoolWithFallbacks(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName);
+            Enabled = fallbacks.GetBool(ConfigurationKeys.Integrations.Enabled, integrationName);
 
-            AnalyticsSampleRate = source.GetDoubleWithFallbacks(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName) ?? 1.0;
+            AnalyticsEnabled = fallbacks.GetBool(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName);
+
+            AnalyticsSampleRate = fallbacks.GetDouble(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName) ?? 1.0;
         }
 
         /// <summary>
