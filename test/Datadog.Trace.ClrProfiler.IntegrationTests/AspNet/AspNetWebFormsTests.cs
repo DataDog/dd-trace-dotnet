@@ -28,16 +28,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(AspNetWebFormsTests))]
-        [InlineData("/Account/Login", "GET /account/login")]
+        [InlineData("/Account/Login", "GET /account/login", false)]
         public async Task SubmitsTraces(
             string path,
-            string expectedResourceName)
+            string expectedResourceName,
+            bool isError)
         {
             await AssertWebServerSpan(
                 path,
                 _iisFixture.Agent,
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
+                isError,
                 SpanTypes.Web,
                 "aspnet.request",
                 expectedResourceName,
