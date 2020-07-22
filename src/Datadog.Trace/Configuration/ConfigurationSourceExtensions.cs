@@ -19,10 +19,24 @@ namespace Datadog.Trace.Configuration
                   .FirstOrDefault(value => value != null);
         }
 
+        public static int? GetInt32WithFallbacks(this IConfigurationSource source, string key, string formatReplacement = null)
+        {
+            return GetAllKeys(key, formatReplacement)
+                  .Select(source.GetInt32)
+                  .FirstOrDefault(value => value != null);
+        }
+
         public static double? GetDoubleWithFallbacks(this IConfigurationSource source, string key, string formatReplacement = null)
         {
             return GetAllKeys(key, formatReplacement)
                   .Select(source.GetDouble)
+                  .FirstOrDefault(value => value != null);
+        }
+
+        public static IDictionary<string, string> GetDictionaryWithFallbacks(this IConfigurationSource source, string key, string formatReplacement = null)
+        {
+            return GetAllKeys(key, formatReplacement)
+                  .Select(source.GetDictionary)
                   .FirstOrDefault(value => value != null);
         }
 
