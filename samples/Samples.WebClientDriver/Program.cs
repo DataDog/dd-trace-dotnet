@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Core.Tools;
 
 namespace Samples.WebClientDriver
@@ -17,7 +18,7 @@ namespace Samples.WebClientDriver
 
         private static string Url;
 
-        static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
             Console.WriteLine($"TracingDisabled {tracingDisabled}");
@@ -33,7 +34,7 @@ namespace Samples.WebClientDriver
                 // send http requests using WebClient
                 Console.WriteLine();
                 Console.WriteLine("Sending request with WebClient.");
-                WebClientHelpers.SendWebClientsRequest(tracingDisabled, Url, RequestContent);
+                await WebClientHelpers.SendWebClientsRequest(tracingDisabled, Url, RequestContent);
 
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");

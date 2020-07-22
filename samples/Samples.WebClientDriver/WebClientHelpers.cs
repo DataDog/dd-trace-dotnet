@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace;
 
 namespace Samples.WebClientDriver
@@ -11,7 +12,7 @@ namespace Samples.WebClientDriver
     {
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
-        public static void SendWebClientsRequest(bool tracingDisabled, string url, string requestContent)
+        public static async Task SendWebClientsRequest(bool tracingDisabled, string url, string requestContent)
         {
             Console.WriteLine($"[WebClient] sending requests to {url}");
 
@@ -48,10 +49,10 @@ namespace Samples.WebClientDriver
 
                     using (Tracer.Instance.StartActive("DownloadDataTaskAsync"))
                     {
-                        webClient.DownloadDataTaskAsync(url).GetAwaiter().GetResult();
+                        await webClient.DownloadDataTaskAsync(url);
                         Console.WriteLine("Received response for client.DownloadDataTaskAsync(String)");
 
-                        webClient.DownloadDataTaskAsync(new Uri(url)).GetAwaiter().GetResult();
+                        await webClient.DownloadDataTaskAsync(new Uri(url));
                         Console.WriteLine("Received response for client.DownloadDataTaskAsync(Uri)");
                     }
 
@@ -77,10 +78,10 @@ namespace Samples.WebClientDriver
 
                     using (Tracer.Instance.StartActive("DownloadFileTaskAsync"))
                     {
-                        webClient.DownloadFileTaskAsync(url, "DownloadFileTaskAsync.string.txt").GetAwaiter().GetResult();
+                        await webClient.DownloadFileTaskAsync(url, "DownloadFileTaskAsync.string.txt");
                         Console.WriteLine("Received response for client.DownloadFileTaskAsync(String, String)");
 
-                        webClient.DownloadFileTaskAsync(new Uri(url), "DownloadFileTaskAsync.uri.txt").GetAwaiter().GetResult();
+                        await webClient.DownloadFileTaskAsync(new Uri(url), "DownloadFileTaskAsync.uri.txt");
                         Console.WriteLine("Received response for client.DownloadFileTaskAsync(Uri, String)");
                     }
 
@@ -106,10 +107,10 @@ namespace Samples.WebClientDriver
 
                     using (Tracer.Instance.StartActive("DownloadStringTaskAsync"))
                     {
-                        webClient.DownloadStringTaskAsync(url).GetAwaiter().GetResult();
+                        await webClient.DownloadStringTaskAsync(url);
                         Console.WriteLine("Received response for client.DownloadStringTaskAsync(String)");
 
-                        webClient.DownloadStringTaskAsync(new Uri(url)).GetAwaiter().GetResult();
+                        await webClient.DownloadStringTaskAsync(new Uri(url));
                         Console.WriteLine("Received response for client.DownloadStringTaskAsync(Uri)");
                     }
 
@@ -135,10 +136,10 @@ namespace Samples.WebClientDriver
 
                     using (Tracer.Instance.StartActive("OpenReadTaskAsync"))
                     {
-                        webClient.OpenReadTaskAsync(url).GetAwaiter().GetResult().Close();
+                        using Stream readStream1 = await webClient.OpenReadTaskAsync(url);
                         Console.WriteLine("Received response for client.OpenReadTaskAsync(String)");
 
-                        webClient.OpenReadTaskAsync(new Uri(url)).GetAwaiter().GetResult().Close();
+                        using Stream readStream2 = await webClient.OpenReadTaskAsync(new Uri(url));
                         Console.WriteLine("Received response for client.OpenReadTaskAsync(Uri)");
                     }
 
@@ -174,16 +175,16 @@ namespace Samples.WebClientDriver
 
                     using (Tracer.Instance.StartActive("UploadDataTaskAsync"))
                     {
-                        webClient.UploadDataTaskAsync(url, new byte[0]).GetAwaiter().GetResult();
+                        await webClient.UploadDataTaskAsync(url, new byte[0]);
                         Console.WriteLine("Received response for client.UploadDataTaskAsync(String, Byte[])");
 
-                        webClient.UploadDataTaskAsync(new Uri(url), new byte[0]).GetAwaiter().GetResult();
+                        await webClient.UploadDataTaskAsync(new Uri(url), new byte[0]);
                         Console.WriteLine("Received response for client.UploadDataTaskAsync(Uri, Byte[])");
 
-                        webClient.UploadDataTaskAsync(url, "POST", new byte[0]).GetAwaiter().GetResult();
+                        await webClient.UploadDataTaskAsync(url, "POST", new byte[0]);
                         Console.WriteLine("Received response for client.UploadDataTaskAsync(String, String, Byte[])");
 
-                        webClient.UploadDataTaskAsync(new Uri(url), "POST", new byte[0]).GetAwaiter().GetResult();
+                        await webClient.UploadDataTaskAsync(new Uri(url), "POST", new byte[0]);
                         Console.WriteLine("Received response for client.UploadDataTaskAsync(Uri, String, Byte[])");
                     }
 
@@ -221,16 +222,16 @@ namespace Samples.WebClientDriver
 
                     using (Tracer.Instance.StartActive("UploadFileTaskAsync"))
                     {
-                        webClient.UploadFileTaskAsync(url, "UploadFile.txt").GetAwaiter().GetResult();
+                        await webClient.UploadFileTaskAsync(url, "UploadFile.txt");
                         Console.WriteLine("Received response for client.UploadFileTaskAsync(String, String)");
 
-                        webClient.UploadFileTaskAsync(new Uri(url), "UploadFile.txt").GetAwaiter().GetResult();
+                        await webClient.UploadFileTaskAsync(new Uri(url), "UploadFile.txt");
                         Console.WriteLine("Received response for client.UploadFileTaskAsync(Uri, String)");
 
-                        webClient.UploadFileTaskAsync(url, "POST", "UploadFile.txt").GetAwaiter().GetResult();
+                        await webClient.UploadFileTaskAsync(url, "POST", "UploadFile.txt");
                         Console.WriteLine("Received response for client.UploadFileTaskAsync(String, String, String)");
 
-                        webClient.UploadFileTaskAsync(new Uri(url), "POST", "UploadFile.txt").GetAwaiter().GetResult();
+                        await webClient.UploadFileTaskAsync(new Uri(url), "POST", "UploadFile.txt");
                         Console.WriteLine("Received response for client.UploadFileTaskAsync(Uri, String, String)");
                     }
 
@@ -266,16 +267,16 @@ namespace Samples.WebClientDriver
 
                     using (Tracer.Instance.StartActive("UploadStringTaskAsync"))
                     {
-                        webClient.UploadStringTaskAsync(url, requestContent).GetAwaiter().GetResult();
+                        await webClient.UploadStringTaskAsync(url, requestContent);
                         Console.WriteLine("Received response for client.UploadStringTaskAsync(String, String)");
 
-                        webClient.UploadStringTaskAsync(new Uri(url), requestContent).GetAwaiter().GetResult();
+                        await webClient.UploadStringTaskAsync(new Uri(url), requestContent);
                         Console.WriteLine("Received response for client.UploadStringTaskAsync(Uri, String)");
 
-                        webClient.UploadStringTaskAsync(url, "POST", requestContent).GetAwaiter().GetResult();
+                        await webClient.UploadStringTaskAsync(url, "POST", requestContent);
                         Console.WriteLine("Received response for client.UploadStringTaskAsync(String, String, String)");
 
-                        webClient.UploadStringTaskAsync(new Uri(url), "POST", requestContent).GetAwaiter().GetResult();
+                        await webClient.UploadStringTaskAsync(new Uri(url), "POST", requestContent);
                         Console.WriteLine("Received response for client.UploadStringTaskAsync(Uri, String, String)");
                     }
 
@@ -312,16 +313,16 @@ namespace Samples.WebClientDriver
 
                     using (Tracer.Instance.StartActive("UploadValuesTaskAsync"))
                     {
-                        webClient.UploadValuesTaskAsync(url, values).GetAwaiter().GetResult();
+                        await webClient.UploadValuesTaskAsync(url, values);
                         Console.WriteLine("Received response for client.UploadValuesTaskAsync(String, NameValueCollection)");
 
-                        webClient.UploadValuesTaskAsync(new Uri(url), values).GetAwaiter().GetResult();
+                        await webClient.UploadValuesTaskAsync(new Uri(url), values);
                         Console.WriteLine("Received response for client.UploadValuesTaskAsync(Uri, NameValueCollection)");
 
-                        webClient.UploadValuesTaskAsync(url, "POST", values).GetAwaiter().GetResult();
+                        await webClient.UploadValuesTaskAsync(url, "POST", values);
                         Console.WriteLine("Received response for client.UploadValuesTaskAsync(String, String, NameValueCollection)");
 
-                        webClient.UploadValuesTaskAsync(new Uri(url), "POST", values).GetAwaiter().GetResult();
+                        await webClient.UploadValuesTaskAsync(new Uri(url), "POST", values);
                         Console.WriteLine("Received response for client.UploadValuesTaskAsync(Uri, String, NameValueCollection)");
                     }
                 }
