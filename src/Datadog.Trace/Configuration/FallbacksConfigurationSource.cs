@@ -20,7 +20,7 @@ namespace Datadog.Trace.Configuration
 
         public bool? GetBool(string key, string templateValue)
         {
-            return GetAllKeys(key, null)
+            return GetAllKeys(key, templateValue)
                   .Select(_source.GetBool)
                   .FirstOrDefault(value => value != null);
         }
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Configuration
 
         public IDictionary<string, string> GetDictionary(string key, string templateValue)
         {
-            return GetAllKeys(key, null)
+            return GetAllKeys(key, templateValue)
                   .Select(_source.GetDictionary)
                   .FirstOrDefault(value => value != null);
         }
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Configuration
 
         public double? GetDouble(string key, string templateValue)
         {
-            return GetAllKeys(key, null)
+            return GetAllKeys(key, templateValue)
                   .Select(_source.GetDouble)
                   .FirstOrDefault(value => value != null);
         }
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Configuration
 
         public int? GetInt32(string key, string templateValue)
         {
-            return GetAllKeys(key, null)
+            return GetAllKeys(key, templateValue)
                   .Select(_source.GetInt32)
                   .FirstOrDefault(value => value != null);
         }
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Configuration
 
         public string GetString(string key, string templateValue)
         {
-            return GetAllKeys(key, null)
+            return GetAllKeys(key, templateValue)
                   .Select(_source.GetString)
                   .FirstOrDefault(value => value != null);
         }
