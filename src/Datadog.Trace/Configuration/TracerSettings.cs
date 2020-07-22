@@ -262,23 +262,28 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
-        /// returned by <see cref="CreateDefaultConfigurationSource"/>.
+        /// returned by <see cref="ConfigurationSource.CreateDefaultSource"/>.
         /// </summary>
         /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
         public static TracerSettings FromDefaultSources()
         {
-            var source = CreateDefaultConfigurationSource();
+            var source = ConfigurationSource.CreateDefaultSource();
             return new TracerSettings(source);
         }
 
         /// <summary>
         /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
         /// AppSettings where available, and a local datadog.json file, if present.
+        /// Deprecated. Use <see cref="ConfigurationSource.CreateDefaultSource"/> instead.
         /// </summary>
-        /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-        public static IConfigurationSource CreateDefaultConfigurationSource()
+        /// <returns>A <see cref="CompositeConfigurationSource"/> instance.</returns>
+        [Obsolete("Use Datadog.Trace.Configuration.ConfigurationSource.CreateDefaultSource")]
+        public static CompositeConfigurationSource CreateDefaultConfigurationSource()
         {
-            return GlobalSettings.CreateDefaultConfigurationSource();
+            IConfigurationSource defaultSource = ConfigurationSource.CreateDefaultSource();
+
+            // this method should return IConfigurationSource but that would a breaking change
+            return new CompositeConfigurationSource { defaultSource };
         }
 
         internal bool IsIntegrationEnabled(string name)
