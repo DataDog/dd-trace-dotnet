@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -78,10 +79,10 @@ namespace Samples.HttpClientDriver
 
                     using (Tracer.Instance.StartActive("GetStreamAsync"))
                     {
-                        (await client.GetStreamAsync(url)).Close();
+                        using Stream stream1 = await client.GetStreamAsync(url);
                         Console.WriteLine("Received response for client.GetStreamAsync(String)");
 
-                        (await client.GetStreamAsync(new Uri(url))).Close();
+                        using Stream stream2 = await client.GetStreamAsync(new Uri(url));
                         Console.WriteLine("Received response for client.GetStreamAsync(Uri)");
                     }
 

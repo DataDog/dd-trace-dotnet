@@ -34,7 +34,6 @@ namespace Samples.HttpClientDriver
                 // send http requests using HttpClient
                 Console.WriteLine();
                 Console.WriteLine("Sending request with HttpClient.");
-                // HttpClientHelpers.SendHttpClientRequestsAsync(tracingDisabled, Url, RequestContent).GetAwaiter().GetResult();
                 await HttpClientHelpers.SendHttpClientRequestsAsync(tracingDisabled, Url, RequestContent);
 
                 Console.WriteLine();
