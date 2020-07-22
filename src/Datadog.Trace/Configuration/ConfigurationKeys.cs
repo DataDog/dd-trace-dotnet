@@ -2,6 +2,7 @@ namespace Datadog.Trace.Configuration
 {
     /// <summary>
     /// String constants for standard Datadog configuration keys.
+    /// When settings are renamed, we keep supporting older names as fallbacks in <see cref="ConfigurationKeyFallbacks"/>.
     /// </summary>
     public static class ConfigurationKeys
     {

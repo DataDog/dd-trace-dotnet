@@ -7,6 +7,10 @@ namespace Datadog.Trace.Configuration
     /// Helper class used to expand a configuration key
     /// into tis multiple supported fallback options.
     /// </summary>
+    /// <remarks>
+    /// Implements <see cref="IEnumerable{T}"/> and <see cref="Add"/>
+    /// to enable collection initializer syntax.
+    /// </remarks>
     internal sealed class ConfigurationKeyFallbacks : IEnumerable<IReadOnlyList<string>>
     {
         private readonly Dictionary<string, string[]> _mapping = new Dictionary<string, string[]>();
