@@ -46,5 +46,5 @@ namespace Datadog.Trace.Configuration
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         IDictionary<string, string> GetDictionary(string key);
-   }
+    }
 }

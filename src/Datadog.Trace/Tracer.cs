@@ -105,7 +105,7 @@ namespace Datadog.Trace
                     IApi overridingApiClient = new Api(baseEndpoint, apiRequestFactory: null, Statsd);
                     if (_agentWriter == null)
                     {
-                        _agentWriter = _agentWriter ?? new AgentWriter(overridingApiClient, Statsd);
+                        _agentWriter = new AgentWriter(overridingApiClient, Statsd);
                     }
                     else
                     {

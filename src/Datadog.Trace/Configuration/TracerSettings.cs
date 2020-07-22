@@ -276,7 +276,7 @@ namespace Datadog.Trace.Configuration
         /// AppSettings where available, and a local datadog.json file, if present.
         /// </summary>
         /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-        public static CompositeConfigurationSource CreateDefaultConfigurationSource()
+        public static IConfigurationSource CreateDefaultConfigurationSource()
         {
             return GlobalSettings.CreateDefaultConfigurationSource();
         }

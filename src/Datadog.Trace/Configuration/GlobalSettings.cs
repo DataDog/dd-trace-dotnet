@@ -86,7 +86,7 @@ namespace Datadog.Trace.Configuration
         /// AppSettings where available, and a local datadog.json file, if present.
         /// </summary>
         /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-        internal static CompositeConfigurationSource CreateDefaultConfigurationSource()
+        internal static IConfigurationSource CreateDefaultConfigurationSource()
         {
             // env > AppSettings > datadog.json
             var configurationSource = new CompositeConfigurationSource
@@ -97,9 +97,8 @@ namespace Datadog.Trace.Configuration
                 // on .NET Framework only, also read from app.config/web.config
                 new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
 #endif
-            };
 
-            string currentDirectory = System.Environment.CurrentDirectory;
+            string currentDirectory = null;
 
 #if !NETSTANDARD2_0
             // on .NET Framework only, use application's root folder
@@ -109,6 +108,8 @@ namespace Datadog.Trace.Configuration
                 currentDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~") ?? string.Empty;
             }
 #endif
+
+            currentDirectory ??= System.Environment.CurrentDirectory;
 
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = configurationSource.GetStringWithFallbacks(ConfigurationKeys.ConfigurationFileName) ??
