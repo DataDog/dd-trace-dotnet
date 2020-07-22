@@ -333,6 +333,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     // 5xx codes are server-side errors
                     scope.Span.Error = true;
+
+                    if (scope.Span.GetTag(Tags.ErrorMsg) == null)
+                    {
+                        scope.Span.SetTag(Tags.ErrorMsg, $"Datadog detected StatusCode={statusCode} that is within the range of server errors: 500-599");
+                    }
                 }
             }
             catch (Exception ex)
