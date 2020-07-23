@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using Datadog.Trace.Configuration;
 using Newtonsoft.Json;
 using Xunit;
@@ -10,10 +9,10 @@ namespace Datadog.Trace.Tests.Configuration
 {
     public class ConfigurationSourceTests
     {
-        private static readonly Dictionary<string, string> TagsK1V1K2V2 = new Dictionary<string, string>() { { "k1", "v1" }, { "k2", "v2" } };
-        private static readonly Dictionary<string, string> TagsK2V2 = new Dictionary<string, string>() { { "k2", "v2" } };
-        private static readonly Dictionary<string, string> HeaderTags = new Dictionary<string, string>() { { "header1", "tag1" } };
-        private static readonly Dictionary<string, string> HeaderTagsSameTag = new Dictionary<string, string>() { { "header1", "tag1" }, { "header2", "tag1" } };
+        private static readonly Dictionary<string, string> TagsK1V1K2V2 = new Dictionary<string, string> { { "k1", "v1" }, { "k2", "v2" } };
+        private static readonly Dictionary<string, string> TagsK2V2 = new Dictionary<string, string> { { "k2", "v2" } };
+        private static readonly Dictionary<string, string> HeaderTags = new Dictionary<string, string> { { "header1", "tag1" } };
+        private static readonly Dictionary<string, string> HeaderTagsSameTag = new Dictionary<string, string> { { "header1", "tag1" }, { "header2", "tag1" } };
 
         public static IEnumerable<object[]> GetGlobalDefaultTestData()
         {
