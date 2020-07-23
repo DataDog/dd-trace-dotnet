@@ -150,33 +150,53 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object controllerContext,
             CancellationToken cancellationToken)
         {
-            using (Scope scope = CreateScope(controllerContext))
+            Scope scope = CreateScope(controllerContext);
+
+            try
             {
-                try
+                // call the original method, inspecting (and rethrowing) any unhandled exceptions
+                var task = (Task<T>)instrumentedMethod(apiController, controllerContext, cancellationToken);
+                var responseMessage = await task;
+
+                if (scope != null)
                 {
-                    // call the original method, inspecting (but not catching) any unhandled exceptions
-                    var task = (Task<T>)instrumentedMethod(apiController, controllerContext, cancellationToken);
-                    var responseMessage = await task.ConfigureAwait(false);
+                    // some fields aren't set till after execution, so populate anything missing
+                    UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
 
-                    if (scope != null)
-                    {
-                        // some fields aren't set till after execution, so populate anything missing
-                        UpdateSpan(controllerContext, scope.Span);
-                    }
-
-                    return responseMessage;
+                    var statusCode = responseMessage.GetProperty("StatusCode");
+                    scope.Span.SetServerStatusCode((int)statusCode.Value);
+                    scope.Dispose();
                 }
-                catch (Exception ex)
+
+                return responseMessage;
+            }
+            catch (Exception ex)
+            {
+                if (scope != null)
                 {
-                    if (scope != null)
-                    {
-                        // some fields aren't set till after execution, so populate anything missing
-                        UpdateSpan(controllerContext, scope.Span);
-                    }
+                    // some fields aren't set till after execution, so populate anything missing
+                    UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
+                    scope.Span.SetException(ex);
 
-                    scope?.Span.SetException(ex);
-                    throw;
+                    // We don't have access to the final status code at this point
+                    // Ask the HttpContext to call us back to that we can get it
+                    var httpContext = System.Web.HttpContext.Current;
+
+                    if (httpContext != null)
+                    {
+                        // We don't know how long it'll take for ASP.NET to invoke the callback,
+                        // so we store the real finish time
+                        var now = scope.Span.Context.TraceContext.UtcNow;
+                        httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
+                    }
+                    else
+                    {
+                        // Looks like we won't be able to get the final status code
+                        scope.Dispose();
+                    }
                 }
+
+                throw;
             }
         }
 
@@ -195,6 +215,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var tracer = Tracer.Instance;
                 var request = controllerContext.GetProperty<object>("Request").GetValueOrDefault();
                 SpanContext propagatedContext = null;
+                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
                 if (request != null && tracer.ActiveScope == null)
                 {
@@ -202,7 +223,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // extract propagated http headers
                         var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
-                        propagatedContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(headers);
+                        var headersCollection = new ReflectionHttpHeadersCollection(headers);
+
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
+                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headersCollection, tracer.Settings.HeaderTags);
                     }
                     catch (Exception ex)
                     {
@@ -211,7 +235,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 scope = tracer.StartActive(OperationName, propagatedContext);
-                UpdateSpan(controllerContext, scope.Span);
+                UpdateSpan(controllerContext, scope.Span, tagsFromHeaders);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
@@ -225,7 +249,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return scope;
         }
 
-        private static void UpdateSpan(dynamic controllerContext, Span span)
+        private static void UpdateSpan(dynamic controllerContext, Span span, IEnumerable<KeyValuePair<string, string>> headerTags)
         {
             try
             {
@@ -280,7 +304,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     resourceName: resourceName,
                     method: method,
                     host: host,
-                    httpUrl: rawUrl);
+                    httpUrl: rawUrl,
+                    tags: headerTags);
                 span.SetTag(Tags.AspNetAction, action);
                 span.SetTag(Tags.AspNetController, controller);
                 span.SetTag(Tags.AspNetRoute, route);
@@ -289,6 +314,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 Log.Error(ex, "Error populating scope data.");
             }
+        }
+
+        private static void OnRequestCompleted(System.Web.HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
+        {
+            scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
+            scope.Span.Finish(finishTime);
+            scope.Dispose();
         }
     }
 }

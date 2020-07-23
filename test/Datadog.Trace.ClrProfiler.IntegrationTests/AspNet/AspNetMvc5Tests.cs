@@ -24,19 +24,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [InlineData("/Home/Index", "GET", "/home/index")]
-        [InlineData("/delay/0", "GET", "/delay/{seconds}")]
-        [InlineData("/delay-async/0", "GET", "/delay-async/{seconds}")]
+        [InlineData("/Home/Index", "GET", "/home/index", HttpStatusCode.OK, false)]
+        [InlineData("/delay/0", "GET", "/delay/{seconds}", HttpStatusCode.OK, false)]
+        [InlineData("/delay-async/0", "GET", "/delay-async/{seconds}", HttpStatusCode.OK, false)]
+        [InlineData("/badrequest", "GET", "/badrequest", HttpStatusCode.InternalServerError, true)]
+        [InlineData("/statuscode/201", "GET", "/statuscode/{value}", HttpStatusCode.Created, false)]
+        [InlineData("/statuscode/503", "GET", "/statuscode/{value}", HttpStatusCode.ServiceUnavailable, true)]
         public async Task SubmitsTraces(
             string path,
             string expectedVerb,
-            string expectedResourceSuffix)
+            string expectedResourceSuffix,
+            HttpStatusCode expectedStatusCode,
+            bool isError)
         {
             await AssertWebServerSpan(
                 path,
                 _iisFixture.Agent,
                 _iisFixture.HttpPort,
-                HttpStatusCode.OK,
+                expectedStatusCode,
+                isError,
                 "web",
                 "aspnet-mvc.request",
                 $"{expectedVerb} {expectedResourceSuffix}",

@@ -1,14 +1,10 @@
-using System;
-using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
@@ -30,18 +26,13 @@ namespace Datadog.Trace.Tests
         [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, "custom-version")]
         public void ConfiguredTracerSettings_DefaultTagsSetFromEnvironmentVariable(string environmentVariableKey, string tagKey, string value)
         {
-            // save original value so we can restore later
-            var originalValue = Environment.GetEnvironmentVariable(environmentVariableKey);
+            var collection = new NameValueCollection { { environmentVariableKey, value } };
 
-            Environment.SetEnvironmentVariable(environmentVariableKey, value, EnvironmentVariableTarget.Process);
-            IConfigurationSource source = new EnvironmentConfigurationSource();
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
-
-            // restore original value
-            Environment.SetEnvironmentVariable(environmentVariableKey, originalValue, EnvironmentVariableTarget.Process);
 
             Assert.Equal(span.GetTag(tagKey), value);
         }
@@ -53,26 +44,42 @@ namespace Datadog.Trace.Tests
         {
             string envValue = $"ddenv-custom-{tagKey}";
             string tagsLine = $"{tagKey}:ddtags-custom-{tagKey}";
+            var collection = new NameValueCollection { { envKey, envValue }, { ConfigurationKeys.GlobalTags, tagsLine } };
 
-            // save original values so we can restore later
-            var originalEnvValue = Environment.GetEnvironmentVariable(envKey);
-            var originalTagsValue = Environment.GetEnvironmentVariable(ConfigurationKeys.GlobalTags);
-
-            Environment.SetEnvironmentVariable(envKey, envValue, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GlobalTags, tagsLine, EnvironmentVariableTarget.Process);
-
-            IConfigurationSource source = new EnvironmentConfigurationSource();
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
             Assert.True(settings.GlobalTags.Any());
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
-            // restore original value
-            Environment.SetEnvironmentVariable(envKey, originalEnvValue, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GlobalTags, originalTagsValue, EnvironmentVariableTarget.Process);
-
             Assert.Equal(span.GetTag(tagKey), envValue);
+        }
+
+        [Theory]
+        [InlineData("", true)]
+        [InlineData("1", true)]
+        [InlineData("0", false)]
+        public void TraceEnabled(string value, bool areTracesEnabled)
+        {
+            var settings = new NameValueCollection
+            {
+                { ConfigurationKeys.TraceEnabled, value }
+            };
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
+
+            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
+
+            _writerMock.ResetCalls();
+
+            var tracer = new Tracer(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var span = tracer.StartSpan("TestTracerDisabled");
+            span.Dispose();
+
+            var assertion = areTracesEnabled ? Times.Once() : Times.Never();
+
+            _writerMock.Verify(w => w.WriteTrace(It.IsAny<Span[]>()), assertion);
         }
     }
 }

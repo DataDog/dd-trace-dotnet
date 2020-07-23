@@ -108,6 +108,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
+                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
                 if (tracer.ActiveScope == null)
                 {
@@ -116,6 +117,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         // extract propagated http headers
                         var headers = httpContext.Request.Headers.Wrap();
                         propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags);
                     }
                     catch (Exception ex)
                     {
@@ -136,7 +138,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     resourceName: resourceName,
                     method: httpMethod,
                     host: host,
-                    httpUrl: url);
+                    httpUrl: url,
+                    tags: tagsFromHeaders);
                 span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
@@ -314,17 +317,44 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 // call the original method, inspecting (but not catching) any unhandled exceptions
-                return instrumentedMethod(asyncControllerActionInvoker, asyncResult);
+                var result = instrumentedMethod(asyncControllerActionInvoker, asyncResult);
+
+                if (scope != null)
+                {
+                    scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
+                    scope.Dispose();
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
-                scope?.Span.SetException(ex);
+                if (scope != null)
+                {
+                    scope.Span.SetException(ex);
+
+                    if (httpContext != null)
+                    {
+                        // We don't know how long it'll take for ASP.NET to invoke the callback,
+                        // so we store the real finish time
+                        var now = scope.Span.Context.TraceContext.UtcNow;
+                        httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
+                    }
+                    else
+                    {
+                        scope.Dispose();
+                    }
+                }
+
                 throw;
             }
-            finally
-            {
-                scope?.Dispose();
-            }
+        }
+
+        private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
+        {
+            scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
+            scope.Span.Finish(finishTime);
+            scope.Dispose();
         }
     }
 }

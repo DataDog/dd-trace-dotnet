@@ -110,6 +110,26 @@ namespace Datadog.Trace.DiagnosticListeners
             return null;
         }
 
+        private static IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, IDatadogTracer tracer)
+        {
+            try
+            {
+                // extract propagation details from http headers
+                var requestHeaders = request.Headers;
+
+                if (requestHeaders != null)
+                {
+                    return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), tracer.Settings.HeaderTags);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.SafeLogError(ex, "Error extracting propagated HTTP headers.");
+            }
+
+            return Enumerable.Empty<KeyValuePair<string, string>>();
+        }
+
         private bool ShouldIgnore(HttpContext httpContext)
         {
             foreach (Func<HttpContext, bool> ignore in _options.IgnorePatterns)
@@ -147,11 +167,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 string resourceName = $"{httpMethod} {resourceUrl}";
 
                 SpanContext propagatedContext = ExtractPropagatedContext(request);
+                var tagsFromHeaders = ExtractHeaderTags(request, _tracer);
 
                 Span span = _tracer.StartSpan(HttpRequestInOperationName, propagatedContext)
                                    .SetTag(Tags.InstrumentationName, ComponentName);
 
-                span.DecorateWebServerSpan(resourceName, httpMethod, host, url);
+                span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tagsFromHeaders);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = _tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);

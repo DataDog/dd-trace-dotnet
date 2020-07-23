@@ -10,7 +10,7 @@ namespace Datadog.Trace.Configuration
         /// Can only be set with an environment variable
         /// or in the <c>app.config</c>/<c>web.config</c> file.
         /// </summary>
-        public const string ConfigurationFileName = "DD_DOTNET_TRACER_CONFIG_FILE";
+        public const string ConfigurationFileName = "DD_TRACE_CONFIG_FILE";
 
         /// <summary>
         /// Configuration key for the application's environment. Sets the "env" tag on every <see cref="Span"/>.
@@ -94,7 +94,15 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for a list of tags to be applied globally to spans.
         /// </summary>
+        /// <seealso cref="TracerSettings.GlobalTags"/>
         public const string GlobalTags = "DD_TAGS";
+
+        /// <summary>
+        /// Configuration key for a map of header keys to tag names.
+        /// Automatically apply header values as tags on traces.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HeaderTags"/>
+        public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
 
         /// <summary>
         /// Configuration key for enabling or disabling the automatic injection
@@ -109,6 +117,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
         public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling the diagnostic log at startup
+        /// </summary>
+        /// <seealso cref="TracerSettings.StartupDiagnosticLogEnabled"/>
+        public const string StartupDiagnosticLogEnabled = "DD_TRACE_STARTUP_LOGS";
 
         /// <summary>
         /// Configuration key for setting custom sampling rules based on regular expressions.
@@ -205,17 +219,17 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key pattern for enabling or disabling an integration.
             /// </summary>
-            public const string Enabled = "DD_{0}_ENABLED";
+            public const string Enabled = "DD_TRACE_{0}_ENABLED";
 
             /// <summary>
             /// Configuration key pattern for enabling or disabling Analytics in an integration.
             /// </summary>
-            public const string AnalyticsEnabled = "DD_{0}_ANALYTICS_ENABLED";
+            public const string AnalyticsEnabled = "DD_TRACE_{0}_ANALYTICS_ENABLED";
 
             /// <summary>
             /// Configuration key pattern for setting Analytics sampling rate in an integration.
             /// </summary>
-            public const string AnalyticsSampleRate = "DD_{0}_ANALYTICS_SAMPLE_RATE";
+            public const string AnalyticsSampleRate = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
         }
 
         /// <summary>

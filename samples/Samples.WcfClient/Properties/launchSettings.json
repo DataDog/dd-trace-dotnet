@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Samples.WcfClient": {
+      "commandName": "Project",
+      "commandLineArgs": "WSHttpBinding"
+    }
+  }
+}

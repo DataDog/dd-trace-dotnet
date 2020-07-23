@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -207,8 +208,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CancellationToken cancellationToken)
         {
             var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
-            if (!(reportedType.FullName.Equals(HttpClientHandler, StringComparison.OrdinalIgnoreCase) || IsSocketsHttpHandlerEnabled(reportedType)) ||
-                !IsTracingEnabled(headers))
+            if (!(reportedType.FullName.Equals(HttpClientHandler, StringComparison.OrdinalIgnoreCase) || IsSocketsHttpHandlerEnabled(reportedType))
+                || !IsTracingEnabled(headers))
             {
                 // skip instrumentation
                 var task = (Task<T>)sendAsync(handler, request, cancellationToken);
@@ -227,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
 
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagatorHelpers.InjectHttpHeadersWithReflection(scope.Span.Context, headers);
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, new ReflectionHttpHeadersCollection(headers));
                     }
 
                     var task = (Task<T>)sendAsync(handler, request, cancellationToken);
