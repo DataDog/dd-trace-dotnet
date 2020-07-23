@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
+using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
@@ -55,86 +54,144 @@ namespace Datadog.Trace.BenchmarkDotNet
         /// <inheritdoc />
         public IEnumerable<string> ExportToFiles(Summary summary, ILogger consoleLogger)
         {
+            DateTimeOffset startTime = DateTimeOffset.UtcNow;
             try
             {
-                DateTimeOffset startTime = DateTimeOffset.UtcNow;
                 foreach (var report in summary.Reports)
                 {
                     Span span = _tracer.StartSpan("benchmark.test", startTime: startTime);
                     span.SetMetric(Tags.Analytics, 1.0d);
                     span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
                     span.Type = "test";
+                    span.ResourceName = $"{report.BenchmarkCase.Descriptor.Type.FullName}.{report.BenchmarkCase.Descriptor.WorkloadMethod.Name}";
                     span.SetTag(TestTags.Name, report.BenchmarkCase.Descriptor.WorkloadMethod.Name);
                     span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
                     span.SetTag(TestTags.Suite, report.BenchmarkCase.Descriptor.Type.FullName);
                     span.SetTag(TestTags.Framework, $"BenchmarkDotNet {summary.HostEnvironmentInfo.BenchmarkDotNetVersion}");
-
-                    span.SetTag("test.description", report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo);
-                    span.SetTag("benchmark.host.processor.name", summary.HostEnvironmentInfo.CpuInfo.Value.ProcessorName);
-                    span.SetMetric("benchmark.host.processor.physical_processor_count", summary.HostEnvironmentInfo.CpuInfo.Value.PhysicalProcessorCount);
-                    span.SetMetric("benchmark.host.processor.physical_core_count", summary.HostEnvironmentInfo.CpuInfo.Value.PhysicalCoreCount);
-                    span.SetMetric("benchmark.host.processor.logical_core_count", summary.HostEnvironmentInfo.CpuInfo.Value.LogicalCoreCount);
-                    span.SetMetric("benchmark.host.processor.max_frequency_hertz", summary.HostEnvironmentInfo.CpuInfo.Value.MaxFrequency?.Hertz);
-                    span.SetMetric("benchmark.host.processor.min_frequency_hertz", summary.HostEnvironmentInfo.CpuInfo.Value.MinFrequency?.Hertz);
-                    span.SetMetric("benchmark.host.processor.nominal_frequency_hertz", summary.HostEnvironmentInfo.CpuInfo.Value.NominalFrequency?.Hertz);
-                    span.SetTag("benchmark.host.os.version", summary.HostEnvironmentInfo.OsVersion.Value);
-                    span.SetTag("benchmark.host.dotnet.version", summary.HostEnvironmentInfo.RuntimeVersion);
-                    span.SetMetric("benchmark.host.chronometer.frequency_hertz", summary.HostEnvironmentInfo.ChronometerFrequency.Hertz);
-                    span.SetMetric("benchmark.host.chronometer.resolution", summary.HostEnvironmentInfo.ChronometerResolution.Nanoseconds);
-                    span.SetTag("benchmark.host.hardware_timer_kind", summary.HostEnvironmentInfo.HardwareTimerKind.ToString());
                     span.SetTag(TestTags.Status, report.Success ? TestTags.StatusPass : TestTags.StatusFail);
+                    span.SetTag("test.description", report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo);
+
+                    if (summary.HostEnvironmentInfo != null)
+                    {
+                        span.SetTag("benchmark.host.processor.name", ProcessorBrandStringHelper.Prettify(summary.HostEnvironmentInfo.CpuInfo.Value));
+                        span.SetMetric("benchmark.host.processor.physical_processor_count", summary.HostEnvironmentInfo.CpuInfo.Value.PhysicalProcessorCount);
+                        span.SetMetric("benchmark.host.processor.physical_core_count", summary.HostEnvironmentInfo.CpuInfo.Value.PhysicalCoreCount);
+                        span.SetMetric("benchmark.host.processor.logical_core_count", summary.HostEnvironmentInfo.CpuInfo.Value.LogicalCoreCount);
+                        span.SetMetric("benchmark.host.processor.max_frequency_hertz", summary.HostEnvironmentInfo.CpuInfo.Value.MaxFrequency?.Hertz);
+                        span.SetMetric("benchmark.host.processor.min_frequency_hertz", summary.HostEnvironmentInfo.CpuInfo.Value.MinFrequency?.Hertz);
+                        span.SetMetric("benchmark.host.processor.nominal_frequency_hertz", summary.HostEnvironmentInfo.CpuInfo.Value.NominalFrequency?.Hertz);
+                        span.SetTag("benchmark.host.os.version", summary.HostEnvironmentInfo.OsVersion.Value);
+                        span.SetTag("benchmark.host.dotnet.version", summary.HostEnvironmentInfo.RuntimeVersion);
+                        span.SetMetric("benchmark.host.chronometer.frequency_hertz", summary.HostEnvironmentInfo.ChronometerFrequency.Hertz);
+                        span.SetMetric("benchmark.host.chronometer.resolution", summary.HostEnvironmentInfo.ChronometerResolution.Nanoseconds);
+                        span.SetTag("benchmark.host.hardware_timer_kind", summary.HostEnvironmentInfo.HardwareTimerKind.ToString());
+                    }
 
                     if (report.BenchmarkCase.HasParameters)
                     {
                         span.SetTag("benchmark.params.count", report.BenchmarkCase.Parameters.ValueInfo);
                     }
 
-                    if (report.ResultStatistics != null)
+                    if (report.BenchmarkCase.Job != null)
                     {
-                        var stats = report.ResultStatistics;
-                        span.SetMetric("benchmark.runs", stats.N);
-                        span.SetMetric("benchmark.duration.max", stats.Max);
-                        span.SetMetric("benchmark.duration.mean", stats.Mean);
-                        span.SetMetric("benchmark.duration.median", stats.Median);
-                        span.SetMetric("benchmark.duration.min", stats.Min);
-                        span.SetMetric("benchmark.duration.q1", stats.Q1);
-                        span.SetMetric("benchmark.duration.q3", stats.Q3);
-                        span.SetMetric("benchmark.duration.kurtosis", stats.Kurtosis);
-                        span.SetMetric("benchmark.duration.skewness", stats.Skewness);
-                        span.SetMetric("benchmark.duration.std_dev", stats.StandardDeviation);
-                        span.SetMetric("benchmark.duration.variance", stats.Variance);
-                        span.SetMetric("benchmark.duration.std_err", stats.StandardError);
-                        span.SetMetric("benchmark.duration.p00", stats.Percentiles.P0);
-                        span.SetMetric("benchmark.duration.p25", stats.Percentiles.P25);
-                        span.SetMetric("benchmark.duration.p50", stats.Percentiles.P50);
-                        span.SetMetric("benchmark.duration.p67", stats.Percentiles.P67);
-                        span.SetMetric("benchmark.duration.p80", stats.Percentiles.P80);
-                        span.SetMetric("benchmark.duration.p85", stats.Percentiles.P85);
-                        span.SetMetric("benchmark.duration.p90", stats.Percentiles.P90);
-                        span.SetMetric("benchmark.duration.p95", stats.Percentiles.P95);
-                        span.SetMetric("benchmark.duration.p99", stats.Percentiles.Percentile(99));
-                        span.SetMetric("benchmark.duration.p100", stats.Percentiles.P100);
+                        var job = report.BenchmarkCase.Job;
+                        span.SetTag("benchmark.job.displayinfo", job.DisplayInfo);
 
-                        if (report.BenchmarkCase.Config.HasMemoryDiagnoser())
+                        if (job.Environment != null)
                         {
-                            span.SetMetric("benchmark.memory.gen0", report.GcStats.Gen0Collections);
-                            span.SetMetric("benchmark.memory.gen1", report.GcStats.Gen1Collections);
-                            span.SetMetric("benchmark.memory.gen2", report.GcStats.Gen2Collections);
-                            span.SetMetric("benchmark.memory.total_operations", report.GcStats.TotalOperations);
-                            span.SetMetric("benchmark.memory.mean_bytes_allocations", report.GcStats.BytesAllocatedPerOperation);
-                            span.SetMetric("benchmark.memory.total_bytes_allocations", report.GcStats.GetTotalAllocatedBytes(false));
+                            var jobEnv = job.Environment;
+                            span.SetTag("benchmark.job.environment.platform", jobEnv.Platform.ToString());
+                            span.SetTag("benchmark.job.environment.jit", jobEnv.Jit.ToString());
+
+                            if (jobEnv.Runtime != null)
+                            {
+                                span.SetTag("benchmark.job.environment.runtime.name", jobEnv.Runtime.Name);
+                                span.SetTag("benchmark.job.environment.runtime.msBuildMoniker", jobEnv.Runtime.MsBuildMoniker);
+                                span.SetTag("benchmark.job.environment.runtime.runtimeMoniker", jobEnv.Runtime.RuntimeMoniker.ToString());
+                            }
+
+                            if (jobEnv.EnvironmentVariables != null)
+                            {
+                                foreach (var envVar in jobEnv.EnvironmentVariables)
+                                {
+                                    span.SetTag("benchmark.job.environment.variables." + envVar.Key, envVar.Value);
+                                }
+                            }
                         }
                     }
 
-                    span.Finish(startTime.Add(TimeSpan.FromSeconds((report.ResultStatistics?.N ?? 0) * (report.ResultStatistics?.Mean ?? 0) / 1_000_000_000)));
+                    double durationNanoseconds = 0;
+                    if (report.ResultStatistics != null)
+                    {
+                        var stats = report.ResultStatistics;
+                        span.SetMetric("benchmark.statistics.n", stats.N);
+                        span.SetMetric("benchmark.statistics.max", stats.Max);
+                        span.SetMetric("benchmark.statistics.mean", stats.Mean);
+                        span.SetMetric("benchmark.statistics.median", stats.Median);
+                        span.SetMetric("benchmark.statistics.min", stats.Min);
+                        span.SetMetric("benchmark.statistics.q1", stats.Q1);
+                        span.SetMetric("benchmark.statistics.q3", stats.Q3);
+                        span.SetMetric("benchmark.statistics.kurtosis", stats.Kurtosis);
+                        span.SetMetric("benchmark.statistics.skewness", stats.Skewness);
+                        span.SetMetric("benchmark.statistics.std_dev", stats.StandardDeviation);
+                        span.SetMetric("benchmark.statistics.variance", stats.Variance);
+                        span.SetMetric("benchmark.statistics.std_err", stats.StandardError);
+                        span.SetMetric("benchmark.statistics.p00", stats.Percentiles.P0);
+                        span.SetMetric("benchmark.statistics.p25", stats.Percentiles.P25);
+                        span.SetMetric("benchmark.statistics.p50", stats.Percentiles.P50);
+                        span.SetMetric("benchmark.statistics.p67", stats.Percentiles.P67);
+                        span.SetMetric("benchmark.statistics.p80", stats.Percentiles.P80);
+                        span.SetMetric("benchmark.statistics.p85", stats.Percentiles.P85);
+                        span.SetMetric("benchmark.statistics.p90", stats.Percentiles.P90);
+                        span.SetMetric("benchmark.statistics.p95", stats.Percentiles.P95);
+                        span.SetMetric("benchmark.statistics.p99", stats.Percentiles.Percentile(99));
+                        span.SetMetric("benchmark.statistics.p100", stats.Percentiles.P100);
+
+                        span.SetMetric("benchmark.confidenceInterval.n", stats.ConfidenceInterval.N);
+                        span.SetMetric("benchmark.confidenceInterval.mean", stats.ConfidenceInterval.Mean);
+                        span.SetMetric("benchmark.confidenceInterval.std_err", stats.ConfidenceInterval.StandardError);
+                        span.SetTag("benchmark.confidenceInterval.level", stats.ConfidenceInterval.Level.ToString());
+                        span.SetMetric("benchmark.confidenceInterval.margin", stats.ConfidenceInterval.Margin);
+                        span.SetMetric("benchmark.confidenceInterval.lower", stats.ConfidenceInterval.Lower);
+                        span.SetMetric("benchmark.confidenceInterval.upper", stats.ConfidenceInterval.Upper);
+
+                        durationNanoseconds = stats.N * stats.Mean;
+                    }
+
+                    if (report.Metrics != null)
+                    {
+                        foreach (var keyValue in report.Metrics)
+                        {
+                            span.SetTag($"benchmark.metrics.{keyValue.Key}.displayName", keyValue.Value.Descriptor.DisplayName);
+                            span.SetTag($"benchmark.metrics.{keyValue.Key}.legend", keyValue.Value.Descriptor.Legend);
+                            span.SetTag($"benchmark.metrics.{keyValue.Key}.unit", keyValue.Value.Descriptor.Unit);
+                            span.SetMetric($"benchmark.metrics.{keyValue.Key}.value", keyValue.Value.Value);
+                        }
+                    }
+
+                    if (report.BenchmarkCase.Config.HasMemoryDiagnoser())
+                    {
+                        span.SetMetric("benchmark.memory.gen0Collections", report.GcStats.Gen0Collections);
+                        span.SetMetric("benchmark.memory.gen1Collections", report.GcStats.Gen1Collections);
+                        span.SetMetric("benchmark.memory.gen2Collections", report.GcStats.Gen2Collections);
+                        span.SetMetric("benchmark.memory.total_operations", report.GcStats.TotalOperations);
+                        span.SetMetric("benchmark.memory.mean_bytes_allocations", report.GcStats.BytesAllocatedPerOperation);
+                        span.SetMetric("benchmark.memory.total_bytes_allocations", report.GcStats.GetTotalAllocatedBytes(false));
+                    }
+
+                    var duration = TimeSpan.FromTicks((long)(durationNanoseconds * TimeConstants.NanoSecondsPerTick));
+                    span.Finish(startTime.Add(duration));
                 }
+
+                SynchronizationContext.SetSynchronizationContext(null);
+                _tracer.FlushAsync().GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
-                consoleLogger.WriteLine(ex.ToString());
+                consoleLogger.WriteLine(LogKind.Error, ex.ToString());
             }
 
-            return Enumerable.Empty<string>();
+            return new string[] { "Datadog Exporter ran successfully." };
         }
     }
 }
