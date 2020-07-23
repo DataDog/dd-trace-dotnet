@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler
 
             while (currentType != null)
             {
-                if (currentType.Namespace == instrumentedNamespace && currentType.Name == instrumentedTypeName)
+                if (currentType.Name == instrumentedTypeName && currentType.Namespace == instrumentedNamespace)
                 {
                     return currentType;
                 }
