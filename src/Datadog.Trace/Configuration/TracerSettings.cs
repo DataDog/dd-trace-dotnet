@@ -228,11 +228,14 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
+        /// Comma-separated "key:value" pairs, e.g. <c>"k1:v1,k2:v2"</c>.
         /// </summary>
         public IDictionary<string, string> GlobalTags { get; set; }
 
         /// <summary>
-        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// Gets or sets the map of header keys to tag names,
+        /// which are applied to the root <see cref="Span"/> of incoming requests.
+        /// Comma-separated "key:value" pairs, e.g. <c>"k1:v1,k2:v2"</c>.
         /// </summary>
         public IDictionary<string, string> HeaderTags { get; set; }
 

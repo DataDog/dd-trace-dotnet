@@ -14,12 +14,13 @@ namespace Datadog.Trace.Configuration
         /// Returns a <see cref="IDictionary{TKey, TValue}"/> from parsing
         /// <paramref name="data"/>.
         /// </summary>
-        /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
+        /// <param name="data">
+        /// A string containing key-value pairs which are comma-separated,
+        /// and for which the key and value are colon-separated, e.g. <c>"k1:v1,k2:v2"</c>
+        /// </param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
         public static IDictionary<string, string> ParseCustomKeyValues(string data)
         {
-            var dictionary = new ConcurrentDictionary<string, string>();
-
             // A null return value means the key was not present,
             // and CompositeConfigurationSource depends on this behavior
             // (it returns the first non-null value it finds).
@@ -27,6 +28,8 @@ namespace Datadog.Trace.Configuration
             {
                 return null;
             }
+
+            var dictionary = new ConcurrentDictionary<string, string>();
 
             if (string.IsNullOrWhiteSpace(data))
             {

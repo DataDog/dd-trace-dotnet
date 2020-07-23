@@ -93,6 +93,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for a list of tags to be applied globally to spans.
+        /// Comma-separated "key:value" pairs, e.g. <c>"k1:v1,k2:v2"</c>.
         /// </summary>
         /// <seealso cref="TracerSettings.GlobalTags"/>
         public const string GlobalTags = "DD_TAGS";
@@ -100,6 +101,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for a map of header keys to tag names.
         /// Automatically apply header values as tags on traces.
+        /// Comma-separated "key:value" pairs, e.g. <c>"k1:v1,k2:v2"</c>.
         /// </summary>
         /// <seealso cref="TracerSettings.HeaderTags"/>
         public const string HeaderTags = "DD_TRACE_HEADER_TAGS";

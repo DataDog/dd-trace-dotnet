@@ -104,7 +104,7 @@ namespace Datadog.Trace.Configuration
         public IDictionary<string, string> GetDictionary(string key)
         {
             return _sources.Select(source => source.GetDictionary(key))
-                        .FirstOrDefault(value => value != null);
+                           .FirstOrDefault(value => value != null);
         }
     }
 }
