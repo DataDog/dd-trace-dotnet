@@ -65,5 +65,16 @@ namespace Datadog.Trace.ExtensionMethods
                 span.SetTag(kvp.Key, kvp.Value);
             }
         }
+
+        internal static void SetServerStatusCode(this Span span, int statusCode)
+        {
+            span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
+
+            // 5xx codes are server-side errors
+            if (statusCode / 100 == 5)
+            {
+                span.Error = true;
+            }
+        }
     }
 }

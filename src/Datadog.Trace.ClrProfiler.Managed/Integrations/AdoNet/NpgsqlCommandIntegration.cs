@@ -43,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             Func<object, object> instrumentedMethod;
 
             try
@@ -51,14 +52,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
                 instrumentedMethod =
                     MethodBuilder<Func<object, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(NpgsqlDataReaderTypeName)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NpgsqlCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -99,6 +107,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             Func<object, CommandBehavior, object> instrumentedMethod;
             var commandBehavior = (CommandBehavior)behavior;
 
@@ -108,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(NpgsqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
@@ -116,7 +125,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NpgsqlCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -173,6 +189,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
             Func<DbCommand, CancellationToken, Task<DbDataReader>> instrumentedMethod;
 
             try
@@ -181,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<DbDataReader>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteReaderAsync))
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
@@ -189,7 +206,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReaderAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NpgsqlCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -224,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object ExecuteReaderAsyncTwoParams(
+        public static object ExecuteReaderAsyncWithBehaviorAndCancellation(
             object command,
             int behavior,
             object boxedCancellationToken,
@@ -234,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         {
             var cancellationToken = (CancellationToken)boxedCancellationToken;
 
-            return ExecuteReaderAsyncInternalTwoParams(
+            return ExecuteReaderAsyncWithBehaviorAndCancellationInternal(
                 (DbCommand)command,
                 (CommandBehavior)behavior,
                 cancellationToken,
@@ -243,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 moduleVersionPtr);
         }
 
-        private static async Task<DbDataReader> ExecuteReaderAsyncInternalTwoParams(
+        private static async Task<DbDataReader> ExecuteReaderAsyncWithBehaviorAndCancellationInternal(
             DbCommand command,
             CommandBehavior commandBehavior,
             CancellationToken cancellationToken,
@@ -251,6 +275,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
             Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>> instrumentedMethod;
 
             try
@@ -259,7 +284,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteReaderAsync))
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
@@ -267,7 +292,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReaderAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NpgsqlCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -305,6 +337,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteNonQuery;
             Func<DbCommand, int> instrumentedMethod;
 
             try
@@ -313,14 +346,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NpgsqlCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -379,6 +419,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteNonQueryAsync;
             Func<DbCommand, CancellationToken, Task<int>> instrumentedMethod;
 
             try
@@ -387,7 +428,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQueryAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
@@ -395,7 +436,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NpgsqlCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -433,6 +481,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteScalar;
             Func<DbCommand, object> instrumentedMethod;
 
             try
@@ -441,14 +490,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NpgsqlCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -507,6 +563,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteScalarAsync;
             Func<DbCommand, CancellationToken, Task<object>> instrumentedMethod;
 
             try
@@ -515,7 +572,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
@@ -523,7 +580,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NpgsqlCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 

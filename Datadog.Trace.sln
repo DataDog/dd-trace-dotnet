@@ -144,6 +144,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MongoDB", "samples\Samples.MongoDB\Samples.MongoDB.csproj", "{3493346B-44F6-4F50-8FB4-51D0090DF544}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Npgsql", "samples\Samples.Npgsql\Samples.Npgsql.csproj", "{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpMessageHandler", "samples\Samples.HttpMessageHandler\Samples.HttpMessageHandler.csproj", "{387E25D9-6B09-4C11-ADDC-EDE1A3311728}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -249,6 +252,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySql", "samples\Samples.MySql\Samples.MySql.csproj", "{42FA33DD-AEA3-4FF3-8319-F30244A666A4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TraceContext.InvalidOperationException", "reproductions\TraceContext.InvalidOperationException\TraceContext.InvalidOperationException.csproj", "{DF923186-5397-4E15-A95B-F15C8327ED53}"
 EndProject
@@ -312,6 +318,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.AssemblyConflict.SdkProject", "reproductions\StackExchange.Redis.AssemblyConflict.SdkProject\StackExchange.Redis.AssemblyConflict.SdkProject.csproj", "{C41023C9-65C3-4FB3-9053-4DE963A81500}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Dapper", "samples\Samples.Dapper\Samples.Dapper.csproj", "{7E563BF6-47F2-4531-A1CE-FB9445DF3253}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "linux", "linux", "{7DB68365-AA9E-4C3E-A553-31BFB5704B01}"
 	ProjectSection(SolutionItems) = preProject
@@ -331,6 +340,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetHttpWithRedirects", "sample-libs\Samples.MultiDomainHost.App.NuGetHttpWithRedirects\Samples.MultiDomainHost.App.NuGetHttpWithRedirects.csproj", "{77EAF70B-4C16-499D-8096-91AC84E12EC4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetJsonWithRedirects", "sample-libs\Samples.MultiDomainHost.App.NuGetJsonWithRedirects\Samples.MultiDomainHost.App.NuGetJsonWithRedirects.csproj", "{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper.netstandard", "sample-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj", "{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StartDistributedTrace", "tools\StartDistributedTrace\StartDistributedTrace.csproj", "{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}"
 EndProject
@@ -1212,6 +1223,18 @@ Global
 		{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6}.Release|x64.Build.0 = Release|Any CPU
 		{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6}.Release|x86.ActiveCfg = Release|Any CPU
 		{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6}.Release|x86.Build.0 = Release|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Debug|x64.Build.0 = Debug|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Debug|x86.Build.0 = Debug|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Release|x64.ActiveCfg = Release|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Release|x64.Build.0 = Release|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Release|x86.ActiveCfg = Release|Any CPU
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Release|x86.Build.0 = Release|Any CPU
 		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -1311,6 +1334,7 @@ Global
 		{C41B289A-A344-49DF-A1BD-081753F9A286} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
 		{77EAF70B-4C16-499D-8096-91AC84E12EC4} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
 		{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
 		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

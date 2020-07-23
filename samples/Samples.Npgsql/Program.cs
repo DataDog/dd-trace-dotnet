@@ -1,6 +1,5 @@
 using System;
-using System.Data;
-using System.Data.Common;
+using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
 using Samples.DatabaseHelper;
@@ -11,59 +10,20 @@ namespace Samples.Npgsql
     {
         private static async Task Main()
         {
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<NpgsqlConnection, NpgsqlCommand, NpgsqlDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    command => command.ExecuteScalarAsync(),
-                    executeReaderAsync: null,
-                    executeReaderWithBehaviorAsync: null
-                );
+            var commandFactory = new DbCommandFactory();
+            var commandExecutor = new NpgsqlCommandExecutor();
+            var cts = new CancellationTokenSource();
 
-                await testQueries.RunAsync();
+            using (var connection = OpenConnection())
+            {
+                await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, cts.Token);
             }
 
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    command => command.ExecuteScalarAsync(),
-                    command => command.ExecuteReaderAsync(),
-                    (command, behavior) => command.ExecuteReaderAsync(behavior)
-                );
-
-                await testQueries.RunAsync();
-            }
-
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    executeNonQueryAsync: null,
-                    executeScalarAsync: null,
-                    executeReaderAsync: null,
-                    executeReaderWithBehaviorAsync: null
-                );
-
-                await testQueries.RunAsync();
-            }
+            // allow time to flush
+            await Task.Delay(2000, cts.Token);
         }
 
-        private static NpgsqlConnection CreateConnection()
+        private static NpgsqlConnection OpenConnection()
         {
             var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
 
@@ -73,7 +33,9 @@ namespace Samples.Npgsql
                 connectionString = $"Host={host};Username=postgres;Password=postgres;Database=postgres";
             }
 
-            return new NpgsqlConnection(connectionString);
+            var connection = new NpgsqlConnection(connectionString);
+            connection.Open();
+            return connection;
         }
     }
 }

@@ -1,303 +1,181 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 
+// ReSharper disable MethodHasAsyncOverloadWithCancellation
+// ReSharper disable MethodSupportsCancellation
+
 namespace Samples.DatabaseHelper
 {
-    public class RelationalDatabaseTestHarness<TConnection, TCommand, TDataReader>
-        where TConnection : class, IDbConnection
-        where TCommand : class, IDbCommand
-        where TDataReader : class, IDataReader
+    public static class RelationalDatabaseTestHarness
     {
-        private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY, Name varchar(100));";
-        private const string InsertCommandText = "INSERT INTO Employees (Id, Name) VALUES (@Id, @Name);";
-        private const string SelectOneCommandText = "SELECT Name FROM Employees WHERE Id=@Id;";
-        private const string UpdateCommandText = "UPDATE Employees SET Name=@Name WHERE Id=@Id;";
-        private const string SelectManyCommandText = "SELECT * FROM Employees WHERE Id=@Id;";
-        private const string DeleteCommandText = "DELETE FROM Employees WHERE Id=@Id;";
-
-        private readonly TConnection _connection;
-
-        private readonly Func<TCommand, int> _executeNonQuery;
-        private readonly Func<TCommand, object> _executeScalar;
-        private readonly Func<TCommand, TDataReader> _executeReader;
-        private readonly Func<TCommand, CommandBehavior, TDataReader> _executeReaderWithBehavior;
-
-        private readonly Func<TCommand, Task<int>> _executeNonQueryAsync;
-        private readonly Func<TCommand, Task<object>> _executeScalarAsync;
-        private readonly Func<TCommand, Task<TDataReader>> _executeReaderAsync;
-        private readonly Func<TCommand, CommandBehavior, Task<TDataReader>> _executeReaderWithBehaviorAsync;
-
-        public RelationalDatabaseTestHarness(
-            TConnection connection,
-            Func<TCommand, int> executeNonQuery,
-            Func<TCommand, object> executeScalar,
-            Func<TCommand, TDataReader> executeReader,
-            Func<TCommand, CommandBehavior, TDataReader> executeReaderWithBehavior,
-            Func<TCommand, Task<int>> executeNonQueryAsync,
-            Func<TCommand, Task<object>> executeScalarAsync,
-            Func<TCommand, Task<TDataReader>> executeReaderAsync,
-            Func<TCommand, CommandBehavior, Task<TDataReader>> executeReaderWithBehaviorAsync)
+        /// <summary>
+        /// Helper method that runs ADO.NET test suite for the specified <see cref="IDbCommandExecutor"/>
+        /// in addition to other built-in implementations.
+        /// </summary>
+        /// <param name="connection">The <see cref="IDbConnection"/> to use to connect to the database.</param>
+        /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
+        /// <param name="providerSpecificCommandExecutor">A <see cref="IDbCommandExecutor"/> specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand, used to call DbCommand methods.</param>
+        /// <param name="cancellationToken">A cancellation token passed into downstream async methods.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public static async Task RunAllAsync(
+            IDbConnection connection,
+            DbCommandFactory commandFactory,
+            IDbCommandExecutor providerSpecificCommandExecutor,
+            CancellationToken cancellationToken)
         {
-            _connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            var executors = new List<IDbCommandExecutor>
+                            {
+                                // call methods directly like SqlCommand.ExecuteScalar(), provided by caller
+                                providerSpecificCommandExecutor,
 
-            _executeNonQuery = executeNonQuery ?? throw new ArgumentNullException(nameof(executeNonQuery));
-            _executeScalar = executeScalar ?? throw new ArgumentNullException(nameof(executeScalar));
-            _executeReader = executeReader ?? throw new ArgumentNullException(nameof(executeReader));
-            _executeReaderWithBehavior = executeReaderWithBehavior ?? throw new ArgumentNullException(nameof(executeReaderWithBehavior));
+                                // call methods through DbCommand reference
+                                new DbCommandClassExecutor(),
 
-            // async methods are not implemented by all ADO.NET providers, so they can be null
-            _executeNonQueryAsync = executeNonQueryAsync;
-            _executeScalarAsync = executeScalarAsync;
-            _executeReaderAsync = executeReaderAsync;
-            _executeReaderWithBehaviorAsync = executeReaderWithBehaviorAsync;
+                                // call methods through IDbCommand reference
+                                new DbCommandInterfaceExecutor(),
+#if !NET45
+                                // call methods through DbCommand reference (referencing netstandard.dll)
+                                new DbCommandNetStandardClassExecutor(),
+
+                                // call methods through IDbCommand reference (referencing netstandard.dll)
+                                new DbCommandNetStandardInterfaceExecutor(),
+#endif
+                            };
+
+            using (var root = Tracer.Instance.StartActive("root"))
+            {
+                foreach (var executor in executors)
+                {
+                    await RunAsync(connection, commandFactory, executor, cancellationToken);
+                }
+            }
         }
 
-        public async Task RunAsync()
+        /// <summary>
+        /// Runs ADO.NET test suite for the specified <see cref="IDbCommandExecutor"/>.
+        /// </summary>
+        /// <param name="connection">The <see cref="IDbConnection"/> to use to connect to the database.</param>
+        /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
+        /// <param name="commandExecutor">A <see cref="IDbCommandExecutor"/> used to call DbCommand methods.</param>
+        /// <param name="cancellationToken">A cancellation token passed into downstream async methods.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        private static async Task RunAsync(
+            IDbConnection connection,
+            DbCommandFactory commandFactory,
+            IDbCommandExecutor commandExecutor,
+            CancellationToken cancellationToken)
         {
-            using (var scopeAll = Tracer.Instance.StartActive("run.all"))
+            string commandName = commandExecutor.CommandTypeName;
+            Console.WriteLine(commandName);
+
+            using (var parentScope = Tracer.Instance.StartActive("command"))
             {
-                scopeAll.Span.SetTag("command-type", typeof(TCommand).FullName);
+                parentScope.Span.ResourceName = commandName;
+                IDbCommand command;
 
-                using (var scopeSync = Tracer.Instance.StartActive("run.sync"))
+                using (var scope = Tracer.Instance.StartActive("sync"))
                 {
-                    scopeSync.Span.SetTag("command-type", typeof(TCommand).FullName);
+                    scope.Span.ResourceName = commandName;
 
-                    _connection.Open();
-                    CreateNewTable(_connection);
-                    InsertRow(_connection);
-                    SelectScalar(_connection);
-                    UpdateRow(_connection);
-                    SelectRecords(_connection);
-                    DeleteRecord(_connection);
-                    _connection.Close();
+                    Console.WriteLine("  Synchronous");
+                    Console.WriteLine();
+                    await Task.Delay(100, cancellationToken);
+
+                    command = commandFactory.GetCreateTableCommand(connection);
+                    commandExecutor.ExecuteNonQuery(command);
+
+                    command = commandFactory.GetInsertRowCommand(connection);
+                    commandExecutor.ExecuteNonQuery(command);
+
+                    command = commandFactory.GetSelectScalarCommand(connection);
+                    commandExecutor.ExecuteScalar(command);
+
+                    command = commandFactory.GetUpdateRowCommand(connection);
+                    commandExecutor.ExecuteNonQuery(command);
+
+                    command = commandFactory.GetSelectRowCommand(connection);
+                    commandExecutor.ExecuteReader(command);
+
+                    command = commandFactory.GetSelectRowCommand(connection);
+                    commandExecutor.ExecuteReader(command, CommandBehavior.Default);
+
+                    command = commandFactory.GetDeleteRowCommand(connection);
+                    commandExecutor.ExecuteNonQuery(command);
                 }
 
-                if (_connection is DbConnection connection)
+                if (commandExecutor.SupportsAsyncMethods)
                 {
-                    // leave a small space between spans, for better visibility in the UI
-                    await Task.Delay(TimeSpan.FromSeconds(0.1));
+                    await Task.Delay(100, cancellationToken);
 
-                    using (var scopeAsync = Tracer.Instance.StartActive("run.async"))
+                    using (var scope = Tracer.Instance.StartActive("async"))
                     {
-                        scopeAsync.Span.SetTag("command-type", typeof(TCommand).FullName);
+                        scope.Span.ResourceName = commandName;
 
-                        await connection.OpenAsync();
-                        await CreateNewTableAsync(_connection);
-                        await InsertRowAsync(_connection);
-                        await SelectScalarAsync(_connection);
-                        await UpdateRowAsync(_connection);
-                        await SelectRecordsAsync(_connection);
-                        await DeleteRecordAsync(_connection);
-                        _connection.Close();
+                        Console.WriteLine("  Asynchronous");
+                        Console.WriteLine();
+                        await Task.Delay(100, cancellationToken);
+
+                        command = commandFactory.GetCreateTableCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command);
+
+                        command = commandFactory.GetInsertRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command);
+
+                        command = commandFactory.GetSelectScalarCommand(connection);
+                        await commandExecutor.ExecuteScalarAsync(command);
+
+                        command = commandFactory.GetUpdateRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command);
+
+                        command = commandFactory.GetSelectRowCommand(connection);
+                        await commandExecutor.ExecuteReaderAsync(command);
+
+                        command = commandFactory.GetSelectRowCommand(connection);
+                        await commandExecutor.ExecuteReaderAsync(command, CommandBehavior.Default);
+
+                        command = commandFactory.GetDeleteRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command);
+                    }
+
+                    await Task.Delay(100, cancellationToken);
+
+                    using (var scope = Tracer.Instance.StartActive("async-with-cancellation"))
+                    {
+                        scope.Span.ResourceName = commandName;
+
+                        Console.WriteLine("  Asynchronous with cancellation");
+                        Console.WriteLine();
+                        await Task.Delay(100, cancellationToken);
+
+                        command = commandFactory.GetCreateTableCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
+
+                        command = commandFactory.GetInsertRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
+
+                        command = commandFactory.GetSelectScalarCommand(connection);
+                        await commandExecutor.ExecuteScalarAsync(command, cancellationToken);
+
+                        command = commandFactory.GetUpdateRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
+
+                        command = commandFactory.GetSelectRowCommand(connection);
+                        await commandExecutor.ExecuteReaderAsync(command, cancellationToken);
+
+                        command = commandFactory.GetSelectRowCommand(connection);
+                        await commandExecutor.ExecuteReaderAsync(command, CommandBehavior.Default, cancellationToken);
+
+                        command = commandFactory.GetDeleteRowCommand(connection);
+                        await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
                     }
                 }
             }
-        }
 
-        private void DeleteRecord(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = DeleteCommandText;
-                command.AddParameterWithValue("Id", 1);
-
-                int records = _executeNonQuery(command);
-                Console.WriteLine($"Deleted {records} record(s).");
-            }
-        }
-
-        private void SelectRecords(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = SelectManyCommandText;
-                command.AddParameterWithValue("Id", 1);
-
-                using (var reader = _executeReader(command))
-                {
-                    var employees = reader.AsDataRecords()
-                                          .Select(
-                                               r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
-                                          .ToList();
-
-                    Console.WriteLine($"Selected {employees.Count} record(s).");
-                }
-
-                using (var reader = _executeReaderWithBehavior(command, CommandBehavior.Default))
-                {
-                    var employees = reader.AsDataRecords()
-                                          .Select(
-                                               r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
-                                          .ToList();
-
-                    Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
-                }
-            }
-        }
-
-        private void UpdateRow(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = UpdateCommandText;
-                command.AddParameterWithValue("Name", "Name2");
-                command.AddParameterWithValue("Id", 1);
-
-                int records = _executeNonQuery(command);
-                Console.WriteLine($"Updated {records} record(s).");
-            }
-        }
-
-        private void SelectScalar(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = SelectOneCommandText;
-                command.AddParameterWithValue("Id", 1);
-
-                var name = _executeScalar(command) as string;
-                Console.WriteLine($"Selected scalar `{name ?? "(null)"}`.");
-            }
-        }
-
-        private void InsertRow(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = InsertCommandText;
-                command.AddParameterWithValue("Id", 1);
-                command.AddParameterWithValue("Name", "Name1");
-
-                int records = _executeNonQuery(command);
-                Console.WriteLine($"Inserted {records} record(s).");
-            }
-        }
-
-        private void CreateNewTable(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = DropCommandText;
-
-                int records = _executeNonQuery(command);
-                Console.WriteLine($"Dropped and recreated table. {records} record(s) affected.");
-            }
-        }
-
-        private async Task DeleteRecordAsync(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = DeleteCommandText;
-                command.AddParameterWithValue("Id", 1);
-
-                if (_executeNonQueryAsync != null)
-                {
-                    int records = await _executeNonQueryAsync(command);
-                    Console.WriteLine($"Deleted {records} record(s).");
-                }
-            }
-        }
-
-        private async Task SelectRecordsAsync(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = SelectManyCommandText;
-                command.AddParameterWithValue("Id", 1);
-
-                if (_executeReaderAsync != null)
-                {
-                    using (var reader = await _executeReaderAsync(command))
-                    {
-                        var employees = reader.AsDataRecords()
-                                              .Select(
-                                                   r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
-                                              .ToList();
-
-                        Console.WriteLine($"Selected {employees.Count} record(s).");
-                    }
-                }
-
-                if (_executeReaderWithBehaviorAsync != null)
-                {
-                    using (var reader = await _executeReaderWithBehaviorAsync(command, CommandBehavior.Default))
-                    {
-                        var employees = reader.AsDataRecords()
-                                              .Select(
-                                                   r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
-                                              .ToList();
-
-                        Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
-                    }
-                }
-            }
-        }
-
-        private async Task UpdateRowAsync(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = UpdateCommandText;
-                command.AddParameterWithValue("Name", "Name2");
-                command.AddParameterWithValue("Id", 1);
-
-                if (_executeNonQueryAsync != null)
-                {
-                    int records = await _executeNonQueryAsync(command);
-                    Console.WriteLine($"Updated {records} record(s).");
-                }
-            }
-        }
-
-        private async Task SelectScalarAsync(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = SelectOneCommandText;
-                command.AddParameterWithValue("Id", 1);
-
-                if (_executeScalarAsync != null)
-                {
-                    object nameObj = await _executeScalarAsync(command);
-                    var name = nameObj as string;
-                    Console.WriteLine($"Selected scalar `{name ?? "(null)"}`.");
-                }
-            }
-        }
-
-        private async Task InsertRowAsync(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = InsertCommandText;
-                command.AddParameterWithValue("Id", 1);
-                command.AddParameterWithValue("Name", "Name1");
-
-                if (_executeNonQueryAsync != null)
-                {
-                    int records = await _executeNonQueryAsync(command);
-                    Console.WriteLine($"Inserted {records} record(s).");
-                }
-            }
-        }
-
-        private async Task CreateNewTableAsync(IDbConnection connection)
-        {
-            using (var command = (TCommand)connection.CreateCommand())
-            {
-                command.CommandText = DropCommandText;
-
-                if (_executeNonQueryAsync != null)
-                {
-                    int records = await _executeNonQueryAsync(command);
-                    Console.WriteLine($"Dropped and recreated table. {records} record(s) affected.");
-                }
-            }
+            await Task.Delay(100, cancellationToken);
         }
     }
 }

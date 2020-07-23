@@ -13,13 +13,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     /// </summary>
     public static class DbCommandIntegration
     {
-        // TODO: support both "DbCommand" (new name) and
-        // "AdoNet" (backwards compatibility) when reading configuration settings
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
+        private const string Major2 = "2";
 
-        private const string DbCommandTypeName = "System.Data.Common.DbCommand";
-        private const string DbDataReaderTypeName = "System.Data.Common.DbDataReader";
+        private const string DbCommandTypeName = AdoNetConstants.TypeNames.DbCommand;
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(DbCommandIntegration));
 
@@ -33,25 +31,36 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { DbDataReaderTypeName },
+            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteReader(
             object command,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             Func<DbCommand, DbDataReader> instrumentedMethod;
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, DbDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithConcreteType(typeof(DbCommand))
-                       .WithNamespaceAndNameFilters(DbDataReaderTypeName)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(targetType)
+                       .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.DbDataReader)
                        .Build();
             }
             catch (Exception ex)
@@ -62,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: nameof(ExecuteReader),
+                    methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -96,9 +105,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { DbDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
+            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader, AdoNetConstants.TypeNames.CommandBehavior },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteReaderWithBehavior(
             object command,
             int behavior,
@@ -106,17 +122,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<DbCommand, CommandBehavior, DbDataReader> instrumentedMethod;
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             var commandBehavior = (CommandBehavior)behavior;
+            Func<DbCommand, CommandBehavior, DbDataReader> instrumentedMethod;
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, DbDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithConcreteType(typeof(DbCommand))
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(targetType)
                        .WithParameters(commandBehavior)
-                       .WithNamespaceAndNameFilters(DbDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
+                       .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.DbDataReader, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
             }
             catch (Exception ex)
@@ -127,7 +146,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: nameof(ExecuteReader),
+                    methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -164,6 +183,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteReaderAsync(
             object command,
             int behavior,
@@ -191,14 +216,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
             Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>> instrumentedMethod;
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReaderAsync)
-                       .WithConcreteType(typeof(DbCommand))
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(targetType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
@@ -211,7 +239,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: nameof(ExecuteReaderAsync),
+                    methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -240,30 +268,48 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Int32 },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static int ExecuteNonQuery(
             object command,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteNonQuery;
             Func<DbCommand, int> instrumentedMethod;
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
-                       .WithConcreteType(typeof(DbCommand))
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: DbCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -298,6 +344,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteNonQueryAsync(
             object command,
             object boxedCancellationToken,
@@ -322,21 +374,31 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteNonQueryAsync;
             Func<DbCommand, CancellationToken, Task<int>> instrumentedMethod;
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQueryAsync)
-                       .WithConcreteType(typeof(DbCommand))
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: DbCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -364,30 +426,48 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Object },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteScalar(
             object command,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteScalar;
             Func<DbCommand, object> instrumentedMethod;
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
-                       .WithConcreteType(typeof(DbCommand))
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: DbCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -422,6 +502,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteScalarAsync(
             object command,
             object boxedCancellationToken,
@@ -446,21 +532,31 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteScalarAsync;
             Func<DbCommand, CancellationToken, Task<object>> instrumentedMethod;
 
             try
             {
+                var targetType = command.GetInstrumentedType(DbCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
-                       .WithConcreteType(typeof(DbCommand))
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: DbCommandTypeName,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
