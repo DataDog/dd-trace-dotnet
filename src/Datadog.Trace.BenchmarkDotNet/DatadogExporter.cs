@@ -64,6 +64,9 @@ namespace Datadog.Trace.BenchmarkDotNet
                     span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
                     span.Type = "test";
                     span.ResourceName = $"{report.BenchmarkCase.Descriptor.Type.FullName}.{report.BenchmarkCase.Descriptor.WorkloadMethod.Name}";
+                    CIEnvironmentValues.DecorateSpan(span);
+                    span.SetTag(TestTags.BuildInContainer, _inContainer ? "true" : "false");
+
                     span.SetTag(TestTags.Name, report.BenchmarkCase.Descriptor.WorkloadMethod.Name);
                     span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
                     span.SetTag(TestTags.Suite, report.BenchmarkCase.Descriptor.Type.FullName);
