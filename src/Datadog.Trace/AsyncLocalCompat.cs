@@ -20,7 +20,12 @@ namespace Datadog.Trace
 
         public void Set(T value)
         {
-            CallContext.LogicalSetData(_name, new ObjectHandle(value));
+            if (CallContext.LogicalGetData(_name) is IDisposable oldHandle)
+            {
+                oldHandle.Dispose();
+            }
+
+            CallContext.LogicalSetData(_name, new DisposableObjectHandle(value));
         }
     }
 
