@@ -34,13 +34,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
         private static readonly FrameworkDescription _runtimeDescription;
         private static readonly bool _inContainer;
-        private static readonly bool _hasServiceName;
 
         static XUnitIntegration()
         {
-            // Check if a service name was set
-            _hasServiceName = TracerSettings.FromDefaultSources().ServiceName != null;
-
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
 
@@ -419,14 +415,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                             }
                         }
                     }
-                }
-
-                // If the service name is not defined, we default to "{AssemblyName.Name}.test" for semantic conventions.
-                if (!_hasServiceName)
-                {
-                    TracerSettings settings = TracerSettings.FromDefaultSources();
-                    settings.ServiceName ??= testClassInstanceAssemblyName?.Name + ".test";
-                    Tracer.Instance = new Tracer(settings, null, null, null, null);
                 }
 
                 Tracer tracer = Tracer.Instance;
