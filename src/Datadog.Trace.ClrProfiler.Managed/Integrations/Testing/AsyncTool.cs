@@ -196,7 +196,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 return InternalSetTaskContinuationAsync(previousTask, state, continuation);
             }
 
-            private async Task InternalSetTaskContinuationAsync<TState>(Task previousTask, TState state, Func<object, Exception, TState, Task<object>> continuation)
+            private static async Task InternalSetTaskContinuationAsync<TState>(Task previousTask, TState state, Func<object, Exception, TState, Task<object>> continuation)
             {
                 try
                 {
