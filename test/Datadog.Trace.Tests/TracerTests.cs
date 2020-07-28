@@ -379,19 +379,19 @@ namespace Datadog.Trace.Tests
         public void DoesNotThrowOnCrossDomainCallsWhenLeaseExpired()
         {
             // Arrange
-            RemotingException remotingException = null;
-
-            AppDomain.CurrentDomain.FirstChanceException +=
-                (_, e) => remotingException = e.Exception is RemotingException re ? re : remotingException;
-
             var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation);
+            string operationName = "test-span";
 
             // Act
             try
             {
-                using (_tracer.StartActive("test-span"))
+                using (_tracer.StartActive(operationName))
                 {
                     remote.DoCallBack(CallFromRemote);
+
+                    // After the lease expires, access the active scope
+                    Scope scope = _tracer.ActiveScope;
+                    Assert.Equal(operationName, scope.Span.OperationName);
                 }
             }
             finally
@@ -400,7 +400,7 @@ namespace Datadog.Trace.Tests
             }
 
             // Assert
-            Assert.Null(remotingException);
+            // Nothing. We should just throw no exceptions here
 
             void CallFromRemote() => Thread.Sleep(200);
         }
