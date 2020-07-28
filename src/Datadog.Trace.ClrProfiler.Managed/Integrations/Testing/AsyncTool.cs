@@ -18,16 +18,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <typeparam name="TState">Type of the state</typeparam>
         /// <param name="returnValue">Return value</param>
         /// <param name="ex">Exception</param>
-        /// <param name="continuation">Continuation delegate</param>
         /// <param name="state">State value</param>
+        /// <param name="continuation">Continuation delegate</param>
         /// <param name="generator">Continuation generator</param>
         /// <returns>Return value after the continuation</returns>
-        public static object AddContinuation<TState>(object returnValue, Exception ex, Func<object, Exception, TState, object> continuation, TState state, TaskContinuationGenerator generator = null)
+        public static object AddContinuation<TState>(object returnValue, Exception ex, TState state, Func<object, Exception, TState, object> continuation, TaskContinuationGenerator generator = null)
         {
             if (returnValue is Task returnTask && ex is null)
             {
                 generator ??= GetContinuationFrom(returnTask.GetType());
-                return generator.SetTaskContinuation(returnTask, continuation, state);
+                return generator.SetTaskContinuation(returnTask, state, continuation);
             }
 
             return continuation(returnValue, ex, state);
@@ -39,16 +39,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <typeparam name="TState">Type of the state</typeparam>
         /// <param name="returnValue">Return value</param>
         /// <param name="ex">Exception</param>
-        /// <param name="continuation">Continuation delegate</param>
         /// <param name="state">State value</param>
+        /// <param name="continuation">Continuation delegate</param>
         /// <param name="generator">Continuation generator</param>
         /// <returns>Return value after the continuation</returns>
-        public static object AddContinuation<TState>(object returnValue, Exception ex, Func<object, Exception, TState, Task<object>> continuation, TState state, TaskContinuationGenerator generator = null)
+        public static object AddContinuation<TState>(object returnValue, Exception ex, TState state, Func<object, Exception, TState, Task<object>> continuation, TaskContinuationGenerator generator = null)
         {
             if (returnValue is Task returnTask && ex is null)
             {
                 generator ??= GetContinuationFrom(returnTask.GetType());
-                return generator.SetTaskContinuationAsync(returnTask, continuation, state);
+                return generator.SetTaskContinuationAsync(returnTask, state, continuation);
             }
 
             SynchronizationContext currentContext = SynchronizationContext.Current;
@@ -101,20 +101,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         internal sealed class TaskContinuationGenerator<TResult> : TaskContinuationGenerator
         {
-            public override Task SetTaskContinuation<TState>(Task previousTask, Func<object, Exception, TState, object> continuation, TState state)
+            public override Task SetTaskContinuation<TState>(Task previousTask, TState state, Func<object, Exception, TState, object> continuation)
             {
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
                     return Task.FromResult((TResult)continuation(((Task<TResult>)previousTask).Result, null, state));
                 }
 
-                return InternalSetTaskContinuation((Task<TResult>)previousTask, continuation, state);
+                return InternalSetTaskContinuation((Task<TResult>)previousTask, state, continuation);
             }
 
-            public override Task SetTaskContinuationAsync<TState>(Task previousTask, Func<object, Exception, TState, Task<object>> continuation, TState state)
-                => SetTaskContinuationAsync((Task<TResult>)previousTask, continuation, state);
+            public override Task SetTaskContinuationAsync<TState>(Task previousTask, TState state, Func<object, Exception, TState, Task<object>> continuation)
+                => SetTaskContinuationAsync((Task<TResult>)previousTask, state, continuation);
 
-            private static async Task<TResult> InternalSetTaskContinuation<TState>(Task<TResult> previousTask, Func<object, Exception, TState, object> continuation, TState state)
+            private static async Task<TResult> InternalSetTaskContinuation<TState>(Task<TResult> previousTask, TState state, Func<object, Exception, TState, object> continuation)
             {
                 TResult result = default;
                 try
@@ -130,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 return (TResult)continuation(result, null, state);
             }
 
-            private static async Task<TResult> SetTaskContinuationAsync<TState>(Task<TResult> previousTask, Func<object, Exception, TState, Task<object>> continuation, TState state)
+            private static async Task<TResult> SetTaskContinuationAsync<TState>(Task<TResult> previousTask, TState state, Func<object, Exception, TState, Task<object>> continuation)
             {
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
@@ -154,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         internal class TaskContinuationGenerator
         {
-            public virtual Task SetTaskContinuation<TState>(Task previousTask, Func<object, Exception, TState, object> continuation, TState state)
+            public virtual Task SetTaskContinuation<TState>(Task previousTask, TState state, Func<object, Exception, TState, object> continuation)
             {
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
@@ -168,10 +168,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 #endif
                 }
 
-                return InternalSetTaskContinuation(previousTask, continuation, state);
+                return InternalSetTaskContinuation(previousTask, state, continuation);
             }
 
-            private static async Task InternalSetTaskContinuation<TState>(Task previousTask, Func<object, Exception, TState, object> continuation, TState state)
+            private static async Task InternalSetTaskContinuation<TState>(Task previousTask, TState state, Func<object, Exception, TState, object> continuation)
             {
                 try
                 {
@@ -186,17 +186,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 continuation(null, null, state);
             }
 
-            public virtual Task SetTaskContinuationAsync<TState>(Task previousTask, Func<object, Exception, TState, Task<object>> continuation, TState state)
+            public virtual Task SetTaskContinuationAsync<TState>(Task previousTask, TState state, Func<object, Exception, TState, Task<object>> continuation)
             {
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
                     return continuation(null, null, state);
                 }
 
-                return InternalSetTaskContinuationAsync(previousTask, continuation, state);
+                return InternalSetTaskContinuationAsync(previousTask, state, continuation);
             }
 
-            private async Task InternalSetTaskContinuationAsync<TState>(Task previousTask, Func<object, Exception, TState, Task<object>> continuation, TState state)
+            private async Task InternalSetTaskContinuationAsync<TState>(Task previousTask, TState state, Func<object, Exception, TState, Task<object>> continuation)
             {
                 try
                 {

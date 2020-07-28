@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
             finally
             {
-                returnValue = AsyncTool.AddContinuation(returnValue, exception, (r, ex, state) => InvokerContinuation(r, ex, state), testInvoker);
+                returnValue = AsyncTool.AddContinuation(returnValue, exception, testInvoker, (r, ex, state) => InvokerContinuation(r, ex, state));
             }
 
             return returnValue;
@@ -210,7 +210,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
             finally
             {
-                returnValue = AsyncTool.AddContinuation(returnValue, exception, (r, ex, state) => TestRunnerContinuation(r, ex, state), scope);
+                returnValue = AsyncTool.AddContinuation(returnValue, exception, scope, (r, ex, state) => TestRunnerContinuation(r, ex, state));
             }
 
             return returnValue;
@@ -313,6 +313,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 returnValue = AsyncTool.AddContinuation<object>(
                     returnValue,
                     exception,
+                    null,
                     async (r, ex, state) =>
                     {
                         // We have to ensure the flush of the buffer after we finish the tests of an assembly.
@@ -322,8 +323,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                         // In a test scenario we must keep all spans.
                         await Tracer.Instance.FlushAsync().ConfigureAwait(false);
                         return r;
-                    },
-                    null);
+                    });
             }
 
             return returnValue;
