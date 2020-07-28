@@ -33,11 +33,11 @@ namespace Datadog.Trace.Util
 #if NETSTANDARD
                 random = new Random();
 #else
-                // On .net framework, the clock is used to seed the new random instances
-                // Resolution is too low, so if a bunch of threads are created at the same time,
-                // they'll all get the same seed.
-                // Instead, use a shared random instance to generate the seed
-                // The same approach was taken for System.Random on .net core:
+                // On .NET Framework, the clock is used to seed the new random instances.
+                // Resolution is too low, so if many threads are created at the same time,
+                // some could end up using the same seed.
+                // Instead, use a shared random instance to generate the seed.
+                // The same approach was used for System.Random on .NET Core:
                 // https://docs.microsoft.com/en-us/dotnet/api/system.random.-ctor?view=netcore-3.1
                 int seed;
 
