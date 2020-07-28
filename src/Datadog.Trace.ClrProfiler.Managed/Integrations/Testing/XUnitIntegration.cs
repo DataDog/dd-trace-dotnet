@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -501,7 +499,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             int mdToken,
             long moduleVersionPtr)
         {
-            Log.Warning("TestOutputHelper_QueueTestOutput");
             if (testOutputHelper == null) { throw new ArgumentNullException(nameof(testOutputHelper)); }
 
             Type testOutputHelperType = testOutputHelper.GetType();
