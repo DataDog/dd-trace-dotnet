@@ -2,18 +2,18 @@ using System;
 
 namespace Datadog.Trace.Util
 {
-    internal class IdGenerator
+    internal class SpanIdGenerator
     {
 #if !NETSTANDARD
-        private static readonly Random GlobalRandom = new Random();
+        private static readonly Random GlobalSeedGenerator = new Random();
 #endif
 
         [ThreadStatic]
         private static Random _threadRandom;
 
-        public static ulong NewSpanId()
+        public static ulong CreateNew()
         {
-            var random = GetRandom();
+            Random random = GetRandom();
 
             long high = random.Next(int.MinValue, int.MaxValue);
             long low = random.Next(int.MinValue, int.MaxValue);
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Util
 
         private static Random GetRandom()
         {
-            var random = _threadRandom;
+            Random random = _threadRandom;
 
             if (random == null)
             {
@@ -41,9 +41,9 @@ namespace Datadog.Trace.Util
                 // https://docs.microsoft.com/en-us/dotnet/api/system.random.-ctor?view=netcore-3.1
                 int seed;
 
-                lock (GlobalRandom)
+                lock (GlobalSeedGenerator)
                 {
-                    seed = GlobalRandom.Next();
+                    seed = GlobalSeedGenerator.Next();
                 }
 
                 random = new Random(seed);
