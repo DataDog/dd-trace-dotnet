@@ -4,8 +4,6 @@ using System.Reflection;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 {
@@ -32,7 +30,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
         private static readonly FrameworkDescription _runtimeDescription;
-        private static readonly bool _inContainer;
 
         static XUnitIntegration()
         {
@@ -40,7 +37,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             CIEnvironmentValues.DecorateSpan(null);
 
             _runtimeDescription = FrameworkDescription.Create();
-            _inContainer = EnvironmentHelpers.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" || ContainerMetadata.GetContainerId() != null;
         }
 
         /// <summary>
@@ -431,8 +427,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 span.SetTag(TestTags.Framework, testFramework);
                 span.SetTag(TestTags.Type, TestTags.TypeTest);
                 CIEnvironmentValues.DecorateSpan(span);
-
-                span.SetTag(TestTags.BuildInContainer, _inContainer ? "true" : "false");
 
                 span.SetTag(TestTags.RuntimeName, _runtimeDescription.Name);
                 span.SetTag(TestTags.RuntimeOSArchitecture, _runtimeDescription.OSArchitecture);
