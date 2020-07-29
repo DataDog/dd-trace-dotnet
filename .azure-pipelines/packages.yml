@@ -58,12 +58,6 @@ stages:
         msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;TracerHomeDirectory=$(tracerHome);RunWixToolsOutOfProc=true;MsiOutputPath=$(msiHome)
         maximumCpuCount: true
 
-    - publish: $(msiHome)/en-us
-      artifact: windows-msi
-
-    - publish: $(tracerHome).zip
-      artifact: $(tracerHomeName)
-
     - task: DotNetCoreCLI@2
       displayName: dotnet pack
       inputs:
@@ -71,6 +65,19 @@ stages:
         packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
         packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
         configuration: $(buildConfiguration)
+
+    - script: |
+       ls
+       ls $(System.DefaultWorkingDirectory)/nuget-output
+       ls $(msiHome)/en-us
+       signtool.exe sign /v /t http://timestamp.digicert.com /fd SHA1
+      displayName: sign all the things
+
+    - publish: $(msiHome)/en-us
+      artifact: windows-msi
+
+    - publish: $(tracerHome).zip
+      artifact: $(tracerHomeName)
 
     - publish: $(System.DefaultWorkingDirectory)/nuget-output
       artifact: nuget-packages
