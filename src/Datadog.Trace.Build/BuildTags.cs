@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Datadog.Trace.Build
 {
     internal static class BuildTags
@@ -137,61 +131,6 @@ namespace Datadog.Trace.Build
         /// Error stack
         /// </summary>
         public const string ErrorStack = "error.stack";
-
-        /// <summary>
-        /// Warning message
-        /// </summary>
-        public const string WarningMessage = "warning.msg";
-
-        /// <summary>
-        /// Warning type
-        /// </summary>
-        public const string WarningType = "warning.type";
-
-        /// <summary>
-        /// Warning code
-        /// </summary>
-        public const string WarningCode = "warning.code";
-
-        /// <summary>
-        /// Warning file
-        /// </summary>
-        public const string WarningFile = "warning.file";
-
-        /// <summary>
-        /// Warning start line
-        /// </summary>
-        public const string WarningStartLine = "warning.start_location.line";
-
-        /// <summary>
-        /// Warning start column
-        /// </summary>
-        public const string WarningStartColumn = "warning.start_location.column";
-
-        /// <summary>
-        /// Warning end line
-        /// </summary>
-        public const string WarningEndLine = "warning.end_location.line";
-
-        /// <summary>
-        /// Warning end column
-        /// </summary>
-        public const string WarningEndColumn = "warning.end_location.column";
-
-        /// <summary>
-        /// Warning project file
-        /// </summary>
-        public const string WarningProjectFile = "warning.project_file";
-
-        /// <summary>
-        /// Warning sub category
-        /// </summary>
-        public const string WarningSubCategory = "warning.sub_category";
-
-        /// <summary>
-        /// Warning stack
-        /// </summary>
-        public const string WarningStack = "warning.stack";
 
         /// <summary>
         /// GIT Repository

@@ -2,11 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 using Microsoft.Build.Framework;
 using Newtonsoft.Json;
 
@@ -18,7 +15,6 @@ namespace Datadog.Trace.Build
     public class DatadogLogger : INodeLogger
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(DatadogLogger));
-        private static readonly bool _inContainer;
 
         private Tracer _tracer = null;
         private Span _buildSpan = null;
@@ -28,8 +24,6 @@ namespace Datadog.Trace.Build
         {
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
-
-            _inContainer = EnvironmentHelpers.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" || ContainerMetadata.GetContainerId() != null;
         }
 
         /// <summary>
@@ -75,13 +69,11 @@ namespace Datadog.Trace.Build
         /// <inheritdoc />
         public void Shutdown()
         {
-            SynchronizationContext.SetSynchronizationContext(null);
-            _tracer.FlushAsync().GetAwaiter().GetResult();
         }
 
         private void EventSource_BuildStarted(object sender, BuildStartedEventArgs e)
         {
-            Log.Information("Build Started");
+            Log.Debug("Build Started");
 
             _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
             _buildSpan.SetMetric(Tags.Analytics, 1.0d);
@@ -98,7 +90,6 @@ namespace Datadog.Trace.Build
             _buildSpan.SetTag(BuildTags.BuildWorkingFolder, Environment.CurrentDirectory);
             _buildSpan.SetTag(BuildTags.BuildStartMessage, e.Message);
 
-            _buildSpan.SetTag(BuildTags.BuildInContainer, _inContainer ? "true" : "false");
             _buildSpan.SetTag(BuildTags.RuntimeOSArchitecture, Environment.Is64BitOperatingSystem ? "x64" : "x86");
             _buildSpan.SetTag(BuildTags.RuntimeProcessArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
 
@@ -107,7 +98,7 @@ namespace Datadog.Trace.Build
 
         private void EventSource_BuildFinished(object sender, BuildFinishedEventArgs e)
         {
-            Log.Information("Build Finished");
+            Log.Debug("Build Finished");
 
             _buildSpan.SetTag(BuildTags.BuildStatus, e.Succeeded ? BuildTags.BuildSucceededStatus : BuildTags.BuildFailedStatus);
             if (!e.Succeeded)
@@ -123,10 +114,11 @@ namespace Datadog.Trace.Build
         {
             if (e.TargetNames.StartsWith("_"))
             {
+                // Ignoring internal targetNames
                 return;
             }
 
-            Log.Information("Project Started");
+            Log.Debug("Project Started");
 
             int parentContext = e.ParentProjectBuildEventContext.ProjectContextId;
             int context = e.BuildEventContext.ProjectContextId;
@@ -137,7 +129,7 @@ namespace Datadog.Trace.Build
 
             string projectName = Path.GetFileName(e.ProjectFile);
 
-            Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context, serviceName: projectName + "-build");
+            Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context, serviceName: projectName);
             projectSpan.ResourceName = projectName;
             projectSpan.SetMetric(Tags.Analytics, 1.0d);
             projectSpan.SetTraceSamplingPriority(SamplingPriority.UserKeep);
@@ -162,7 +154,7 @@ namespace Datadog.Trace.Build
             int context = e.BuildEventContext.ProjectContextId;
             if (_projects.TryRemove(context, out Span projectSpan))
             {
-                Log.Information("Project Finished");
+                Log.Debug("Project Finished");
 
                 projectSpan.SetTag(BuildTags.BuildStatus, e.Succeeded ? BuildTags.BuildSucceededStatus : BuildTags.BuildFailedStatus);
                 if (!e.Succeeded)
@@ -182,14 +174,14 @@ namespace Datadog.Trace.Build
                 return;
             }
 
-            Log.Information("Error Raised");
+            Log.Debug("Error Raised");
 
             int context = e.BuildEventContext.ProjectContextId;
             if (_projects.TryGetValue(context, out Span projectSpan))
             {
                 string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
                 string message = e.Message;
-                string type = e.SenderName?.ToUpperInvariant() + " Error";
+                string type = $"{e.SenderName?.ToUpperInvariant()} ({e.Code}) Error";
                 string code = e.Code;
                 int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
                 int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
@@ -247,14 +239,14 @@ namespace Datadog.Trace.Build
                 return;
             }
 
-            Log.Information("Warning Raised");
+            Log.Debug("Warning Raised");
 
             int context = e.BuildEventContext.ProjectContextId;
             if (_projects.TryGetValue(context, out Span projectSpan))
             {
                 string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
                 string message = e.Message;
-                string type = e.SenderName?.ToUpperInvariant() + " Warning";
+                string type = $"{e.SenderName?.ToUpperInvariant()} ({e.Code}) Warning";
                 string code = e.Code;
                 int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
                 int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
