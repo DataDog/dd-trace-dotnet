@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Security;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Rendering;
 
@@ -117,7 +118,11 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// <summary>
         /// True if the property name is a positional index; otherwise, false.
         /// </summary>
-        public bool IsPositional => _position.HasValue;
+        public bool IsPositional
+        {
+            [SecuritySafeCritical]
+            get { return _position.HasValue; } 
+        }
 
         internal string RawText => _rawText;
 
@@ -126,6 +131,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// </summary>
         /// <param name="position">The integer value, if present.</param>
         /// <returns>True if the property is positional, otherwise false.</returns>
+        [SecuritySafeCritical]
         public bool TryGetPositionalValue(out int position)
         {
             if (_position == null)

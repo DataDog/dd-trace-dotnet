@@ -4,7 +4,9 @@ namespace Datadog.Trace
     using System;
     using System.Runtime.Remoting;
     using System.Runtime.Remoting.Messaging;
+    using System.Security;
 
+    [SecuritySafeCritical]
     internal class AsyncLocalCompat<T>
     {
         private readonly string _name = "__Datadog_Scope_Current__" + Guid.NewGuid();
