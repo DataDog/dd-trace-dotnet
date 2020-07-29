@@ -18,7 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string Major2 = "2";
         private const string Major2Minor2 = "2.2";
 
-        private const string XUnitAssembly = "xunit.execution.dotnet";
+        private const string XUnitNetCoreAssembly = "xunit.execution.dotnet";
+        private const string XUnitDesktopAssembly = "xunit.execution.desktop";
 
         private const string XUnitTestInvokerType = "Xunit.Sdk.TestInvoker`1";
         private const string XUnitTestRunnerType = "Xunit.Sdk.TestRunner`1";
@@ -51,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
-            TargetAssembly = XUnitAssembly,
+            TargetAssemblies = new[] { XUnitNetCoreAssembly, XUnitDesktopAssembly },
             TargetType = XUnitTestInvokerType,
             TargetMethod = XUnitRunAsyncMethod,
             TargetMinimumVersion = Major2Minor2,
@@ -142,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
-            TargetAssembly = XUnitAssembly,
+            TargetAssemblies = new[] { XUnitNetCoreAssembly, XUnitDesktopAssembly },
             TargetType = XUnitTestRunnerType,
             TargetMethod = XUnitRunAsyncMethod,
             TargetMinimumVersion = Major2Minor2,
@@ -248,7 +249,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
-            TargetAssembly = XUnitAssembly,
+            TargetAssemblies = new[] { XUnitNetCoreAssembly, XUnitDesktopAssembly },
             TargetType = XUnitTestAssemblyRunnerType,
             TargetMethod = XUnitRunTestCollectionAsyncMethod,
             TargetMinimumVersion = Major2Minor2,
@@ -486,7 +487,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
-            TargetAssembly = XUnitAssembly,
+            TargetAssemblies = new[] { XUnitNetCoreAssembly, XUnitDesktopAssembly },
             TargetType = XUnitTestOutputHelperType,
             TargetMethod = XUnitQueueTestOutputMethod,
             TargetMinimumVersion = Major2Minor2,
