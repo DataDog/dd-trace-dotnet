@@ -21,11 +21,6 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_MessagePack.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\MessagePack.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Microsoft.CSharp.dll"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\Microsoft.CSharp.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -81,28 +76,13 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Runtime.CompilerServices.Unsafe.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Runtime.InteropServices.RuntimeInformation.dll"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Runtime.InteropServices.RuntimeInformation.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Runtime.Serialization.Primitives.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Runtime.Serialization.Primitives.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Threading.dll"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Threading.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Threading.Tasks.Extensions.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Threading.Tasks.Extensions.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>

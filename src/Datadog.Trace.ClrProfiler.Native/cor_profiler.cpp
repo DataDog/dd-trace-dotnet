@@ -388,8 +388,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
   // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
-  // subscribe to DiagnosticSource events
-  if (module_info.assembly.name != "Microsoft.AspNetCore.Hosting"_W) {
+  // subscribe to DiagnosticSource events.
+  // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
+  // System.Data or System.Data.Common
+  if (module_info.assembly.name != "Microsoft.AspNetCore.Hosting"_W &&
+      module_info.assembly.name != "Dapper"_W) {
     filtered_integrations =
         FilterIntegrationsByTarget(filtered_integrations, assembly_import);
 

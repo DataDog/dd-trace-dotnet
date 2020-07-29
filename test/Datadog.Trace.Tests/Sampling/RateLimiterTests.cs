@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Sampling;
@@ -53,13 +52,13 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Limits_Approximately_To_Defaults()
         {
-            Run_Limit_Test(intervalLimit: null, numberPerBurst: 200, numberOfBursts: 20, millisecondsBetweenBursts: 247);
+            Run_Limit_Test(intervalLimit: null, numberPerBurst: 200, numberOfBursts: 18, millisecondsBetweenBursts: 247);
         }
 
         [Fact]
         public void Limits_To_Custom_Amount_Per_Second()
         {
-            Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 20, millisecondsBetweenBursts: 247);
+            Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 18, millisecondsBetweenBursts: 247);
         }
 
         private static void Run_Limit_Test(int? intervalLimit, int numberPerBurst, int numberOfBursts, int millisecondsBetweenBursts)
@@ -152,10 +151,14 @@ namespace Datadog.Trace.Tests.Sampling
                 workers[i] = Task.Factory.StartNew(
                     () =>
                     {
+                        var stopwatch = new Stopwatch();
+
                         for (var i = 0; i < test.NumberOfBursts; i++)
                         {
                             // Wait for every worker to be ready for next burst
                             barrier.SignalAndWait();
+
+                            stopwatch.Restart();
 
                             for (int j = 0; j < numberPerThread; j++)
                             {
@@ -172,7 +175,12 @@ namespace Datadog.Trace.Tests.Sampling
                                 }
                             }
 
-                            Thread.Sleep(test.TimeBetweenBursts);
+                            var remainingTime = (test.TimeBetweenBursts - stopwatch.Elapsed).TotalMilliseconds;
+
+                            if (remainingTime > 0)
+                            {
+                                Thread.Sleep((int)remainingTime);
+                            }
                         }
                     },
                     TaskCreationOptions.LongRunning);

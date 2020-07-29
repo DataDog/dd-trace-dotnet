@@ -44,6 +44,12 @@ namespace UpdateVendors
                 branchDownload: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
                 pathToSrc: new[] { "dogstatsd-csharp-client-3.3.0", "src", "StatsdClient" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
+
+            UpdateVendor(
+                libraryName: "MessagePack",
+                branchDownload: "https://github.com/neuecc/MessagePack-CSharp/archive/v1.9.3.zip",
+                pathToSrc: new[] { "MessagePack-CSharp-1.9.3", "src", "MessagePack" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "MessagePack"));
         }
 
         private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, Func<string, string, string> extraTransform = null)

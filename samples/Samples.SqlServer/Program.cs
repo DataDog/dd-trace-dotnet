@@ -1,9 +1,7 @@
 using System;
-using System.Data;
-using System.Data.Common;
 using System.Data.SqlClient;
+using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace;
 using Samples.DatabaseHelper;
 
 namespace Samples.SqlServer
@@ -12,68 +10,27 @@ namespace Samples.SqlServer
     {
         private static async Task Main()
         {
-            using (var root = Tracer.Instance.StartActive("root"))
+            var commandFactory = new DbCommandFactory();
+            var commandExecutor = new SqlCommandExecutor();
+            var cts = new CancellationTokenSource();
+
+            using (var connection = OpenConnection())
             {
-                using (var connection = CreateConnection())
-                {
-                    var testQueries = new RelationalDatabaseTestHarness<SqlConnection, SqlCommand, SqlDataReader>(
-                        connection,
-                        command => command.ExecuteNonQuery(),
-                        command => command.ExecuteScalar(),
-                        command => command.ExecuteReader(),
-                        (command, behavior) => command.ExecuteReader(behavior),
-                        command => command.ExecuteNonQueryAsync(),
-                        command => command.ExecuteScalarAsync(),
-                        command => command.ExecuteReaderAsync(),
-                        (command, behavior) => command.ExecuteReaderAsync(behavior)
-                    );
-
-
-                    await testQueries.RunAsync();
-                }
-
-                using (var connection = CreateConnection())
-                {
-                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
-                        connection,
-                        command => command.ExecuteNonQuery(),
-                        command => command.ExecuteScalar(),
-                        command => command.ExecuteReader(),
-                        (command, behavior) => command.ExecuteReader(behavior),
-                        command => command.ExecuteNonQueryAsync(),
-                        command => command.ExecuteScalarAsync(),
-                        command => command.ExecuteReaderAsync(),
-                        (command, behavior) => command.ExecuteReaderAsync(behavior)
-                    );
-
-                    await testQueries.RunAsync();
-                }
-
-                using (var connection = CreateConnection())
-                {
-                    var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(
-                        connection,
-                        command => command.ExecuteNonQuery(),
-                        command => command.ExecuteScalar(),
-                        command => command.ExecuteReader(),
-                        (command, behavior) => command.ExecuteReader(behavior),
-                        executeNonQueryAsync: null,
-                        executeScalarAsync: null,
-                        executeReaderAsync: null,
-                        executeReaderWithBehaviorAsync: null
-                    );
-
-                    await testQueries.RunAsync();
-                }
+                await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, cts.Token);
             }
+
+            // allow time to flush
+            await Task.Delay(2000, cts.Token);
         }
 
-        private static SqlConnection CreateConnection()
+        private static SqlConnection OpenConnection()
         {
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
                                    @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=30";
 
-            return new SqlConnection(connectionString);
+            var connection = new SqlConnection(connectionString);
+            connection.Open();
+            return connection;
         }
     }
 }

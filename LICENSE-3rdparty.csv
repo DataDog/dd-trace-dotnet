@@ -1,6 +1,6 @@
 Component,Origin,License,Copyright
 opentracing-csharp,https://github.com/opentracing/opentracing-csharp,MIT,Copyright 2016-2017 The OpenTracing Authors
-msgpack-cli,https://github.com/msgpack/msgpack-cli,Apache-2.0,"Copyright 2010-2016 FUJIWARA, Yusuke, all rights reserved."
+MessagePack-CSharp,https://github.com/neuecc/MessagePack-CSharp,MIT,Copyright (c) 2017 Yoshifumi Kawai and contributors
 liblog,https://github.com/damianh/LibLog,MIT,Copyright (C) 2011-2017 Damian Hickey
 dotnet/runtime,https://github.com/dotnet/runtime,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 clr-samples,https://github.com/Microsoft/clr-samples,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.

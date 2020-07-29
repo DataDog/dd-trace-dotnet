@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
-using Datadog.Trace.Abstractions;
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -144,6 +141,10 @@ namespace Datadog.Trace.ClrProfiler
                     return "sql-server";
                 case "NpgsqlCommand":
                     return "postgres";
+                case "MySqlCommand":
+                    return "mysql";
+                case "OracleCommand":
+                    return "oracle";
                 case "InterceptableDbCommand":
                 case "ProfiledDbCommand":
                     // don't create spans for these

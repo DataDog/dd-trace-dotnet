@@ -208,8 +208,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CancellationToken cancellationToken)
         {
             var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
-            if (!(reportedType.FullName.Equals(HttpClientHandler, StringComparison.OrdinalIgnoreCase) || IsSocketsHttpHandlerEnabled(reportedType)) ||
-                !IsTracingEnabled(headers))
+            if (!(reportedType.FullName.Equals(HttpClientHandler, StringComparison.OrdinalIgnoreCase) || IsSocketsHttpHandlerEnabled(reportedType))
+                || !IsTracingEnabled(headers))
             {
                 // skip instrumentation
                 var task = (Task<T>)sendAsync(handler, request, cancellationToken);
