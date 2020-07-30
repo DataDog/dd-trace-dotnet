@@ -26,12 +26,17 @@ namespace Datadog.Trace
 
         internal Span(SpanContext context, DateTimeOffset? start)
         {
+            if (context is null)
+            {
+                return;
+            }
+
             Init(context, start);
 
             Log.Debug(
                 "Span started: [s_id: {0}, p_id: {1}, t_id: {2}]",
                 SpanId,
-                Context?.ParentId,
+                Context.ParentId,
                 TraceId);
         }
 
