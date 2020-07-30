@@ -5,6 +5,12 @@
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>8</LangVersion>
+    
+    <!-- Strong name signature -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <DelaySign>false</DelaySign>
   </PropertyGroup>
 
   <ItemGroup>
