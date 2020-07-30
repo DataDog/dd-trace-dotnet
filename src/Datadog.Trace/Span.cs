@@ -426,8 +426,8 @@ namespace Datadog.Trace
             Context = null;
             StartTime = default;
             Duration = default;
-            Tags.Clear();
-            Metrics.Clear();
+            Tags?.Clear();
+            Metrics?.Clear();
             IsFinished = false;
             OperationName = null;
             ResourceName = null;

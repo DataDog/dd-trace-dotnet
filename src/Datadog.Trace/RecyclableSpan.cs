@@ -14,7 +14,7 @@ namespace Datadog.Trace
                 maxItems: 250, // Maximum items in the pool
                 dropFrequencyInMinutes: 5); // Time in minutes before doing a drop out items to the minimum
 
-        private bool _isDirty;
+        private bool _isDirty = false;
 
         private RecyclableSpan()
             : base(null, null)

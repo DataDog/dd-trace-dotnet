@@ -53,7 +53,6 @@ namespace Benchmarks.Trace
                 scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             }
             await tracer.FlushAsync().ConfigureAwait(false);
-
         }
 
         /// <summary>
@@ -68,7 +67,6 @@ namespace Benchmarks.Trace
                 scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             }
             await tracer.FlushAsync().ConfigureAwait(false);
-
         }
     }
 }
