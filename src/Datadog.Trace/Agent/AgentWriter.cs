@@ -94,6 +94,18 @@ namespace Datadog.Trace.Agent
             if (traces.Length > 0)
             {
                 await _api.SendTracesAsync(traces).ConfigureAwait(false);
+
+                // Returns the recyclable spans to the pool
+                foreach (Span[] trace in traces)
+                {
+                    foreach (Span span in trace)
+                    {
+                        if (span is RecyclableSpan rSpan)
+                        {
+                            RecyclableSpan.Return(rSpan);
+                        }
+                    }
+                }
             }
         }
 

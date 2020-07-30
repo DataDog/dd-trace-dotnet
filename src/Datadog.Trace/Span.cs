@@ -26,9 +26,7 @@ namespace Datadog.Trace
 
         internal Span(SpanContext context, DateTimeOffset? start)
         {
-            Context = context;
-            ServiceName = context.ServiceName;
-            StartTime = start ?? Context.TraceContext.UtcNow;
+            Init(context, start);
 
             Log.Debug(
                 "Span started: [s_id: {0}, p_id: {1}, t_id: {2}]",
@@ -78,9 +76,9 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId => Context.SpanId;
 
-        internal SpanContext Context { get; }
+        internal SpanContext Context { get; private set; }
 
-        internal DateTimeOffset StartTime { get; }
+        internal DateTimeOffset StartTime { get; private set; }
 
         internal TimeSpan Duration { get; private set; }
 
@@ -410,6 +408,26 @@ namespace Datadog.Trace
             }
 
             return this;
+        }
+
+        internal void Init(SpanContext context, DateTimeOffset? start)
+        {
+            Context = context;
+            StartTime = start ?? context?.TraceContext?.UtcNow ?? default;
+        }
+
+        internal void Clear()
+        {
+            Context = null;
+            StartTime = default;
+            Duration = default;
+            Tags.Clear();
+            Metrics.Clear();
+            IsFinished = false;
+            OperationName = null;
+            ResourceName = null;
+            Type = null;
+            Error = false;
         }
     }
 }

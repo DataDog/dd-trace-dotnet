@@ -308,62 +308,7 @@ namespace Datadog.Trace
         /// <returns>The newly created span</returns>
         public Span StartSpan(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
         {
-            if (parent == null && !ignoreActiveScope)
-            {
-                parent = _scopeManager.Active?.Span?.Context;
-            }
-
-            ITraceContext traceContext;
-
-            // try to get the trace context (from local spans) or
-            // sampling priority (from propagated spans),
-            // otherwise start a new trace context
-            if (parent is SpanContext parentSpanContext)
-            {
-                traceContext = parentSpanContext.TraceContext ??
-                               new TraceContext(this)
-                               {
-                                   SamplingPriority = parentSpanContext.SamplingPriority
-                               };
-            }
-            else
-            {
-                traceContext = new TraceContext(this);
-            }
-
-            var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;
-            var spanContext = new SpanContext(parent, traceContext, finalServiceName);
-
-            var span = new Span(spanContext, startTime)
-            {
-                OperationName = operationName,
-            };
-
-            // Apply any global tags
-            if (Settings.GlobalTags.Count > 0)
-            {
-                foreach (var entry in Settings.GlobalTags)
-                {
-                    span.SetTag(entry.Key, entry.Value);
-                }
-            }
-
-            // automatically add the "env" tag if defined, taking precedence over an "env" tag set from a global tag
-            var env = Settings.Environment;
-            if (!string.IsNullOrWhiteSpace(env))
-            {
-                span.SetTag(Tags.Env, env);
-            }
-
-            // automatically add the "version" tag if defined, taking precedence over an "version" tag set from a global tag
-            var version = Settings.ServiceVersion;
-            if (!string.IsNullOrWhiteSpace(version) && string.Equals(finalServiceName, DefaultServiceName))
-            {
-                span.SetTag(Tags.Version, version);
-            }
-
-            traceContext.AddSpan(span);
-            return span;
+            return InternalStartSpan<Span>(operationName, parent, serviceName, startTime, ignoreActiveScope);
         }
 
         /// <summary>
@@ -376,6 +321,17 @@ namespace Datadog.Trace
             {
                 _agentWriter.WriteTrace(trace);
             }
+        }
+
+        internal Scope StartRecyclableActive(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
+        {
+            var span = StartRecyclableSpan(operationName, parent, serviceName, startTime, ignoreActiveScope);
+            return _scopeManager.Activate(span, finishOnClose);
+        }
+
+        internal Span StartRecyclableSpan(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
+        {
+            return InternalStartSpan<RecyclableSpan>(operationName, parent, serviceName, startTime, ignoreActiveScope);
         }
 
         internal async Task FlushAsync()
@@ -609,6 +565,86 @@ namespace Datadog.Trace
                 Log.SafeLogError(ex, $"Unable to instantiate {nameof(Statsd)} client.");
                 return new NoOpStatsd();
             }
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="Span"/> with the specified parameters.
+        /// </summary>
+        /// <typeparam name="TSpan">Type of the span</typeparam>
+        /// <param name="operationName">The span's operation name</param>
+        /// <param name="parent">The span's parent</param>
+        /// <param name="serviceName">The span's service name</param>
+        /// <param name="startTime">An explicit start time for that span</param>
+        /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
+        /// <returns>The newly created span</returns>
+        private Span InternalStartSpan<TSpan>(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
+            where TSpan : Span
+        {
+            if (parent == null && !ignoreActiveScope)
+            {
+                parent = _scopeManager.Active?.Span?.Context;
+            }
+
+            ITraceContext traceContext;
+
+            // try to get the trace context (from local spans) or
+            // sampling priority (from propagated spans),
+            // otherwise start a new trace context
+            if (parent is SpanContext parentSpanContext)
+            {
+                traceContext = parentSpanContext.TraceContext ??
+                               new TraceContext(this)
+                               {
+                                   SamplingPriority = parentSpanContext.SamplingPriority
+                               };
+            }
+            else
+            {
+                traceContext = new TraceContext(this);
+            }
+
+            var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;
+            var spanContext = new SpanContext(parent, traceContext, finalServiceName);
+
+            Span span;
+            if (typeof(TSpan) == typeof(RecyclableSpan))
+            {
+                span = RecyclableSpan.Get(spanContext, startTime);
+                span.OperationName = operationName;
+            }
+            else
+            {
+                span = new Span(spanContext, startTime)
+                {
+                    OperationName = operationName,
+                };
+            }
+
+            // Apply any global tags
+            if (Settings.GlobalTags.Count > 0)
+            {
+                foreach (var entry in Settings.GlobalTags)
+                {
+                    span.SetTag(entry.Key, entry.Value);
+                }
+            }
+
+            // automatically add the "env" tag if defined, taking precedence over an "env" tag set from a global tag
+            var env = Settings.Environment;
+            if (!string.IsNullOrWhiteSpace(env))
+            {
+                span.SetTag(Tags.Env, env);
+            }
+
+            // automatically add the "version" tag if defined, taking precedence over an "version" tag set from a global tag
+            var version = Settings.ServiceVersion;
+            if (!string.IsNullOrWhiteSpace(version) && string.Equals(finalServiceName, DefaultServiceName))
+            {
+                span.SetTag(Tags.Version, version);
+            }
+
+            traceContext.AddSpan(span);
+            return span;
         }
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
