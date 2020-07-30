@@ -8,7 +8,9 @@ namespace Benchmarks.Trace
     {
         private static void Main(string[] args)
         {
-            Summary summary = BenchmarkRunner.Run<SpanBenchmark>();
+            Summary summary;
+            summary = BenchmarkRunner.Run<SpanBenchmark>();
+            summary = BenchmarkRunner.Run<TracerBenchmark>();
         }
     }
 }

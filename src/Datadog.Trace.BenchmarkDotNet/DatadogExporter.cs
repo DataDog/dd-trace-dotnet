@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.BenchmarkDotNet
 {
@@ -23,24 +20,11 @@ namespace Datadog.Trace.BenchmarkDotNet
         public static readonly IExporter Default = new DatadogExporter();
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(DatadogExporter));
-        private static readonly bool _inContainer;
-
-        private Tracer _tracer = null;
 
         static DatadogExporter()
         {
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
-
-            _inContainer = EnvironmentHelpers.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" || ContainerMetadata.GetContainerId() != null;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DatadogExporter"/> class.
-        /// </summary>
-        public DatadogExporter()
-        {
-            _tracer = Tracer.Instance;
         }
 
         /// <inheritdoc />
@@ -55,17 +39,22 @@ namespace Datadog.Trace.BenchmarkDotNet
         public IEnumerable<string> ExportToFiles(Summary summary, ILogger consoleLogger)
         {
             DateTimeOffset startTime = DateTimeOffset.UtcNow;
+            Exception exception = null;
+
             try
             {
+                Tracer tracer = new Tracer();
+
                 foreach (var report in summary.Reports)
                 {
-                    Span span = _tracer.StartSpan("benchmark.test", startTime: startTime);
+                    Span span = tracer.StartSpan("benchmark.test", startTime: startTime);
+                    double durationNanoseconds = 0;
+
                     span.SetMetric(Tags.Analytics, 1.0d);
                     span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
                     span.Type = "test";
                     span.ResourceName = $"{report.BenchmarkCase.Descriptor.Type.FullName}.{report.BenchmarkCase.Descriptor.WorkloadMethod.Name}";
                     CIEnvironmentValues.DecorateSpan(span);
-                    span.SetTag(TestTags.BuildInContainer, _inContainer ? "true" : "false");
 
                     span.SetTag(TestTags.Name, report.BenchmarkCase.Descriptor.WorkloadMethod.Name);
                     span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
@@ -123,7 +112,6 @@ namespace Datadog.Trace.BenchmarkDotNet
                         }
                     }
 
-                    double durationNanoseconds = 0;
                     if (report.ResultStatistics != null)
                     {
                         var stats = report.ResultStatistics;
@@ -139,16 +127,20 @@ namespace Datadog.Trace.BenchmarkDotNet
                         span.SetMetric("benchmark.statistics.std_dev", stats.StandardDeviation);
                         span.SetMetric("benchmark.statistics.variance", stats.Variance);
                         span.SetMetric("benchmark.statistics.std_err", stats.StandardError);
-                        span.SetMetric("benchmark.statistics.p00", stats.Percentiles.P0);
-                        span.SetMetric("benchmark.statistics.p25", stats.Percentiles.P25);
-                        span.SetMetric("benchmark.statistics.p50", stats.Percentiles.P50);
-                        span.SetMetric("benchmark.statistics.p67", stats.Percentiles.P67);
-                        span.SetMetric("benchmark.statistics.p80", stats.Percentiles.P80);
-                        span.SetMetric("benchmark.statistics.p85", stats.Percentiles.P85);
-                        span.SetMetric("benchmark.statistics.p90", stats.Percentiles.P90);
-                        span.SetMetric("benchmark.statistics.p95", stats.Percentiles.P95);
-                        span.SetMetric("benchmark.statistics.p99", stats.Percentiles.Percentile(99));
-                        span.SetMetric("benchmark.statistics.p100", stats.Percentiles.P100);
+
+                        if (stats.Percentiles != null)
+                        {
+                            span.SetMetric("benchmark.statistics.p00", stats.Percentiles.P0);
+                            span.SetMetric("benchmark.statistics.p25", stats.Percentiles.P25);
+                            span.SetMetric("benchmark.statistics.p50", stats.Percentiles.P50);
+                            span.SetMetric("benchmark.statistics.p67", stats.Percentiles.P67);
+                            span.SetMetric("benchmark.statistics.p80", stats.Percentiles.P80);
+                            span.SetMetric("benchmark.statistics.p85", stats.Percentiles.P85);
+                            span.SetMetric("benchmark.statistics.p90", stats.Percentiles.P90);
+                            span.SetMetric("benchmark.statistics.p95", stats.Percentiles.P95);
+                            span.SetMetric("benchmark.statistics.p99", stats.Percentiles.Percentile(99));
+                            span.SetMetric("benchmark.statistics.p100", stats.Percentiles.P100);
+                        }
 
                         span.SetMetric("benchmark.confidenceInterval.n", stats.ConfidenceInterval.N);
                         span.SetMetric("benchmark.confidenceInterval.mean", stats.ConfidenceInterval.Mean);
@@ -165,6 +157,11 @@ namespace Datadog.Trace.BenchmarkDotNet
                     {
                         foreach (var keyValue in report.Metrics)
                         {
+                            if (keyValue.Value is null || keyValue.Value.Descriptor is null)
+                            {
+                                continue;
+                            }
+
                             span.SetTag($"benchmark.metrics.{keyValue.Key}.displayName", keyValue.Value.Descriptor.DisplayName);
                             span.SetTag($"benchmark.metrics.{keyValue.Key}.legend", keyValue.Value.Descriptor.Legend);
                             span.SetTag($"benchmark.metrics.{keyValue.Key}.unit", keyValue.Value.Descriptor.Unit);
@@ -172,7 +169,7 @@ namespace Datadog.Trace.BenchmarkDotNet
                         }
                     }
 
-                    if (report.BenchmarkCase.Config.HasMemoryDiagnoser())
+                    if (report.BenchmarkCase.Config?.HasMemoryDiagnoser() == true)
                     {
                         span.SetMetric("benchmark.memory.gen0Collections", report.GcStats.Gen0Collections);
                         span.SetMetric("benchmark.memory.gen1Collections", report.GcStats.Gen1Collections);
@@ -182,19 +179,24 @@ namespace Datadog.Trace.BenchmarkDotNet
                         span.SetMetric("benchmark.memory.total_bytes_allocations", report.GcStats.GetTotalAllocatedBytes(false));
                     }
 
-                    var duration = TimeSpan.FromTicks((long)(durationNanoseconds * TimeConstants.NanoSecondsPerTick));
+                    var duration = TimeSpan.FromTicks((long)(durationNanoseconds / TimeConstants.NanoSecondsPerTick));
                     span.Finish(startTime.Add(duration));
                 }
-
-                SynchronizationContext.SetSynchronizationContext(null);
-                _tracer.FlushAsync().GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
+                exception = ex;
                 consoleLogger.WriteLine(LogKind.Error, ex.ToString());
             }
 
-            return new string[] { "Datadog Exporter ran successfully." };
+            if (exception is null)
+            {
+                return new string[] { "Datadog Exporter ran successfully." };
+            }
+            else
+            {
+                return new string[] { "Datadog Exporter error: " + exception.ToString() };
+            }
         }
     }
 }
