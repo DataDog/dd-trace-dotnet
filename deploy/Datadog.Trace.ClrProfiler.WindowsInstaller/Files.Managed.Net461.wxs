@@ -11,6 +11,11 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.Build.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.Build.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.ClrProfiler.Managed.Core.dll"
               Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.ClrProfiler.Managed.Core.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -23,6 +28,11 @@
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.dll"
               Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Microsoft.Build.Framework.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Microsoft.Build.Framework.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -43,11 +53,6 @@
       <Component Win64="$(var.Win64)">
         <File Id="net461_System.Runtime.InteropServices.RuntimeInformation.dll"
               Source="$(var.TracerHomeDirectory)\net461\System.Runtime.InteropServices.RuntimeInformation.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_Datadog.Trace.Build.dll"
-              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.Build.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>
