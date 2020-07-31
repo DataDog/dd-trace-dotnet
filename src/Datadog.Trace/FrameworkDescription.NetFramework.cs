@@ -10,8 +10,6 @@ namespace Datadog.Trace
     {
         public static FrameworkDescription Create()
         {
-            var assemblyName = RootAssembly.GetName();
-
             // .NET Framework
             return new FrameworkDescription(
                 ".NET Framework",
