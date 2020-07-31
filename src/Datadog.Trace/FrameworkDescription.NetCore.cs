@@ -10,11 +10,6 @@ namespace Datadog.Trace
     {
         public static FrameworkDescription Create()
         {
-            return CreateFromRuntimeInformation();
-        }
-
-        private static FrameworkDescription CreateFromRuntimeInformation()
-        {
             string frameworkName = null;
             string osPlatform = null;
 
@@ -46,13 +41,13 @@ namespace Datadog.Trace
 
             return new FrameworkDescription(
                 frameworkName ?? "unknown",
-                GetNetCoreVersion() ?? "unknown",
+                GetNetCoreOrNetFrameworkVersion() ?? "unknown",
                 osPlatform ?? "unknown",
                 RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(),
                 RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant());
         }
 
-        private static string GetNetCoreVersion()
+        private static string GetNetCoreOrNetFrameworkVersion()
         {
             string productVersion = null;
 
