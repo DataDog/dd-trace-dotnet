@@ -26,11 +26,6 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_Microsoft.CSharp.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\Microsoft.CSharp.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Newtonsoft.Json.dll"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\Newtonsoft.Json.dll"
               KeyPath="yes" Checksum="yes"/>
