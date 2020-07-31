@@ -116,19 +116,19 @@ namespace Datadog.Trace.Ci
         public const string CIProvider = "ci.provider";
 
         /// <summary>
-        /// CI Build id
+        /// CI Pipeline id
         /// </summary>
-        public const string CIBuildId = "ci.build_id";
+        public const string CIPipelineId = "pipeline.id";
 
         /// <summary>
-        /// CI Build number
+        /// CI Pipeline number
         /// </summary>
-        public const string CIBuildNumber = "ci.build_number";
+        public const string CIPipelineNumber = "pipeline.number";
 
         /// <summary>
-        /// CI Build url
+        /// CI Pipeline url
         /// </summary>
-        public const string CIBuildUrl = "ci.build_url";
+        public const string CIPipelineUrl = "pipeline.url";
 
         /// <summary>
         /// Runtime name
