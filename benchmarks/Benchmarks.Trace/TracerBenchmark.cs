@@ -24,43 +24,23 @@ namespace Benchmarks.Trace
         }
 
         /// <summary>
-        /// Starts and finishes tracer benchmark
-        /// </summary>
-        [Benchmark]
-        public async Task StartFinishTracerAndSpan()
-        {
-            var tracer = Tracer.Instance;
-            Span span = tracer.StartSpan("operation");
-            span.SetTraceSamplingPriority(SamplingPriority.UserReject);
-            span.Finish();
-            await tracer.FlushAsync().ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Starts and finishes tracer benchmark
-        /// </summary>
-        [Benchmark]
-        public async Task StartFinishTracerAndSpanRecycle()
-        {
-            var tracer = Tracer.Instance;
-            Span span = tracer.StartRecyclableSpan("operation");
-            span.SetTraceSamplingPriority(SamplingPriority.UserReject);
-            span.Finish();
-            await tracer.FlushAsync().ConfigureAwait(false);
-        }
-
-        /// <summary>
         /// Starts and finishes an scope with tracer benchmark
         /// </summary>
         [Benchmark]
         public async Task StartFinishTracerAndScope()
         {
             var tracer = Tracer.Instance;
-            using (Scope scope = tracer.StartActive("operation"))
+            for (var f = 0; f < 5; f++)
             {
-                scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+                for (var i = 0; i < 10; i++)
+                {
+                    using (Scope scope = tracer.StartActive("operation"))
+                    {
+                        scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+                    }
+                }
+                await tracer.FlushAsync().ConfigureAwait(false);
             }
-            await tracer.FlushAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -70,11 +50,17 @@ namespace Benchmarks.Trace
         public async Task StartFinishTracerAndScopeRecycle()
         {
             var tracer = Tracer.Instance;
-            using (Scope scope = tracer.StartRecyclableActive("operation"))
+            for (var f = 0; f < 5; f++)
             {
-                scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+                for (var i = 0; i < 10; i++)
+                {
+                    using (Scope scope = tracer.StartRecyclableActive("operation"))
+                    {
+                        scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+                    }
+                }
+                await tracer.FlushAsync().ConfigureAwait(false);
             }
-            await tracer.FlushAsync().ConfigureAwait(false);
         }
     }
 }
