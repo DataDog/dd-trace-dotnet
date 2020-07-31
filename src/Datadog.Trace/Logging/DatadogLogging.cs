@@ -40,7 +40,15 @@ namespace Datadog.Trace.Logging
                     MaxLogFileSize = maxLogSize;
                 }
 
-                var logDirectory = GetLogDirectory();
+                string logDirectory = null;
+                try
+                {
+                    logDirectory = GetLogDirectory();
+                }
+                catch
+                {
+                    // Do nothing when an exception is thrown for attempting to access the filesystem
+                }
 
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 if (logDirectory == null)
@@ -142,48 +150,33 @@ namespace Datadog.Trace.Logging
             if (logDirectory == null)
             {
 #if NETFRAMEWORK
-                var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
-                if (Directory.Exists(windowsDefaultDirectory))
-                {
-                    logDirectory = windowsDefaultDirectory;
-                }
+                logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
 #else
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
-                    if (Directory.Exists(windowsDefaultDirectory))
-                    {
-                        logDirectory = windowsDefaultDirectory;
-                    }
+                    logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
                 }
                 else
                 {
                     // Linux
-                    if (Directory.Exists(NixDefaultDirectory))
-                    {
-                        logDirectory = NixDefaultDirectory;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            var di = Directory.CreateDirectory(NixDefaultDirectory);
-                            logDirectory = NixDefaultDirectory;
-                        }
-                        catch
-                        {
-                            // Unable to create the directory meaning that the user
-                            // will have to create it on their own.
-                        }
-                    }
+                    logDirectory = NixDefaultDirectory;
                 }
 #endif
             }
 
-            if (logDirectory == null)
+            if (!Directory.Exists(logDirectory))
             {
-                // Last effort at writing logs
-                logDirectory = Path.GetTempPath();
+                try
+                {
+                    Directory.CreateDirectory(logDirectory);
+                }
+                catch
+                {
+                    // Unable to create the directory meaning that the user
+                    // will have to create it on their own.
+                    // Last effort at writing logs
+                    logDirectory = Path.GetTempPath();
+                }
             }
 
             return logDirectory;
