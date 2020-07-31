@@ -16,12 +16,20 @@ namespace Benchmarks.Trace
     public class TracerBenchmark
     {
         /// <summary>
+        /// 
+        /// </summary>
+        public TracerBenchmark()
+        {
+            RecyclableSpan.Return(RecyclableSpan.Get(null, null));
+        }
+
+        /// <summary>
         /// Starts and finishes tracer benchmark
         /// </summary>
         [Benchmark]
         public async Task StartFinishTracerAndSpan()
         {
-            Tracer tracer = new Tracer();
+            var tracer = Tracer.Instance;
             Span span = tracer.StartSpan("operation");
             span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             span.Finish();
@@ -34,7 +42,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public async Task StartFinishTracerAndSpanRecycle()
         {
-            Tracer tracer = new Tracer();
+            var tracer = Tracer.Instance;
             Span span = tracer.StartRecyclableSpan("operation");
             span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             span.Finish();
@@ -47,7 +55,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public async Task StartFinishTracerAndScope()
         {
-            Tracer tracer = new Tracer();
+            var tracer = Tracer.Instance;
             using (Scope scope = tracer.StartActive("operation"))
             {
                 scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
@@ -61,7 +69,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public async Task StartFinishTracerAndScopeRecycle()
         {
-            Tracer tracer = new Tracer();
+            var tracer = Tracer.Instance;
             using (Scope scope = tracer.StartRecyclableActive("operation"))
             {
                 scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);

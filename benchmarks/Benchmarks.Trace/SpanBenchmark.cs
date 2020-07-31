@@ -16,6 +16,14 @@ namespace Benchmarks.Trace
         private static Tracer _tracer = Tracer.Instance;
 
         /// <summary>
+        /// 
+        /// </summary>
+        public SpanBenchmark()
+        {
+            RecyclableSpan.Return(RecyclableSpan.Get(null, null));
+        }
+
+        /// <summary>
         /// Starts and finishes span benchmark
         /// </summary>
         [Benchmark]
