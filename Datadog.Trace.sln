@@ -345,7 +345,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper.nets
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StartDistributedTrace", "tools\StartDistributedTrace\StartDistributedTrace.csproj", "{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Datadog.Trace.Ci.Shared", "src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.shproj", "{A1D7653A-C409-414A-B9B0-7879953EBCDD}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}*SharedItemsImports = 5
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{a1d7653a-c409-414a-b9b0-7879953ebcdd}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
@@ -1336,6 +1342,7 @@ Global
 		{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
 		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
 		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
+		{A1D7653A-C409-414A-B9B0-7879953EBCDD} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

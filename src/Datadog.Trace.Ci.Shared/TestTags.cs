@@ -1,4 +1,4 @@
-namespace Datadog.Trace.ClrProfiler.Integrations.Testing
+namespace Datadog.Trace.Ci
 {
     /// <summary>
     /// Span tags for test data model
