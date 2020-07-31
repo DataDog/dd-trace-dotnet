@@ -13,7 +13,8 @@ namespace Datadog.Trace
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
-        private readonly List<Span> _spans = new List<Span>();
+        private readonly object _spansLock = new object();
+        private List<Span> _spans = new List<Span>();
 
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
@@ -51,7 +52,7 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (_spans)
+            lock (_spansLock)
             {
                 if (RootSpan == null)
                 {
@@ -78,6 +79,11 @@ namespace Datadog.Trace
                     }
                 }
 
+                if (_spans is null)
+                {
+                    _spans = new List<Span>();
+                }
+
                 _spans.Add(span);
                 _openSpans++;
             }
@@ -100,16 +106,16 @@ namespace Datadog.Trace
                 }
             }
 
-            Span[] spansToWrite = null;
+            IReadOnlyList<Span> spansToWrite = null;
 
-            lock (_spans)
+            lock (_spansLock)
             {
                 _openSpans--;
 
                 if (_openSpans == 0)
                 {
-                    spansToWrite = _spans.ToArray();
-                    _spans.Clear();
+                    spansToWrite = _spans;
+                    _spans = null;
                 }
             }
 

@@ -315,7 +315,7 @@ namespace Datadog.Trace
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(Span[] trace)
+        void IDatadogTracer.Write(IReadOnlyList<Span> trace)
         {
             if (Settings.TraceEnabled)
             {
@@ -334,9 +334,9 @@ namespace Datadog.Trace
             return InternalStartSpan<RecyclableSpan>(operationName, parent, serviceName, startTime, ignoreActiveScope);
         }
 
-        internal async Task FlushAsync()
+        internal Task FlushAsync()
         {
-            await _agentWriter.FlushAndCloseAsync();
+            return _agentWriter.FlushAsync();
         }
 
         internal void StartDiagnosticObservers()

@@ -9,7 +9,7 @@ namespace Datadog.Trace.Util
     /// </summary>
     /// <typeparam name="TObject">Type of the pool item object</typeparam>
     /// <typeparam name="TStruct">Type of the allocator</typeparam>
-    internal sealed class ObjectPool<TObject, TStruct>
+    internal class ObjectPool<TObject, TStruct>
         where TObject : class
         where TStruct : struct, IPoolAllocator<TObject>
     {

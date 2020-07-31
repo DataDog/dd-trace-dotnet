@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
@@ -13,7 +15,7 @@ namespace Datadog.Trace.Agent
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
 
-        private readonly AgentWriterBuffer<Span[]> _tracesBuffer = new AgentWriterBuffer<Span[]>(TraceBufferSize);
+        private readonly AgentWriterBuffer<IReadOnlyList<Span>> _tracesBuffer = new AgentWriterBuffer<IReadOnlyList<Span>>(TraceBufferSize);
         private readonly IStatsd _statsd;
         private readonly Task _flushTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
@@ -37,7 +39,7 @@ namespace Datadog.Trace.Agent
             return _api.SendTracesAsync(new Span[0][]);
         }
 
-        public void WriteTrace(Span[] trace)
+        public void WriteTrace(IReadOnlyList<Span> trace)
         {
             var success = _tracesBuffer.Push(trace);
 
@@ -49,16 +51,21 @@ namespace Datadog.Trace.Agent
             if (_statsd != null)
             {
                 _statsd.AppendIncrementCount(TracerMetricNames.Queue.EnqueuedTraces);
-                _statsd.AppendIncrementCount(TracerMetricNames.Queue.EnqueuedSpans, trace.Length);
+                _statsd.AppendIncrementCount(TracerMetricNames.Queue.EnqueuedSpans, trace.Count);
 
                 if (!success)
                 {
                     _statsd.AppendIncrementCount(TracerMetricNames.Queue.DroppedTraces);
-                    _statsd.AppendIncrementCount(TracerMetricNames.Queue.DroppedSpans, trace.Length);
+                    _statsd.AppendIncrementCount(TracerMetricNames.Queue.DroppedSpans, trace.Count);
                 }
 
                 _statsd.Send();
             }
+        }
+
+        public Task FlushAsync()
+        {
+            return FlushTracesAsync();
         }
 
         public async Task FlushAndCloseAsync()
@@ -79,33 +86,43 @@ namespace Datadog.Trace.Agent
 
         private async Task FlushTracesAsync()
         {
-            var traces = _tracesBuffer.Pop();
-
-            if (_statsd != null)
+            var pool = DefaultObjectPool<List<IReadOnlyList<Span>>>.Shared;
+            var traces = pool.Get();
+            try
             {
-                var spanCount = traces.Sum(t => t.Length);
+                _tracesBuffer.Fill(traces);
 
-                _statsd.AppendIncrementCount(TracerMetricNames.Queue.DequeuedTraces, traces.Length);
-                _statsd.AppendIncrementCount(TracerMetricNames.Queue.DequeuedSpans, spanCount);
-                _statsd.AppendSetGauge(TracerMetricNames.Queue.MaxTraces, TraceBufferSize);
-                _statsd.Send();
-            }
-
-            if (traces.Length > 0)
-            {
-                await _api.SendTracesAsync(traces).ConfigureAwait(false);
-
-                // Returns the recyclable spans to the pool
-                foreach (Span[] trace in traces)
+                if (_statsd != null)
                 {
-                    foreach (Span span in trace)
+                    var spanCount = traces.Sum(t => t.Count);
+
+                    _statsd.AppendIncrementCount(TracerMetricNames.Queue.DequeuedTraces, traces.Count);
+                    _statsd.AppendIncrementCount(TracerMetricNames.Queue.DequeuedSpans, spanCount);
+                    _statsd.AppendSetGauge(TracerMetricNames.Queue.MaxTraces, TraceBufferSize);
+                    _statsd.Send();
+                }
+
+                if (traces.Count > 0)
+                {
+                    await _api.SendTracesAsync(traces).ConfigureAwait(false);
+
+                    // Returns the recyclable spans to the pool
+                    foreach (var trace in traces)
                     {
-                        if (span is RecyclableSpan rSpan)
+                        foreach (var span in trace)
                         {
-                            RecyclableSpan.Return(rSpan);
+                            if (span is RecyclableSpan rSpan)
+                            {
+                                RecyclableSpan.Return(rSpan);
+                            }
                         }
                     }
                 }
+            }
+            finally
+            {
+                traces.Clear();
+                pool.Return(traces);
             }
         }
 

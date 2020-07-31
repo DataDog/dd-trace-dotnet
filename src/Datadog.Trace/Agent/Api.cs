@@ -8,6 +8,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using Newtonsoft.Json;
 
@@ -51,64 +52,101 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public async Task<bool> SendTracesAsync(Span[][] traces)
+        public async Task<bool> SendTracesAsync(IReadOnlyList<IReadOnlyList<Span>> traces)
         {
             // retry up to 5 times with exponential back-off
             var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
-            var traceIds = GetUniqueTraceIds(traces);
 
-            while (true)
+            var pool = DefaultObjectPool<HashSet<ulong>>.Shared;
+            var traceIds = pool.Get();
+            try
             {
-                var request = _apiRequestFactory.Create(_tracesEndpoint);
+                FillUniqueTraceIds(traceIds, traces);
 
-                // Set additional headers
-                request.AddHeader(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
-                if (_frameworkDescription != null)
+                while (true)
                 {
-                    request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, _frameworkDescription.Name);
-                    request.AddHeader(AgentHttpHeaderNames.LanguageVersion, _frameworkDescription.ProductVersion);
-                }
+                    var request = _apiRequestFactory.Create(_tracesEndpoint);
 
-                if (_containerId != null)
-                {
-                    request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-                }
+                    // Set additional headers
+                    request.AddHeader(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
+                    if (_frameworkDescription != null)
+                    {
+                        request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, _frameworkDescription.Name);
+                        request.AddHeader(AgentHttpHeaderNames.LanguageVersion, _frameworkDescription.ProductVersion);
+                    }
 
-                IApiResponse response;
-                try
-                {
+                    if (_containerId != null)
+                    {
+                        request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
+                    }
+
+                    IApiResponse response;
                     try
                     {
-                        _statsd?.AppendIncrementCount(TracerMetricNames.Api.Requests);
-                        response = await request.PostAsync(traces, _formatterResolver).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        // count the exceptions thrown by the HttpClient,
-                        // not responses with 5xx status codes
-                        // (which cause EnsureSuccessStatusCode() to throw below)
-                        _statsd?.AppendIncrementCount(TracerMetricNames.Api.Errors);
-                        throw;
-                    }
+                        try
+                        {
+                            _statsd?.AppendIncrementCount(TracerMetricNames.Api.Requests);
+                            response = await request.PostAsync(traces, _formatterResolver).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            // count the exceptions thrown by the HttpClient,
+                            // not responses with 5xx status codes
+                            // (which cause EnsureSuccessStatusCode() to throw below)
+                            _statsd?.AppendIncrementCount(TracerMetricNames.Api.Errors);
+                            throw;
+                        }
 
-                    if (_statsd != null)
-                    {
-                        // don't bother creating the tags array if trace metrics are disabled
-                        string[] tags = { $"status:{response.StatusCode}" };
+                        if (_statsd != null)
+                        {
+                            // don't bother creating the tags array if trace metrics are disabled
+                            string[] tags = { $"status:{response.StatusCode}" };
 
-                        // count every response, grouped by status code
-                        _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
+                            // count every response, grouped by status code
+                            _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
+                        }
+
+                        // Attempt a retry if the status code is not SUCCESS
+                        if (response.StatusCode < 200 || response.StatusCode > 300)
+                        {
+                            if (retryCount >= retryLimit)
+                            {
+                                // stop retrying
+                                Log.Error("An error occurred while sending traces to the agent at {Endpoint}", _tracesEndpoint);
+                                return false;
+                            }
+
+                            // retry
+                            await Task.Delay(sleepDuration).ConfigureAwait(false);
+                            retryCount++;
+                            sleepDuration *= 2;
+
+                            continue;
+                        }
                     }
-
-                    // Attempt a retry if the status code is not SUCCESS
-                    if (response.StatusCode < 200 || response.StatusCode > 300)
+                    catch (Exception ex)
                     {
+#if DEBUG
+                        if (ex.InnerException is InvalidOperationException ioe)
+                        {
+                            Log.Error("An error occurred while sending traces to the agent at {Endpoint}\n{Exception}", ex, _tracesEndpoint, ex.ToString());
+                            return false;
+                        }
+#endif
+                        var isSocketException = false;
+                        if (ex.InnerException is SocketException se)
+                        {
+                            isSocketException = true;
+                            Log.Error(se, "Unable to communicate with the trace agent at {Endpoint}", _tracesEndpoint);
+                            TracingProcessManager.TryForceTraceAgentRefresh();
+                        }
+
                         if (retryCount >= retryLimit)
                         {
                             // stop retrying
-                            Log.Error("An error occurred while sending traces to the agent at {Endpoint}", _tracesEndpoint);
+                            Log.Error("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
                             return false;
                         }
 
@@ -117,79 +155,49 @@ namespace Datadog.Trace.Agent
                         retryCount++;
                         sleepDuration *= 2;
 
+                        if (isSocketException)
+                        {
+                            // Ensure we have the most recent port before trying again
+                            TracingProcessManager.TraceAgentMetadata.ForcePortFileRead();
+                        }
+
                         continue;
                     }
+
+                    try
+                    {
+                        if (response.ContentLength > 0 && Tracer.Instance.Sampler != null)
+                        {
+                            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                            Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Traces sent successfully to the Agent at {Endpoint}, but an error occurred deserializing the response.", ex, _tracesEndpoint);
+                    }
+
+                    _statsd?.Send();
+                    return true;
                 }
-                catch (Exception ex)
-                {
-#if DEBUG
-                    if (ex.InnerException is InvalidOperationException ioe)
-                    {
-                        Log.Error("An error occurred while sending traces to the agent at {Endpoint}\n{Exception}", ex, _tracesEndpoint, ex.ToString());
-                        return false;
-                    }
-#endif
-                    var isSocketException = false;
-                    if (ex.InnerException is SocketException se)
-                    {
-                        isSocketException = true;
-                        Log.Error(se, "Unable to communicate with the trace agent at {Endpoint}", _tracesEndpoint);
-                        TracingProcessManager.TryForceTraceAgentRefresh();
-                    }
-
-                    if (retryCount >= retryLimit)
-                    {
-                        // stop retrying
-                        Log.Error("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
-                        return false;
-                    }
-
-                    // retry
-                    await Task.Delay(sleepDuration).ConfigureAwait(false);
-                    retryCount++;
-                    sleepDuration *= 2;
-
-                    if (isSocketException)
-                    {
-                        // Ensure we have the most recent port before trying again
-                        TracingProcessManager.TraceAgentMetadata.ForcePortFileRead();
-                    }
-
-                    continue;
-                }
-
-                try
-                {
-                    if (response.ContentLength > 0 && Tracer.Instance.Sampler != null)
-                    {
-                        var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
-                        Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Traces sent successfully to the Agent at {Endpoint}, but an error occurred deserializing the response.", ex, _tracesEndpoint);
-                }
-
-                _statsd?.Send();
-                return true;
+            }
+            finally
+            {
+                traceIds.Clear();
+                pool.Return(traceIds);
             }
         }
 
-        private static HashSet<ulong> GetUniqueTraceIds(Span[][] traces)
+        private static void FillUniqueTraceIds(HashSet<ulong> tracesIds, IReadOnlyList<IReadOnlyList<Span>> traces)
         {
-            var uniqueTraceIds = new HashSet<ulong>();
-
             foreach (var trace in traces)
             {
                 foreach (var span in trace)
                 {
-                    uniqueTraceIds.Add(span.TraceId);
+                    tracesIds.Add(span.TraceId);
                 }
             }
-
-            return uniqueTraceIds;
         }
 
         internal class ApiResponse

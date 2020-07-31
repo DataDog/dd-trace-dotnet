@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.Agent
 {
@@ -11,8 +13,11 @@ namespace Datadog.Trace.Agent
 
         public AgentWriterBuffer(int maxSize)
         {
+            Capacity = maxSize;
             _items = new T[maxSize];
         }
+
+        public int Capacity { get; private set; }
 
         public bool Push(T item)
         {
@@ -47,6 +52,21 @@ namespace Datadog.Trace.Agent
                 _count = 0;
 
                 return result;
+            }
+        }
+
+        public void Fill(List<T> buffer)
+        {
+            lock (_items)
+            {
+                for (var i = 0; i < _count; i++)
+                {
+                    buffer.Add(_items[i]);
+                }
+
+                // clear buffer
+                Array.Clear(_items, 0, _items.Length);
+                _count = 0;
             }
         }
     }
