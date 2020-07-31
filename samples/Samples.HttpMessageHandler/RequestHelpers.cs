@@ -6,9 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 
-namespace Samples.HttpClientDriver
+namespace Samples.HttpMessageHandler
 {
-    public static class HttpClientHelpers
+    public static class RequestHelpers
     {
         private static readonly Encoding Utf8 = Encoding.UTF8;
 

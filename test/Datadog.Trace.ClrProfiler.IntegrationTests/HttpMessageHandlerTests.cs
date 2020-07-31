@@ -8,10 +8,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class HttpClientTests : TestHelper
+    public class HttpMessageHandlerTests : TestHelper
     {
-        public HttpClientTests(ITestOutputHelper output)
-            : base("HttpClientDriver", output)
+        public HttpMessageHandlerTests(ITestOutputHelper output)
+            : base("HttpMessageHandler", output)
         {
             SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
             SetServiceVersion("1.0.0");
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 34 : 30;
             const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.HttpClientDriver-http-client";
+            const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
