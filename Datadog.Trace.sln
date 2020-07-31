@@ -350,7 +350,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Trace", "benchma
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpClientDriver", "samples\Samples.HttpClientDriver\Samples.HttpClientDriver.csproj", "{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WebClientDriver", "samples\Samples.WebClientDriver\Samples.WebClientDriver.csproj", "{ED2742D3-2AA3-4D62-BB63-CFA43CEACCF3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WebRequest", "samples\Samples.WebRequest\Samples.WebRequest.csproj", "{ED2742D3-2AA3-4D62-BB63-CFA43CEACCF3}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

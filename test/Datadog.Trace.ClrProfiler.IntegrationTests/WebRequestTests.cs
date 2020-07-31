@@ -10,10 +10,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class WebClientTests : TestHelper
+    public class WebRequestTests : TestHelper
     {
-        public WebClientTests(ITestOutputHelper output)
-            : base("WebClientDriver", output)
+        public WebRequestTests(ITestOutputHelper output)
+            : base("WebRequest", output)
         {
             SetServiceVersion("1.0.0");
         }
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 70 : 26; // .NET Framework automatic instrumentation doesn't cover Async / TaskAsync operations
             const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.WebClientDriver-http-client";
+            const string expectedServiceName = "Samples.WebRequest-http-client";
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();

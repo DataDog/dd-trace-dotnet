@@ -6,9 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace;
 
-namespace Samples.WebClientDriver
+namespace Samples.WebRequest
 {
-    public static class WebClientHelpers
+    public static class RequestHelpers
     {
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
@@ -338,7 +338,7 @@ namespace Samples.WebClientDriver
                 using (Tracer.Instance.StartActive("GetResponse"))
                 {
                     // Create two separate request objects since .NET Core asserts only one response per request
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(url);
                     if (tracingDisabled)
                     {
                         request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
@@ -351,7 +351,7 @@ namespace Samples.WebClientDriver
                 using (Tracer.Instance.StartActive("GetResponseAsync"))
                 {
                     // Create two separate request objects since .NET Core asserts only one response per request
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(url);
                     if (tracingDisabled)
                     {
                         request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");

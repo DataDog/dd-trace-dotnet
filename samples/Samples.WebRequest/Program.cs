@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
 
-namespace Samples.WebClientDriver
+namespace Samples.WebRequest
 {
     public static class Program
     {
@@ -34,8 +34,8 @@ namespace Samples.WebClientDriver
                 // send http requests using WebClient
                 Console.WriteLine();
                 Console.WriteLine("Sending request with WebClient.");
-                await WebClientHelpers.SendWebClientRequests(tracingDisabled, Url, RequestContent);
-                await WebClientHelpers.SendWebRequestRequests(tracingDisabled, Url, RequestContent);
+                await RequestHelpers.SendWebClientRequests(tracingDisabled, Url, RequestContent);
+                await RequestHelpers.SendWebRequestRequests(tracingDisabled, Url, RequestContent);
 
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
@@ -53,7 +53,7 @@ namespace Samples.WebClientDriver
             // try up to 5 consecutive ports before giving up
             while (true)
             {
-                Url = $"http://localhost:{port}/Samples.WebClientDriver/";
+                Url = $"http://localhost:{port}/Samples.WebRequest/";
 
                 // seems like we can't reuse a listener if it fails to start,
                 // so create a new listener each time we retry
