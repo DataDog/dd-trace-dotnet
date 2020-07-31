@@ -34,7 +34,8 @@ namespace Samples.WebClientDriver
                 // send http requests using WebClient
                 Console.WriteLine();
                 Console.WriteLine("Sending request with WebClient.");
-                await WebClientHelpers.SendWebClientsRequest(tracingDisabled, Url, RequestContent);
+                await WebClientHelpers.SendWebClientRequests(tracingDisabled, Url, RequestContent);
+                await WebClientHelpers.SendWebRequestRequests(tracingDisabled, Url, RequestContent);
 
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");

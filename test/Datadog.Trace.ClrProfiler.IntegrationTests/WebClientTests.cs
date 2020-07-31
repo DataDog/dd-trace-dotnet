@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 68 : 24; // .NET Framework automatic instrumentation doesn't cover Async / TaskAsync operations
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 70 : 26; // .NET Framework automatic instrumentation doesn't cover Async / TaskAsync operations
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.WebClientDriver-http-client";
 

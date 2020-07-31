@@ -12,7 +12,7 @@ namespace Samples.WebClientDriver
     {
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
-        public static async Task SendWebClientsRequest(bool tracingDisabled, string url, string requestContent)
+        public static async Task SendWebClientRequests(bool tracingDisabled, string url, string requestContent)
         {
             Console.WriteLine($"[WebClient] sending requests to {url}");
 
@@ -25,7 +25,7 @@ namespace Samples.WebClientDriver
                     webClient.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
                 }
 
-                using (Tracer.Instance.StartActive("WebClientRequest"))
+                using (Tracer.Instance.StartActive("WebClient"))
                 {
                     using (Tracer.Instance.StartActive("DownloadData"))
                     {
@@ -325,6 +325,40 @@ namespace Samples.WebClientDriver
                         await webClient.UploadValuesTaskAsync(new Uri(url), "POST", values);
                         Console.WriteLine("Received response for client.UploadValuesTaskAsync(Uri, String, NameValueCollection)");
                     }
+                }
+            }
+        }
+
+        public static async Task SendWebRequestRequests(bool tracingDisabled, string url, string requestContent)
+        {
+            Console.WriteLine($"[WebRequest] sending requests to {url}");
+
+            using (Tracer.Instance.StartActive("WebRequest"))
+            {
+                using (Tracer.Instance.StartActive("GetResponse"))
+                {
+                    // Create two separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                    }
+
+                    request.GetResponse().Close();
+                    Console.WriteLine("Received response for request.GetResponse()");
+                }
+
+                using (Tracer.Instance.StartActive("GetResponseAsync"))
+                {
+                    // Create two separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                    }
+
+                    (await request.GetResponseAsync()).Close();
+                    Console.WriteLine("Received response for request.GetResponseAsync()");
                 }
             }
         }
