@@ -17,9 +17,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "travis";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_REPO_SLUG");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_COMMIT");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_BUILD_DIR");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_REPO_SLUG");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_COMMIT");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_BUILD_DIR");
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_BUILD_ID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_BUILD_NUMBER");
                 PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_BUILD_WEB_URL");
@@ -33,9 +33,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "circleci";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_REPOSITORY_URL");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_SHA1");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_WORKING_DIRECTORY");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_REPOSITORY_URL");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_SHA1");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_WORKING_DIRECTORY");
                 PipelineId = null;
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_BUILD_NUM");
                 PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_BUILD_URL");
@@ -45,9 +45,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "jenkins";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("GIT_URL");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("GIT_COMMIT");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("WORKSPACE");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("GIT_URL");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("GIT_COMMIT");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("WORKSPACE");
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILD_ID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILD_NUMBER");
                 PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("BUILD_URL");
@@ -61,9 +61,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "gitlab";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("CI_REPOSITORY_URL");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_SHA");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("CI_PROJECT_DIR");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("CI_REPOSITORY_URL");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_SHA");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("CI_PROJECT_DIR");
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_ID");
                 PipelineNumber = null;
                 PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_URL");
@@ -77,9 +77,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "appveyor";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_NAME");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_COMMIT");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_NAME");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_COMMIT");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER");
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_BUILD_ID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_BUILD_NUMBER");
                 PipelineUrl = string.Format("https://ci.appveyor.com/project/{0}/builds/{1}", EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_PROJECT_SLUG"), EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_BUILD_ID"));
@@ -93,9 +93,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "azurepipelines";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("BUILD_REPOSITORY_URI");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCEVERSION");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCESDIRECTORY");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("BUILD_REPOSITORY_URI");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCEVERSION");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCESDIRECTORY");
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDNUMBER");
                 PipelineUrl = string.Format("{0}/{1}/_build/results?buildId={2}&_a=summary", EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"), EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMPROJECT"), EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID"));
@@ -109,9 +109,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "bitbucketpipelines";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_GIT_SSH_ORIGIN");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_COMMIT");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_CLONE_DIR");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_GIT_SSH_ORIGIN");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_COMMIT");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_CLONE_DIR");
                 PipelineId = null;
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_BUILD_NUMBER");
                 PipelineUrl = null;
@@ -120,9 +120,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "github";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("GITHUB_SHA");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("GITHUB_WORKSPACE");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_SHA");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_WORKSPACE");
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_NUMBER");
                 PipelineUrl = $"{Repository}/commit/{Commit}/checks";
@@ -132,9 +132,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "teamcity";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_URL");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_NUMBER");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("BUILD_CHECKOUTDIR");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_URL");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_NUMBER");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BUILD_CHECKOUTDIR");
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILD_ID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILD_NUMBER");
                 string serverUrl = EnvironmentHelpers.GetEnvironmentVariable("SERVER_URL");
@@ -151,9 +151,9 @@ namespace Datadog.Trace.Ci
             {
                 IsCI = true;
                 Provider = "buildkite";
-                Repository ??= EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_REPO");
-                Commit ??= EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_COMMIT");
-                SourceRoot ??= EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_CHECKOUT_PATH");
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_REPO");
+                Commit = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_COMMIT");
+                SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_CHECKOUT_PATH");
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_ID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_NUMBER");
                 PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_URL");

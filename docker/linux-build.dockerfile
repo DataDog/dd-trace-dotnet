@@ -1,3 +1,8 @@
+# This is a multistage docker file, used by the linux-build.bash file to create the two images from two different stages
+# The 'tracer-build' stage contains only the result of building the tracer (managed+native) without any other files (from scratch)
+# The 'dotnet-sdk-with-dd-tracer' stage contains the dotnet sdk 3.1 as a base image.
+# Also the dockerfile contains arguments to customize the build process.
+
 ARG BUILD_CONFIGURATION=Release
 ARG WORKSPACE=/workspace
 ARG PUBLISH_FOLDER=/workspace/publish

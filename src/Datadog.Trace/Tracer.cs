@@ -377,7 +377,7 @@ namespace Datadog.Trace
 
         internal Task FlushAsync()
         {
-            return _agentWriter.FlushAsync();
+            return _agentWriter.FlushTracesAsync();
         }
 
         internal void StartDiagnosticObservers()

@@ -8,7 +8,7 @@ namespace Datadog.Trace.Agent
 
         Task<bool> Ping();
 
-        Task FlushAsync();
+        Task FlushTracesAsync();
 
         Task FlushAndCloseAsync();
 
