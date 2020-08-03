@@ -31,15 +31,17 @@ namespace Samples.SqlServer
 
             for (int i = 0; i < numAttempts; i++)
             {
+                var connection = new SqlConnection(connectionString);
+
                 try
                 {
-                    var connection = new SqlConnection(connectionString);
                     connection.Open();
                     return connection;
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
+                    connection.Dispose();
                 }
             }
 
