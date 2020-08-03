@@ -1,5 +1,8 @@
-namespace Datadog.Trace.MSBuild
+namespace Datadog.Trace.Ci
 {
+    /// <summary>
+    /// Span tags for build data model
+    /// </summary>
     internal static class BuildTags
     {
         /// <summary>
@@ -131,75 +134,5 @@ namespace Datadog.Trace.MSBuild
         /// Error stack
         /// </summary>
         public const string ErrorStack = "error.stack";
-
-        /// <summary>
-        /// GIT Repository
-        /// </summary>
-        public const string GitRepository = "git.repository";
-
-        /// <summary>
-        /// GIT Commit hash
-        /// </summary>
-        public const string GitCommit = "git.commit";
-
-        /// <summary>
-        /// GIT Branch name
-        /// </summary>
-        public const string GitBranch = "git.branch";
-
-        /// <summary>
-        /// Build Source root
-        /// </summary>
-        public const string BuildSourceRoot = "build.source_root";
-
-        /// <summary>
-        /// Build InContainer flag
-        /// </summary>
-        public const string BuildInContainer = "build.incontainer";
-
-        /// <summary>
-        /// CI Provider
-        /// </summary>
-        public const string CIProvider = "ci.provider";
-
-        /// <summary>
-        /// CI Build id
-        /// </summary>
-        public const string CIBuildId = "ci.build_id";
-
-        /// <summary>
-        /// CI Build number
-        /// </summary>
-        public const string CIBuildNumber = "ci.build_number";
-
-        /// <summary>
-        /// CI Build url
-        /// </summary>
-        public const string CIBuildUrl = "ci.build_url";
-
-        /// <summary>
-        /// Runtime name
-        /// </summary>
-        public const string RuntimeName = "runtime.name";
-
-        /// <summary>
-        /// Runtime os architecture
-        /// </summary>
-        public const string RuntimeOSArchitecture = "runtime.os_architecture";
-
-        /// <summary>
-        /// Runtime os platform
-        /// </summary>
-        public const string RuntimeOSPlatform = "runtime.os_platform";
-
-        /// <summary>
-        /// Runtime process architecture
-        /// </summary>
-        public const string RuntimeProcessArchitecture = "runtime.process_architecture";
-
-        /// <summary>
-        /// Runtime version
-        /// </summary>
-        public const string RuntimeVersion = "runtime.version";
     }
 }

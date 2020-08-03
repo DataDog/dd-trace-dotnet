@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Microsoft.Build.Framework;
@@ -90,8 +91,8 @@ namespace Datadog.Trace.MSBuild
             _buildSpan.SetTag(BuildTags.BuildWorkingFolder, Environment.CurrentDirectory);
             _buildSpan.SetTag(BuildTags.BuildStartMessage, e.Message);
 
-            _buildSpan.SetTag(BuildTags.RuntimeOSArchitecture, Environment.Is64BitOperatingSystem ? "x64" : "x86");
-            _buildSpan.SetTag(BuildTags.RuntimeProcessArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
+            _buildSpan.SetTag(CommonTags.RuntimeOSArchitecture, Environment.Is64BitOperatingSystem ? "x64" : "x86");
+            _buildSpan.SetTag(CommonTags.RuntimeProcessArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
 
             CIEnvironmentValues.DecorateSpan(_buildSpan);
         }
