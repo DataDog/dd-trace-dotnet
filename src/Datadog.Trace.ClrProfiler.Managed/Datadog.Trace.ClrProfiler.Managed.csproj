@@ -52,6 +52,6 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
 
   <ItemGroup>
     <!-- Include Datadog.Trace.Build assembly as a reference for publishing purposes -->
-    <ProjectReference Include="..\Datadog.Trace.Build\Datadog.Trace.Build.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj" PrivateAssets="all" />
   </ItemGroup>
 </Project>

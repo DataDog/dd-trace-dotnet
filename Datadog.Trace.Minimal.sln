@@ -52,7 +52,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNet", "src
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Datadog.Trace.Ci.Shared", "src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.shproj", "{A1D7653A-C409-414A-B9B0-7879953EBCDD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Build", "src\Datadog.Trace.Build\Datadog.Trace.Build.csproj", "{ADE25B77-2608-4E3E-96B0-6144A6466F84}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.MSBuild", "src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj", "{ADE25B77-2608-4E3E-96B0-6144A6466F84}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

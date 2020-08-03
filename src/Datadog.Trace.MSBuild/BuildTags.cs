@@ -1,4 +1,4 @@
-namespace Datadog.Trace.Build
+namespace Datadog.Trace.MSBuild
 {
     internal static class BuildTags
     {

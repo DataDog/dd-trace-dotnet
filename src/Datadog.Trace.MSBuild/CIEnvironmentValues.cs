@@ -4,7 +4,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
-namespace Datadog.Trace.Build
+namespace Datadog.Trace.MSBuild
 {
     internal static class CIEnvironmentValues
     {

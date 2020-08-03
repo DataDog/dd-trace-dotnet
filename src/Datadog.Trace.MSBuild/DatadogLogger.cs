@@ -7,7 +7,7 @@ using Datadog.Trace.Logging;
 using Microsoft.Build.Framework;
 using Newtonsoft.Json;
 
-namespace Datadog.Trace.Build
+namespace Datadog.Trace.MSBuild
 {
     /// <summary>
     /// Build logger

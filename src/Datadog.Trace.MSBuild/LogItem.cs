@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Datadog.Trace.Build
+namespace Datadog.Trace.MSBuild
 {
     internal struct LogItem
     {
