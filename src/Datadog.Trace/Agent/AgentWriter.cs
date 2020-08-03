@@ -77,7 +77,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private async Task FlushTracesAsync()
+        public async Task FlushTracesAsync()
         {
             var traces = _tracesBuffer.Pop();
 

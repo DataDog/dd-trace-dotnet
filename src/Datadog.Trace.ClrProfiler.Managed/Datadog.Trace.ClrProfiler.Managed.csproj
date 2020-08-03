@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler</RootNamespace>
@@ -47,5 +47,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
   <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
     <PackageReference Include="Sigil-vNext" Version="4.8.41" />
   </ItemGroup>
+
+  <Import Project="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
 
 </Project>

@@ -50,7 +50,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Core.Tools", "tools
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNet", "src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj", "{B34EDBC7-C5FB-409D-8472-BC7469D6F2BD}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Datadog.Trace.Ci.Shared", "src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.shproj", "{A1D7653A-C409-414A-B9B0-7879953EBCDD}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}*SharedItemsImports = 5
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{a1d7653a-c409-414a-b9b0-7879953ebcdd}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
@@ -217,6 +223,7 @@ Global
 		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{3BEACB10-89FE-4F74-8022-1A52F223CE82} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{B34EDBC7-C5FB-409D-8472-BC7469D6F2BD} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{A1D7653A-C409-414A-B9B0-7879953EBCDD} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
