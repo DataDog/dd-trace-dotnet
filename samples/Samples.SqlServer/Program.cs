@@ -25,12 +25,28 @@ namespace Samples.SqlServer
 
         private static SqlConnection OpenConnection()
         {
+            int numAttempts = 3;
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-                                   @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=30";
+@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=30";
 
-            var connection = new SqlConnection(connectionString);
-            connection.Open();
-            return connection;
+            for (int i = 0; i < numAttempts; i++)
+            {
+                SqlConnection connection = null;
+
+                try
+                {
+                    connection = new SqlConnection(connectionString);
+                    connection.Open();
+                    return connection;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    connection?.Dispose();
+                }
+            }
+
+            throw new Exception($"Unable to open connection to connection string {connectionString} after {numAttempts} attempts");
         }
     }
 }
