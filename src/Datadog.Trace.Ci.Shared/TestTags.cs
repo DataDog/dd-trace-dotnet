@@ -16,16 +16,6 @@ namespace Datadog.Trace.Ci
         public const string Name = "test.name";
 
         /// <summary>
-        /// Test fqn
-        /// </summary>
-        public const string Fqn = "test.fqn";
-
-        /// <summary>
-        /// Test fqn
-        /// </summary>
-        public const string Id = "test.id";
-
-        /// <summary>
         /// Test type
         /// </summary>
         public const string Type = "test.type";
@@ -39,11 +29,6 @@ namespace Datadog.Trace.Ci
         /// Test type benchmark
         /// </summary>
         public const string TypeBenchmark = "benchmark";
-
-        /// <summary>
-        /// Test fqn
-        /// </summary>
-        public const string ProcessId = "test.processId";
 
         /// <summary>
         /// Test framework
@@ -88,12 +73,12 @@ namespace Datadog.Trace.Ci
         /// <summary>
         /// GIT Repository
         /// </summary>
-        public const string GitRepository = "git.repository";
+        public const string GitRepository = "git.repository_url";
 
         /// <summary>
         /// GIT Commit hash
         /// </summary>
-        public const string GitCommit = "git.commit";
+        public const string GitCommit = "git.commit_sha";
 
         /// <summary>
         /// GIT Branch name
@@ -106,29 +91,29 @@ namespace Datadog.Trace.Ci
         public const string BuildSourceRoot = "build.source_root";
 
         /// <summary>
-        /// Build InContainer flag
-        /// </summary>
-        public const string BuildInContainer = "build.incontainer";
-
-        /// <summary>
         /// CI Provider
         /// </summary>
-        public const string CIProvider = "ci.provider";
+        public const string CIProvider = "ci.provider.name";
 
         /// <summary>
         /// CI Pipeline id
         /// </summary>
-        public const string CIPipelineId = "pipeline.id";
+        public const string CIPipelineId = "ci.pipeline.id";
 
         /// <summary>
         /// CI Pipeline number
         /// </summary>
-        public const string CIPipelineNumber = "pipeline.number";
+        public const string CIPipelineNumber = "ci.pipeline.number";
 
         /// <summary>
         /// CI Pipeline url
         /// </summary>
-        public const string CIPipelineUrl = "pipeline.url";
+        public const string CIPipelineUrl = "ci.pipeline.url";
+
+        /// <summary>
+        /// CI Job url
+        /// </summary>
+        public const string CIJobUrl = "ci.job.url";
 
         /// <summary>
         /// Runtime name

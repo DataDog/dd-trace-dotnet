@@ -23,6 +23,7 @@ namespace Datadog.Trace.Ci
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_BUILD_ID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_BUILD_NUMBER");
                 PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_BUILD_WEB_URL");
+                JobUrl = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_JOB_WEB_URL");
                 Branch = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_PULL_REQUEST_BRANCH");
                 if (string.IsNullOrWhiteSpace(Branch))
                 {
@@ -51,6 +52,7 @@ namespace Datadog.Trace.Ci
                 PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILD_ID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILD_NUMBER");
                 PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("BUILD_URL");
+                JobUrl = EnvironmentHelpers.GetEnvironmentVariable("JOB_URL");
                 Branch = EnvironmentHelpers.GetEnvironmentVariable("GIT_BRANCH");
                 if (Branch?.IndexOf("origin/", StringComparison.Ordinal) == 0)
                 {
@@ -64,9 +66,10 @@ namespace Datadog.Trace.Ci
                 Repository = EnvironmentHelpers.GetEnvironmentVariable("CI_REPOSITORY_URL");
                 Commit = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_SHA");
                 SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("CI_PROJECT_DIR");
-                PipelineId = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_ID");
-                PipelineNumber = null;
-                PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_URL");
+                PipelineId = EnvironmentHelpers.GetEnvironmentVariable("CI_PIPELINE_ID");
+                PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("CI_PIPELINE_IID");
+                PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("CI_PIPELINE_URL");
+                JobUrl = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_URL");
                 Branch = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_BRANCH");
                 if (string.IsNullOrWhiteSpace(Branch))
                 {
@@ -112,7 +115,7 @@ namespace Datadog.Trace.Ci
                 Repository = EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_GIT_SSH_ORIGIN");
                 Commit = EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_COMMIT");
                 SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_CLONE_DIR");
-                PipelineId = null;
+                PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_PIPELINE_UUID");
                 PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BITBUCKET_BUILD_NUMBER");
                 PipelineUrl = null;
             }
@@ -196,6 +199,8 @@ namespace Datadog.Trace.Ci
 
         public static string PipelineUrl { get; }
 
+        public static string JobUrl { get; }
+
         public static void DecorateSpan(Span span)
         {
             if (span == null || !IsCI)
@@ -207,6 +212,7 @@ namespace Datadog.Trace.Ci
             span.SetTag(TestTags.CIPipelineId, PipelineId);
             span.SetTag(TestTags.CIPipelineNumber, PipelineNumber);
             span.SetTag(TestTags.CIPipelineUrl, PipelineUrl);
+            span.SetTag(TestTags.CIJobUrl, JobUrl);
 
             span.SetTag(TestTags.GitRepository, Repository);
             span.SetTag(TestTags.GitCommit, Commit);

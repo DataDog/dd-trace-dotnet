@@ -338,7 +338,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             Scope scope = null;
             try
             {
-                string uniqueId = null;
                 string testSuite = null;
                 string testName = null;
                 string skipReason = null;
@@ -382,8 +381,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                             }
                         }
                     }
-
-                    testCase.TryGetPropertyValue<string>("UniqueID", out uniqueId);
                 }
 
                 AssemblyName testInvokerAssemblyName = testSdk.GetType().Assembly.GetName();
@@ -434,11 +431,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 span.SetTag(TestTags.RuntimeOSPlatform, _runtimeDescription.OSPlatform);
                 span.SetTag(TestTags.RuntimeProcessArchitecture, _runtimeDescription.ProcessArchitecture);
                 span.SetTag(TestTags.RuntimeVersion, _runtimeDescription.ProductVersion);
-
-                if (uniqueId != null)
-                {
-                    span.SetTag(TestTags.Id, uniqueId);
-                }
 
                 if (testArguments != null)
                 {
