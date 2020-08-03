@@ -4,6 +4,7 @@ using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
