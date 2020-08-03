@@ -8,7 +8,7 @@ namespace Datadog.Trace.Ci
         /// <summary>
         /// Build operation name
         /// </summary>
-        public const string BuildOperationName = "build";
+        public const string BuildOperationName = "msbuild.build";
 
         /// <summary>
         /// Build name
