@@ -350,6 +350,7 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}*SharedItemsImports = 5
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{a1d7653a-c409-414a-b9b0-7879953ebcdd}*SharedItemsImports = 13
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{e02b141f-e7c0-46cf-b9f6-39427218e714}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
