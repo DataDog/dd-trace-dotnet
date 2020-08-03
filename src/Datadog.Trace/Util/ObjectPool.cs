@@ -62,23 +62,19 @@ namespace Datadog.Trace.Util
                 return;
             }
 
-            if (_fastItem is null)
-            {
-                _allocator.Clear(value);
-
-                // we don't care if in a multithread scenario if we replace a reference
-                _fastItem = value;
-                return;
-            }
-
-            if (_count >= _maxItems)
-            {
-                return;
-            }
-
             _allocator.Clear(value);
-            _stack.Push(value);
-            Interlocked.Increment(ref _count);
+
+            var currentItem = _fastItem;
+            if (currentItem == null && Interlocked.CompareExchange(ref _fastItem, value, null) == null)
+            {
+                return;
+            }
+
+            if (_count < _maxItems)
+            {
+                _stack.Push(value);
+                Interlocked.Increment(ref _count);
+            }
         }
 
         private static void DropTimerMethod(object state)
