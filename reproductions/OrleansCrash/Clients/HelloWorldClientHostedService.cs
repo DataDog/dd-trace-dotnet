@@ -30,6 +30,11 @@ namespace OrleansCrash.Clients
 
         public Grains.IHello GimmeTheGrain()
         {
+            while (!_client.IsInitialized)
+            {
+                Thread.Sleep(500);
+            }
+
             return _client.GetGrain<Grains.IHello>(0);
         }
     }

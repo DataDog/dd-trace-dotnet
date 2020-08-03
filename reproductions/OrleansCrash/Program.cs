@@ -37,10 +37,6 @@ namespace OrleansCrash
                 var clientTask = clientHost.RunAsync(tokenSource.Token);
                 orleansTasks.Add(clientTask);
 
-                Console.WriteLine("Waiting a little before grabbing a service.");
-                // TODO: Make this based on a ping or something
-                Task.Delay(4_000, tokenSource.Token).Wait(); // Give the cluster time to start
-
                 Console.WriteLine("Grabbing an orleans singleton service.");
                 var helloWorldClient = clientHost.Services.GetService<IHelloWorldHostedService>();
                 var helloGrain = helloWorldClient.GimmeTheGrain();
