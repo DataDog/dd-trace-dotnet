@@ -95,6 +95,11 @@
               Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.BenchmarkDotNet.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_System.Threading.Tasks.Extensions.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Threading.Tasks.Extensions.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>
