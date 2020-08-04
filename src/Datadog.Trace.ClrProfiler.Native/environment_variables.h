@@ -91,6 +91,10 @@ const WSTRING azure_app_services_app_pool_id = "APP_POOL_ID"_W;
 const WSTRING azure_app_services_cli_telemetry_profile_value =
     "DOTNET_CLI_TELEMETRY_PROFILE"_W;
 
+// Determine whether to instrument calls into netstandard.dll.
+// Default to false for now to avoid the unexpected overhead of additional spans.
+const WSTRING netstandard_enabled = "DD_TRACE_NETSTANDARD_ENABLED"_W;
+
 }  // namespace environment
 }  // namespace trace
 
