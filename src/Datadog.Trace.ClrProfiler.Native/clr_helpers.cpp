@@ -267,12 +267,12 @@ mdAssemblyRef FindAssemblyRef(
 
 std::vector<Integration> FilterIntegrationsByName(
     const std::vector<Integration>& integrations,
-    const std::vector<WSTRING>& integration_names) {
+    const std::vector<WSTRING>& disabled_integration_names) {
   std::vector<Integration> enabled;
 
   for (auto& i : integrations) {
     bool disabled = false;
-    for (auto& disabled_integration : integration_names) {
+    for (auto& disabled_integration : disabled_integration_names) {
       if (i.integration_name == disabled_integration) {
         // this integration is disabled, skip it
         disabled = true;
