@@ -51,5 +51,10 @@ namespace Datadog.Trace
         /// The span type for a Benchmark integration.
         /// </summary>
         public const string Benchmark = "benchmark";
+
+        /// <summary>
+        /// The span type for msbuild integration.
+        /// </summary>
+        public const string Build = "build";
     }
 }

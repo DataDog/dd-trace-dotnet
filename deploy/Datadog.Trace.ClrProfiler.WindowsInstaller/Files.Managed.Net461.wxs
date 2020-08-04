@@ -26,6 +26,11 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.MSBuild.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.MSBuild.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_Newtonsoft.Json.dll"
               Source="$(var.TracerHomeDirectory)\net461\Newtonsoft.Json.dll"
               KeyPath="yes" Checksum="yes"/>

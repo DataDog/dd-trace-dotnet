@@ -50,4 +50,8 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
 
   <Import Project="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
 
+  <ItemGroup>
+    <!-- Include Datadog.Trace.Build assembly as a reference for publishing purposes -->
+    <ProjectReference Include="..\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj" PrivateAssets="all" />
+  </ItemGroup>
 </Project>
