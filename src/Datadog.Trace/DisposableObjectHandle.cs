@@ -14,6 +14,8 @@ namespace Datadog.Trace
     {
         private static readonly ISponsor LifeTimeSponsor = new ClientSponsor();
 
+        private bool _disposed;
+
         public DisposableObjectHandle(object o)
             : base(o)
         {
@@ -26,12 +28,24 @@ namespace Datadog.Trace
             return lease;
         }
 
-        public void Dispose()
+        public void Dispose() => Dispose(true);
+
+        private void Dispose(bool disposing)
         {
-            if (GetLifetimeService() is ILease lease)
+            if (_disposed)
             {
-                lease.Unregister(LifeTimeSponsor);
+                return;
             }
+
+            if (disposing)
+            {
+                if (GetLifetimeService() is ILease lease)
+                {
+                    lease.Unregister(LifeTimeSponsor);
+                }
+            }
+
+            _disposed = true;
         }
     }
 }
