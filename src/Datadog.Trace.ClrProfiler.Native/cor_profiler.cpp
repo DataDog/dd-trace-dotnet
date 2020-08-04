@@ -131,16 +131,16 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       GetEnvironmentValues(environment::disabled_integrations);
 
   // remove disabled integrations
-  integrations_ =
+  const std::vector<Integration> integrations =
       FilterIntegrationsByName(all_integrations, disabled_integration_names);
 
   // check if there are any enabled integrations left
-  if (integrations_.empty()) {
+  if (integrations.empty()) {
     Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: no enabled integrations found.");
     return E_FAIL;
   }
 
-  flatten_integrations_ = FlattenIntegrations(integrations_);
+  flatten_integrations_ = FlattenIntegrations(integrations);
 
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
