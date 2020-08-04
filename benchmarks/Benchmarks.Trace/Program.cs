@@ -1,5 +1,3 @@
-using System;
-using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 
 namespace Benchmarks.Trace
@@ -8,9 +6,7 @@ namespace Benchmarks.Trace
     {
         private static void Main(string[] args)
         {
-            Summary summary;
-            summary = BenchmarkRunner.Run<SpanBenchmark>();
-            summary = BenchmarkRunner.Run<TracerBenchmark>();
+            BenchmarkRunner.Run<SpanBenchmark>();
         }
     }
 }

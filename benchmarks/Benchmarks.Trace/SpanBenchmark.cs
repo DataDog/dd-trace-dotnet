@@ -15,7 +15,12 @@ namespace Benchmarks.Trace
     [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     public class SpanBenchmark
     {
-        private static Tracer _tracer = Tracer.Instance;
+        private static Tracer _tracer;
+
+        static SpanBenchmark()
+        {
+            _tracer = new Tracer(null, new DummyAgentWriter(), null, null, null);
+        }
 
         /// <summary>
         /// Starts and finishes span benchmark
