@@ -333,7 +333,8 @@ std::vector<Integration> FilterIntegrationsByName(
 
 // FlattenIntegrations flattens integrations to per method structures
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations);
+    const std::vector<Integration>& integrations,
+    const std::vector<WSTRING>& excluded_assembly_names);
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module

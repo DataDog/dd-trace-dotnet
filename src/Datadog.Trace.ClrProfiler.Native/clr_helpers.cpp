@@ -289,12 +289,24 @@ std::vector<Integration> FilterIntegrationsByName(
 }
 
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations) {
+    const std::vector<Integration>& integrations,
+    const std::vector<WSTRING>& excluded_assembly_names) {
   std::vector<IntegrationMethod> flattened;
 
   for (auto& i : integrations) {
     for (auto& mr : i.method_replacements) {
-      flattened.emplace_back(i.integration_name, mr);
+      bool assembly_excluded = false;
+
+      for (auto& excluded_assembly_name : excluded_assembly_names) {
+        if (mr.target_method.assembly.name == excluded_assembly_name) {
+          assembly_excluded = true;
+          break;
+        }
+      }
+
+      if (!assembly_excluded) {
+        flattened.emplace_back(i.integration_name, mr);
+      }
     }
   }
 
