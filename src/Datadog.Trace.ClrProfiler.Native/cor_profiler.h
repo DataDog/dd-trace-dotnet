@@ -21,6 +21,7 @@ class CorProfiler : public CorProfilerBase {
   bool is_attached_ = false;
   RuntimeInformation runtime_information_;
   std::vector<Integration> integrations_;
+  std::vector<IntegrationMethod> flatten_integrations_;
 
   // Startup helper variables
   bool first_jit_compilation_completed = false;

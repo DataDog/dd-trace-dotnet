@@ -140,6 +140,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  flatten_integrations_ = FlattenIntegrations(integrations_);
+
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
@@ -243,22 +245,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
       IID_IMetaDataAssemblyImport);
   const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
-  // Configure a version string to compare with the profiler version
-  WSTRINGSTREAM ws;
-  ws << ToWSTRING(assembly_metadata.version.major)
-      << '.'_W
-      << ToWSTRING(assembly_metadata.version.minor)
-      << '.'_W
-      << ToWSTRING(assembly_metadata.version.build);
-
   if (debug_logging_enabled) {
-    Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name, " AssemblyVersion=", ws.str(), ".", assembly_metadata.version.revision);
+    Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name, " AssemblyVersion=", assembly_metadata.version.str());
   }
 
   if (assembly_info.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+    // Configure a version string to compare with the profiler version
+    WSTRINGSTREAM ws;
+    ws << ToWSTRING(assembly_metadata.version.major) << '.'_W
+       << ToWSTRING(assembly_metadata.version.minor) << '.'_W
+       << ToWSTRING(assembly_metadata.version.build);
+
+    auto assembly_version = ws.str();
+
     // Check that Major.Minor.Build match the profiler version
-    if (ws.str() == ToWSTRING(PROFILER_VERSION)) {
-      Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " matched profiler version v", PROFILER_VERSION);
+    if (assembly_version == ToWSTRING(PROFILER_VERSION)) {
+      Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", assembly_version, " matched profiler version v", PROFILER_VERSION);
       managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
 
       if (runtime_information_.is_desktop() && corlib_module_loaded) {
@@ -273,7 +275,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
       }
     }
     else {
-      Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " did not match profiler version v", PROFILER_VERSION);
+      Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", assembly_version, " did not match profiler version v", PROFILER_VERSION);
     }
   }
 
@@ -356,10 +358,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   std::vector<IntegrationMethod> filtered_integrations =
-      FlattenIntegrations(integrations_);
+      FilterIntegrationsByCaller(flatten_integrations_, module_info.assembly);
 
-  filtered_integrations =
-      FilterIntegrationsByCaller(filtered_integrations, module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Debug("ModuleLoadFinished skipping module (filtered by caller): ",
