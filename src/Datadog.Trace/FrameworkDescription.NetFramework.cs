@@ -52,6 +52,12 @@ namespace Datadog.Trace
                 productVersion = GetVersionFromAssemblyAttributes();
             }
 
+            if (productVersion == null)
+            {
+                // at this point, everything else has failed (this is probably the same as [AssemblyFileVersion] above)
+                productVersion = Environment.Version.ToString();
+            }
+
             return productVersion;
         }
     }
