@@ -99,8 +99,8 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
         {},
         {}}}};
   Integration i3 = {L"integration-3", {{{}, {}, {}}}};
-  auto all = FlattenIntegrations({i1, i2, i3});
-  auto expected = FlattenIntegrations({i1, i3});
+  auto all = FlattenIntegrations({i1, i2, i3}, {});
+  auto expected = FlattenIntegrations({i1, i3}, {});
   ModuleID manifest_module_id{};
   AppDomainID app_domain_id{};
   trace::AssemblyInfo assembly_info = { 1, L"Assembly.One", manifest_module_id,  app_domain_id, L"AppDomain1"};
@@ -128,8 +128,8 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
   Integration i3 = {
       L"integration-3",
       {{{}, {L"System.Runtime", L"", L"", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_}, {}}}};
-  auto all = FlattenIntegrations({i1, i2, i3});
-  auto expected = FlattenIntegrations({i1, i3});
+  auto all = FlattenIntegrations({i1, i2, i3}, {});
+  auto expected = FlattenIntegrations({i1, i3}, {});
   auto actual = FilterIntegrationsByTarget(all, assembly_import_);
   EXPECT_EQ(actual, expected);
 }
@@ -154,7 +154,7 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
                               empty_sig_type_};
 
   Integration i1 = {L"integration-1", {{{}, included, {}}, {{}, excluded, {}}}};
-  auto all = FlattenIntegrations({i1});
+  auto all = FlattenIntegrations({i1}, {});
   auto filtered = FilterIntegrationsByTarget(all, assembly_import_);
   bool foundExclusion = false;
   for (auto& item : filtered) {
