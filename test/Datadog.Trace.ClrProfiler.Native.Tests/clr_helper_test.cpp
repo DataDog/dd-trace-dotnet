@@ -162,7 +162,7 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTargetAssembly) {
   Integration excluded_integration = {L"integration-3", {excluded_method}};
   auto all = FlattenIntegrations({mixed_integration, included_integration, excluded_integration});
   auto expected = FlattenIntegrations({{L"integration-1", {included_method}}, included_integration});
-  auto actual = FilterIntegrationsByTargetAssembly(all, {L"Samples.Excluded"});
+  auto actual = FilterIntegrationsByTargetAssemblyName(all, {L"Samples.Excluded"});
   EXPECT_EQ(actual, expected);
 }
 

@@ -150,7 +150,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // users can opt-in to the additional instrumentation by setting environment
   // variable DD_TRACE_NETSTANDARD_ENABLED
   if (netstandard_enabled != "1"_W && netstandard_enabled != "true"_W) {
-    integration_methods_ = FilterIntegrationsByTargetAssembly(
+    integration_methods_ = FilterIntegrationsByTargetAssemblyName(
         integration_methods_, std::vector<WSTRING>{"netstandard"_W});
   }
 

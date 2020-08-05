@@ -366,7 +366,7 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
   return enabled;
 }
 
-std::vector<IntegrationMethod> FilterIntegrationsByTargetAssembly(
+std::vector<IntegrationMethod> FilterIntegrationsByTargetAssemblyName(
     const std::vector<IntegrationMethod>& integrations,
     const std::vector<WSTRING>& excluded_assembly_names) {
   std::vector<IntegrationMethod> methods;

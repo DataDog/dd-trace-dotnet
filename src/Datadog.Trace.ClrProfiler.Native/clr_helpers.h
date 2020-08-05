@@ -349,7 +349,7 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
 
 // FilterIntegrationsByTargetAssembly removes any integrations which target any
 // of the specified assemblies
-std::vector<IntegrationMethod> FilterIntegrationsByTargetAssembly(
+std::vector<IntegrationMethod> FilterIntegrationsByTargetAssemblyName(
     const std::vector<IntegrationMethod>& integrations,
     const std::vector<WSTRING>& excluded_assembly_names);
 
