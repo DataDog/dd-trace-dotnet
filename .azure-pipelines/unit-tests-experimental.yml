@@ -1,6 +1,7 @@
 trigger:
   branches:
     include:
+      - master
       - '*'
     exclude:
       - refs/pull/*/head
