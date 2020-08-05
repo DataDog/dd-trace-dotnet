@@ -289,24 +289,12 @@ std::vector<Integration> FilterIntegrationsByName(
 }
 
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations,
-    const std::vector<WSTRING>& excluded_assembly_names) {
+    const std::vector<Integration>& integrations) {
   std::vector<IntegrationMethod> flattened;
 
   for (auto& i : integrations) {
     for (auto& mr : i.method_replacements) {
-      bool assembly_excluded = false;
-
-      for (auto& excluded_assembly_name : excluded_assembly_names) {
-        if (mr.target_method.assembly.name == excluded_assembly_name) {
-          assembly_excluded = true;
-          break;
-        }
-      }
-
-      if (!assembly_excluded) {
-        flattened.emplace_back(i.integration_name, mr);
-      }
+      flattened.emplace_back(i.integration_name, mr);
     }
   }
 
@@ -376,6 +364,29 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
   }
 
   return enabled;
+}
+
+std::vector<IntegrationMethod> FilterIntegrationsByTargetAssembly(
+    const std::vector<IntegrationMethod>& integrations,
+    const std::vector<WSTRING>& excluded_assembly_names) {
+  std::vector<IntegrationMethod> methods;
+
+  for (auto& i : integrations) {
+    bool assembly_excluded = false;
+
+    for (auto& excluded_assembly_name : excluded_assembly_names) {
+      if (i.replacement.target_method.assembly.name == excluded_assembly_name) {
+        assembly_excluded = true;
+        break;
+      }
+    }
+
+    if (!assembly_excluded) {
+      methods.emplace_back(i);
+    }
+  }
+
+  return methods;
 }
 
 mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,

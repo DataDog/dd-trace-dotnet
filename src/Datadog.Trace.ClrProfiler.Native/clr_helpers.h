@@ -333,8 +333,7 @@ std::vector<Integration> FilterIntegrationsByName(
 
 // FlattenIntegrations flattens integrations to per method structures
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations,
-    const std::vector<WSTRING>& excluded_assembly_names);
+    const std::vector<Integration>& integrations);
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
@@ -347,6 +346,12 @@ std::vector<IntegrationMethod> FilterIntegrationsByCaller(
 std::vector<IntegrationMethod> FilterIntegrationsByTarget(
     const std::vector<IntegrationMethod>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import);
+
+// FilterIntegrationsByTargetAssembly removes any integrations which target any
+// of the specified assemblies
+std::vector<IntegrationMethod> FilterIntegrationsByTargetAssembly(
+    const std::vector<IntegrationMethod>& integrations,
+    const std::vector<WSTRING>& excluded_assembly_names);
 
 mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
                               const mdToken& token,

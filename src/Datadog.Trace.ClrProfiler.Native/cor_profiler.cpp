@@ -140,16 +140,19 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  std::vector<WSTRING> excluded_assembly_names;
+  flatten_integrations_ = FlattenIntegrations(integrations);
+
   const WSTRING netstandard_enabled =
       GetEnvironmentValue(environment::netstandard_enabled);
 
+  // temporarily skip the calls into netstandard.dll that were added in
+  // https://github.com/DataDog/dd-trace-dotnet/pull/753.
+  // users can opt-in to the additional instrumentation by setting environment
+  // variable DD_TRACE_NETSTANDARD_ENABLED
   if (netstandard_enabled != "1"_W && netstandard_enabled != "true"_W) {
-    excluded_assembly_names.push_back("netstandard"_W);
+    flatten_integrations_ = FilterIntegrationsByTargetAssembly(
+        flatten_integrations_, std::vector<WSTRING>{"netstandard"_W});
   }
-
-  flatten_integrations_ =
-      FlattenIntegrations(integrations, excluded_assembly_names);
 
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
