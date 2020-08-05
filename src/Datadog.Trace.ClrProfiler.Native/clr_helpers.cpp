@@ -302,11 +302,11 @@ std::vector<IntegrationMethod> FlattenIntegrations(
 }
 
 std::vector<IntegrationMethod> FilterIntegrationsByCaller(
-    const std::vector<IntegrationMethod>& integrations,
+    const std::vector<IntegrationMethod>& integration_methods,
     const AssemblyInfo assembly) {
   std::vector<IntegrationMethod> enabled;
 
-  for (auto& i : integrations) {
+  for (auto& i : integration_methods) {
     if (i.replacement.caller_method.assembly.name.empty() ||
         i.replacement.caller_method.assembly.name == assembly.name) {
       enabled.push_back(i);
@@ -338,13 +338,13 @@ bool AssemblyMeetsIntegrationRequirements(
 }
 
 std::vector<IntegrationMethod> FilterIntegrationsByTarget(
-    const std::vector<IntegrationMethod>& integrations,
+    const std::vector<IntegrationMethod>& integration_methods,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   std::vector<IntegrationMethod> enabled;
 
   const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
-  for (auto& i : integrations) {
+  for (auto& i : integration_methods) {
     bool found = false;
     if (AssemblyMeetsIntegrationRequirements(assembly_metadata,
                                              i.replacement)) {
@@ -367,11 +367,11 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
 }
 
 std::vector<IntegrationMethod> FilterIntegrationsByTargetAssemblyName(
-    const std::vector<IntegrationMethod>& integrations,
+    const std::vector<IntegrationMethod>& integration_methods,
     const std::vector<WSTRING>& excluded_assembly_names) {
   std::vector<IntegrationMethod> methods;
 
-  for (auto& i : integrations) {
+  for (auto& i : integration_methods) {
     bool assembly_excluded = false;
 
     for (auto& excluded_assembly_name : excluded_assembly_names) {
