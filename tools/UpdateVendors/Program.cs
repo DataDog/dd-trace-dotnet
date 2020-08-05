@@ -92,7 +92,7 @@ namespace UpdateVendors
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
                             builder.ToString(),
-                            @"public(\s+((abstract|sealed|static)\s+)?((partial|readonly)\s+)?(class|struct|interface|enum|delegate))",
+                            @"public(\s+((abstract|sealed|static)\s+)?(partial\s+)?(class|readonly\s+struct|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
             }
@@ -190,6 +190,8 @@ namespace UpdateVendors
         {
             var fileContent = File.ReadAllText(filePath);
             fileContent = transform(fileContent);
+            // Normalize text to use CRLF line endings so we have deterministic results
+            fileContent = fileContent.Replace("\r\n", "\n").Replace("\n", "\r\n");
             File.WriteAllText(
                 filePath,
                 fileContent,
