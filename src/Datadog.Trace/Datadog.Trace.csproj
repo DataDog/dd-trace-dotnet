@@ -46,9 +46,12 @@
     <DefineConstants>$(DefineConstants);ASYNCLOCAL;HASHTABLE</DefineConstants>
   </PropertyGroup>
 
+  <!-- Remove System.Collections.NonGeneric. This was defined in Serilog 2.8.0 but it is unnecessary -->
+  <!--
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
   </ItemGroup>
+  -->
 
   <!--Serilog.Sinks.File-->
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
