@@ -5,8 +5,8 @@ using System.IO;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
-using Newtonsoft.Json;
 
 namespace Datadog.Trace.MSBuild
 {
