@@ -347,7 +347,7 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
     const std::vector<IntegrationMethod>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
-// FilterIntegrationsByTargetAssembly removes any integrations which target any
+// FilterIntegrationsByTargetAssemblyName removes any integrations which target any
 // of the specified assemblies
 std::vector<IntegrationMethod> FilterIntegrationsByTargetAssemblyName(
     const std::vector<IntegrationMethod>& integrations,
