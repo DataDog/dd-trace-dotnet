@@ -151,7 +151,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // variable DD_TRACE_NETSTANDARD_ENABLED
   if (netstandard_enabled != "1"_W && netstandard_enabled != "true"_W) {
     integration_methods_ = FilterIntegrationsByTargetAssemblyName(
-        integration_methods_, std::vector<WSTRING>{"netstandard"_W});
+        integration_methods_, {"netstandard"_W});
   }
 
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
