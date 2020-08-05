@@ -134,6 +134,38 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
   EXPECT_EQ(actual, expected);
 }
 
+TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTargetAssembly) {
+  MethodReplacement included_method = {{},
+                      {L"Samples.Included",
+                       L"SomeType",
+                       L"SomeMethod",
+                       L"ReplaceTargetMethod",
+                       min_ver_,
+                       max_ver_,
+                       {},
+                       empty_sig_type_},
+                      {}};
+
+  MethodReplacement excluded_method = {{},
+                      {L"Samples.Excluded",
+                       L"SomeType",
+                       L"SomeMethod",
+                       L"ReplaceTargetMethod",
+                       min_ver_,
+                       max_ver_,
+                       {},
+                       empty_sig_type_},
+                      {}};
+
+  Integration mixed_integration = {L"integration-1", {included_method, excluded_method}};
+  Integration included_integration = {L"integration-2", {included_method}};
+  Integration excluded_integration = {L"integration-3", {excluded_method}};
+  auto all = FlattenIntegrations({mixed_integration, included_integration, excluded_integration});
+  auto expected = FlattenIntegrations({{L"integration-1", {included_method}}, included_integration});
+  auto actual = FilterIntegrationsByTargetAssembly(all, {L"Samples.Excluded"});
+  EXPECT_EQ(actual, expected);
+}
+
 TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
   MethodReference included = {L"Samples.ExampleLibrary",
                               L"SomeType",
