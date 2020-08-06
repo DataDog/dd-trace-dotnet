@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTracesWithNetStandard(string packageVersion)
+        public void SubmitsTracesWithNetStandard()
         {
 #if NET452
             var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
