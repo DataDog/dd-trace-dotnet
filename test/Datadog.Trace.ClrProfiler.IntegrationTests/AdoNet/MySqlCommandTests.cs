@@ -50,8 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.SqlClient), MemberType = typeof(PackageVersions))]
+        [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public void SubmitsTracesWithNetStandard(string packageVersion)
