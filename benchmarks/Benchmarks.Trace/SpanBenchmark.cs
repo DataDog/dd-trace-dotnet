@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Benchmarks.Trace
@@ -10,11 +11,17 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class SpanBenchmark
     {
-        private static Tracer _tracer;
+        private static readonly Tracer Tracer;
 
         static SpanBenchmark()
         {
-            _tracer = new Tracer(null, new DummyAgentWriter(), null, null, null);
+            var settings = new TracerSettings
+            {
+                TraceEnabled = false,
+                StartupDiagnosticLogEnabled = false
+            };
+
+            Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null);
         }
 
         /// <summary>
@@ -23,7 +30,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void StartFinishSpan()
         {
-            Span span = _tracer.StartSpan("operation");
+            Span span = Tracer.StartSpan("operation");
             span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             span.Finish();
         }
@@ -34,7 +41,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void StartFinishScope()
         {
-            using (Scope scope = _tracer.StartActive("operation"))
+            using (Scope scope = Tracer.StartActive("operation"))
             {
                 scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             }
