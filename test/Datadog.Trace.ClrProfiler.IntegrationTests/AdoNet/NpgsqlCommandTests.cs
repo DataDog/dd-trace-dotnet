@@ -54,7 +54,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Theory]
         [MemberData(nameof(PackageVersions.SqlClient), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
         public void SubmitsTracesWithNetStandard(string packageVersion)
         {
 #if NET452
