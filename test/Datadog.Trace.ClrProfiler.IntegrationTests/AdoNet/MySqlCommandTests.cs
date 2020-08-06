@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 #elif NET461
             var expectedSpanCount = 64;
 #else
-            var expectedSpanCount = 47; // 7 queries * 11 groups + 1 internal query
+            var expectedSpanCount = 47;
 #endif
 
             const string dbType = "mysql";
