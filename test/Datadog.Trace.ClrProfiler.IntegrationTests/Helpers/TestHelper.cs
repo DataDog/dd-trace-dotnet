@@ -7,7 +7,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
-using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
@@ -45,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
         }
 
-        protected EnvironmentHelper EnvironmentHelper { get; set; }
+        protected EnvironmentHelper EnvironmentHelper { get; }
 
         protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
 

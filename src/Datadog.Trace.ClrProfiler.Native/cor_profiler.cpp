@@ -140,7 +140,19 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  flatten_integrations_ = FlattenIntegrations(integrations);
+  integration_methods_ = FlattenIntegrations(integrations);
+
+  const WSTRING netstandard_enabled =
+      GetEnvironmentValue(environment::netstandard_enabled);
+
+  // temporarily skip the calls into netstandard.dll that were added in
+  // https://github.com/DataDog/dd-trace-dotnet/pull/753.
+  // users can opt-in to the additional instrumentation by setting environment
+  // variable DD_TRACE_NETSTANDARD_ENABLED
+  if (netstandard_enabled != "1"_W && netstandard_enabled != "true"_W) {
+    integration_methods_ = FilterIntegrationsByTargetAssemblyName(
+        integration_methods_, {"netstandard"_W});
+  }
 
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
@@ -358,7 +370,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   std::vector<IntegrationMethod> filtered_integrations =
-      FilterIntegrationsByCaller(flatten_integrations_, module_info.assembly);
+      FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
 
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
@@ -680,7 +692,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
   if (assemblyReference.public_key == trace::PublicKey()) {
     public_key_size = 0;
   }
-  
+
   COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
   asmRefInfo.pbPublicKeyOrToken =
         (void*)&assemblyReference.public_key.data[0];

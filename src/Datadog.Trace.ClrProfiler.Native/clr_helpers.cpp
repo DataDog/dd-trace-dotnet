@@ -267,12 +267,12 @@ mdAssemblyRef FindAssemblyRef(
 
 std::vector<Integration> FilterIntegrationsByName(
     const std::vector<Integration>& integrations,
-    const std::vector<WSTRING>& integration_names) {
+    const std::vector<WSTRING>& disabled_integration_names) {
   std::vector<Integration> enabled;
 
   for (auto& i : integrations) {
     bool disabled = false;
-    for (auto& disabled_integration : integration_names) {
+    for (auto& disabled_integration : disabled_integration_names) {
       if (i.integration_name == disabled_integration) {
         // this integration is disabled, skip it
         disabled = true;
@@ -302,11 +302,11 @@ std::vector<IntegrationMethod> FlattenIntegrations(
 }
 
 std::vector<IntegrationMethod> FilterIntegrationsByCaller(
-    const std::vector<IntegrationMethod>& integrations,
+    const std::vector<IntegrationMethod>& integration_methods,
     const AssemblyInfo assembly) {
   std::vector<IntegrationMethod> enabled;
 
-  for (auto& i : integrations) {
+  for (auto& i : integration_methods) {
     if (i.replacement.caller_method.assembly.name.empty() ||
         i.replacement.caller_method.assembly.name == assembly.name) {
       enabled.push_back(i);
@@ -338,13 +338,13 @@ bool AssemblyMeetsIntegrationRequirements(
 }
 
 std::vector<IntegrationMethod> FilterIntegrationsByTarget(
-    const std::vector<IntegrationMethod>& integrations,
+    const std::vector<IntegrationMethod>& integration_methods,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   std::vector<IntegrationMethod> enabled;
 
   const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
-  for (auto& i : integrations) {
+  for (auto& i : integration_methods) {
     bool found = false;
     if (AssemblyMeetsIntegrationRequirements(assembly_metadata,
                                              i.replacement)) {
@@ -364,6 +364,29 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
   }
 
   return enabled;
+}
+
+std::vector<IntegrationMethod> FilterIntegrationsByTargetAssemblyName(
+    const std::vector<IntegrationMethod>& integration_methods,
+    const std::vector<WSTRING>& excluded_assembly_names) {
+  std::vector<IntegrationMethod> methods;
+
+  for (auto& i : integration_methods) {
+    bool assembly_excluded = false;
+
+    for (auto& excluded_assembly_name : excluded_assembly_names) {
+      if (i.replacement.target_method.assembly.name == excluded_assembly_name) {
+        assembly_excluded = true;
+        break;
+      }
+    }
+
+    if (!assembly_excluded) {
+      methods.emplace_back(i);
+    }
+  }
+
+  return methods;
 }
 
 mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,

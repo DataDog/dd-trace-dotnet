@@ -63,9 +63,8 @@ const WSTRING disabled_integrations = "DD_DISABLED_INTEGRATIONS"_W;
 // "/var/log/datadog/dotnet/dotnet-profiler.log" on Linux.
 const WSTRING log_path = "DD_TRACE_LOG_PATH"_W;
 
-// Sets whether to disable all optimizations.
-// Default is false on Windows.
-// Default is true on Linux to work around a bug in the JIT compiler.
+// Sets whether to disable all JIT optimizations.
+// Default value is false (do not disable all optimizations).
 // https://github.com/dotnet/coreclr/issues/24676
 // https://github.com/dotnet/coreclr/issues/12468
 const WSTRING clr_disable_optimizations = "DD_CLR_DISABLE_OPTIMIZATIONS"_W;
@@ -77,7 +76,7 @@ const WSTRING clr_disable_optimizations = "DD_CLR_DISABLE_OPTIMIZATIONS"_W;
 // enabled when there is only one AppDomain or, when hosting applications in IIS,
 // the user can guarantee that all Application Pools on the system have at most
 // one application.
-// Default is false.
+// Default is false. Only used in .NET Framework 4.5 and 4.5.1.
 // https://github.com/DataDog/dd-trace-dotnet/pull/671
 const WSTRING domain_neutral_instrumentation = "DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION"_W;
 
@@ -91,6 +90,10 @@ const WSTRING azure_app_services_app_pool_id = "APP_POOL_ID"_W;
 // The DOTNET_CLI_TELEMETRY_PROFILE in the context of azure app services
 const WSTRING azure_app_services_cli_telemetry_profile_value =
     "DOTNET_CLI_TELEMETRY_PROFILE"_W;
+
+// Determine whether to instrument calls into netstandard.dll.
+// Default to false for now to avoid the unexpected overhead of additional spans.
+const WSTRING netstandard_enabled = "DD_TRACE_NETSTANDARD_ENABLED"_W;
 
 }  // namespace environment
 }  // namespace trace
