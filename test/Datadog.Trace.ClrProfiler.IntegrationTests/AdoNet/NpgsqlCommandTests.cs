@@ -13,14 +13,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        [Fact]
+        [Theory]
+        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        public void SubmitsTraces(string packageVersion)
         {
 #if NET452
             var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
+#elif NET461
+            var expectedSpanCount = 58;
 #else
-            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
+            var expectedSpanCount = 38;
 #endif
 
             const string dbType = "postgres";
@@ -30,7 +33,48 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
+
+                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                Assert.Equal(expectedSpanCount, spans.Count);
+
+                foreach (var span in spans)
+                {
+                    Assert.Equal(expectedOperationName, span.Name);
+                    Assert.Equal(expectedServiceName, span.Service);
+                    Assert.Equal(SpanTypes.Sql, span.Type);
+                    Assert.Equal(dbType, span.Tags[Tags.DbType]);
+                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
+                }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(PackageVersions.SqlClient), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void SubmitsTracesWithNetStandard(string packageVersion)
+        {
+#if NET452
+            var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
+#else
+            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
+#endif
+
+            const string dbType = "sql-server";
+            const string expectedOperationName = dbType + ".query";
+            const string expectedServiceName = "Samples.SqlServer-" + dbType;
+
+            // NOTE: opt into the additional instrumentation of calls into netstandard.dll
+            // see https://github.com/DataDog/dd-trace-dotnet/pull/753
+            SetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", "true");
+
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
