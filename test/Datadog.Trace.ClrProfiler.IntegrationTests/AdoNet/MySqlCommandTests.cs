@@ -20,9 +20,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 #if NET452
             var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
 #elif NET461
-            var expectedSpanCount = 59;
+            var expectedSpanCount = 64;
 #else
-            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
+            var expectedSpanCount = 47; // 7 queries * 11 groups + 1 internal query
 #endif
 
             const string dbType = "mysql";
@@ -52,7 +52,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [Fact]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
         public void SubmitsTracesWithNetStandard()
         {
 #if NET452
