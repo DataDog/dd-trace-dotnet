@@ -82,7 +82,7 @@ namespace Datadog.Core.Tools
 #if DEBUG
             return "Debug";
 #else
-        return "Release";
+            return "Release";
 #endif
         }
 
