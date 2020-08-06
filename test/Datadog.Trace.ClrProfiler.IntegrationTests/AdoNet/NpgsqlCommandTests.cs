@@ -63,9 +63,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
 #endif
 
-            const string dbType = "sql-server";
+            const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.SqlServer-" + dbType;
+            const string expectedServiceName = "Samples.Npgsql-" + dbType;
 
             // NOTE: opt into the additional instrumentation of calls into netstandard.dll
             // see https://github.com/DataDog/dd-trace-dotnet/pull/753

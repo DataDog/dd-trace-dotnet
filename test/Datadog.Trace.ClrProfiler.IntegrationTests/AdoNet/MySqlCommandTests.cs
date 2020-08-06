@@ -62,9 +62,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
 #endif
 
-            const string dbType = "sql-server";
+            const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.SqlServer-" + dbType;
+            const string expectedServiceName = "Samples.MySql-" + dbType;
 
             // NOTE: opt into the additional instrumentation of calls into netstandard.dll
             SetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", "true");
