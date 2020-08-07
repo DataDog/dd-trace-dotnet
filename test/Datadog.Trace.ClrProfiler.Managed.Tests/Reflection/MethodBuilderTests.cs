@@ -253,6 +253,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         private MethodBuilder<T> Build<T>(string methodName, Type overrideType = null)
+            where T : Delegate
         {
             return MethodBuilder<T>
                   .Start(_moduleVersionId, 0, (int)OpCodeValue.Callvirt, methodName)
