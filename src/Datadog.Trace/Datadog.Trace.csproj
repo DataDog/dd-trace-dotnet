@@ -13,12 +13,6 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <!--
-    This reference allows us to build the code without precompiler directives,
-    but the logic at runtime will never try to use the Registry if it's not available
-    -->
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.6.0" PrivateAssets="all" />
-
     <!-- Instrumented libraries -->
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.0.0" PrivateAssets="All" />
@@ -26,10 +20,8 @@
 
   <ItemGroup>
     <PackageReference Include="LibLog" Version="5.0.6" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
-    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->

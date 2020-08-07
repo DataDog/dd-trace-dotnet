@@ -99,28 +99,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static string GetHost(dynamic redisNativeClient)
+        private static string GetHost(object redisNativeClient)
         {
-            try
-            {
-                return redisNativeClient?.Host;
-            }
-            catch
-            {
-                return string.Empty;
-            }
+            return redisNativeClient.GetProperty<string>("Host").GetValueOrDefault() ?? string.Empty;
         }
 
-        private static string GetPort(dynamic redisNativeClient)
+        private static string GetPort(object redisNativeClient)
         {
-            try
-            {
-                return ((object)redisNativeClient?.Port)?.ToString();
-            }
-            catch
-            {
-                return string.Empty;
-            }
+            return redisNativeClient.GetProperty<int>("Port").GetValueOrDefault().ToString();
         }
 
         private static string GetRawCommand(byte[][] cmdWithBinaryArgs)

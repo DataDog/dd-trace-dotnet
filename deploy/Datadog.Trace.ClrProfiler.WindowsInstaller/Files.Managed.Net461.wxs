@@ -45,11 +45,6 @@
               Source="$(var.TracerHomeDirectory)\net461\System.Diagnostics.DiagnosticSource.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_System.Runtime.InteropServices.RuntimeInformation.dll"
-              Source="$(var.TracerHomeDirectory)\net461\System.Runtime.InteropServices.RuntimeInformation.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>

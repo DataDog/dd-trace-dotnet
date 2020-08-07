@@ -249,20 +249,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return scope;
         }
 
-        private static void UpdateSpan(dynamic controllerContext, Span span, IEnumerable<KeyValuePair<string, string>> headerTags)
+        private static void UpdateSpan(object controllerContext, Span span, IEnumerable<KeyValuePair<string, string>> headerTags)
         {
             try
             {
-                var req = controllerContext?.Request;
+                object request = controllerContext.GetProperty<object>("Request").GetValueOrDefault();
+                Uri requestUri = request.GetProperty<Uri>("RequestUri").GetValueOrDefault();
 
-                string host = req?.Headers?.Host ?? string.Empty;
-                string rawUrl = req?.RequestUri?.ToString().ToLowerInvariant() ?? string.Empty;
-                string absoluteUri = req?.RequestUri?.AbsoluteUri?.ToLowerInvariant() ?? string.Empty;
-                string method = controllerContext?.Request?.Method?.Method?.ToUpperInvariant() ?? "GET";
+                string host = request.GetProperty<object>("Headers").GetProperty<string>("Host").GetValueOrDefault() ?? string.Empty;
+                string rawUrl = requestUri?.ToString().ToLowerInvariant() ?? string.Empty;
+                string absoluteUri = requestUri?.AbsoluteUri?.ToLowerInvariant() ?? string.Empty;
+                string method = request.GetProperty<object>("Method").GetProperty<string>("Method").GetValueOrDefault()?.ToUpperInvariant() ?? "GET";
                 string route = null;
                 try
                 {
-                    route = controllerContext?.RouteData?.Route?.RouteTemplate;
+                    route = controllerContext.GetProperty<object>("RouteData").GetProperty<object>("Route").GetProperty<string>("RouteTemplate").GetValueOrDefault();
                 }
                 catch
                 {
@@ -274,9 +275,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     resourceName = $"{method} {route.ToLowerInvariant()}";
                 }
-                else if (req?.RequestUri != null)
+                else if (requestUri != null)
                 {
-                    var cleanUri = UriHelpers.GetRelativeUrl(req?.RequestUri, tryRemoveIds: true);
+                    var cleanUri = UriHelpers.GetRelativeUrl(requestUri, tryRemoveIds: true);
                     resourceName = $"{method} {cleanUri.ToLowerInvariant()}";
                 }
 
@@ -284,7 +285,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string action = string.Empty;
                 try
                 {
-                    if (controllerContext?.RouteData?.Values is IDictionary<string, object> routeValues)
+                    var routeValues = controllerContext.GetProperty<object>("RouteData").GetProperty<IDictionary<string, object>>("Values").GetValueOrDefault();
+                    if (routeValues != null)
                     {
                         controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                         action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
