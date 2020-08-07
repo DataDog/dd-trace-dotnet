@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.Configuration
         public static IEnumerable<object[]> GetDefaultTestData()
         {
             yield return new object[] { CreateFunc(s => s.TraceEnabled), true };
-            yield return new object[] { CreateFunc(s => s.AgentUri), new Uri("http://localhost:8126/") };
+            yield return new object[] { CreateFunc(s => s.AgentUri), new Uri("http://127.0.0.1:8126/") };
             yield return new object[] { CreateFunc(s => s.Environment), null };
             yield return new object[] { CreateFunc(s => s.ServiceName), null };
             yield return new object[] { CreateFunc(s => s.DisabledIntegrationNames.Count), 0 };
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.TraceEnabled, "false", CreateFunc(s => s.TraceEnabled), false };
 
             yield return new object[] { ConfigurationKeys.AgentHost, "test-host", CreateFunc(s => s.AgentUri), new Uri("http://test-host:8126/") };
-            yield return new object[] { ConfigurationKeys.AgentPort, "9000", CreateFunc(s => s.AgentUri), new Uri("http://localhost:9000/") };
+            yield return new object[] { ConfigurationKeys.AgentPort, "9000", CreateFunc(s => s.AgentUri), new Uri("http://127.0.0.1:9000/") };
 
             yield return new object[] { ConfigurationKeys.Environment, "staging", CreateFunc(s => s.Environment), "staging" };
 
