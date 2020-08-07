@@ -41,12 +41,6 @@
               Source="$(var.TracerHomeDirectory)\net45\Datadog.Trace.MSBuild.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
-      <Component Win64="$(var.Win64)">
-        <Condition>NOT WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
-        <File Id="net45_GAC_Sigil.dll"
-              Source="$(var.TracerHomeDirectory)\net45\Sigil.dll"
-              KeyPath="yes" Checksum="yes" Assembly=".net"/>
-      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>
