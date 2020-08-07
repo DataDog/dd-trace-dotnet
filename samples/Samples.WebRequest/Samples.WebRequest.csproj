@@ -8,8 +8,4 @@
     <ProjectReference Include="..\..\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
-    <Reference Include="System.Net.Http" />
-  </ItemGroup>
-
 </Project>
