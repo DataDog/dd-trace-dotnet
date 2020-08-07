@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using Sigil;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
@@ -158,7 +157,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
                                          .ToArray();
             }
 
-            Emit<TDelegate> dynamicMethod = Emit<TDelegate>.NewDynamicMethod(methodInfo.Name);
+            DynamicMethod dynamicMethod1 = new DynamicMethod(methodInfo.Name, returnType, parameterTypes, ObjectExtensions.Module, skipVisibility: true);
+            ILGenerator il = dynamicMethod1.GetILGenerator();
 
             // load each argument and cast or unbox as necessary
             for (ushort argumentIndex = 0; argumentIndex < parameterTypes.Length; argumentIndex++)
@@ -166,28 +166,28 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 Type delegateParameterType = parameterTypes[argumentIndex];
                 Type underlyingParameterType = effectiveParameterTypes[argumentIndex];
 
-                dynamicMethod.LoadArgument(argumentIndex);
+                il.Emit(OpCodes.Ldarg, argumentIndex);
 
                 if (underlyingParameterType.IsValueType && delegateParameterType == typeof(object))
                 {
-                    dynamicMethod.UnboxAny(underlyingParameterType);
+                    il.Emit(OpCodes.Unbox_Any, underlyingParameterType);
                 }
                 else if (underlyingParameterType != delegateParameterType)
                 {
-                    dynamicMethod.CastClass(underlyingParameterType);
+                    il.Emit(OpCodes.Castclass, underlyingParameterType);
                 }
             }
 
             if (callOpCode == OpCodeValue.Call || methodInfo.IsStatic)
             {
                 // non-virtual call (e.g. static method, or method override calling overriden implementation)
-                dynamicMethod.Call(methodInfo);
+                il.Emit(OpCodes.Call, methodInfo);
             }
             else if (callOpCode == OpCodeValue.Callvirt)
             {
                 // Note: C# compiler uses CALLVIRT for non-virtual
                 // instance methods to get the cheap null check
-                dynamicMethod.CallVirtual(methodInfo);
+                il.Emit(OpCodes.Callvirt, methodInfo);
             }
             else
             {
@@ -196,15 +196,15 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
             {
-                dynamicMethod.Box(methodInfo.ReturnType);
+                il.Emit(OpCodes.Box, methodInfo.ReturnType);
             }
             else if (methodInfo.ReturnType != returnType)
             {
-                dynamicMethod.CastClass(returnType);
+                il.Emit(OpCodes.Castclass, returnType);
             }
 
-            dynamicMethod.Return();
-            return dynamicMethod.CreateDelegate();
+            il.Emit(OpCodes.Ret);
+            return (TDelegate)dynamicMethod1.CreateDelegate(delegateType);
         }
 
         private struct Key
