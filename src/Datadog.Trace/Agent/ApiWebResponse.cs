@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
 {
-    internal class ApiWebResponse : IApiResponse
+    internal class ApiWebResponse : IApiResponse, IDisposable
     {
-        private HttpWebResponse _response;
+        private readonly HttpWebResponse _response;
 
         public ApiWebResponse(HttpWebResponse response)
         {
@@ -28,6 +28,11 @@ namespace Datadog.Trace.Agent
                 var reader = new StreamReader(responseStream);
                 return await reader.ReadToEndAsync().ConfigureAwait(false);
             }
+        }
+
+        public void Dispose()
+        {
+            _response?.Dispose();
         }
     }
 }
