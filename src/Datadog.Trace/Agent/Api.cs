@@ -74,7 +74,8 @@ namespace Datadog.Trace.Agent
                     request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
                 }
 
-                IApiResponse response;
+                IApiResponse response = null;
+
                 try
                 {
                     try
@@ -154,6 +155,10 @@ namespace Datadog.Trace.Agent
                     }
 
                     continue;
+                }
+                finally
+                {
+                    response?.Dispose();
                 }
 
                 try
