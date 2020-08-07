@@ -21,10 +21,16 @@ namespace Datadog.Trace.Agent
         private IApi _api;
 
         public AgentWriter(IApi api, IStatsd statsd)
+            : this(api, statsd, automaticFlush: true)
+        {
+        }
+
+        internal AgentWriter(IApi api, IStatsd statsd, bool automaticFlush)
         {
             _api = api;
             _statsd = statsd;
-            _flushTask = Task.Run(FlushTracesTaskLoopAsync);
+
+            _flushTask = automaticFlush ? Task.Run(FlushTracesTaskLoopAsync) : Task.FromResult(true);
         }
 
         public void OverrideApi(IApi api)
