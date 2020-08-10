@@ -96,15 +96,7 @@ namespace Datadog.Trace.Agent
                 // Error handling block
                 if (!success)
                 {
-                    bool isSocketException = false;
-
-                    if (exception?.InnerException is SocketException se)
-                    {
-                        isSocketException = true;
-                        Log.Error(se, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
-                        TracingProcessManager.TryForceTraceAgentRefresh();
-                    }
-
+                    // Exit if we've hit our retry limit
                     if (retryCount >= retryLimit)
                     {
                         // stop retrying
@@ -112,11 +104,28 @@ namespace Datadog.Trace.Agent
                         return false;
                     }
 
+                    // Before retry delay
+                    bool isSocketException = false;
+
+                    Exception innermostException = exception;
+                    while (innermostException?.InnerException != null)
+                    {
+                        innermostException = innermostException.InnerException;
+                    }
+
+                    if (innermostException is SocketException se)
+                    {
+                        isSocketException = true;
+                        Log.Error(se, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
+                        TracingProcessManager.TryForceTraceAgentRefresh();
+                    }
+
                     // retry
                     await Task.Delay(sleepDuration).ConfigureAwait(false);
                     retryCount++;
                     sleepDuration *= 2;
 
+                    // After retry delay
                     if (isSocketException)
                     {
                         // Ensure we have the most recent port before trying again
