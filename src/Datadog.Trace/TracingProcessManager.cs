@@ -229,6 +229,12 @@ namespace Datadog.Trace
                                 }
                             }
                         }
+                        catch (ArgumentException)
+                        {
+                            // It is expected for Process.GetProcessById to throw an ArgumentException
+                            // if there is no process matching the identifier argument.
+                            // This is fine, do not bubble up the exception any further.
+                        }
                         finally
                         {
                             if (!isActive)
