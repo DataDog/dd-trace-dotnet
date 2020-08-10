@@ -74,72 +74,41 @@ namespace Datadog.Trace.Agent
                     request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
                 }
 
-                IApiResponse response = null;
+                bool success = false;
+                Exception exception = null;
 
                 try
                 {
-                    try
-                    {
-                        _statsd?.AppendIncrementCount(TracerMetricNames.Api.Requests);
-                        response = await request.PostAsync(traces, _formatterResolver).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        // count the exceptions thrown by the HttpClient,
-                        // not responses with 5xx status codes
-                        // (which cause EnsureSuccessStatusCode() to throw below)
-                        _statsd?.AppendIncrementCount(TracerMetricNames.Api.Errors);
-                        throw;
-                    }
-
-                    if (_statsd != null)
-                    {
-                        // don't bother creating the tags array if trace metrics are disabled
-                        string[] tags = { $"status:{response.StatusCode}" };
-
-                        // count every response, grouped by status code
-                        _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
-                    }
-
-                    // Attempt a retry if the status code is not SUCCESS
-                    if (response.StatusCode < 200 || response.StatusCode > 300)
-                    {
-                        if (retryCount >= retryLimit)
-                        {
-                            // stop retrying
-                            Log.Error("An error occurred while sending traces to the agent at {Endpoint}", _tracesEndpoint);
-                            return false;
-                        }
-
-                        // retry
-                        await Task.Delay(sleepDuration).ConfigureAwait(false);
-                        retryCount++;
-                        sleepDuration *= 2;
-
-                        continue;
-                    }
+                    success = await SendTracesAsync(traces, request).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
-                        Log.Error("An error occurred while sending traces to the agent at {Endpoint}\n{Exception}", ex, _tracesEndpoint, ex.ToString());
+                        Log.Error(ex, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
                         return false;
                     }
 #endif
-                    var isSocketException = false;
-                    if (ex.InnerException is SocketException se)
+                    exception = ex;
+                }
+
+                // Error handling block
+                if (!success)
+                {
+                    bool isSocketException = false;
+
+                    if (exception?.InnerException is SocketException se)
                     {
                         isSocketException = true;
-                        Log.Error(se, "Unable to communicate with the trace agent at {Endpoint}", _tracesEndpoint);
+                        Log.Error(se, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
                         TracingProcessManager.TryForceTraceAgentRefresh();
                     }
 
                     if (retryCount >= retryLimit)
                     {
                         // stop retrying
-                        Log.Error("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
+                        Log.Error(exception, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
                         return false;
                     }
 
@@ -155,24 +124,6 @@ namespace Datadog.Trace.Agent
                     }
 
                     continue;
-                }
-                finally
-                {
-                    response?.Dispose();
-                }
-
-                try
-                {
-                    if (response.ContentLength > 0 && Tracer.Instance.Sampler != null)
-                    {
-                        var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
-                        Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Traces sent successfully to the Agent at {Endpoint}, but an error occurred deserializing the response.", ex, _tracesEndpoint);
                 }
 
                 _statsd?.Send();
@@ -193,6 +144,63 @@ namespace Datadog.Trace.Agent
             }
 
             return uniqueTraceIds;
+        }
+
+        private async Task<bool> SendTracesAsync(Span[][] traces, IApiRequest request)
+        {
+            IApiResponse response = null;
+
+            try
+            {
+                try
+                {
+                    _statsd?.AppendIncrementCount(TracerMetricNames.Api.Requests);
+                    response = await request.PostAsync(traces, _formatterResolver).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // count the exceptions thrown by the HttpClient,
+                    // not responses with 5xx status codes
+                    // (which cause EnsureSuccessStatusCode() to throw below)
+                    _statsd?.AppendIncrementCount(TracerMetricNames.Api.Errors);
+                    throw;
+                }
+
+                if (_statsd != null)
+                {
+                    // don't bother creating the tags array if trace metrics are disabled
+                    string[] tags = { $"status:{response.StatusCode}" };
+
+                    // count every response, grouped by status code
+                    _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
+                }
+
+                // Attempt a retry if the status code is not SUCCESS
+                if (response.StatusCode < 200 || response.StatusCode > 300)
+                {
+                    return false;
+                }
+
+                try
+                {
+                    if (response.ContentLength > 0 && Tracer.Instance.Sampler != null)
+                    {
+                        var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                        Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Traces sent successfully to the Agent at {0}, but an error occurred deserializing the response.", _tracesEndpoint);
+                }
+            }
+            finally
+            {
+                response?.Dispose();
+            }
+
+            return true;
         }
 
         internal class ApiResponse
