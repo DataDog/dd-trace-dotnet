@@ -56,7 +56,7 @@ namespace Datadog.Trace.Sampling
             }
             catch (Exception ex)
             {
-                Log.Error("Unable to parse custom sampling rules: {0}", ex);
+                Log.Error(ex, "Unable to parse custom sampling rules");
             }
 
             return Enumerable.Empty<CustomSamplingRule>();
