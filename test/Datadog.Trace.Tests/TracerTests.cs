@@ -1,7 +1,12 @@
 using System;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
+#if NET452
+using System.Runtime.Remoting;
+using System.Runtime.Remoting.Lifetime;
+using System.Runtime.Remoting.Services;
+#endif
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -17,6 +22,14 @@ namespace Datadog.Trace.Tests
     public class TracerTests
     {
         private readonly Tracer _tracer;
+
+        static TracerTests()
+        {
+#if NET452
+            LifetimeServices.LeaseTime = TimeSpan.FromMilliseconds(100);
+            LifetimeServices.LeaseManagerPollTime = TimeSpan.FromMilliseconds(10);
+#endif
+        }
 
         public TracerTests()
         {
@@ -357,5 +370,90 @@ namespace Datadog.Trace.Tests
             Assert.Equal(secondSpan.Span.Context.Origin, resultContext.Origin);
             Assert.Equal(origin, resultContext.Origin);
         }
+#if NET452
+
+        // Test that storage in the Logical Call Context does not expire
+        // See GitHub issue https://github.com/serilog/serilog/issues/987
+        // and the associated PR https://github.com/serilog/serilog/pull/992
+        [Fact]
+        public void DoesNotThrowOnCrossDomainCallsWhenLeaseExpired()
+        {
+            // Arrange
+            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation);
+            string operationName = "test-span";
+
+            // Act
+            try
+            {
+                using (_tracer.StartActive(operationName))
+                {
+                    remote.DoCallBack(CallFromRemote);
+
+                    // After the lease expires, access the active scope
+                    Scope scope = _tracer.ActiveScope;
+                    Assert.Equal(operationName, scope.Span.OperationName);
+                }
+            }
+            finally
+            {
+                AppDomain.Unload(remote);
+            }
+
+            // Assert
+            // Nothing. We should just throw no exceptions here
+
+            void CallFromRemote() => Thread.Sleep(200);
+        }
+
+        [Fact]
+        public async Task DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose()
+        {
+            // Arrange
+            var tracker = new InMemoryRemoteObjectTracker();
+            TrackingServices.RegisterTrackingHandler(tracker);
+
+            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation);
+
+            // Act
+            try
+            {
+                using (_tracer.StartActive("test-span"))
+                {
+                    remote.DoCallBack(CallFromRemote);
+
+                    using (_tracer.StartActive("test-span-inner"))
+                    {
+                        remote.DoCallBack(CallFromRemote);
+                    }
+                }
+            }
+            finally
+            {
+                AppDomain.Unload(remote);
+            }
+
+            await Task.Delay(200);
+
+            // Assert
+            Assert.Equal(2, tracker.DisconnectCount);
+
+            void CallFromRemote() { }
+        }
+
+        private class InMemoryRemoteObjectTracker : ITrackingHandler
+        {
+            public int DisconnectCount { get; set; }
+
+            public void DisconnectedObject(object obj) => DisconnectCount++;
+
+            public void MarshaledObject(object obj, ObjRef or)
+            {
+            }
+
+            public void UnmarshaledObject(object obj, ObjRef or)
+            {
+            }
+        }
+#endif
     }
 }
