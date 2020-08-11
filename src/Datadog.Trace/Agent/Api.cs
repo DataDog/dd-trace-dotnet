@@ -121,7 +121,7 @@ namespace Datadog.Trace.Agent
                     if (innermostException is SocketException se)
                     {
                         isSocketException = true;
-                        Log.Error(se, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
+                        Log.Error(exception, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
                         TracingProcessManager.TryForceTraceAgentRefresh();
                     }
 
