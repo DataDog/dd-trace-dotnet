@@ -53,7 +53,7 @@ jobs:
     env:
       releaseVersion: $(releaseVersion)
 
-  - powershell: ls "env:"
+  - powershell: Get-ChildItem "env:"
 
   - task: UseDotNet@2
     displayName: install dotnet core runtime 2.1
