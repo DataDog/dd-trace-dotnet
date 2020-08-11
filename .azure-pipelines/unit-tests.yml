@@ -14,21 +14,21 @@ variables:
   dotnetCoreSdkVersion: 3.1.107
   ddApiKey: $(DD_API_KEY)
 
+resources:
+  containers:
+  - container: dd_agent
+    image: datadog/agent:latest
+    ports:
+    - 8126:8126
+    env:
+    - DD_API_KEY=$(ddApiKey)
+    - DD_HOSTNAME=none
+    - DD_APM_ENABLED=true
+    - DD_APM_NON_LOCAL_TRAFFIC=true
+
 jobs:
 
 - job: managed
-
-  resources:
-    containers:
-    - container: dd_agent
-      image: datadog/agent:latest
-      ports:
-      - 8126:8126
-      env:
-      - DD_API_KEY=$(ddApiKey)
-      - DD_HOSTNAME=none
-      - DD_APM_ENABLED=true
-      - DD_APM_NON_LOCAL_TRAFFIC=true
 
   strategy:
     matrix:
