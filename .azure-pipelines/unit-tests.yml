@@ -134,3 +134,4 @@ jobs:
       buildPlatform: $(buildPlatform)
       buildConfiguration: $(buildConfiguration)
     condition: succeededOrFailed()
+
