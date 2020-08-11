@@ -266,6 +266,7 @@ namespace Datadog.Trace
                 {
                     if (!metadata.IsBeingManaged)
                     {
+                        metadata.HasAttemptedStartup = false;
                         metadata.KeepAliveTask = StartProcessWithKeepAlive(metadata);
                     }
                 }
@@ -664,7 +665,7 @@ namespace Datadog.Trace
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Error when alerting subscribers for {0}", Name);
-                        Thread.Sleep(5); // Wait just a tiny bit just to let the file come unlocked
+                        Thread.Sleep(20); // Wait just a tiny bit just to let the file come unlocked
                     }
                 }
             }
