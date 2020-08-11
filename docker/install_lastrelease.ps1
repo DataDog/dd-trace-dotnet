@@ -13,7 +13,7 @@ $dd_tracer_integrations = ""
 $dd_tracer_profiler_32 = ""
 $dd_tracer_profiler_64 = ""
 
-if ($isWindows) 
+if ($env:os -eq "Windows_NT") 
 {
     Invoke-WebRequest -Uri $windows_url -OutFile windows.zip
     echo "Extracting windows.zip"
