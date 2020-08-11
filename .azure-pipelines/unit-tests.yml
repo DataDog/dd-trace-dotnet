@@ -21,10 +21,10 @@ resources:
     ports:
     - 8126:8126
     env:
-      DD_API_KEY:$(ddApiKey)
-      DD_HOSTNAME:none
-      DD_APM_ENABLED:true
-      DD_APM_NON_LOCAL_TRAFFIC:true
+      DD_API_KEY: $(ddApiKey)
+      DD_HOSTNAME: none
+      DD_APM_ENABLED: true
+      DD_APM_NON_LOCAL_TRAFFIC: true
 
 jobs:
 
