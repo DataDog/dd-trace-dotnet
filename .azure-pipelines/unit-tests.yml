@@ -14,6 +14,7 @@ variables:
   dotnetCoreSdkVersion: 3.1.107
   ddApiKey: $(DD_API_KEY)
   releaseVersion: 1.19.1
+  DD_DOTNET_TRACER_MSBUILD:
 
 
 resources:
@@ -78,6 +79,7 @@ jobs:
     inputs:
       command: build
       configuration: $(buildConfiguration)
+      arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
