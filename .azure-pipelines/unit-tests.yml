@@ -48,13 +48,11 @@ jobs:
 
   steps:
   - task: PowerShell@2
-    displayName: download v$(releaseVersion) release
+    displayName: Install profiler v$(releaseVersion)
     inputs:
       filePath: ./docker/install_lastrelease.ps1
     env:
       releaseVersion: $(releaseVersion)
-
-  - powershell: Get-ChildItem "env:"
 
   - task: UseDotNet@2
     displayName: install dotnet core runtime 2.1
