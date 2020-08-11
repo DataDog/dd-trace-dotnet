@@ -71,7 +71,6 @@ namespace Datadog.Trace
                     return;
                 }
 
-                Log.Warning("Attempting to force a child process refresh.");
                 InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
 
                 if (!_isProcessManager)
@@ -82,7 +81,9 @@ namespace Datadog.Trace
 
                 if (Processes.All(p => p.HasAttemptedStartup))
                 {
-                    Log.Debug("Forcing a full refresh on agent processes.");
+                    Log.Warning("Attempting to force a child process refresh.");
+
+                    Log.Debug("Stopping child processes.");
                     StopProcesses();
 
                     _cancellationTokenSource = new CancellationTokenSource();
@@ -92,7 +93,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    Log.Debug("This process has not had a chance to initialize agent processes.");
+                    Log.Warning("This process has not had a chance to initialize agent processes.");
                 }
             }
             catch (Exception ex)
