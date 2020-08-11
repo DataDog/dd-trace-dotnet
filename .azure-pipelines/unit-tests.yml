@@ -48,8 +48,11 @@ jobs:
 
   steps:
   - pwsh: |
-      echo "$($env:releasesUrl)v$($env:releaseVersion)/windows-tracer-home.zip"
-      echo "$($env:releasesUrl)v$($env:releaseVersion)/datadog-dotnet-apm-$($env:version).tar.gz"
+      echo "Downloading tracer binaries..."
+      Invoke-WebRequest "$($env:releasesUrl)v$($env:releaseVersion)/windows-tracer-home.zip" -OutFile "windows-tracer-home.zip"
+      Invoke-WebRequest "$($env:releasesUrl)v$($env:releaseVersion)/datadog-dotnet-apm-$($env:version).tar.gz" -OutFile "datadog-dotnet-apm-$($env:version).tar.gz"
+
+    displayName: Release v$(releaseVersion) download
     env:
       releasesUrl: $(releasesUrl)
       releaseVersion: $(releaseVersion)
