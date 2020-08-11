@@ -19,10 +19,10 @@ namespace Datadog.Trace.Agent
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IStatsd _statsd;
-        private readonly Uri _tracesEndpoint;
         private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
         private readonly string _containerId;
         private readonly FrameworkDescription _frameworkDescription;
+        private Uri _tracesEndpoint; // The Uri may be reassigned dynamically so that retry attempts may attempt updated Agent ports
 
         public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IStatsd statsd)
         {
@@ -47,6 +47,11 @@ namespace Datadog.Trace.Agent
             {
                 Log.SafeLogError(e, "Error getting framework description");
             }
+        }
+
+        public void OverrideBaseEndpoint(Uri uri)
+        {
+            _tracesEndpoint = new Uri(uri, TracesPath);
         }
 
         public async Task<bool> SendTracesAsync(Span[][] traces)
