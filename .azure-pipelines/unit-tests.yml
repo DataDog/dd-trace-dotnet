@@ -53,6 +53,8 @@ jobs:
     env:
       releaseVersion: $(releaseVersion)
 
+  - pwsh: ls env:
+
   - task: UseDotNet@2
     displayName: install dotnet core runtime 2.1
     inputs:
