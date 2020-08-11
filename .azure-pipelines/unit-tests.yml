@@ -47,8 +47,12 @@ jobs:
     dd_agent: dd_agent
 
   steps:
-  - pwsh: echo "$($env:releasesUrl)v$($env:releaseVersion)/windows-tracer-home.zip"
-  - pwsh: echo "$($env:releasesUrl)v$($env:releaseVersion)/datadog-dotnet-apm-$($env:version).tar.gz"
+  - pwsh: |
+      echo "$($env:releasesUrl)v$($env:releaseVersion)/windows-tracer-home.zip"
+      echo "$($env:releasesUrl)v$($env:releaseVersion)/datadog-dotnet-apm-$($env:version).tar.gz"
+    env:
+      releasesUrl: $(releasesUrl)
+      releaseVersion: $(releaseVersion)
 
   - task: UseDotNet@2
     displayName: install dotnet core runtime 2.1
