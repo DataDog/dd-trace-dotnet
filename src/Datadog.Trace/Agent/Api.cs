@@ -49,9 +49,9 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public void OverrideBaseEndpoint(Uri uri)
+        public void OverrideBaseEndpoint(Uri baseEndpoint)
         {
-            _tracesEndpoint = new Uri(uri, TracesPath);
+            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
         }
 
         public async Task<bool> SendTracesAsync(Span[][] traces)
