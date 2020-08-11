@@ -13,7 +13,6 @@ variables:
   buildConfiguration: Debug
   dotnetCoreSdkVersion: 3.1.107
   ddApiKey: $(DD_API_KEY)
-  releasesUrl: https://github.com/DataDog/dd-trace-dotnet/releases/download/
   releaseVersion: 1.19.1
 
 
@@ -47,18 +46,11 @@ jobs:
     dd_agent: dd_agent
 
   steps:
-  - pwsh: |
-      echo "Downloading tracer binaries..."
-      $windows_url = "$($env:releasesUrl)v$($env:releaseVersion)/windows-tracer-home.zip"
-      $linux_url = "$($env:releasesUrl)v$($env:releaseVersion)/datadog-dotnet-apm-$($env:releaseVersion).tar.gz"
-      echo $windows_url
-      Invoke-WebRequest -Uri $windows_url -OutFile windows.zip
-      echo $linux_url
-      Invoke-WebRequest -Uri $linux_url -OutFile linux.tar.gz
-
+  - task: PowerShell@2
     displayName: download v$(releaseVersion) release
+    inputs:
+      filePath: ./docker/install_lastrelease.ps1
     env:
-      releasesUrl: $(releasesUrl)
       releaseVersion: $(releaseVersion)
 
   - task: UseDotNet@2
