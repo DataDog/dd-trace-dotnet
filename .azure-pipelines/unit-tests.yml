@@ -51,8 +51,10 @@ jobs:
       echo "Downloading tracer binaries..."
       $windows_url = "$($env:releasesUrl)v$($env:releaseVersion)/windows-tracer-home.zip"
       $linux_url = "$($env:releasesUrl)v$($env:releaseVersion)/datadog-dotnet-apm-$($env:version).tar.gz"
-      Invoke-WebRequest $windows_url -OutFile windows.zip
-      Invoke-WebRequest $linux_url -OutFile linux.tar.gz
+      echo $windows_url
+      Invoke-WebRequest -Uri $windows_url -OutFile windows.zip
+      echo $linux_url
+      Invoke-WebRequest -Uri $linux_url -OutFile linux.tar.gz
 
     displayName: download v$(releaseVersion) release
     env:
