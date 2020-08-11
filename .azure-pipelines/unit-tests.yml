@@ -49,8 +49,10 @@ jobs:
   steps:
   - pwsh: |
       echo "Downloading tracer binaries..."
-      Invoke-WebRequest $($env:releasesUrl)v$($env:releaseVersion)/windows-tracer-home.zip -OutFile windows-tracer-home.zip
-      Invoke-WebRequest $($env:releasesUrl)v$($env:releaseVersion)/datadog-dotnet-apm-$($env:version).tar.gz -OutFile datadog-dotnet-apm-$($env:version).tar.gz
+      $windows_url = "$($env:releasesUrl)v$($env:releaseVersion)/windows-tracer-home.zip"
+      $linux_url = "$($env:releasesUrl)v$($env:releaseVersion)/datadog-dotnet-apm-$($env:version).tar.gz"
+      Invoke-WebRequest $windows_url -OutFile windows.zip
+      Invoke-WebRequest $linux_url -OutFile linux.tar.gz
 
     displayName: download v$(releaseVersion) release
     env:
