@@ -157,8 +157,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
                                          .ToArray();
             }
 
-            DynamicMethod dynamicMethod1 = new DynamicMethod(methodInfo.Name, returnType, parameterTypes, ObjectExtensions.Module, skipVisibility: true);
-            ILGenerator il = dynamicMethod1.GetILGenerator();
+            DynamicMethod dynamicMethod = new DynamicMethod(methodInfo.Name, returnType, parameterTypes, ObjectExtensions.Module, skipVisibility: true);
+            ILGenerator il = dynamicMethod.GetILGenerator();
 
             // load each argument and cast or unbox as necessary
             for (ushort argumentIndex = 0; argumentIndex < parameterTypes.Length; argumentIndex++)
@@ -204,7 +204,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
 
             il.Emit(OpCodes.Ret);
-            return (TDelegate)dynamicMethod1.CreateDelegate(delegateType);
+            return (TDelegate)dynamicMethod.CreateDelegate(delegateType);
         }
 
         private struct Key
