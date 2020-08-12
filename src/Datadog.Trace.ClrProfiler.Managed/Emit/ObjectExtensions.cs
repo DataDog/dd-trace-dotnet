@@ -11,6 +11,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
     /// </summary>
     internal static class ObjectExtensions
     {
+        // A new module to be emitted in the current AppDomain which will contain DynamicMethods
+        // and have same evidence/permissions as this AppDomain
         internal static readonly ModuleBuilder Module;
 
         private static readonly ConcurrentDictionary<PropertyFetcherCacheKey, object> Cache = new ConcurrentDictionary<PropertyFetcherCacheKey, object>();
@@ -19,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
         static ObjectExtensions()
         {
 #if NETSTANDARD
-            var asm = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("Sigil.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
+            var asm = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("Datadog.Trace.ClrProfiler.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
 #else
-            var asm = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Sigil.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
+            var asm = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Datadog.Trace.ClrProfiler.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
 #endif
             Module = asm.DefineDynamicModule("DynamicModule");
         }
