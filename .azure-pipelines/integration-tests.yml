@@ -130,7 +130,7 @@ jobs:
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
     env:
       DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
-      DD_API_KEY: $(ddApiKey)
+      DD_API_KEY: $(DD_API_KEY)
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests
@@ -139,7 +139,7 @@ jobs:
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
     env:
       DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
-      DD_API_KEY: $(ddApiKey)
+      DD_API_KEY: $(DD_API_KEY)
 
   - task: PublishTestResults@2
     displayName: publish test results
@@ -237,7 +237,7 @@ jobs:
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
     env:
       DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
-      DD_API_KEY: $(ddApiKey)
+      DD_API_KEY: $(DD_API_KEY)
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core21
@@ -247,7 +247,7 @@ jobs:
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core21
     env:
       DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
-      DD_API_KEY: $(ddApiKey)
+      DD_API_KEY: $(DD_API_KEY)
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core30
@@ -257,7 +257,7 @@ jobs:
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core30
     env:
       DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
-      DD_API_KEY: $(ddApiKey)
+      DD_API_KEY: $(DD_API_KEY)
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core31
@@ -267,7 +267,7 @@ jobs:
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
     env:
       DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
-      DD_API_KEY: $(ddApiKey)
+      DD_API_KEY: $(DD_API_KEY)
 
   - task: PublishTestResults@2
     displayName: publish test results
