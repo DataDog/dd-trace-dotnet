@@ -109,6 +109,13 @@ services:
     command: /project/docker/Datadog.Trace.ClrProfiler.Native.sh
     volumes:
     - ./:/project
+    environment:
+    - DD_ENV
+    - DD_DOTNET_TRACER_HOME
+    - DD_INTEGRATIONS
+    - CORECLR_ENABLE_PROFILING
+    - CORECLR_PROFILER
+    - CORECLR_PROFILER_PATH_64
 
   Profiler.Alpine:
     build:
