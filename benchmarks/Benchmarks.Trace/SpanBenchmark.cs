@@ -11,8 +11,6 @@ namespace Benchmarks.Trace
     /// </summary>
     [DatadogExporter]
     [MemoryDiagnoser]
-    [SimpleJob(RuntimeMoniker.Net472)]
-    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     public class SpanBenchmark
     {
         private static Tracer _tracer;
