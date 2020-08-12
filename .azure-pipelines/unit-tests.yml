@@ -82,7 +82,7 @@ jobs:
         src/**/*.csproj
         test/**/*.Tests.csproj
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -91,7 +91,7 @@ jobs:
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
 - job: native_windows
   strategy:
@@ -131,7 +131,7 @@ jobs:
         sample-libs/**/Samples.ExampleLibrary*.csproj
       arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet-loader
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-loader
 
   - task: NuGetToolInstaller@1
     displayName: install nuget
@@ -151,7 +151,7 @@ jobs:
       msbuildArguments: /t:BuildCpp;BuildCppTests /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       maximumCpuCount: true
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet-native
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-native
 
   - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
     displayName: run tests

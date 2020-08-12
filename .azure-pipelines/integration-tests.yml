@@ -67,7 +67,7 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
       arguments: --configuration $(buildConfiguration) -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-loader
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-loader
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
@@ -79,7 +79,7 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0 -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-publish
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-publish
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
@@ -172,7 +172,7 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
       arguments: --configuration $(buildConfiguration) -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-loader
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-loader
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
@@ -184,7 +184,7 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0 -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-publish
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-publish
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler.Alpine
@@ -331,7 +331,7 @@ jobs:
       msbuildArguments: /t:msi /p:RunWixToolsOutOfProc=true /p:TracerHomeDirectory=$(publishOutput) /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       maximumCpuCount: true
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
   - task: MSBuild@1
     displayName: Build .NET Framework projects (not SDK-based projects)
@@ -342,7 +342,7 @@ jobs:
       msbuildArguments: /t:BuildFrameworkReproductions /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       maximumCpuCount: true
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-framework-reproductions
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-framework-reproductions
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build integration tests
@@ -357,7 +357,7 @@ jobs:
         !reproductions/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-integration-tests
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-integration-tests
 
   - task: NuGetCommand@2
     displayName: nuget restore IIS samples
@@ -373,7 +373,7 @@ jobs:
       msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"'
       maximumCpuCount: true
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-samples-iis
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-samples-iis
 
   - task: DockerCompose@0
     displayName: docker-compose build IIS containers
@@ -397,7 +397,7 @@ jobs:
         test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
       arguments: -p:Platform=$(buildPlatform)
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-integration-tests
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-integration-tests
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -407,7 +407,7 @@ jobs:
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True" -p:Platform=$(buildPlatform) 
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-integration-tests
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-integration-tests
 
   - powershell: |
       [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
@@ -423,7 +423,7 @@ jobs:
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True" -p:Platform=$(buildPlatform)
     env:
-      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-integration-tests-gac
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet-integration-tests-gac
 
   - task: DockerCompose@0
     displayName: docker-compose stop services
