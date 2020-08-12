@@ -461,7 +461,7 @@ namespace Datadog.Trace.Tests
             public void DisconnectedObject(object obj)
             {
                 DisconnectCount++;
-                _cde?.Signal();
+                _cde.Signal();
             }
 
             public void MarshaledObject(object obj, ObjRef or)
