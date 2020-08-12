@@ -66,13 +66,10 @@ jobs:
   strategy:
     matrix:
       netcoreapp2_1:
-        dotnetCoreSdkVersion: 2.1.x
         publishTargetFramework: netcoreapp2.1
       netcoreapp3_0:
-        dotnetCoreSdkVersion: 3.0.x
         publishTargetFramework: netcoreapp3.0
       netcoreapp3_1:
-        dotnetCoreSdkVersion: 3.1.x
         publishTargetFramework: netcoreapp3.1
 
   variables:
@@ -146,13 +143,10 @@ jobs:
   strategy:
     matrix:
       netcoreapp2_1:
-        dotnetCoreSdkVersion: 2.1.x
         publishTargetFramework: netcoreapp2.1
       netcoreapp3_0:
-        dotnetCoreSdkVersion: 3.0.x
         publishTargetFramework: netcoreapp3.0
       netcoreapp3_1:
-        dotnetCoreSdkVersion: 3.1.x
         publishTargetFramework: netcoreapp3.1
 
   variables:
