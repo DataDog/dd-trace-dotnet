@@ -86,6 +86,7 @@ services:
     - publishTargetFramework=${publishTargetFramework}
     - DD_ENV
     - DD_DOTNET_TRACER_MSBUILD
+    - DD_SERVICE_NAME
     - DD_TRACE_AGENT_URL=http://dd-agent:8126
     depends_on: 
     - dd-agent
@@ -275,6 +276,7 @@ services:
     - publishTargetFramework=netcoreapp2.1
     - DD_ENV
     - DD_DOTNET_TRACER_MSBUILD
+    - DD_SERVICE_NAME
     - DD_TRACE_AGENT_URL=http://dd-agent:8126
     depends_on:
     - dd-agent
@@ -309,6 +311,7 @@ services:
     - publishTargetFramework=netcoreapp3.0
     - DD_ENV
     - DD_DOTNET_TRACER_MSBUILD
+    - DD_SERVICE_NAME
     - DD_TRACE_AGENT_URL=http://dd-agent:8126
     depends_on:
     - dd-agent
@@ -343,6 +346,7 @@ services:
     - publishTargetFramework=netcoreapp3.1
     - DD_ENV
     - DD_DOTNET_TRACER_MSBUILD
+    - DD_SERVICE_NAME
     - DD_TRACE_AGENT_URL=http://dd-agent:8126
     depends_on:
     - dd-agent
@@ -377,6 +381,7 @@ services:
     - publishTargetFramework=${publishTargetFramework}
     - DD_ENV
     - DD_DOTNET_TRACER_MSBUILD
+    - DD_SERVICE_NAME
     - DD_TRACE_AGENT_URL=http://dd-agent:8126
     depends_on:
     - dd-agent
