@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         internal static readonly ModuleBuilder Module;
 
         private static readonly ConcurrentDictionary<MemberFetcherCacheKey, object> Cache = new ConcurrentDictionary<MemberFetcherCacheKey, object>();
-        private static readonly ConcurrentDictionary<MemberFetcherCacheKey, PropertyFetcher> PropertyFetcherCache = new ConcurrentDictionary<MemberFetcherCacheKey, PropertyFetcher>();
+        private static readonly ConcurrentDictionary<MemberFetcherCacheKey, MemberFetcher> MemberFetcherCache = new ConcurrentDictionary<MemberFetcherCacheKey, MemberFetcher>();
 
         static ObjectExtensions()
         {
@@ -166,9 +166,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 var type = source.GetType();
 
-                PropertyFetcher fetcher = PropertyFetcherCache.GetOrAdd(
+                MemberFetcher fetcher = MemberFetcherCache.GetOrAdd(
                     GetKey<TResult>(MemberType.Property, propertyName, type),
-                    key => new PropertyFetcher(key.Name));
+                    key => new MemberFetcher(key.Name));
 
                 if (fetcher != null)
                 {

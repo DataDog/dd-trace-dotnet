@@ -6,17 +6,17 @@ using System.Reflection;
 
 namespace Datadog.Trace.Util
 {
-    internal class PropertyFetcher
+    internal class MemberFetcher
     {
         private readonly string _propertyName;
         private Type _expectedType;
         private object _fetchForExpectedType;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PropertyFetcher"/> class.
+        /// Initializes a new instance of the <see cref="MemberFetcher"/> class.
         /// </summary>
         /// <param name="propertyName">The name of the property that this instance will fetch.</param>
-        public PropertyFetcher(string propertyName)
+        public MemberFetcher(string propertyName)
         {
             _propertyName = propertyName;
         }
