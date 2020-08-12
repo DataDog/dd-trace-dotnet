@@ -10,6 +10,8 @@ mkdir -p "$PUBLISH_OUTPUT/netstandard2.0"
 
 printenv
 
+[ ! -f $DD_DOTNET_TRACER_MSBUILD ] && echo "$DD_DOTNET_TRACER_MSBUILD does not exist."
+
 dotnet build -c $buildConfiguration src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj -l:DatadogLogger,"$DD_DOTNET_TRACER_MSBUILD"
 
 for proj in Datadog.Trace Datadog.Trace.OpenTracing ; do
