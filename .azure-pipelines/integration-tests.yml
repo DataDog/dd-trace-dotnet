@@ -105,10 +105,6 @@ jobs:
   variables:
     TestAllPackageVersions: true
 
-  # Enable the Datadog Agent service for this job
-  services:
-    dd_agent: dd_agent
-
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
   # The script exposes the required environment variables to the following steps
   steps:
@@ -132,12 +128,16 @@ jobs:
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+    env:
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
+    env:
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
   - task: PublishTestResults@2
     displayName: publish test results
@@ -210,10 +210,6 @@ jobs:
   variables:
     TestAllPackageVersions: true
 
-  # Enable the Datadog Agent service for this job
-  services:
-    dd_agent: dd_agent
-
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
   # The script exposes the required environment variables to the following steps
   steps:
@@ -237,6 +233,8 @@ jobs:
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+    env:
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core21
@@ -244,6 +242,8 @@ jobs:
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core21
+    env:
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core30
@@ -251,6 +251,8 @@ jobs:
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core30
+    env:
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core31
@@ -258,6 +260,8 @@ jobs:
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
+    env:
+      DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
   - task: PublishTestResults@2
     displayName: publish test results

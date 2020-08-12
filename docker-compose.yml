@@ -1,5 +1,15 @@
 version: '3'
 services:
+  dd-agent:
+    image: datadog/agent:latest
+    ports:
+    - "8126:8126"
+    environment: 
+    - DD_API_KEY
+    - DD_HOSTNAME=none
+    - DD_APM_ENABLED=true
+    - DD_APM_NON_LOCAL_TRAFFIC=true
+
   servicestackredis:
     image: redis:4-alpine
     command: redis-server --bind 0.0.0.0
@@ -75,11 +85,10 @@ services:
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
     - DD_ENV
-    - DD_DOTNET_TRACER_HOME
-    - DD_INTEGRATIONS
-    - CORECLR_ENABLE_PROFILING
-    - CORECLR_PROFILER
-    - CORECLR_PROFILER_PATH_64
+    - DD_DOTNET_TRACER_MSBUILD
+    - DD_TRACE_AGENT_URL=http://dd-agent:8126
+    depends_on: 
+    - dd-agent
     command: /project/docker/build.sh
     volumes:
     - ./:/project
@@ -265,12 +274,10 @@ services:
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp2.1
     - DD_ENV
-    - DD_DOTNET_TRACER_HOME
-    - DD_INTEGRATIONS
-    - CORECLR_ENABLE_PROFILING
-    - CORECLR_PROFILER
-    - CORECLR_PROFILER_PATH_64
+    - DD_DOTNET_TRACER_MSBUILD
+    - DD_TRACE_AGENT_URL=http://dd-agent:8126
     depends_on:
+    - dd-agent
     - servicestackredis
     - stackexchangeredis
     - elasticsearch6
@@ -301,12 +308,10 @@ services:
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.0
     - DD_ENV
-    - DD_DOTNET_TRACER_HOME
-    - DD_INTEGRATIONS
-    - CORECLR_ENABLE_PROFILING
-    - CORECLR_PROFILER
-    - CORECLR_PROFILER_PATH_64
+    - DD_DOTNET_TRACER_MSBUILD
+    - DD_TRACE_AGENT_URL=http://dd-agent:8126
     depends_on:
+    - dd-agent
     - servicestackredis
     - stackexchangeredis
     - elasticsearch6
@@ -337,12 +342,10 @@ services:
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.1
     - DD_ENV
-    - DD_DOTNET_TRACER_HOME
-    - DD_INTEGRATIONS
-    - CORECLR_ENABLE_PROFILING
-    - CORECLR_PROFILER
-    - CORECLR_PROFILER_PATH_64
+    - DD_DOTNET_TRACER_MSBUILD
+    - DD_TRACE_AGENT_URL=http://dd-agent:8126
     depends_on:
+    - dd-agent
     - servicestackredis
     - stackexchangeredis
     - elasticsearch6
@@ -373,12 +376,10 @@ services:
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
     - DD_ENV
-    - DD_DOTNET_TRACER_HOME
-    - DD_INTEGRATIONS
-    - CORECLR_ENABLE_PROFILING
-    - CORECLR_PROFILER
-    - CORECLR_PROFILER_PATH_64
+    - DD_DOTNET_TRACER_MSBUILD
+    - DD_TRACE_AGENT_URL=http://dd-agent:8126
     depends_on:
+    - dd-agent
     - servicestackredis
     - stackexchangeredis
     - elasticsearch6

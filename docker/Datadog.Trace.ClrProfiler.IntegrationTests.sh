@@ -4,6 +4,7 @@ set -euxo pipefail
 cd "$( dirname "${BASH_SOURCE[0]}" )"/../
 
 docker/with-profiler-logs.bash \
+    wait-for-it dd-agent:8126 -- \
     dotnet vstest test/Datadog.Trace.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.IntegrationTests/results
 
 docker/with-profiler-logs.bash \
