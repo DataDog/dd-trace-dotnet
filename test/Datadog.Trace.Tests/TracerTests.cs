@@ -387,7 +387,7 @@ namespace Datadog.Trace.Tests
             {
                 using (_tracer.StartActive(operationName))
                 {
-                    remote.DoCallBack(CallFromRemote);
+                    remote.DoCallBack(SleepForLeaseManagerPollCallback);
 
                     // After the lease expires, access the active scope
                     Scope scope = _tracer.ActiveScope;
@@ -401,11 +401,6 @@ namespace Datadog.Trace.Tests
 
             // Assert
             // Nothing. We should just throw no exceptions here
-
-            // Ensure the remote call takes long enough for the lease manager poll to occur.
-            // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
-            // the default value is 10 seconds so the first poll may not be affected by our modification
-            void CallFromRemote() => Thread.Sleep(TimeSpan.FromSeconds(12));
         }
 
         [Fact]
@@ -423,11 +418,11 @@ namespace Datadog.Trace.Tests
             {
                 using (_tracer.StartActive("test-span"))
                 {
-                    remote.DoCallBack(CallFromRemote);
+                    remote.DoCallBack(EmptyCallback);
 
                     using (_tracer.StartActive("test-span-inner"))
                     {
-                        remote.DoCallBack(CallFromRemote);
+                        remote.DoCallBack(EmptyCallback);
                     }
                 }
             }
@@ -443,8 +438,15 @@ namespace Datadog.Trace.Tests
 
             // Assert
             Assert.Equal(2, tracker.DisconnectCount);
+        }
 
-            void CallFromRemote() { }
+        // Ensure the remote call takes long enough for the lease manager poll to occur.
+        // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
+        // the default value is 10 seconds so the first poll may not be affected by our modification
+        private static void SleepForLeaseManagerPollCallback() => Thread.Sleep(TimeSpan.FromSeconds(12));
+
+        private static void EmptyCallback()
+        {
         }
 
         private class InMemoryRemoteObjectTracker : ITrackingHandler
