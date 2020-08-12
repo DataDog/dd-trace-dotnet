@@ -47,6 +47,7 @@ else
 # Set all environment variables to attach the profiler to the following pipeline steps
 echo "Setting environment variables..."
 
+echo "##vso[task.setvariable variable=DD_ENV]CI"
 echo "##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]$dd_tracer_home"
 echo "##vso[task.setvariable variable=DD_DOTNET_TRACER_MSBUILD]$dd_tracer_msbuild"
 echo "##vso[task.setvariable variable=DD_INTEGRATIONS]$dd_tracer_integrations"

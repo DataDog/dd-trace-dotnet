@@ -81,6 +81,8 @@ jobs:
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -88,6 +90,8 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet
 
 - job: native_windows
   strategy:
