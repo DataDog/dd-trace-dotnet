@@ -35,7 +35,7 @@ stages:
     steps:
 
     - task: UseDotNet@2
-      displayName: install dotnet core sdk
+      displayName: install dotnet core sdk 3.1
       inputs:
         packageType: sdk
         version: $(dotnetCoreSdkVersion)
