@@ -43,17 +43,12 @@ jobs:
     vmImage: $(imageName)
 
   # Enable the Datadog Agent service for this job
-  #services:
-  #  dd_agent: dd_agent
+  services:
+    dd_agent: dd_agent
 
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
   # The script exposes the required environment variables to the following steps
   steps:
-  - task: PowerShell@2
-    displayName: Install agent latest release
-    inputs:
-      filePath: ./docker/install_agent_latestrelease.ps1
-
   - task: PowerShell@2
     displayName: Install profiler latest release
     inputs:
