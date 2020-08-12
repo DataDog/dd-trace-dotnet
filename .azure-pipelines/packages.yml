@@ -14,7 +14,7 @@ schedules:
 
 variables:
   buildConfiguration: release
-  dotnetCoreSdkVersion: 3.1.x
+  dotnetCoreSdkVersion: 3.1.107
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
 stages:
