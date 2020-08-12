@@ -22,7 +22,7 @@ pool:
 variables:
   buildConfiguration: Debug
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
-  dotnetCoreSdkVersion: 3.1.x
+  dotnetCoreSdkVersion: 3.1.107
 
 jobs:
 
@@ -226,7 +226,7 @@ jobs:
     displayName: install dotnet core sdk 3.1
     inputs:
       packageType: sdk
-      version: 3.1.x
+      version: $(dotnetCoreSdkVersion)
 
   - task: NuGetToolInstaller@1
     displayName: install nuget
