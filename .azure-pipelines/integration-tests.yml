@@ -53,7 +53,7 @@ jobs:
   - task: PowerShell@2
     displayName: Install profiler latest release
     inputs:
-      filePath: ./docker/install_lastrelease.ps1
+      filePath: ./docker/install_tracer_latestrelease.ps1
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 3.1
@@ -111,7 +111,7 @@ jobs:
   - task: PowerShell@2
     displayName: Install profiler latest release
     inputs:
-      filePath: ./docker/install_lastrelease.ps1
+      filePath: ./docker/install_tracer_latestrelease.ps1
     env:
       DD_TRACER_WORKINGFOLDER: /project
 
@@ -160,7 +160,7 @@ jobs:
   - task: PowerShell@2
     displayName: Install profiler latest release
     inputs:
-      filePath: ./docker/install_lastrelease.ps1
+      filePath: ./docker/install_tracer_latestrelease.ps1
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 3.1
@@ -218,7 +218,7 @@ jobs:
   - task: PowerShell@2
     displayName: Install profiler latest release
     inputs:
-      filePath: ./docker/install_lastrelease.ps1
+      filePath: ./docker/install_tracer_latestrelease.ps1
     env:
       DD_TRACER_WORKINGFOLDER: /project
 
@@ -301,7 +301,7 @@ jobs:
   - task: PowerShell@2
     displayName: Install profiler latest release
     inputs:
-      filePath: ./docker/install_lastrelease.ps1
+      filePath: ./docker/install_tracer_latestrelease.ps1
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 2.1
