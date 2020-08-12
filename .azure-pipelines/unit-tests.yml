@@ -11,6 +11,7 @@ trigger:
 
 variables:
   buildConfiguration: Debug
+  dotnetCoreSdkVersion: 3.1.107
 
 jobs:
 
@@ -41,7 +42,7 @@ jobs:
     displayName: install dotnet core sdk 3.1
     inputs:
       packageType: sdk
-      version: 3.1.x
+      version: $(dotnetCoreSdkVersion)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
@@ -75,7 +76,7 @@ jobs:
     displayName: install dotnet core sdk 3.1
     inputs:
       packageType: sdk
-      version: 3.1.x
+      version: $(dotnetCoreSdkVersion)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
