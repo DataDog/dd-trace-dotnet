@@ -13,10 +13,9 @@ variables:
   buildConfiguration: Debug
   dotnetCoreSdkVersion: 3.1.107
   ddApiKey: $(DD_API_KEY)
-  releaseVersion: 1.19.1
   DD_DOTNET_TRACER_MSBUILD:
 
-
+# Declare the datadog agent as a resource to be used as a pipeline service
 resources:
   containers:
   - container: dd_agent
@@ -43,16 +42,17 @@ jobs:
   pool:
     vmImage: $(imageName)
 
+  # Enable the Datadog Agent service for this job
   services:
     dd_agent: dd_agent
 
+  # Install the tracer latest stable release to attach the profiler to the build and test steps.
+  # The script exposes the required environment variables to the following steps
   steps:
   - task: PowerShell@2
     displayName: Install profiler v$(releaseVersion)
     inputs:
       filePath: ./docker/install_lastrelease.ps1
-    env:
-      releaseVersion: $(releaseVersion)
 
   - task: UseDotNet@2
     displayName: install dotnet core runtime 2.1
@@ -145,6 +145,3 @@ jobs:
       buildPlatform: $(buildPlatform)
       buildConfiguration: $(buildConfiguration)
     condition: succeededOrFailed()
-
-
-
