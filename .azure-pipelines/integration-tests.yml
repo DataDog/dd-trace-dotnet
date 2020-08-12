@@ -117,7 +117,7 @@ jobs:
     inputs:
       filePath: ./docker/install_lastrelease.ps1
     env:
-      DD_TRACER_WORKINGFOLDER:/project
+      DD_TRACER_WORKINGFOLDER: /project
 
   - download: current
     artifact: linux-tracer-home
