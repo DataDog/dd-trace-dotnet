@@ -451,10 +451,6 @@ namespace Datadog.Trace.Tests
         {
             private CountdownEvent _cde;
 
-            public InMemoryRemoteObjectTracker()
-            {
-            }
-
             public InMemoryRemoteObjectTracker(CountdownEvent cde)
             {
                 _cde = cde;
