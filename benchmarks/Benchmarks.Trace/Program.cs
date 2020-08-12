@@ -6,7 +6,7 @@ namespace Benchmarks.Trace
     {
         private static void Main(string[] args)
         {
-            BenchmarkRunner.Run<SpanBenchmark>();
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         }
     }
 }
