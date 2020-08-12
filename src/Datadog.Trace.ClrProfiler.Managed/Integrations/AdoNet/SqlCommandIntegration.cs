@@ -178,15 +178,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             var cancellationToken = (CancellationToken)boxedCancellationToken;
             var commandBehavior = (CommandBehavior)behavior;
 
+            Type sqlCommandType;
             Type sqlDataReaderType;
+
             try
             {
-                var sqlCommandType = command.GetInstrumentedType(SqlCommandTypeName);
+                sqlCommandType = command.GetInstrumentedType(SqlCommandTypeName);
                 sqlDataReaderType = sqlCommandType.Assembly.GetType(SqlDataReaderTypeName);
             }
             catch (Exception ex)
             {
-                // This shouldn't happen because the System.Data.SqlClient.SqlDataReader type should have been loaded already
+                // This shouldn't happen because the assembly holding the System.Data.SqlClient.SqlDataReader type should have been loaded already
                 // profiled app will not continue working as expected without this method
                 Log.Error(ex, "Error finding the System.Data.SqlClient.SqlDataReader type");
                 throw;
@@ -196,12 +198,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
-
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(targetType)
+                       .WithConcreteType(sqlCommandType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
