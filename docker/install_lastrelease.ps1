@@ -4,6 +4,7 @@ echo "Getting latest release version"
 # Get the latest release tag from the github release page
 $release_version = (Invoke-WebRequest https://api.github.com/repos/datadog/dd-trace-dotnet/releases | ConvertFrom-Json)[0].tag_name.SubString(1)
 
+$dd_tracer_workingfolder = $env:DD_TRACER_WORKINGFOLDER
 $dd_tracer_home = ""
 $dd_tracer_msbuild = ""
 $dd_tracer_integrations = ""
@@ -22,7 +23,12 @@ if ($env:os -eq "Windows_NT")
     Expand-Archive windows.zip -DestinationPath .\release
     Remove-Item windows.zip
 
-    $dd_tracer_home = "$(pwd)\release"
+    if ([string]::IsNullOrEmpty($dd_tracer_workingfolder)) {
+        $dd_tracer_home = "$(pwd)\release"
+    } else {
+        $dd_tracer_home = "$dd_tracer_workingfolder\release"
+    }
+
     $dd_tracer_msbuild = "$dd_tracer_home\netstandard2.0\Datadog.Trace.MSBuild.dll"
     $dd_tracer_integrations = "$dd_tracer_home\integrations.json"
     $dd_tracer_profiler_32 = "$dd_tracer_home\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
@@ -38,7 +44,12 @@ else
     tar -xvzf linux.tar.gz -C ./release
     Remove-Item linux.tar.gz
     
-    $dd_tracer_home = "$(pwd)/release"
+    if ([string]::IsNullOrEmpty($dd_tracer_workingfolder)) {
+        $dd_tracer_home = "$(pwd)/release"
+    } else {
+        $dd_tracer_home = "$dd_tracer_workingfolder/release"
+    }
+
     $dd_tracer_msbuild = "$dd_tracer_home/netstandard2.0/Datadog.Trace.MSBuild.dll"
     $dd_tracer_integrations = "$dd_tracer_home/integrations.json"
     $dd_tracer_profiler_64 = "$dd_tracer_home/Datadog.Trace.ClrProfiler.Native.so"

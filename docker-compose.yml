@@ -74,6 +74,12 @@ services:
     environment:
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
+    - DD_ENV
+    - DD_DOTNET_TRACER_HOME
+    - DD_INTEGRATIONS
+    - CORECLR_ENABLE_PROFILING
+    - CORECLR_PROFILER
+    - CORECLR_PROFILER_PATH_64
     command: /project/docker/build.sh
     volumes:
     - ./:/project
@@ -348,6 +354,12 @@ services:
     - MYSQL_PORT=3306
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
+    - DD_ENV
+    - DD_DOTNET_TRACER_HOME
+    - DD_INTEGRATIONS
+    - CORECLR_ENABLE_PROFILING
+    - CORECLR_PROFILER
+    - CORECLR_PROFILER_PATH_64
     depends_on:
     - servicestackredis
     - stackexchangeredis
