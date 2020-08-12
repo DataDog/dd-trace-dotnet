@@ -50,7 +50,7 @@ jobs:
   # The script exposes the required environment variables to the following steps
   steps:
   - task: PowerShell@2
-    displayName: Install profiler v$(releaseVersion)
+    displayName: Install profiler latest release
     inputs:
       filePath: ./docker/install_lastrelease.ps1
 

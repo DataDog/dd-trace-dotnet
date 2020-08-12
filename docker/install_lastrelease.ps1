@@ -1,3 +1,5 @@
+$ProgressPreference = 'SilentlyContinue'
+
 echo "Getting latest release version"
 # Get the latest release tag from the github release page
 $release_version = (Invoke-WebRequest https://api.github.com/repos/datadog/dd-trace-dotnet/releases | ConvertFrom-Json)[0].tag_name.SubString(1)
