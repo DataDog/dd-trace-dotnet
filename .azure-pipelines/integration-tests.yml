@@ -67,7 +67,7 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
       arguments: --configuration $(buildConfiguration) -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
     env:
-      DD_SERVICE_NAME: $(System.JobName)-dd-tracer-dotnet-loader
+      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-loader
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
@@ -77,17 +77,15 @@ jobs:
       modifyOutputPath: false
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0  -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0 -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
     env:
-      DD_SERVICE_NAME: $(System.JobName)-dd-tracer-dotnet-publish
+      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-publish
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run Profiler
-    env:
-      DD_SERVICE_NAME: $(System.JobName)-dd-tracer-dotnet
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
     artifact: linux-tracer-home
@@ -137,7 +135,18 @@ jobs:
 
 - job: build_alpine_linux_profiler
 
+  # Enable the Datadog Agent service for this job
+  services:
+    dd_agent: dd_agent
+
+  # Install the tracer latest stable release to attach the profiler to the build and test steps.
+  # The script exposes the required environment variables to the following steps
   steps:
+  - task: PowerShell@2
+    displayName: Install profiler latest release
+    inputs:
+      filePath: ./docker/install_lastrelease.ps1
+
   - task: UseDotNet@2
     displayName: install dotnet core sdk 3.1
     inputs:
@@ -148,7 +157,9 @@ jobs:
     inputs:
       command: build
       projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-      arguments: --configuration $(buildConfiguration)
+      arguments: --configuration $(buildConfiguration) -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+    env:
+      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-loader
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
@@ -158,7 +169,9 @@ jobs:
       modifyOutputPath: false
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0 -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+    env:
+      DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-publish
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler.Alpine
