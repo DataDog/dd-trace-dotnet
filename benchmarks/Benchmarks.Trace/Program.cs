@@ -1,4 +1,6 @@
+using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
+using Datadog.Trace.BenchmarkDotNet;
 
 namespace Benchmarks.Trace
 {
@@ -6,7 +8,9 @@ namespace Benchmarks.Trace
     {
         private static void Main(string[] args)
         {
-            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+            var config = DefaultConfig.Instance.AddExporter(DatadogExporter.Default);
+
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
         }
     }
 }
