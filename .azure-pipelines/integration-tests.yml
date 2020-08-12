@@ -370,7 +370,7 @@ jobs:
     inputs:
       solution: samples-iis/samples-iis.sln
       configuration: '$(buildConfiguration)'
-      msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml' /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"'
       maximumCpuCount: true
     env:
       DD_SERVICE_NAME: $(Agent.JobName)-dd-tracer-dotnet-samples-iis
