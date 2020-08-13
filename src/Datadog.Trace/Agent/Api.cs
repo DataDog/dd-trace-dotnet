@@ -159,9 +159,8 @@ namespace Datadog.Trace.Agent
                 }
                 catch
                 {
-                    // count the exceptions thrown by the HttpClient,
-                    // not responses with 5xx status codes
-                    // (which cause EnsureSuccessStatusCode() to throw below)
+                    // count only network/infrastructure errors, not valid responses with error status codes
+                    // (which are handled below)
                     _statsd?.AppendIncrementCount(TracerMetricNames.Api.Errors);
                     throw;
                 }
@@ -176,7 +175,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 // Attempt a retry if the status code is not SUCCESS
-                if (response.StatusCode < 200 || response.StatusCode > 300)
+                if (response.StatusCode < 200 || response.StatusCode >= 300)
                 {
                     return false;
                 }

@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Vendors.MessagePack;
@@ -11,7 +7,7 @@ namespace Datadog.Trace.Agent
 {
     internal class ApiWebRequest : IApiRequest
     {
-        private HttpWebRequest _request;
+        private readonly HttpWebRequest _request;
 
         public ApiWebRequest(HttpWebRequest request)
         {
@@ -40,8 +36,17 @@ namespace Datadog.Trace.Agent
                 await MessagePackSerializer.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
             }
 
-            var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
-            return new ApiWebResponse(httpWebResponse);
+            try
+            {
+                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                return new ApiWebResponse(httpWebResponse);
+            }
+            catch (WebException exception)
+                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+            {
+                // If the exception is caused by an error status code, ignore it and let the caller handle the result
+                return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
         }
     }
 }
