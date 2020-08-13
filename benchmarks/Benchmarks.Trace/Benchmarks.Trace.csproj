@@ -31,7 +31,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="microbenchmarks\" />
     <None Remove="microbenchmarks\.gitignore" />
   </ItemGroup>
 
