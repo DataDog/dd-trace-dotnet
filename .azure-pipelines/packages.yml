@@ -14,7 +14,7 @@ schedules:
 
 variables:
   buildConfiguration: release
-  dotnetCoreSdkVersion: 3.1.x
+  dotnetCoreSdkVersion: 3.1.107
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
 stages:
@@ -35,7 +35,7 @@ stages:
     steps:
 
     - task: UseDotNet@2
-      displayName: install dotnet core sdk
+      displayName: install dotnet core sdk 3.1
       inputs:
         packageType: sdk
         version: $(dotnetCoreSdkVersion)

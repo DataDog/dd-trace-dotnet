@@ -18,10 +18,11 @@ pr:
 
 pool:
   vmImage: ubuntu-18.04
+
 variables:
   buildConfiguration: Debug
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
-  dotnetCoreSdkVersion: 3.1.x
+  dotnetCoreSdkVersion: 3.1.107
 
 jobs:
 
@@ -29,7 +30,7 @@ jobs:
 
   steps:
   - task: UseDotNet@2
-    displayName: install dotnet core sdk
+    displayName: install dotnet core sdk 3.1
     inputs:
       version: $(dotnetCoreSdkVersion)
 
@@ -65,15 +66,12 @@ jobs:
   strategy:
     matrix:
       netcoreapp2_1:
-        dotnetCoreSdkVersion: 2.1.x
         publishTargetFramework: netcoreapp2.1
       netcoreapp3_0:
-        dotnetCoreSdkVersion: 3.0.x
         publishTargetFramework: netcoreapp3.0
       netcoreapp3_1:
-        dotnetCoreSdkVersion: 3.1.x
         publishTargetFramework: netcoreapp3.1
- 
+
   variables:
     TestAllPackageVersions: true
 
@@ -109,7 +107,7 @@ jobs:
 
   steps:
   - task: UseDotNet@2
-    displayName: install dotnet core sdk
+    displayName: install dotnet core sdk 3.1
     inputs:
       version: $(dotnetCoreSdkVersion)
 
@@ -145,15 +143,12 @@ jobs:
   strategy:
     matrix:
       netcoreapp2_1:
-        dotnetCoreSdkVersion: 2.1.x
         publishTargetFramework: netcoreapp2.1
       netcoreapp3_0:
-        dotnetCoreSdkVersion: 3.0.x
         publishTargetFramework: netcoreapp3.0
       netcoreapp3_1:
-        dotnetCoreSdkVersion: 3.1.x
         publishTargetFramework: netcoreapp3.1
-  
+
   variables:
     TestAllPackageVersions: true
 
@@ -216,22 +211,22 @@ jobs:
 
   steps:
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 2.1
+    displayName: install dotnet core runtime 2.1
     inputs:
-      packageType: sdk
+      packageType: runtime
       version: 2.1.x
 
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.0
+    displayName: install dotnet core runtime 3.0
     inputs:
-      packageType: sdk
+      packageType: runtime
       version: 3.0.x
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 3.1
     inputs:
       packageType: sdk
-      version: 3.1.x
+      version: $(dotnetCoreSdkVersion)
 
   - task: NuGetToolInstaller@1
     displayName: install nuget
