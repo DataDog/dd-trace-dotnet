@@ -1,22 +1,24 @@
-// From https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/DiagnosticSourceEventSource.cs
-
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.Util
 {
-    internal class MemberFetcher
+    internal class PropertyFetcher : IMemberFetcher
     {
         private readonly string _propertyName;
         private Type _expectedType;
         private object _fetchForExpectedType;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MemberFetcher"/> class.
+        /// Initializes a new instance of the <see cref="PropertyFetcher"/> class.
         /// </summary>
         /// <param name="propertyName">The name of the property that this instance will fetch.</param>
-        public MemberFetcher(string propertyName)
+        public PropertyFetcher(string propertyName)
         {
             _propertyName = propertyName;
         }

@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         internal static readonly ModuleBuilder Module;
 
         private static readonly ConcurrentDictionary<MemberFetcherCacheKey, object> Cache = new ConcurrentDictionary<MemberFetcherCacheKey, object>();
-        private static readonly ConcurrentDictionary<MemberFetcherCacheKey, MemberFetcher> MemberFetcherCache = new ConcurrentDictionary<MemberFetcherCacheKey, MemberFetcher>();
+        private static readonly ConcurrentDictionary<MemberFetcherCacheKey, IMemberFetcher> MemberFetcherCache = new ConcurrentDictionary<MemberFetcherCacheKey, IMemberFetcher>();
 
         static ObjectExtensions()
         {
@@ -166,9 +166,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 var type = source.GetType();
 
-                MemberFetcher fetcher = MemberFetcherCache.GetOrAdd(
+                IMemberFetcher fetcher = MemberFetcherCache.GetOrAdd(
                     GetKey<TResult>(MemberType.Property, propertyName, type),
-                    key => new MemberFetcher(key.Name));
+                    key => new PropertyFetcher(key.Name));
 
                 if (fetcher != null)
                 {
@@ -317,15 +317,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     return hashCode;
                 }
             }
-        }
-
-#pragma warning disable SA1201 // Elements must appear in the correct order
-        private enum MemberType
-#pragma warning restore SA1201 // Elements must appear in the correct order
-        {
-            Field,
-            Property,
-            Method
         }
     }
 }

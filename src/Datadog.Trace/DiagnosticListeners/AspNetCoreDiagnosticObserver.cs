@@ -32,12 +32,12 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AspNetCoreDiagnosticObserver>();
 
-        private static readonly MemberFetcher HttpRequestInStartHttpContextFetcher = new MemberFetcher("HttpContext");
-        private static readonly MemberFetcher HttpRequestInStopHttpContextFetcher = new MemberFetcher("HttpContext");
-        private static readonly MemberFetcher UnhandledExceptionHttpContextFetcher = new MemberFetcher("HttpContext");
-        private static readonly MemberFetcher UnhandledExceptionExceptionFetcher = new MemberFetcher("Exception");
-        private static readonly MemberFetcher BeforeActionHttpContextFetcher = new MemberFetcher("httpContext");
-        private static readonly MemberFetcher BeforeActionActionDescriptorFetcher = new MemberFetcher("actionDescriptor");
+        private static readonly PropertyFetcher HttpRequestInStartHttpContextFetcher = new PropertyFetcher("HttpContext");
+        private static readonly PropertyFetcher HttpRequestInStopHttpContextFetcher = new PropertyFetcher("HttpContext");
+        private static readonly PropertyFetcher UnhandledExceptionHttpContextFetcher = new PropertyFetcher("HttpContext");
+        private static readonly PropertyFetcher UnhandledExceptionExceptionFetcher = new PropertyFetcher("Exception");
+        private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("httpContext");
+        private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("actionDescriptor");
 
         private readonly IDatadogTracer _tracer;
         private readonly AspNetCoreDiagnosticOptions _options;
