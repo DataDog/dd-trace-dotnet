@@ -1,7 +1,5 @@
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using Datadog.Trace;
-using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Benchmarks.Trace
@@ -9,10 +7,7 @@ namespace Benchmarks.Trace
     /// <summary>
     /// Span benchmarks
     /// </summary>
-    [DatadogExporter]
     [MemoryDiagnoser]
-    [SimpleJob(RuntimeMoniker.Net472)]
-    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     public class SpanBenchmark
     {
         private static Tracer _tracer;
