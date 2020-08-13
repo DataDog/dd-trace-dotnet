@@ -623,7 +623,7 @@ namespace Datadog.Trace
             private void OnPortFileDeleted(object source, FileSystemEventArgs e)
             {
                 // For if some process or user decides to delete the port file, we have some evidence of what happened
-                Log.Error("The port file ({0}) has been deleted.");
+                Log.Error("The port file ({0}) has been deleted.", e.FullPath);
             }
 
             private void ReadPortAndAlertSubscribers()
