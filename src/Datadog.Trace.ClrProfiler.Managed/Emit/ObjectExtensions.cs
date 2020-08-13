@@ -208,16 +208,19 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// <returns><c>true</c> if the field exists, otherwise <c>false</c>.</returns>
         public static bool TryGetFieldValue<TResult>(this object source, string fieldName, out TResult value)
         {
-            var type = source.GetType();
-
-            object cachedItem = Cache.GetOrAdd(
-                GetKey<TResult>(MemberType.Field, fieldName, type),
-                key => CreateFieldDelegate<TResult>(key.Type1, key.Name));
-
-            if (cachedItem is Func<object, TResult> func)
+            if (source != null)
             {
-                value = func(source);
-                return true;
+                var type = source.GetType();
+
+                IMemberFetcher fetcher = MemberFetcherCache.GetOrAdd(
+                    GetKey<TResult>(MemberType.Field, fieldName, type),
+                    key => new FieldFetcher(key.Name));
+
+                if (fetcher != null)
+                {
+                    value = fetcher.Fetch<TResult>(source, type);
+                    return true;
+                }
             }
 
             value = default;
@@ -234,44 +237,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static MemberFetcherCacheKey GetKey<TResult>(MemberType memberType, string name, Type type)
         {
             return new MemberFetcherCacheKey(memberType, type, typeof(TResult), name);
-        }
-
-        private static Func<object, TResult> CreateFieldDelegate<TResult>(Type containerType, string fieldName)
-        {
-            FieldInfo fieldInfo = containerType.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (fieldInfo == null)
-            {
-                return null;
-            }
-
-            DynamicMethod dynamicMethod1 = new DynamicMethod($"{containerType.FullName}.{fieldName}", typeof(TResult), new Type[] { typeof(object) }, ObjectExtensions.Module, skipVisibility: true);
-            ILGenerator il = dynamicMethod1.GetILGenerator();
-
-            il.Emit(OpCodes.Ldarg_0);
-
-            if (containerType.IsValueType)
-            {
-                il.Emit(OpCodes.Unbox, containerType);
-            }
-            else
-            {
-                il.Emit(OpCodes.Castclass, containerType);
-            }
-
-            il.Emit(OpCodes.Ldfld, fieldInfo);
-
-            if (fieldInfo.FieldType.IsValueType && typeof(TResult) == typeof(object))
-            {
-                il.Emit(OpCodes.Box, fieldInfo.FieldType);
-            }
-            else if (fieldInfo.FieldType != typeof(TResult))
-            {
-                il.Emit(OpCodes.Castclass, typeof(TResult));
-            }
-
-            il.Emit(OpCodes.Ret);
-            return (Func<object, TResult>)dynamicMethod1.CreateDelegate(typeof(Func<object, TResult>));
         }
 
         private readonly struct MemberFetcherCacheKey : IEquatable<MemberFetcherCacheKey>
