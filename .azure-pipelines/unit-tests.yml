@@ -27,6 +27,15 @@ resources:
       DD_HOSTNAME: none
       DD_APM_ENABLED: true
       DD_APM_NON_LOCAL_TRAFFIC: true
+  - container: dd_agent_dev
+    image: datadog/agent-dev:olivielpeau-image-allow-disabling-system-checks-py3
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_REMOVE_DEFAULT_CHECKS: true
+      DD_APM_ENABLED: true
+      DD_APM_NON_LOCAL_TRAFFIC: true
 
 jobs:
 
@@ -36,15 +45,17 @@ jobs:
     matrix:
       windows:
         imageName: windows-2019
+        serviceName: dd_agent
       linux:
         imageName: ubuntu-18.04
+        serviceName: dd_agent_dev
 
   pool:
     vmImage: $(imageName)
 
   # Enable the Datadog Agent service for this job
   services:
-    dd_agent: dd_agent
+    dd_agent: $[ variables['serviceName'] ]
 
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
   # The script exposes the required environment variables to the following steps
