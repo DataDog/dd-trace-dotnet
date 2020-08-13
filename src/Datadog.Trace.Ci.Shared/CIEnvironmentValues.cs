@@ -200,16 +200,21 @@ namespace Datadog.Trace.Ci
         {
             IsCI = true;
             Provider = "azurepipelines";
-            Repository = EnvironmentHelpers.GetEnvironmentVariable("BUILD_REPOSITORY_URI");
-            Commit = EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCEVERSION");
             SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCESDIRECTORY");
             PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID");
             PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDNUMBER");
-            PipelineUrl = string.Format("{0}/{1}/_build/results?buildId={2}&_a=summary", EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"), EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMPROJECT"), EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID"));
-            Branch = EnvironmentHelpers.GetEnvironmentVariable("Build.SourceBranchName");
+            PipelineUrl = string.Format("{0}{1}/_build/results?buildId={2}&_a=summary", EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"), EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMPROJECT"), EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID"));
+            Repository = EnvironmentHelpers.GetEnvironmentVariable("BUILD_REPOSITORY_URI");
+
+            string prCommit = EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_PULLREQUEST_SOURCECOMMIT");
+            Commit = !string.IsNullOrWhiteSpace(prCommit) ? prCommit : EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCEVERSION");
+
+            string prBranch = EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_PULLREQUEST_SOURCEBRANCH");
+            Branch = !string.IsNullOrWhiteSpace(prBranch) ? prBranch : EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCEBRANCHNAME");
+
             if (string.IsNullOrWhiteSpace(Branch))
             {
-                Branch = EnvironmentHelpers.GetEnvironmentVariable("Build.SourceBranch");
+                Branch = EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCEBRANCH");
             }
         }
 
