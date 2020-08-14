@@ -81,5 +81,20 @@ namespace Datadog.Trace.Tests
 
             _writerMock.Verify(w => w.WriteTrace(It.IsAny<Span[]>()), assertion);
         }
+
+        [Theory]
+        [InlineData("http://localhost:7777/agent?querystring", "http://127.0.0.1:7777/agent?querystring")]
+        [InlineData("http://datadog:7777/agent?querystring", "http://datadog:7777/agent?querystring")]
+        public void ReplaceLocalhost(string original, string expected)
+        {
+            var settings = new NameValueCollection
+            {
+                { ConfigurationKeys.AgentUri, original }
+            };
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
+
+            Assert.Equal(expected, tracerSettings.AgentUri.ToString());
+        }
     }
 }
