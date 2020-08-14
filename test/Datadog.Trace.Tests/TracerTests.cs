@@ -434,9 +434,10 @@ namespace Datadog.Trace.Tests
             // Ensure that we wait long enough for the lease manager poll to occur.
             // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
             // the default value is 10 seconds so the first poll may not be affected by our modification
-            cde.Wait(TimeSpan.FromSeconds(30));
+            bool eventSet = cde.Wait(TimeSpan.FromSeconds(30));
 
             // Assert
+            Assert.True(eventSet);
             Assert.Equal(2, tracker.DisconnectCount);
         }
 
