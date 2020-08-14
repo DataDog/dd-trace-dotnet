@@ -30,4 +30,8 @@
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.6.0" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="microbenchmarks\.gitignore" />
+  </ItemGroup>
+
 </Project>
