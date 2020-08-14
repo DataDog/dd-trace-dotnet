@@ -387,7 +387,7 @@ namespace Datadog.Trace.Tests
             {
                 using (_tracer.StartActive(operationName))
                 {
-                    remote.DoCallBack(CallFromRemote);
+                    remote.DoCallBack(SleepForLeaseManagerPollCallback);
 
                     // After the lease expires, access the active scope
                     Scope scope = _tracer.ActiveScope;
@@ -401,15 +401,14 @@ namespace Datadog.Trace.Tests
 
             // Assert
             // Nothing. We should just throw no exceptions here
-
-            void CallFromRemote() => Thread.Sleep(200);
         }
 
         [Fact]
-        public async Task DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose()
+        public void DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose()
         {
             // Arrange
-            var tracker = new InMemoryRemoteObjectTracker();
+            var cde = new CountdownEvent(2);
+            var tracker = new InMemoryRemoteObjectTracker(cde);
             TrackingServices.RegisterTrackingHandler(tracker);
 
             var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation);
@@ -419,11 +418,11 @@ namespace Datadog.Trace.Tests
             {
                 using (_tracer.StartActive("test-span"))
                 {
-                    remote.DoCallBack(CallFromRemote);
+                    remote.DoCallBack(EmptyCallback);
 
                     using (_tracer.StartActive("test-span-inner"))
                     {
-                        remote.DoCallBack(CallFromRemote);
+                        remote.DoCallBack(EmptyCallback);
                     }
                 }
             }
@@ -432,19 +431,41 @@ namespace Datadog.Trace.Tests
                 AppDomain.Unload(remote);
             }
 
-            await Task.Delay(200);
+            // Ensure that we wait long enough for the lease manager poll to occur.
+            // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
+            // the default value is 10 seconds so the first poll may not be affected by our modification
+            bool eventSet = cde.Wait(TimeSpan.FromSeconds(30));
 
             // Assert
+            Assert.True(eventSet);
             Assert.Equal(2, tracker.DisconnectCount);
+        }
 
-            void CallFromRemote() { }
+        // Ensure the remote call takes long enough for the lease manager poll to occur.
+        // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
+        // the default value is 10 seconds so the first poll may not be affected by our modification
+        private static void SleepForLeaseManagerPollCallback() => Thread.Sleep(TimeSpan.FromSeconds(12));
+
+        private static void EmptyCallback()
+        {
         }
 
         private class InMemoryRemoteObjectTracker : ITrackingHandler
         {
+            private CountdownEvent _cde;
+
+            public InMemoryRemoteObjectTracker(CountdownEvent cde)
+            {
+                _cde = cde;
+            }
+
             public int DisconnectCount { get; set; }
 
-            public void DisconnectedObject(object obj) => DisconnectCount++;
+            public void DisconnectedObject(object obj)
+            {
+                DisconnectCount++;
+                _cde.Signal();
+            }
 
             public void MarshaledObject(object obj, ObjRef or)
             {
