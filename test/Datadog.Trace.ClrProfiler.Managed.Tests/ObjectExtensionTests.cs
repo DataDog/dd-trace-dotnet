@@ -58,7 +58,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Fact]
-        public void CallMethod_TwoOverloads_WithDifferentType_ShouldNotAffectResult()
+        public void CallMethod_OneTypeArg_WithDifferentReturnType_ShouldNotAffectResult()
+        {
+            var someInstance = new SomeClass();
+            var expected = 42;
+
+            var objectResult = someInstance.CallMethod<object>("GetTheAnswerToTheUniverse");
+            var actualResult = someInstance.CallMethod<int>("GetTheAnswerToTheUniverse");
+
+            Assert.Equal(expected, (int)objectResult.GetValueOrDefault());
+            Assert.Equal(expected, actualResult.GetValueOrDefault());
+        }
+
+        [Fact]
+        public void CallMethod_TwoTypeArgs_WithDifferentReturnType_ShouldNotAffectResult()
         {
             var someInstance = new SomeClass();
             var expected = 1;
@@ -81,6 +94,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             public int GetSomeIntField()
             {
                 return someIntField;
+            }
+
+            public int GetTheAnswerToTheUniverse()
+            {
+                return 42;
             }
 
             public int AddOne(int value)

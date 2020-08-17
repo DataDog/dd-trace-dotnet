@@ -96,9 +96,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public static bool TryCallMethod<TResult>(this object source, string methodName, out TResult value)
         {
             var type = source.GetType();
+            var returnType = typeof(TResult);
 
             object cachedItem = Cache.GetOrAdd(
-                new PropertyFetcherCacheKey(type, null, methodName),
+                new PropertyFetcherCacheKey(type, returnType, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TResult>>
                        .CreateMethodCallDelegate(
@@ -121,11 +122,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return source.TryCallMethod(methodName, arg1, out TResult result)
                        ? new MemberResult<TResult>(result)
                        : MemberResult<TResult>.NotFound;
-        }
-
-        public static MemberResult<object> CallMethod<TArg1>(this object source, string methodName, TArg1 arg1)
-        {
-            return CallMethod<TArg1, object>(source, methodName, arg1);
         }
 
         public static MemberResult<TResult> CallMethod<TResult>(this object source, string methodName)
