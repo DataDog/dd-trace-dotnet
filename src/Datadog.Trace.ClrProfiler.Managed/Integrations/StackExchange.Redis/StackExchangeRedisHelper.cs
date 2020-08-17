@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>The multiplexer</returns>
         public static object GetMultiplexer(object obj)
         {
-            return obj.GetField("multiplexer").GetValueOrDefault();
+            return obj.GetField<object>("multiplexer").GetValueOrDefault();
         }
     }
 }

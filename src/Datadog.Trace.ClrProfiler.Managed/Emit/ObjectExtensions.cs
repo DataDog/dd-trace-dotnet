@@ -221,11 +221,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                        : MemberResult<TResult>.NotFound;
         }
 
-        public static MemberResult<object> GetField(this object source, string fieldName)
-        {
-            return GetField<object>(source, fieldName);
-        }
-
         private static PropertyFetcherCacheKey GetKey<TResult>(string name, Type type)
         {
             return new PropertyFetcherCacheKey(type, typeof(TResult), name);
