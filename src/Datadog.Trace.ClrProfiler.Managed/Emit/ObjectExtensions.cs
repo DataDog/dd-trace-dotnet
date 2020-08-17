@@ -28,9 +28,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             var type = source.GetType();
             var paramType1 = typeof(TArg1);
+            var returnType = typeof(TResult);
 
             object cachedItem = Cache.GetOrAdd(
-                new PropertyFetcherCacheKey(type, paramType1, methodName),
+                new PropertyFetcherCacheKey(type, paramType1, returnType, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TArg1, TResult>>
                        .CreateMethodCallDelegate(
