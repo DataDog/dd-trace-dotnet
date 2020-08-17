@@ -104,6 +104,10 @@ namespace Benchmarks.Trace
             {
                 throw new NotImplementedException();
             }
+
+            public void Dispose()
+            {
+            }
         }
     }
 }

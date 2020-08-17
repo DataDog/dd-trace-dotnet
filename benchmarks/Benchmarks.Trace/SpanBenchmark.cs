@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 
@@ -8,6 +9,7 @@ namespace Benchmarks.Trace
     /// <summary>
     /// Span benchmarks
     /// </summary>
+    [DatadogExporter]
     [MemoryDiagnoser]
     public class SpanBenchmark
     {
