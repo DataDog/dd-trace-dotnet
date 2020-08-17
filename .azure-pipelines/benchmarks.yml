@@ -74,5 +74,10 @@ stages:
 
     - publish: $(System.DefaultWorkingDirectory)/nuget-output
       artifact: nuget-packages
-      
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'run'
+        projects: '$(System.DefaultWorkingDirectory)/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
+        arguments: '-c Release -- -i -m -f ''*'''
   
