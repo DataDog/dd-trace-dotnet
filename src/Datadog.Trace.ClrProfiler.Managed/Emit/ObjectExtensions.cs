@@ -226,54 +226,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return new PropertyFetcherCacheKey(type, typeof(TResult), name);
         }
 
-        private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
-        {
-            PropertyInfo propertyInfo = containerType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (propertyInfo == null)
-            {
-                return null;
-            }
-
-            var dynamicMethod = Emit<Func<object, TResult>>.NewDynamicMethod($"{containerType.FullName}.get_{propertyName}");
-            dynamicMethod.LoadArgument(0);
-
-            if (containerType.IsValueType)
-            {
-                dynamicMethod.Unbox(containerType);
-            }
-            else
-            {
-                dynamicMethod.CastClass(containerType);
-            }
-
-            MethodInfo methodInfo = propertyInfo.GetMethod;
-
-            if (methodInfo.IsStatic)
-            {
-                dynamicMethod.Call(methodInfo);
-            }
-            else
-            {
-                // C# compiler always uses CALLVIRT for instance methods
-                // to get the cheap null check, even if they are not virtual
-                dynamicMethod.CallVirtual(methodInfo);
-            }
-
-            if (propertyInfo.PropertyType != typeof(TResult))
-            {
-                if (propertyInfo.PropertyType.IsValueType)
-                {
-                    dynamicMethod.Box(propertyInfo.PropertyType);
-                }
-
-                dynamicMethod.CastClass(typeof(TResult));
-            }
-
-            dynamicMethod.Return();
-            return dynamicMethod.CreateDelegate();
-        }
-
         private static Func<object, TResult> CreateFieldDelegate<TResult>(Type containerType, string fieldName)
         {
             FieldInfo fieldInfo = containerType.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
