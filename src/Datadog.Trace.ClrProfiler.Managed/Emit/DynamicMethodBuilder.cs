@@ -23,14 +23,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// </summary>
         /// <param name="type">The <see cref="Type"/> that contains the method to call when the returned delegate is executed..</param>
         /// <param name="methodName">The name of the method to call when the returned delegate is executed.</param>
-        /// <param name="callOpCode">The OpCode to use in the method call.</param>
         /// <param name="methodParameterTypes">If not null, use method overload that matches the specified parameters.</param>
         /// <param name="methodGenericArguments">If not null, use method overload that has the same number of generic arguments.</param>
         /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
         public static TDelegate CreateMethodCallDelegate(
             Type type,
             string methodName,
-            OpCodeValue callOpCode,
             Type[] methodParameterTypes = null,
             Type[] methodGenericArguments = null)
         {
@@ -149,20 +147,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 }
             }
 
-            if (callOpCode == OpCodeValue.Call || methodInfo.IsStatic)
+            if (methodInfo.IsStatic)
             {
                 // non-virtual call (e.g. static method, or method override calling overriden implementation)
                 il.Emit(OpCodes.Call, methodInfo);
             }
-            else if (callOpCode == OpCodeValue.Callvirt)
+            else
             {
                 // Note: C# compiler uses CALLVIRT for non-virtual
                 // instance methods to get the cheap null check
                 il.Emit(OpCodes.Callvirt, methodInfo);
-            }
-            else
-            {
-                throw new NotSupportedException($"OpCode {callOpCode} not supported when calling a method.");
             }
 
             if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
