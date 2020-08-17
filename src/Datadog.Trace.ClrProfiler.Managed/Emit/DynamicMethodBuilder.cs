@@ -18,35 +18,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
 
         /// <summary>
-        /// Gets a previously cache delegate used to call the specified method,
-        /// or creates and caches a new delegate if not found.
-        /// </summary>
-        /// <param name="type">The <see cref="Type"/> that contains the method.</param>
-        /// <param name="methodName">The name of the method.</param>
-        /// <param name="callOpCode">The OpCode to use in the method call.</param>
-        /// <param name="returnType">The method's return type.</param>
-        /// <param name="methodParameterTypes">optional types for the method parameters</param>
-        /// <param name="methodGenericArguments">optional generic type arguments for a generic method</param>
-        /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
-        public static TDelegate GetOrCreateMethodCallDelegate(
-            Type type,
-            string methodName,
-            OpCodeValue callOpCode,
-            Type returnType = null,
-            Type[] methodParameterTypes = null,
-            Type[] methodGenericArguments = null)
-        {
-            return Cache.GetOrAdd(
-                new Key(type, methodName, callOpCode, returnType, methodParameterTypes, methodGenericArguments),
-                key => CreateMethodCallDelegate(
-                    key.Type,
-                    key.MethodName,
-                    key.CallOpCode,
-                    key.MethodParameterTypes,
-                    key.MethodGenericArguments));
-        }
-
-        /// <summary>
         /// Creates a simple <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/> that
         /// calls a method with the specified name and parameter types.
         /// </summary>
