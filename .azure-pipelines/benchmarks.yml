@@ -8,17 +8,34 @@ pr: none
 variables:
   buildConfiguration: release
   dotnetCoreSdkVersion: 3.1.107
+  ddApiKey: $(DD_API_KEY)
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
+
+# Declare the datadog agent as a resource to be used as a pipeline service
+resources:
+  containers:
+  - container: dd_agent
+    image: datadog/agent:latest
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_HOSTNAME: none
+      DD_APM_ENABLED: true
+      DD_APM_NON_LOCAL_TRAFFIC: true
 
 stages:
 - stage: build
   jobs:
 
-  #### Windows and NuGet packages
+  #### Windows 
 
-  - job: windows_packages_and_nuget
+  - job: Windows
     pool:
       vmImage: windows-2019
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
     variables:
       tracerHomeName: windows-tracer-home
       tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
@@ -49,22 +66,8 @@ stages:
         restoreSolution: Datadog.Trace.Native.sln
         verbosityRestore: Normal
 
-    # this triggers a dependency chain that builds all the managed, x64, and x86 dlls, and the zip and msi files
-    - task: MSBuild@1
-      displayName: build both msi
-      inputs:
-        solution: Datadog.Trace.proj
-        configuration: $(buildConfiguration)
-        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;TracerHomeDirectory=$(tracerHome);RunWixToolsOutOfProc=true;MsiOutputPath=$(msiHome)
-        maximumCpuCount: true
-
-    - publish: $(msiHome)/en-us
-      artifact: windows-msi
-
-    - publish: $(tracerHome).zip
-      artifact: $(tracerHomeName)
-
     - task: DotNetCoreCLI@2
+      displayName: Benchmarks
       inputs:
         command: 'run'
         projects: '$(System.DefaultWorkingDirectory)/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
