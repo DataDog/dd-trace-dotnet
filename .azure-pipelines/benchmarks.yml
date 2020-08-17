@@ -1,0 +1,78 @@
+trigger:
+  branches:
+    include:
+      - master
+      - refs/tags/*
+pr: none
+
+variables:
+  buildConfiguration: release
+  dotnetCoreSdkVersion: 3.1.107
+  publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
+
+stages:
+- stage: build
+  jobs:
+
+  #### Windows and NuGet packages
+
+  - job: windows_packages_and_nuget
+    pool:
+      vmImage: windows-2019
+    variables:
+      tracerHomeName: windows-tracer-home
+      tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
+      msiHome: $(System.DefaultWorkingDirectory)/src/bin/msi
+      nuget_packages: $(Pipeline.Workspace)/.nuget/packages
+
+    steps:
+
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 3.1
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdkVersion)
+
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet restore
+      inputs:
+        command: restore
+        projects: src/**/*.csproj
+
+    # native projects must be restored with nuget.exe
+    - task: NuGetCommand@2
+      displayName: nuget restore native
+      inputs:
+        restoreSolution: Datadog.Trace.Native.sln
+        verbosityRestore: Normal
+
+    # this triggers a dependency chain that builds all the managed, x64, and x86 dlls, and the zip and msi files
+    - task: MSBuild@1
+      displayName: build both msi
+      inputs:
+        solution: Datadog.Trace.proj
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;TracerHomeDirectory=$(tracerHome);RunWixToolsOutOfProc=true;MsiOutputPath=$(msiHome)
+        maximumCpuCount: true
+
+    - publish: $(msiHome)/en-us
+      artifact: windows-msi
+
+    - publish: $(tracerHome).zip
+      artifact: $(tracerHomeName)
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet pack
+      inputs:
+        command: pack
+        packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
+        packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
+        configuration: $(buildConfiguration)
+
+    - publish: $(System.DefaultWorkingDirectory)/nuget-output
+      artifact: nuget-packages
+      
+  
