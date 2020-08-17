@@ -71,5 +71,5 @@ stages:
       inputs:
         command: 'run'
         projects: '$(System.DefaultWorkingDirectory)/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
-        arguments: '-c Release -f netcoreapp3.1 -- -i -m -f * -r netcoreapp3.1'
+        arguments: '-c Release -f netcoreapp3.1 -- -i -m -f * '
   
