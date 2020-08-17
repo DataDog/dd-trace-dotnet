@@ -65,19 +65,8 @@ stages:
       artifact: $(tracerHomeName)
 
     - task: DotNetCoreCLI@2
-      displayName: dotnet pack
-      inputs:
-        command: pack
-        packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
-        packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
-        configuration: $(buildConfiguration)
-
-    - publish: $(System.DefaultWorkingDirectory)/nuget-output
-      artifact: nuget-packages
-
-    - task: DotNetCoreCLI@2
       inputs:
         command: 'run'
         projects: '$(System.DefaultWorkingDirectory)/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
-        arguments: '-c Release -f netcoreapp3.1 -- -i -m -f ''*'' -r netcoreapp3.1'
+        arguments: '-c Release -f netcoreapp3.1 -- -i -m -f * -r netcoreapp3.1'
   
