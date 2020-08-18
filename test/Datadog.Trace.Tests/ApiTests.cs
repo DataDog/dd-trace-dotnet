@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
 
-            var api = new Api(new Uri("http://localhost:1234"), apiRequestFactory: factoryMock.Object, statsd: null);
+            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null);
 
             var span = _tracer.StartSpan("Operation");
             var traces = new[] { new[] { span } };
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
 
-            var api = new Api(new Uri("http://localhost:1234"), apiRequestFactory: factoryMock.Object, statsd: null);
+            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null);
 
             var sw = new Stopwatch();
             sw.Start();
