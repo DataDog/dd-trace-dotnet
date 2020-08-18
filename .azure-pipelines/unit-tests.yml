@@ -113,10 +113,6 @@ jobs:
     env:
       DD_SERVICE_NAME: $(Build.DefinitionName)-$(Agent.JobName)-dd-tracer-dotnet
 
-  - upload: /var/log/datadog/dotnet/*
-    displayName: upload logs
-    condition: always()
-
 - job: native_windows
   strategy:
     matrix:
