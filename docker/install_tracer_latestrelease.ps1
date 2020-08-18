@@ -43,8 +43,6 @@ else
     echo "Extracting linux.tar.gz"
     tar -xvzf linux.tar.gz -C ./release
     Remove-Item linux.tar.gz
-    mkdir -p /var/log/datadog/dotnet
-    touch /var/log/datadog/dotnet/dotnet-profiler.log
     
     if ([string]::IsNullOrEmpty($dd_tracer_workingfolder)) {
         $dd_tracer_home = "$(pwd)/release"
