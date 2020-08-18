@@ -3,13 +3,13 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Emit;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
     /// <summary>
-    /// Helper class to create instances of <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/>.
+    /// Helper class to create delegates with correct argument loading and correct return types.
     /// </summary>
     /// <typeparam name="TDelegate">The type of delegate</typeparam>
     internal static class DynamicMethodBuilder<TDelegate>
@@ -18,8 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
 
         /// <summary>
-        /// Creates a simple <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/> that
-        /// calls a method with the specified name and parameter types.
+        /// Creates a delegate that is always a static method that can wrap an instance or static method
+        /// with correct argument loading and correct return types.
         /// </summary>
         /// <param name="type">The <see cref="Type"/> that contains the method to call when the returned delegate is executed..</param>
         /// <param name="methodName">The name of the method to call when the returned delegate is executed.</param>
@@ -126,8 +126,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
                                          .ToArray();
             }
 
-            DynamicMethod dynamicMethod = new DynamicMethod(methodInfo.Name, returnType, parameterTypes, ObjectExtensions.Module, skipVisibility: true);
-            ILGenerator il = dynamicMethod.GetILGenerator();
+            Expression instance = null;
+            List<ParameterExpression> parameters = new List<ParameterExpression>();
+            List<Expression> arguments = new List<Expression>();
 
             // load each argument and cast or unbox as necessary
             for (ushort argumentIndex = 0; argumentIndex < parameterTypes.Length; argumentIndex++)
@@ -135,41 +136,50 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 Type delegateParameterType = parameterTypes[argumentIndex];
                 Type underlyingParameterType = effectiveParameterTypes[argumentIndex];
 
-                il.Emit(OpCodes.Ldarg, argumentIndex);
+                ParameterExpression parameter = Expression.Parameter(delegateParameterType, $"arg{argumentIndex}");
+                parameters.Add(parameter);
 
+                Expression argument = parameter;
                 if (underlyingParameterType.IsValueType && delegateParameterType == typeof(object))
                 {
-                    il.Emit(OpCodes.Unbox_Any, underlyingParameterType);
+                    argument = Expression.Convert(argument, underlyingParameterType);
                 }
                 else if (underlyingParameterType != delegateParameterType)
                 {
-                    il.Emit(OpCodes.Castclass, underlyingParameterType);
+                    argument = Expression.Convert(argument, underlyingParameterType);
+                }
+
+                if (argumentIndex == 0 && !methodInfo.IsStatic)
+                {
+                    instance = argument;
+                }
+                else
+                {
+                    arguments.Add(argument);
                 }
             }
 
+            Expression lastExpression = null;
             if (methodInfo.IsStatic)
             {
-                // non-virtual call (e.g. static method, or method override calling overriden implementation)
-                il.Emit(OpCodes.Call, methodInfo);
+                lastExpression = Expression.Call(methodInfo, arguments);
             }
             else
             {
-                // Note: C# compiler uses CALLVIRT for non-virtual
-                // instance methods to get the cheap null check
-                il.Emit(OpCodes.Callvirt, methodInfo);
+                lastExpression = Expression.Call(instance, methodInfo, arguments);
             }
 
             if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
             {
-                il.Emit(OpCodes.Box, methodInfo.ReturnType);
+                lastExpression = Expression.Convert(lastExpression, methodInfo.ReturnType);
             }
             else if (methodInfo.ReturnType != returnType)
             {
-                il.Emit(OpCodes.Castclass, returnType);
+                lastExpression = Expression.Convert(lastExpression, returnType);
             }
 
-            il.Emit(OpCodes.Ret);
-            return (TDelegate)dynamicMethod.CreateDelegate(delegateType);
+            var lambda = Expression.Lambda(typeof(TDelegate), lastExpression, parameters);
+            return (TDelegate)lambda.Compile();
         }
 
         private struct Key
