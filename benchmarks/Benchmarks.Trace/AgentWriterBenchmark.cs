@@ -2,20 +2,16 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Vendors.MessagePack;
 
 namespace Benchmarks.Trace
 {
     [DatadogExporter]
     [MemoryDiagnoser]
-    [SimpleJob(RuntimeMoniker.Net472)]
-    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
@@ -85,9 +81,9 @@ namespace Benchmarks.Trace
 
             public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
             {
-                using (var requestStream = new MemoryStream())
+                using (var requestStream = new NullStream())
                 {
-                    await MessagePackSerializer.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
+                    await CachedSerializer.Instance.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
                 }
 
                 return new FakeApiResponse();
@@ -106,6 +102,38 @@ namespace Benchmarks.Trace
             }
 
             public void Dispose()
+            {
+            }
+        }
+
+        private class NullStream : Stream
+        {
+            public override bool CanRead => false;
+            public override bool CanSeek => false;
+            public override bool CanWrite => true;
+            public override long Length => throw new NotImplementedException();
+            public override long Position { get; set; }
+
+            public override void Flush()
+            {
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void SetLength(long value)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
             {
             }
         }
