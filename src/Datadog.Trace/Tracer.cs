@@ -530,6 +530,9 @@ namespace Datadog.Trace
 
                     writer.WriteEndArray();
 
+                    writer.WritePropertyName("netstandard_enabled");
+                    writer.WriteValue(Settings.IsNetStandardFeatureFlagEnabled());
+
                     writer.WritePropertyName("agent_reachable");
                     writer.WriteValue(agentError == null);
 
