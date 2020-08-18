@@ -15,8 +15,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
     internal static class DynamicMethodBuilder<TDelegate>
         where TDelegate : Delegate
     {
-        private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
-
         /// <summary>
         /// Creates a delegate that is always a static method that can wrap an instance or static method
         /// with correct argument loading and correct return types.
