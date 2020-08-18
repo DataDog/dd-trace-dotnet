@@ -1487,6 +1487,61 @@
     ]
   },
   {
+    "name": "NUnit",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Internal.Commands.TestMethodCommand",
+          "method": "Execute",
+          "signature_types": [
+            "NUnit.Framework.Internal.TestResult",
+            "NUnit.Framework.Internal.TestExecutionContext"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
+          "method": "TestMethodCommand_Execute",
+          "signature": "00 05 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Internal.Commands.SkipCommand",
+          "method": "Execute",
+          "signature_types": [
+            "NUnit.Framework.Internal.TestResult",
+            "NUnit.Framework.Internal.TestExecutionContext"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
+          "method": "SkipCommand_Execute",
+          "signature": "00 05 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      }
+    ]
+  },
+  {
     "name": "ServiceStackRedis",
     "method_replacements": [
       {
