@@ -319,5 +319,12 @@ namespace Datadog.Trace.Configuration
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }
+
+        internal bool IsNetStandardFeatureFlagEnabled()
+        {
+            var value = EnvironmentHelpers.GetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", string.Empty);
+
+            return value == "1" || value == "true";
+        }
     }
 }
