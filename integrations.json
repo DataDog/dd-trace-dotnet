@@ -1493,7 +1493,7 @@
         "caller": {},
         "target": {
           "assembly": "nunit.framework",
-          "type": "NUnit.Framework.Internal.Commands.TestMethodCommand",
+          "type": "NUnit.Framework.Internal.Commands.TestCommand",
           "method": "Execute",
           "signature_types": [
             "NUnit.Framework.Internal.TestResult",
@@ -1509,7 +1509,7 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
-          "method": "TestMethodCommand_Execute",
+          "method": "TestCommand_Execute",
           "signature": "00 05 1C 1C 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
@@ -1518,11 +1518,10 @@
         "caller": {},
         "target": {
           "assembly": "nunit.framework",
-          "type": "NUnit.Framework.Internal.Commands.SkipCommand",
-          "method": "Execute",
+          "type": "NUnit.Framework.Internal.Execution.WorkShift",
+          "method": "ShutDown",
           "signature_types": [
-            "NUnit.Framework.Internal.TestResult",
-            "NUnit.Framework.Internal.TestExecutionContext"
+            "System.Void"
           ],
           "minimum_major": 3,
           "minimum_minor": 0,
@@ -1534,8 +1533,8 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
-          "method": "SkipCommand_Execute",
-          "signature": "00 05 1C 1C 1C 08 08 0A",
+          "method": "WorkShift_ShutDown",
+          "signature": "00 04 01 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
       }
