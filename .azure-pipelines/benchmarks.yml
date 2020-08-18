@@ -1,0 +1,75 @@
+trigger:
+  branches:
+    include:
+      - master
+      - refs/tags/*
+pr: none
+
+variables:
+  buildConfiguration: release
+  dotnetCoreSdkVersion: 3.1.107
+  ddApiKey: $(DD_API_KEY)
+  publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
+
+# Declare the datadog agent as a resource to be used as a pipeline service
+resources:
+  containers:
+  - container: dd_agent
+    image: datadog/agent:latest
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_HOSTNAME: none
+      DD_APM_ENABLED: true
+      DD_APM_NON_LOCAL_TRAFFIC: true
+
+stages:
+- stage: build
+  jobs:
+
+  #### Windows 
+
+  - job: Windows
+    pool:
+      vmImage: windows-2019
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+    variables:
+      tracerHomeName: windows-tracer-home
+      tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
+      msiHome: $(System.DefaultWorkingDirectory)/src/bin/msi
+      nuget_packages: $(Pipeline.Workspace)/.nuget/packages
+
+    steps:
+
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 3.1
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdkVersion)
+
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet restore
+      inputs:
+        command: restore
+        projects: src/**/*.csproj
+
+    # native projects must be restored with nuget.exe
+    - task: NuGetCommand@2
+      displayName: nuget restore native
+      inputs:
+        restoreSolution: Datadog.Trace.Native.sln
+        verbosityRestore: Normal
+
+    - task: DotNetCoreCLI@2
+      displayName: Benchmarks
+      inputs:
+        command: 'run'
+        projects: '$(System.DefaultWorkingDirectory)/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
+        arguments: '-c Release -f netcoreapp3.1 -- -i -m -f * '
+  
