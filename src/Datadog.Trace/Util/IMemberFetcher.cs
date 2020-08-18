@@ -1,8 +1,6 @@
 // From https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/DiagnosticSourceEventSource.cs
 
 using System;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Datadog.Trace.Util
 {
