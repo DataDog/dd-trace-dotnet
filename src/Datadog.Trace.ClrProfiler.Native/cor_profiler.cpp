@@ -216,6 +216,12 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     is_desktop_iis = runtime_information_.is_desktop();
   }
 
+  // writing opcodes vector
+#define OPDEF(c, s, pop, push, args, type, l, s1, s2, flow) \
+  opcodes_names.push_back(s);
+#include "opcode.def"
+#undef OPDEF
+
   // we're in!
   Info("Profiler attached.");
   this->info_->AddRef();
@@ -1269,17 +1275,27 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
   orig_sstream << ToString(caller.type.name);
   orig_sstream << ".";
   orig_sstream << ToString(caller.name.c_str());
-  orig_sstream << " : ";
+  orig_sstream << " : \n";
   for (ILInstr* cInstr = rewriter->GetILList()->m_pNext;
        cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext) {
-    orig_sstream << "0x";
-    orig_sstream << std::setfill('0') << std::setw(2) << std::hex
-                 << cInstr->m_opcode;
-    if (cInstr->m_Arg64 != 0) {
-      orig_sstream << "-";
+    
+    orig_sstream << cInstr;
+    orig_sstream << ": ";
+    if (cInstr->m_opcode < opcodes_names.size()) {
+      orig_sstream << std::setw(10) << opcodes_names[cInstr->m_opcode];
+    } else {
+       orig_sstream << "0x";
+       orig_sstream << std::setfill('0') << std::setw(2) << std::hex
+                   << cInstr->m_opcode;
+    }
+    if (cInstr->m_pTarget != NULL) {
+      orig_sstream << " ";
+      orig_sstream << cInstr->m_pTarget;
+    } else if (cInstr->m_Arg64 != 0) {
+      orig_sstream << " ";
       orig_sstream << cInstr->m_Arg64;
     }
-    orig_sstream << " ";
+    orig_sstream << "\n";
   }
   return orig_sstream.str();
 }

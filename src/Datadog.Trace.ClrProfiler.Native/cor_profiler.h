@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <vector>
 #include <string>
 #include <unordered_map>
 #include "cor.h"
@@ -34,6 +35,11 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
   bool is_desktop_iis = false;
+
+  //
+  // OpCodes helper
+  //
+  std::vector<std::string> opcodes_names;
 
   //
   // Module helper variables

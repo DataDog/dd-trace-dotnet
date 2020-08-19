@@ -7,6 +7,7 @@
 
 #include <corhlpr.h>
 #include <corprof.h>
+#include <vector>
 
 typedef enum {
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, ctrl) c,

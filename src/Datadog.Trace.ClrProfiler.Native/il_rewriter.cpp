@@ -5,6 +5,7 @@
 #include <corhlpr.cpp>
 
 #include "il_rewriter.h"
+#include <string>
 
 #undef IfFailRet
 #define IfFailRet(EXPR)  \
