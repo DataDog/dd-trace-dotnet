@@ -73,21 +73,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             // At runtime, get a Type object for GraphQL.ExecutionResult
             var documentValidatorInstanceType = documentValidator.GetType();
-
-            try
-            {
-                var graphQLAssembly = AppDomain.CurrentDomain
-                                        .GetAssemblies()
-                                        .Single(a => a.GetName().Name.Equals(GraphQLAssemblyName));
-            }
-            catch (Exception ex)
-            {
-                // This shouldn't happen because the GraphQL assembly should have been loaded to construct various other types
-                // profiled app will not continue working as expected without this method
-                Log.Error(ex, $"Error finding types in the GraphQL assembly.");
-                throw;
-            }
-
             Func<object, object, object, object, object, object, object, object> instrumentedMethod;
 
             try
