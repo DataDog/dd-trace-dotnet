@@ -1,11 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.Testing
@@ -99,10 +100,196 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 return execute(testMethodCommand, testExecutionContext);
             }
 
-            bool skipped = testMethodCommandType.FullName == NUnitSkipCommandType;
+            Scope scope = CreateScope(testExecutionContext, testMethodCommandType);
+            if (scope is null)
+            {
+                return execute(testMethodCommand, testExecutionContext);
+            }
 
-            Log.Information("Executing: " + testMethodCommandType);
-            return execute(testMethodCommand, testExecutionContext);
+            using (scope)
+            {
+                object result = null;
+                Exception exception = null;
+                try
+                {
+                    scope.Span.ResetStartTime();
+                    result = execute(testMethodCommand, testExecutionContext);
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                    throw;
+                }
+                finally
+                {
+                    FinishScope(scope, testExecutionContext, exception);
+                }
+
+                return result;
+            }
+        }
+
+        private static Scope CreateScope(object testExecutionContext, Type testMethodCommandType)
+        {
+            Scope scope = null;
+
+            try
+            {
+                if (testExecutionContext.TryGetPropertyValue<object>("TestObject", out object testObject) &&
+                    testExecutionContext.TryGetPropertyValue<object>("CurrentTest", out object currentTest))
+                {
+                    MethodInfo testMethod = null;
+                    object[] testMethodArguments = null;
+                    object properties = null;
+
+                    if (currentTest != null)
+                    {
+                        if (currentTest.TryGetPropertyValue<object>("Method", out object method))
+                        {
+                            method?.TryGetPropertyValue<MethodInfo>("MethodInfo", out testMethod);
+                        }
+
+                        currentTest.TryGetPropertyValue<object[]>("Arguments", out testMethodArguments);
+                        currentTest.TryGetPropertyValue<object>("Properties", out properties);
+                    }
+
+                    if (testMethod != null)
+                    {
+                        string testFramework = "NUnit " + testMethodCommandType.Assembly.GetName().Version;
+                        string testSuite = testMethod.DeclaringType?.FullName;
+                        string testName = testMethod.Name;
+                        string skipReason = null;
+                        List<KeyValuePair<string, string>> testArguments = null;
+                        List<KeyValuePair<string, string>> testTraits = null;
+
+                        // Get test parameters
+                        ParameterInfo[] methodParameters = testMethod.GetParameters();
+                        if (methodParameters?.Length > 0 && testMethodArguments != null)
+                        {
+                            testArguments = new List<KeyValuePair<string, string>>();
+
+                            for (int i = 0; i < methodParameters.Length; i++)
+                            {
+                                if (i < testMethodArguments.Length)
+                                {
+                                    testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)"));
+                                }
+                                else
+                                {
+                                    testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", "(default)"));
+                                }
+                            }
+                        }
+
+                        // Get traits
+                        if (properties != null)
+                        {
+                            properties.TryCallMethod<string, string>("Get", "_SKIPREASON", out skipReason);
+
+                            if (properties.TryGetFieldValue<Dictionary<string, IList>>("inner", out Dictionary<string, IList> traits) && traits.Count > 0)
+                            {
+                                testTraits = new List<KeyValuePair<string, string>>();
+
+                                foreach (KeyValuePair<string, IList> traitValue in traits)
+                                {
+                                    if (traitValue.Key == "_SKIPREASON")
+                                    {
+                                        continue;
+                                    }
+
+                                    IEnumerable<string> values = Enumerable.Empty<string>();
+                                    if (traitValue.Value != null)
+                                    {
+                                        List<string> lstValues = new List<string>();
+                                        foreach (object valObj in traitValue.Value)
+                                        {
+                                            if (valObj is null)
+                                            {
+                                                continue;
+                                            }
+
+                                            lstValues.Add(valObj.ToString());
+                                        }
+
+                                        values = lstValues;
+                                    }
+
+                                    testTraits.Add(new KeyValuePair<string, string>($"{TestTags.Traits}.{traitValue.Key}", string.Join(", ", values) ?? "(null)"));
+                                }
+                            }
+                        }
+
+                        Tracer tracer = Tracer.Instance;
+                        scope = tracer.StartActive("nunit.test");
+                        Span span = scope.Span;
+
+                        span.Type = SpanTypes.Test;
+                        span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
+                        span.ResourceName = $"{testSuite}.{testName}";
+                        span.SetTag(TestTags.Suite, testSuite);
+                        span.SetTag(TestTags.Name, testName);
+                        span.SetTag(TestTags.Framework, testFramework);
+                        span.SetTag(TestTags.Type, TestTags.TypeTest);
+                        CIEnvironmentValues.DecorateSpan(span);
+
+                        span.SetTag(CommonTags.RuntimeName, _runtimeDescription.Name);
+                        span.SetTag(CommonTags.RuntimeOSArchitecture, _runtimeDescription.OSArchitecture);
+                        span.SetTag(CommonTags.RuntimeOSPlatform, _runtimeDescription.OSPlatform);
+                        span.SetTag(CommonTags.RuntimeProcessArchitecture, _runtimeDescription.ProcessArchitecture);
+                        span.SetTag(CommonTags.RuntimeVersion, _runtimeDescription.ProductVersion);
+
+                        if (testArguments != null)
+                        {
+                            foreach (KeyValuePair<string, string> argument in testArguments)
+                            {
+                                span.SetTag(argument.Key, argument.Value);
+                            }
+                        }
+
+                        if (testTraits != null)
+                        {
+                            foreach (KeyValuePair<string, string> trait in testTraits)
+                            {
+                                span.SetTag(trait.Key, trait.Value);
+                            }
+                        }
+
+                        if (skipReason != null)
+                        {
+                            span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                            span.SetTag(TestTags.SkipReason, skipReason);
+                            span.Finish(TimeSpan.Zero);
+                            scope.Dispose();
+                            scope = null;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            return scope;
+        }
+
+        private static void FinishScope(Scope scope, object testExecutionContext, Exception ex)
+        {
+            // unwrap the generic NUnitException
+            if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
+            {
+                ex = ex.InnerException;
+            }
+
+            if (ex != null && ex.GetType().FullName != "NUnit.Framework.SuccessException")
+            {
+                scope.Span.SetException(ex);
+                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+            }
+            else
+            {
+                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+            }
         }
 
         /// <summary>
@@ -151,7 +338,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 throw;
             }
 
-            Log.Information("Executing: " + workShiftType);
             execute(workShift);
             SynchronizationContext context = SynchronizationContext.Current;
             try
