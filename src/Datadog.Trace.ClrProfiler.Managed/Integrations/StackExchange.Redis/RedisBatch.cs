@@ -91,16 +91,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 throw new ArgumentNullException(nameof(redisBase));
             }
 
-            Type thisType = redisBase.GetType();
-            Type batchType = thisType.Assembly.GetType("StackExchange.Redis.RedisBatch", throwOnError: false);
-
             Func<object, object, object, object, Task<T>> instrumentedMethod;
 
             try
             {
+                var instrumentedType = redisBase.GetInstrumentedType(RedisBaseTypeName);
                 instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
                                         .Start(moduleVersionPtr, mdToken, callOpCode, nameof(ExecuteAsync))
-                                        .WithConcreteType(thisType)
+                                        .WithConcreteType(instrumentedType)
                                         .WithMethodGenerics(typeof(T))
                                         .WithParameters(message, processor, server)
                                         .WithNamespaceAndNameFilters(
@@ -124,6 +122,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             }
 
             // we only trace RedisBatch methods here
+            var thisType = redisBase.GetType();
+            var batchType = thisType.Assembly.GetType("StackExchange.Redis.RedisBatch", throwOnError: false);
+
             if (thisType == batchType)
             {
                 using (var scope = CreateScope(redisBase, message))
