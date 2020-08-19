@@ -95,6 +95,9 @@ const WSTRING azure_app_services_cli_telemetry_profile_value =
 // Default to false for now to avoid the unexpected overhead of additional spans.
 const WSTRING netstandard_enabled = "DD_TRACE_NETSTANDARD_ENABLED"_W;
 
+// Enable the profiler to dump the IL original code and modification to the log.
+const WSTRING dump_il_rewrite_enabled = "DD_DUMP_ILREWRITE_ENABLED"_W;
+
 }  // namespace environment
 }  // namespace trace
 
