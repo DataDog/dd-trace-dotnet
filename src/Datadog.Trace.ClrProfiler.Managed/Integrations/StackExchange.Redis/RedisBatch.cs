@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                     opCode: callOpCode,
                     instrumentedType: RedisBaseTypeName,
                     methodName: nameof(ExecuteAsync),
-                    instanceType: thisType.AssemblyQualifiedName);
+                    instanceType: redisBase.GetType().AssemblyQualifiedName);
                 throw;
             }
 
