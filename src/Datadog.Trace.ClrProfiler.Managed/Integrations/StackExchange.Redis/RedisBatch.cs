@@ -20,10 +20,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RedisBatch));
 
-        private static Assembly _redisAssembly;
-        private static Type _redisBaseType;
-        private static Type _batchType;
-
         /// <summary>
         /// Execute an asynchronous redis operation.
         /// </summary>
@@ -95,16 +91,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 throw new ArgumentNullException(nameof(redisBase));
             }
 
-            var thisType = redisBase.GetType();
-
-            if (_redisAssembly == null)
-            {
-                // get these only once and cache them,
-                // no need for locking, race conditions are not a problem
-                _redisAssembly = thisType.Assembly;
-                _redisBaseType = _redisAssembly.GetType("StackExchange.Redis.RedisBase");
-                _batchType = _redisAssembly.GetType("StackExchange.Redis.RedisBatch");
-            }
+            Type thisType = redisBase.GetType();
+            Type batchType = thisType.Assembly.GetType("StackExchange.Redis.RedisBatch", throwOnError: false);
 
             Func<object, object, object, object, Task<T>> instrumentedMethod;
 
@@ -112,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             {
                 instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
                                         .Start(moduleVersionPtr, mdToken, callOpCode, nameof(ExecuteAsync))
-                                        .WithConcreteType(_redisBaseType)
+                                        .WithConcreteType(thisType)
                                         .WithMethodGenerics(typeof(T))
                                         .WithParameters(message, processor, server)
                                         .WithNamespaceAndNameFilters(
@@ -136,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             }
 
             // we only trace RedisBatch methods here
-            if (thisType == _batchType)
+            if (thisType == batchType)
             {
                 using (var scope = CreateScope(redisBase, message))
                 {
