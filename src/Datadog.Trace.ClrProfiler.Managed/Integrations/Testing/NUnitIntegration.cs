@@ -135,8 +135,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             try
             {
-                if (testExecutionContext.TryGetPropertyValue<object>("TestObject", out object testObject) &&
-                    testExecutionContext.TryGetPropertyValue<object>("CurrentTest", out object currentTest))
+                if (testExecutionContext.TryGetPropertyValue<object>("CurrentTest", out object currentTest))
                 {
                     MethodInfo testMethod = null;
                     object[] testMethodArguments = null;
@@ -164,13 +163,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                         // Get test parameters
                         ParameterInfo[] methodParameters = testMethod.GetParameters();
-                        if (methodParameters?.Length > 0 && testMethodArguments != null)
+                        if (methodParameters?.Length > 0)
                         {
                             testArguments = new List<KeyValuePair<string, string>>();
 
                             for (int i = 0; i < methodParameters.Length; i++)
                             {
-                                if (i < testMethodArguments.Length)
+                                if (testMethodArguments != null && i < testMethodArguments.Length)
                                 {
                                     testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)"));
                                 }
@@ -342,6 +341,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             SynchronizationContext context = SynchronizationContext.Current;
             try
             {
+                SynchronizationContext.SetSynchronizationContext(null);
                 // We have to ensure the flush of the buffer after we finish the tests of an assembly.
                 // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
                 // So the last spans in buffer aren't send to the agent.
