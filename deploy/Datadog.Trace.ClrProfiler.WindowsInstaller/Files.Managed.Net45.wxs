@@ -31,11 +31,6 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net45_Newtonsoft.Json.dll"
-              Source="$(var.TracerHomeDirectory)\net45\Newtonsoft.Json.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="net45_Sigil.dll"
               Source="$(var.TracerHomeDirectory)\net45\Sigil.dll"
               KeyPath="yes" Checksum="yes"/>

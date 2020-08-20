@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration

@@ -11,3 +11,4 @@ miniutf,https://github.com/dropbox/miniutf,MIT,"Copyright (c) 2013 Dropbox, Inc.
 Serilog,https://github.com/serilog/serilog,Apache-2.0,"Copyright (c) 2013-2018 Serilog Contributors"
 Serilog.Sinks.File,https://github.com/serilog/serilog-sinks-file,Apache-2.0,"Copyright (c) 2016 Serilog Contributors"
 opentracing-contrib/csharp-netcore,https://github.com/opentracing-contrib/csharp-netcore,Apache-2.0,
+Newtonsoft.Json,https://github.com/JamesNK/Newtonsoft.Json,MIT,Copyright (c) 2007 James Newton-King

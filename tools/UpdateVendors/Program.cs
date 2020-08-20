@@ -50,6 +50,12 @@ namespace UpdateVendors
                 branchDownload: "https://github.com/neuecc/MessagePack-CSharp/archive/v1.9.3.zip",
                 pathToSrc: new[] { "MessagePack-CSharp-1.9.3", "src", "MessagePack" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "MessagePack"));
+
+            UpdateVendor(
+                libraryName: "Newtonsoft.Json",
+                branchDownload: "https://github.com/JamesNK/Newtonsoft.Json/archive/12.0.1.zip",
+                pathToSrc: new[] { "Newtonsoft.Json-12.0.1", "src", "Newtonsoft.Json" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Newtonsoft.Json"));
         }
 
         private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, Func<string, string, string> extraTransform = null)
@@ -65,15 +71,28 @@ namespace UpdateVendors
 
                         builder.Append(content);
 
+                        // Special Newtonsoft.Json processing
+                        if (originalNamespace.Equals("Newtonsoft.Json"))
+                        {
+                            builder.Replace($"using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs", "using ErrorEventArgs = Datadog.Trace.Vendors.Newtonsoft.Json.Serialization.ErrorEventArgs");
+
+                            if (content.Contains("using Newtonsoft.Json.Serialization;"))
+                            {
+                                builder.Replace($"Func<", $"System.Func<");
+                                builder.Replace($"Action<", $"System.Action<");
+                            }
+                        }
+
                         // Prevent namespace conflicts
                         builder.Replace($"using {originalNamespace}", $"using Datadog.Trace.Vendors.{originalNamespace}");
                         builder.Replace($"namespace {originalNamespace}", $"namespace Datadog.Trace.Vendors.{originalNamespace}");
+                        builder.Replace($"[CLSCompliant(false)]", $"// [CLSCompliant(false)]");
 
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
                             builder.ToString(),
-                            @"public(\s+((abstract|sealed|static)\s+)?(partial\s+)?(class|struct|interface|enum|delegate))",
+                            @"public(\s+((abstract|sealed|static)\s+)?(partial\s+)?(class|readonly\s+struct|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
             }
@@ -171,6 +190,8 @@ namespace UpdateVendors
         {
             var fileContent = File.ReadAllText(filePath);
             fileContent = transform(fileContent);
+            // Normalize text to use CRLF line endings so we have deterministic results
+            fileContent = fileContent.Replace("\r\n", "\n").Replace("\n", "\r\n");
             File.WriteAllText(
                 filePath,
                 fileContent,
