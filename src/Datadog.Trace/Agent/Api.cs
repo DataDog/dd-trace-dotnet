@@ -111,21 +111,26 @@ namespace Datadog.Trace.Agent
 
                     // Before retry delay
                     bool isSocketException = false;
+                    Exception innerException = exception;
 
-                    Exception innermostException = exception;
-                    while (innermostException?.InnerException != null)
+                    while (innerException != null)
                     {
-                        innermostException = innermostException.InnerException;
+                        if (innerException is SocketException)
+                        {
+                            isSocketException = true;
+                            break;
+                        }
+
+                        innerException = innerException.InnerException;
                     }
 
-                    if (innermostException is SocketException se)
+                    if (isSocketException)
                     {
-                        isSocketException = true;
                         Log.Error(exception, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
                         TracingProcessManager.TryForceTraceAgentRefresh();
                     }
 
-                    // retry
+                    // Execute retry delay
                     await Task.Delay(sleepDuration).ConfigureAwait(false);
                     retryCount++;
                     sleepDuration *= 2;
