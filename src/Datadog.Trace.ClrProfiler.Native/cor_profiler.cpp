@@ -221,6 +221,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   opcodes_names.push_back(s);
 #include "opcode.def"
 #undef OPDEF
+  opcodes_names.push_back("(count)");
+  opcodes_names.push_back("->");
 
   // we're in!
   Info("Profiler attached.");
@@ -1281,11 +1283,7 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
     
     orig_sstream << cInstr;
     orig_sstream << ": ";
-    if (cInstr->m_opcode == CEE_COUNT) {
-      orig_sstream << std::setw(10) << "(count)";
-    } else if (cInstr->m_opcode == CEE_SWITCH_ARG) {
-      orig_sstream << std::setw(10) << "->";
-    } else if (cInstr->m_opcode < opcodes_names.size()) {
+    if (cInstr->m_opcode < opcodes_names.size()) {
       orig_sstream << std::setw(10) << opcodes_names[cInstr->m_opcode];
     } else {
        orig_sstream << "0x";
