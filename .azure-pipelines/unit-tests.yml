@@ -15,6 +15,7 @@ variables:
   ddApiKey: $(DD_API_KEY)
   DD_DOTNET_TRACER_MSBUILD:
 
+
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
   containers:
