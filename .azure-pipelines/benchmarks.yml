@@ -3,7 +3,6 @@ trigger:
     include:
       - master
       - refs/tags/*
-pr: none
 
 variables:
   buildConfiguration: release
