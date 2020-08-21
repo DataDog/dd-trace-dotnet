@@ -1487,6 +1487,60 @@
     ]
   },
   {
+    "name": "NUnit",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Internal.Commands.TestCommand",
+          "method": "Execute",
+          "signature_types": [
+            "NUnit.Framework.Internal.TestResult",
+            "NUnit.Framework.Internal.TestExecutionContext"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
+          "method": "TestCommand_Execute",
+          "signature": "00 05 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Internal.Execution.WorkShift",
+          "method": "ShutDown",
+          "signature_types": [
+            "System.Void"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
+          "method": "WorkShift_ShutDown",
+          "signature": "00 04 01 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      }
+    ]
+  },
+  {
     "name": "ServiceStackRedis",
     "method_replacements": [
       {
