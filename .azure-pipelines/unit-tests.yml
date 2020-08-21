@@ -28,21 +28,23 @@ resources:
       DD_APM_ENABLED: true
       DD_APM_NON_LOCAL_TRAFFIC: true
   - container: dd_agent_dev_windows
-    image: datadog/agent-dev:olivielpeau-image-allow-disabling-system-checks-py3-win1809
+    image: datadog/agent-dev:master-py3-win1909
     ports:
     - 8126:8126
     env:
       DD_API_KEY: $(ddApiKey)
       DD_REMOVE_DEFAULT_CHECKS: true
+      DD_HOSTNAME: none
       DD_APM_ENABLED: true
       DD_APM_NON_LOCAL_TRAFFIC: true
   - container: dd_agent_dev_linux
-    image: datadog/agent-dev:olivielpeau-image-allow-disabling-system-checks-py3
+    image: datadog/agent-dev:master
     ports:
     - 8126:8126
     env:
       DD_API_KEY: $(ddApiKey)
       DD_REMOVE_DEFAULT_CHECKS: true
+      DD_HOSTNAME: none
       DD_APM_ENABLED: true
       DD_APM_NON_LOCAL_TRAFFIC: true
 
