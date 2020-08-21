@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.StackExchange.Redis;
 using Datadog.StackExchange.Redis.Abstractions;
 using Datadog.StackExchange.Redis.StrongName;
@@ -8,11 +9,11 @@ namespace StackExchange.Redis.AssemblyConflict.SdkProject
 {
     public class Program
     {
-        public static void Main()
+        public static async Task Main()
         {
             try
             {
-                RunTest();
+                await RunTest();
             }
             finally
             {
@@ -31,21 +32,22 @@ namespace StackExchange.Redis.AssemblyConflict.SdkProject
             }
         }
 
-        private static void RunTest()
+        private static async Task RunTest()
         {
             // note: STACKEXCHANGE_REDIS_HOST includes a port, despite its name
             var configuration = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
 
             ICache redis = new RedisClient(configuration);
-            RunTest(redis);
+            await RunTest(redis);
 
             ICache redisStrongName = new RedisStrongNameClient(configuration);
-            RunTest(redisStrongName);
+            await RunTest(redisStrongName);
         }
 
-        public static void RunTest(ICache cache)
+        public static async Task RunTest(ICache cache)
         {
             Console.WriteLine($"Running test with {cache.GetType().Name}");
+            Console.WriteLine("Running sync operations");
 
             const string name = "name1";
             const string expectedValue = "value1";
@@ -66,6 +68,22 @@ namespace StackExchange.Redis.AssemblyConflict.SdkProject
                 throw new Exception($"Values do NOT match. {expectedValue} == {actualValue}");
             }
 
+            Console.WriteLine("Running async operations");
+            Console.WriteLine("Setting string...");
+            await cache.SetStringAsync(name, expectedValue);
+
+            Console.WriteLine("Getting string...");
+            actualValue = await cache.GetStringAsync(name);
+
+            if (expectedValue == actualValue)
+            {
+                Console.WriteLine($"Values match. {expectedValue} == {actualValue}");
+                Console.WriteLine();
+            }
+            else
+            {
+                throw new Exception($"Values do NOT match. {expectedValue} == {actualValue}");
+            }
         }
     }
 }

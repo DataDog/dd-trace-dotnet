@@ -20,10 +20,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RedisBatch));
 
-        private static Assembly _redisAssembly;
-        private static Type _redisBaseType;
-        private static Type _batchType;
-
         /// <summary>
         /// Execute an asynchronous redis operation.
         /// </summary>
@@ -95,24 +91,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 throw new ArgumentNullException(nameof(redisBase));
             }
 
-            var thisType = redisBase.GetType();
-
-            if (_redisAssembly == null)
-            {
-                // get these only once and cache them,
-                // no need for locking, race conditions are not a problem
-                _redisAssembly = thisType.Assembly;
-                _redisBaseType = _redisAssembly.GetType("StackExchange.Redis.RedisBase");
-                _batchType = _redisAssembly.GetType("StackExchange.Redis.RedisBatch");
-            }
-
             Func<object, object, object, object, Task<T>> instrumentedMethod;
 
             try
             {
+                var instrumentedType = redisBase.GetInstrumentedType(RedisBaseTypeName);
                 instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
                                         .Start(moduleVersionPtr, mdToken, callOpCode, nameof(ExecuteAsync))
-                                        .WithConcreteType(_redisBaseType)
+                                        .WithConcreteType(instrumentedType)
                                         .WithMethodGenerics(typeof(T))
                                         .WithParameters(message, processor, server)
                                         .WithNamespaceAndNameFilters(
@@ -131,12 +117,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                     opCode: callOpCode,
                     instrumentedType: RedisBaseTypeName,
                     methodName: nameof(ExecuteAsync),
-                    instanceType: thisType.AssemblyQualifiedName);
+                    instanceType: redisBase.GetType().AssemblyQualifiedName);
                 throw;
             }
 
             // we only trace RedisBatch methods here
-            if (thisType == _batchType)
+            var thisType = redisBase.GetType();
+            var batchType = thisType.Assembly.GetType("StackExchange.Redis.RedisBatch", throwOnError: false);
+
+            if (thisType == batchType)
             {
                 using (var scope = CreateScope(redisBase, message))
                 {
