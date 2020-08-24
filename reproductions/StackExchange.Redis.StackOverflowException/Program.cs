@@ -10,6 +10,12 @@ namespace StackExchange.Redis.StackOverflowException
     {
         private static async Task<int> Main()
         {
+#if NETCOREAPP2_1
+            // Add a delay to avoid a race condition on shutdown: https://github.com/dotnet/coreclr/pull/22712
+            // This would cause a segmentation fault on .net core 2.x
+            Thread.Sleep(5000);
+#endif
+
             try
             {
                 Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
