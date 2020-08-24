@@ -28,6 +28,7 @@ namespace Datadog.Trace.TestHelpers
                 // so create a new listener each time we retry
                 var listener = new HttpListener();
                 listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+                listener.Prefixes.Add($"http://localhost:{port}/");
 
                 try
                 {
