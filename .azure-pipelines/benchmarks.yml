@@ -71,4 +71,6 @@ stages:
         command: 'run'
         projects: '$(System.DefaultWorkingDirectory)/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
         arguments: '-c Release -f netcoreapp3.1 -- -i -m -f * '
-  
+    - task: Delay@1
+      inputs:
+        delayForMinutes: '5'
