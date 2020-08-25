@@ -81,7 +81,7 @@ namespace Benchmarks.Trace
 
             public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
             {
-                using (var requestStream = new NullStream())
+                using (var requestStream = Stream.Null)
                 {
                     await CachedSerializer.Instance.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
                 }
@@ -102,38 +102,6 @@ namespace Benchmarks.Trace
             }
 
             public void Dispose()
-            {
-            }
-        }
-
-        private class NullStream : Stream
-        {
-            public override bool CanRead => false;
-            public override bool CanSeek => false;
-            public override bool CanWrite => true;
-            public override long Length => throw new NotImplementedException();
-            public override long Position { get; set; }
-
-            public override void Flush()
-            {
-            }
-
-            public override long Seek(long offset, SeekOrigin origin)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override void SetLength(long value)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override int Read(byte[] buffer, int offset, int count)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override void Write(byte[] buffer, int offset, int count)
             {
             }
         }
