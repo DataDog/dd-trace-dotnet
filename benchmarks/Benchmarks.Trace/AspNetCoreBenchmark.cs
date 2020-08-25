@@ -1,10 +1,7 @@
 #if !NETFRAMEWORK
-extern alias Http; // Import the "real" HttpClient
-
-// ReSharper disable RedundantNameQualifier -- We're doing some namespace trickeries here
-// Resharper is going to tell you the fully qualified namespaces are not necessary, that's a lie
 
 using System;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +20,7 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class AspNetCoreBenchmark
     {
-        private static readonly System.Net.Http.HttpClient Client;
+        private static readonly HttpClient Client;
 
         static AspNetCoreBenchmark()
         {
@@ -69,20 +66,25 @@ namespace Benchmarks.Trace
         }
     }
 
+    /// <summary>
+    /// Simple controller used for the aspnetcore benchmark
+    /// </summary>
     public class HomeController : Controller
     {
-        private static System.Net.Http.HttpRequestMessage _request = new System.Net.Http.HttpRequestMessage();
-        private static System.Net.Http.HttpClientHandler _handler = System.Net.Http.HttpClientHandler.Create();
-        private static object _boxedCancellationToken = new CancellationToken();
+        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage();
+        private static readonly HttpMessageHandler Handler = new CustomHttpMessageHandler();
+        private static readonly object BoxedCancellationToken = new CancellationToken();
         private static int _mdToken;
         private static IntPtr _guidPtr;
 
         internal static void Initialize()
         {
-            var methodInfo = typeof(Http::System.Net.Http.HttpMessageHandler).GetMethod("SendAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            HttpMessageHandlerIntegration.HttpClientHandler = typeof(CustomHttpMessageHandler).FullName;
+
+            var methodInfo = typeof(HttpMessageHandler).GetMethod("SendAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             _mdToken = methodInfo.MetadataToken;
-            var guid = typeof(Http::System.Net.Http.HttpMessageHandler).Module.ModuleVersionId;
+            var guid = typeof(HttpMessageHandler).Module.ModuleVersionId;
 
             _guidPtr = Marshal.AllocHGlobal(Marshal.SizeOf(guid));
 
@@ -92,9 +94,9 @@ namespace Benchmarks.Trace
         public async Task<string> Index()
         {
             var task = (Task)HttpMessageHandlerIntegration.HttpMessageHandler_SendAsync(
-                _handler,
-                _request,
-                _boxedCancellationToken,
+                Handler,
+                HttpRequest,
+                BoxedCancellationToken,
                 111,
                 _mdToken,
                 (long)_guidPtr);
@@ -103,22 +105,17 @@ namespace Benchmarks.Trace
 
             return "OK";
         }
-    }
-}
 
-// The HttpMessageHandler instrumentation expects an instance of System.Net.Http.HttpClientHandler
-// To avoid dependencies on an actual HTTP stack, declare our own type with the same name
-namespace System.Net.Http
-{
-    internal class HttpClientHandler : Http::System.Net.Http.HttpMessageHandler
-    {
-        private static readonly Task<Http::System.Net.Http.HttpResponseMessage> CachedResult = Task.FromResult(new Http::System.Net.Http.HttpResponseMessage());
-
-        internal static HttpClientHandler Create() => new HttpClientHandler();
-
-        protected override Task<Http::System.Net.Http.HttpResponseMessage> SendAsync(Http::System.Net.Http.HttpRequestMessage request, CancellationToken cancellationToken)
+        internal class CustomHttpMessageHandler : HttpMessageHandler
         {
-            return CachedResult;
+            private static readonly Task<HttpResponseMessage> CachedResult = Task.FromResult(new HttpResponseMessage());
+
+            internal static HttpClientHandler Create() => new HttpClientHandler();
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                return CachedResult;
+            }
         }
     }
 }
