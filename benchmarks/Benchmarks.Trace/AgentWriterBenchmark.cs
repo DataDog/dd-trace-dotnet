@@ -2,20 +2,16 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Vendors.MessagePack;
 
 namespace Benchmarks.Trace
 {
     [DatadogExporter]
     [MemoryDiagnoser]
-    [SimpleJob(RuntimeMoniker.Net472)]
-    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
@@ -85,9 +81,9 @@ namespace Benchmarks.Trace
 
             public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
             {
-                using (var requestStream = new MemoryStream())
+                using (var requestStream = Stream.Null)
                 {
-                    await MessagePackSerializer.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
+                    await CachedSerializer.Instance.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
                 }
 
                 return new FakeApiResponse();

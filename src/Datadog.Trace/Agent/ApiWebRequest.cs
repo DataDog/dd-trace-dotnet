@@ -1,7 +1,6 @@
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Agent
 {
@@ -33,7 +32,7 @@ namespace Datadog.Trace.Agent
             _request.ContentType = "application/msgpack";
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                await MessagePackSerializer.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
+                await CachedSerializer.Instance.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
             }
 
             try
