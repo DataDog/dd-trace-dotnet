@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.ServiceModel.Channels;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -19,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string Major4 = "4";
 
         private const string ChannelHandlerTypeName = "System.ServiceModel.Dispatcher.ChannelHandler";
+        private const string HttpRequestMessagePropertyTypeName = "System.ServiceModel.Channels.HttpRequestMessageProperty";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(WcfIntegration));
 
@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = CreateScope(requestContext as RequestContext))
+            using (var scope = CreateScope(requestContext))
             {
                 try
                 {
@@ -93,9 +93,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScope(RequestContext requestContext)
+        private static Scope CreateScope(object requestContext)
         {
-            var requestMessage = requestContext?.RequestMessage;
+            var requestMessage = requestContext.GetProperty<object>("RequestMessage").GetValueOrDefault();
 
             if (requestMessage == null)
             {
@@ -119,19 +119,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string host = null;
                 string httpMethod = null;
 
-                if (requestMessage.Properties.TryGetValue("httpRequest", out var httpRequestProperty) &&
-                    httpRequestProperty is HttpRequestMessageProperty httpRequestMessageProperty)
+                IDictionary<string, object> requestProperties = requestMessage.GetProperty<IDictionary<string, object>>("Properties").GetValueOrDefault();
+                if (requestProperties.TryGetValue("httpRequest", out object httpRequestProperty) &&
+                    httpRequestProperty.GetType().FullName.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
                 {
+                    var webHeaderCollection = httpRequestProperty.GetProperty<WebHeaderCollection>("Headers").GetValueOrDefault();
+
                     // we're using an http transport
-                    host = httpRequestMessageProperty.Headers[HttpRequestHeader.Host];
-                    httpMethod = httpRequestMessageProperty.Method?.ToUpperInvariant();
+                    host = webHeaderCollection[HttpRequestHeader.Host];
+                    httpMethod = httpRequestProperty.GetProperty<string>("Method").GetValueOrDefault()?.ToUpperInvariant();
 
                     // try to extract propagated context values from http headers
                     if (tracer.ActiveScope == null)
                     {
                         try
                         {
-                            var headers = httpRequestMessageProperty.Headers.Wrap();
+                            var headers = webHeaderCollection.Wrap();
                             propagatedContext = SpanContextPropagator.Instance.Extract(headers);
                             tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags);
                         }
@@ -145,11 +148,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scope = tracer.StartActive("wcf.request", propagatedContext);
                 var span = scope.Span;
 
+                object requestHeaders = requestMessage.GetProperty<object>("Headers").GetValueOrDefault();
+                string action = requestHeaders.GetProperty<string>("Action").GetValueOrDefault();
+                Uri requestHeadersTo = requestHeaders.GetProperty<Uri>("To").GetValueOrDefault();
+
                 span.DecorateWebServerSpan(
-                    resourceName: requestMessage.Headers.Action ?? requestMessage.Headers.To?.LocalPath,
+                    resourceName: action ?? requestHeadersTo?.LocalPath,
                     httpMethod,
                     host,
-                    httpUrl: requestMessage.Headers.To?.AbsoluteUri,
+                    httpUrl: requestHeadersTo?.AbsoluteUri,
                     tags: tagsFromHeaders);
 
                 // set analytics sample rate if enabled
