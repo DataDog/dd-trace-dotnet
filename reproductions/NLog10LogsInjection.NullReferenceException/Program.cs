@@ -11,6 +11,12 @@ namespace NLog10LogsInjection.NullReferenceException
 
         static int Main(string[] args)
         {
+#if NETCOREAPP2_1
+            // Add a delay to avoid a race condition on shutdown: https://github.com/dotnet/coreclr/pull/22712
+            // This would cause a segmentation fault on .net core 2.x
+            System.Threading.Thread.Sleep(5000);
+#endif
+
             using (var scope = Tracer.Instance.StartActive("Main"))
             {
                 Logger.Info("Message during a trace.");
