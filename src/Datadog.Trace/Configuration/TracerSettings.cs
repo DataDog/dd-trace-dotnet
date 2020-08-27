@@ -261,7 +261,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets or sets a value indicating whether the use
-        /// of <see cref="System.Diagnostics.DiagnosticSource"/> is enabled.
+        /// of System.Diagnostics.DiagnosticSource is enabled.
         /// </summary>
         public bool DiagnosticSourceEnabled { get; set; }
 

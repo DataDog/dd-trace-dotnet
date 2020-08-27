@@ -206,7 +206,7 @@ namespace Datadog.Trace.Configuration
         public const string DogStatsDArgs = "DD_DOGSTATSD_ARGS";
 
         /// <summary>
-        /// Configuration key for enabling or disabling the use of <see cref="System.Diagnostics.DiagnosticSource"/>.
+        /// Configuration key for enabling or disabling the use of System.Diagnostics.DiagnosticSource.
         /// Default value is <c>true</c> (enabled).
         /// </summary>
         public const string DiagnosticSourceEnabled = "DD_DIAGNOSTIC_SOURCE_ENABLED";
