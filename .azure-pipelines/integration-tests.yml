@@ -196,6 +196,7 @@ jobs:
     condition: succeededOrFailed()
 
 - job: Windows
+  timeoutInMinutes: 80
   strategy:
     matrix:
       x64:
