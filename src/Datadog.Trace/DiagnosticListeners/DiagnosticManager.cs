@@ -1,3 +1,4 @@
+#if NETSTANDARD
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -92,3 +93,4 @@ namespace Datadog.Trace.DiagnosticListeners
         }
     }
 }
+#endif

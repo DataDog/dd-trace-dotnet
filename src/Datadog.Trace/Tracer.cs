@@ -383,6 +383,7 @@ namespace Datadog.Trace
             return _agentWriter.FlushTracesAsync();
         }
 
+#if NETSTANDARD
         internal void StartDiagnosticObservers()
         {
             // instead of adding a hard dependency on DiagnosticSource,
@@ -406,7 +407,6 @@ namespace Datadog.Trace
 
             var observers = new List<DiagnosticObserver>();
 
-#if NETSTANDARD
             if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
             {
                 Log.Debug("Adding AspNetCoreDiagnosticObserver");
@@ -414,7 +414,6 @@ namespace Datadog.Trace
                 var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
                 observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
             }
-#endif
 
             if (observers.Count == 0)
             {
@@ -429,6 +428,7 @@ namespace Datadog.Trace
                 DiagnosticManager = diagnosticManager;
             }
         }
+#endif
 
         internal async Task WriteDiagnosticLog()
         {
