@@ -25,7 +25,7 @@
     <ConvertToAbsolutePath Paths="$(OutputPath)">
       <Output TaskParameter="AbsolutePaths" PropertyName="AbsoluteOutputPath" />
     </ConvertToAbsolutePath>
-    <MSBuild Projects="@(SubApplications)" Targets="Restore;Build" Properties="OutputPath=$(AbsoluteOutputPath)\%(Name)\;TargetFramework=$(TargetFramework);ExcludeNativeProfiler=true;ExcludeManagedProfiler=true;LoadManagedProfilerFromProfilerDirectory=false" />
+    <MSBuild BuildInParallel="false" RunEachTargetSeparately="true" Projects="@(SubApplications)" Targets="Restore;Build" Properties="OutputPath=$(AbsoluteOutputPath)\%(Name)\;TargetFramework=$(TargetFramework);ExcludeNativeProfiler=true;ExcludeManagedProfiler=true;LoadManagedProfilerFromProfilerDirectory=false" />
   </Target>
 
 </Project>
