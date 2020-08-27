@@ -180,11 +180,11 @@ namespace Datadog.Trace.TestHelpers
 
             string integrations = string.Join(";", GetIntegrationsFilePaths());
             environmentVariables["DD_INTEGRATIONS"] = integrations;
-            environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "localhost";
+            environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 
             // for ASP.NET Core sample apps, set the server's port
-            environmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{aspNetCorePort}/";
+            environmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{aspNetCorePort}/";
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {

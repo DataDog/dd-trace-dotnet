@@ -74,6 +74,16 @@ namespace Datadog.Trace.Configuration
 
             AgentUri = new Uri(agentUri);
 
+            if (string.Equals(AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+            {
+                // Replace localhost with 127.0.0.1 to avoid DNS resolution.
+                // When ipv6 is enabled, localhost is first resolved to ::1, which fails
+                // because the trace agent is only bound to ipv4.
+                // This causes delays when sending traces.
+                var builder = new UriBuilder(agentUri) { Host = "127.0.0.1" };
+                AgentUri = builder.Uri;
+            }
+
             AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
                                // default value
                                false;

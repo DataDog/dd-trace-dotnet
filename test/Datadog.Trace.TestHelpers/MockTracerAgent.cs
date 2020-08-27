@@ -27,6 +27,7 @@ namespace Datadog.Trace.TestHelpers
                 // seems like we can't reuse a listener if it fails to start,
                 // so create a new listener each time we retry
                 var listener = new HttpListener();
+                listener.Prefixes.Add($"http://127.0.0.1:{port}/");
                 listener.Prefixes.Add($"http://localhost:{port}/");
 
                 try
