@@ -110,7 +110,7 @@ namespace Datadog.Trace
                     }
                     else
                     {
-                        _agentWriter.OverrideApiBaseEndpoint(baseEndpoint);
+                        _agentWriter.SetApiBaseEndpoint(baseEndpoint);
                     }
                 });
 

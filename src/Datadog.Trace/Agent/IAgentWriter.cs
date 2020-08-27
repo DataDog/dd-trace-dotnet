@@ -13,6 +13,6 @@ namespace Datadog.Trace.Agent
 
         Task FlushAndCloseAsync();
 
-        void OverrideApiBaseEndpoint(Uri uri);
+        void SetApiBaseEndpoint(Uri uri);
     }
 }

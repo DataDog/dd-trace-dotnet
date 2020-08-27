@@ -5,7 +5,7 @@ namespace Datadog.Trace.Agent
 {
     internal interface IApi
     {
-        public void OverrideBaseEndpoint(Uri baseEndpoint);
+        public void SetBaseEndpoint(Uri baseEndpoint);
 
         Task<bool> SendTracesAsync(Span[][] traces);
     }

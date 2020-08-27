@@ -49,7 +49,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public void OverrideBaseEndpoint(Uri baseEndpoint)
+        public void SetBaseEndpoint(Uri baseEndpoint)
         {
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
         }
