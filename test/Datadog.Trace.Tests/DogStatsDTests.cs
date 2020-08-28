@@ -40,9 +40,9 @@ namespace Datadog.Trace.Tests
 
             // Setup mock to set a bool when receiving a successful response from the agent, so we know to verify success or error.
             var requestSuccessful = false;
-            var requestHadErrors = false;
+            var requestEncounteredErrors = false;
             statsd.Setup(s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Responses, 1, 1, It.IsAny<string[]>())).Callback(() => requestSuccessful = true);
-            statsd.Setup(s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Errors, 1, 1, It.IsAny<string[]>())).Callback(() => requestHadErrors = true);
+            statsd.Setup(s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Errors, 1, 1, It.IsAny<string[]>())).Callback(() => requestEncounteredErrors = true);
 
             var spans = SendSpan(tracerMetricsEnabled: true, statsd);
 
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests
                     Times.Once());
             }
 
-            if (requestHadErrors)
+            if (requestEncounteredErrors)
             {
                 statsd.Verify(
                     s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Errors, 1, 1, null),
