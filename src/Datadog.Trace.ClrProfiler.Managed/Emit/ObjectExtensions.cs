@@ -28,9 +28,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             var type = source.GetType();
             var paramType1 = typeof(TArg1);
+            var returnType = typeof(TResult);
 
             object cachedItem = Cache.GetOrAdd(
-                new PropertyFetcherCacheKey(type, paramType1, methodName),
+                new PropertyFetcherCacheKey(type, paramType1, returnType, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TArg1, TResult>>
                        .CreateMethodCallDelegate(
@@ -95,9 +96,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public static bool TryCallMethod<TResult>(this object source, string methodName, out TResult value)
         {
             var type = source.GetType();
+            var returnType = typeof(TResult);
 
             object cachedItem = Cache.GetOrAdd(
-                new PropertyFetcherCacheKey(type, null, methodName),
+                new PropertyFetcherCacheKey(type, returnType, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TResult>>
                        .CreateMethodCallDelegate(
@@ -120,11 +122,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return source.TryCallMethod(methodName, arg1, out TResult result)
                        ? new MemberResult<TResult>(result)
                        : MemberResult<TResult>.NotFound;
-        }
-
-        public static MemberResult<object> CallMethod<TArg1>(this object source, string methodName, TArg1 arg1)
-        {
-            return CallMethod<TArg1, object>(source, methodName, arg1);
         }
 
         public static MemberResult<TResult> CallMethod<TResult>(this object source, string methodName)
@@ -220,62 +217,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
                        : MemberResult<TResult>.NotFound;
         }
 
-        public static MemberResult<object> GetField(this object source, string fieldName)
-        {
-            return GetField<object>(source, fieldName);
-        }
-
         private static PropertyFetcherCacheKey GetKey<TResult>(string name, Type type)
         {
             return new PropertyFetcherCacheKey(type, typeof(TResult), name);
-        }
-
-        private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
-        {
-            PropertyInfo propertyInfo = containerType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (propertyInfo == null)
-            {
-                return null;
-            }
-
-            var dynamicMethod = Emit<Func<object, TResult>>.NewDynamicMethod($"{containerType.FullName}.get_{propertyName}");
-            dynamicMethod.LoadArgument(0);
-
-            if (containerType.IsValueType)
-            {
-                dynamicMethod.Unbox(containerType);
-            }
-            else
-            {
-                dynamicMethod.CastClass(containerType);
-            }
-
-            MethodInfo methodInfo = propertyInfo.GetMethod;
-
-            if (methodInfo.IsStatic)
-            {
-                dynamicMethod.Call(methodInfo);
-            }
-            else
-            {
-                // C# compiler always uses CALLVIRT for instance methods
-                // to get the cheap null check, even if they are not virtual
-                dynamicMethod.CallVirtual(methodInfo);
-            }
-
-            if (propertyInfo.PropertyType != typeof(TResult))
-            {
-                if (propertyInfo.PropertyType.IsValueType)
-                {
-                    dynamicMethod.Box(propertyInfo.PropertyType);
-                }
-
-                dynamicMethod.CastClass(typeof(TResult));
-            }
-
-            dynamicMethod.Return();
-            return dynamicMethod.CreateDelegate();
         }
 
         private static Func<object, TResult> CreateFieldDelegate<TResult>(Type containerType, string fieldName)
