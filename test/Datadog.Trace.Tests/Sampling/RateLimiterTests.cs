@@ -174,6 +174,13 @@ namespace Datadog.Trace.Tests.Sampling
                                     result.Denied.Add(span.SpanId);
                                 }
                             }
+
+                            var remainingTime = (test.TimeBetweenBursts - stopwatch.Elapsed).TotalMilliseconds;
+
+                            if (remainingTime > 0)
+                            {
+                                Thread.Sleep((int)remainingTime);
+                            }
                         }
                     },
                     TaskCreationOptions.LongRunning);
