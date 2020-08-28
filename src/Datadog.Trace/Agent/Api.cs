@@ -106,6 +106,7 @@ namespace Datadog.Trace.Agent
                     {
                         // stop retrying
                         Log.Error(exception, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
+                        _statsd?.Send();
                         return false;
                     }
 
