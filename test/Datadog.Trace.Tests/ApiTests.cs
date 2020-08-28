@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests
             sw.Stop();
 
             requestMock.Verify(x => x.PostAsync(It.IsAny<Span[][]>(), It.IsAny<FormatterResolverWrapper>()), Times.Exactly(5));
-            Assert.InRange(sw.ElapsedMilliseconds, 1000, 16000); // should be ~ 3200ms
+            Assert.InRange(sw.ElapsedMilliseconds, 1000, 20_000); // should be ~ 3200ms
 
             // TODO:bertrand check that it's properly logged
         }
