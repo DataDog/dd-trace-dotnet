@@ -78,9 +78,10 @@ namespace Datadog.Trace.Tests.Sampling
 
             var expectedLimit = totalMilliseconds * actualIntervalLimit / 1_000;
 
-            var acceptableVariance = (actualIntervalLimit * 1.0);
-            var upperLimit = expectedLimit + acceptableVariance;
-            var lowerLimit = expectedLimit - acceptableVariance;
+            var acceptableUpperVariance = (actualIntervalLimit * 1.0);
+            var acceptableLowerVariance = (actualIntervalLimit * 1.15); // Allow for increased tolerance on lower limit since the current implementation's dequeueing behavior is slower than queueing behavior
+            var upperLimit = expectedLimit + acceptableUpperVariance;
+            var lowerLimit = expectedLimit - acceptableLowerVariance;
 
             Assert.True(
                 result.TotalAllowed >= lowerLimit && result.TotalAllowed <= upperLimit,
@@ -200,6 +201,7 @@ namespace Datadog.Trace.Tests.Sampling
             result.TimeElapsed = sw.Elapsed;
             result.RateLimiter = limiter;
             result.ReportedRate = limiter.GetEffectiveRate();
+            result.Parallelism = parallelism;
 
             return result;
         }
@@ -228,6 +230,8 @@ namespace Datadog.Trace.Tests.Sampling
             public int TotalAttempted => Allowed.Count + Denied.Count;
 
             public int TotalAllowed => Allowed.Count;
+
+            public int Parallelism { get; set; }
         }
     }
 }
