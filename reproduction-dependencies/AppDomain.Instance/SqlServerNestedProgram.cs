@@ -14,7 +14,7 @@ namespace AppDomain.Instance
         public int CurrentCallCount { get; set; }
         public bool DenyAllCalls { get; set; }
 
-        private readonly string _connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=30";
+        private readonly string _connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
         private readonly string _jokeTable = "GreatJoke";
 
         public SqlServerNestedProgram()

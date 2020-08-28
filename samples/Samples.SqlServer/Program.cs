@@ -27,7 +27,7 @@ namespace Samples.SqlServer
         {
             int numAttempts = 3;
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=30";
+@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
             for (int i = 0; i < numAttempts; i++)
             {

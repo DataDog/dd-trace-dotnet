@@ -17,7 +17,7 @@ namespace Samples.WebForms.Empty
     {
         public object GetValue()
         {
-            var connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true";
+            var connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
             using (var connection = (DbConnection)new SqlConnection(connectionString))
             using (var command = connection.CreateCommand())
