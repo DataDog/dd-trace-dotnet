@@ -33,9 +33,9 @@ namespace Datadog.Trace.Agent
             _flushTask = automaticFlush ? Task.Run(FlushTracesTaskLoopAsync) : Task.FromResult(true);
         }
 
-        public void OverrideApi(IApi api)
+        public void SetApiBaseEndpoint(Uri uri)
         {
-            _api = api;
+            _api.SetBaseEndpoint(uri);
         }
 
         public Task<bool> Ping()

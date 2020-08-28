@@ -71,7 +71,6 @@ namespace Datadog.Trace
                     return;
                 }
 
-                Log.Warning("Attempting to force a child process refresh.");
                 InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
 
                 if (!_isProcessManager)
@@ -82,7 +81,9 @@ namespace Datadog.Trace
 
                 if (Processes.All(p => p.HasAttemptedStartup))
                 {
-                    Log.Debug("Forcing a full refresh on agent processes.");
+                    Log.Warning("Attempting to force a child process refresh.");
+
+                    Log.Debug("Stopping child processes.");
                     StopProcesses();
 
                     _cancellationTokenSource = new CancellationTokenSource();
@@ -92,7 +93,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    Log.Debug("This process has not had a chance to initialize agent processes.");
+                    Log.Warning("This process has not had a chance to initialize agent processes.");
                 }
             }
             catch (Exception ex)
@@ -229,6 +230,12 @@ namespace Datadog.Trace
                                 }
                             }
                         }
+                        catch (ArgumentException)
+                        {
+                            // It is expected for Process.GetProcessById to throw an ArgumentException
+                            // if there is no process matching the identifier argument.
+                            // This is fine, do not bubble up the exception any further.
+                        }
                         finally
                         {
                             if (!isActive)
@@ -260,6 +267,7 @@ namespace Datadog.Trace
                 {
                     if (!metadata.IsBeingManaged)
                     {
+                        metadata.HasAttemptedStartup = false;
                         metadata.KeepAliveTask = StartProcessWithKeepAlive(metadata);
                     }
                 }
@@ -658,7 +666,7 @@ namespace Datadog.Trace
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Error when alerting subscribers for {0}", Name);
-                        Thread.Sleep(5); // Wait just a tiny bit just to let the file come unlocked
+                        Thread.Sleep(20); // Wait just a tiny bit just to let the file come unlocked
                     }
                 }
             }

@@ -102,14 +102,15 @@ namespace Datadog.Trace
                     Log.Debug("Attempting to override trace agent port with {0}", port);
                     var builder = new UriBuilder(Settings.AgentUri) { Port = port };
                     var baseEndpoint = builder.Uri;
-                    IApi overridingApiClient = new Api(baseEndpoint, apiRequestFactory: null, Statsd);
+
                     if (_agentWriter == null)
                     {
+                        IApi overridingApiClient = new Api(baseEndpoint, apiRequestFactory: null, Statsd);
                         _agentWriter = _agentWriter ?? new AgentWriter(overridingApiClient, Statsd);
                     }
                     else
                     {
-                        _agentWriter.OverrideApi(overridingApiClient);
+                        _agentWriter.SetApiBaseEndpoint(baseEndpoint);
                     }
                 });
 

@@ -19,10 +19,10 @@ namespace Datadog.Trace.Agent
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IStatsd _statsd;
-        private readonly Uri _tracesEndpoint;
         private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
         private readonly string _containerId;
         private readonly FrameworkDescription _frameworkDescription;
+        private Uri _tracesEndpoint; // The Uri may be reassigned dynamically so that retry attempts may attempt updated Agent ports
 
         public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IStatsd statsd)
         {
@@ -47,6 +47,11 @@ namespace Datadog.Trace.Agent
             {
                 Log.SafeLogError(e, "Error getting framework description");
             }
+        }
+
+        public void SetBaseEndpoint(Uri baseEndpoint)
+        {
+            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
         }
 
         public async Task<bool> SendTracesAsync(Span[][] traces)
@@ -96,15 +101,7 @@ namespace Datadog.Trace.Agent
                 // Error handling block
                 if (!success)
                 {
-                    bool isSocketException = false;
-
-                    if (exception?.InnerException is SocketException se)
-                    {
-                        isSocketException = true;
-                        Log.Error(se, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
-                        TracingProcessManager.TryForceTraceAgentRefresh();
-                    }
-
+                    // Exit if we've hit our retry limit
                     if (retryCount >= retryLimit)
                     {
                         // stop retrying
@@ -112,11 +109,33 @@ namespace Datadog.Trace.Agent
                         return false;
                     }
 
-                    // retry
+                    // Before retry delay
+                    bool isSocketException = false;
+                    Exception innerException = exception;
+
+                    while (innerException != null)
+                    {
+                        if (innerException is SocketException)
+                        {
+                            isSocketException = true;
+                            break;
+                        }
+
+                        innerException = innerException.InnerException;
+                    }
+
+                    if (isSocketException)
+                    {
+                        Log.Error(exception, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
+                        TracingProcessManager.TryForceTraceAgentRefresh();
+                    }
+
+                    // Execute retry delay
                     await Task.Delay(sleepDuration).ConfigureAwait(false);
                     retryCount++;
                     sleepDuration *= 2;
 
+                    // After retry delay
                     if (isSocketException)
                     {
                         // Ensure we have the most recent port before trying again

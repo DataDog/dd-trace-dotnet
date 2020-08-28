@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
@@ -12,6 +13,6 @@ namespace Datadog.Trace.Agent
 
         Task FlushAndCloseAsync();
 
-        void OverrideApi(IApi api);
+        void SetApiBaseEndpoint(Uri uri);
     }
 }
