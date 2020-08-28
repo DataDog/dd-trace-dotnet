@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var expectedLimit = totalMilliseconds * actualIntervalLimit / 1_000;
 
-            var acceptableVariance = (actualIntervalLimit * 1.0);
+            var acceptableVariance = (actualIntervalLimit * 1.15);
             var upperLimit = expectedLimit + acceptableVariance;
             var lowerLimit = expectedLimit - acceptableVariance;
 
