@@ -9,8 +9,11 @@ namespace Datadog.Trace.Sampling
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RateLimiter>();
 
+        private readonly ConcurrentQueue<DateTime> _intervalQueue = new ConcurrentQueue<DateTime>();
+
         private readonly int _maxTracesPerInterval;
         private readonly int _intervalMilliseconds;
+        private readonly TimeSpan _interval;
 
         private DateTime _windowBegin;
 
@@ -26,6 +29,7 @@ namespace Datadog.Trace.Sampling
         {
             _maxTracesPerInterval = maxTracesPerInterval ?? 100;
             _intervalMilliseconds = 1_000;
+            _interval = TimeSpan.FromMilliseconds(_intervalMilliseconds);
             _windowBegin = DateTime.UtcNow;
         }
 
@@ -50,7 +54,7 @@ namespace Datadog.Trace.Sampling
                 // This must happen after the wait, because we check for window statistics, modifying this number
                 Interlocked.Increment(ref _windowChecks);
 
-                var count = _windowAllowed;
+                var count = _intervalQueue.Count;
 
                 if (count >= _maxTracesPerInterval)
                 {
@@ -58,6 +62,7 @@ namespace Datadog.Trace.Sampling
                     return false;
                 }
 
+                _intervalQueue.Enqueue(DateTime.UtcNow);
                 Interlocked.Increment(ref _windowAllowed);
 
                 return true;
@@ -123,6 +128,11 @@ namespace Datadog.Trace.Sampling
                     _windowAllowed = 0;
                     _windowChecks = 0;
                     _windowBegin = now;
+                }
+
+                while (_intervalQueue.TryPeek(out var time) && now.Subtract(time) > _interval)
+                {
+                    _intervalQueue.TryDequeue(out _);
                 }
             }
             finally
