@@ -78,9 +78,10 @@ namespace Datadog.Trace.Tests.Sampling
 
             var expectedLimit = totalMilliseconds * actualIntervalLimit / 1_000;
 
-            var acceptableVariance = (actualIntervalLimit * 1.0);
-            var upperLimit = expectedLimit + acceptableVariance;
-            var lowerLimit = expectedLimit - acceptableVariance;
+            var acceptableUpperVariance = (actualIntervalLimit * 1.0);
+            var acceptableLowerVariance = (actualIntervalLimit * 1.15); // Allow for increased tolerance on lower limit since the rolling window does not get dequeued as quickly as it can queued
+            var upperLimit = expectedLimit + acceptableUpperVariance;
+            var lowerLimit = expectedLimit - acceptableLowerVariance;
 
             Assert.True(
                 result.TotalAllowed >= lowerLimit && result.TotalAllowed <= upperLimit,
