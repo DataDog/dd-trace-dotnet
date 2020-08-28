@@ -11,12 +11,12 @@ namespace Samples.DatabaseHelper
 {
     public class DapperTestHarness
     {
-        private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY, Name varchar(100));";
-        private const string InsertCommandText = "INSERT INTO Employees (Id, Name) VALUES (@Id, @Name);";
-        private const string SelectOneCommandText = "SELECT Name FROM Employees WHERE Id=@Id;";
-        private const string UpdateCommandText = "UPDATE Employees SET Name=@Name WHERE Id=@Id;";
-        private const string SelectManyCommandText = "SELECT * FROM Employees WHERE Id=@Id;";
-        private const string DeleteCommandText = "DELETE FROM Employees WHERE Id=@Id;";
+        private const string DropCommandText = "DROP TABLE IF EXISTS DapperEmployees; CREATE TABLE DapperEmployees (Id int PRIMARY KEY, Name varchar(100));";
+        private const string InsertCommandText = "INSERT INTO DapperEmployees (Id, Name) VALUES (@Id, @Name);";
+        private const string SelectOneCommandText = "SELECT Name FROM DapperEmployees WHERE Id=@Id;";
+        private const string UpdateCommandText = "UPDATE DapperEmployees SET Name=@Name WHERE Id=@Id;";
+        private const string SelectManyCommandText = "SELECT * FROM DapperEmployees WHERE Id=@Id;";
+        private const string DeleteCommandText = "DELETE FROM DapperEmployees WHERE Id=@Id;";
 
         public async Task RunAsync(DbConnection connection)
         {
