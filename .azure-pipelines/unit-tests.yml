@@ -52,6 +52,7 @@ jobs:
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
+        benchmarks/**/*.csproj
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
