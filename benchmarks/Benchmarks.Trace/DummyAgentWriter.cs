@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
@@ -11,6 +12,10 @@ namespace Benchmarks.Trace
         public Task FlushAndCloseAsync()
         {
             return Task.CompletedTask;
+        }
+
+        public void SetApiBaseEndpoint(Uri uri)
+        {
         }
 
         public Task FlushTracesAsync()
