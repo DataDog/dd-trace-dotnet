@@ -167,11 +167,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 lastExpression = Expression.Call(instance, methodInfo, arguments);
             }
 
-            if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
-            {
-                lastExpression = Expression.Convert(lastExpression, methodInfo.ReturnType);
-            }
-            else if (methodInfo.ReturnType != returnType)
+            // Cast the real object to the return type of the delegate
+            // This also works for boxing value types if type object is expected
+            if (methodInfo.ReturnType != returnType)
             {
                 lastExpression = Expression.Convert(lastExpression, returnType);
             }
