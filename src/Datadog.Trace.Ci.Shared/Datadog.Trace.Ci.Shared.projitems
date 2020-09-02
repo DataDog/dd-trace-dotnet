@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>a1d7653a-c409-414a-b9b0-7879953ebcdd</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Datadog.Trace.Ci</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)BuildTags.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CIEnvironmentValues.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CommonTags.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestTags.cs" />
+  </ItemGroup>
+</Project>

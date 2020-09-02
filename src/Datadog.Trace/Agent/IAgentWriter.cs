@@ -9,5 +9,7 @@ namespace Datadog.Trace.Agent
         Task FlushAndCloseAsync();
 
         void OverrideApi(IApi api);
+
+        Task FlushTracesAsync();
     }
 }
