@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpClientHandlerTypeName = "HttpClientHandler";
 
         private const string HttpMessageHandler = SystemNetHttp + "." + HttpMessageHandlerTypeName;
-        private const string HttpClientHandler = SystemNetHttp + "." + HttpClientHandlerTypeName;
+        private const string HttpClientHandlerConst = SystemNetHttp + "." + HttpClientHandlerTypeName;
         private const string SendAsync = "SendAsync";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpMessageHandlerIntegration));
@@ -30,6 +30,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Type _httpMessageHandlerResultType;
         private static Type _httpClientHandlerResultType;
+
+        internal static string HttpClientHandler { get; set; } = HttpClientHandlerConst;
 
         /// <summary>
         /// Instrumentation wrapper for HttpMessageHandler.SendAsync/>.
@@ -143,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = SystemNetHttp,
-            TargetType = HttpClientHandler,
+            TargetType = HttpClientHandlerConst,
             TargetMethod = SendAsync,
             TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
