@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,9 +51,11 @@ namespace Benchmarks.Trace
 
         private class FakeHttpHandler : DelegatingHandler
         {
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                return Task.FromResult(new HttpResponseMessage());
+                await request.Content.CopyToAsync(Stream.Null);
+
+                return new HttpResponseMessage();
             }
         }
     }
