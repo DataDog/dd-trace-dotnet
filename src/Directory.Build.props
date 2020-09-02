@@ -18,7 +18,7 @@
     <RepositoryUrl>https://github.com/DataDog/dd-trace-dotnet.git</RepositoryUrl>
     <Copyright>Copyright 2017 Datadog, Inc.</Copyright>
     <Company>Datadog</Company>
-    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd;bobuva</Authors>
+    <Authors>Datadog</Authors>
   </PropertyGroup>
 
   <ItemGroup>
