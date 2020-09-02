@@ -132,7 +132,7 @@ namespace Benchmarks.Trace
     public class AspNetCoreBenchmark
     {
         [Benchmark]
-        public Task<string> SendRequest()
+        public string SendRequest()
         {
             return null;
         }
