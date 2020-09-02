@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
 using Microsoft.AspNetCore.Builder;
@@ -97,7 +98,7 @@ namespace Benchmarks.Trace
                 Handler,
                 HttpRequest,
                 BoxedCancellationToken,
-                111,
+                (int)OpCodeValue.Callvirt,
                 _mdToken,
                 (long)_guidPtr);
 
