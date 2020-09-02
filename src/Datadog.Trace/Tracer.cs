@@ -360,7 +360,10 @@ namespace Datadog.Trace
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
         void IDatadogTracer.Write(Span[] trace)
         {
-            _agentWriter.WriteTrace(trace);
+            if (Settings.TraceEnabled)
+            {
+                _agentWriter.WriteTrace(trace);
+            }
         }
 
         internal async Task FlushAsync()
