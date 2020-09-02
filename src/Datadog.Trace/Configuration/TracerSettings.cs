@@ -238,6 +238,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public bool DiagnosticSourceEnabled { get; set; }
 
+        internal static bool DisableSharedInstance { get; set; }
+
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.

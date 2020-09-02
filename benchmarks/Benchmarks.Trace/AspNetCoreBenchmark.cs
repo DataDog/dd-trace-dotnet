@@ -25,7 +25,7 @@ namespace Benchmarks.Trace
 
         static AspNetCoreBenchmark()
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.TraceEnabled, "0");
+            TracerSettings.DisableSharedInstance = true;
 
             var settings = new TracerSettings
             {
@@ -43,12 +43,14 @@ namespace Benchmarks.Trace
             Datadog.Trace.ClrProfiler.Instrumentation.Initialize();
 
             HomeController.Initialize();
+
+            new AspNetCoreBenchmark().SendRequest();
         }
 
         [Benchmark]
-        public Task<string> SendRequest()
+        public string SendRequest()
         {
-            return Client.GetStringAsync("/Home");
+            return Client.GetStringAsync("/Home").GetAwaiter().GetResult();
         }
 
         private class Startup

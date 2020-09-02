@@ -22,6 +22,8 @@ namespace Benchmarks.Trace
 
         static AgentWriterBenchmark()
         {
+            TracerSettings.DisableSharedInstance = true;
+
             var settings = TracerSettings.FromDefaultSources();
 
             settings.TraceEnabled = false;
