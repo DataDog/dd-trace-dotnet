@@ -12,7 +12,7 @@ namespace Datadog.Trace.Util
         /// <typeparam name="T">Type of the result.</typeparam>
         /// <param name="obj">The object that contains the property.</param>
         /// <returns>The value of the property on the specified object.</returns>
-        public abstract T Fetch<T>(object obj);
+        T Fetch<T>(object obj);
 
         /// <summary>
         /// Gets the value of the property on the specified object.
@@ -21,6 +21,6 @@ namespace Datadog.Trace.Util
         /// <param name="obj">The object that contains the property.</param>
         /// <param name="objType">Type of the object</param>
         /// <returns>The value of the property on the specified object.</returns>
-        public abstract T Fetch<T>(object obj, Type objType);
+        T Fetch<T>(object obj, Type objType);
     }
 }
