@@ -5,6 +5,7 @@
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)src\bin\tracer-home</TracerHomeDirectory>
   </PropertyGroup>
 
+  <!-- Pointless update -->
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj"/>
     <CsharpTestProject Include="test\**\*.csproj"/>
