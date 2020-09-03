@@ -408,13 +408,10 @@ namespace Datadog.Trace
 
             var observers = new List<DiagnosticObserver>();
 
-            if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
-            {
-                Log.Debug("Adding AspNetCoreDiagnosticObserver");
+            Log.Debug("Adding AspNetCoreDiagnosticObserver");
 
-                var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
-                observers.Add(new AspNetCoreDiagnosticObserver(aspNetCoreDiagnosticOptions));
-            }
+            var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
+            observers.Add(new AspNetCoreDiagnosticObserver(aspNetCoreDiagnosticOptions));
 
             if (observers.Count == 0)
             {

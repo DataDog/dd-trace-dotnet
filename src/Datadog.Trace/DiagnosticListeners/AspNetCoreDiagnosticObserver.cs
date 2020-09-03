@@ -142,6 +142,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
+            var tracer = Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                return;
+            }
+
             var httpContext = HttpRequestInStartHttpContextFetcher.Fetch<HttpContext>(arg);
 
             if (ShouldIgnore(httpContext))
@@ -150,41 +157,46 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     Log.Debug("Ignoring request");
                 }
+
+                return;
             }
-            else
-            {
-                HttpRequest request = httpContext.Request;
-                string host = request.Host.Value;
-                string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-                string url = GetUrl(request);
 
-                string resourceUrl = UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true)
-                                               .ToLowerInvariant();
+            HttpRequest request = httpContext.Request;
+            string host = request.Host.Value;
+            string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+            string url = GetUrl(request);
 
-                string resourceName = $"{httpMethod} {resourceUrl}";
+            string resourceUrl = UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true)
+                                           .ToLowerInvariant();
 
-                var tracer = Tracer.Instance;
+            string resourceName = $"{httpMethod} {resourceUrl}";
 
-                SpanContext propagatedContext = ExtractPropagatedContext(request);
-                var tagsFromHeaders = ExtractHeaderTags(request, tracer);
+            SpanContext propagatedContext = ExtractPropagatedContext(request);
+            var tagsFromHeaders = ExtractHeaderTags(request, tracer);
 
-                Span span = tracer.StartSpan(HttpRequestInOperationName, propagatedContext)
-                                  .SetTag(Tags.InstrumentationName, ComponentName);
+            Span span = tracer.StartSpan(HttpRequestInOperationName, propagatedContext)
+                              .SetTag(Tags.InstrumentationName, ComponentName);
 
-                span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tagsFromHeaders);
+            span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tagsFromHeaders);
 
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+            // set analytics sample rate if enabled
+            var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+            span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
-                Scope scope = tracer.ActivateSpan(span);
+            Scope scope = tracer.ActivateSpan(span);
 
-                _options.OnRequest?.Invoke(scope.Span, httpContext);
-            }
+            _options.OnRequest?.Invoke(scope.Span, httpContext);
         }
 
         private void OnMvcBeforeAction(object arg)
         {
+            var tracer = Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                return;
+            }
+
             var httpContext = BeforeActionHttpContextFetcher.Fetch<HttpContext>(arg);
 
             if (ShouldIgnore(httpContext))
@@ -196,7 +208,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
             else
             {
-                Span span = Tracer.Instance.ActiveScope?.Span;
+                Span span = tracer.ActiveScope?.Span;
 
                 if (span != null)
                 {
@@ -219,7 +231,14 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
-            IScope scope = Tracer.Instance.ActiveScope;
+            var tracer = Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                return;
+            }
+
+            IScope scope = tracer.ActiveScope;
 
             if (scope != null)
             {
@@ -238,7 +257,14 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingUnhandledException(object arg)
         {
-            ISpan span = Tracer.Instance.ActiveScope?.Span;
+            var tracer = Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                return;
+            }
+
+            ISpan span = tracer.ActiveScope?.Span;
 
             if (span != null)
             {
