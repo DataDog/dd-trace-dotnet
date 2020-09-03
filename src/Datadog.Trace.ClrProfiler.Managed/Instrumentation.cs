@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
@@ -44,18 +46,43 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 var tracer = Tracer.Instance;
-
-#if NETSTANDARD
-                if (tracer.Settings.DiagnosticSourceEnabled)
-                {
-                    tracer.StartDiagnosticObservers();
-                }
-#endif
             }
             catch
             {
                 // ignore
             }
+
+#if NETSTANDARD
+            try
+            {
+                // if (tracer.Settings.DiagnosticSourceEnabled)
+                // check if DiagnosticSource is available before trying to use it
+                var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+
+                if (type == null)
+                {
+                    Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
+                }
+                else
+                {
+                    // don't call this method unless DiagnosticSource is available
+                    StartDiagnosticManager();
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+#endif
         }
+
+#if NETSTANDARD
+        private static void StartDiagnosticManager()
+        {
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };
+            var diagnosticManager = new DiagnosticManager(observers);
+            diagnosticManager.Start();
+        }
+#endif
     }
 }
