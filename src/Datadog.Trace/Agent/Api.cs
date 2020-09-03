@@ -6,7 +6,6 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -208,7 +207,7 @@ namespace Datadog.Trace.Agent
                     {
                         var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
 
-                        if (!DefaultSamplingRule.OptimEnabled || responseContent != _cachedResponse)
+                        if (responseContent != _cachedResponse)
                         {
                             var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
 
