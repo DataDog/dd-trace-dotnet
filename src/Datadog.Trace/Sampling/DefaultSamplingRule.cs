@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Sampling
@@ -17,6 +18,8 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         public int Priority => int.MinValue;
 
+        internal static bool OptimEnabled { get; set; }
+
         public bool IsMatch(Span span)
         {
             return true;
@@ -25,6 +28,14 @@ namespace Datadog.Trace.Sampling
         public float GetSamplingRate(Span span)
         {
             Log.Debug("Using the default sampling logic");
+
+            if (OptimEnabled)
+            {
+                if (_sampleRates.Count == 0)
+                {
+                    return 1;
+                }
+            }
 
             var env = span.GetTag(Tags.Env);
             var service = span.ServiceName;
@@ -52,7 +63,11 @@ namespace Datadog.Trace.Sampling
             {
                 foreach (var pair in sampleRates)
                 {
-                    rates.Add(pair.Key, pair.Value);
+                    // No point in adding default rates
+                    if (pair.Value != 1)
+                    {
+                        rates.Add(pair.Key, pair.Value);
+                    }
                 }
             }
 

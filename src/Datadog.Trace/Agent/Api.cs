@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -23,6 +25,7 @@ namespace Datadog.Trace.Agent
         private readonly string _containerId;
         private readonly FrameworkDescription _frameworkDescription;
         private Uri _tracesEndpoint; // The Uri may be reassigned dynamically so that retry attempts may attempt updated Agent ports
+        private string _cachedResponse;
 
         public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IStatsd statsd)
         {
@@ -205,8 +208,15 @@ namespace Datadog.Trace.Agent
                     if (response.ContentLength > 0 && Tracer.Instance.Sampler != null)
                     {
                         var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
-                        Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
+
+                        if (!DefaultSamplingRule.OptimEnabled || responseContent != _cachedResponse)
+                        {
+                            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+
+                            Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
+
+                            _cachedResponse = responseContent;
+                        }
                     }
                 }
                 catch (Exception ex)
