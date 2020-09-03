@@ -413,7 +413,7 @@ namespace Datadog.Trace
                 Log.Debug("Adding AspNetCoreDiagnosticObserver");
 
                 var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
-                observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
+                observers.Add(new AspNetCoreDiagnosticObserver(aspNetCoreDiagnosticOptions));
             }
 
             if (observers.Count == 0)
