@@ -32,7 +32,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             if (_allListenersSubscription == null)
             {
-                Log.Verbose("Starting AllListeners subscription");
+                Log.Verbose("Starting DiagnosticListener.AllListeners subscription");
                 _allListenersSubscription = DiagnosticListener.AllListeners.Subscribe(this);
             }
         }
@@ -72,7 +72,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 if (Log.IsEnabled(LogEventLevel.Verbose))
                 {
-                    Log.Verbose("Stopping AllListeners subscription");
+                    Log.Verbose("Stopping DiagnosticListener.AllListeners subscription");
                 }
 
                 _allListenersSubscription.Dispose();
