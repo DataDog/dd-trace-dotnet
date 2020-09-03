@@ -85,6 +85,8 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };
             var diagnosticManager = new DiagnosticManager(observers);
             diagnosticManager.Start();
+
+            DiagnosticManager.Instance = diagnosticManager;
         }
 #endif
     }
