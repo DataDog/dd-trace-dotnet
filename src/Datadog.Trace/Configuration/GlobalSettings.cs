@@ -27,6 +27,10 @@ namespace Datadog.Trace.Configuration
             DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
                            // default value
                            false;
+
+            DiagnosticSourceEnabled = source?.GetBool(ConfigurationKeys.DiagnosticSourceEnabled) ??
+                                      // default value
+                                      true;
         }
 
         /// <summary>
@@ -36,6 +40,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
         public bool DebugEnabled { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the use
+        /// of System.Diagnostics.DiagnosticSource is enabled.
+        /// </summary>
+        public bool DiagnosticSourceEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the global settings instance.
