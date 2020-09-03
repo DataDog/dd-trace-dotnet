@@ -39,13 +39,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("httpContext");
         private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("actionDescriptor");
 
-        private readonly AspNetCoreDiagnosticOptions _options;
         private readonly bool _isLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
-
-        public AspNetCoreDiagnosticObserver(AspNetCoreDiagnosticOptions options)
-        {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-        }
 
         protected override string ListenerName => DiagnosticListenerName;
 
@@ -127,19 +121,6 @@ namespace Datadog.Trace.DiagnosticListeners
             return Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
-        private bool ShouldIgnore(HttpContext httpContext)
-        {
-            foreach (Func<HttpContext, bool> ignore in _options.IgnorePatterns)
-            {
-                if (ignore(httpContext))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = Tracer.Instance;
@@ -150,16 +131,6 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             var httpContext = HttpRequestInStartHttpContextFetcher.Fetch<HttpContext>(arg);
-
-            if (ShouldIgnore(httpContext))
-            {
-                if (_isLogLevelDebugEnabled)
-                {
-                    Log.Debug("Ignoring request");
-                }
-
-                return;
-            }
 
             HttpRequest request = httpContext.Request;
             string host = request.Host.Value;
@@ -184,8 +155,6 @@ namespace Datadog.Trace.DiagnosticListeners
             span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
             Scope scope = tracer.ActivateSpan(span);
-
-            _options.OnRequest?.Invoke(scope.Span, httpContext);
         }
 
         private void OnMvcBeforeAction(object arg)
@@ -199,33 +168,23 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var httpContext = BeforeActionHttpContextFetcher.Fetch<HttpContext>(arg);
 
-            if (ShouldIgnore(httpContext))
+            Span span = tracer.ActiveScope?.Span;
+
+            if (span != null)
             {
-                if (_isLogLevelDebugEnabled)
-                {
-                    Log.Debug("Ignoring request");
-                }
-            }
-            else
-            {
-                Span span = tracer.ActiveScope?.Span;
+                // NOTE: This event is the start of the action pipeline. The action has been selected, the route
+                //       has been selected but no filters have run and model binding hasn't occured.
+                var actionDescriptor = BeforeActionActionDescriptorFetcher.Fetch<ActionDescriptor>(arg);
+                HttpRequest request = httpContext.Request;
 
-                if (span != null)
-                {
-                    // NOTE: This event is the start of the action pipeline. The action has been selected, the route
-                    //       has been selected but no filters have run and model binding hasn't occured.
-                    var actionDescriptor = BeforeActionActionDescriptorFetcher.Fetch<ActionDescriptor>(arg);
-                    HttpRequest request = httpContext.Request;
+                string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                string controllerName = actionDescriptor.RouteValues["controller"];
+                string actionName = actionDescriptor.RouteValues["action"];
+                string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template ?? $"{controllerName}/{actionName}";
+                string resourceName = $"{httpMethod} {routeTemplate}";
 
-                    string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-                    string controllerName = actionDescriptor.RouteValues["controller"];
-                    string actionName = actionDescriptor.RouteValues["action"];
-                    string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template ?? $"{controllerName}/{actionName}";
-                    string resourceName = $"{httpMethod} {routeTemplate}";
-
-                    // override the parent's resource name with the MVC route template
-                    span.ResourceName = resourceName;
-                }
+                // override the parent's resource name with the MVC route template
+                span.ResourceName = resourceName;
             }
         }
 
@@ -272,7 +231,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 var httpContext = UnhandledExceptionHttpContextFetcher.Fetch<HttpContext>(arg);
 
                 span.SetException(exception);
-                _options.OnError?.Invoke(span, exception, httpContext);
             }
         }
 
