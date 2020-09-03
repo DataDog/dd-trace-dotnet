@@ -4,7 +4,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
-    /// Provides instrumentation probes that can be injected into profiled code.
+    /// Provides access to the profiler CLSID and whether it is attached to the process.
     /// </summary>
     public static class Instrumentation
     {
