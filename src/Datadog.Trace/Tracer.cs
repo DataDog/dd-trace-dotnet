@@ -406,24 +406,11 @@ namespace Datadog.Trace
         {
             DiagnosticManager?.Stop();
 
-            var observers = new List<DiagnosticObserver>();
+            Log.Debug("Starting DiagnosticManager");
 
-            Log.Debug("Adding AspNetCoreDiagnosticObserver");
-
-            observers.Add(new AspNetCoreDiagnosticObserver());
-
-            if (observers.Count == 0)
-            {
-                Log.Debug("DiagnosticManager not started, zero observers added.");
-            }
-            else
-            {
-                Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
-
-                var diagnosticManager = new DiagnosticManager(observers);
-                diagnosticManager.Start();
-                DiagnosticManager = diagnosticManager;
-            }
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };
+            var diagnosticManager = new DiagnosticManager(observers);
+            diagnosticManager.Start();
         }
 #endif
 
