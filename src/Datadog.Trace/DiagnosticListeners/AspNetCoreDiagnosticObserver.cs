@@ -112,19 +112,24 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, IDatadogTracer tracer)
         {
-            try
-            {
-                // extract propagation details from http headers
-                var requestHeaders = request.Headers;
+            var settings = tracer.Settings;
 
-                if (requestHeaders != null)
-                {
-                    return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), tracer.Settings.HeaderTags);
-                }
-            }
-            catch (Exception ex)
+            if (!settings.HeaderTagsEmpty)
             {
-                Log.SafeLogError(ex, "Error extracting propagated HTTP headers.");
+                try
+                {
+                    // extract propagation details from http headers
+                    var requestHeaders = request.Headers;
+
+                    if (requestHeaders != null)
+                    {
+                        return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.SafeLogError(ex, "Error extracting propagated HTTP headers.");
+                }
             }
 
             return Enumerable.Empty<KeyValuePair<string, string>>();
