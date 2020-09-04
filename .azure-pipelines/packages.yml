@@ -175,11 +175,6 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
-    - task: GitVersion@5
-      displayName: GitVersion
-      inputs:
-        preferBundledVersion: false
-
     - download: current
       artifact: windows-msi
       patterns: '**/*x64.msi'
@@ -207,9 +202,9 @@ stages:
     - script: |
         INDEX_FILE=$(pwd)/s3_upload/index.txt
         git rev-parse --abbrev-ref HEAD >> $INDEX_FILE
-        echo $(GitVersion.Sha) >> $INDEX_FILE
+        git rev-parse HEAD >> $INDEX_FILE
         pushd s3_upload && name=$(ls *.deb) && echo "${name::-9}*" >> $INDEX_FILE && popd
-        git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
+        git show -s --format='%ae' HEAD >> $INDEX_FILE
         echo Generated index.txt file:
         cat $INDEX_FILE
       displayName: Write index.txt
