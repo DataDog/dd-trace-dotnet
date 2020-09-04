@@ -199,6 +199,12 @@ stages:
         mv s3_upload/*.deb $PACKAGE_NAME-amd64.deb
       displayName: Rename deb package name to match MSI name
 
+    # Create index.txt file with the following format:
+    # BRANCH_NAME
+    # SHA
+    # ARTIFACT WILDCARD (datadog-dotnet-apm-vX.X.X-*)
+    # COMMIT AUTHOR
+    # Note: For the branch name, normalize 'refs/heads/<branch>' to '<branch>' and 'refs/tags/<tag_name>' to 'tags/<tag_name>'
     - script: |
         INDEX_FILE=$(pwd)/s3_upload/index.txt
         echo $(Build.SourceBranch) | sed 's/refs\/heads\///g' | sed 's/refs\/tags\//tags\//g' >> $INDEX_FILE
