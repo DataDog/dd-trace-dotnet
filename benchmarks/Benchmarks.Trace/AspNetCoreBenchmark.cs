@@ -28,10 +28,11 @@ namespace Benchmarks.Trace
             Environment.SetEnvironmentVariable(ConfigurationKeys.TraceEnabled, "0");
             Environment.SetEnvironmentVariable(ConfigurationKeys.StartupDiagnosticLogEnabled, "0");
 
+            GlobalSettings.Source.DiagnosticSourceEnabled = true;
+
             var settings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false,
-                DiagnosticSourceEnabled = true
             };
 
             Tracer.Instance = new Tracer(settings, new DummyAgentWriter(), null, null, null);
