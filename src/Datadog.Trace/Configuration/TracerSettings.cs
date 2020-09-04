@@ -22,6 +22,9 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public const int DefaultAgentPort = 8126;
 
+        private IDictionary<string, string> _headerTags;
+        private Func<bool> _headerTagsEmpty;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
@@ -244,7 +247,23 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
         /// </summary>
-        public IDictionary<string, string> HeaderTags { get; set; }
+        public IDictionary<string, string> HeaderTags
+        {
+            get => _headerTags;
+            set
+            {
+                _headerTags = value;
+
+                if (value is ConcurrentDictionary<string, string> concurrentDictionary)
+                {
+                    _headerTagsEmpty = () => concurrentDictionary.IsEmpty;
+                }
+                else
+                {
+                    _headerTagsEmpty = () => value.Count == 0;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the port where the DogStatsd server is listening for connections.
@@ -269,6 +288,8 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        internal bool HeaderTagsEmpty => _headerTagsEmpty();
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
