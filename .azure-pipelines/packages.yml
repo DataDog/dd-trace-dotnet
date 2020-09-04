@@ -201,7 +201,7 @@ stages:
 
     - script: |
         INDEX_FILE=$(pwd)/s3_upload/index.txt
-        git branch --show-current >> $INDEX_FILE
+        echo $(Build.SourceBranch) | sed 's/refs\/heads\///g' >> $INDEX_FILE
         git rev-parse HEAD >> $INDEX_FILE
         pushd s3_upload && name=$(ls *.deb) && echo "${name::-9}*" >> $INDEX_FILE && popd
         git show -s --format='%ae' HEAD >> $INDEX_FILE
