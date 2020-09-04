@@ -25,11 +25,13 @@ namespace Datadog.Trace.Util
 
         public static string GetRelativeUrl(Uri uri, bool tryRemoveIds)
         {
+            return GetRelativeUrl(uri.AbsolutePath, tryRemoveIds);
+        }
+
+        public static string GetRelativeUrl(string uri, bool tryRemoveIds)
+        {
             // try to remove segments that look like ids
-            string path = tryRemoveIds
-                              ? CleanUriSegment(uri.AbsolutePath)
-                              : uri.AbsolutePath;
-            return path;
+            return tryRemoveIds ? CleanUriSegment(uri) : uri;
         }
 
         public static string CleanUriSegment(string absolutePath)

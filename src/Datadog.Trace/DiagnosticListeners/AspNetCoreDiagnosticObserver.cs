@@ -166,7 +166,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
                 string url = GetUrl(request);
 
-                string resourceUrl = UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true)
+                string resourceUrl = UriHelpers.GetRelativeUrl(url, tryRemoveIds: true)
                                                .ToLowerInvariant();
 
                 string resourceName = $"{httpMethod} {resourceUrl}";
@@ -230,7 +230,17 @@ namespace Datadog.Trace.DiagnosticListeners
             if (scope != null)
             {
                 var httpContext = HttpRequestInStopHttpContextFetcher.Fetch<HttpContext>(arg);
-                scope.Span.SetTag(Tags.HttpStatusCode, httpContext.Response.StatusCode.ToString());
+
+                var statusCode = httpContext.Response.StatusCode;
+
+                if (statusCode == 200)
+                {
+                    scope.Span.SetTag(Tags.HttpStatusCode, "200");
+                }
+                else
+                {
+                    scope.Span.SetTag(Tags.HttpStatusCode, httpContext.Response.StatusCode.ToString());
+                }
 
                 if (httpContext.Response.StatusCode / 100 == 5)
                 {
