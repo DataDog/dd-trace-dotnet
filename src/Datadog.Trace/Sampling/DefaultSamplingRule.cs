@@ -17,8 +17,6 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         public int Priority => int.MinValue;
 
-        internal static bool UseOptim { get; set; }
-
         public bool IsMatch(Span span)
         {
             return true;
