@@ -166,7 +166,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
                 string url = GetUrl(request);
 
-                string resourceUrl = UriHelpers.GetRelativeUrl(url, tryRemoveIds: true)
+                string absolutePath = request.Path.Value;
+
+                if (request.PathBase.HasValue)
+                {
+                    absolutePath = request.PathBase.Value + absolutePath;
+                }
+
+                string resourceUrl = UriHelpers.GetRelativeUrl(absolutePath, tryRemoveIds: true)
                                                .ToLowerInvariant();
 
                 string resourceName = $"{httpMethod} {resourceUrl}";
