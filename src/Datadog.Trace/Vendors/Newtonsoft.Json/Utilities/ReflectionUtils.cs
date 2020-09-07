@@ -45,7 +45,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
 {
-#if (DOTNET || PORTABLE || PORTABLE40) && !NETSTANDARD2_0
+#if (DOTNET || PORTABLE || PORTABLE40) && !NETSTANDARD
     [Flags]
     internal enum MemberTypes
     {
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
     }
 #endif
 
-#if PORTABLE && !NETSTANDARD2_0
+#if PORTABLE && !NETSTANDARD
     [Flags]
     internal enum BindingFlags
     {
@@ -741,7 +741,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
             return attributes?.FirstOrDefault();
         }
 
-#if !(DOTNET || PORTABLE) || NETSTANDARD2_0
+#if !(DOTNET || PORTABLE) || NETSTANDARD
         public static T[] GetAttributes<T>(object attributeProvider, bool inherit) where T : Attribute
         {
             Attribute[] a = GetAttributes(attributeProvider, typeof(T), inherit);

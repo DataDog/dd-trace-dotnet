@@ -144,6 +144,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
             return property;
         }
 
+#if !NETSTANDARD2_1
         private bool TryGetValue(string key, out JsonProperty item)
         {
             if (Dictionary == null)
@@ -154,6 +155,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
 
             return Dictionary.TryGetValue(key, out item);
         }
+#endif
 
         /// <summary>
         /// Gets a property by property name.

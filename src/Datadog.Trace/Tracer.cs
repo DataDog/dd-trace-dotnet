@@ -517,7 +517,7 @@ namespace Datadog.Trace
         {
             try
             {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD
                 // System.Web.dll is only available on .NET Framework
                 if (System.Web.Hosting.HostingEnvironment.IsHosted)
                 {

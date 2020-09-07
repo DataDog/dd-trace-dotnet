@@ -23,7 +23,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
        to test the loading of managed profiler assemblies from disk -->
-  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' and '$(TargetFramework)' == 'netstandard2.0'">
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' AND $(TargetFramework.StartsWith('netstandard2'))">
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
@@ -32,7 +32,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
  
-  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'netstandard2.1'">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
 

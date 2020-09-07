@@ -14,11 +14,11 @@
     <PackageReference Include="OpenTracing" Version="0.12.0" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('netstandard2')) ">
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
+  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'netstandard2.1' ">
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 </Project>
