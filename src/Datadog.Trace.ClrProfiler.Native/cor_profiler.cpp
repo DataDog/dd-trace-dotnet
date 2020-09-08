@@ -216,7 +216,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     is_desktop_iis = runtime_information_.is_desktop();
   }
 
-  // writing opcodes vector
+  // writing opcodes vector for the IL dumper
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, flow) \
   opcodes_names.push_back(s);
 #include "opcode.def"
@@ -1277,7 +1277,7 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
   orig_sstream << ToString(caller.type.name);
   orig_sstream << ".";
   orig_sstream << ToString(caller.name.c_str());
-  orig_sstream << " : \n";
+  orig_sstream << " =>" << std::endl;
   for (ILInstr* cInstr = rewriter->GetILList()->m_pNext;
        cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext) {
     
@@ -1297,7 +1297,7 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
       orig_sstream << " ";
       orig_sstream << cInstr->m_Arg64;
     }
-    orig_sstream << "\n";
+    orig_sstream << std::endl;
   }
   return orig_sstream.str();
 }
