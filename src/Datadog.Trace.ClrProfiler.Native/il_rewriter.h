@@ -125,6 +125,8 @@ class ILRewriter {
   LPBYTE AllocateILMemory(unsigned size);
 
   void DeallocateILMemory(LPBYTE pBody);
+
+  unsigned GetMaxStackValue();
 };
 
 #endif  // DD_CLR_PROFILER_IL_REWRITER_H_

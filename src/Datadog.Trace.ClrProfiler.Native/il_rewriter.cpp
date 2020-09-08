@@ -654,3 +654,5 @@ void ILRewriter::DeallocateILMemory(LPBYTE pBody) {
 
   delete[] pBody;
 }
+
+unsigned ILRewriter::GetMaxStackValue() { return m_maxStack; }

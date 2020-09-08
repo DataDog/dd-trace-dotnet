@@ -1277,7 +1277,9 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
   orig_sstream << ToString(caller.type.name);
   orig_sstream << ".";
   orig_sstream << ToString(caller.name.c_str());
-  orig_sstream << " =>" << std::endl;
+  orig_sstream << " => (max_stack: ";
+  orig_sstream << rewriter->GetMaxStackValue();
+  orig_sstream << ")" << std::endl;
   for (ILInstr* cInstr = rewriter->GetILList()->m_pNext;
        cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext) {
     
