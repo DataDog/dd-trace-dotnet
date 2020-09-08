@@ -14,7 +14,7 @@ variables:
 resources:
   containers:
   - container: dd_agent
-    image: datadog/agent:latest
+    image: datadog/agent-dev:master-py3-win1809
     ports:
     - 8126:8126
     env:
