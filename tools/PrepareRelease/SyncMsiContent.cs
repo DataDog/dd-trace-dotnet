@@ -52,8 +52,8 @@ namespace PrepareRelease
                 groupId: "Files.Managed.NetStandard20",
                 frameworkMoniker: "netstandard2.0");
             CreateWixFile(
-                groupId: "Files.Managed.NetStandard21",
-                frameworkMoniker: "netstandard2.1");
+                groupId: "Files.Managed.Netcoreapp3.1",
+                frameworkMoniker: "netcoreapp3.1");
         }
 
         private static void CreateWixFile(

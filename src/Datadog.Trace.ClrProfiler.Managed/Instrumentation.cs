@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler
                 // ignore
             }
 
-#if NETSTANDARD
+#if !NETFRAMEWORK
             try
             {
                 if (GlobalSettings.Source.DiagnosticSourceEnabled)

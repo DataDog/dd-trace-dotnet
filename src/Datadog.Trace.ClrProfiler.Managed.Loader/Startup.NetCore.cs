@@ -19,9 +19,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var version = Environment.Version;
 
             // Old versions of .net core have a major version of 4
-            if (version.Major == 3 || version.Major >= 5)
+            if ((version.Major == 3 && version.Minor >= 1) || version.Major >= 5)
             {
-                tracerFrameworkDirectory = "netstandard2.1";
+                tracerFrameworkDirectory = "netcoreapp3.1";
             }
 
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;

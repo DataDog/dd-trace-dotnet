@@ -4,7 +4,7 @@ namespace Datadog.Trace.Util
 {
     internal class SpanIdGenerator
     {
-#if !NETSTANDARD
+#if NETFRAMEWORK
         private static readonly Random GlobalSeedGenerator = new Random();
 #endif
 
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Util
 
             if (random == null)
             {
-#if NETSTANDARD
+#if !NETFRAMEWORK
                 random = new Random();
 #else
                 // On .NET Framework, the clock is used to seed the new random instances.

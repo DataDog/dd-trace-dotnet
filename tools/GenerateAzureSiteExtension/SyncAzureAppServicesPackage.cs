@@ -25,7 +25,7 @@ namespace GenerateAzureSiteExtension
             CopyTargetFrameworkPrivateBin("net45");
             CopyTargetFrameworkPrivateBin("net461");
             CopyTargetFrameworkPrivateBin("netstandard2.0");
-            CopyTargetFrameworkPrivateBin("netstandard2.1");
+            CopyTargetFrameworkPrivateBin("netcoreapp3.1");
             CopyNativeProfiler("x86");
             CopyNativeProfiler("x64");
             CopyIntegrationsJson();
