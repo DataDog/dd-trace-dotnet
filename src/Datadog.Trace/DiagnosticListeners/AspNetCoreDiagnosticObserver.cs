@@ -114,7 +114,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var settings = tracer.Settings;
 
-            if (!settings.HeaderTagsEmpty)
+            if (!settings.HeaderTags.IsEmpty())
             {
                 try
                 {

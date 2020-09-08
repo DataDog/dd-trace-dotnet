@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -62,6 +63,16 @@ namespace Datadog.Trace.ExtensionMethods
                     value = default;
                     return false;
             }
+        }
+
+        public static bool IsEmpty<TKey, TValue>(this IDictionary<TKey, TValue> dictionary)
+        {
+            if (dictionary is ConcurrentDictionary<TKey, TValue> concurrentDictionary)
+            {
+                return concurrentDictionary.IsEmpty;
+            }
+
+            return dictionary.Count == 0;
         }
     }
 }

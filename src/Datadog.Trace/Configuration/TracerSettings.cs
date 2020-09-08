@@ -270,8 +270,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
 
-        internal bool HeaderTagsEmpty => HeaderTags is ConcurrentDictionary<string, string> concurrent ? concurrent.IsEmpty : HeaderTags.Count == 0;
-
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.
