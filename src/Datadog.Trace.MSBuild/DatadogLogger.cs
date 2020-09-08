@@ -94,8 +94,7 @@ namespace Datadog.Trace.MSBuild
                 Log.Debug("Build Started");
 
                 _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
-                _buildSpan.SetMetric(Tags.Analytics, 1.0d);
-                _buildSpan.SetTraceSamplingPriority(SamplingPriority.UserKeep);
+                _buildSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
                 _buildSpan.Type = SpanTypes.Build;
                 _buildSpan.SetTag(BuildTags.BuildName, e.SenderName);
@@ -167,8 +166,7 @@ namespace Datadog.Trace.MSBuild
 
                 Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context, serviceName: projectName);
                 projectSpan.ResourceName = projectName;
-                projectSpan.SetMetric(Tags.Analytics, 1.0d);
-                projectSpan.SetTraceSamplingPriority(SamplingPriority.UserKeep);
+                projectSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
                 projectSpan.Type = SpanTypes.Build;
 
                 foreach (KeyValuePair<string, string> prop in e.GlobalProperties)
