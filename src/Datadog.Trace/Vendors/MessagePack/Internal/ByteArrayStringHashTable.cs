@@ -88,7 +88,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             if (entry == null) goto NOT_FOUND;
 
             {
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
                 ref var v = ref entry[0];
 #else
                 var v = entry[0];
@@ -102,7 +102,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
             for (int i = 1; i < entry.Length; i++)
             {
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
                 ref var v = ref entry[i];
 #else
                 var v = entry[i];
@@ -119,11 +119,11 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             return false;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         static readonly bool Is32Bit = (IntPtr.Size == 4);
 #endif
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         static ulong ByteArrayGetHashCode(byte[] x, int offset, int count)

@@ -144,7 +144,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
             return property;
         }
 
-#if !NETSTANDARD2_1
+#if !NETCOREAPP
         private bool TryGetValue(string key, out JsonProperty item)
         {
             if (Dictionary == null)

@@ -519,7 +519,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
         {
             get
             {
-#if !(PORTABLE40 || PORTABLE || DOTNET || NETSTANDARD)
+#if !(PORTABLE40 || PORTABLE || DOTNET || NETSTANDARD2_0 || NETCOREAPP)
                 if (DynamicCodeGeneration)
                 {
                     return DynamicReflectionDelegateFactory.Instance;

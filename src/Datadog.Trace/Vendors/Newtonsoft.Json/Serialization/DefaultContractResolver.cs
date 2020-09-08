@@ -1400,7 +1400,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
             // warning - this method use to cause errors with Intellitrace. Retest in VS Ultimate after changes
             IValueProvider valueProvider;
 
-#if !(PORTABLE40 || PORTABLE || DOTNET || NETSTANDARD)
+#if !(PORTABLE40 || PORTABLE || DOTNET || NETSTANDARD2_0 || NETCOREAPP)
             if (DynamicCodeGeneration)
             {
                 valueProvider = new DynamicValueProvider(member);

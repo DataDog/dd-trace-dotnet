@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 using System.Threading.Tasks;
 #endif
 
@@ -411,7 +411,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
         }
     }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 
     internal sealed class BigIntegerFormatter : IMessagePackFormatter<System.Numerics.BigInteger>
     {

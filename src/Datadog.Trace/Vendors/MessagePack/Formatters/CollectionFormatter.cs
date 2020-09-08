@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 using System.Collections.Concurrent;
 #endif
 
@@ -247,7 +247,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
                         {
                             while (e.MoveNext())
                             {
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
                                 offset += formatter.Serialize(ref bytes, offset, e.Current, formatterResolver);
 #else
                                 offset += formatter.Serialize(ref bytes, (int)offset, (TElement)e.Current, (IFormatterResolver)formatterResolver);
@@ -278,7 +278,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
                             while (e.MoveNext())
                             {
                                 count++;
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
                                 var writeSize = formatter.Serialize(ref bytes, offset, e.Current, formatterResolver);
 #else
                                 var writeSize = formatter.Serialize(ref bytes, (int)offset, (TElement)e.Current, (IFormatterResolver)formatterResolver);
@@ -348,7 +348,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
             {
                 return collection.Count;
             }
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
             else
             {
                 var c2 = sequence as IReadOnlyCollection<TElement>;
@@ -952,7 +952,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
         }
     }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 
     internal sealed class ObservableCollectionFormatter<T> : CollectionFormatterBase<T, ObservableCollection<T>>
     {
