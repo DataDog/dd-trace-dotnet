@@ -11,12 +11,6 @@ namespace AssemblyResolveMscorlibResources.InfiniteRecursionCrash
     {
         public static int Main()
         {
-#if NETCOREAPP2_1
-            // Add a delay to avoid a race condition on shutdown: https://github.com/dotnet/coreclr/pull/22712
-            // This would cause a segmentation fault on .net core 2.x
-            System.Threading.Thread.Sleep(5000);
-#endif
-
             var ci = new CultureInfo("fr-FR");
             Thread.CurrentThread.CurrentUICulture = ci;
 
@@ -38,6 +32,14 @@ namespace AssemblyResolveMscorlibResources.InfiniteRecursionCrash
                 {
                     Console.WriteLine("The AssemblyResolve event didn't cause infinite recusion. The original System.IO.DirectoryNotFoundException exception was correctly thrown and caught.");
                     return (int)ExitCode.Success;
+                }
+                finally
+                {
+#if NETCOREAPP2_1
+                    // Add a delay to avoid a race condition on shutdown: https://github.com/dotnet/coreclr/pull/22712
+                    // This would cause a segmentation fault on .net core 2.x
+                    System.Threading.Thread.Sleep(5000);
+#endif
                 }
             }
 
