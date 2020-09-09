@@ -112,19 +112,24 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, IDatadogTracer tracer)
         {
-            try
-            {
-                // extract propagation details from http headers
-                var requestHeaders = request.Headers;
+            var settings = tracer.Settings;
 
-                if (requestHeaders != null)
-                {
-                    return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), tracer.Settings.HeaderTags);
-                }
-            }
-            catch (Exception ex)
+            if (!settings.HeaderTags.IsEmpty())
             {
-                Log.SafeLogError(ex, "Error extracting propagated HTTP headers.");
+                try
+                {
+                    // extract propagation details from http headers
+                    var requestHeaders = request.Headers;
+
+                    if (requestHeaders != null)
+                    {
+                        return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.SafeLogError(ex, "Error extracting propagated HTTP headers.");
+                }
             }
 
             return Enumerable.Empty<KeyValuePair<string, string>>();
@@ -161,7 +166,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
                 string url = GetUrl(request);
 
-                string resourceUrl = UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true)
+                string absolutePath = request.Path.Value;
+
+                if (request.PathBase.HasValue)
+                {
+                    absolutePath = request.PathBase.Value + absolutePath;
+                }
+
+                string resourceUrl = UriHelpers.GetRelativeUrl(absolutePath, tryRemoveIds: true)
                                                .ToLowerInvariant();
 
                 string resourceName = $"{httpMethod} {resourceUrl}";
@@ -225,7 +237,17 @@ namespace Datadog.Trace.DiagnosticListeners
             if (scope != null)
             {
                 var httpContext = HttpRequestInStopHttpContextFetcher.Fetch<HttpContext>(arg);
-                scope.Span.SetTag(Tags.HttpStatusCode, httpContext.Response.StatusCode.ToString());
+
+                var statusCode = httpContext.Response.StatusCode;
+
+                if (statusCode == 200)
+                {
+                    scope.Span.SetTag(Tags.HttpStatusCode, "200");
+                }
+                else
+                {
+                    scope.Span.SetTag(Tags.HttpStatusCode, httpContext.Response.StatusCode.ToString());
+                }
 
                 if (httpContext.Response.StatusCode / 100 == 5)
                 {

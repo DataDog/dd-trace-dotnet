@@ -92,18 +92,15 @@ namespace Datadog.Trace
         public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap)
             where T : IHeadersCollection
         {
-            var tagsFromHeaders = new Dictionary<string, string>();
-
             foreach (KeyValuePair<string, string> headerNameToTagName in headerToTagMap)
             {
                 string headerValue = ParseString(headers, headerNameToTagName.Key);
+
                 if (headerValue != null)
                 {
-                    tagsFromHeaders.Add(headerNameToTagName.Value, headerValue);
+                    yield return new KeyValuePair<string, string>(headerNameToTagName.Value, headerValue);
                 }
             }
-
-            return tagsFromHeaders;
         }
 
         private static ulong ParseUInt64<T>(T headers, string headerName)
