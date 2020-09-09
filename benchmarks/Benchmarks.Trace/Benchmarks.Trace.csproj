@@ -12,6 +12,7 @@
     <AssemblyOriginatorKeyFile>..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <DelaySign>false</DelaySign>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
