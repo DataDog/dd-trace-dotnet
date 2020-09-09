@@ -118,7 +118,7 @@ namespace Datadog.Trace.BenchmarkDotNet
                             span.SetMetric("benchmark.statistics.p99", stats.Percentiles.Percentile(99));
                         }
 
-                        durationNanoseconds = stats.N * stats.Mean;
+                        durationNanoseconds = stats.Mean;
                     }
 
                     if (report.Metrics != null)
