@@ -123,7 +123,8 @@ namespace Datadog.Trace.Tests
                 var settings = new TracerSettings
                                {
                                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
-                                   TracerMetricsEnabled = tracerMetricsEnabled
+                                   TracerMetricsEnabled = tracerMetricsEnabled,
+                                   StartupDiagnosticLogEnabled = false,
                                };
 
                 var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd.Object);
