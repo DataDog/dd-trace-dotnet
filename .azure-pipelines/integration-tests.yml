@@ -297,6 +297,104 @@ jobs:
         samples/**/*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false
 
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: |
+        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
+        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
+      arguments: -p:Platform=$(buildPlatform)
+
+  - task: DockerCompose@0
+    displayName: docker-compose stop services
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: down
+    condition: succeededOrFailed()
+- job: Windows_Smoke_tests
+  timeoutInMinutes: 80
+  strategy:
+    matrix:
+      x64:
+        buildPlatform: x64
+        enable32bit: false
+      x86:
+        buildPlatform: x86
+        enable32bit: true
+  pool:
+    vmImage: windows-2019
+  variables:
+    msiOutputDirectory: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
+
+  steps:
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 2.1
+    inputs:
+      packageType: sdk
+      version: 2.1.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 3.0
+    inputs:
+      packageType: sdk
+      version: 3.0.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 3.1
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdkVersion)
+
+  - task: NuGetToolInstaller@1
+    displayName: install nuget
+
+  - task: NuGetCommand@2
+    displayName: nuget restore
+    inputs:
+      restoreSolution: Datadog.Trace.sln
+      verbosityRestore: Normal
+
+  # this triggers a dependency chain that builds all the managed and native dlls
+  - task: MSBuild@1
+    displayName: msbuild tracer-home
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:msi /p:RunWixToolsOutOfProc=true /p:TracerHomeDirectory=$(publishOutput)
+      maximumCpuCount: true
+
+  - task: MSBuild@1
+    displayName: Build .NET Framework projects (not SDK-based projects)
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:BuildFrameworkReproductions
+      maximumCpuCount: true
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build integration tests
+    inputs:
+      command: build
+      projects: |
+        reproductions/**/*.csproj
+        test/*.IntegrationTests/*.IntegrationTests.csproj
+        !reproductions/**/ExpenseItDemo*.csproj
+        !reproductions/**/EntityFramework6x*.csproj
+        !reproductions/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build samples
+    inputs:
+      command: build
+      projects: |
+        samples/**/*.csproj
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false
+
   - task: NuGetCommand@2
     displayName: nuget restore IIS samples
     inputs:
@@ -322,16 +420,6 @@ jobs:
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet test
-    inputs:
-      command: test
-      configuration: $(buildConfiguration)
-      projects: |
-        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
-        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
-      arguments: -p:Platform=$(buildPlatform)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
