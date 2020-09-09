@@ -100,8 +100,8 @@ static int k_rgnStackPushes[] = {
 #undef PushRef
 #undef VarPush
 #undef OPDEF
-    0,  // CEE_COUNT
-    0   // CEE_SWITCH_ARG
+    0, // CEE_COUNT
+    0  // CEE_SWITCH_ARG
 };
 
 ILRewriter::ILRewriter(
@@ -654,3 +654,5 @@ void ILRewriter::DeallocateILMemory(LPBYTE pBody) {
 
   delete[] pBody;
 }
+
+unsigned ILRewriter::GetMaxStackValue() { return m_maxStack; }

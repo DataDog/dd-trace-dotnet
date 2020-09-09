@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <vector>
 #include <string>
 #include <unordered_map>
 #include "cor.h"
@@ -13,6 +14,7 @@
 #include "integration.h"
 #include "module_metadata.h"
 #include "pal.h"
+#include "il_rewriter.h"
 
 namespace trace {
 
@@ -33,6 +35,11 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
   bool is_desktop_iis = false;
+
+  //
+  // OpCodes helper
+  //
+  std::vector<std::string> opcodes_names;
 
   //
   // Module helper variables
@@ -60,7 +67,8 @@ class CorProfiler : public CorProfilerBase {
                                          const FunctionInfo& caller,
                                          const std::vector<MethodReplacement> method_replacements);
   bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
-
+  std::string GetILCodes(std::string title, ILRewriter* rewriter,
+                         const FunctionInfo& caller);
   //
   // Startup methods
   //

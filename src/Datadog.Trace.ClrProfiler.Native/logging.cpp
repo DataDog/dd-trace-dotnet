@@ -9,6 +9,7 @@
 namespace trace {
 
 bool debug_logging_enabled = false;
+bool dump_il_rewrite_enabled = false;
 
 void Log(const std::string& str) {
   static auto current_process_name = ToString(GetCurrentProcessName());

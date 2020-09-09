@@ -415,10 +415,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                 scope = tracer.StartActive("xunit.test");
                 Span span = scope.Span;
-                span.SetMetric(Tags.Analytics, 1.0d);
 
                 span.Type = SpanTypes.Test;
-                span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
+                span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
                 span.ResourceName = $"{testSuite}.{testName}";
                 span.SetTag(TestTags.Suite, testSuite);
                 span.SetTag(TestTags.Name, testName);

@@ -5,13 +5,6 @@ trigger:
       - refs/tags/*
 pr: none
 
-schedules:
-- cron: "0 0 * * *"
-  displayName: Daily midnight build
-  branches:
-    include:
-    - master
-
 variables:
   buildConfiguration: release
   dotnetCoreSdkVersion: 3.1.107
@@ -182,11 +175,6 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
-    - task: GitVersion@5
-      displayName: GitVersion
-      inputs:
-        preferBundledVersion: false
-
     - download: current
       artifact: windows-msi
       patterns: '**/*x64.msi'
@@ -211,12 +199,18 @@ stages:
         mv s3_upload/*.deb $PACKAGE_NAME-amd64.deb
       displayName: Rename deb package name to match MSI name
 
+    # Create index.txt file with the following format:
+    # BRANCH_NAME
+    # SHA
+    # ARTIFACT WILDCARD (datadog-dotnet-apm-vX.X.X-*)
+    # COMMIT AUTHOR
+    # Note: For the branch name, normalize 'refs/heads/<branch>' to '<branch>' and 'refs/tags/<tag_name>' to 'tags/<tag_name>'
     - script: |
         INDEX_FILE=$(pwd)/s3_upload/index.txt
-        echo $(GitVersion.BranchName) >> $INDEX_FILE
-        echo $(GitVersion.Sha) >> $INDEX_FILE
+        echo $(Build.SourceBranch) | sed 's/refs\/heads\///g' | sed 's/refs\/tags\//tags\//g' >> $INDEX_FILE
+        git rev-parse HEAD >> $INDEX_FILE
         pushd s3_upload && name=$(ls *.deb) && echo "${name::-9}*" >> $INDEX_FILE && popd
-        git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
+        git show -s --format='%ae' HEAD >> $INDEX_FILE
         echo Generated index.txt file:
         cat $INDEX_FILE
       displayName: Write index.txt

@@ -9,6 +9,7 @@ namespace trace {
   WSTRING env_vars_to_display[]{
     environment::tracing_enabled,
     environment::debug_enabled,
+    environment::dump_il_rewrite_enabled,
     environment::profiler_home_path,
     environment::integrations_path,
     environment::include_process_names,

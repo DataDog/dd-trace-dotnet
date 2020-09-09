@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Loggers;
@@ -51,9 +52,8 @@ namespace Datadog.Trace.BenchmarkDotNet
                     Span span = tracer.StartSpan("benchmarkdotnet.test", startTime: startTime);
                     double durationNanoseconds = 0;
 
-                    span.SetMetric(Tags.Analytics, 1.0d);
-                    span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
-                    span.Type = "test";
+                    span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+                    span.Type = SpanTypes.Test;
                     span.ResourceName = $"{report.BenchmarkCase.Descriptor.Type.FullName}.{report.BenchmarkCase.Descriptor.WorkloadMethod.Name}";
                     CIEnvironmentValues.DecorateSpan(span);
 
@@ -117,7 +117,7 @@ namespace Datadog.Trace.BenchmarkDotNet
                             span.SetMetric("benchmark.statistics.p99", stats.Percentiles.Percentile(99));
                         }
 
-                        durationNanoseconds = stats.N * stats.Mean;
+                        durationNanoseconds = stats.Mean;
                     }
 
                     if (report.Metrics != null)
@@ -148,6 +148,19 @@ namespace Datadog.Trace.BenchmarkDotNet
 
                     var duration = TimeSpan.FromTicks((long)(durationNanoseconds / TimeConstants.NanoSecondsPerTick));
                     span.Finish(startTime.Add(duration));
+                }
+
+                // Ensure all the spans gets flushed before we report the success.
+                // In some cases the process finishes without sending the traces in the buffer.
+                SynchronizationContext context = SynchronizationContext.Current;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    tracer.FlushAsync().GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(context);
                 }
             }
             catch (Exception ex)

@@ -37,6 +37,15 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     debug_logging_enabled = true;
   }
 
+  // check if dump il rewrite is enabled
+  const auto dump_il_rewrite_enabled_value = 
+      GetEnvironmentValue(environment::dump_il_rewrite_enabled);
+
+  if (dump_il_rewrite_enabled_value == "1"_W ||
+      dump_il_rewrite_enabled_value == "true"_W) {
+    dump_il_rewrite_enabled = true;
+  }
+
   CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
   // check if tracing is completely disabled
@@ -206,6 +215,14 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       process_name == "iisexpress.exe"_W) {
     is_desktop_iis = runtime_information_.is_desktop();
   }
+
+  // writing opcodes vector for the IL dumper
+#define OPDEF(c, s, pop, push, args, type, l, s1, s2, flow) \
+  opcodes_names.push_back(s);
+#include "opcode.def"
+#undef OPDEF
+  opcodes_names.push_back("(count)"); // CEE_COUNT
+  opcodes_names.push_back("->"); // CEE_SWITCH_ARG
 
   // we're in!
   Info("Profiler attached.");
@@ -740,6 +757,12 @@ HRESULT CorProfiler::ProcessReplacementCalls(
     return hr;
   }
 
+  std::string original_code;
+  if (dump_il_rewrite_enabled) {
+    original_code =
+        GetILCodes("***   IL original code for caller: ", &rewriter, caller);
+  }
+
   // Perform method call replacements
   for (auto& method_replacement : method_replacements) {
     // Exit early if the method replacement isn't actually doing a replacement
@@ -1092,6 +1115,11 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       Warn("ProcessReplacementCalls: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ", function_token);
       return hr;
     }
+
+    if (dump_il_rewrite_enabled) {
+      Info(original_code);
+      Info(GetILCodes("***   IL modification  for caller: ", &rewriter, caller));
+    }
   }
 
   return S_OK;
@@ -1240,6 +1268,40 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
   return managed_profiler_loaded_domain_neutral ||
          managed_profiler_loaded_app_domains.find(app_domain_id) !=
              managed_profiler_loaded_app_domains.end();
+}
+
+std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
+                                    const FunctionInfo& caller) {
+  std::stringstream orig_sstream;
+  orig_sstream << title;
+  orig_sstream << ToString(caller.type.name);
+  orig_sstream << ".";
+  orig_sstream << ToString(caller.name.c_str());
+  orig_sstream << " => (max_stack: ";
+  orig_sstream << rewriter->GetMaxStackValue();
+  orig_sstream << ")" << std::endl;
+  for (ILInstr* cInstr = rewriter->GetILList()->m_pNext;
+       cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext) {
+    
+    orig_sstream << cInstr;
+    orig_sstream << ": ";
+    if (cInstr->m_opcode < opcodes_names.size()) {
+      orig_sstream << std::setw(10) << opcodes_names[cInstr->m_opcode];
+    } else {
+       orig_sstream << "0x";
+       orig_sstream << std::setfill('0') << std::setw(2) << std::hex
+                   << cInstr->m_opcode;
+    }
+    if (cInstr->m_pTarget != NULL) {
+      orig_sstream << " ";
+      orig_sstream << cInstr->m_pTarget;
+    } else if (cInstr->m_Arg64 != 0) {
+      orig_sstream << " ";
+      orig_sstream << cInstr->m_Arg64;
+    }
+    orig_sstream << std::endl;
+  }
+  return orig_sstream.str();
 }
 
 //

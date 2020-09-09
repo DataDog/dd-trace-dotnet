@@ -6,6 +6,7 @@
 namespace trace {
 
 extern bool debug_logging_enabled;
+extern bool dump_il_rewrite_enabled;
 
 void Log(const std::string &str);
 
