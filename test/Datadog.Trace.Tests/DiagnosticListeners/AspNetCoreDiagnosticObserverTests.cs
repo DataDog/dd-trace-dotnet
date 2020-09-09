@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             var tracer = GetTracer();
 
-            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, new AspNetCoreDiagnosticOptions());
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver();
 
             var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
 
@@ -42,26 +42,6 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Assert.Equal("localhost", span.GetTag(Tags.HttpRequestHeadersHost));
             Assert.Equal("http://localhost/home/1/action", span.GetTag(Tags.HttpUrl));
             Assert.Equal(TracerConstants.Language, span.GetTag(Tags.Language));
-        }
-
-        [Fact]
-        public void HttpRequestIn_FilterRequest()
-        {
-            var tracer = GetTracer();
-            var httpContext = GetHttpContext();
-
-            var options = new AspNetCoreDiagnosticOptions();
-            options.IgnorePatterns.Add(h => object.ReferenceEquals(h, httpContext));
-
-            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, options);
-
-            var context = new HostingApplication.Context { HttpContext = httpContext };
-
-            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Start", context));
-
-            var scope = tracer.ActiveScope;
-
-            Assert.Null(scope);
         }
 
         private static Tracer GetTracer()
