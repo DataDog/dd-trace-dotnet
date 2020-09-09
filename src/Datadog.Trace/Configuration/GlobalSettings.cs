@@ -55,6 +55,7 @@ namespace Datadog.Trace.Configuration
             {
                 _diagnosticSourceEnabled = value;
 
+#if NETSTANDARD || NETCOREAPP
                 if (value)
                 {
                     DiagnosticManager.Instance?.Start();
@@ -63,6 +64,7 @@ namespace Datadog.Trace.Configuration
                 {
                     DiagnosticManager.Instance?.Stop();
                 }
+#endif
             }
         }
 
