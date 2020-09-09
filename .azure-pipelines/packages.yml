@@ -97,7 +97,7 @@ stages:
         arguments: --configuration $(buildConfiguration)
 
     - task: DotNetCoreCLI@2
-      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
       inputs:
         command: publish
         publishWebProjects: false
@@ -105,6 +105,16 @@ stages:
         zipAfterPublish: false
         projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
         arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(tracerHome)/netstandard2.0
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(tracerHome)/netcoreapp3.1
 
     - task: DockerCompose@0
       displayName: docker-compose run Profiler
@@ -141,7 +151,7 @@ stages:
         arguments: --configuration $(buildConfiguration)
 
     - task: DotNetCoreCLI@2
-      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
       inputs:
         command: publish
         publishWebProjects: false
@@ -149,6 +159,16 @@ stages:
         zipAfterPublish: false
         projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
         arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(tracerHome)/netstandard2.0
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(tracerHome)/netcoreapp3.1
 
     - task: DockerCompose@0
       displayName: docker-compose run Profiler.Alpine
