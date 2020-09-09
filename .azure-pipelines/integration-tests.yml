@@ -263,12 +263,19 @@ jobs:
       command: build
       projects: |
         reproductions/**/*.csproj
-        samples/**/*.csproj
         test/*.IntegrationTests/*.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
         !reproductions/**/EntityFramework6x*.csproj
         !reproductions/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build samples
+    inputs:
+      command: build
+      projects: |
+        samples/**/*.csproj
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false
 
   - task: NuGetCommand@2
     displayName: nuget restore IIS samples
