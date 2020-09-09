@@ -108,9 +108,6 @@ namespace Datadog.Trace.Tests
             statsd.Verify(
                 s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Health.Heartbeat, It.IsAny<int>(), 1, null),
                 Times.AtLeastOnce());
-
-            // no other methods should be called on the IStatsd
-            statsd.VerifyNoOtherCalls();
         }
 
         private static IImmutableList<MockTracerAgent.Span> SendSpan(bool tracerMetricsEnabled, Mock<IStatsd> statsd)
