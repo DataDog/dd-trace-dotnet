@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Loggers;
@@ -148,6 +149,19 @@ namespace Datadog.Trace.BenchmarkDotNet
 
                     var duration = TimeSpan.FromTicks((long)(durationNanoseconds / TimeConstants.NanoSecondsPerTick));
                     span.Finish(startTime.Add(duration));
+                }
+
+                // Ensure all the spans gets flushed before we report the success.
+                // In some cases the process finishes without sending the traces in the buffer.
+                SynchronizationContext context = SynchronizationContext.Current;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    tracer.FlushAsync().GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(context);
                 }
             }
             catch (Exception ex)
