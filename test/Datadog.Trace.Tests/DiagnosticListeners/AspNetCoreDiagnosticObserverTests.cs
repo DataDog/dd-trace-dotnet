@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             var tracer = GetTracer();
 
-            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver();
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer);
 
             var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
 

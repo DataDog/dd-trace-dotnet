@@ -39,7 +39,18 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("httpContext");
         private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("actionDescriptor");
 
+        private readonly IDatadogTracer _tracer;
         private readonly bool _isLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
+
+        public AspNetCoreDiagnosticObserver()
+            : this(null)
+        {
+        }
+
+        public AspNetCoreDiagnosticObserver(IDatadogTracer tracer)
+        {
+            _tracer = tracer;
+        }
 
         protected override string ListenerName => DiagnosticListenerName;
 
@@ -128,7 +139,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
-            var tracer = Tracer.Instance;
+            var tracer = _tracer ?? Tracer.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
             {
@@ -141,7 +152,7 @@ namespace Datadog.Trace.DiagnosticListeners
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             string url = GetUrl(request);
 
-             string absolutePath = request.Path.Value;
+            string absolutePath = request.Path.Value;
 
             if (request.PathBase.HasValue)
             {
@@ -170,7 +181,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var tracer = Tracer.Instance;
+            var tracer = _tracer ?? Tracer.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
             {
@@ -179,7 +190,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var httpContext = BeforeActionHttpContextFetcher.Fetch<HttpContext>(arg);
 
-            Span span = tracer.ActiveScope?.Span;
+            Span span = tracer.ScopeManager.Active?.Span;
 
             if (span != null)
             {
@@ -201,14 +212,14 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
-            var tracer = Tracer.Instance;
+            var tracer = _tracer ?? Tracer.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
             {
                 return;
             }
 
-            IScope scope = tracer.ActiveScope;
+            IScope scope = tracer.ScopeManager.Active;
 
             if (scope != null)
             {
@@ -237,14 +248,14 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingUnhandledException(object arg)
         {
-            var tracer = Tracer.Instance;
+            var tracer = _tracer ?? Tracer.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
             {
                 return;
             }
 
-            ISpan span = tracer.ActiveScope?.Span;
+            ISpan span = tracer.ScopeManager.Active?.Span;
 
             if (span != null)
             {
