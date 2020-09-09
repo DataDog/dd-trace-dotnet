@@ -6,7 +6,7 @@
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
        to test the loading of managed profiler assemblies from disk -->
-  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' and ('$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1')">
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' AND ('$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1')">
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   
