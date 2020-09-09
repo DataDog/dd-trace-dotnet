@@ -221,8 +221,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   opcodes_names.push_back(s);
 #include "opcode.def"
 #undef OPDEF
-  opcodes_names.push_back("(count)");
-  opcodes_names.push_back("->");
+  opcodes_names.push_back("(count)"); // CEE_COUNT
+  opcodes_names.push_back("->"); // CEE_SWITCH_ARG
 
   // we're in!
   Info("Profiler attached.");
