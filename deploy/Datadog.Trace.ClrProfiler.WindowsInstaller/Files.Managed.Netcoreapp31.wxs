@@ -30,46 +30,6 @@
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Sigil.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_System.Collections.Immutable.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\System.Collections.Immutable.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_System.Diagnostics.DiagnosticSource.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\System.Diagnostics.DiagnosticSource.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_System.Reflection.Emit.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\System.Reflection.Emit.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_System.Reflection.Emit.ILGeneration.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\System.Reflection.Emit.ILGeneration.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_System.Reflection.Emit.Lightweight.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\System.Reflection.Emit.Lightweight.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_System.Reflection.Metadata.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\System.Reflection.Metadata.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_System.Reflection.TypeExtensions.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\System.Reflection.TypeExtensions.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_System.Threading.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\System.Threading.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>
