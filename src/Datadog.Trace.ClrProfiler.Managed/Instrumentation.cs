@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
@@ -11,6 +12,11 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     public static class Instrumentation
     {
+        /// <summary>
+        /// Indicates whether we're initializing Instrumentation for the first time
+        /// </summary>
+        private static int _firstInitialization = 1;
+
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
         /// </summary>
@@ -44,39 +50,42 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public static void Initialize()
         {
-            try
+            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
             {
-                var tracer = Tracer.Instance;
-            }
-            catch
-            {
-                // ignore
-            }
+                try
+                {
+                    var tracer = Tracer.Instance;
+                }
+                catch
+                {
+                    // ignore
+                }
 
 #if NETSTANDARD
-            try
-            {
-                if (GlobalSettings.Source.DiagnosticSourceEnabled)
+                try
                 {
-                    // check if DiagnosticSource is available before trying to use it
-                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+                    if (GlobalSettings.Source.DiagnosticSourceEnabled)
+                    {
+                        // check if DiagnosticSource is available before trying to use it
+                        var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
 
-                    if (type == null)
-                    {
-                        Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
-                    }
-                    else
-                    {
-                        // don't call this method unless DiagnosticSource is available
-                        StartDiagnosticManager();
+                        if (type == null)
+                        {
+                            Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
+                        }
+                        else
+                        {
+                            // don't call this method unless DiagnosticSource is available
+                            StartDiagnosticManager();
+                        }
                     }
                 }
-            }
-            catch
-            {
-                // ignore
-            }
+                catch
+                {
+                    // ignore
+                }
 #endif
+            }
         }
 
 #if NETSTANDARD
