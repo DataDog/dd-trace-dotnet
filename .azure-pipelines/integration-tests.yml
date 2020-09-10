@@ -307,13 +307,22 @@ jobs:
         test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
       arguments: -p:Platform=$(buildPlatform)
 
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+      arguments: --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True" -p:Platform=$(buildPlatform)
+
   - task: DockerCompose@0
     displayName: docker-compose stop services
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: down
     condition: succeededOrFailed()
-- job: Windows_Smoke_tests
+    
+- job: Windows_IIS
   timeoutInMinutes: 80
   strategy:
     matrix:
@@ -420,14 +429,6 @@ jobs:
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet test
-    inputs:
-      command: test
-      configuration: $(buildConfiguration)
-      projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True" -p:Platform=$(buildPlatform)
 
   - powershell: |
       [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
