@@ -450,6 +450,8 @@ namespace Datadog.Trace.Tests
             Assert.Equal(2, tracker.DisconnectCount);
         }
 
+        // Static class with static methods that are publicly accessible so new sandbox AppDomain does not need special
+        // Reflection permissions to run callback code.
         public static class AppDomainHelpers
         {
             // Ensure the remote call takes long enough for the lease manager poll to occur.
