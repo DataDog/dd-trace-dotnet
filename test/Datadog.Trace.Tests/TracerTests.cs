@@ -393,7 +393,7 @@ namespace Datadog.Trace.Tests
             {
                 using (_tracer.StartActive(operationName))
                 {
-                    remote.DoCallBack(SleepForLeaseManagerPollCallback);
+                    remote.DoCallBack(AppDomainHelpers.SleepForLeaseManagerPollCallback);
 
                     // After the lease expires, access the active scope
                     Scope scope = _tracer.ActiveScope;
@@ -427,11 +427,11 @@ namespace Datadog.Trace.Tests
             {
                 using (_tracer.StartActive("test-span"))
                 {
-                    remote.DoCallBack(EmptyCallback);
+                    remote.DoCallBack(AppDomainHelpers.EmptyCallback);
 
                     using (_tracer.StartActive("test-span-inner"))
                     {
-                        remote.DoCallBack(EmptyCallback);
+                        remote.DoCallBack(AppDomainHelpers.EmptyCallback);
                     }
                 }
             }
@@ -450,17 +450,16 @@ namespace Datadog.Trace.Tests
             Assert.Equal(2, tracker.DisconnectCount);
         }
 
-        // Ensure the remote call takes long enough for the lease manager poll to occur.
-        // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
-        // the default value is 10 seconds so the first poll may not be affected by our modification
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "xUnit1013:Public method should be marked as test", Justification = "This method is marked public so the cross AppDomain call can access the public method.")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1204:Static elements must appear before instance elements", Justification = "This method is located logically next to the cross AppDomain calls.")]
-        public static void SleepForLeaseManagerPollCallback() => Thread.Sleep(TimeSpan.FromSeconds(12));
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "xUnit1013:Public method should be marked as test", Justification = "This method is marked public so the cross AppDomain call can access the public method.")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1204:Static elements must appear before instance elements", Justification = "This method is located logically next to the cross AppDomain calls.")]
-        public static void EmptyCallback()
+        public static class AppDomainHelpers
         {
+            // Ensure the remote call takes long enough for the lease manager poll to occur.
+            // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
+            // the default value is 10 seconds so the first poll may not be affected by our modification
+            public static void SleepForLeaseManagerPollCallback() => Thread.Sleep(TimeSpan.FromSeconds(12));
+
+            public static void EmptyCallback()
+            {
+            }
         }
 
         private class InMemoryRemoteObjectTracker : ITrackingHandler
