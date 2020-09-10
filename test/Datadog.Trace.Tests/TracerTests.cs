@@ -5,6 +5,9 @@ using System.Net;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Lifetime;
 using System.Runtime.Remoting.Services;
+using System.Security;
+using System.Security.Permissions;
+using System.Security.Policy;
 #endif
 using System.Threading;
 using System.Threading.Tasks;
@@ -379,7 +382,10 @@ namespace Datadog.Trace.Tests
         public void DoesNotThrowOnCrossDomainCallsWhenLeaseExpired()
         {
             // Arrange
-            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation);
+            // Set the minimum permissions needed to run code in the new AppDomain
+            PermissionSet permSet = new PermissionSet(PermissionState.None);
+            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
+            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
             string operationName = "test-span";
 
             // Act
@@ -411,7 +417,10 @@ namespace Datadog.Trace.Tests
             var tracker = new InMemoryRemoteObjectTracker(cde);
             TrackingServices.RegisterTrackingHandler(tracker);
 
-            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation);
+            // Set the minimum permissions needed to run code in the new AppDomain
+            PermissionSet permSet = new PermissionSet(PermissionState.None);
+            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
+            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
 
             // Act
             try
@@ -444,9 +453,13 @@ namespace Datadog.Trace.Tests
         // Ensure the remote call takes long enough for the lease manager poll to occur.
         // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
         // the default value is 10 seconds so the first poll may not be affected by our modification
-        private static void SleepForLeaseManagerPollCallback() => Thread.Sleep(TimeSpan.FromSeconds(12));
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "xUnit1013:Public method should be marked as test", Justification = "This method is marked public so the cross AppDomain call can access the public method.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1204:Static elements must appear before instance elements", Justification = "This method is located logically next to the cross AppDomain calls.")]
+        public static void SleepForLeaseManagerPollCallback() => Thread.Sleep(TimeSpan.FromSeconds(12));
 
-        private static void EmptyCallback()
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "xUnit1013:Public method should be marked as test", Justification = "This method is marked public so the cross AppDomain call can access the public method.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1204:Static elements must appear before instance elements", Justification = "This method is located logically next to the cross AppDomain calls.")]
+        public static void EmptyCallback()
         {
         }
 
