@@ -8,7 +8,9 @@ namespace Datadog.Trace
     // objects stored in the CallContext until the host AppDomain
     // no longer needs them.
     // This issue was raised in the Serilog library here: https://github.com/serilog/serilog/issues/987
-    // This solution was borrowed from the corresponding fix in the following PR: https://github.com/serilog/serilog/pull/992
+    // This solution is a combination of the following items:
+    //   1) https://github.com/serilog/serilog/pull/992
+    //   2) https://github.com/serilog/serilog/issues/835#issuecomment-242944461
     internal sealed class DisposableObjectHandle : ObjectHandle, IDisposable
     {
         private bool _disposed;
