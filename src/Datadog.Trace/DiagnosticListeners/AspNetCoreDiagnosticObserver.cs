@@ -195,7 +195,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (span != null)
             {
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
-                //       has been selected but no filters have run and model binding hasn't occured.
+                //       has been selected but no filters have run and model binding hasn't occurred.
                 var actionDescriptor = BeforeActionActionDescriptorFetcher.Fetch<ActionDescriptor>(arg);
                 HttpRequest request = httpContext.Request;
 
