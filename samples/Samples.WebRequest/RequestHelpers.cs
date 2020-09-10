@@ -38,12 +38,10 @@ namespace Samples.WebRequest
 
                     using (Tracer.Instance.StartActive("DownloadDataAsync"))
                     {
-                        webClient.DownloadDataAsync(new Uri(url));
-                        while (webClient.IsBusy) ;
+                        webClient.DownloadDataAsyncAndWait(new Uri(url));
                         Console.WriteLine("Received response for client.DownloadDataAsync(Uri)");
 
-                        webClient.DownloadDataAsync(new Uri(url), null);
-                        while (webClient.IsBusy) ;
+                        webClient.DownloadDataAsyncAndWait(new Uri(url), null);
                         Console.WriteLine("Received response for client.DownloadDataAsync(Uri, Object)");
                     }
 
@@ -67,12 +65,10 @@ namespace Samples.WebRequest
 
                     using (Tracer.Instance.StartActive("DownloadFileAsync"))
                     {
-                        webClient.DownloadFileAsync(new Uri(url), "DownloadFileAsync.uri.txt");
-                        while (webClient.IsBusy) ;
+                        webClient.DownloadFileAsyncAndWait(new Uri(url), "DownloadFileAsync.uri.txt");
                         Console.WriteLine("Received response for client.DownloadFileAsync(Uri, String)");
 
-                        webClient.DownloadFileAsync(new Uri(url), "DownloadFileAsync.uri_token.txt", null);
-                        while (webClient.IsBusy) ;
+                        webClient.DownloadFileAsyncAndWait(new Uri(url), "DownloadFileAsync.uri_token.txt", null);
                         Console.WriteLine("Received response for client.DownloadFileAsync(Uri, String, Object)");
                     }
 
@@ -96,12 +92,10 @@ namespace Samples.WebRequest
 
                     using (Tracer.Instance.StartActive("DownloadStringAsync"))
                     {
-                        webClient.DownloadStringAsync(new Uri(url));
-                        while (webClient.IsBusy) ;
+                        webClient.DownloadStringAsyncAndWait(new Uri(url));
                         Console.WriteLine("Received response for client.DownloadStringAsync(Uri)");
 
-                        webClient.DownloadStringAsync(new Uri(url), null);
-                        while (webClient.IsBusy) ;
+                        webClient.DownloadStringAsyncAndWait(new Uri(url), null);
                         Console.WriteLine("Received response for client.DownloadStringAsync(Uri, Object)");
                     }
 
@@ -125,12 +119,10 @@ namespace Samples.WebRequest
 
                     using (Tracer.Instance.StartActive("OpenReadAsync"))
                     {
-                        webClient.OpenReadAsync(new Uri(url));
-                        while (webClient.IsBusy) ;
+                        webClient.OpenReadAsyncAndWait(new Uri(url));
                         Console.WriteLine("Received response for client.OpenReadAsync(Uri)");
 
-                        webClient.OpenReadAsync(new Uri(url), null);
-                        while (webClient.IsBusy) ;
+                        webClient.OpenReadAsyncAndWait(new Uri(url), null);
                         Console.WriteLine("Received response for client.OpenReadAsync(Uri, Object)");
                     }
 
@@ -160,16 +152,13 @@ namespace Samples.WebRequest
 
                     using (Tracer.Instance.StartActive("UploadDataAsync"))
                     {
-                        webClient.UploadDataAsync(new Uri(url), new byte[0]);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadDataAsyncAndWait(new Uri(url), new byte[0]);
                         Console.WriteLine("Received response for client.UploadDataAsync(Uri, Byte[])");
 
-                        webClient.UploadDataAsync(new Uri(url), "POST", new byte[0]);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadDataAsyncAndWait(new Uri(url), "POST", new byte[0]);
                         Console.WriteLine("Received response for client.UploadDataAsync(Uri, String, Byte[])");
 
-                        webClient.UploadDataAsync(new Uri(url), "POST", new byte[0], null);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadDataAsyncAndWait(new Uri(url), "POST", new byte[0], null);
                         Console.WriteLine("Received response for client.UploadDataAsync(Uri, String, Byte[], Object)");
                     }
 
@@ -207,16 +196,13 @@ namespace Samples.WebRequest
 
                     using (Tracer.Instance.StartActive("UploadFileAsync"))
                     {
-                        webClient.UploadFileAsync(new Uri(url), "UploadFile.txt");
-                        while (webClient.IsBusy) ;
+                        webClient.UploadFileAsyncAndWait(new Uri(url), "UploadFile.txt");
                         Console.WriteLine("Received response for client.UploadFileAsync(Uri, String)");
 
-                        webClient.UploadFileAsync(new Uri(url), "POST", "UploadFile.txt");
-                        while (webClient.IsBusy) ;
+                        webClient.UploadFileAsyncAndWait(new Uri(url), "POST", "UploadFile.txt");
                         Console.WriteLine("Received response for client.UploadFileAsync(Uri, String, String)");
 
-                        webClient.UploadFileAsync(new Uri(url), "POST", "UploadFile.txt", null);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadFileAsyncAndWait(new Uri(url), "POST", "UploadFile.txt", null);
                         Console.WriteLine("Received response for client.UploadFileAsync(Uri, String, String, Object)");
                     }
 
@@ -252,16 +238,13 @@ namespace Samples.WebRequest
 
                     using (Tracer.Instance.StartActive("UploadStringAsync"))
                     {
-                        webClient.UploadStringAsync(new Uri(url), requestContent);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadStringAsyncAndWait(new Uri(url), requestContent);
                         Console.WriteLine("Received response for client.UploadStringAsync(Uri, String)");
 
-                        webClient.UploadStringAsync(new Uri(url), "POST", requestContent);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadStringAsyncAndWait(new Uri(url), "POST", requestContent);
                         Console.WriteLine("Received response for client.UploadStringAsync(Uri, String, String)");
 
-                        webClient.UploadStringAsync(new Uri(url), "POST", requestContent, null);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadStringAsyncAndWait(new Uri(url), "POST", requestContent, null);
                         Console.WriteLine("Received response for client.UploadStringAsync(Uri, String, String, Object)");
                     }
 
@@ -298,16 +281,13 @@ namespace Samples.WebRequest
 
                     using (Tracer.Instance.StartActive("UploadValuesAsync"))
                     {
-                        webClient.UploadValuesAsync(new Uri(url), values);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadValuesAsyncAndWait(new Uri(url), values);
                         Console.WriteLine("Received response for client.UploadValuesAsync(Uri, NameValueCollection)");
 
-                        webClient.UploadValuesAsync(new Uri(url), "POST", values);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadValuesAsyncAndWait(new Uri(url), "POST", values);
                         Console.WriteLine("Received response for client.UploadValuesAsync(Uri, String, NameValueCollection)");
 
-                        webClient.UploadValuesAsync(new Uri(url), "POST", values, null);
-                        while (webClient.IsBusy) ;
+                        webClient.UploadValuesAsyncAndWait(new Uri(url), "POST", values, null);
                         Console.WriteLine("Received response for client.UploadValuesAsync(Uri, String, NameValueCollection, Object)");
                     }
 
