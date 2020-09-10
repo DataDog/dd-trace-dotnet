@@ -16,8 +16,8 @@ namespace Benchmarks.Trace
     {
         private const int SpanCount = 1000;
 
-        private static readonly IAgentWriter _agentWriter;
-        private static readonly Span[] _spans;
+        private static readonly IAgentWriter AgentWriter;
+        private static readonly Span[] Spans;
 
         static AgentWriterBenchmark()
         {
@@ -30,14 +30,14 @@ namespace Benchmarks.Trace
 
             var api = new Api(settings.AgentUri, new FakeApiRequestFactory(), statsd: null);
 
-            _agentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
+            AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
 
-            _spans = new Span[SpanCount];
+            Spans = new Span[SpanCount];
             var now = DateTimeOffset.UtcNow;
 
             for (int i = 0; i < SpanCount; i++)
             {
-                _spans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
+                Spans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
             }
         }
 
@@ -47,8 +47,8 @@ namespace Benchmarks.Trace
         [Benchmark]
         public Task WriteAndFlushTraces()
         {
-            _agentWriter.WriteTrace(_spans);
-            return _agentWriter.FlushTracesAsync();
+            AgentWriter.WriteTrace(Spans);
+            return AgentWriter.FlushTracesAsync();
         }
 
         /// <summary>
