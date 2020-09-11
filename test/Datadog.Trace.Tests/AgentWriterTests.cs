@@ -32,12 +32,12 @@ namespace Datadog.Trace.Tests
             // TODO:bertrand it is too complicated to setup such a simple test
             var trace = new[] { new Span(_spanContext, start: null) };
             _agentWriter.WriteTrace(trace);
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
             _api.Verify(x => x.SendTracesAsync(It.Is<Span[][]>(y => y.Single().Equals(trace))), Times.Once);
 
             trace = new[] { new Span(_spanContext, start: null) };
             _agentWriter.WriteTrace(trace);
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
             _api.Verify(x => x.SendTracesAsync(It.Is<Span[][]>(y => y.Single().Equals(trace))), Times.Once);
         }
 
