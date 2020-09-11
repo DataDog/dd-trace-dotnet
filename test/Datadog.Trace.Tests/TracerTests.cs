@@ -5,6 +5,9 @@ using System.Net;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Lifetime;
 using System.Runtime.Remoting.Services;
+using System.Security;
+using System.Security.Permissions;
+using System.Security.Policy;
 #endif
 using System.Threading;
 using System.Threading.Tasks;
@@ -379,7 +382,10 @@ namespace Datadog.Trace.Tests
         public void DoesNotThrowOnCrossDomainCallsWhenLeaseExpired()
         {
             // Arrange
-            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation);
+            // Set the minimum permissions needed to run code in the new AppDomain
+            PermissionSet permSet = new PermissionSet(PermissionState.None);
+            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
+            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
             string operationName = "test-span";
 
             // Act
@@ -387,7 +393,7 @@ namespace Datadog.Trace.Tests
             {
                 using (_tracer.StartActive(operationName))
                 {
-                    remote.DoCallBack(SleepForLeaseManagerPollCallback);
+                    remote.DoCallBack(AppDomainHelpers.SleepForLeaseManagerPollCallback);
 
                     // After the lease expires, access the active scope
                     Scope scope = _tracer.ActiveScope;
@@ -411,18 +417,21 @@ namespace Datadog.Trace.Tests
             var tracker = new InMemoryRemoteObjectTracker(cde);
             TrackingServices.RegisterTrackingHandler(tracker);
 
-            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation);
+            // Set the minimum permissions needed to run code in the new AppDomain
+            PermissionSet permSet = new PermissionSet(PermissionState.None);
+            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
+            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
 
             // Act
             try
             {
                 using (_tracer.StartActive("test-span"))
                 {
-                    remote.DoCallBack(EmptyCallback);
+                    remote.DoCallBack(AppDomainHelpers.EmptyCallback);
 
                     using (_tracer.StartActive("test-span-inner"))
                     {
-                        remote.DoCallBack(EmptyCallback);
+                        remote.DoCallBack(AppDomainHelpers.EmptyCallback);
                     }
                 }
             }
@@ -441,13 +450,18 @@ namespace Datadog.Trace.Tests
             Assert.Equal(2, tracker.DisconnectCount);
         }
 
-        // Ensure the remote call takes long enough for the lease manager poll to occur.
-        // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
-        // the default value is 10 seconds so the first poll may not be affected by our modification
-        private static void SleepForLeaseManagerPollCallback() => Thread.Sleep(TimeSpan.FromSeconds(12));
-
-        private static void EmptyCallback()
+        // Static class with static methods that are publicly accessible so new sandbox AppDomain does not need special
+        // Reflection permissions to run callback code.
+        public static class AppDomainHelpers
         {
+            // Ensure the remote call takes long enough for the lease manager poll to occur.
+            // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
+            // the default value is 10 seconds so the first poll may not be affected by our modification
+            public static void SleepForLeaseManagerPollCallback() => Thread.Sleep(TimeSpan.FromSeconds(12));
+
+            public static void EmptyCallback()
+            {
+            }
         }
 
         private class InMemoryRemoteObjectTracker : ITrackingHandler
