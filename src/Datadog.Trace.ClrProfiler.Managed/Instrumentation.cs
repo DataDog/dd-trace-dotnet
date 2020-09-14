@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    var tracer = Tracer.Instance;
+                    _ = Tracer.Instance;
                 }
                 catch
                 {
