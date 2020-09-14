@@ -5,7 +5,9 @@
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">netcoreapp3.1;net472</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1</TargetFrameworks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <LangVersion>latest</LangVersion>
+
+    <!-- benchmarkdotnet only support numberic values, not "latest"-->
+    <LangVersion>8</LangVersion>
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
