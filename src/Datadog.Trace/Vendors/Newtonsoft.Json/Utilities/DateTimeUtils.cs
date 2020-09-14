@@ -63,6 +63,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
         }
 
 #if !(PORTABLE40 || PORTABLE) || NETSTANDARD1_3
+#if HAVE_XML_DOCUMENT
         public static XmlDateTimeSerializationMode ToSerializationMode(DateTimeKind kind)
         {
             switch (kind)
@@ -77,6 +78,7 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
                     throw MiscellaneousUtils.CreateArgumentOutOfRangeException(nameof(kind), kind, "Unexpected DateTimeKind value.");
             }
         }
+#endif
 #else
         public static string ToDateTimeFormat(DateTimeKind kind)
         {
