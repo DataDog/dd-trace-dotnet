@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Limits_Approximately_To_Defaults()
         {
-            Run_Limit_Test(intervalLimit: null, numberPerBurst: 200, numberOfBursts: 18, millisecondsBetweenBursts: 247);
+            Run_Limit_Test(intervalLimit: null, numberPerBurst: 100, numberOfBursts: 18, millisecondsBetweenBursts: 247);
         }
 
         [Fact]
