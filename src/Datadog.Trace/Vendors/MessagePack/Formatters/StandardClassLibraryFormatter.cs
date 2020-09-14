@@ -413,6 +413,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
 
 #if NETSTANDARD || NETFRAMEWORK
 
+    /* Datadog: Comment out System.Numerics types
     internal sealed class BigIntegerFormatter : IMessagePackFormatter<System.Numerics.BigInteger>
     {
         public static readonly IMessagePackFormatter<System.Numerics.BigInteger> Instance = new BigIntegerFormatter();
@@ -432,7 +433,9 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
             return new System.Numerics.BigInteger(MessagePackBinary.ReadBytes(bytes, offset, out readSize));
         }
     }
+    */
 
+    /* Datadog: Comment out System.Numerics types
     internal sealed class ComplexFormatter : IMessagePackFormatter<System.Numerics.Complex>
     {
         public static readonly IMessagePackFormatter<System.Numerics.Complex> Instance = new ComplexFormatter();
@@ -469,6 +472,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
             return new System.Numerics.Complex(real, imaginary);
         }
     }
+    */
 
     internal sealed class LazyFormatter<T> : IMessagePackFormatter<Lazy<T>>
     {
