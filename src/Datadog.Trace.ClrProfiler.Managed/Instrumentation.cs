@@ -50,42 +50,45 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public static void Initialize()
         {
-            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
+            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
-                try
-                {
-                    _ = Tracer.Instance;
-                }
-                catch
-                {
-                    // ignore
-                }
+                // Initialize() was already called before
+                return;
+            }
+
+            try
+            {
+                _ = Tracer.Instance;
+            }
+            catch
+            {
+                // ignore
+            }
 
 #if NETSTANDARD
-                try
+            try
+            {
+                if (GlobalSettings.Source.DiagnosticSourceEnabled)
                 {
-                    if (GlobalSettings.Source.DiagnosticSourceEnabled)
-                    {
-                        // check if DiagnosticSource is available before trying to use it
-                        var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+                    // check if DiagnosticSource is available before trying to use it
+                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
 
-                        if (type == null)
-                        {
-                            Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
-                        }
-                        else
-                        {
-                            // don't call this method unless DiagnosticSource is available
-                            StartDiagnosticManager();
-                        }
+                    if (type == null)
+                    {
+                        Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
+                    }
+                    else
+                    {
+                        // don't call this method unless DiagnosticSource is available
+                        StartDiagnosticManager();
                     }
                 }
-                catch
-                {
-                    // ignore
-                }
-#endif
             }
+            catch
+            {
+                // ignore
+            }
+#endif
         }
 
 #if NETSTANDARD
