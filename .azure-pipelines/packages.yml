@@ -97,7 +97,7 @@ stages:
         arguments: --configuration $(buildConfiguration)
 
     - task: DotNetCoreCLI@2
-      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed netstandard 2.0
       inputs:
         command: publish
         publishWebProjects: false
@@ -107,7 +107,7 @@ stages:
         arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(tracerHome)/netstandard2.0
 
     - task: DotNetCoreCLI@2
-      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed netcoreapp 3.1
       inputs:
         command: publish
         publishWebProjects: false
