@@ -23,6 +23,7 @@ namespace Datadog.Trace.Agent
         private readonly string _containerId;
         private readonly FrameworkDescription _frameworkDescription;
         private Uri _tracesEndpoint; // The Uri may be reassigned dynamically so that retry attempts may attempt updated Agent ports
+        private string _cachedResponse;
 
         public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IStatsd statsd)
         {
@@ -205,8 +206,15 @@ namespace Datadog.Trace.Agent
                     if (response.ContentLength > 0 && Tracer.Instance.Sampler != null)
                     {
                         var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
-                        Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
+
+                        if (responseContent != _cachedResponse)
+                        {
+                            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+
+                            Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
+
+                            _cachedResponse = responseContent;
+                        }
                     }
                 }
                 catch (Exception ex)

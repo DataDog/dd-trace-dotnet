@@ -7,7 +7,7 @@ namespace Benchmarks.Trace
 {
     class DummyAgentWriter : IAgentWriter
     {
-        static readonly Task<bool> _pingTask = Task.FromResult(true);
+        private static readonly Task<bool> PingTask = Task.FromResult(true);
 
         public Task FlushAndCloseAsync()
         {
@@ -29,7 +29,7 @@ namespace Benchmarks.Trace
 
         public Task<bool> Ping()
         {
-            return _pingTask;
+            return PingTask;
         }
 
         public void WriteTrace(Span[] trace)

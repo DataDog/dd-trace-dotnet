@@ -11,12 +11,6 @@ namespace StackExchange.Redis.AssemblyConflict.LegacyProject
     {
         public static async Task Main()
         {
-#if NETCOREAPP2_1
-            // Add a delay to avoid a race condition on shutdown: https://github.com/dotnet/coreclr/pull/22712
-            // This would cause a segmentation fault on .net core 2.x
-            System.Threading.Thread.Sleep(5000);
-#endif
-
             try
             {
                 await RunTest();
@@ -36,6 +30,12 @@ namespace StackExchange.Redis.AssemblyConflict.LegacyProject
                 Console.WriteLine($"Sigil.dll path: {sigilAssemblyLocation}");
                 Console.WriteLine();
             }
+
+#if NETCOREAPP2_1
+            // Add a delay to avoid a race condition on shutdown: https://github.com/dotnet/coreclr/pull/22712
+            // This would cause a segmentation fault on .net core 2.x
+            System.Threading.Thread.Sleep(5000);
+#endif
         }
 
         private static async Task RunTest()

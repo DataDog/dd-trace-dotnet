@@ -108,9 +108,6 @@ namespace Datadog.Trace.Tests
             statsd.Verify(
                 s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Health.Heartbeat, It.IsAny<int>(), 1, null),
                 Times.AtLeastOnce());
-
-            // no other methods should be called on the IStatsd
-            statsd.VerifyNoOtherCalls();
         }
 
         private static IImmutableList<MockTracerAgent.Span> SendSpan(bool tracerMetricsEnabled, Mock<IStatsd> statsd)
@@ -123,7 +120,8 @@ namespace Datadog.Trace.Tests
                 var settings = new TracerSettings
                                {
                                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
-                                   TracerMetricsEnabled = tracerMetricsEnabled
+                                   TracerMetricsEnabled = tracerMetricsEnabled,
+                                   StartupDiagnosticLogEnabled = false,
                                };
 
                 var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd.Object);

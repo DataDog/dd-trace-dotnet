@@ -94,6 +94,7 @@ namespace Datadog.Trace.MSBuild
                 Log.Debug("Build Started");
 
                 _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
+                _buildSpan.SetMetric(Tags.Analytics, 1.0d);
                 _buildSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
                 _buildSpan.Type = SpanTypes.Build;
