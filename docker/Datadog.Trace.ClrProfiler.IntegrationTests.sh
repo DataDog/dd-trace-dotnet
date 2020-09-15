@@ -3,13 +3,13 @@ set -euxo pipefail
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"/../
 
-docker/with-profiler-logs.bash \
+docker/with-profiler.bash \
     dotnet vstest test/Datadog.Trace.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.IntegrationTests/results
 
-docker/with-profiler-logs.bash \
+docker/with-profiler.bash \
     dotnet vstest test/Datadog.Trace.OpenTracing.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.OpenTracing.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.OpenTracing.IntegrationTests/results
 
-docker/with-profiler-logs.bash \
+docker/with-profiler.bash \
     wait-for-it servicestackredis:6379 -- \
     wait-for-it stackexchangeredis:6379 -- \
     wait-for-it elasticsearch6:9200 -- \
