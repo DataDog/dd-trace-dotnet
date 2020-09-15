@@ -3,13 +3,20 @@ set -euxo pipefail
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"/../
 
-docker/with-profiler.bash \
+mkdir -p /var/log/datadog/dotnet
+touch /var/log/datadog/dotnet/dotnet-profiler.log
+tail -f /var/log/datadog/dotnet/dotnet-profiler.log | awk '
+  /info/ {print "\033[32m" $0 "\033[39m"}
+  /warn/ {print "\033[31m" $0 "\033[39m"}
+' &
+
+docker/with-profiler-logs.bash \
     dotnet vstest test/Datadog.Trace.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.IntegrationTests/results
 
-docker/with-profiler.bash \
+docker/with-profiler-logs.bash \
     dotnet vstest test/Datadog.Trace.OpenTracing.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.OpenTracing.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.OpenTracing.IntegrationTests/results
 
-docker/with-profiler.bash \
+docker/with-profiler-logs.bash \
     wait-for-it servicestackredis:6379 -- \
     wait-for-it stackexchangeredis:6379 -- \
     wait-for-it elasticsearch6:9200 -- \
