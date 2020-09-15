@@ -79,13 +79,13 @@ Add the corresponding port bindings to the ServiceManfestImport within Applicati
   <ServiceManifestImport>
     <ServiceManifestRef ServiceManifestName="DatadogAgentPkg" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
-+    <Policies>
-+      <ContainerHostPolicies CodePackageRef="Code">
-+        <PortBinding ContainerPort="5002" EndpointRef="DatadogTypeEndpoint" />
-+        <PortBinding ContainerPort="8126" EndpointRef="DatadogTraceEndpoint" />
-+        <PortBinding ContainerPort="8125" EndpointRef="DatadogStatsEndpoint" />
-+      </ContainerHostPolicies>
-    </Policies>
++   <Policies>
++     <ContainerHostPolicies CodePackageRef="Code">
++       <PortBinding ContainerPort="5002" EndpointRef="DatadogTypeEndpoint" />
++       <PortBinding ContainerPort="8126" EndpointRef="DatadogTraceEndpoint" />
++       <PortBinding ContainerPort="8125" EndpointRef="DatadogStatsEndpoint" />
++     </ContainerHostPolicies>
++   </Policies>
   </ServiceManifestImport>
 ```
 
@@ -112,21 +112,21 @@ Within the ServiceManifestImport of the service responsible for deploying the tr
   <ServiceManifestImport>
     <ServiceManifestRef ServiceManifestName="ServiceThatDeploysDatadogTracerPkg" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
-+    <Policies>
-+      <RunAsPolicy CodePackageRef="Code" UserRef="SetupAdminUser" EntryPointType="Setup" />
-+    </Policies>
++   <Policies>
++     <RunAsPolicy CodePackageRef="Code" UserRef="SetupAdminUser" EntryPointType="Setup" />
++   </Policies>
   </ServiceManifestImport>
 ```  
 
 Within the ServiceManifest.xml of the service responsible for deploying the Datadog Tracer, add the reference to the install script.
-```
+```diff
   <CodePackage Name="Code" Version="1.0.0">
-+    <SetupEntryPoint>
-+      <ExeHost>
-+        <Program>DatadogInstall.bat</Program>
-+        <WorkingFolder>CodePackage</WorkingFolder>
-+      </ExeHost>
-+    </SetupEntryPoint>
++   <SetupEntryPoint>
++     <ExeHost>
++       <Program>DatadogInstall.bat</Program>
++       <WorkingFolder>CodePackage</WorkingFolder>
++     </ExeHost>
++   </SetupEntryPoint>
     <EntryPoint>
       <ExeHost>
         <Program>ServiceThatDeploysDatadogTracer.exe</Program>
