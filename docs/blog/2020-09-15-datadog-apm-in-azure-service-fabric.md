@@ -145,4 +145,13 @@ The latest representation of this install process is here: https://github.com/Da
  - [Batch Script](https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample/blob/master/VotingWeb/DatadogInstall.bat)
  - [Powershell Script](https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample/blob/master/VotingWeb/DatadogInstall.ps1)
 
+
+### That's all folks
+---
+
+The next time you deploy this application to the cluster, your application should start sending traces through to Datadog.
+This also enables custom statistics through the DogStatsD client and custom traces through the Datadog.Trace library.
+
+Happy developing!
+
 ---
