@@ -30,7 +30,7 @@ Otherwise, here is one way to setup a Service Fabric Application in Visual Studi
 
 Start with a stateless ASP.NET Core application, and use MVC as a template.
 
-![Create a stateleess ASP.NET Core application](https://user-images.githubusercontent.com/1801443/93099063-959e2f80-f675-11ea-805c-eb627e2b9e53.png)
+![Create a stateless ASP.NET Core application](https://user-images.githubusercontent.com/1801443/93099063-959e2f80-f675-11ea-805c-eb627e2b9e53.png)
 
 ## Setting up the Datadog agent
 
