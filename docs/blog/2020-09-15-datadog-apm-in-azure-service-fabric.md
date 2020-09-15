@@ -55,7 +55,6 @@ Replace the ServiceManifest.xml with this, being sure to replace `API_KEY_GOES_H
     </EntryPoint>
     <EnvironmentVariables>
       <EnvironmentVariable Name="DD_API_KEY" Value="API_KEY_GOES_HERE"/>
-      <EnvironmentVariable Name="DD_ENV" Value="apm-reliability-testing"/>
       <EnvironmentVariable Name="DD_APM_ENABLED" Value="true"/>
       <EnvironmentVariable Name="DD_APM_NON_LOCAL_TRAFFIC" Value="true"/>
       <EnvironmentVariable Name="DD_DOGSTATSD_NON_LOCAL_TRAFFIC" Value="true"/>
