@@ -241,6 +241,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-pipelines", "{C52D6695-4E05-4930-88F8-0EFF8056A967}"
 	ProjectSection(SolutionItems) = preProject
+		.azure-pipelines\benchmarks.yml = .azure-pipelines\benchmarks.yml
 		.azure-pipelines\integration-tests.yml = .azure-pipelines\integration-tests.yml
 		.azure-pipelines\packages.yml = .azure-pipelines\packages.yml
 		.azure-pipelines\unit-tests.yml = .azure-pipelines\unit-tests.yml
