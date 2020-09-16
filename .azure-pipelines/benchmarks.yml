@@ -30,8 +30,8 @@ stages:
   #### Windows 
 
   - job: Windows
-    pool:
-      vmImage: windows-2019
+    pool: Benchmarks
+
     # Enable the Datadog Agent service for this job
     services:
       dd_agent: dd_agent
