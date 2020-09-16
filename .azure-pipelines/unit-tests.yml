@@ -156,8 +156,10 @@ jobs:
       solution: Datadog.Trace.proj
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
-      msbuildArguments: /t:BuildCpp;BuildCppTests
+      msbuildArguments: /t:BuildCpp;BuildCppTests /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       maximumCpuCount: true
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet-native
 
   - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
     displayName: run tests
