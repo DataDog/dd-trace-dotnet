@@ -110,7 +110,18 @@ jobs:
   pool:
     vmImage: windows-2019
 
+  # Enable the Datadog Agent service for this job
+  services:
+    dd_agent: dd_agent_dev_windows
+
   steps:
+
+  # Install the tracer latest stable release to attach the profiler to the build and test steps.
+  # The script exposes the required environment variables to the following steps
+  - task: PowerShell@2
+    displayName: Install profiler latest release
+    inputs:
+      filePath: ./.azure-pipelines/setup_tracer.ps1
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 3.1
@@ -126,6 +137,9 @@ jobs:
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
         sample-libs/**/Samples.ExampleLibrary*.csproj
+      arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet-native
 
   - task: NuGetToolInstaller@1
     displayName: install nuget
