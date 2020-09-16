@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests
             Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
         }
 
-        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
+        [AttributeUsage(AttributeTargets.Class, Inherited = true)]
         private class TracerRestorerAttribute : BeforeAfterTestAttribute
         {
             private Tracer _tracer;
