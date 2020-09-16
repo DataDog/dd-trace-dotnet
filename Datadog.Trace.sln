@@ -244,6 +244,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-
 		.azure-pipelines\benchmarks.yml = .azure-pipelines\benchmarks.yml
 		.azure-pipelines\integration-tests.yml = .azure-pipelines\integration-tests.yml
 		.azure-pipelines\packages.yml = .azure-pipelines\packages.yml
+		.azure-pipelines\setup_tracer.ps1 = .azure-pipelines\setup_tracer.ps1
 		.azure-pipelines\unit-tests.yml = .azure-pipelines\unit-tests.yml
 	EndProjectSection
 EndProject

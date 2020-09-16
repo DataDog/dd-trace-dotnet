@@ -12,6 +12,26 @@ trigger:
 variables:
   buildConfiguration: Debug
   dotnetCoreSdkVersion: 3.1.107
+  ddApiKey: $(DD_API_KEY)
+  DD_DOTNET_TRACER_MSBUILD:
+
+# Declare the datadog agent as a resource to be used as a pipeline service
+resources:
+  containers:
+  - container: dd_agent_dev_windows
+    image: datadog/agent-dev:olivielpeau-ci-container-defaults-py3-win1809
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_INSIDE_CI: true
+  - container: dd_agent_dev_linux
+    image: datadog/agent-dev:olivielpeau-ci-container-defaults-py3
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_INSIDE_CI: true
 
 jobs:
 
@@ -20,12 +40,26 @@ jobs:
     matrix:
       windows:
         imageName: windows-2019
+        serviceName: dd_agent_dev_windows
       linux:
         imageName: ubuntu-18.04
+        serviceName: dd_agent_dev_linux
   pool:
     vmImage: $(imageName)
 
+  # Enable the Datadog Agent service for this job
+  services:
+    dd_agent: $[ variables['serviceName'] ]
+
   steps:
+
+  # Install the tracer latest stable release to attach the profiler to the build and test steps.
+  # The script exposes the required environment variables to the following steps
+  - task: PowerShell@2
+    displayName: Install profiler latest release
+    inputs:
+      filePath: ./.azure-pipelines/setup_tracer.ps1
+
   - task: UseDotNet@2
     displayName: install dotnet core runtime 2.1
     inputs:
@@ -49,10 +83,13 @@ jobs:
     inputs:
       command: build
       configuration: $(buildConfiguration)
+      arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
         benchmarks/**/*.csproj
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -60,6 +97,8 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet
 
 - job: native_windows
   strategy:
