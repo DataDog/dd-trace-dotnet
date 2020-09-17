@@ -20,10 +20,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
 #if NET452
             var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
-#elif NET461
-            var expectedSpanCount = 58;
 #else
-            var expectedSpanCount = 38;
+            var expectedSpanCount = 78; // 11 queries * 7 groups + 1 internal query
 #endif
 
             const string dbType = "postgres";
@@ -33,23 +31,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion, enableNetStandard: true))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
-                // HACK: I get 38 spans locally but CI gets 48.
-                // We want this to pass for now,
-                // but still be alerted if the number changes.
-                if (expectedSpanCount == 38)
-                {
-                    Assert.True(spans.Count == 38 || spans.Count == 48);
-                }
-                else
-                {
-                    Assert.Equal(expectedSpanCount, spans.Count);
-                }
+                Assert.Equal(expectedSpanCount, spans.Count);
 
                 foreach (var span in spans)
                 {

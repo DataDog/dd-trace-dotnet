@@ -21,10 +21,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
 #if NET452
             var expectedSpanCount = 49; // 7 queries * 7 groups
-#elif NET461
-            var expectedSpanCount = 59;
 #else
-            var expectedSpanCount = 49; // 7 queries * 11 groups - netstandard
+            var expectedSpanCount = 77; // 7 queries * 11 groups
 #endif
 
             const string dbType = "sql-server";
@@ -34,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion, enableNetStandard: true))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
