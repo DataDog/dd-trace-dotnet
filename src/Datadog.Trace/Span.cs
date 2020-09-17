@@ -1,10 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace
@@ -21,11 +21,15 @@ namespace Datadog.Trace
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private readonly object _lock = new object();
-        private readonly object _tagsLock = new object();
-        private readonly object _metricLock = new object();
 
         internal Span(SpanContext context, DateTimeOffset? start)
+            : this(context, start, null)
         {
+        }
+
+        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
+        {
+            Tags = tags ?? new CommonTags();
             Context = context;
             ServiceName = context.ServiceName;
             StartTime = start ?? Context.TraceContext.UtcNow;
@@ -78,15 +82,13 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId => Context.SpanId;
 
+        internal ITags Tags { get; set; }
+
         internal SpanContext Context { get; }
 
         internal DateTimeOffset StartTime { get; private set; }
 
         internal TimeSpan Duration { get; private set; }
-
-        internal Dictionary<string, string> Tags { get; private set; }
-
-        internal Dictionary<string, double> Metrics { get; private set; }
 
         internal bool IsFinished { get; private set; }
 
@@ -111,33 +113,7 @@ namespace Datadog.Trace
             sb.AppendLine($"Start: {StartTime}");
             sb.AppendLine($"Duration: {Duration}");
             sb.AppendLine($"Error: {Error}");
-            sb.AppendLine("Meta:");
-
-            if (Tags?.Count > 0)
-            {
-                // lock because we're iterating the collection, not reading a single value
-                lock (_tagsLock)
-                {
-                    foreach (var kv in Tags)
-                    {
-                        sb.Append($"\t{kv.Key}:{kv.Value}");
-                    }
-                }
-            }
-
-            sb.AppendLine("Metrics:");
-
-            if (Metrics?.Count > 0)
-            {
-                // lock because we're iterating the collection, not reading a single value
-                lock (_metricLock)
-                {
-                    foreach (var kv in Metrics)
-                    {
-                        sb.Append($"\t{kv.Key}:{kv.Value}");
-                    }
-                }
-            }
+            sb.AppendLine($"Meta: {Tags}");
 
             return sb.ToString();
         }
@@ -226,36 +202,7 @@ namespace Datadog.Trace
 
                     break;
                 default:
-                    if (value == null)
-                    {
-                        if (Tags != null)
-                        {
-                            // lock when modifying the collection
-                            lock (_tagsLock)
-                            {
-                                // Agent doesn't accept null tag values,
-                                // remove them instead
-                                Tags.Remove(key);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // lock when modifying the collection
-                        lock (_tagsLock)
-                        {
-                            if (Tags == null)
-                            {
-                                // defer instantiation until needed to
-                                // avoid unnecessary allocations per span
-                                Tags = new Dictionary<string, string>();
-                            }
-
-                            // if not a special tag, just add it to the tag bag
-                            Tags[key] = value;
-                        }
-                    }
-
+                    Tags.SetTag(key, value);
                     break;
             }
 
@@ -335,8 +282,7 @@ namespace Datadog.Trace
                 case Trace.Tags.SamplingPriority:
                     return ((int?)(Context.TraceContext?.SamplingPriority ?? Context.SamplingPriority))?.ToString();
                 default:
-                    // no need to lock on single reads
-                    return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
+                    return Tags.GetTag(key);
             }
         }
 
@@ -374,45 +320,19 @@ namespace Datadog.Trace
                         ServiceName,
                         ResourceName,
                         OperationName,
-                        Tags == null ? string.Empty : string.Join(",", Tags.Keys));
+                        Tags);
                 }
             }
         }
 
         internal double? GetMetric(string key)
         {
-            // no need to lock on single reads
-            return Metrics != null && Metrics.TryGetValue(key, out double value) ? value : default;
+            return Tags.GetMetric(key);
         }
 
         internal Span SetMetric(string key, double? value)
         {
-            if (value == null)
-            {
-                if (Metrics != null)
-                {
-                    // lock when modifying the collection
-                    lock (_metricLock)
-                    {
-                        Metrics.Remove(key);
-                    }
-                }
-            }
-            else
-            {
-                // lock when modifying the collection
-                lock (_metricLock)
-                {
-                    if (Metrics == null)
-                    {
-                        // defer instantiation until needed to
-                        // avoid unnecessary allocations per span
-                        Metrics = new Dictionary<string, double>();
-                    }
-
-                    Metrics[key] = value.Value;
-                }
-            }
+            Tags.SetMetric(key, value);
 
             return this;
         }
