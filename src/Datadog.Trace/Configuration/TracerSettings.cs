@@ -138,10 +138,6 @@ namespace Datadog.Trace.Configuration
 
             GlobalSamplingRate = source?.GetDouble(ConfigurationKeys.GlobalSamplingRate);
 
-            DiagnosticSourceEnabled = source?.GetBool(ConfigurationKeys.DiagnosticSourceEnabled) ??
-                                      // default value
-                                      true;
-
             StartupDiagnosticLogEnabled = source?.GetBool(ConfigurationKeys.StartupDiagnosticLogEnabled) ??
                                           // default value
                                           true;
@@ -263,7 +259,12 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the use
         /// of System.Diagnostics.DiagnosticSource is enabled.
         /// </summary>
-        public bool DiagnosticSourceEnabled { get; set; }
+        [Obsolete("Use Datadog.Trace.Configuration.GlobalSettings.DiagnosticSourceEnabled", error: false)]
+        public bool DiagnosticSourceEnabled
+        {
+            get => GlobalSettings.Source.DiagnosticSourceEnabled;
+            set => GlobalSettings.Source.DiagnosticSourceEnabled = value;
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled

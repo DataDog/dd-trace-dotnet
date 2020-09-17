@@ -388,53 +388,6 @@ namespace Datadog.Trace
             return _agentWriter.FlushTracesAsync();
         }
 
-#if NETSTANDARD
-        internal void StartDiagnosticObservers()
-        {
-            // instead of adding a hard dependency on DiagnosticSource,
-            // check if it is available before trying to use it
-            var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
-
-            if (type == null)
-            {
-                Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
-            }
-            else
-            {
-                // don't call this method unless the necessary types are available
-                StartDiagnosticObserversInternal();
-            }
-        }
-
-        internal void StartDiagnosticObserversInternal()
-        {
-            DiagnosticManager?.Stop();
-
-            var observers = new List<DiagnosticObserver>();
-
-            if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
-            {
-                Log.Debug("Adding AspNetCoreDiagnosticObserver");
-
-                var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
-                observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
-            }
-
-            if (observers.Count == 0)
-            {
-                Log.Debug("DiagnosticManager not started, zero observers added.");
-            }
-            else
-            {
-                Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
-
-                var diagnosticManager = new DiagnosticManager(observers);
-                diagnosticManager.Start();
-                DiagnosticManager = diagnosticManager;
-            }
-        }
-#endif
-
         internal async Task WriteDiagnosticLog()
         {
             string agentError = null;

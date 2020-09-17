@@ -10,13 +10,6 @@ namespace Datadog.Trace.DiagnosticListeners
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<DiagnosticObserver>();
 
-        protected DiagnosticObserver(IDatadogTracer tracer)
-        {
-            Tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
-        }
-
-        protected IDatadogTracer Tracer { get; }
-
         /// <summary>
         /// Gets the name of the <see cref="DiagnosticListener"/> that should be instrumented.
         /// </summary>
