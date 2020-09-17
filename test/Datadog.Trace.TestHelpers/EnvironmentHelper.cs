@@ -144,7 +144,6 @@ namespace Datadog.Trace.TestHelpers
             int agentPort,
             int aspNetCorePort,
             string processPath,
-            bool netStandardEnabled,
             StringDictionary environmentVariables)
         {
             var processName = processPath;
@@ -186,11 +185,6 @@ namespace Datadog.Trace.TestHelpers
 
             // for ASP.NET Core sample apps, set the server's port
             environmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{aspNetCorePort}/";
-
-            if (netStandardEnabled)
-            {
-                environmentVariables["DD_TRACE_NETSTANDARD_ENABLED"] = "1";
-            }
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {

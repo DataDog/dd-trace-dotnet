@@ -147,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                 startInfo = new ProcessStartInfo(executable, $"{commandLineArgs}");
             }
 
-            environmentHelper.SetEnvironmentVariables(agentPort, aspNetPort, executable, false, startInfo.EnvironmentVariables);
+            environmentHelper.SetEnvironmentVariables(agentPort, aspNetPort, executable, startInfo.EnvironmentVariables);
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
