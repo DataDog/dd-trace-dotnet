@@ -1,7 +1,9 @@
 using System;
 using System.Data;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
@@ -51,16 +53,33 @@ namespace Datadog.Trace.ClrProfiler
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
                 string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
-                scope = tracer.StartActive(OperationName, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
+                HttpTags tags = null;
+
+                if (TracerSettings.UseOptim)
+                {
+                    tags = new HttpTags();
+                }
+
+                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
 
-                span.SetTag(Tags.SpanKind, SpanKinds.Client);
-                span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
-                span.SetTag(Tags.HttpUrl, httpUrl);
-                span.SetTag(Tags.InstrumentationName, integrationName);
+                if (TracerSettings.UseOptim)
+                {
+                    tags.SpanKind = SpanKinds.Client;
+                    tags.HttpMethod = httpMethod?.ToUpperInvariant();
+                    tags.HttpUrl = httpUrl;
+                    tags.InstrumentationName = integrationName;
+                }
+                else
+                {
+                    span.SetTag(Tags.SpanKind, SpanKinds.Client);
+                    span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
+                    span.SetTag(Tags.HttpUrl, httpUrl);
+                    span.SetTag(Tags.InstrumentationName, integrationName);
+                }
 
                 // set analytics sample rate if enabled
                 if (integrationName != null)
