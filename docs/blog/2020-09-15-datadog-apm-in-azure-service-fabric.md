@@ -16,7 +16,7 @@ More info on Service Fabric:
  
 There are two particular requirements for enabling Datadog in Azure Service Fabric: Deploying the Datadog Agent, and installing the .NET Tracer.
 
-The datadog agent is a standalone docker container which exists as a service.
+The Datadog Agent is a standalone Docker container which exists as a service.
 
 The .NET tracer requires including some scripts with a deployed service to install the .NET Tracer on your clusters.
  
