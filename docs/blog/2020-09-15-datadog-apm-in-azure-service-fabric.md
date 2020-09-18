@@ -5,7 +5,7 @@
 
 *However, if you try it, we would love to hear your feedback.*
 
-This article contains guidance for enabling APM on applications built with [Microsoft Azure Service Fabric](https://azure.microsoft.com/services/service-fabric/). The quickstart project contains a single application with multiple services demonstrating the basic concepts of service communication and use of reliable dictionaries.
+This article contains guidance for enabling APM on .NET applications built with [Microsoft Azure Service Fabric](https://azure.microsoft.com/services/service-fabric/). The quickstart project contains a single application with multiple services demonstrating the basic concepts of service communication and use of reliable dictionaries.
 
 For a more in depth tour with the sample used for this demo, visit: [Service Fabric .NET quickstart](https://docs.microsoft.com/en-us/azure/service-fabric/service-fabric-quickstart-dotnet)
 
