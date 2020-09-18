@@ -135,7 +135,7 @@ Within the ServiceManifest.xml of the service responsible for deploying the Data
   </CodePackage>
 ```
 
-Include the DatadogInstall.bat and DatadogInstall.ps1 scripts in the project responsible for deploying the tracer.
+Include the `DatadogInstall.bat` and `DatadogInstall.ps1` scripts in the project responsible for deploying the tracer.
 Ensure that in the properties of both scripts, you set that they are copied to the output directory.
 
 ![Copy to output directory](https://user-images.githubusercontent.com/1801443/93110062-d05a9480-f682-11ea-8fb4-7b266f576f68.png)
