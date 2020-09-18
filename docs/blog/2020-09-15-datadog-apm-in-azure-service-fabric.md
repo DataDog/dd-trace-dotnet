@@ -14,7 +14,7 @@ More info on Service Fabric:
  - [Service Fabric sample projects](https://azure.microsoft.com/resources/samples/?service=service-fabric)
  - [Service Fabric open source home repo](https://github.com/azure/service-fabric)
  
-There are two particular requirements for enabling Datadog in Azure Service Fabric: Deploying the datadog agent, and installing the .NET Tracer
+There are two particular requirements for enabling Datadog in Azure Service Fabric: Deploying the Datadog Agent, and installing the .NET Tracer.
 
 The datadog agent is a standalone docker container which exists as a service.
 
