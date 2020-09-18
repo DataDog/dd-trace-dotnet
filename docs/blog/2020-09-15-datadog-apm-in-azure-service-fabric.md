@@ -148,7 +148,7 @@ The latest representation of this install process is here: https://github.com/Da
 ### That's all folks
 ---
 
-The next time you deploy this application to the cluster, your application should start sending traces through to Datadog.
+The next time you deploy this application to the cluster, your application should start sending traces to Datadog.
 This also enables custom statistics through the DogStatsD client and custom traces through the Datadog.Trace library.
 
 Happy developing!
