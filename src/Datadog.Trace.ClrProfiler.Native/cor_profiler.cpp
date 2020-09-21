@@ -950,13 +950,12 @@ HRESULT CorProfiler::ProcessReplacementCalls(
         continue;
       }
 
-      bool caller_assembly_is_domain_neutral =
-          runtime_information_.is_desktop() && corlib_module_loaded &&
-          module_metadata->app_domain_id == corlib_app_domain_id;
-
       // At this point we know we've hit a match. Error out if
       //   1) The managed profiler has not been loaded yet
-      //   2) The caller is domain-neutral AND we want to instrument domain-neutral assemblies AND the Profiler has already been loaded
+      //   2) The caller is domain-neutral AND we do not want to instrument domain-neutral assemblies
+      //   3) The target instruction is a constrained virtual method call (a constrained IL instruction followed by a callvirt IL instruction)
+
+      //   1) The managed profiler has not been loaded yet
       if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
         Warn(
             "JITCompilationStarted skipping method: Method replacement "
@@ -968,9 +967,11 @@ HRESULT CorProfiler::ProcessReplacementCalls(
         continue;
       }
 
-      // At this point we know we've hit a match. Error out if
-      //   1) The calling assembly is domain-neutral
-      //   2) The profiler is not configured to instrument domain-neutral assemblies
+      //   2) The caller is domain-neutral AND we do not want to instrument domain-neutral assemblies
+      bool caller_assembly_is_domain_neutral =
+          runtime_information_.is_desktop() && corlib_module_loaded &&
+          module_metadata->app_domain_id == corlib_app_domain_id;
+
       if (caller_assembly_is_domain_neutral && !instrument_domain_neutral_assemblies) {
         Warn(
             "JITCompilationStarted skipping method: Method replacement",
@@ -980,6 +981,19 @@ HRESULT CorProfiler::ProcessReplacementCalls(
             " function_id=", function_id, " token=", function_token,
             " caller_name=", caller.type.name, ".", caller.name, "()",
             " target_name=", target.type.name, ".", target.name, "()");
+        continue;
+      }
+
+      //   3) The target instruction is a constrained virtual method call (a constrained IL instruction followed by a callvirt IL instruction)
+      if (pInstr->m_opcode == CEE_CALLVIRT && pInstr->m_pPrev->m_opcode == CEE_CONSTRAINED) {
+        Warn("JITCompilationStarted skipping method: Method replacement",
+             " found but the target method call is a constrained virtual method call ",
+             " (a 'constrained' IL instruction followed by a 'callvirt' IL instruction).",
+             " This type of method call is not currently supported for automatic"
+             " instrumentation.",
+             " function_id=", function_id, " token=", function_token,
+             " caller_name=", caller.type.name, ".", caller.name, "()",
+             " target_name=", target.type.name, ".", target.name, "()");
         continue;
       }
 
