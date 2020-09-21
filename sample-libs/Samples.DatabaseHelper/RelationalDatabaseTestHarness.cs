@@ -25,12 +25,16 @@ namespace Samples.DatabaseHelper
             IDbConnection connection,
             DbCommandFactory commandFactory,
             IDbCommandExecutor providerSpecificCommandExecutor,
+            IDbCommandExecutor genericCommandExecutor,
             CancellationToken cancellationToken)
         {
             var executors = new List<IDbCommandExecutor>
                             {
                                 // call methods directly like SqlCommand.ExecuteScalar(), provided by caller
                                 providerSpecificCommandExecutor,
+
+                                // call methods directly using a generic constraint, like TCommand.ExecuteScalar() where TCommand : IDbCommand, provided by caller
+                                genericCommandExecutor,
 
                                 // call methods through DbCommand reference
                                 new DbCommandClassExecutor(),
