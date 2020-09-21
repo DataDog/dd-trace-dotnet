@@ -20,7 +20,7 @@ The Datadog Agent is a standalone Docker container which exists as a service.
 
 The .NET tracer requires including some scripts with a deployed service to install the .NET Tracer on your clusters.
  
-## Create a service fabric application
+## 1. Create a service fabric application
 
 If you already have a service fabric application, you can skip ahead to `Setting up the datadog agent`.
 
