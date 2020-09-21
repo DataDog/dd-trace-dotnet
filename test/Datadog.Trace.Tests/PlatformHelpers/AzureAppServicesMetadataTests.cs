@@ -2,11 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.PlatformHelpers;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
+    [CollectionDefinition(nameof(AzureAppServicesMetadataTests), DisableParallelization = true)]
+    [AzureAppServicesRestorer]
     public class AzureAppServicesMetadataTests
     {
         private static readonly List<string> EnvVars = new List<string>()
@@ -130,6 +134,24 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             vars.Add(AzureAppServices.ResourceGroupKey, siteResourceGroup);
             vars.Add(AzureAppServices.SiteNameKey, deploymentId);
             return vars;
+        }
+
+        [AttributeUsage(AttributeTargets.Class, Inherited = true)]
+        private class AzureAppServicesRestorerAttribute : BeforeAfterTestAttribute
+        {
+            private AzureAppServices _metadata;
+
+            public override void Before(MethodInfo methodUnderTest)
+            {
+                _metadata = AzureAppServices.Metadata;
+                base.Before(methodUnderTest);
+            }
+
+            public override void After(MethodInfo methodUnderTest)
+            {
+                AzureAppServices.Metadata = _metadata;
+                base.After(methodUnderTest);
+            }
         }
     }
 }
