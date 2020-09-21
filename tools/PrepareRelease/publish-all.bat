@@ -10,3 +10,4 @@ RMDIR "%OUTPUT_DIR%" /S /Q
 dotnet publish %INTEGRATIONS_PROJ% -c %TOOL_BUILD_CONFIG% -f net45 -o "%OUTPUT_DIR%\net45"
 dotnet publish %INTEGRATIONS_PROJ% -c %TOOL_BUILD_CONFIG% -f net461 -o "%OUTPUT_DIR%\net461"
 dotnet publish %INTEGRATIONS_PROJ% -c %TOOL_BUILD_CONFIG% -f netstandard2.0 -o "%OUTPUT_DIR%\netstandard2.0"
+dotnet publish %INTEGRATIONS_PROJ% -c %TOOL_BUILD_CONFIG% -f netcoreapp3.1 -o "%OUTPUT_DIR%\netcoreapp3.1"

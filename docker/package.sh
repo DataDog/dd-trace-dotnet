@@ -19,6 +19,7 @@ for pkgtype in $PKGTYPES ; do
         $(if [ $pkgtype != 'tar' ] ; then echo --prefix /opt/datadog ; fi) \
         --chdir $DIR/../src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64 \
         netstandard2.0/ \
+        netcoreapp3.1/ \
         Datadog.Trace.ClrProfiler.Native.so \
         integrations.json \
         createLogPath.sh

@@ -16,7 +16,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
     {
         public static readonly IFormatterResolver Instance = new StandardResolver();
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         public static readonly IMessagePackFormatter<object> ObjectFallbackFormatter = new DynamicObjectTypeFallbackFormatter(StandardResolverCore.Instance);
 #endif
 
@@ -38,7 +38,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
                 if (typeof(T) == typeof(object))
                 {
                     // final fallback
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
                     formatter = (IMessagePackFormatter<T>)ObjectFallbackFormatter;
 #else
                     formatter = PrimitiveObjectResolver.Instance.GetFormatter<T>();
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
     {
         public static readonly IFormatterResolver Instance = new ContractlessStandardResolver();
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         public static readonly IMessagePackFormatter<object> ObjectFallbackFormatter = new DynamicObjectTypeFallbackFormatter(ContractlessStandardResolverCore.Instance);
 #endif
 
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
                 if (typeof(T) == typeof(object))
                 {
                     // final fallback
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
                     formatter = (IMessagePackFormatter<T>)ObjectFallbackFormatter;
 #else
                     formatter = PrimitiveObjectResolver.Instance.GetFormatter<T>();
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
     {
         public static readonly IFormatterResolver Instance = new StandardResolverAllowPrivate();
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         public static readonly IMessagePackFormatter<object> ObjectFallbackFormatter = new DynamicObjectTypeFallbackFormatter(StandardResolverAllowPrivateCore.Instance);
 #endif
 
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
                 if (typeof(T) == typeof(object))
                 {
                     // final fallback
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
                     formatter = (IMessagePackFormatter<T>)ObjectFallbackFormatter;
 #else
                     formatter = PrimitiveObjectResolver.Instance.GetFormatter<T>();
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
     {
         public static readonly IFormatterResolver Instance = new ContractlessStandardResolverAllowPrivate();
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         public static readonly IMessagePackFormatter<object> ObjectFallbackFormatter = new DynamicObjectTypeFallbackFormatter(ContractlessStandardResolverAllowPrivateCore.Instance);
 #endif
 
@@ -158,7 +158,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
                 if (typeof(T) == typeof(object))
                 {
                     // final fallback
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
                     formatter = (IMessagePackFormatter<T>)ObjectFallbackFormatter;
 #else
                     formatter = PrimitiveObjectResolver.Instance.GetFormatter<T>();
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             BuiltinResolver.Instance, // Try Builtin
             AttributeFormatterResolver.Instance, // Try use [MessagePackFormatter]
 
-#if !(NETSTANDARD || NETFRAMEWORK)
+#if !(NETSTANDARD || NETFRAMEWORK || NETCOREAPP)
             MessagePack.Unity.UnityResolver.Instance,
 #endif
 

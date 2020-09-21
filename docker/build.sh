@@ -7,14 +7,17 @@ cd "$DIR/.."
 
 PUBLISH_OUTPUT="$( pwd )/src/bin/managed-publish"
 mkdir -p "$PUBLISH_OUTPUT/netstandard2.0"
+mkdir -p "$PUBLISH_OUTPUT/netcoreapp3.1"
 
 dotnet build -c $buildConfiguration src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
 
 for proj in Datadog.Trace Datadog.Trace.OpenTracing ; do
     dotnet publish -f netstandard2.0 -c $buildConfiguration src/$proj/$proj.csproj
+    dotnet publish -f netcoreapp3.1 -c $buildConfiguration src/$proj/$proj.csproj
 done
 
 dotnet publish -f netstandard2.0 -c $buildConfiguration src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj -o "$PUBLISH_OUTPUT/netstandard2.0"
+dotnet publish -f netcoreapp3.1 -c $buildConfiguration src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj -o "$PUBLISH_OUTPUT/netcoreapp3.1"
 
 # Only build Samples.AspNetCoreMvc21 for netcoreapp2.1
 if [ "$publishTargetFramework" == "netcoreapp2.1" ]

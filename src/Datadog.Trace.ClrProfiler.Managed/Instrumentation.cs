@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler
                 // ignore
             }
 
-#if NETSTANDARD
+#if !NETFRAMEWORK
             try
             {
                 if (GlobalSettings.Source.DiagnosticSourceEnabled)
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler
 #endif
         }
 
-#if NETSTANDARD
+#if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };

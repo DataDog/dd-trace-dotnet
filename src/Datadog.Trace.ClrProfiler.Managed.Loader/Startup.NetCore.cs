@@ -15,6 +15,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static string ResolveManagedProfilerDirectory()
         {
             string tracerFrameworkDirectory = "netstandard2.0";
+
+            var version = Environment.Version;
+
+            // Old versions of .net core have a major version of 4
+            if ((version.Major == 3 && version.Minor >= 1) || version.Major >= 5)
+            {
+                tracerFrameworkDirectory = "netcoreapp3.1";
+            }
+
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
             return Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
         }

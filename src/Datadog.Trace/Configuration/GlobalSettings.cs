@@ -124,7 +124,7 @@ namespace Datadog.Trace.Configuration
             {
                 new EnvironmentConfigurationSource(),
 
-#if !NETSTANDARD2_0
+#if NETFRAMEWORK
                 // on .NET Framework only, also read from app.config/web.config
                 new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
 #endif
@@ -132,7 +132,7 @@ namespace Datadog.Trace.Configuration
 
             string currentDirectory = System.Environment.CurrentDirectory;
 
-#if !NETSTANDARD2_0
+#if NETFRAMEWORK
             // on .NET Framework only, use application's root folder
             // as default path when looking for datadog.json
             if (System.Web.Hosting.HostingEnvironment.IsHosted)

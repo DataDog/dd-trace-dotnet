@@ -124,6 +124,10 @@
       <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
         <Properties>TargetFramework=netstandard2.0;PublishDir=$(TracerHomeDirectory)\netstandard2.0</Properties>
       </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+        <Properties>TargetFramework=netcoreapp3.1;PublishDir=$(TracerHomeDirectory)\netcoreapp3.1</Properties>
+      </ManagedProfilerPublishProject>
     </ItemGroup>
 
     <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="$(BuildInParallel)" RemoveProperties="Platform">
@@ -143,6 +147,10 @@
 
       <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
         <Properties>TargetFramework=netstandard2.0;PublishDir=$(TracerHomeDirectory)\netstandard2.0</Properties>
+      </BuildLoggerPublishProject>
+
+      <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
+        <Properties>TargetFramework=netcoreapp3.1;PublishDir=$(TracerHomeDirectory)\netcoreapp3.1</Properties>
       </BuildLoggerPublishProject>
     </ItemGroup>
 

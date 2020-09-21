@@ -42,7 +42,7 @@ jobs:
       arguments: --configuration $(buildConfiguration)
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
     inputs:
       command: publish
       publishWebProjects: false
@@ -51,6 +51,16 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
+      
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
     inputs:
@@ -119,7 +129,7 @@ jobs:
       arguments: --configuration $(buildConfiguration)
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
     inputs:
       command: publish
       publishWebProjects: false
@@ -127,6 +137,16 @@ jobs:
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler.Alpine
