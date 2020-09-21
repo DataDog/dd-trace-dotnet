@@ -17,6 +17,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitsTracesWithNetStandard()
         {
+            // Note: The automatic instrumentation currently bails out on the generic wrappers.
+            // Once this is implemented, this will add another 1 group for the direct assembly reference
+            // and another 1 group for the netstandard assembly reference
 #if NET452
             var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
 #else
