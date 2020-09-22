@@ -12,12 +12,11 @@ namespace Samples.Npgsql
         {
             var commandFactory = new DbCommandFactory();
             var commandExecutor = new NpgsqlCommandExecutor();
-            var genericCommandExecutor = new DbCommandInterfaceGenericExecutor<NpgsqlCommand>();
             var cts = new CancellationTokenSource();
 
             using (var connection = OpenConnection())
             {
-                await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, genericCommandExecutor, cts.Token);
+                await RelationalDatabaseTestHarness.RunAllAsync<NpgsqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
             }
 
             // allow time to flush

@@ -12,12 +12,11 @@ namespace Samples.SqlServer
         {
             var commandFactory = new DbCommandFactory();
             var commandExecutor = new SqlCommandExecutor();
-            var genericCommandExecutor = new DbCommandInterfaceGenericExecutor<SqlCommand>();
             var cts = new CancellationTokenSource();
 
             using (var connection = OpenConnection())
             {
-                await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, genericCommandExecutor, cts.Token);
+                await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
             }
 
             // allow time to flush
