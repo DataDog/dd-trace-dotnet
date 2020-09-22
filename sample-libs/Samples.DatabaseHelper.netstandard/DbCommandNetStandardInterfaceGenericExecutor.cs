@@ -7,7 +7,7 @@ namespace Samples.DatabaseHelper
     public class DbCommandNetStandardInterfaceGenericExecutor<TCommand> : DbCommandExecutor<TCommand>
         where TCommand : IDbCommand
     {
-        public override string CommandTypeName => nameof(IDbCommand) + "-netstandard";
+        public override string CommandTypeName => "IDbCommandGenericConstraint<" + typeof(TCommand).Name + ">-netstandard";
 
         public override bool SupportsAsyncMethods => false;
 

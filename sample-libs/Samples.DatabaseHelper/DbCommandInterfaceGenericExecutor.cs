@@ -9,7 +9,7 @@ namespace Samples.DatabaseHelper
     {
         private static readonly Task CompletedTask = Task.FromResult(0);
 
-        public override string CommandTypeName => nameof(IDbCommand);
+        public override string CommandTypeName => "IDbCommandGenericConstraint<" + typeof(TCommand).Name + ">";
 
         public override bool SupportsAsyncMethods => false;
 
