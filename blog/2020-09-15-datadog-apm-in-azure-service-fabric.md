@@ -1,8 +1,7 @@
 
 # Deploy Datadog APM in .NET applications on Azure Service Fabric
 
-
-<div style="text-align: right; font-style: italic;">date: 2020-09-15</div>
+<p align='right'><i>date: 2020-09-15</i></p>
 
 Datadog [Application Performance Monitoring (APM) and Distributed Tracing](https://docs.datadoghq.com/tracing/) products provide deep visibility into your applications. In order to get started, you need to configure the Datadog Agent and to instrument your application using the Datadog Tracer. This blog post describes how you can do this for a .NET application running in [Azure Service Fabric](https://azure.microsoft.com/services/service-fabric/).
 
