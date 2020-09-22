@@ -19,14 +19,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("RunOnWindows", "True")]
         public void SubmitsTracesWithNetStandard(string packageVersion)
         {
-            // Note: The automatic instrumentation currently bails out on the generic wrappers.
-            // Once this is implemented, this will add another 1 group for the direct assembly reference
-            // and another 1 group for the netstandard assembly reference
             // Note: The automatic instrumentation currently does not instrument on the generic wrappers
             // due to an issue with constrained virtual method calls. This leads to an inconsistency where
             // the .NET Core apps generate 4 more spans than .NET Framework apps (2 ExecuteReader calls *
             // 2 interfaces: IDbCommand and IDbCommand-netstandard).
-            // Once this is fully supported, this will add another 2 complete groups instead to both net461 and netcoreappX.X.
+            // Once this is fully supported, this will add another 2 complete groups for all frameworks instead
+            // of 4 extra spans on net461 and netcoreapp2.0+
 #if NET452
             var expectedSpanCount = 49; // 7 queries * 7 groups
 #elif NET461
