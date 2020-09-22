@@ -1,30 +1,33 @@
 
-# Datadog .NET APM in Service Fabric
+# Deploy Datadog APM in .NET applications on Azure Service Fabric
 
-*This guidance is in an alpha state, and is not officially supported*
 
-*However, if you try it, we would love to hear your feedback.*
+<div style="text-align: right; font-style: italic;">date: 2020-09-15</div>
 
-This article contains guidance for enabling APM on .NET applications built with [Microsoft Azure Service Fabric](https://azure.microsoft.com/services/service-fabric/). The quickstart project contains a single application with multiple services demonstrating the basic concepts of service communication and use of reliable dictionaries.
+Datadog [Application Performance Monitoring (APM) and Distributed Tracing](https://docs.datadoghq.com/tracing/) products provide deep visibility into your applications. In order to get started, you need to configure the Datadog Agent and to instrument your application using the Datadog Tracer. This blog post describes how you can do this for a .NET application running in [Azure Service Fabric](https://azure.microsoft.com/services/service-fabric/).
 
-For a more in depth tour with the sample used for this demo, visit: [Service Fabric .NET quickstart](https://docs.microsoft.com/en-us/azure/service-fabric/service-fabric-quickstart-dotnet)
+<table border="1" bgcolor="#FFF0F0" align="center"><tr><td>
 
-More info on Service Fabric:
+**The guidance described in this post is in an *alpha* state, and is not officially supported.**
+
+However, if you try it, we would love to hear your feedback.
+To leave us feedback, please [create a new issue](https://github.com/DataDog/dd-trace-dotnet/issues/new) and make sure to reference this article.
+</td></tr></table>  
+<p> </p> 
+
+In this guide, we use the [.NET quick-start project](https://docs.microsoft.com/en-us/azure/service-fabric/service-fabric-quickstart-dotnet) provided as a part of Microsoft's documentation on Azure Service Fabric. You can follow the [official docs](https://docs.microsoft.com/en-us/azure/service-fabric/service-fabric-quickstart-dotnet) to deploy the quick-start project to the cloud. Here we will focus on how you can subsequently start collecting distributed traces of your application using Datadog.
+
+More info on Azure Service Fabric:
  - [Documentation](https://docs.microsoft.com/azure/service-fabric/)
  - [Service Fabric sample projects](https://azure.microsoft.com/resources/samples/?service=service-fabric)
  - [Service Fabric open source home repo](https://github.com/azure/service-fabric)
  
-There are two particular requirements for enabling Datadog in Azure Service Fabric: Deploying the Datadog Agent, and installing the .NET Tracer.
 
-The Datadog Agent is a standalone Docker container which exists as a service.
+## 1. Create a service fabric application
 
-The .NET tracer requires including some scripts with a deployed service to install the .NET Tracer on your clusters.
- 
-## Create a service fabric application
+(*If you already have a service fabric application, you can skip ahead to [Set up the Datadog Agent](#set-up-the-datadog-agent)*).
 
-If you already have a service fabric application, you can skip ahead to `Setting up the datadog agent`.
-
-Otherwise, here is one way to setup a Service Fabric Application in Visual Studio:
+One way to setup a Azure Service Fabric application is by starting a new project in Visual Studio:
 
 ![Create a service fabric project](https://user-images.githubusercontent.com/1801443/93098850-5079fd80-f675-11ea-90d6-7573b7faef68.png)
 
@@ -32,15 +35,21 @@ Start with a stateless ASP.NET Core application, and use MVC as a template.
 
 ![Create a stateless ASP.NET Core application](https://user-images.githubusercontent.com/1801443/93099063-959e2f80-f675-11ea-805c-eb627e2b9e53.png)
 
-## Setting up the Datadog agent
+## 2. Set up the Datadog Agent
 
-Add a new Service Fabric Service to the solution.
+The Datadog Agent is a component that runs in a separate process next to each instance of your application. It collects telemetry about your infrastructure, merges it with your application telemetry (which is collected by the Tracer) and sends it all to the Datadog server.
+
+In a Service Fabric we will use a standalone Docker container to include the Agent into our application. We will configure the container to run as a service available to other components of our application.
+
+First, add a new Service Fabric Service to the solution:
 
 ![Add new Service Fabric Service](https://user-images.githubusercontent.com/1801443/93102030-04c95300-f679-11ea-89f2-1de6160b5bc2.png)
 
 ![Setup the agent container](https://user-images.githubusercontent.com/1801443/93107331-73111400-f67f-11ea-9a5e-06094e775177.png)
 
-Replace the ServiceManifest.xml with this, being sure to replace `API_KEY_GOES_HERE` with your Datadog API key:
+Next, replace the `ServiceManifest.xml` with the text below.
+
+(As you do this, make sure to replace the value "*API_KEY_GOES_HERE*" for the `DD_API_KEY`-setting with your Datadog API key. An API key is a unique identifier that belongs to your organization and is required to submit telemetry to Datadog ([more info](https://docs.datadoghq.com/account_management/api-app-keys/)). You can obtain it from your Datadog [account page](https://app.datadoghq.com/account/settings#api).)
 ```
 <?xml version="1.0" encoding="utf-8"?>
 <ServiceManifest Name="DatadogAgentPkg" Version="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -72,7 +81,7 @@ Replace the ServiceManifest.xml with this, being sure to replace `API_KEY_GOES_H
 </ServiceManifest>
 ```
 
-Add the corresponding port bindings to the ServiceManfestImport within ApplicationManifest.xml
+Now, add the corresponding port bindings to the ServiceManfestImport within `ApplicationManifest.xml`:
 
 ```diff
   <ServiceManifestImport>
@@ -88,10 +97,14 @@ Add the corresponding port bindings to the ServiceManfestImport within Applicati
   </ServiceManifestImport>
 ```
 
-## Installing the .NET Tracer
+## Install the .NET Tracer
+
+The Datadog .NET Tracer is a also known as an in-process auto-instrumentation agent. It is a component that attaches to your application and automatically collects telemetry. The application telemetry is sent to the Datadog Agent (see above), where it is merged with infrastructure telemetry and forwarded to Datadog's servers. 
+
+To install the .NET Tracer on our Service Fabric cluster, we need to include some scripts with each service deployed into the Fabric.
 
 The tracer requires machine administrator permissions.
-Add the SetupAdminUser to the Principals section in the ApplicationManifest.xml. If the Principals section is missing, add it.
+Add the *SetupAdminUser* to the *Principals* section in the `ApplicationManifest.xml`. If the *Principals* section is missing, add it:
 
 ```
   <Principals>
@@ -105,7 +118,7 @@ Add the SetupAdminUser to the Principals section in the ApplicationManifest.xml.
   </Principals>
 ```
 
-Within the ServiceManifestImport of the service responsible for deploying the tracer to the cluster, give the Setup script SetupAdminUser as the executing user.
+Within the *ServiceManifestImport* section of the service responsible for deploying the tracer to the cluster, give the Setup script SetupAdminUser as the executing user.
 
 ```diff
   <ServiceManifestImport>
