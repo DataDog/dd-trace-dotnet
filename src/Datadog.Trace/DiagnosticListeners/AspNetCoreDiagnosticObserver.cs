@@ -38,6 +38,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("httpContext");
         private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("actionDescriptor");
 
+        // used to override the global tracer for testing purposes
         private readonly IDatadogTracer _tracer;
 
         public AspNetCoreDiagnosticObserver()
@@ -45,6 +46,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
         }
 
+        // used to override the global tracer for testing purposes
         public AspNetCoreDiagnosticObserver(IDatadogTracer tracer)
         {
             _tracer = tracer;
