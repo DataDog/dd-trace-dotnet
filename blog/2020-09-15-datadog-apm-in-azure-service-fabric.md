@@ -176,7 +176,7 @@ Configure both files to be copied to the output directory.
 ---
 
 The next time you deploy this application Azure Service Fabric, your application should start sending traces to Datadog.
-This also enables custom statistics through the DogStatsD client and custom traces through the Datadog.Trace library.
+This also enables custom statistics through the [DogStatsD client](https://www.nuget.org/packages/DogStatsD-CSharp-Client/) and manual traces through the [Datadog.Trace library](https://www.nuget.org/packages/Datadog.Trace).
 
 The latest representation of the install process is here: https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample
 
