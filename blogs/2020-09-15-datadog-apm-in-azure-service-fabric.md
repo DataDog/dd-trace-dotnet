@@ -98,6 +98,8 @@ Now, add the corresponding port bindings to the ServiceManfestImport within `App
 
 ## 3. Install the .NET Tracer
 
+### Setup an administrator for the script
+
 The Datadog .NET Tracer is also known as an in-process auto-instrumentation agent. It is a component that attaches to your application and automatically collects telemetry. The application telemetry is sent to the Datadog Agent (see above), where it is merged with infrastructure telemetry and forwarded to Datadog's servers. 
 
 To install the .NET Tracer in a service in a cluster, we include some scripts with each service deployed into the Fabric.
@@ -117,7 +119,13 @@ Add the *SetupAdminUser* to the *Principals* section in the `ApplicationManifest
   </Principals>
 ```
 
-Within the *ServiceManifestImport* section of the service responsible for deploying the tracer to the cluster, give the Setup script *SetupAdminUser* as the executing user.
+### Execute the script and opt-in
+
+*This section should be repeated for each service within an application that you would like to monitor:*
+
+---
+
+In your *ApplicationManifest.xml*, within the *ServiceManifestImport* section of the service, give the Setup script *SetupAdminUser* as the executing user.
 
 ```diff
   <ServiceManifestImport>
@@ -129,8 +137,9 @@ Within the *ServiceManifestImport* section of the service responsible for deploy
   </ServiceManifestImport>
 ```  
 
-Within the *ServiceManifest.xml* of the service responsible for deploying the Datadog Tracer, add the reference to the install script.
+Within the *ServiceManifest.xml* of the service you want to monitor, add the reference to the install script.
 Then, add the envrionment variables to opt into profiling.
+
 ```diff
   <CodePackage Name="Code" Version="1.0.0">
 +   <SetupEntryPoint>
@@ -162,13 +171,14 @@ Configure both files to be copied to the output directory.
 ![Copy to output directory](https://user-images.githubusercontent.com/1801443/93110062-d05a9480-f682-11ea-8fb4-7b266f576f68.png)
 
 
-The latest representation of the install process is here: https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample
 
 ### That's all folks
 ---
 
 The next time you deploy this application Azure Service Fabric, your application should start sending traces to Datadog.
 This also enables custom statistics through the DogStatsD client and custom traces through the Datadog.Trace library.
+
+The latest representation of the install process is here: https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample
 
 Happy developing!
 
