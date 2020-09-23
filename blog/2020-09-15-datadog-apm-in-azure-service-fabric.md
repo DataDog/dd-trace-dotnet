@@ -103,7 +103,7 @@ The Datadog .NET Tracer is also known as an in-process auto-instrumentation agen
 
 ### Setup an administrator for the script
 
-To install the .NET Tracer in a service in a cluster, we include some scripts with each service deployed into the Fabric.
+To install the .NET Tracer in a service, we include some scripts to be deployed into the output directory and executed.
 
 The install script requires machine administrator permissions.
 Add the *SetupAdminUser* to the *Principals* section in the `ApplicationManifest.xml`. If the *Principals* section is missing, add it:
