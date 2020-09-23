@@ -5,14 +5,17 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Tagging
 {
-    internal abstract class TagsDictionary : Dictionary<string, string>, ITags
+    internal abstract class ExtendedTagsDictionary : ITags
     {
         private static readonly IProperty<string>[] EmptyTags = new IProperty<string>[0];
         private static readonly IProperty<double?>[] EmptyMetrics = new IProperty<double?>[0];
 
         private Dictionary<string, double> _metrics;
+        private Dictionary<string, string> _tags;
 
         protected Dictionary<string, double> Metrics => Volatile.Read(ref _metrics);
+
+        protected Dictionary<string, string> Tags => Volatile.Read(ref _tags);
 
         public string GetTag(string key)
         {
@@ -24,7 +27,14 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            return TryGetValue(key, out var value) ? value : null;
+            var tags = Tags;
+
+            if (tags == null)
+            {
+                return null;
+            }
+
+            return tags.TryGetValue(key, out var value) ? value : null;
         }
 
         public double? GetMetric(string key)
@@ -58,15 +68,23 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            lock (this)
+            var tags = Tags;
+
+            if (tags == null)
+            {
+                var newTags = new Dictionary<string, string>();
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            lock (tags)
             {
                 if (value == null)
                 {
-                    Remove(key);
+                    tags.Remove(key);
                     return;
                 }
 
-                this[key] = value;
+                tags[key] = value;
             }
         }
 
@@ -113,11 +131,16 @@ namespace Datadog.Trace.Tagging
         {
             var sb = new StringBuilder();
 
-            lock (this)
+            var tags = Tags;
+
+            if (tags != null)
             {
-                foreach (var pair in this)
+                lock (tags)
                 {
-                    sb.Append($"{pair.Key} (tag):{pair.Value},");
+                    foreach (var pair in tags)
+                    {
+                        sb.Append($"{pair.Key} (tag):{pair.Value},");
+                    }
                 }
             }
 
@@ -174,17 +197,27 @@ namespace Datadog.Trace.Tagging
             int headerOffset = offset;
             int count;
 
-            lock (this)
+            var tags = Tags;
+
+            if (tags != null)
             {
-                count = Count;
-
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
-
-                foreach (var pair in this)
+                lock (tags)
                 {
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Key);
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Value);
+                    count = tags.Count;
+
+                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
+
+                    foreach (var pair in tags)
+                    {
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Key);
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Value);
+                    }
                 }
+            }
+            else
+            {
+                count = 0;
+                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
             }
 
             foreach (var property in GetAdditionalTags())

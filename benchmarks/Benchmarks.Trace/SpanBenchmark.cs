@@ -20,13 +20,16 @@ namespace Benchmarks.Trace
 
         public enum TagsTypes
         {
-            Common
+            Common,
+            Extended,
+            CommonList,
+            ExtendedList
         }
 
-        [Params(TagsTypes.Common)]
+        [Params(TagsTypes.Extended, TagsTypes.ExtendedList)]
         public TagsTypes TagsType { get; set; }
 
-        [Params(0, 1, 5)]
+        [Params(0,1,5)]
         public int NumberOfKeys { get; set; }
 
         private static string[] Keys = Enumerable.Range(1, 10).Select(i => i.ToString()).ToArray();
@@ -36,7 +39,8 @@ namespace Benchmarks.Trace
             var settings = new TracerSettings
             {
                 TraceEnabled = false,
-                StartupDiagnosticLogEnabled = false
+                StartupDiagnosticLogEnabled = false,
+                Environment = "Benchmarks"
             };
 
             Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null);
@@ -60,7 +64,7 @@ namespace Benchmarks.Trace
         public void StartFinishSpanWithTag()
         {
             Span span = Tracer.StartSpan("operation", GetTagStorage());
-            // span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+            span.SetTraceSamplingPriority(SamplingPriority.UserReject);
 
             for (int i = 0; i < NumberOfKeys; i++)
             {
@@ -94,6 +98,21 @@ namespace Benchmarks.Trace
             if (TagsType == TagsTypes.Common)
             {
                 return new CommonTags();
+            }
+
+            if (TagsType == TagsTypes.Extended)
+            {
+                return new ExtendedCommonTags();
+            }
+
+            if (TagsType == TagsTypes.CommonList)
+            {
+                return new CommonTagsList();
+            }
+
+            if (TagsType == TagsTypes.ExtendedList)
+            {
+                return new ExtendedCommonTagsList();
             }
 
             throw new InvalidOperationException();
