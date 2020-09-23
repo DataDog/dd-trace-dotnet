@@ -36,7 +36,7 @@ Start with a stateless ASP.NET Core application, and use MVC as a template.
 
 ## 2. Set up the Datadog Agent
 
-The Datadog Agent is a component that runs in a separate process next to each instance of your application. It collects telemetry about your infrastructure, merges it with your application telemetry (which is collected by the Tracer) and sends it to the Datadog server.
+The Datadog Agent is a component that collects telemetry about your infrastructure, merges it with your application telemetry (which is collected by the Tracer) and sends it to the Datadog servers.
 
 We will use a standalone Docker container to include the Agent into our Service Fabric application. We will configure the container to run as a Fabric service available to other components of our application.
 
@@ -176,7 +176,7 @@ Configure both files to be copied to the output directory.
 ---
 
 The next time you deploy this application Azure Service Fabric, your application should start sending traces to Datadog.
-This also enables custom metrics through the [DogStatsD client](https://www.nuget.org/packages/DogStatsD-CSharp-Client/) and manual traces through the [Datadog.Trace library](https://www.nuget.org/packages/Datadog.Trace).
+This also enables custom met through the [DogStatsD client](https://www.nuget.org/packages/DogStatsD-CSharp-Client/) and manual traces through the [Datadog.Trace library](https://www.nuget.org/packages/Datadog.Trace).
 
 The latest representation of the install process is here: https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample
 
