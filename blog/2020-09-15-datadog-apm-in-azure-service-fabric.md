@@ -23,9 +23,10 @@ More info on Azure Service Fabric:
  
 
 ### Optional quick start:
-**If you don't have an application and don't want to set one up, you can use this repository: 
+**If you don't have an application and don't want to set one up, you can use the repository this article is based on.
+Change the API Key as in [step 2](#2-set-up-the-datadog-agent) and deploy this sample to an Azure Service Fabric cluster to get started right away. 
 https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample
-Change out the API Key as in [step 2](#2-set-up-the-datadog-agent) and deploy this sample to an Azure Service Fabric cluster to test it out.**
+**
 
 ## 1. Create a service fabric application
 
@@ -43,7 +44,7 @@ Start with a stateless ASP.NET Core application, and use MVC as a template.
 
 The Datadog Agent is a component that collects telemetry about your infrastructure, merges it with your application telemetry (which is collected by the Tracer) and sends it to the Datadog servers.
 
-We will use a standalone Docker container to include the Agent into our Service Fabric application. We will configure the container to run as a Fabric service available to other components of our application.
+We will use a standalone Docker container to include the Agent into our Service Fabric application. We will configure the container to run as a service available to other components of our application.
 
 First, add a new Service Fabric service to the solution:
 
@@ -53,7 +54,7 @@ First, add a new Service Fabric service to the solution:
 
 Next, replace the `ServiceManifest.xml` with the text below.
 
-(As you do this, make sure to replace the value "*API_KEY_GOES_HERE*" for the `DD_API_KEY`-setting with your Datadog API key. An API key is a unique identifier that belongs to your organization and is required to submit telemetry to Datadog ([more info](https://docs.datadoghq.com/account_management/api-app-keys/)). You can obtain it from your Datadog [account page](https://app.datadoghq.com/account/settings#api).)
+(As you do this, make sure to replace the value "*API_KEY_GOES_HERE*" for the `DD_API_KEY`-setting with your Datadog API key. An API key is a unique identifier that belongs to your organization and is required to submit telemetry to Datadog ([more info](https://docs.datadoghq.com/account_management/api-app-keys/)). You can obtain it from your [Datadog account page](https://app.datadoghq.com/account/settings#api).)
 
 ```
 <?xml version="1.0" encoding="utf-8"?>
@@ -177,11 +178,10 @@ Configure both files to be copied to the output directory.
 ![Copy to output directory](https://user-images.githubusercontent.com/1801443/93110062-d05a9480-f682-11ea-8fb4-7b266f576f68.png)
 
 
-Deploy your application to the cluster, generate some load against it, and you should start seeing your infrastructure and traces coming through to your Datadog account.
+Deploy your application to the cluster, generate some load against it, and you should start seeing your infrastructure and traces come through to your Datadog account. For example:
 
-[Trace View](https://app.datadoghq.com/apm/traces)
-[Host Map](https://app.datadoghq.com/infrastructure/map)
-
+- View [traces](https://app.datadoghq.com/apm/traces) in the Datadog portal.
+- View the [Host Map](https://app.datadoghq.com/infrastructure/map) in the Datadog portal.
 
 ### That's all folks
 ---
