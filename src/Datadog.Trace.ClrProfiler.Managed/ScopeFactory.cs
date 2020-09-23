@@ -53,18 +53,11 @@ namespace Datadog.Trace.ClrProfiler
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
                 string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
-                ITags tags = null;
+                HttpTags tags = null;
 
                 if (TracerSettings.UseOptim)
                 {
-                    if (TracerSettings.UseList)
-                    {
-                        tags = new HttpTagsList();
-                    }
-                    else
-                    {
-                        tags = new HttpTags();
-                    }
+                    tags = new HttpTags();
                 }
 
                 scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
@@ -75,22 +68,10 @@ namespace Datadog.Trace.ClrProfiler
 
                 if (TracerSettings.UseOptim)
                 {
-                    if (TracerSettings.UseList)
-                    {
-                        var t = (HttpTagsList)tags;
-                        t.SpanKind = SpanKinds.Client;
-                        t.HttpMethod = httpMethod?.ToUpperInvariant();
-                        t.HttpUrl = httpUrl;
-                        t.InstrumentationName = integrationName;
-                    }
-                    else
-                    {
-                        var t = (HttpTags)tags;
-                        t.SpanKind = SpanKinds.Client;
-                        t.HttpMethod = httpMethod?.ToUpperInvariant();
-                        t.HttpUrl = httpUrl;
-                        t.InstrumentationName = integrationName;
-                    }
+                    tags.SpanKind = SpanKinds.Client;
+                    tags.HttpMethod = httpMethod?.ToUpperInvariant();
+                    tags.HttpUrl = httpUrl;
+                    tags.InstrumentationName = integrationName;
                 }
                 else
                 {
@@ -153,10 +134,27 @@ namespace Datadog.Trace.ClrProfiler
                 string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
                 string operationName = $"{dbType}.query";
 
-                scope = tracer.StartActive(operationName, serviceName: serviceName);
+                SqlTags tags = null;
+
+                if (TracerSettings.UseOptim)
+                {
+                    tags = new SqlTags();
+                }
+
+                scope = tracer.StartActiveWithTags(operationName, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
-                span.SetTag(Tags.DbType, dbType);
-                span.SetTag(Tags.InstrumentationName, integrationName);
+
+                if (TracerSettings.UseOptim)
+                {
+                    tags.DbType = dbType;
+                    tags.InstrumentationName = integrationName;
+                }
+                else
+                {
+                    span.SetTag(Tags.DbType, dbType);
+                    span.SetTag(Tags.InstrumentationName, integrationName);
+                }
+
                 span.AddTagsFromDbCommand(command);
 
                 // set analytics sample rate if enabled

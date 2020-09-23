@@ -21,12 +21,9 @@ namespace Benchmarks.Trace
         public enum TagsTypes
         {
             Common,
-            Extended,
-            CommonList,
-            ExtendedList
         }
 
-        [Params(TagsTypes.Extended, TagsTypes.ExtendedList)]
+        [Params(TagsTypes.Common)]
         public TagsTypes TagsType { get; set; }
 
         [Params(0,1,5)]
@@ -98,21 +95,6 @@ namespace Benchmarks.Trace
             if (TagsType == TagsTypes.Common)
             {
                 return new CommonTags();
-            }
-
-            if (TagsType == TagsTypes.Extended)
-            {
-                return new ExtendedCommonTags();
-            }
-
-            if (TagsType == TagsTypes.CommonList)
-            {
-                return new CommonTagsList();
-            }
-
-            if (TagsType == TagsTypes.ExtendedList)
-            {
-                return new ExtendedCommonTagsList();
             }
 
             throw new InvalidOperationException();

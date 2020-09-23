@@ -1,3 +1,4 @@
+using System;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 using Benchmarks.Trace.microbenchmarks;
@@ -9,8 +10,13 @@ namespace Benchmarks.Trace
     {
         private static void Main(string[] args)
         {
+#if DEBUG
+            Console.WriteLine(new DbCommandBenchmark().ExecuteNonQuery_Old());
+            Console.WriteLine(new DbCommandBenchmark().ExecuteNonQuery_New());
+#endif
+
 #if !NETFRAMEWORK && DEBUG
-            new SpanBenchmark().StartFinishSpanWithTag();
+            // new SpanBenchmark().StartFinishSpanWithTag();
             // new HttpClientBenchmark().SendAsync_New().GetAwaiter().GetResult();
 #endif
             var config = DefaultConfig.Instance.AddExporter(DatadogExporter.Default);

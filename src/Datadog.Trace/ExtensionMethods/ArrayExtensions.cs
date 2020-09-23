@@ -9,7 +9,7 @@ namespace Datadog.Trace.ExtensionMethods
             var destination = new T[array.Length + newElements.Length];
 
             Array.Copy(array, 0, destination, 0, array.Length);
-            Array.Copy(newElements, 0, destination, array.Length, destination.Length);
+            Array.Copy(newElements, 0, destination, array.Length, newElements.Length);
 
             return destination;
         }
