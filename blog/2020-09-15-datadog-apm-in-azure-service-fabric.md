@@ -22,6 +22,11 @@ More info on Azure Service Fabric:
  - [Service Fabric open source home repo](https://github.com/azure/service-fabric)
  
 
+### Optional quick start:
+**If you don't have an application and don't want to set one up, you can use this repository: 
+https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample
+Change out the API Key as in [step 2](#2-set-up-the-datadog-agent) and deploy this sample to an Azure Service Fabric cluster to test it out.**
+
 ## 1. Create a service fabric application
 
 (*If you already have a service fabric application, you can skip ahead to [Set up the Datadog Agent](#2-set-up-the-datadog-agent)*).
@@ -172,15 +177,16 @@ Configure both files to be copied to the output directory.
 ![Copy to output directory](https://user-images.githubusercontent.com/1801443/93110062-d05a9480-f682-11ea-8fb4-7b266f576f68.png)
 
 
+Deploy your application to the cluster, generate some load against it, and you should start seeing your infrastructure and traces coming through to your Datadog account.
+
+[Trace View](https://app.datadoghq.com/apm/traces)
+[Host Map](https://app.datadoghq.com/infrastructure/map)
+
 
 ### That's all folks
 ---
 
-The next time you deploy this application Azure Service Fabric, your application should start sending traces to Datadog.
-
 This also enables custom metrics through the [DogStatsD client](https://www.nuget.org/packages/DogStatsD-CSharp-Client/) and manual traces through the [Datadog.Trace library](https://www.nuget.org/packages/Datadog.Trace).
-
-The latest representation of the install process is here: https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample
 
 Happy developing!
 
