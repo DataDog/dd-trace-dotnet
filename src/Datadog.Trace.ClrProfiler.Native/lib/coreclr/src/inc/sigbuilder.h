@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 
 #ifndef _SIGBUILDER_H_
@@ -39,9 +38,9 @@ public:
     }
 
     ~SigBuilder();
-    
+
     SigBuilder(DWORD cbPreallocationSize);
-    
+
     PVOID GetSignature(DWORD * pdwLength)
     {
         LIMITED_METHOD_CONTRACT;

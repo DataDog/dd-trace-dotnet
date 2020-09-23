@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //
 
 //
@@ -96,38 +95,18 @@
 #endif
 #endif
 
-/* WCHAR */
-#if defined (SAFECRT_INCLUDE_REDEFINES)
-#if !defined(_WCHAR_T_DEFINED)
-typedef unsigned short WCHAR;
-#define _WCHAR_T_DEFINED
-#endif
-#endif
-
 /* _W64 */
 #if !defined(_W64)
-#if !defined(__midl) && (defined(_X86_) || defined(_M_IX86)) && _MSC_VER >= 1300
+#if !defined(__midl) && (defined(HOST_X86) || defined(_M_IX86)) && _MSC_VER >= 1300
 #define _W64 __w64
 #else
 #define _W64
 #endif
 #endif
 
-/* size_t */
-#if defined (SAFECRT_INCLUDE_REDEFINES)
-#if !defined(_SIZE_T_DEFINED)
-#if defined(_WIN64)
-typedef unsigned __int64    size_t;
-#else
-typedef _W64 unsigned int   size_t;
-#endif
-#define _SIZE_T_DEFINED
-#endif
-#endif
-
 /* uintptr_t */
 #if !defined(_UINTPTR_T_DEFINED)
-#if defined(_WIN64)
+#if defined(HOST_64BIT)
 typedef unsigned __int64    uintptr_t;
 #else
 typedef _W64 unsigned int   uintptr_t;
@@ -318,7 +297,7 @@ typedef int errno_t; /* standard */
 #endif
 #endif
 
-/* put a null terminator at the beginning of the string and then calls _SAFECRT__FILL_STRING; 
+/* put a null terminator at the beginning of the string and then calls _SAFECRT__FILL_STRING;
  * assume that the string has been validated with _SAFECRT__VALIDATE_STRING
  */
 #if !defined(_SAFECRT__RESET_STRING)
@@ -370,9 +349,6 @@ void __cdecl _invalid_parameter(const WCHAR *_Message, const WCHAR *_FunctionNam
 #if (_SAFECRT_USE_INLINES || _SAFECRT_IMPL) && !defined(_SAFECRT_DO_NOT_DEFINE_INVALID_PARAMETER)
 
 #ifndef STATUS_INVALID_PARAMETER
-#if defined (SAFECRT_INCLUDE_REDEFINES)
-typedef LONG NTSTATUS;
-#endif
 #define STATUS_INVALID_PARAMETER ((NTSTATUS)0xC000000DL)
 #endif
 
@@ -413,7 +389,6 @@ void __cdecl _invalid_parameter(const WCHAR *_Message, const WCHAR *_FunctionNam
 #define _vsntprintf_s   _vsnprintf_s
 #define _tscanf_s       scanf_s
 #define _tsscanf_s      sscanf_s
-#define _tsnscanf_s     _snscanf_s
 
 #elif defined(_UNICODE) || defined(UNICODE)
 
@@ -430,7 +405,6 @@ void __cdecl _invalid_parameter(const WCHAR *_Message, const WCHAR *_FunctionNam
 #define _vsntprintf_s   _vsnwprintf_s
 #define _tscanf_s       wscanf_s
 #define _tsscanf_s      swscanf_s
-#define _tsnscanf_s     _swnscanf_s
 
 #elif defined(_MBCS)
 
@@ -447,7 +421,6 @@ void __cdecl _invalid_parameter(const WCHAR *_Message, const WCHAR *_FunctionNam
 #define _sntprintf_s    _snprintf_s
 #define _tscanf_s       scanf_s
 #define _tsscanf_s      sscanf_s
-#define _tsnscanf_s     _snscanf_s
 
 #else
 
@@ -458,7 +431,7 @@ void __cdecl _invalid_parameter(const WCHAR *_Message, const WCHAR *_FunctionNam
 #endif /* _SAFECRT_DEFINE_TCS_MACROS */
 
 /* strcpy_s */
-/* 
+/*
  * strcpy_s, wcscpy_s copy string _Src into _Dst;
  * will call _SAFECRT_INVALID_PARAMETER if string _Src does not fit into _Dst
  */
@@ -479,18 +452,18 @@ errno_t __cdecl strcpy_s(char (&_Dst)[_SizeInBytes], const char *_Src)
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
 
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl strcpy_s(char *_Dst, size_t _SizeInBytes, const char *_Src)
 {
 
     char *p;
     size_t available;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     while ((*p++ = *_Src++) != 0 && --available > 0)
@@ -502,11 +475,11 @@ errno_t __cdecl strcpy_s(char *_Dst, size_t _SizeInBytes, const char *_Src)
        _SAFECRT__RESET_STRING(_Dst, _SizeInBytes);
        _SAFECRT__RETURN_BUFFER_TOO_SMALL(_Dst, _SizeInBytes);
     }
-    
+
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* wcscpy_s */
@@ -523,23 +496,23 @@ errno_t __cdecl wcscpy_s(WCHAR (&_Dst)[_SizeInWords], const WCHAR *_Src)
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl wcscpy_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src)
 {
     WCHAR *p;
     size_t available;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInWords);
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInWords);
- 
+
     p = _Dst;
     available = _SizeInWords;
     while ((*p++ = *_Src++) != 0 && --available > 0)
     {
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInWords);
@@ -548,7 +521,7 @@ errno_t __cdecl wcscpy_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src)
     _SAFECRT__FILL_STRING(_Dst, _SizeInWords, _SizeInWords - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* _mbscpy_s */
@@ -567,23 +540,23 @@ errno_t __cdecl _mbscpy_s(unsigned char (&_Dst)[_SizeInBytes], const unsigned ch
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbscpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsigned char *_Src)
 {
     unsigned char *p;
     size_t available;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     while ((*p++ = *_Src++) != 0 && --available > 0)
     {
     }
- 
+
     if (available == 0)
     {
         if (*_Src == 0 && _SAFECRT__ISMBBLEAD(p[-1]))
@@ -604,17 +577,17 @@ errno_t __cdecl _mbscpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsign
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
 
 /* strncpy_s */
-/* 
+/*
  * strncpy_s, wcsncpy_s copy at max _Count characters from string _Src into _Dst;
  * string _Dst will always be null-terminated;
  * will call _SAFECRT_INVALID_PARAMETER if there is not enough space in _Dst;
- * if _Count == _TRUNCATE, we will copy as many characters as we can from _Src into _Dst, and 
+ * if _Count == _TRUNCATE, we will copy as many characters as we can from _Src into _Dst, and
  *      return STRUNCATE if _Src does not entirely fit into _Dst (we will not call _SAFECRT_INVALID_PARAMETER);
  * if _Count == 0, then (_Dst == nullptr && _SizeInBytes == 0) is allowed
  */
@@ -631,19 +604,19 @@ errno_t __cdecl strncpy_s(char (&_Dst)[_SizeInBytes], const char *_Src, size_t _
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl strncpy_s(char *_Dst, size_t _SizeInBytes, const char *_Src, size_t _Count)
 {
     char *p;
     size_t available;
- 
+
     if (_Count == 0 && _Dst == nullptr && _SizeInBytes == 0)
     {
         /* this case is allowed; nothing to do */
         return 0;
     }
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
     if (_Count == 0)
@@ -653,7 +626,7 @@ errno_t __cdecl strncpy_s(char *_Dst, size_t _SizeInBytes, const char *_Src, siz
         return 0;
     }
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     if (_Count == _TRUNCATE)
@@ -672,7 +645,7 @@ errno_t __cdecl strncpy_s(char *_Dst, size_t _SizeInBytes, const char *_Src, siz
             *p = 0;
         }
     }
- 
+
     if (available == 0)
     {
         if (_Count == _TRUNCATE)
@@ -686,7 +659,7 @@ errno_t __cdecl strncpy_s(char *_Dst, size_t _SizeInBytes, const char *_Src, siz
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* wcsncpy_s */
@@ -703,19 +676,19 @@ errno_t __cdecl wcsncpy_s(WCHAR (&_Dst)[_SizeInWords], const WCHAR *_Src, size_t
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl wcsncpy_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src, size_t _Count)
 {
     WCHAR *p;
     size_t available;
- 
+
     if (_Count == 0 && _Dst == nullptr && _SizeInWords == 0)
     {
         /* this case is allowed; nothing to do */
         return 0;
     }
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInWords);
     if (_Count == 0)
@@ -725,7 +698,7 @@ errno_t __cdecl wcsncpy_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src, s
         return 0;
     }
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInWords);
- 
+
     p = _Dst;
     available = _SizeInWords;
     if (_Count == _TRUNCATE)
@@ -744,7 +717,7 @@ errno_t __cdecl wcsncpy_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src, s
             *p = 0;
         }
     }
- 
+
     if (available == 0)
     {
         if (_Count == _TRUNCATE)
@@ -758,7 +731,7 @@ errno_t __cdecl wcsncpy_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src, s
     _SAFECRT__FILL_STRING(_Dst, _SizeInWords, _SizeInWords - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* _mbsnbcpy_s */
@@ -777,19 +750,19 @@ errno_t __cdecl _mbsnbcpy_s(unsigned char (&_Dst)[_SizeInBytes], const unsigned 
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbsnbcpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsigned char *_Src, size_t _CountInBytes)
 {
     unsigned char *p;
     size_t available;
- 
+
     if (_CountInBytes == 0 && _Dst == nullptr && _SizeInBytes == 0)
     {
         /* this case is allowed; nothing to do */
         return 0;
     }
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
     if (_CountInBytes == 0)
@@ -799,7 +772,7 @@ errno_t __cdecl _mbsnbcpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsi
         return 0;
     }
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     if (_CountInBytes == _TRUNCATE)
@@ -818,7 +791,7 @@ errno_t __cdecl _mbsnbcpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsi
             *p++ = 0;
         }
     }
- 
+
     if (available == 0)
     {
         if ((*_Src == 0 || _CountInBytes == 1) && _SAFECRT__ISMBBLEAD(p[-1]))
@@ -852,7 +825,7 @@ errno_t __cdecl _mbsnbcpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsi
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
@@ -873,19 +846,19 @@ errno_t __cdecl _mbsncpy_s(unsigned char (&_Dst)[_SizeInBytes], const unsigned c
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbsncpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsigned char *_Src, size_t _CountInChars)
 {
     unsigned char *p;
     size_t available;
- 
+
     if (_CountInChars == 0 && _Dst == nullptr && _SizeInBytes == 0)
     {
         /* this case is allowed; nothing to do */
         return 0;
     }
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
     if (_CountInChars == 0)
@@ -895,7 +868,7 @@ errno_t __cdecl _mbsncpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsig
         return 0;
     }
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     if (_CountInChars == _TRUNCATE)
@@ -940,7 +913,7 @@ errno_t __cdecl _mbsncpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsig
             *p++ = 0;
         }
     }
- 
+
     if (available == 0)
     {
         if (_CountInChars == _TRUNCATE)
@@ -962,13 +935,13 @@ errno_t __cdecl _mbsncpy_s(unsigned char *_Dst, size_t _SizeInBytes, const unsig
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
 
 /* strcat_s */
-/* 
+/*
  * strcat_s, wcscat_s append string _Src to _Dst;
  * will call _SAFECRT_INVALID_PARAMETER if there is not enough space in _Dst
  */
@@ -985,17 +958,17 @@ errno_t __cdecl strcat_s(char (&_Dst)[_SizeInBytes], const char *_Src)
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl strcat_s(char *_Dst, size_t _SizeInBytes, const char *_Src)
 {
     char *p;
     size_t available;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     while (available > 0 && *p != 0)
@@ -1003,17 +976,17 @@ errno_t __cdecl strcat_s(char *_Dst, size_t _SizeInBytes, const char *_Src)
         p++;
         available--;
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInBytes);
         _SAFECRT__RETURN_DEST_NOT_NULL_TERMINATED(_Dst, _SizeInBytes);
     }
- 
+
     while ((*p++ = *_Src++) != 0 && --available > 0)
     {
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInBytes);
@@ -1022,7 +995,7 @@ errno_t __cdecl strcat_s(char *_Dst, size_t _SizeInBytes, const char *_Src)
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* wcscat_s */
@@ -1039,17 +1012,17 @@ errno_t __cdecl wcscat_s(WCHAR (&_Dst)[_SizeInWords], const WCHAR *_Src)
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl wcscat_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src)
 {
     WCHAR *p;
     size_t available;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInWords);
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInWords);
- 
+
     p = _Dst;
     available = _SizeInWords;
     while (available > 0 && *p != 0)
@@ -1057,17 +1030,17 @@ errno_t __cdecl wcscat_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src)
         p++;
         available--;
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInWords);
         _SAFECRT__RETURN_DEST_NOT_NULL_TERMINATED(_Dst, _SizeInWords);
     }
- 
+
     while ((*p++ = *_Src++) != 0 && --available > 0)
     {
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInWords);
@@ -1076,7 +1049,7 @@ errno_t __cdecl wcscat_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src)
     _SAFECRT__FILL_STRING(_Dst, _SizeInWords, _SizeInWords - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* _mbscat_s */
@@ -1095,17 +1068,17 @@ errno_t __cdecl _mbscat_s(unsigned char (&_Dst)[_SizeInBytes], const unsigned ch
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbscat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsigned char *_Src)
 {
     unsigned char *p;
     size_t available;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
     _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     while (available > 0 && *p != 0)
@@ -1113,7 +1086,7 @@ errno_t __cdecl _mbscat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsign
         p++;
         available--;
     }
- 
+
     if (available == 0)
     {
         if (*p == 0 && _SAFECRT__ISMBBLEAD(p[-1]))
@@ -1136,11 +1109,11 @@ errno_t __cdecl _mbscat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsign
         *p = 0;
         available++;
     }
- 
+
     while ((*p++ = *_Src++) != 0 && --available > 0)
     {
     }
- 
+
     if (available == 0)
     {
         if (*_Src == 0 && _SAFECRT__ISMBBLEAD(p[-1]))
@@ -1161,17 +1134,17 @@ errno_t __cdecl _mbscat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsign
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
 
 /* strncat_s */
-/* 
+/*
  * strncat_s, wcsncat_s append at max _Count characters from string _Src to _Dst;
  * string _Dst will always be null-terminated;
  * will call _SAFECRT_INVALID_PARAMETER if there is not enough space in _Dst;
- * if _Count == _TRUNCATE, we will append as many characters as we can from _Src to _Dst, and 
+ * if _Count == _TRUNCATE, we will append as many characters as we can from _Src to _Dst, and
  *      return STRUNCATE if _Src does not entirely fit into _Dst (we will not call _SAFECRT_INVALID_PARAMETER);
  * if _Count == 0, then (_Dst == nullptr && _SizeInBytes == 0) is allowed
  */
@@ -1188,7 +1161,7 @@ errno_t __cdecl strncat_s(char (&_Dst)[_SizeInBytes], const char *_Src, size_t _
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl strncat_s(char *_Dst, size_t _SizeInBytes, const char *_Src, size_t _Count)
 {
@@ -1205,7 +1178,7 @@ errno_t __cdecl strncat_s(char *_Dst, size_t _SizeInBytes, const char *_Src, siz
     {
         _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
     }
- 
+
     p = _Dst;
     available = _SizeInBytes;
     while (available > 0 && *p != 0)
@@ -1213,13 +1186,13 @@ errno_t __cdecl strncat_s(char *_Dst, size_t _SizeInBytes, const char *_Src, siz
         p++;
         available--;
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInBytes);
         _SAFECRT__RETURN_DEST_NOT_NULL_TERMINATED(_Dst, _SizeInBytes);
     }
- 
+
     if (_Count == _TRUNCATE)
     {
         while ((*p++ = *_Src++) != 0 && --available > 0)
@@ -1237,7 +1210,7 @@ errno_t __cdecl strncat_s(char *_Dst, size_t _SizeInBytes, const char *_Src, siz
             *p = 0;
         }
     }
- 
+
     if (available == 0)
     {
         if (_Count == _TRUNCATE)
@@ -1251,7 +1224,7 @@ errno_t __cdecl strncat_s(char *_Dst, size_t _SizeInBytes, const char *_Src, siz
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* wcsncat_s */
@@ -1268,7 +1241,7 @@ errno_t __cdecl wcsncat_s(WCHAR (&_Dst)[_SizeInWords], const WCHAR *_Src, size_t
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl wcsncat_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src, size_t _Count)
 {
@@ -1285,7 +1258,7 @@ errno_t __cdecl wcsncat_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src, s
     {
         _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInWords);
     }
- 
+
     p = _Dst;
     available = _SizeInWords;
     while (available > 0 && *p != 0)
@@ -1293,13 +1266,13 @@ errno_t __cdecl wcsncat_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src, s
         p++;
         available--;
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInWords);
         _SAFECRT__RETURN_DEST_NOT_NULL_TERMINATED(_Dst, _SizeInWords);
     }
- 
+
     if (_Count == _TRUNCATE)
     {
         while ((*p++ = *_Src++) != 0 && --available > 0)
@@ -1317,7 +1290,7 @@ errno_t __cdecl wcsncat_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src, s
             *p = 0;
         }
     }
- 
+
     if (available == 0)
     {
         if (_Count == _TRUNCATE)
@@ -1331,7 +1304,7 @@ errno_t __cdecl wcsncat_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Src, s
     _SAFECRT__FILL_STRING(_Dst, _SizeInWords, _SizeInWords - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* _mbsnbcat_s */
@@ -1350,7 +1323,7 @@ errno_t __cdecl _mbsnbcat_s(unsigned char (&_Dst)[_SizeInBytes], const unsigned 
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbsnbcat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsigned char *_Src, size_t _CountInBytes)
 {
@@ -1367,7 +1340,7 @@ errno_t __cdecl _mbsnbcat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsi
     {
         _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
     }
- 
+
     p = _Dst;
     available = _SizeInBytes;
     while (available > 0 && *p != 0)
@@ -1375,7 +1348,7 @@ errno_t __cdecl _mbsnbcat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsi
         p++;
         available--;
     }
- 
+
     if (available == 0)
     {
         if (*p == 0 && _SAFECRT__ISMBBLEAD(p[-1]))
@@ -1398,7 +1371,7 @@ errno_t __cdecl _mbsnbcat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsi
         *p = 0;
         available++;
     }
- 
+
     if (_CountInBytes == _TRUNCATE)
     {
         while ((*p++ = *_Src++) != 0 && --available > 0)
@@ -1416,7 +1389,7 @@ errno_t __cdecl _mbsnbcat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsi
             *p++ = 0;
         }
     }
- 
+
     if (available == 0)
     {
         if ((*_Src == 0 || _CountInBytes == 1) && _SAFECRT__ISMBBLEAD(p[-1]))
@@ -1450,7 +1423,7 @@ errno_t __cdecl _mbsnbcat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsi
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
@@ -1471,7 +1444,7 @@ errno_t __cdecl _mbsncat_s(unsigned char (&_Dst)[_SizeInBytes], const unsigned c
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbsncat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsigned char *_Src, size_t _CountInChars)
 {
@@ -1488,7 +1461,7 @@ errno_t __cdecl _mbsncat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsig
     {
         _SAFECRT__VALIDATE_POINTER_RESET_STRING(_Src, _Dst, _SizeInBytes);
     }
- 
+
     p = _Dst;
     available = _SizeInBytes;
     while (available > 0 && *p != 0)
@@ -1496,7 +1469,7 @@ errno_t __cdecl _mbsncat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsig
         p++;
         available--;
     }
- 
+
     if (available == 0)
     {
         if (*p == 0 && _SAFECRT__ISMBBLEAD(p[-1]))
@@ -1519,7 +1492,7 @@ errno_t __cdecl _mbsncat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsig
         *p = 0;
         available++;
     }
- 
+
     if (_CountInChars == _TRUNCATE)
     {
         while ((*p++ = *_Src++) != 0 && --available > 0)
@@ -1562,7 +1535,7 @@ errno_t __cdecl _mbsncat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsig
             *p++ = 0;
         }
     }
- 
+
     if (available == 0)
     {
         if (_CountInChars == _TRUNCATE)
@@ -1584,13 +1557,13 @@ errno_t __cdecl _mbsncat_s(unsigned char *_Dst, size_t _SizeInBytes, const unsig
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
 
 /* _strset_s */
-/* 
+/*
  * _strset_s, _wcsset_s ;
  * will call _SAFECRT_INVALID_PARAMETER if _Dst is not null terminated.
  */
@@ -1607,23 +1580,23 @@ errno_t __cdecl _strset_s(char (&_Dst)[_SizeInBytes], int _Value)
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _strset_s(char *_Dst, size_t _SizeInBytes, int _Value)
 {
     char *p;
     size_t available;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
-    
+
     p = _Dst;
     available = _SizeInBytes;
     while (*p != 0 && --available > 0)
     {
         *p++ = (char)_Value;
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInBytes);
@@ -1632,7 +1605,7 @@ errno_t __cdecl _strset_s(char *_Dst, size_t _SizeInBytes, int _Value)
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* _wcsset_s */
@@ -1649,23 +1622,23 @@ errno_t __cdecl _wcsset_s(WCHAR (&_Dst)[_SizeInWords], WCHAR _Value)
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _wcsset_s(WCHAR *_Dst, size_t _SizeInWords, WCHAR _Value)
 {
     WCHAR *p;
     size_t available;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInWords);
-    
+
     p = _Dst;
     available = _SizeInWords;
     while (*p != 0 && --available > 0)
     {
         *p++ = (WCHAR)_Value;
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInWords);
@@ -1674,7 +1647,7 @@ errno_t __cdecl _wcsset_s(WCHAR *_Dst, size_t _SizeInWords, WCHAR _Value)
     _SAFECRT__FILL_STRING(_Dst, _SizeInWords, _SizeInWords - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* _mbsset_s */
@@ -1693,7 +1666,7 @@ errno_t __cdecl _mbsset_s(unsigned char (&_Dst)[_SizeInBytes], unsigned int _Val
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbsset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned int _Value)
 {
@@ -1701,10 +1674,10 @@ errno_t __cdecl _mbsset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned int
     unsigned char *p;
     size_t available;
     unsigned char highval, lowval;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     highval = (unsigned char)(_Value >> 8);
@@ -1751,7 +1724,7 @@ errno_t __cdecl _mbsset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned int
             *p++ = lowval;
         }
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInBytes);
@@ -1767,13 +1740,13 @@ errno_t __cdecl _mbsset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned int
         return 0;
     }
 }
- 
+
 #endif
 
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
 
 /* _strnset_s */
-/* 
+/*
  * _strnset_s, _wcsnset_s ;
  * will call _SAFECRT_INVALID_PARAMETER if _Dst is not null terminated.
  */
@@ -1790,13 +1763,13 @@ errno_t __cdecl _strnset_s(char (&_Dst)[_SizeInBytes], int _Value, size_t _Count
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _strnset_s(char *_Dst, size_t _SizeInBytes, int _Value, size_t _Count)
 {
     char *p;
     size_t available;
- 
+
     /* validation section */
     if (_Count == 0 && _Dst == nullptr && _SizeInBytes == 0)
     {
@@ -1804,7 +1777,7 @@ errno_t __cdecl _strnset_s(char *_Dst, size_t _SizeInBytes, int _Value, size_t _
         return 0;
     }
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
-    
+
     p = _Dst;
     available = _SizeInBytes;
     while (*p != 0 && _Count > 0 && --available > 0)
@@ -1812,7 +1785,7 @@ errno_t __cdecl _strnset_s(char *_Dst, size_t _SizeInBytes, int _Value, size_t _
         *p++ = (char)_Value;
         --_Count;
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInBytes);
@@ -1825,7 +1798,7 @@ errno_t __cdecl _strnset_s(char *_Dst, size_t _SizeInBytes, int _Value, size_t _
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, _SizeInBytes - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* _wcsnset_s */
@@ -1842,13 +1815,13 @@ errno_t __cdecl _wcsnset_s(WCHAR (&_Dst)[_SizeInWords], WCHAR _Value, size_t _Co
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _wcsnset_s(WCHAR *_Dst, size_t _SizeInWords, WCHAR _Value, size_t _Count)
 {
     WCHAR *p;
     size_t available;
- 
+
     /* validation section */
     if (_Count == 0 && _Dst == nullptr && _SizeInWords == 0)
     {
@@ -1856,7 +1829,7 @@ errno_t __cdecl _wcsnset_s(WCHAR *_Dst, size_t _SizeInWords, WCHAR _Value, size_
         return 0;
     }
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInWords);
-    
+
     p = _Dst;
     available = _SizeInWords;
     while (*p != 0 && _Count > 0 && --available > 0)
@@ -1864,7 +1837,7 @@ errno_t __cdecl _wcsnset_s(WCHAR *_Dst, size_t _SizeInWords, WCHAR _Value, size_
         *p++ = (WCHAR)_Value;
         --_Count;
     }
- 
+
     if (available == 0)
     {
         _SAFECRT__RESET_STRING(_Dst, _SizeInWords);
@@ -1877,7 +1850,7 @@ errno_t __cdecl _wcsnset_s(WCHAR *_Dst, size_t _SizeInWords, WCHAR _Value, size_
     _SAFECRT__FILL_STRING(_Dst, _SizeInWords, _SizeInWords - available + 1);
     return 0;
 }
- 
+
 #endif
 
 /* _mbsnbset_s */
@@ -1896,7 +1869,7 @@ errno_t __cdecl _mbsnbset_s(unsigned char (&_Dst)[_SizeInBytes], unsigned int _V
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbsnbset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned int _Value, size_t _CountInBytes)
 {
@@ -1904,7 +1877,7 @@ errno_t __cdecl _mbsnbset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned i
     unsigned char *p;
     size_t available;
     unsigned char highval, lowval;
- 
+
     /* validation section */
     if (_CountInBytes == 0 && _Dst == nullptr && _SizeInBytes == 0)
     {
@@ -1912,7 +1885,7 @@ errno_t __cdecl _mbsnbset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned i
         return 0;
     }
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     highval = (unsigned char)(_Value >> 8);
@@ -1982,7 +1955,7 @@ errno_t __cdecl _mbsnbset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned i
         return 0;
     }
 }
- 
+
 #endif
 
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
@@ -2003,7 +1976,7 @@ errno_t __cdecl _mbsnset_s(unsigned char (&_Dst)[_SizeInBytes], unsigned int _Va
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbsnset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned int _Value, size_t _CountInChars)
 {
@@ -2011,7 +1984,7 @@ errno_t __cdecl _mbsnset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned in
     unsigned char *p;
     size_t available;
     unsigned char highval, lowval;
- 
+
     /* validation section */
     if (_CountInChars == 0 && _Dst == nullptr && _SizeInBytes == 0)
     {
@@ -2019,7 +1992,7 @@ errno_t __cdecl _mbsnset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned in
         return 0;
     }
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
- 
+
     p = _Dst;
     available = _SizeInBytes;
     highval = (unsigned char)(_Value >> 8);
@@ -2088,7 +2061,7 @@ errno_t __cdecl _mbsnset_s(unsigned char *_Dst, size_t _SizeInBytes, unsigned in
         return 0;
     }
 }
- 
+
 #endif
 
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
@@ -2109,7 +2082,7 @@ errno_t __cdecl _mbccpy_s(unsigned char (&_Dst)[_SizeInBytes], int *_PCopied, co
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _mbccpy_s(unsigned char *_Dst, size_t _SizeInBytes, int *_PCopied, const unsigned char *_Src)
 {
@@ -2121,7 +2094,7 @@ errno_t __cdecl _mbccpy_s(unsigned char *_Dst, size_t _SizeInBytes, int *_PCopie
         *_Dst = '\0';
         _SAFECRT__RETURN_EINVAL;
     }
- 
+
     /* copy */
     if (_SAFECRT__ISMBBLEAD(*_Src))
     {
@@ -2148,7 +2121,7 @@ errno_t __cdecl _mbccpy_s(unsigned char *_Dst, size_t _SizeInBytes, int *_PCopie
         *_Dst = *_Src;
         if (_PCopied != nullptr) { *_PCopied = 1; };
     }
- 
+
     return 0;
 }
 #endif
@@ -2156,7 +2129,7 @@ errno_t __cdecl _mbccpy_s(unsigned char *_Dst, size_t _SizeInBytes, int *_PCopie
 #endif /* _SAFECRT_DEFINE_MBS_FUNCTIONS */
 
 /* strtok_s */
-/* 
+/*
  * strtok_s, wcstok_s ;
  * uses _Context to keep track of the position in the string.
  */
@@ -2164,7 +2137,7 @@ _SAFECRT__EXTERN_C
 char * __cdecl strtok_s(char *_String, const char *_Control, char **_Context);
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 char * __cdecl strtok_s(char *_String, const char *_Control, char **_Context)
 {
@@ -2172,23 +2145,23 @@ char * __cdecl strtok_s(char *_String, const char *_Control, char **_Context)
     const unsigned char *ctl = (const unsigned char *)_Control;
     unsigned char map[32];
     int count;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_POINTER_ERROR_RETURN(_Context, EINVAL, nullptr);
     _SAFECRT__VALIDATE_POINTER_ERROR_RETURN(_Control, EINVAL, nullptr);
     _SAFECRT__VALIDATE_CONDITION_ERROR_RETURN(_String != nullptr || *_Context != nullptr, EINVAL, nullptr);
- 
+
     /* Clear control map */
     for (count = 0; count < 32; count++)
     {
         map[count] = 0;
     }
- 
+
     /* Set bits in delimiter table */
     do {
         map[*ctl >> 3] |= (1 << (*ctl & 7));
     } while (*ctl++);
- 
+
     /* If string is nullptr, set str to the saved
     * pointer (i.e., continue breaking tokens out of the string
     * from the last strtok call) */
@@ -2200,7 +2173,7 @@ char * __cdecl strtok_s(char *_String, const char *_Control, char **_Context)
     {
         str = (unsigned char *)*_Context;
     }
- 
+
     /* Find beginning of token (skip over leading delimiters). Note that
     * there is no token iff this loop sets str to point to the terminal
     * null (*str == 0) */
@@ -2208,9 +2181,9 @@ char * __cdecl strtok_s(char *_String, const char *_Control, char **_Context)
     {
         str++;
     }
- 
+
     _String = (char *)str;
- 
+
     /* Find the end of the token. If it is not the end of the string,
     * put a null there. */
     for ( ; *str != 0 ; str++ )
@@ -2221,10 +2194,10 @@ char * __cdecl strtok_s(char *_String, const char *_Control, char **_Context)
             break;
         }
     }
- 
+
     /* Update context */
     *_Context = (char *)str;
- 
+
     /* Determine if a token has been found. */
     if (_String == (char *)str)
     {
@@ -2242,24 +2215,24 @@ _SAFECRT__EXTERN_C
 WCHAR * __cdecl wcstok_s(WCHAR *_String, const WCHAR *_Control, WCHAR **_Context);
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 WCHAR * __cdecl wcstok_s(WCHAR *_String, const WCHAR *_Control, WCHAR **_Context)
 {
     WCHAR *token;
     const WCHAR *ctl;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_POINTER_ERROR_RETURN(_Context, EINVAL, nullptr);
     _SAFECRT__VALIDATE_POINTER_ERROR_RETURN(_Control, EINVAL, nullptr);
     _SAFECRT__VALIDATE_CONDITION_ERROR_RETURN(_String != nullptr || *_Context != nullptr, EINVAL, nullptr);
- 
+
     /* If string==nullptr, continue with previous string */
     if (!_String)
     {
         _String = *_Context;
     }
- 
+
     /* Find beginning of token (skip over leading delimiters). Note that
     * there is no token iff this loop sets string to point to the terminal null. */
     for ( ; *_String != 0 ; _String++)
@@ -2271,9 +2244,9 @@ WCHAR * __cdecl wcstok_s(WCHAR *_String, const WCHAR *_Control, WCHAR **_Context
             break;
         }
     }
- 
+
     token = _String;
- 
+
     /* Find the end of the token. If it is not the end of the string,
     * put a null there. */
     for ( ; *_String != 0 ; _String++)
@@ -2286,10 +2259,10 @@ WCHAR * __cdecl wcstok_s(WCHAR *_String, const WCHAR *_Control, WCHAR **_Context
             break;
         }
     }
- 
+
     /* Update the context */
     *_Context = _String;
- 
+
     /* Determine if a token has been found. */
     if (token == _String)
     {
@@ -2309,25 +2282,25 @@ _SAFECRT__EXTERN_C
 unsigned char * __cdecl _mbstok_s(unsigned char *_String, const unsigned char *_Control, unsigned char **_Context);
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 unsigned char * __cdecl _mbstok_s(unsigned char *_String, const unsigned char *_Control, unsigned char **_Context)
 {
     unsigned char *token;
     const unsigned char *ctl;
     int dbc;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_POINTER_ERROR_RETURN(_Context, EINVAL, nullptr);
     _SAFECRT__VALIDATE_POINTER_ERROR_RETURN(_Control, EINVAL, nullptr);
     _SAFECRT__VALIDATE_CONDITION_ERROR_RETURN(_String != nullptr || *_Context != nullptr, EINVAL, nullptr);
- 
+
     /* If string==nullptr, continue with previous string */
     if (!_String)
     {
         _String = *_Context;
     }
- 
+
     /* Find beginning of token (skip over leading delimiters). Note that
     * there is no token iff this loop sets string to point to the terminal null. */
     for ( ; *_String != 0; _String++)
@@ -2363,9 +2336,9 @@ unsigned char * __cdecl _mbstok_s(unsigned char *_String, const unsigned char *_
             }
         }
     }
- 
+
     token = _String;
- 
+
     /* Find the end of the token. If it is not the end of the string,
     * put a null there. */
     for ( ; *_String != 0; _String++)
@@ -2407,10 +2380,10 @@ unsigned char * __cdecl _mbstok_s(unsigned char *_String, const unsigned char *_
             }
         }
     }
- 
+
     /* Update the context */
     *_Context = _String;
- 
+
     /* Determine if a token has been found. */
     if (token == _String)
     {
@@ -2478,7 +2451,7 @@ size_t __cdecl wcsnlen(const WCHAR *inString, size_t inMaxSize)
 #endif // PAL_STDCPP_COMPAT
 
 /* _makepath_s */
-/* 
+/*
  * _makepath_s, _wmakepath_s build up a path starting from the specified components;
  * will call _SAFECRT_INVALID_PARAMETER if there is not enough space in _Dst;
  * any of _Drive, _Dir, _Filename and _Ext can be nullptr
@@ -2496,17 +2469,17 @@ errno_t __cdecl _makepath_s(char (&_Dst)[_SizeInBytes], const char *_Drive, cons
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _makepath_s(char *_Dst, size_t _SizeInBytes, const char *_Drive, const char *_Dir, const char *_Filename, const char *_Ext)
 {
     size_t written;
     const char *p;
     char *d;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInBytes);
- 
+
     /* copy drive */
     written = 0;
     d = _Dst;
@@ -2520,7 +2493,7 @@ errno_t __cdecl _makepath_s(char *_Dst, size_t _SizeInBytes, const char *_Drive,
         *d++ = *_Drive;
         *d++ = ':';
     }
- 
+
     /* copy dir */
     p = _Dir;
     if (p != nullptr && *p != 0)
@@ -2532,7 +2505,7 @@ errno_t __cdecl _makepath_s(char *_Dst, size_t _SizeInBytes, const char *_Drive,
             }
             *d++ = *p++;
         } while (*p != 0);
- 
+
         p = (const char *)_SAFECRT__MBSDEC((const unsigned char *)_Dir, (const unsigned char *)p);
         if (*p != '/' && *p != '\\')
         {
@@ -2543,12 +2516,12 @@ errno_t __cdecl _makepath_s(char *_Dst, size_t _SizeInBytes, const char *_Drive,
             *d++ = '\\';
         }
     }
- 
+
     /* copy fname */
     p = _Filename;
     if (p != nullptr)
     {
-        while (*p != 0) 
+        while (*p != 0)
         {
             if(++written >= _SizeInBytes)
             {
@@ -2557,7 +2530,7 @@ errno_t __cdecl _makepath_s(char *_Dst, size_t _SizeInBytes, const char *_Drive,
             *d++ = *p++;
         }
     }
- 
+
     /* copy extension; check to see if a '.' needs to be inserted */
     p = _Ext;
     if (p != nullptr)
@@ -2579,7 +2552,7 @@ errno_t __cdecl _makepath_s(char *_Dst, size_t _SizeInBytes, const char *_Drive,
             *d++ = *p++;
         }
     }
- 
+
     if(++written > _SizeInBytes)
     {
         goto error_return;
@@ -2587,7 +2560,7 @@ errno_t __cdecl _makepath_s(char *_Dst, size_t _SizeInBytes, const char *_Drive,
     *d = 0;
     _SAFECRT__FILL_STRING(_Dst, _SizeInBytes, written);
     return 0;
- 
+
 error_return:
     _SAFECRT__RESET_STRING(_Dst, _SizeInBytes);
     _SAFECRT__RETURN_BUFFER_TOO_SMALL(_Dst, _SizeInBytes);
@@ -2610,17 +2583,17 @@ errno_t __cdecl _wmakepath_s(WCHAR (&_Dst)[_SizeInWords], const WCHAR *_Drive, c
 #endif
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _wmakepath_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Drive, const WCHAR *_Dir, const WCHAR *_Filename, const WCHAR *_Ext)
 {
     size_t written;
     const WCHAR *p;
     WCHAR *d;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_STRING(_Dst, _SizeInWords);
- 
+
     /* copy drive */
     written = 0;
     d = _Dst;
@@ -2634,7 +2607,7 @@ errno_t __cdecl _wmakepath_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Dri
         *d++ = *_Drive;
         *d++ = L':';
     }
- 
+
     /* copy dir */
     p = _Dir;
     if (p != nullptr && *p != 0)
@@ -2646,7 +2619,7 @@ errno_t __cdecl _wmakepath_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Dri
             }
             *d++ = *p++;
         } while (*p != 0);
- 
+
         p = p - 1;
         if (*p != L'/' && *p != L'\\')
         {
@@ -2657,12 +2630,12 @@ errno_t __cdecl _wmakepath_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Dri
             *d++ = L'\\';
         }
     }
- 
+
     /* copy fname */
     p = _Filename;
     if (p != nullptr)
     {
-        while (*p != 0) 
+        while (*p != 0)
         {
             if(++written >= _SizeInWords)
             {
@@ -2671,7 +2644,7 @@ errno_t __cdecl _wmakepath_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Dri
             *d++ = *p++;
         }
     }
- 
+
     /* copy extension; check to see if a '.' needs to be inserted */
     p = _Ext;
     if (p != nullptr)
@@ -2693,7 +2666,7 @@ errno_t __cdecl _wmakepath_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Dri
             *d++ = *p++;
         }
     }
- 
+
     if(++written > _SizeInWords)
     {
         goto error_return;
@@ -2701,7 +2674,7 @@ errno_t __cdecl _wmakepath_s(WCHAR *_Dst, size_t _SizeInWords, const WCHAR *_Dri
     *d = 0;
     _SAFECRT__FILL_STRING(_Dst, _SizeInWords, written);
     return 0;
- 
+
 error_return:
     _SAFECRT__RESET_STRING(_Dst, _SizeInWords);
     _SAFECRT__RETURN_BUFFER_TOO_SMALL(_Dst, _SizeInWords);
@@ -2711,7 +2684,7 @@ error_return:
 #endif
 
 /* _splitpath_s */
-/* 
+/*
  * _splitpath_s, _wsplitpath_s decompose a path into the specified components;
  * will call _SAFECRT_INVALID_PARAMETER if there is not enough space in
  *      any of _Drive, _Dir, _Filename and _Ext;
@@ -2731,7 +2704,7 @@ errno_t __cdecl _splitpath_s(
 /* no C++ overload for _splitpath_s */
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _splitpath_s(
     const char *_Path,
@@ -2747,7 +2720,7 @@ errno_t __cdecl _splitpath_s(
     int drive_set = 0;
     size_t length = 0;
     int bEinval = 0;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_POINTER(_Path);
     if ((_Drive == nullptr && _DriveSize != 0) || (_Drive != nullptr && _DriveSize == 0))
@@ -2766,13 +2739,13 @@ errno_t __cdecl _splitpath_s(
     {
         goto error_einval;
     }
- 
+
     /* check if _Path begins with the longpath prefix */
     if (_Path[0] == '\\' && _Path[1] == '\\' && _Path[2] == '?' && _Path[3] == '\\')
     {
         _Path += 4;
     }
- 
+
     /* extract drive letter and ':', if any */
     if (!drive_set)
     {
@@ -2803,7 +2776,7 @@ errno_t __cdecl _splitpath_s(
             }
         }
     }
- 
+
     /* extract path string, if any. _Path now points to the first character
      * of the path, if any, or the filename or extension, if no path was
      * specified.  Scan ahead for the last occurence, if any, of a '/' or
@@ -2827,7 +2800,7 @@ errno_t __cdecl _splitpath_s(
         {
             tmp++;
         }
-        else 
+        else
         {
             if (*tmp == '/' || *tmp == '\\')
             {
@@ -2840,8 +2813,8 @@ errno_t __cdecl _splitpath_s(
             }
         }
     }
- 
-    if (last_slash != nullptr) 
+
+    if (last_slash != nullptr)
     {
         /* found a path - copy up through last_slash or max characters
          * allowed, whichever is smaller
@@ -2864,7 +2837,7 @@ errno_t __cdecl _splitpath_s(
             _SAFECRT__RESET_STRING(_Dir, _DirSize);
         }
     }
- 
+
     /* extract file name and extension, if any.  Path now points to the
      * first character of the file name, if any, or the extension if no
      * file name was given.  Dot points to the '.' beginning the extension,
@@ -2914,12 +2887,12 @@ errno_t __cdecl _splitpath_s(
             _SAFECRT__RESET_STRING(_Ext, _ExtSize);
         }
     }
- 
+
     return 0;
- 
+
 error_einval:
     bEinval = 1;
- 
+
 error_erange:
     if (_Drive != nullptr && _DriveSize > 0)
     {
@@ -2937,12 +2910,12 @@ error_erange:
     {
         _SAFECRT__RESET_STRING(_Ext, _ExtSize);
     }
- 
+
     if (bEinval)
     {
         _SAFECRT__RETURN_EINVAL;
     }
- 
+
     _SAFECRT__RETURN_BUFFER_TOO_SMALL(_Strings, _StringSizes);
     /* should never happen, but compiler can't tell */
     return EINVAL;
@@ -2962,7 +2935,7 @@ errno_t __cdecl _wsplitpath_s(
 /* no C++ overload for _wsplitpath_s */
 
 #if _SAFECRT_USE_INLINES || _SAFECRT_IMPL
- 
+
 _SAFECRT__INLINE
 errno_t __cdecl _wsplitpath_s(
     const WCHAR *_Path,
@@ -2978,7 +2951,7 @@ errno_t __cdecl _wsplitpath_s(
     int drive_set = 0;
     size_t length = 0;
     int bEinval = 0;
- 
+
     /* validation section */
     _SAFECRT__VALIDATE_POINTER(_Path);
     if ((_Drive == nullptr && _DriveSize != 0) || (_Drive != nullptr && _DriveSize == 0))
@@ -2997,13 +2970,13 @@ errno_t __cdecl _wsplitpath_s(
     {
         goto error_einval;
     }
- 
+
     /* check if _Path begins with the longpath prefix */
     if (_Path[0] == L'\\' && _Path[1] == L'\\' && _Path[2] == L'?' && _Path[3] == L'\\')
     {
         _Path += 4;
     }
- 
+
     /* extract drive letter and ':', if any */
     if (!drive_set)
     {
@@ -3034,7 +3007,7 @@ errno_t __cdecl _wsplitpath_s(
             }
         }
     }
- 
+
     /* extract path string, if any. _Path now points to the first character
      * of the path, if any, or the filename or extension, if no path was
      * specified.  Scan ahead for the last occurence, if any, of a '/' or
@@ -3059,8 +3032,8 @@ errno_t __cdecl _wsplitpath_s(
             }
         }
     }
- 
-    if (last_slash != nullptr) 
+
+    if (last_slash != nullptr)
     {
         /* found a path - copy up through last_slash or max characters
          * allowed, whichever is smaller
@@ -3083,7 +3056,7 @@ errno_t __cdecl _wsplitpath_s(
             _SAFECRT__RESET_STRING(_Dir, _DirSize);
         }
     }
- 
+
     /* extract file name and extension, if any.  Path now points to the
      * first character of the file name, if any, or the extension if no
      * file name was given.  Dot points to the '.' beginning the extension,
@@ -3133,12 +3106,12 @@ errno_t __cdecl _wsplitpath_s(
             _SAFECRT__RESET_STRING(_Ext, _ExtSize);
         }
     }
- 
+
     return 0;
- 
+
 error_einval:
     bEinval = 1;
- 
+
 error_erange:
     if (_Drive != nullptr && _DriveSize > 0)
     {
@@ -3156,12 +3129,12 @@ error_erange:
     {
         _SAFECRT__RESET_STRING(_Ext, _ExtSize);
     }
- 
+
     if (bEinval)
     {
         _SAFECRT__RETURN_EINVAL;
     }
- 
+
     _SAFECRT__RETURN_BUFFER_TOO_SMALL(_Strings, _StringSizes);
     /* should never happen, but compiler can't tell */
     return EINVAL;
@@ -3169,7 +3142,7 @@ error_erange:
 #endif
 
 /* sprintf_s, vsprintf_s */
-/* 
+/*
  * sprintf_s, swprintf_s, vsprintf_s, vswprintf_s format a string and copy it into _Dst;
  * need safecrt.lib and msvcrt.dll;
  * will call _SAFECRT_INVALID_PARAMETER if there is not enough space in _Dst;
@@ -3238,7 +3211,7 @@ int __cdecl vswprintf_s(WCHAR (&_Dst)[_SizeInWords], const WCHAR *_Format, va_li
 /* no inline version of swprintf_s, vswprintf_s */
 
 /* _snprintf_s, _vsnprintf_s */
-/* 
+/*
  * _snprintf_s, _snwprintf_s, _vsnprintf_s, _vsnwprintf_s format a string and copy at max _Count characters into _Dst;
  * need safecrt.lib and msvcrt.dll;
  * string _Dst will always be null-terminated;
@@ -3249,7 +3222,7 @@ int __cdecl vswprintf_s(WCHAR (&_Dst)[_SizeInWords], const WCHAR *_Format, va_li
  * return a negative number if something goes wrong with mbcs conversions (we will not call _SAFECRT_INVALID_PARAMETER);
  * _SizeInBytes/_SizeInWords must be <= (INT_MAX / sizeof(char/WCHAR));
  * cannot be used without safecrt.lib;
- * if _Count == _TRUNCATE, we will copy into _Dst as many characters as we can, and 
+ * if _Count == _TRUNCATE, we will copy into _Dst as many characters as we can, and
  *      return -1 if the formatted string does not entirely fit into _Dst (we will not call _SAFECRT_INVALID_PARAMETER);
  * if _Count == 0, then (_Dst == nullptr && _SizeInBytes == 0) is allowed
  */
@@ -3348,14 +3321,6 @@ int __cdecl swscanf_s(const WCHAR *_String, const WCHAR *_Format, ...);
 /* no C++ overload for swscanf_s */
 
 /* no inline version of swscanf_s */
-
-/* _snscanf_s */
-_SAFECRT__EXTERN_C
-int __cdecl _snscanf_s(const char *_String, size_t _Count, const char *_Format, ...);
-
-/* no C++ overload for snscanf_s */
-
-/* no inline version of snscanf_s */
 
 /* _swnscanf_s */
 _SAFECRT__EXTERN_C

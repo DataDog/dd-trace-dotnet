@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 //
 // This file is used to describe the different types of Crst and their dependencies on other Crst types (in
@@ -105,7 +104,7 @@ Crst AssemblyDependencyGraph
 End
 
 Crst AvailableParamTypes
-    AcquiredBefore IbcProfile LoaderHeap
+    AcquiredBefore ModuleLookupTable IbcProfile LoaderHeap
 End
 
 Crst BaseDomain
@@ -133,9 +132,6 @@ Crst ClrNotification
     Unordered
 End
 
-Crst CrstCLRPrivBinderLocalWinMDPath
-End
-
 Crst CLRPrivBinderMaps
 End
 
@@ -156,12 +152,8 @@ Crst Contexts
                    StubUnwindInfoHeapSegments SyncBlockCache TypeIDMap UnresolvedClassLock
 End
 
-Crst CoreCLRBinderLog
-	Unordered
-End
-
 Crst CSPCache
-    AcquiredBefore JumpStubCache 
+    AcquiredBefore JumpStubCache
 End
 
 Crst DeadlockDetection
@@ -169,14 +161,14 @@ End
 
 Crst DebuggerController
     // AcquiredBefore DebuggerHeapLock DebuggerJitInfo LoaderHeap
-    
-    // See bug: 581892. This has a conflict with CrstInstMethodHashTableRanking.     
+
+    // See bug: 581892. This has a conflict with CrstInstMethodHashTableRanking.
     // The controller logic will be moved to OOP in V3, and so this lock will no longer be necessary.
     // Fixing this in-proc would be difficult, and it would all be throwaway as we go oop.
     Unordered
 End
 
-// This is a leaf debugger lock. 
+// This is a leaf debugger lock.
 Crst DebuggerFavorLock
     AcquiredAfter DebuggerJitInfo DebuggerMutex
 End
@@ -189,32 +181,32 @@ End
 Crst DebuggerHeapLock
     AcquiredAfter DebuggerFavorLock DebuggerJitInfo DebuggerMutex
     // Disabled per bug 581892
-    // AcquiredAfter DebuggerController 
+    // AcquiredAfter DebuggerController
 End
 
 Crst DebuggerJitInfo
     AcquiredBefore DebuggerHeapLock
 End
 
-// This is the major debugger lock. 
+// This is the major debugger lock.
 // It's the largest of the debugger locks.
 Crst DebuggerMutex
-    AcquiredBefore AvailableParamTypes ConnectionNameTable 
+    AcquiredBefore AvailableParamTypes ConnectionNameTable
                    DynamicIL LoaderHeap ModuleLookupTable
 
     // Disabled per bug 581892
-    // AcquiredBefore DebuggerController 
+    // AcquiredBefore DebuggerController
     AcquiredBefore DebuggerHeapLock DebuggerJitInfo
 
 End
 
-// This lock is used only for testing data consistency (see code:DataTest::TestDataSafety) 
+// This lock is used only for testing data consistency (see code:DataTest::TestDataSafety)
 // and is released before taking any other lock except for CrstDataTest2
 Crst DataTest1
     AcquiredAfter DebuggerMutex
 End
 
-// This lock is used only for testing data consistency (see code:DataTest::TestDataSafety) 
+// This lock is used only for testing data consistency (see code:DataTest::TestDataSafety)
 // and is released before taking any other lockCrst DataTest2
 Crst DataTest2
     AcquiredAfter DataTest1
@@ -284,10 +276,7 @@ Crst NativeImageCache
 End
 
 Crst GCCover
-    AcquiredBefore LoaderHeap ReJITDomainTable
-End
-
-Crst GCMemoryPressure
+    AcquiredBefore LoaderHeap CodeVersioning
 End
 
 Crst GlobalStrLiteralMap
@@ -355,14 +344,18 @@ End
 Crst JitGenericHandleCache
 End
 
+Crst JitPatchpoint
+    AcquiredBefore LoaderHeap
+End
+
 Crst JitPerf
     Unordered
 End
 
 Crst JumpStubCache
     AcquiredBefore ExecuteManRangeLock LoaderHeap SingleUseLock
-    AcquiredAfter AppDomainCache ExecuteManLock 
-                  ILStubGen ThreadpoolTimerQueue ThreadpoolWaitThreads 
+    AcquiredAfter AppDomainCache ExecuteManLock
+                  ILStubGen ThreadpoolTimerQueue ThreadpoolWaitThreads
                   TPMethodTable TypeIDMap BaseDomain AssemblyLoader
 End
 
@@ -482,6 +475,9 @@ End
 Crst RCWCleanupList
 End
 
+Crst ExternalObjectContextCache
+End
+
 Crst ReDacl
 End
 
@@ -490,28 +486,24 @@ Crst Reflection
 End
 
 // Used to synchronize all rejit information stored in a given AppDomain.
-Crst ReJITDomainTable
+Crst CodeVersioning
     AcquiredBefore LoaderHeap SingleUseLock DeadlockDetection JumpStubCache DebuggerController FuncPtrStubs
     AcquiredAfter ReJITGlobalRequest ThreadStore GlobalStrLiteralMap SystemDomain DebuggerMutex MethodDescBackpatchInfoTracker
+                ReadyToRunEntryPointToMethodDescMap ClassInit AppDomainCache TypeIDMap FusionAppCtx
 End
 
 // Used to synchronize all global requests (which may span multiple AppDomains) which add
 // new functions to rejit tables, or request Reverts on existing functions in the rejit
 // tables.  One of these crsts exist per runtime.
 Crst ReJITGlobalRequest
-    AcquiredBefore ThreadStore ReJITDomainTable SystemDomain
+    AcquiredBefore ThreadStore CodeVersioning SystemDomain JitInlineTrackingMap
 End
 
 // ETW infrastructure uses this crst to protect a hash table of TypeHandles which is
 // used to remember which types have been logged (to avoid duplicate logging of the
 // same type).
 Crst EtwTypeLogHash
-    AcquiredAfter ThreadStore AllowedFiles Cer TPMethodTable
-    AcquiredBefore AvailableParamTypes ConnectionNameTable DeadlockDetection DebuggerController 
-               DebuggerHeapLock DebuggerJitInfo DynamicIL ExecuteManRangeLock HandleTable IbcProfile
-               JitGenericHandleCache JumpStubCache LoaderHeap ModuleLookupTable ProfilingAPIStatus
-               ProfilerGCRefDataFreeList RWLock SingleUseLock SyncBlockCache SystemDomainDelayedUnloadList
-               ThreadIdDispenser ThreadStaticDataHashTable
+    AcquiredAfter AllowedFiles Cer SingleUseLock TPMethodTable
 End
 
 Crst Remoting
@@ -616,7 +608,7 @@ Crst ThreadStaticDataHashTable
 End
 
 Crst ThreadStore
-    AcquiredBefore AvailableParamTypes ConnectionNameTable DeadlockDetection DebuggerController 
+    AcquiredBefore AvailableParamTypes ConnectionNameTable DeadlockDetection DebuggerController
                    DebuggerHeapLock DebuggerJitInfo DynamicIL ExecuteManRangeLock HandleTable IbcProfile
                    JitGenericHandleCache JumpStubCache LoaderHeap ModuleLookupTable ProfilingAPIStatus
                    ProfilerGCRefDataFreeList RWLock SingleUseLock SyncBlockCache SystemDomainDelayedUnloadList
@@ -668,11 +660,7 @@ Crst MulticoreJitManager
     AcquiredBefore MulticoreJitHash ThreadStore
 End
 
-Crst WinRTFactoryCache
-    AcquiredBefore HandleTable    
-End
-
-Crst SqmManager 
+Crst SqmManager
 End
 
 Crst StackSampler
@@ -683,7 +671,7 @@ Crst InlineTrackingMap
 End
 
 Crst JitInlineTrackingMap
-    AcquiredBefore ReJITDomainTable ThreadStore LoaderAllocator
+    AcquiredBefore CodeVersioning ThreadStore LoaderAllocator
 End
 
 Crst EventPipe
@@ -699,6 +687,7 @@ Crst ReadyToRunEntryPointToMethodDescMap
 End
 
 Crst TieredCompilation
+    AcquiredAfter CodeVersioning
     AcquiredBefore ThreadpoolTimerQueue
 End
 
@@ -708,4 +697,10 @@ End
 Crst MethodDescBackpatchInfoTracker
     AcquiredBefore FuncPtrStubs ThreadStore SystemDomain
     AcquiredAfter ReJITGlobalRequest
+End
+
+Crst NativeImageEagerFixups
+End
+
+Crst NativeImageLoad
 End

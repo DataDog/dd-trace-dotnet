@@ -1,11 +1,10 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //
 // GetProductVersionNumber.h
 //
 // Helper function to retrieve the file version number of a file.
-// 
+//
 // ======================================================================================
 
 
@@ -35,7 +34,7 @@
 void inline GetProductVersionNumber(SString &szFullPath, DWORD * pdwVersionMS, DWORD * pdwVersionLS)
 {
     WRAPPER_NO_CONTRACT;
-#ifndef FEATURE_PAL
+#ifndef TARGET_UNIX
 
     DWORD dwDummy = 0;
     DWORD dwFileInfoSize = 0;
@@ -48,7 +47,7 @@ void inline GetProductVersionNumber(SString &szFullPath, DWORD * pdwVersionMS, D
     }
 
     // Create the buffer to store the file information.
-    NewHolder<BYTE> pbFileInfo(new BYTE[dwFileInfoSize]); 
+    NewHolder<BYTE> pbFileInfo(new BYTE[dwFileInfoSize]);
 
     // Actually retrieve the file version information.
     if (!GetFileVersionInfo(szFullPath, NULL, dwFileInfoSize, pbFileInfo))
@@ -71,7 +70,7 @@ void inline GetProductVersionNumber(SString &szFullPath, DWORD * pdwVersionMS, D
 #else
     *pdwVersionMS = 0;
     *pdwVersionLS = 0;
-#endif // FEATURE_PAL
+#endif // TARGET_UNIX
 }
 
 #endif // __GetProductVersionNumber_h__

@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 #ifndef NIBBLEMAPMACROS_H_
 #define NIBBLEMAPMACROS_H_
@@ -25,8 +24,8 @@
 // nibbles inside a DWORD from the highest bits (28..31). Because
 // of that we can scan backwards inside the DWORD with right shifts.
 
-#if defined(_WIN64)
-// TODO: bump up the windows CODE_ALIGN to 16 and iron out any nibble map bugs that exist. 
+#if defined(HOST_64BIT)
+// TODO: bump up the windows CODE_ALIGN to 16 and iron out any nibble map bugs that exist.
 // TODO: there is something wrong with USE_INDIRECT_CODEHEADER with CODE_ALIGN=16
 # define CODE_ALIGN             4
 # define LOG2_CODE_ALIGN        2

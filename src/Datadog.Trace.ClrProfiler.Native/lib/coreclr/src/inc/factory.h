@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 
 #ifndef _FACTORY_H_
@@ -19,7 +18,7 @@ class InlineFactory : public Factory<PRODUCT>
 {
 public:
     InlineFactory() : m_next(NULL), m_cProduct(0) { WRAPPER_NO_CONTRACT; }
-    ~InlineFactory() { WRAPPER_NO_CONTRACT; if (m_next) delete m_next; } 
+    ~InlineFactory() { WRAPPER_NO_CONTRACT; if (m_next) delete m_next; }
     PRODUCT* Create();
 
 private:
@@ -34,7 +33,7 @@ private:
         {
             m_next = new (nothrow) InlineFactory<PRODUCT, MAX_FACTORY_PRODUCT>();
         }
-              
+
         return m_next;
     }
 

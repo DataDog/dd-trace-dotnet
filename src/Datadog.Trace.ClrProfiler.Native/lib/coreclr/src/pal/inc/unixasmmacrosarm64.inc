@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 .macro NESTED_ENTRY Name, Section, Handler
         LEAF_ENTRY \Name, \Section
@@ -83,7 +82,7 @@ C_FUNC(\Name\()_End):
 
 .macro EPILOG_RESTORE_REG reg, ofs
         ldr \reg, [sp, \ofs]
-        .cfi_restore \reg1
+        .cfi_restore \reg
 .endm
 
 .macro EPILOG_RESTORE_REG_PAIR reg1, reg2, ofs

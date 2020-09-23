@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 
 #ifndef _GCREFMAP_H_
@@ -9,15 +8,15 @@
 #include "sigbuilder.h"
 
 //
-// The GCRef map is used to encode GC type of arguments for callsites. Logically, it is sequence <pos, token> where pos is 
+// The GCRef map is used to encode GC type of arguments for callsites. Logically, it is sequence <pos, token> where pos is
 // position of the reference in the stack frame and token is type of GC reference (one of GCREFMAP_XXX values).
 //
-// - The encoding always starts at the byte boundary. The high order bit of each byte is used to signal end of the encoding 
+// - The encoding always starts at the byte boundary. The high order bit of each byte is used to signal end of the encoding
 // stream. The last byte has the high order bit zero. It means that there are 7 useful bits in each byte.
 // - "pos" is always encoded as delta from previous pos.
-// - The basic encoding unit is two bits. Values 0, 1 and 2 are the common constructs (skip single slot, GC reference, interior 
-// pointer). Value 3 means that extended encoding follows. 
-// - The extended information is integer encoded in one or more four bit blocks. The high order bit of the four bit block is 
+// - The basic encoding unit is two bits. Values 0, 1 and 2 are the common constructs (skip single slot, GC reference, interior
+// pointer). Value 3 means that extended encoding follows.
+// - The extended information is integer encoded in one or more four bit blocks. The high order bit of the four bit block is
 // used to signal the end.
 // - For x86, the encoding starts by size of the callee poped stack. The size is encoded using the same mechanism as above (two bit
 // basic encoding, with extended encoding for large values).
@@ -29,7 +28,7 @@ class GCRefMapBuilder
 {
     int m_PendingByte;  // Pending value, not yet written out
 
-    int m_Bits;         // Number of bits in pending byte. Note that the trailing zero bits are not written out, 
+    int m_Bits;         // Number of bits in pending byte. Note that the trailing zero bits are not written out,
                         // so this can be more than 7.
 
     int m_Pos;          // Current position
@@ -47,7 +46,7 @@ class GCRefMapBuilder
                 m_PendingByte = 0;
                 m_Bits -= 7;
             }
-        
+
             m_PendingByte |= (1 << m_Bits);
         }
 
@@ -80,7 +79,7 @@ public:
     {
     }
 
-#ifdef _TARGET_X86_
+#ifdef TARGET_X86
     void WriteStackPop(int stackPop)
     {
         if (stackPop < 3)
@@ -99,6 +98,8 @@ public:
     {
         int posDelta = pos - m_Pos;
         m_Pos = pos + 1;
+
+        _ASSERTE(posDelta >= 0);
 
         if (posDelta != 0)
         {
@@ -205,7 +206,7 @@ public:
         return m_PendingByte == 0;
     }
 
-#ifdef _TARGET_X86_
+#ifdef TARGET_X86
     UINT ReadStackPop()
     {
         int x = GetTwoBit();

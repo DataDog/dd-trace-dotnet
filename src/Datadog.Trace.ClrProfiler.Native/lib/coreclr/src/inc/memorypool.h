@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 
 #ifndef _MEMORYPOOL_
@@ -19,7 +18,7 @@
 //
 // It also has several additional features:
 //	* you can free the entire pool of objects cheaply.
-//	* you can test an object to see if it's an element of the pool.	
+//	* you can test an object to see if it's an element of the pool.
 //
 
 class MemoryPool
@@ -132,7 +131,7 @@ class MemoryPoolElementHolder
         if (bRelease)
             Release();
     }
-    
+
     operator void* ()
     {
         LIMITED_METHOD_CONTRACT;

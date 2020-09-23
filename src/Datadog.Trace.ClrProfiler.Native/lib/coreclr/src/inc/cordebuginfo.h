@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 //
 // Keep in sync with https://github.com/dotnet/corert/blob/master/src/Native/ObjWriter/cordebuginfo.h
@@ -69,7 +68,7 @@ public:
     // contained in debug/inc/DbgIPCEvents.h.
     enum RegNum
     {
-#ifdef _TARGET_X86_
+#ifdef TARGET_X86
         REGNUM_EAX,
         REGNUM_ECX,
         REGNUM_EDX,
@@ -78,7 +77,7 @@ public:
         REGNUM_EBP,
         REGNUM_ESI,
         REGNUM_EDI,
-#elif _TARGET_ARM_
+#elif TARGET_ARM
         REGNUM_R0,
         REGNUM_R1,
         REGNUM_R2,
@@ -95,7 +94,7 @@ public:
         REGNUM_SP,
         REGNUM_LR,
         REGNUM_PC,
-#elif _TARGET_ARM64_
+#elif TARGET_ARM64
         REGNUM_X0,
         REGNUM_X1,
         REGNUM_X2,
@@ -129,7 +128,7 @@ public:
         REGNUM_LR,
         REGNUM_SP,
         REGNUM_PC,
-#elif _TARGET_AMD64_
+#elif TARGET_AMD64
         REGNUM_RAX,
         REGNUM_RCX,
         REGNUM_RDX,
@@ -153,18 +152,18 @@ public:
         REGNUM_AMBIENT_SP, // ambient SP support. Ambient SP is the original SP in the non-BP based frame.
                            // Ambient SP should not change even if there are push/pop operations in the method.
 
-#ifdef _TARGET_X86_
+#ifdef TARGET_X86
         REGNUM_FP = REGNUM_EBP,
         REGNUM_SP = REGNUM_ESP,
-#elif _TARGET_AMD64_
+#elif TARGET_AMD64
         REGNUM_SP = REGNUM_RSP,
-#elif _TARGET_ARM_
+#elif TARGET_ARM
 #ifdef REDHAWK
         REGNUM_FP = REGNUM_R7,
 #else
         REGNUM_FP = REGNUM_R11,
 #endif //REDHAWK
-#elif _TARGET_ARM64_
+#elif TARGET_ARM64
         //Nothing to do here. FP is already alloted.
 #else
         // RegNum values should be properly defined for this platform
@@ -174,7 +173,7 @@ public:
 
     };
 
-    // VarLoc describes the location of a native variable.  Note that currently, VLT_REG_BYREF and VLT_STK_BYREF 
+    // VarLoc describes the location of a native variable.  Note that currently, VLT_REG_BYREF and VLT_STK_BYREF
     // are only used for value types on X64.
 
     enum VarLocType
