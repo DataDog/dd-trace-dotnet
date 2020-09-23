@@ -81,7 +81,7 @@ Next, replace the `ServiceManifest.xml` with the text below.
 </ServiceManifest>
 ```
 
-Now, add the corresponding port bindings to the ServiceManfestImport within `ApplicationManifest.xml`:
+Now, add the corresponding port bindings to the ServiceManifestImport within `ApplicationManifest.xml`:
 
 ```diff
   <ServiceManifestImport>
@@ -99,9 +99,9 @@ Now, add the corresponding port bindings to the ServiceManfestImport within `App
 
 ## 3. Install the .NET Tracer
 
-### Setup an administrator for the script
-
 The Datadog .NET Tracer is also known as an in-process auto-instrumentation agent. It is a component that attaches to your application and automatically collects telemetry. The application telemetry is sent to the Datadog Agent (see above), where it is merged with infrastructure telemetry and forwarded to Datadog's servers. 
+
+### Setup an administrator for the script
 
 To install the .NET Tracer in a service in a cluster, we include some scripts with each service deployed into the Fabric.
 
@@ -126,7 +126,7 @@ Add the *SetupAdminUser* to the *Principals* section in the `ApplicationManifest
 
 ---
 
-In your *ApplicationManifest.xml*, within the *ServiceManifestImport* section of the service, give the Setup script *SetupAdminUser* as the executing user.
+In your `ApplicationManifest.xml`, within the *ServiceManifestImport* section of the service, give the Setup script *SetupAdminUser* as the executing user.
 
 ```diff
   <ServiceManifestImport>
@@ -138,7 +138,7 @@ In your *ApplicationManifest.xml*, within the *ServiceManifestImport* section of
   </ServiceManifestImport>
 ```  
 
-Within the *ServiceManifest.xml* of the service you want to monitor, add the reference to the install script.
+Within the `ServiceManifest.xml` of the service you want to monitor, add the reference to the install script.
 Then, add the envrionment variables to opt into profiling.
 
 ```diff
