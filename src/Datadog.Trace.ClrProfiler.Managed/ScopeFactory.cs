@@ -53,11 +53,18 @@ namespace Datadog.Trace.ClrProfiler
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
                 string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
-                HttpTags tags = null;
+                ITags tags = null;
 
                 if (TracerSettings.UseOptim)
                 {
-                    tags = new HttpTags();
+                    if (TracerSettings.UseList)
+                    {
+                        tags = new HttpTagsList();
+                    }
+                    else
+                    {
+                        tags = new HttpTags();
+                    }
                 }
 
                 scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
@@ -68,10 +75,22 @@ namespace Datadog.Trace.ClrProfiler
 
                 if (TracerSettings.UseOptim)
                 {
-                    tags.SpanKind = SpanKinds.Client;
-                    tags.HttpMethod = httpMethod?.ToUpperInvariant();
-                    tags.HttpUrl = httpUrl;
-                    tags.InstrumentationName = integrationName;
+                    if (TracerSettings.UseList)
+                    {
+                        var t = (HttpTagsList)tags;
+                        t.SpanKind = SpanKinds.Client;
+                        t.HttpMethod = httpMethod?.ToUpperInvariant();
+                        t.HttpUrl = httpUrl;
+                        t.InstrumentationName = integrationName;
+                    }
+                    else
+                    {
+                        var t = (HttpTags)tags;
+                        t.SpanKind = SpanKinds.Client;
+                        t.HttpMethod = httpMethod?.ToUpperInvariant();
+                        t.HttpUrl = httpUrl;
+                        t.InstrumentationName = integrationName;
+                    }
                 }
                 else
                 {

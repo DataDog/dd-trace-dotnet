@@ -6,6 +6,8 @@ namespace Datadog.Trace.Tagging
 
         private static readonly Property<HttpTags, string>[] TagsProperties =
         {
+            new Property<HttpTags, string>(Trace.Tags.Env, t => t.Environment, (t, v) => t.Environment = v),
+            new Property<HttpTags, string>(Trace.Tags.Version, t => t.Version, (t, v) => t.Version = v),
             new Property<HttpTags, string>(Tags.HttpStatusCode, t => t.HttpStatusCode, (t, v) => t.HttpStatusCode = v),
             new Property<HttpTags, string>(HttpClientHandlerTypeKey, t => t.HttpClientHandlerType, (t, v) => t.HttpClientHandlerType = v),
             new Property<HttpTags, string>(Tags.SpanKind, t => t.SpanKind, (t, v) => t.SpanKind = v),
@@ -38,6 +40,10 @@ namespace Datadog.Trace.Tagging
         public double? SamplingLimitDecision { get; set; }
 
         public double? SamplingPriority { get; set; }
+
+        public string Environment { get; set; }
+
+        public string Version { get; set; }
 
         protected override IProperty<string>[] GetAdditionalTags() => TagsProperties;
 

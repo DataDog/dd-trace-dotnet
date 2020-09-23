@@ -5,14 +5,17 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Tagging
 {
-    internal abstract class TagsDictionary : Dictionary<string, string>, ITags
+    internal abstract class TagsList : ITags
     {
         private static readonly IProperty<string>[] EmptyTags = new IProperty<string>[0];
         private static readonly IProperty<double?>[] EmptyMetrics = new IProperty<double?>[0];
 
-        private Dictionary<string, double> _metrics;
+        private List<KeyValuePair<string, double>> _metrics;
+        private List<KeyValuePair<string, string>> _tags;
 
-        protected Dictionary<string, double> Metrics => Volatile.Read(ref _metrics);
+        protected List<KeyValuePair<string, double>> Metrics => Volatile.Read(ref _metrics);
+
+        protected List<KeyValuePair<string, string>> Tags => Volatile.Read(ref _tags);
 
         public string GetTag(string key)
         {
@@ -24,7 +27,25 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            return TryGetValue(key, out var value) ? value : null;
+            var tags = Tags;
+
+            if (tags == null)
+            {
+                return null;
+            }
+
+            lock (tags)
+            {
+                for (int i = 0; i < tags.Count; i++)
+                {
+                    if (tags[i].Key == key)
+                    {
+                        return tags[i].Value;
+                    }
+                }
+            }
+
+            return null;
         }
 
         public double? GetMetric(string key)
@@ -44,7 +65,18 @@ namespace Datadog.Trace.Tagging
                 return null;
             }
 
-            return metrics.TryGetValue(key, out var value) ? value : (double?)null;
+            lock (metrics)
+            {
+                for (int i = 0; i < metrics.Count; i++)
+                {
+                    if (metrics[i].Key == key)
+                    {
+                        return metrics[i].Value;
+                    }
+                }
+            }
+
+            return null;
         }
 
         public void SetTag(string key, string value)
@@ -58,15 +90,38 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            lock (this)
+            var tags = Tags;
+
+            if (tags == null)
             {
-                if (value == null)
+                var newTags = new List<KeyValuePair<string, string>>();
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            lock (tags)
+            {
+                for (int i = 0; i < tags.Count; i++)
                 {
-                    Remove(key);
-                    return;
+                    if (tags[i].Key == key)
+                    {
+                        if (value == null)
+                        {
+                            tags.RemoveAt(i);
+                        }
+                        else
+                        {
+                            tags[i] = new KeyValuePair<string, string>(key, value);
+                        }
+
+                        return;
+                    }
                 }
 
-                this[key] = value;
+                // If we get there, the tag wasn't in the collection
+                if (value != null)
+                {
+                    tags.Add(new KeyValuePair<string, string>(key, value));
+                }
             }
         }
 
@@ -85,19 +140,34 @@ namespace Datadog.Trace.Tagging
 
             if (metrics == null)
             {
-                var newMetrics = new Dictionary<string, double>();
+                var newMetrics = new List<KeyValuePair<string, double>>();
                 metrics = Interlocked.CompareExchange(ref _metrics, newMetrics, null) ?? newMetrics;
             }
 
             lock (metrics)
             {
-                if (value == null)
+                for (int i = 0; i < metrics.Count; i++)
                 {
-                    metrics.Remove(key);
-                    return;
+                    if (metrics[i].Key == key)
+                    {
+                        if (value == null)
+                        {
+                            metrics.RemoveAt(i);
+                        }
+                        else
+                        {
+                            metrics[i] = new KeyValuePair<string, double>(key, value.Value);
+                        }
+
+                        return;
+                    }
                 }
 
-                metrics[key] = value.Value;
+                // If we get there, the tag wasn't in the collection
+                if (value != null)
+                {
+                    metrics.Add(new KeyValuePair<string, double>(key, value.Value));
+                }
             }
         }
 
@@ -113,11 +183,16 @@ namespace Datadog.Trace.Tagging
         {
             var sb = new StringBuilder();
 
-            lock (this)
+            var tags = Tags;
+
+            if (tags != null)
             {
-                foreach (var pair in this)
+                lock (tags)
                 {
-                    sb.Append($"{pair.Key} (tag):{pair.Value},");
+                    foreach (var pair in tags)
+                    {
+                        sb.Append($"{pair.Key} (tag):{pair.Value},");
+                    }
                 }
             }
 
@@ -174,17 +249,27 @@ namespace Datadog.Trace.Tagging
             int headerOffset = offset;
             int count;
 
-            lock (this)
+            var tags = Tags;
+
+            if (tags != null)
             {
-                count = Count;
-
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
-
-                foreach (var pair in this)
+                lock (tags)
                 {
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Key);
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Value);
+                    count = tags.Count;
+
+                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
+
+                    foreach (var pair in tags)
+                    {
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Key);
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Value);
+                    }
                 }
+            }
+            else
+            {
+                count = 0;
+                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
             }
 
             foreach (var property in GetAdditionalTags())
