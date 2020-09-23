@@ -49,11 +49,12 @@ First, add a new Service Fabric service to the solution:
 Next, replace the `ServiceManifest.xml` with the text below.
 
 (As you do this, make sure to replace the value "*API_KEY_GOES_HERE*" for the `DD_API_KEY`-setting with your Datadog API key. An API key is a unique identifier that belongs to your organization and is required to submit telemetry to Datadog ([more info](https://docs.datadoghq.com/account_management/api-app-keys/)). You can obtain it from your Datadog [account page](https://app.datadoghq.com/account/settings#api).)
+
 ```
 <?xml version="1.0" encoding="utf-8"?>
-<ServiceManifest Name="DatadogAgentPkg" Version="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ServiceManifest Name="DatadogPkg" Version="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ServiceTypes>
-    <StatelessServiceType ServiceTypeName="DatadogAgentType" UseImplicitHost="true" />
+    <StatelessServiceType ServiceTypeName="DatadogType" UseImplicitHost="true" />
   </ServiceTypes>
   <CodePackage Name="Code" Version="1.0.0">
     <EntryPoint>
@@ -84,7 +85,7 @@ Now, add the corresponding port bindings to the ServiceManfestImport within `App
 
 ```diff
   <ServiceManifestImport>
-    <ServiceManifestRef ServiceManifestName="DatadogAgentPkg" ServiceManifestVersion="1.0.0" />
+    <ServiceManifestRef ServiceManifestName="DatadogPkg" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
 +   <Policies>
 +     <ContainerHostPolicies CodePackageRef="Code">
