@@ -354,7 +354,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpMessageHandler"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WebRequest", "samples\Samples.WebRequest\Samples.WebRequest.csproj", "{ED2742D3-2AA3-4D62-BB63-CFA43CEACCF3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.ServiceFabric.Remoting", "src\Datadog.ServiceFabric.Remoting\Datadog.ServiceFabric.Remoting.csproj", "{9CA2156C-5A5D-4452-8A98-F9B16EF7B2A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ServiceFabric.Remoting", "src\Datadog.ServiceFabric.Remoting\Datadog.Trace.ServiceFabric.Remoting.csproj", "{9CA2156C-5A5D-4452-8A98-F9B16EF7B2A5}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

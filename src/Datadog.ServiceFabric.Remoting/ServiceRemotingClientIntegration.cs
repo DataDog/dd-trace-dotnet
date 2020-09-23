@@ -1,12 +1,11 @@
 using System;
-using System.ComponentModel;
 using System.Globalization;
-using Datadog.Trace;
+using Datadog.Trace.ExtensionMethods;
 using Microsoft.ServiceFabric.Services.Remoting;
 using Microsoft.ServiceFabric.Services.Remoting.V2;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Client;
 
-namespace Datadog.ServiceFabric.Remoting
+namespace Datadog.Trace.ServiceFabric.Remoting
 {
     // https://github.com/microsoft/ApplicationInsights-ServiceFabric/blob/master/src/ApplicationInsights.ServiceFabric.Native.Shared/DependencyTrackingModule/ServiceRemotingClientEventListener.cs
     public class ServiceRemotingClientIntegration
@@ -64,7 +63,11 @@ namespace Datadog.ServiceFabric.Remoting
                 ulong spanId = tracer.ActiveScope?.Span?.SpanId ?? 0;
                 messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(spanId));
 
+                tracer.ActiveScope?.Span.SetTraceSamplingPriority();
+
                 // TODO: sampling priority
+
+                // TODO: origin
             }
 
             Scope scope = tracer.ActivateSpan(span);
