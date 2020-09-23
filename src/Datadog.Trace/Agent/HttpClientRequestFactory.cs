@@ -8,9 +8,9 @@ namespace Datadog.Trace.Agent
     {
         private readonly HttpClient _client;
 
-        public HttpClientRequestFactory()
+        public HttpClientRequestFactory(HttpMessageHandler handler = null)
         {
-            _client = new HttpClient();
+            _client = handler == null ? new HttpClient() : new HttpClient(handler);
 
             // Default headers
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
