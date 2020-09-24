@@ -26,8 +26,6 @@ namespace Datadog.Trace.DiagnosticListeners
             _diagnosticObservers = diagnosticSubscribers.Where(x => x.IsSubscriberEnabled());
         }
 
-        public static DiagnosticManager Instance { get; set; }
-
         public bool IsRunning => _allListenersSubscription != null;
 
         public void Start()

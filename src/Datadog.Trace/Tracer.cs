@@ -41,6 +41,10 @@ namespace Datadog.Trace
 
         private IAgentWriter _agentWriter;
 
+#if !NETFRAMEWORK
+        private DiagnosticManager _diagnosticManager;
+#endif
+
         static Tracer()
         {
             TracingProcessManager.Initialize();
@@ -502,6 +506,39 @@ namespace Datadog.Trace
             }
         }
 
+#if !NETFRAMEWORK
+        internal void StopDiagnosticManager()
+        {
+            _diagnosticManager?.Stop();
+        }
+
+        internal void SafeStartDiagnosticManager()
+        {
+            try
+            {
+                if (Settings.DiagnosticSourceEnabled)
+                {
+                    // check if DiagnosticSource is available before trying to use it
+                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+
+                    if (type == null)
+                    {
+                        Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
+                    }
+                    else
+                    {
+                        // don't call this method unless DiagnosticSource is available
+                        UnsafeStartDiagnosticManager();
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+#endif
+
         /// <summary>
         /// Gets an "application name" for the executing application by looking at
         /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
@@ -623,5 +660,22 @@ namespace Datadog.Trace
                 Statsd.Send();
             }
         }
+
+#if !NETFRAMEWORK
+        /// <summary>
+        /// Calling this method will crash during JIT if System.Diagnostics.DiagnosticSource.dll is not available.
+        /// </summary>
+        private void UnsafeStartDiagnosticManager()
+        {
+            _diagnosticManager?.Dispose();
+
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };
+            var diagnosticManager = new DiagnosticManager(observers);
+            diagnosticManager.Start();
+
+            _diagnosticManager = diagnosticManager;
+        }
+
+#endif
     }
 }
