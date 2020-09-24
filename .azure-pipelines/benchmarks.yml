@@ -10,19 +10,6 @@ variables:
   ddApiKey: $(DD_API_KEY)
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
-# Declare the datadog agent as a resource to be used as a pipeline service
-resources:
-  containers:
-  - container: dd_agent
-    image: datadog/agent-dev:master-py3-win1809
-    ports:
-    - 8126:8126
-    env:
-      DD_API_KEY: $(ddApiKey)
-      DD_HOSTNAME: none
-      DD_APM_ENABLED: true
-      DD_APM_NON_LOCAL_TRAFFIC: true
-
 stages:
 - stage: build
   jobs:
@@ -32,9 +19,6 @@ stages:
   - job: Windows
     pool: Benchmarks
 
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent
     variables:
       tracerHomeName: windows-tracer-home
       tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
@@ -70,7 +54,7 @@ stages:
       inputs:
         command: 'run'
         projects: '$(System.DefaultWorkingDirectory)/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
-        arguments: '-c Release -f netcoreapp3.1 -- -r net472 netcoreapp3.1 -m -f * '
+        arguments: '-c Release -f net472 -- -r net472 netcoreapp3.1 -m -f * '
     - task: PowerShell@2
       inputs:
         targetType: 'inline'
