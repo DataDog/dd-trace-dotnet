@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -50,17 +51,19 @@ namespace Datadog.Trace.ExtensionMethods
             string method,
             string host,
             string httpUrl,
-            IEnumerable<KeyValuePair<string, string>> tags)
+            WebTags tags,
+            IEnumerable<KeyValuePair<string, string>> tagsFromHeaders)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
-            span.SetTag(Tags.SpanKind, SpanKinds.Server);
-            span.SetTag(Tags.HttpMethod, method);
-            span.SetTag(Tags.HttpRequestHeadersHost, host);
-            span.SetTag(Tags.HttpUrl, httpUrl);
-            span.SetTag(Tags.Language, TracerConstants.Language);
 
-            foreach (KeyValuePair<string, string> kvp in tags)
+            tags.SpanKind = SpanKinds.Server;
+            tags.HttpMethod = method;
+            tags.HttpRequestHeadersHost = host;
+            tags.HttpUrl = httpUrl;
+            tags.Language = TracerConstants.Language;
+
+            foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
             {
                 span.SetTag(kvp.Key, kvp.Value);
             }
