@@ -55,7 +55,3 @@ stages:
         command: 'run'
         projects: '$(System.DefaultWorkingDirectory)/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
         arguments: '-c Release -f net472 -- -r net472 netcoreapp3.1 -m -f * '
-    - task: PowerShell@2
-      inputs:
-        targetType: 'inline'
-        script: 'Start-Sleep -s 120'
