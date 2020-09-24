@@ -259,23 +259,12 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the use
         /// of System.Diagnostics.DiagnosticSource is enabled.
         /// </summary>
-        [Obsolete("Use Datadog.Trace.Configuration.GlobalSettings.DiagnosticSourceEnabled", error: false)]
-        public bool DiagnosticSourceEnabled
-        {
-            get => GlobalSettings.Source.DiagnosticSourceEnabled;
-            set => GlobalSettings.Source.DiagnosticSourceEnabled = value;
-        }
+        public bool DiagnosticSourceEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the shared Tracer instance is disabled.
-        /// To be used to prevent the automatic instantiation of Tracer.Instance when running tests/benchmarks
-        /// </summary>
-        internal static bool DisableSharedInstance { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
