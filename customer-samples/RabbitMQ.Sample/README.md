@@ -1,4 +1,29 @@
-### Setup
+# RabbitMQ Instrumentation
+Currently there is not out-of-the-box automatic instrumentation for the RabbitMQ .NET SDK. This means if your .NET application publishes/consumes a RabbitMQ message and you would like to propagate/consume the Datadog trace context, you must do so manually by adding/removing the Datadog headers. This sample follows the ["Hello World" C# tutorial](https://www.rabbitmq.com/tutorials/tutorial-one-dotnet.html) provided by RabbitMQ and modifies it in the following ways:
+
+1. The sender begins a Datadog Trace before publishing a message
+1. The sender injects the trace context to the published message before sending
+1. The receiver extracts the trace context from the consumed message
+1. The receiver starts a new Datadog Trace that is now properly connected to the original Trace
+
+## Setup
+### Application setup
+There are two .NET Core applications: `Send` and `Receive`. Open two terminals. First run the consumer
+
+```
+cd Receive
+dotnet run
+```
+
+Then run the producer:
+```
+cd Send
+dotnet run
+```
+
+For further tutorial instructions, see the official RabbitMQ docs at https://www.rabbitmq.com/tutorials/tutorial-one-dotnet.html
+
+### RabbitMQ setup
 Ensure RabbitMQ is running on localhost. If you have docker installed, you may get it up and running quickly on your workstation via the community Docker image:
 
 ```
