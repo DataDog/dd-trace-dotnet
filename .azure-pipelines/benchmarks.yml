@@ -18,6 +18,9 @@ stages:
 
   - job: Windows
     pool: Benchmarks
+    
+    workspace:
+        clean: all
 
     variables:
       tracerHomeName: windows-tracer-home
