@@ -46,14 +46,24 @@ namespace Send
                         properties.Headers.Add(HttpHeaderNames.ParentId, spanId.ToString(CultureInfo.InvariantCulture));
                         properties.Headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority);
 
+                        // Publish message
                         channel.BasicPublish(exchange: "",
                                              routingKey: "hello",
                                              basicProperties: properties, // Pass the properties with the message
                                              body: body);
+
+                        // Log message and properties to screen
                         Console.WriteLine(" [x] Sent {0}", message);
                         Console.WriteLine("     {0}:{1}", HttpHeaderNames.TraceId, properties.Headers[HttpHeaderNames.TraceId]);
                         Console.WriteLine("     {0}:{1}", HttpHeaderNames.ParentId, properties.Headers[HttpHeaderNames.ParentId]);
                         Console.WriteLine("     {0}:{1}", HttpHeaderNames.SamplingPriority, properties.Headers[HttpHeaderNames.SamplingPriority]);
+
+                        // Set Datadog tags
+                        var span = scope.Span;
+                        span.ResourceName = "basic.publish";
+                        span.SetTag(Tags.SpanKind, SpanKinds.Producer);
+                        span.SetTag("amqp.exchange", "");
+                        span.SetTag("amqp.routing_key", "hello");
                     }
                 }
 

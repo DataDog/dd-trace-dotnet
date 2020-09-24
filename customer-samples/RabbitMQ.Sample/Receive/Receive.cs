@@ -27,6 +27,7 @@ namespace Receive
                     var consumer = new EventingBasicConsumer(channel);
                     consumer.Received += (model, ea) =>
                     {
+                        // Receive message
                         var body = ea.Body.ToArray();
                         var message = Encoding.UTF8.GetString(body);
 
@@ -76,13 +77,20 @@ namespace Receive
                         // Start a new Datadog span
                         using (var scope = Tracer.Instance.StartActive("rabbitmq.consume", propagatedContext))
                         {
+                            // Log message and properties to screen
                             Console.WriteLine(" [x] Received.");
                             Console.WriteLine("     Message: {0}", message);
                             Console.WriteLine("     Active TraceId: {0}", scope.Span.TraceId);
                             Console.WriteLine("     Active SpanId: {0}", scope.Span.SpanId);
                             Console.WriteLine("     Active SamplingPriority: {0}", scope.Span.GetTag(Tags.SamplingPriority));
 
-                            // After receiving the message, do work
+                            // Set Datadog tags
+                            var span = scope.Span;
+                            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+                            span.SetTag("amqp.exchange", ea.Exchange);
+                            span.SetTag("amqp.routing_key", ea.RoutingKey);
+
+                            // Do work inside the Datadog trace
                             Thread.Sleep(1500);
                         }
                     };
