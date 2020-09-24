@@ -22,6 +22,7 @@ namespace Send
                                          autoDelete: false,
                                          arguments: null);
 
+                    // Start a new Datadog span
                     using (var scope = Tracer.Instance.StartActive("rabbitmq-publish"))
                     {
                         string message = "Hello World!";

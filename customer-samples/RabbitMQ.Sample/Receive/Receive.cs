@@ -51,6 +51,7 @@ namespace Receive
                             propagatedContext = new SpanContext(traceId, spanId.Value);
                         }
 
+                        // Start a new Datadog span
                         using (var scope = Tracer.Instance.StartActive("rabbitmq-consume", propagatedContext))
                         {
                             Console.WriteLine(" [x] Received.");
