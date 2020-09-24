@@ -4,6 +4,7 @@ using RabbitMQ.Client.Events;
 using System;
 using System.Globalization;
 using System.Text;
+using System.Threading;
 
 namespace Receive
 {
@@ -80,6 +81,9 @@ namespace Receive
                             Console.WriteLine("     Active TraceId: {0}", scope.Span.TraceId);
                             Console.WriteLine("     Active SpanId: {0}", scope.Span.SpanId);
                             Console.WriteLine("     Active SamplingPriority: {0}", scope.Span.GetTag(Tags.SamplingPriority));
+
+                            // After receiving the message, do work
+                            Thread.Sleep(1500);
                         }
                     };
                     channel.BasicConsume(queue: "hello",
