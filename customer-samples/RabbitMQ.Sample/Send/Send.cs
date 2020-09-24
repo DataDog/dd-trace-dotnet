@@ -1,14 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace;
 using RabbitMQ.Client;
 
 namespace Send
 {
     class Send
     {
+        // This small application follows the RabbitMQ tutorial at https://www.rabbitmq.com/tutorials/tutorial-one-dotnet.html
         public static void Main(string[] args)
         {
-            // Follow RabbitMQ tutorial at https://www.rabbitmq.com/tutorials/tutorial-one-dotnet.html
             var factory = new ConnectionFactory() { HostName = "localhost" };
             using (var connection = factory.CreateConnection())
             {
@@ -20,14 +22,26 @@ namespace Send
                                          autoDelete: false,
                                          arguments: null);
 
-                    string message = "Hello World!";
-                    var body = Encoding.UTF8.GetBytes(message);
+                    using (var scope = Tracer.Instance.StartActive("rabbitmq-publish"))
+                    {
+                        string message = "Hello World!";
+                        var body = Encoding.UTF8.GetBytes(message);
 
-                    channel.BasicPublish(exchange: "",
-                                         routingKey: "hello",
-                                         basicProperties: null,
-                                         body: body);
-                    Console.WriteLine(" [x] Sent {0}", message);
+                        // Add basic properties
+                        // This is where we'll manually add the datadog headers:
+                        //  - "x-datadog-trace-id": "<trace_id>"
+                        //  - "x-dataadog-span-id": "<span_id>"
+                        var properties = channel.CreateBasicProperties();
+                        properties.Headers = new Dictionary<string, object>();
+                        properties.Headers.Add("x-datadog-trace-id", CorrelationIdentifier.TraceId.ToString());
+                        properties.Headers.Add("x-datadog-parent-id", CorrelationIdentifier.SpanId.ToString());
+
+                        channel.BasicPublish(exchange: "",
+                                            routingKey: "hello",
+                                            basicProperties: properties,
+                                            body: body);
+                        Console.WriteLine(" [x] Sent {0}", message);
+                    }
                 }
 
                 Console.WriteLine(" Press [enter] to exit.");
