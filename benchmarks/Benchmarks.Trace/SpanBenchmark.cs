@@ -22,6 +22,7 @@ namespace Benchmarks.Trace
             var settings = new TracerSettings
             {
                 TraceEnabled = false,
+                DiagnosticSourceEnabled = false
             };
 
             Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null);
