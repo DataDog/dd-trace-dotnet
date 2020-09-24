@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
@@ -59,48 +56,12 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                _ = Tracer.Instance;
+                Tracer.Instance = new Tracer();
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore
+                Log.SafeLogError(ex, "Error creating the default Tracer instance.");
             }
-
-#if !NETFRAMEWORK
-            try
-            {
-                if (GlobalSettings.Source.DiagnosticSourceEnabled)
-                {
-                    // check if DiagnosticSource is available before trying to use it
-                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
-
-                    if (type == null)
-                    {
-                        Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
-                    }
-                    else
-                    {
-                        // don't call this method unless DiagnosticSource is available
-                        StartDiagnosticManager();
-                    }
-                }
-            }
-            catch
-            {
-                // ignore
-            }
-#endif
         }
-
-#if !NETFRAMEWORK
-        private static void StartDiagnosticManager()
-        {
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };
-            var diagnosticManager = new DiagnosticManager(observers);
-            diagnosticManager.Start();
-
-            DiagnosticManager.Instance = diagnosticManager;
-        }
-#endif
     }
 }
