@@ -24,7 +24,7 @@ namespace Send
                                          arguments: null);
 
                     // Start a new Datadog span
-                    using (var scope = Tracer.Instance.StartActive("rabbitmq-publish"))
+                    using (var scope = Tracer.Instance.StartActive("rabbitmq.publish"))
                     {
                         string message = "Hello World!";
                         var body = Encoding.UTF8.GetBytes(message);
