@@ -45,7 +45,7 @@ namespace Datadog.Trace.Configuration
         public bool DebugEnabled { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the use
+        /// Gets a value indicating whether the use
         /// of System.Diagnostics.DiagnosticSource is enabled.
         /// </summary>
         public bool DiagnosticSourceEnabled

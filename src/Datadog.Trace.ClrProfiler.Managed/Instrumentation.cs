@@ -47,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler
 
         /// <summary>
         /// Initializes global instrumentation values.
+        /// Called via reflection from Datadog.Trace.ClrProfiler.Managed.Loader.Startup.TryLoadManagedAssembly().
         /// </summary>
         public static void Initialize()
         {
