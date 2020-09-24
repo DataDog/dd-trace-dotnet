@@ -91,7 +91,7 @@ namespace Receive
                             span.SetTag("amqp.routing_key", ea.RoutingKey);
 
                             // Do work inside the Datadog trace
-                            Thread.Sleep(1500);
+                            Thread.Sleep(1000);
                         }
                     };
                     channel.BasicConsume(queue: "hello",
