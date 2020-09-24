@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace;
 using RabbitMQ.Client;
@@ -28,20 +29,31 @@ namespace Send
                         string message = "Hello World!";
                         var body = Encoding.UTF8.GetBytes(message);
 
-                        // Add basic properties
-                        // This is where we'll manually add the datadog headers:
-                        //  - "x-datadog-trace-id": "<trace_id>"
-                        //  - "x-dataadog-span-id": "<span_id>"
+                        // Create BasicProperties and a Headers dictionary to store header information
                         var properties = channel.CreateBasicProperties();
                         properties.Headers = new Dictionary<string, object>();
-                        properties.Headers.Add("x-datadog-trace-id", CorrelationIdentifier.TraceId.ToString());
-                        properties.Headers.Add("x-datadog-parent-id", CorrelationIdentifier.SpanId.ToString());
+
+                        // Get properties for the active Datadog span
+                        ulong traceId = scope.Span.TraceId;
+                        ulong spanId = scope.Span.SpanId;
+                        string samplingPriority = scope.Span.GetTag(Tags.SamplingPriority);
+
+                        // Add properties to the Headers dictionary in the following way:
+                        //  - "x-datadog-trace-id": "<trace_id>"
+                        //  - "x-dataadog-parent-id": "<span_id>"
+                        //  - "x-datadog-sampling-priority": "<sampling_priority>"
+                        properties.Headers.Add(HttpHeaderNames.TraceId, traceId.ToString(CultureInfo.InvariantCulture));
+                        properties.Headers.Add(HttpHeaderNames.ParentId, spanId.ToString(CultureInfo.InvariantCulture));
+                        properties.Headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority);
 
                         channel.BasicPublish(exchange: "",
-                                            routingKey: "hello",
-                                            basicProperties: properties,
-                                            body: body);
+                                             routingKey: "hello",
+                                             basicProperties: properties, // Pass the properties with the message
+                                             body: body);
                         Console.WriteLine(" [x] Sent {0}", message);
+                        Console.WriteLine("     {0}:{1}", HttpHeaderNames.TraceId, properties.Headers[HttpHeaderNames.TraceId]);
+                        Console.WriteLine("     {0}:{1}", HttpHeaderNames.ParentId, properties.Headers[HttpHeaderNames.ParentId]);
+                        Console.WriteLine("     {0}:{1}", HttpHeaderNames.SamplingPriority, properties.Headers[HttpHeaderNames.SamplingPriority]);
                     }
                 }
 
