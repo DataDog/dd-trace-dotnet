@@ -81,8 +81,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // get Profiler interface
-  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo4>(
-      &this->info_);
+  HRESULT hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo4),
+      (void **)&this->info_);
   if (FAILED(hr)) {
     Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo4 not found.");
     return E_FAIL;
@@ -184,7 +184,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // set event mask to subscribe to events and disable NGEN images
   // get ICorProfilerInfo6 for net452+
   ICorProfilerInfo6* info6;
-  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo6>(&info6);
+  hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void **)&info6);
 
   if (SUCCEEDED(hr)) {
     Debug("Interface ICorProfilerInfo6 found.");
