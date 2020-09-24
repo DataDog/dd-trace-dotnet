@@ -37,7 +37,7 @@ namespace Receive
                         ulong? traceId = null;
                         SamplingPriority? samplingPriority = null;
 
-                        // Parse parentId
+                        // Parse parentId header
                         if (headers?[HttpHeaderNames.ParentId] is byte[] parentSpanIdBytes)
                         {
                             var parentSpanIdString = Encoding.UTF8.GetString(parentSpanIdBytes);
@@ -47,7 +47,7 @@ namespace Receive
                             }
                         }
 
-                        // Parse traceId
+                        // Parse traceId header
                         if (headers?[HttpHeaderNames.TraceId] is byte[] traceIdBytes)
                         {
                             var traceIdString = Encoding.UTF8.GetString(traceIdBytes);
@@ -57,7 +57,7 @@ namespace Receive
                             }
                         }
 
-                        // Parse samplingPriority
+                        // Parse samplingPriority header
                         if (headers?[HttpHeaderNames.SamplingPriority] is byte[] samplingPriorityBytes)
                         {
                             var samplingPriorityString = Encoding.UTF8.GetString(samplingPriorityBytes);
