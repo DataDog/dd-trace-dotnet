@@ -31,6 +31,9 @@ stages:
 
   - job: Windows
     pool: Benchmarks
+    
+    workspace:
+      clean: all
 
     # Enable the Datadog Agent service for this job
     services:
