@@ -67,32 +67,6 @@ namespace Datadog.Trace.Agent.MessagePack
 
             offset += value.Tags.SerializeTo(ref bytes, offset);
 
-            /*
-            if (value.Tags != null)
-            {
-                offset += MessagePackBinary.WriteString(ref bytes, offset, "meta");
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, value.Tags.Count);
-
-                foreach (var pair in value.Tags)
-                {
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Key);
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Value);
-                }
-            }
-
-            if (value.Metrics != null)
-            {
-                offset += MessagePackBinary.WriteString(ref bytes, offset, "metrics");
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, value.Metrics.Count);
-
-                foreach (var pair in value.Metrics)
-                {
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Key);
-                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, pair.Value);
-                }
-            }
-            */
-
             return offset - originalOffset;
         }
 

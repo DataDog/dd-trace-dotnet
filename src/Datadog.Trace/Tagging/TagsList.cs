@@ -173,10 +173,12 @@ namespace Datadog.Trace.Tagging
 
         public int SerializeTo(ref byte[] bytes, int offset)
         {
+            int originalOffset = offset;
+
             offset += WriteTags(ref bytes, offset);
             offset += WriteMetrics(ref bytes, offset);
 
-            return offset;
+            return offset - originalOffset;
         }
 
         public override string ToString()
@@ -244,6 +246,8 @@ namespace Datadog.Trace.Tagging
 
         private int WriteTags(ref byte[] bytes, int offset)
         {
+            int originalOffset = offset;
+
             offset += MessagePackBinary.WriteString(ref bytes, offset, "meta");
 
             int headerOffset = offset;
@@ -287,11 +291,13 @@ namespace Datadog.Trace.Tagging
             // Write updated count
             MessagePackBinary.WriteMapHeader(ref bytes, headerOffset, count);
 
-            return offset;
+            return offset - originalOffset;
         }
 
         private int WriteMetrics(ref byte[] bytes, int offset)
         {
+            int originalOffset = offset;
+
             offset += MessagePackBinary.WriteString(ref bytes, offset, "metrics");
 
             var metrics = Metrics;
@@ -335,7 +341,7 @@ namespace Datadog.Trace.Tagging
             // Write updated count
             MessagePackBinary.WriteMapHeader(ref bytes, headerOffset, count);
 
-            return offset;
+            return offset - originalOffset;
         }
     }
 }
