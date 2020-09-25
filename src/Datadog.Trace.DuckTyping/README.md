@@ -63,7 +63,7 @@ public readonly struct IDuckAnonymous___<>f__AnonymousType0`2[System.String,Syst
 Depending on the proxy definition type, the library will create different proxy types as shown in the following table:
 
 |    Proxy Definition Type   |               Resulting Proxy Type               |
-|:--------------------------:|:------------------------------------------------:|
+|----------------------------|--------------------------------------------------|
 | Interface                  | Struct implementing the interface                |
 | Abstract class             | Class inherits and overriding the abstract class |
 | Class with virtual members | Class inherits and overriding the virtual class  |
@@ -214,7 +214,7 @@ public interface IMyProxy
 In order to support all accessor modifiers for: instance types, parameters and return value types, the Duck Type library applies some `tricks` to avoid the visibility checks. This is done automatically when the library is creating the proxy type. In summary the following logic is applied depending on each case:
 
 |      Target Instance AM      | Target Member Type |       Target Member AM       | Access Method                                 |
-|:----------------------------:|--------------------|:----------------------------:|-----------------------------------------------|
+|------------------------------|--------------------|------------------------------|-----------------------------------------------|
 | Public                       | Field              | Public                       | Direct                                        |
 | Public                       | Field              | Private, Protected, Internal | through DynamicMethod                         |
 | Public                       | Property           | Public                       | Direct                                        |
