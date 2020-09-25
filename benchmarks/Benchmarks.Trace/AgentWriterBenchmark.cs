@@ -18,6 +18,7 @@ namespace Benchmarks.Trace
 
         private static readonly IAgentWriter AgentWriter;
         private static readonly Span[] Spans;
+        private static readonly Span[] EnrichedSpans;
 
         static AgentWriterBenchmark()
         {
@@ -34,12 +35,20 @@ namespace Benchmarks.Trace
             AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
 
             Spans = new Span[SpanCount];
+            EnrichedSpans = new Span[SpanCount];
             var now = DateTimeOffset.UtcNow;
 
             for (int i = 0; i < SpanCount; i++)
             {
                 Spans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
+                EnrichedSpans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
+                EnrichedSpans[i].SetTag(Tags.Env, "Benchmark");
+                EnrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
+
+            // Run benchmarks once to reduce noise
+            new AgentWriterBenchmark().WriteAndFlushTraces().GetAwaiter().GetResult();
+            new AgentWriterBenchmark().WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -49,6 +58,16 @@ namespace Benchmarks.Trace
         public Task WriteAndFlushTraces()
         {
             AgentWriter.WriteTrace(Spans);
+            return AgentWriter.FlushTracesAsync();
+        }
+
+        /// <summary>
+        /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics)
+        /// </summary>
+        [Benchmark]
+        public Task WriteAndFlushEnrichedTraces()
+        {
+            AgentWriter.WriteTrace(EnrichedSpans);
             return AgentWriter.FlushTracesAsync();
         }
 
