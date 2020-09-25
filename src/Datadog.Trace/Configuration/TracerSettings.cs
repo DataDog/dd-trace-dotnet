@@ -263,7 +263,7 @@ namespace Datadog.Trace.Configuration
         public bool DiagnosticSourceEnabled
         {
             get => GlobalSettings.Source.DiagnosticSourceEnabled;
-            set => GlobalSettings.Source.DiagnosticSourceEnabled = value;
+            set { }
         }
 
         /// <summary>
