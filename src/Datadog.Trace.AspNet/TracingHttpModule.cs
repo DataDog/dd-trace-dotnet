@@ -134,7 +134,11 @@ namespace Datadog.Trace.AspNet
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                tags.AnalyticsSampleRate = analyticsSampleRate;
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
             }

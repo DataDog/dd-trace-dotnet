@@ -4,8 +4,8 @@ namespace Datadog.Trace.Tagging
 {
     internal class WebTags : CommonTags
     {
-        private static new readonly IProperty<string>[] TagsProperties =
-            CommonTags.TagsProperties.Concat(
+        internal static readonly IProperty<string>[] WebTagsProperties =
+            CommonTagsProperties.Concat(
                 new Property<WebTags, string>(Trace.Tags.SpanKind, t => t.SpanKind, (t, v) => t.SpanKind = v),
                 new Property<WebTags, string>(Trace.Tags.HttpStatusCode, t => t.StatusCode, (t, v) => t.StatusCode = v),
                 new Property<WebTags, string>(Trace.Tags.HttpMethod, t => t.HttpMethod, (t, v) => t.HttpMethod = v),
@@ -13,8 +13,8 @@ namespace Datadog.Trace.Tagging
                 new Property<WebTags, string>(Trace.Tags.HttpUrl, t => t.HttpUrl, (t, v) => t.HttpUrl = v),
                 new Property<WebTags, string>(Trace.Tags.Language, t => t.Language, (t, v) => t.Language = v));
 
-        private static new readonly IProperty<double?>[] MetricsProperties =
-            CommonTags.MetricsProperties.Concat(
+        internal static readonly IProperty<double?>[] WebMetricsProperties =
+            CommonMetricsProperties.Concat(
                 new Property<WebTags, double?>(Trace.Tags.Analytics, t => t.AnalyticsSampleRate, (t, v) => t.AnalyticsSampleRate = v));
 
         public string SpanKind { get; set; }
@@ -31,8 +31,8 @@ namespace Datadog.Trace.Tagging
 
         public double? AnalyticsSampleRate { get; set; }
 
-        protected override IProperty<string>[] GetAdditionalTags() => TagsProperties;
+        protected override IProperty<string>[] GetAdditionalTags() => WebTagsProperties;
 
-        protected override IProperty<double?>[] GetAdditionalMetrics() => MetricsProperties;
+        protected override IProperty<double?>[] GetAdditionalMetrics() => WebMetricsProperties;
     }
 }

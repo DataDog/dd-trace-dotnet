@@ -4,8 +4,8 @@ namespace Datadog.Trace.Tagging
 {
     internal class AspNetTags : WebTags
     {
-        private static new readonly IProperty<string>[] TagsProperties =
-            WebTags.TagsProperties.Concat(
+        private static readonly IProperty<string>[] AspNetTagsProperties =
+            WebTagsProperties.Concat(
                 new Property<AspNetTags, string>(Trace.Tags.AspNetRoute, t => t.AspNetRoute, (t, v) => t.AspNetRoute = v),
                 new Property<AspNetTags, string>(Trace.Tags.AspNetController, t => t.AspNetController, (t, v) => t.AspNetController = v),
                 new Property<AspNetTags, string>(Trace.Tags.AspNetAction, t => t.AspNetAction, (t, v) => t.AspNetAction = v));
@@ -16,6 +16,6 @@ namespace Datadog.Trace.Tagging
 
         public string AspNetAction { get; set; }
 
-        protected override IProperty<string>[] GetAdditionalTags() => TagsProperties;
+        protected override IProperty<string>[] GetAdditionalTags() => AspNetTagsProperties;
     }
 }

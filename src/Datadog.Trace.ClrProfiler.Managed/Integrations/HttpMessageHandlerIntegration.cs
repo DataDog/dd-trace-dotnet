@@ -245,13 +245,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var httpMethod = requestValue.Method.Method;
             var requestUri = requestValue.RequestUri;
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationName))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationName, out var tags))
             {
                 try
                 {
                     if (scope != null)
                     {
-                        scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
+                        tags.HttpClientHandlerType = reportedType.FullName;
 
                         // add distributed tracing headers to the HTTP request
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, new HttpHeadersCollection(requestValue.Headers));
@@ -264,7 +264,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     // this tag can only be set after the response is returned
                     int statusCode = response.As<HttpResponseMessageStruct>().StatusCode;
-                    scope?.Span.SetTag(Tags.HttpStatusCode, (statusCode).ToString());
+
+                    if (scope != null)
+                    {
+                        tags.HttpStatusCode = statusCode.ToString();
+                    }
 
                     return response;
                 }

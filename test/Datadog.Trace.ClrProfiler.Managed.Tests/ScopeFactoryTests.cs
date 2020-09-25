@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             const string integrationName = "HttpMessageHandler";
 
-            using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), integrationName))
+            using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), integrationName, out _))
             {
                 Assert.Equal(expected, automaticScope.Span.ResourceName);
             }
@@ -83,9 +83,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             const string method = "GET";
             const string integrationName = "HttpMessageHandler";
 
-            using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), integrationName))
+            using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), integrationName, out var tags))
             {
                 Assert.Equal(expected, automaticScope.Span.GetTag(Tags.HttpUrl));
+                Assert.Equal(expected, tags.HttpUrl);
             }
         }
 
@@ -110,9 +111,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 manualScope.Span.ResourceName = $"{method} {url}";
                 manualScope.Span.ServiceName = $"{tracer.DefaultServiceName}-http-client";
 
-                using (var automaticScope1 = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(url), integrationName1))
+                using (var automaticScope1 = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(url), integrationName1, out _))
                 {
-                    using (var automaticScope2 = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(url), integrationName2))
+                    using (var automaticScope2 = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(url), integrationName2, out _))
                     {
                         Assert.NotNull(manualScope);
                         Assert.NotNull(automaticScope1);

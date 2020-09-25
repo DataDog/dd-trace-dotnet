@@ -4,10 +4,8 @@ namespace Datadog.Trace.Tagging
 {
     internal class HttpTags : CommonTags
     {
-        private const string HttpClientHandlerTypeKey = "http-client-handler-type";
-
-        private static new readonly IProperty<string>[] TagsProperties =
-            CommonTags.TagsProperties.Concat(
+        internal static readonly IProperty<string>[] HttpTagsProperties =
+            CommonTagsProperties.Concat(
                 new Property<HttpTags, string>(Trace.Tags.Env, t => t.Environment, (t, v) => t.Environment = v),
                 new Property<HttpTags, string>(Trace.Tags.Version, t => t.Version, (t, v) => t.Version = v),
                 new Property<HttpTags, string>(Trace.Tags.HttpStatusCode, t => t.HttpStatusCode, (t, v) => t.HttpStatusCode = v),
@@ -17,9 +15,11 @@ namespace Datadog.Trace.Tagging
                 new Property<HttpTags, string>(Trace.Tags.HttpUrl, t => t.HttpUrl, (t, v) => t.HttpUrl = v),
                 new Property<HttpTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName, (t, v) => t.InstrumentationName = v));
 
-        private static new readonly IProperty<double?>[] MetricsProperties =
-            CommonTags.MetricsProperties.Concat(
+        internal static readonly IProperty<double?>[] HttpMetricsProperties =
+            CommonMetricsProperties.Concat(
                 new Property<HttpTags, double?>(Trace.Tags.Analytics, t => t.AnalyticsSampleRate, (t, v) => t.AnalyticsSampleRate = v));
+
+        private const string HttpClientHandlerTypeKey = "http-client-handler-type";
 
         public string SpanKind { get; set; }
 
@@ -35,8 +35,8 @@ namespace Datadog.Trace.Tagging
 
         public double? AnalyticsSampleRate { get; set; }
 
-        protected override IProperty<string>[] GetAdditionalTags() => TagsProperties;
+        protected override IProperty<string>[] GetAdditionalTags() => HttpTagsProperties;
 
-        protected override IProperty<double?>[] GetAdditionalMetrics() => MetricsProperties;
+        protected override IProperty<double?>[] GetAdditionalMetrics() => HttpMetricsProperties;
     }
 }
