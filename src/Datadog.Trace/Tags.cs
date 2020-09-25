@@ -210,5 +210,11 @@ namespace Datadog.Trace
         /// Configures the origin of the trace
         /// </summary>
         public const string Origin = "_dd.origin";
+
+        internal const string ElasticsearchAction = "elasticsearch.action";
+
+        internal const string ElasticsearchMethod = "elasticsearch.method";
+
+        internal const string ElasticsearchUrl = "elasticsearch.url";
     }
 }

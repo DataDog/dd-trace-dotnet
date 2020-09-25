@@ -273,8 +273,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal static bool DisableSharedInstance { get; set; }
 
-        internal static bool UseOptim { get; set; }
-
         /// <summary>
 >>>>>>> Remove extra types and implement SqlTags
         /// Create a <see cref="TracerSettings"/> populated from the default sources

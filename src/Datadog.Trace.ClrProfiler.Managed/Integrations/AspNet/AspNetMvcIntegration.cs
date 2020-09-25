@@ -150,7 +150,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                tags.AnalyticsSampleRate = analyticsSampleRate;
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {
