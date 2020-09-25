@@ -35,12 +35,12 @@ namespace Datadog.Trace.DuckTyping
         public DuckKind Kind { get; set; } = DuckKind.Property;
 
         /// <summary>
-        /// Gets or sets the generic parameter type names definition for a generic method call
+        /// Gets or sets the generic parameter type names definition for a generic method call (required when calling generic methods and instance type is non public)
         /// </summary>
         public string[] GenericParameterTypeNames { get; set; }
 
         /// <summary>
-        /// Gets or sets the parameter type names of the target method
+        /// Gets or sets the parameter type names of the target method (optional / used to disambiguation)
         /// </summary>
         public string[] ParameterTypeNames { get; set; }
     }

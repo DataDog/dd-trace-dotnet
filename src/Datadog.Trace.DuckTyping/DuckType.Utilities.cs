@@ -27,9 +27,9 @@ namespace Datadog.Trace.DuckTyping
             return (IDuckType)Activator.CreateInstance(result.ProxyType, originalValue);
         }
 
-        internal static TProxyInstance CreateProxyTypeInstance<TProxyInstance>(object value)
+        internal static TProxyInstance CreateProxyTypeInstance<TProxyInstance, TInstance>(TInstance value)
         {
-            return ProxyActivator<TProxyInstance>.CreateInstance(value);
+            return ProxyActivator<TProxyInstance, TInstance>.CreateInstance(value);
         }
 
         /// <summary>
@@ -56,19 +56,19 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private readonly struct InstanceWrapper
+        private readonly struct InstanceWrapper<T>
         {
-            private readonly object _currentInstance;
+            private readonly T _currentInstance;
 
-            public InstanceWrapper(object instance)
+            public InstanceWrapper(T instance)
             {
                 _currentInstance = instance;
             }
         }
 
-        internal static class ProxyActivator<TProxy>
+        internal static class ProxyActivator<TProxy, TInstance>
         {
-            private delegate ref TProxy ConverterDelegate(ref InstanceWrapper wrapper);
+            private delegate ref TProxy ConverterDelegate(ref InstanceWrapper<TInstance> wrapper);
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
             private static readonly ConverterDelegate _converter;
@@ -82,18 +82,18 @@ namespace Datadog.Trace.DuckTyping
                 DynamicMethod converterMethod = new DynamicMethod(
                     $"WrapperConverter<{typeof(TProxy).Name}>._converter",
                     typeof(TProxy).MakeByRefType(),
-                    new[] { typeof(InstanceWrapper).MakeByRefType() });
+                    new[] { typeof(InstanceWrapper<TInstance>).MakeByRefType() });
                 ILGenerator il = converterMethod.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ret);
                 _converter = (ConverterDelegate)converterMethod.CreateDelegate(typeof(ConverterDelegate));
             }
 
-            public static TProxy CreateInstance(object instance)
+            public static TProxy CreateInstance(TInstance instance)
             {
                 if (typeof(TProxy).IsValueType)
                 {
-                    InstanceWrapper wrapper = new InstanceWrapper(instance);
+                    InstanceWrapper<TInstance> wrapper = new InstanceWrapper<TInstance>(instance);
                     return _converter(ref wrapper);
                 }
                 else

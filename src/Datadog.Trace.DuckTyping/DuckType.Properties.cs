@@ -66,7 +66,7 @@ namespace Datadog.Trace.DuckTyping
                 targetParametersTypes[pIndex] = targetParamType;
             }
 
-            // Call the set method
+            // Call the getter method
             if (publicInstance)
             {
                 // If the instance is public we can emit directly without any dynamic method
@@ -210,7 +210,7 @@ namespace Datadog.Trace.DuckTyping
                 targetParametersTypes[pIndex] = targetParamType;
             }
 
-            // Call the set method
+            // Call the setter method
             if (publicInstance)
             {
                 // If the instance is public we can emit directly without any dynamic method

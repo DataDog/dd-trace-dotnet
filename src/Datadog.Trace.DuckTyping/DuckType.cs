@@ -118,7 +118,7 @@ namespace Datadog.Trace.DuckTyping
                 // Create IDuckType and IDuckTypeSetter implementations
                 FieldInfo instanceField = CreateIDuckTypeImplementation(proxyTypeBuilder, targetType);
 
-                // Define .ctor
+                // Define .ctor to store the instance field
                 ConstructorBuilder ctorBuilder = proxyTypeBuilder.DefineConstructor(
                     MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
                     CallingConventions.Standard,
@@ -129,8 +129,10 @@ namespace Datadog.Trace.DuckTyping
                 ctorIL.Emit(OpCodes.Stfld, instanceField);
                 ctorIL.Emit(OpCodes.Ret);
 
-                // Create Members
+                // Create Fields and Properties
                 CreateProperties(proxyTypeBuilder, proxyType, targetType, instanceField);
+
+                // Create Methods
                 CreateMethods(proxyTypeBuilder, proxyType, targetType, instanceField);
 
                 // Create Type
@@ -178,10 +180,6 @@ namespace Datadog.Trace.DuckTyping
             il = getPropType.GetILGenerator();
             il.Emit(OpCodes.Ldtoken, targetType);
             il.EmitCall(OpCodes.Call, GetTypeFromHandleMethodInfo, null);
-
-            // il.Emit(OpCodes.Ldarg_0);
-            // il.Emit(OpCodes.Ldfld, instanceField);
-            // il.EmitCall(OpCodes.Callvirt, targetType.GetMethod("GetType"), null);
             il.Emit(OpCodes.Ret);
             propType.SetGetMethod(getPropType);
 
@@ -228,8 +226,6 @@ namespace Datadog.Trace.DuckTyping
 
         private static void CreateProperties(TypeBuilder proxyTypeBuilder, Type proxyType, Type targetType, FieldInfo instanceField)
         {
-            Version targetTypeAssemblyVersion = targetType.Assembly.GetName().Version;
-
             // Gets all properties to be implemented
             List<PropertyInfo> proxyTypeProperties = GetProperties(proxyType);
 

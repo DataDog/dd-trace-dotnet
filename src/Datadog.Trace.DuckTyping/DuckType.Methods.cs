@@ -112,7 +112,7 @@ namespace Datadog.Trace.DuckTyping
                 MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(proxyMethodDefinition.Name, proxyMethodAttributes, proxyMethodDefinition.ReturnType, proxyMethodDefinitionParametersTypes);
                 if (proxyMethodDefinitionGenericArgumentsNames.Length > 0)
                 {
-                    GenericTypeParameterBuilder[] proxyMethodGenericTypeParametersBuilders = proxyMethod.DefineGenericParameters(proxyMethodDefinitionGenericArgumentsNames);
+                    _ = proxyMethod.DefineGenericParameters(proxyMethodDefinitionGenericArgumentsNames);
                 }
 
                 // Define the proxy method implementation parameters for optional parameters with default values
@@ -140,6 +140,7 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Ldfld, instanceField);
                 }
 
+                // Load all the arguments / parameters
                 int maxParamLength = Math.Max(proxyMethodDefinitionParameters.Length, targetMethodParameters.Length);
                 for (int idx = 0; idx < maxParamLength; idx++)
                 {
@@ -164,7 +165,7 @@ namespace Datadog.Trace.DuckTyping
                     {
                         if (proxyParamInfo.IsOut != targetParamInfo.IsOut || proxyParamInfo.IsIn != targetParamInfo.IsIn)
                         {
-                            // The target method parameter is not optional.
+                            // the proxy and target parameters doesn't have the same signature
                             throw new DuckTypeProxyAndTargetMethodParameterSignatureMismatch(proxyMethodDefinition, targetMethod);
                         }
 

@@ -38,7 +38,7 @@ namespace Datadog.Trace.DuckTyping
             else
             {
                 // If the instance or the field are non public we need to create a Dynamic method to overpass the visibility checks
-                // we can't access non public types so we have to cast to object type (in the instance object and the return type).
+                // we can't access non public types so we have to cast to object type (in the instance object and the return type if is needed).
 
                 string dynMethodName = $"_getNonPublicField+{targetField.DeclaringType.Name}.{targetField.Name}";
                 returnType = targetField.FieldType.IsPublic || targetField.FieldType.IsNestedPublic ? targetField.FieldType : typeof(object);
