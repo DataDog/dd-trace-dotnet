@@ -289,7 +289,7 @@ public interface IMyProxy
 
 ## Duck chaining
 
-Duck chaining enables the possibility to interact with properties or methods returning or using as parameter a non public type to be wrapped with a new duck type proxy, so we can access the internals of those objects.
+Duck chaining enables the possibility to interact with properties or methods returning or using non public type parameters to be wrapped with a new duck type proxy, so we can access the internals of those objects.
 
 ### Example
 
