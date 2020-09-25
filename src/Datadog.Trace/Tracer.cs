@@ -36,6 +36,10 @@ namespace Datadog.Trace
         /// </summary>
         private static int _firstInitialization = 1;
 
+        private static Tracer _instance;
+        private static bool _globalInstanceInitialized;
+        private static object _globalInstanceLock;
+
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
 
@@ -175,9 +179,18 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets or sets the global tracer object
+        /// Gets or sets the global <see cref="Tracer"/> instance.
+        /// Used by all automatic instrumentation and recommended
+        /// as the entry point for manual instrumentation.
         /// </summary>
-        public static Tracer Instance { get; set; }
+        public static Tracer Instance
+        {
+            get
+            {
+                return LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
+            }
+            set => _instance = value;
+        }
 
         /// <summary>
         /// Gets the active scope
