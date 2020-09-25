@@ -44,12 +44,6 @@ namespace Datadog.Trace
         static Tracer()
         {
             TracingProcessManager.Initialize();
-
-            if (!TracerSettings.DisableSharedInstance)
-            {
-                // create the default global Tracer
-                Instance = new Tracer();
-            }
         }
 
         /// <summary>
