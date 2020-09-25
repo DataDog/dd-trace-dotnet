@@ -8,55 +8,55 @@ The goal of the library is to have an unify code to access unknown types as fast
 Given the following scenario, where we want to access the data from an anonymous class instance in another method, a code example to do that would be:
 
 ```csharp
-	public class Program
+public class Program
+{
+	public static void Main()
 	{
-		public static void Main()
-		{
-			// We create an anonymous object
-			var anonymousObject = new { Name = ".NET Core", Version = "3.1" };
-			
-			Process(anonymousObject);
-		}
+		// We create an anonymous object
+		var anonymousObject = new { Name = ".NET Core", Version = "3.1" };
 		
-		public static void Process(object obj) 
-		{
-            // First, we create a proxy instance using IDuckAnonymous type
-            // as a proxy definition and the obj instance as the target.
-			// Now the proxyInstance implements IDuckAnonymous type and all
-            // getters to access the anonymous object internals were generated
-            // automatically for us.
-
-            // We use the `As` extension method to call the duck typing proxy creator.
-			var proxyInstance = obj.As<IDuckAnonymous>();
-
-			// Here we can access the internal properties
-			Console.WriteLine($"Name: {proxyInstance.Name}");
-			Console.WriteLine($"Version: {proxyInstance.Version}");
-		}
-		
-		public interface IDuckAnonymous 
-		{
-			string Name { get; }
-			string Version { get; }
-		}		
+		Process(anonymousObject);
 	}
+	
+	public static void Process(object obj) 
+	{
+                // First, we create a proxy instance using IDuckAnonymous type
+                // as a proxy definition and the obj instance as the target.
+		// Now the proxyInstance implements IDuckAnonymous type and all
+                // getters to access the anonymous object internals were generated
+                // automatically for us.
+
+                // We use the `As` extension method to call the duck typing proxy creator.
+		var proxyInstance = obj.As<IDuckAnonymous>();
+
+		// Here we can access the internal properties
+		Console.WriteLine($"Name: {proxyInstance.Name}");
+		Console.WriteLine($"Version: {proxyInstance.Version}");
+	}
+	
+	public interface IDuckAnonymous 
+	{
+		string Name { get; }
+		string Version { get; }
+	}		
+}
 ```
 
 For this particular case the generated proxy type by the Duck Type library will look like this:
 
 ```csharp
-    public readonly struct IDuckAnonymous___<>f__AnonymousType0`2[System.String,System.String] : IDuckAnonymous, IDuckType
-    {
-        private readonly <>f__AnonymousType0`2[System.String,System.String] _currentInstance;
+public readonly struct IDuckAnonymous___<>f__AnonymousType0`2[System.String,System.String] : IDuckAnonymous, IDuckType
+{
+    private readonly <>f__AnonymousType0`2[System.String,System.String] _currentInstance;
 
-        // *** IDuckType implementation
-        public object Instance => _currentInstance;
-        public Type Type => typeof(<>f__AnonymousType0`2[System.String,System.String]);
+    // *** IDuckType implementation
+    public object Instance => _currentInstance;
+    public Type Type => typeof(<>f__AnonymousType0`2[System.String,System.String]);
 
-        // *** IDuckAnonymous implementation
-        public string Name => _currentInstance.Name;
-        public string Version => _currentInstance.Version;
-    }
+    // *** IDuckAnonymous implementation
+    public string Name => _currentInstance.Name;
+    public string Version => _currentInstance.Version;
+}
 ```
 
 ## Proxy types
@@ -71,18 +71,18 @@ Depending on the proxy definition type, the library will create different proxy 
 Also, all resulting proxy types implements the `IDuckType` interface to expose the target instance and type. The interface has the following definition:
 
 ```csharp
-    public interface IDuckType
-    {
-        /// <summary>
-        /// Gets instance
-        /// </summary>
-        object Instance { get; }
+public interface IDuckType
+{
+    /// <summary>
+    /// Gets instance
+    /// </summary>
+    object Instance { get; }
 
-        /// <summary>
-        /// Gets instance Type
-        /// </summary>
-        Type Type { get; }
-    }
+    /// <summary>
+    /// Gets instance Type
+    /// </summary>
+    Type Type { get; }
+}
 ```
 
 ## Controlling bindings
@@ -90,48 +90,48 @@ Also, all resulting proxy types implements the `IDuckType` interface to expose t
 To control the bindings between the proxy definition and the target type, we can make use of the `DuckAttribute` attribute type defined as:
 
 ```csharp
+/// <summary>
+/// Duck attribute
+/// </summary>
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Method, AllowMultiple = false)]
+public class DuckAttribute : Attribute
+{
     /// <summary>
-    /// Duck attribute
+    /// Gets or sets the underlying type member name
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method, AllowMultiple = false)]
-    public class DuckAttribute : Attribute
-    {
-        /// <summary>
-        /// Gets or sets the underlying type member name
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// Gets or sets duck kind
-        /// </summary>
-        public DuckKind Kind { get; set; } = DuckKind.Property;
-
-        /// <summary>
-        /// Gets or sets the generic parameter type names definition for a generic method call (required when calling generic methods and instance type is non public)
-        /// </summary>
-        public string[] GenericParameterTypeNames { get; set; }
-
-        /// <summary>
-        /// Gets or sets the parameter type names of the target method (optional / used to disambiguation)
-        /// </summary>
-        public string[] ParameterTypeNames { get; set; }
-    }
+    public string Name { get; set; }
 
     /// <summary>
-    /// Duck kind
+    /// Gets or sets duck kind
     /// </summary>
-    public enum DuckKind
-    {
-        /// <summary>
-        /// Property
-        /// </summary>
-        Property,
+    public DuckKind Kind { get; set; } = DuckKind.Property;
 
-        /// <summary>
-        /// Field
-        /// </summary>
-        Field
-    }
+    /// <summary>
+    /// Gets or sets the generic parameter type names definition for a generic method call (required when calling generic methods and instance type is non public)
+    /// </summary>
+    public string[] GenericParameterTypeNames { get; set; }
+
+    /// <summary>
+    /// Gets or sets the parameter type names of the target method (optional / used to disambiguation)
+    /// </summary>
+    public string[] ParameterTypeNames { get; set; }
+}
+
+/// <summary>
+/// Duck kind
+/// </summary>
+public enum DuckKind
+{
+    /// <summary>
+    /// Property
+    /// </summary>
+    Property,
+
+    /// <summary>
+    /// Field
+    /// </summary>
+    Field
+}
 ```
 
 This attribute can be used in `Properties` or `Methods` in the proxy definition and is used by the library to select the members we want to access.
