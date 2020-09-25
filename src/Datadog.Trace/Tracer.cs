@@ -42,7 +42,8 @@ namespace Datadog.Trace
         private IAgentWriter _agentWriter;
 
 #if !NETFRAMEWORK
-        private DiagnosticManager _diagnosticManager;
+        // use object instead of DiagnosticManager
+        private object _diagnosticManager;
 #endif
 
         static Tracer()
@@ -507,29 +508,15 @@ namespace Datadog.Trace
         }
 
 #if !NETFRAMEWORK
-        internal void StopDiagnosticManager()
-        {
-            _diagnosticManager?.Stop();
-        }
 
-        internal void SafeStartDiagnosticManager()
+        internal void StartDiagnosticManager()
         {
             try
             {
-                if (Settings.DiagnosticSourceEnabled)
+                if (IsDiagnosticSourceAvailable())
                 {
-                    // check if DiagnosticSource is available before trying to use it
-                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
-
-                    if (type == null)
-                    {
-                        Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
-                    }
-                    else
-                    {
-                        // don't call this method unless DiagnosticSource is available
-                        UnsafeStartDiagnosticManager();
-                    }
+                    // don't call this method unless DiagnosticSource is available
+                    UnsafeStartDiagnosticManager();
                 }
             }
             catch
@@ -537,6 +524,23 @@ namespace Datadog.Trace
                 // ignore
             }
         }
+
+        internal void StopDiagnosticManager()
+        {
+            try
+            {
+                if (IsDiagnosticSourceAvailable())
+                {
+                    // don't call this method unless DiagnosticSource is available
+                    UnsafeStopDiagnosticManager();
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
 #endif
 
         /// <summary>
@@ -662,18 +666,53 @@ namespace Datadog.Trace
         }
 
 #if !NETFRAMEWORK
+        private bool IsDiagnosticSourceAvailable()
+        {
+            try
+            {
+                if (Settings.DiagnosticSourceEnabled)
+                {
+                    // check if DiagnosticSource is available before trying to use it
+                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+
+                    if (type != null)
+                    {
+                        return true;
+                    }
+
+                    Log.Warning("DiagnosticSource type could not be loaded.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.SafeLogError(ex, "DiagnosticSource type could not be loaded.");
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Calling this method will crash during JIT if System.Diagnostics.DiagnosticSource.dll is not available.
         /// </summary>
         private void UnsafeStartDiagnosticManager()
         {
-            _diagnosticManager?.Dispose();
+            // stop any previous subscriptions
+            UnsafeStopDiagnosticManager();
 
+            // start new subscriptions
             var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };
             var diagnosticManager = new DiagnosticManager(observers);
             diagnosticManager.Start();
 
             _diagnosticManager = diagnosticManager;
+        }
+
+        /// <summary>
+        /// Calling this method will crash during JIT if System.Diagnostics.DiagnosticSource.dll is not available.
+        /// </summary>
+        private void UnsafeStopDiagnosticManager()
+        {
+            ((DiagnosticManager)_diagnosticManager)?.Stop();
         }
 
 #endif
