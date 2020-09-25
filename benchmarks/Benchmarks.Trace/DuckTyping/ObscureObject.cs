@@ -271,9 +271,6 @@ namespace Benchmarks.Trace.DuckTyping
 
         public class PropertyPublicObject : IObscureObject, IBaseMethodRunner
         {
-            private Dictionary<int, int> _dictioInt = new Dictionary<int, int> { [42] = 24 };
-            private Dictionary<string, string> _dictioString = new Dictionary<string, string>();
-
             // *********
 
             public static int PublicStaticGetValueType { get; } = 10;
@@ -408,14 +405,14 @@ namespace Benchmarks.Trace.DuckTyping
 
             public int this[int index]
             {
-                get => _dictioInt[index];
-                set => _dictioInt[index] = value;
+                get => 42;
+                set { }
             }
 
             public string this[string index]
             {
-                get => _dictioString[index];
-                set => _dictioString[index] = value;
+                get => "Hello World";
+                set { }
             }
 
             public override string ToString() => "Public";
@@ -453,9 +450,6 @@ namespace Benchmarks.Trace.DuckTyping
 
         internal class PropertyInternalObject
         {
-            private Dictionary<int, int> _dictioInt = new Dictionary<int, int> { [42] = 24 };
-            private Dictionary<string, string> _dictioString = new Dictionary<string, string>();
-
             public static int PublicStaticGetValueType { get; } = 10;
 
             internal static int InternalStaticGetValueType { get; } = 11;
@@ -588,14 +582,14 @@ namespace Benchmarks.Trace.DuckTyping
 
             public int this[int index]
             {
-                get => _dictioInt[index];
-                set => _dictioInt[index] = value;
+                get => 42;
+                set { }
             }
 
             public string this[string index]
             {
-                get => _dictioString[index];
-                set => _dictioString[index] = value;
+                get => "Hello World";
+                set { }
             }
 
             public override string ToString() => "Internal";
@@ -633,9 +627,6 @@ namespace Benchmarks.Trace.DuckTyping
 
         private class PropertyPrivateObject
         {
-            private Dictionary<int, int> _dictioInt = new Dictionary<int, int> { [42] = 24 };
-            private Dictionary<string, string> _dictioString = new Dictionary<string, string>();
-
             public static int PublicStaticGetValueType { get; } = 10;
 
             internal static int InternalStaticGetValueType { get; } = 11;
@@ -767,15 +758,16 @@ namespace Benchmarks.Trace.DuckTyping
             // ***
             public int this[int index]
             {
-                get => _dictioInt[index];
-                set => _dictioInt[index] = value;
+                get => 42;
+                set { }
             }
 
             public string this[string index]
             {
-                get => _dictioString[index];
-                set => _dictioString[index] = value;
+                get => "Hello World";
+                set { }
             }
+
             public override string ToString() => "Private";
 
             public void Add(string key, string value)

@@ -11,7 +11,7 @@ namespace Benchmarks.Trace.DuckTyping
     [MemoryDiagnoser]
     [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
     [CategoriesColumn]
-    public class ValueTypeFieldBenchmark
+    public class DuckTypeValueTypeFieldBenchmark
     {
         public static IEnumerable<IObscureDuckType> Proxies()
         {

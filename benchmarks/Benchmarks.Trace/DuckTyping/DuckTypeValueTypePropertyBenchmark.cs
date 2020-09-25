@@ -11,7 +11,7 @@ namespace Benchmarks.Trace.DuckTyping
     [MemoryDiagnoser]
     [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
     [CategoriesColumn]
-    public class ValueTypePropertyBenchmark
+    public class DuckTypeValueTypePropertyBenchmark
     {
         public static ObscureObject.IObscureObject BaseObject = (ObscureObject.IObscureObject)ObscureObject.GetPropertyPublicObject();
 
