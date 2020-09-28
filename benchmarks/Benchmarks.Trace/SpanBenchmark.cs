@@ -17,8 +17,6 @@ namespace Benchmarks.Trace
 
         static SpanBenchmark()
         {
-            TracerSettings.DisableSharedInstance = true;
-
             var settings = new TracerSettings
             {
                 TraceEnabled = false,

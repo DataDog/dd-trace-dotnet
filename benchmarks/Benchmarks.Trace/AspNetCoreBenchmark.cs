@@ -25,8 +25,6 @@ namespace Benchmarks.Trace
 
         static AspNetCoreBenchmark()
         {
-            TracerSettings.DisableSharedInstance = true;
-
             GlobalSettings.Source.DiagnosticSourceEnabled = true;
 
             var settings = new TracerSettings
