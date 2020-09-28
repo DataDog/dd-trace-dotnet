@@ -27,8 +27,6 @@ namespace Benchmarks.Trace
         {
             TracerSettings.DisableSharedInstance = true;
 
-            GlobalSettings.Source.DiagnosticSourceEnabled = true;
-
             var settings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false,

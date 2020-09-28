@@ -24,7 +24,6 @@ namespace Benchmarks.Trace
         static RedisBenchmark()
         {
             TracerSettings.DisableSharedInstance = true;
-            GlobalSettings.Source.DiagnosticSourceEnabled = false;
 
             var settings = new TracerSettings
             {
