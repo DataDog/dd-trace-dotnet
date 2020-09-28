@@ -56,7 +56,7 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>CreateTypeResult instance</returns>
         public static CreateTypeResult GetOrCreateProxyType(Type proxyType, Type targetType)
         {
-            VTuple<Type, Type> key = new VTuple<Type, Type>(proxyType, targetType);
+            TypesTuple key = new TypesTuple(proxyType, targetType);
 
             if (DuckTypeCache.TryGetValue(key, out CreateTypeResult proxyTypeResult))
             {

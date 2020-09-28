@@ -411,15 +411,8 @@ namespace Datadog.Trace.DuckTyping
                             !proxyArgumentType.IsGenericParameter &&
                             !proxyArgumentType.IsAssignableFrom(localType))
                         {
-                            // If we are in a duck chaining scenario we convert the field value to an object and push it to the stack
-                            ILHelpers.TypeConversion(il, localType, typeof(object));
-
-                            // Load the property type to the stack
-                            il.Emit(OpCodes.Ldtoken, proxyArgumentType);
-                            il.EmitCall(OpCodes.Call, GetTypeFromHandleMethodInfo, null);
-
-                            // We call DuckType.GetStructDuckTypeChainningValue() with the 2 loaded values from the stack: field value, property type
-                            il.EmitCall(OpCodes.Call, GetDuckTypeChainningValueMethodInfo, null);
+                            // Write the DuckType chaining code
+                            ILHelpers.WriteGetDuckTypeChaining(il, localType, proxyArgumentType);
                         }
                         else
                         {
@@ -438,15 +431,8 @@ namespace Datadog.Trace.DuckTyping
                     // Check if the type can be converted or if we need to enable duck chaining
                     if (proxyMethodDefinition.ReturnType != targetMethod.ReturnType && !proxyMethodDefinition.ReturnType.IsValueType && !proxyMethodDefinition.ReturnType.IsAssignableFrom(targetMethod.ReturnType))
                     {
-                        // If we are in a duck chaining scenario we convert the field value to an object and push it to the stack
-                        ILHelpers.TypeConversion(il, returnType, typeof(object));
-
-                        // Load the property type to the stack
-                        il.Emit(OpCodes.Ldtoken, proxyMethodDefinition.ReturnType);
-                        il.EmitCall(OpCodes.Call, GetTypeFromHandleMethodInfo, null);
-
-                        // We call DuckType.GetStructDuckTypeChainningValue() with the 2 loaded values from the stack: field value, property type
-                        il.EmitCall(OpCodes.Call, GetDuckTypeChainningValueMethodInfo, null);
+                        // Write the DuckType chaining code
+                        ILHelpers.WriteGetDuckTypeChaining(il, returnType, proxyMethodDefinition.ReturnType);
                     }
                     else if (returnType != proxyMethodDefinition.ReturnType)
                     {

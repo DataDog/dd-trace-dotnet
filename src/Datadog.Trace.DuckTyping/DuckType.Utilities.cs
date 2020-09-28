@@ -1,5 +1,5 @@
 using System;
-using System.ComponentModel;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Datadog.Trace.DuckTyping
@@ -9,24 +9,6 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
-        /// <summary>
-        /// Gets the DuckType value for a DuckType chaining value
-        /// </summary>
-        /// <param name="originalValue">Original obscure value</param>
-        /// <param name="proxyType">Proxy type</param>
-        /// <returns>IDuckType instance</returns>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static IDuckType GetDuckTypeChainningValue(object originalValue, Type proxyType)
-        {
-            if (originalValue is null)
-            {
-                return null;
-            }
-
-            CreateTypeResult result = GetOrCreateProxyType(proxyType, originalValue.GetType());
-            return result.CreateInstance(originalValue);
-        }
-
         /// <summary>
         /// Checks and ensures the arguments for the Create methods
         /// </summary>
@@ -49,6 +31,14 @@ namespace Datadog.Trace.DuckTyping
             {
                 throw new DuckTypeTypeIsNotPublicException(proxyType, nameof(proxyType));
             }
+        }
+
+        private static RuntimeMethodHandle GetRuntimeHandle(DynamicMethod dynamicMethod)
+        {
+            _dynamicGetMethodDescriptor ??= (Func<DynamicMethod, RuntimeMethodHandle>)typeof(DynamicMethod)
+                .GetMethod("GetMethodDescriptor", BindingFlags.NonPublic | BindingFlags.Instance)
+                .CreateDelegate(typeof(Func<DynamicMethod, RuntimeMethodHandle>));
+            return _dynamicGetMethodDescriptor(dynamicMethod);
         }
     }
 }

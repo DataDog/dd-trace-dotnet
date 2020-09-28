@@ -134,15 +134,8 @@ namespace Datadog.Trace.DuckTyping
             // Check if the type can be converted or if we need to enable duck chaining
             if (proxyProperty.PropertyType != targetProperty.PropertyType && !proxyProperty.PropertyType.IsValueType && !proxyProperty.PropertyType.IsAssignableFrom(targetProperty.PropertyType))
             {
-                // If we are in a duck chaining scenario we convert the field value to an object and push it to the stack
-                ILHelpers.TypeConversion(il, returnType, typeof(object));
-
-                // Load the property type to the stack
-                il.Emit(OpCodes.Ldtoken, proxyProperty.PropertyType);
-                il.EmitCall(OpCodes.Call, GetTypeFromHandleMethodInfo, null);
-
-                // We call DuckType.GetStructDuckTypeChainningValue() with the 2 loaded values from the stack: field value, property type
-                il.EmitCall(OpCodes.Call, GetDuckTypeChainningValueMethodInfo, null);
+                // Write the DuckType chaining code
+                ILHelpers.WriteGetDuckTypeChaining(il, returnType, proxyProperty.PropertyType);
             }
             else if (returnType != proxyProperty.PropertyType)
             {

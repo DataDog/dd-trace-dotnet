@@ -292,5 +292,56 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
         }
+
+        internal static void WriteGetDuckTypeChaining(ILGenerator il, Type currentType, Type proxyType)
+        {
+            LocalBuilder instanceLocal = il.DeclareLocal(currentType);
+            LocalBuilder createResultLocal = il.DeclareLocal(typeof(DuckType.CreateTypeResult));
+            Label isNullLabel = il.DefineLabel();
+            Label endLabel = il.DefineLabel();
+
+            // Store the instance stack value to local
+            WriteStoreLocal(instanceLocal.LocalIndex, il);
+
+            // Check if the stack value is null
+            WriteLoadLocal(instanceLocal.LocalIndex, il);
+            il.Emit(OpCodes.Brfalse_S, isNullLabel);
+
+            // ***
+            // Is not null, we create the new proxy instance
+            // ***
+
+            // Load the proxy definition type to the stack.
+            il.Emit(OpCodes.Ldtoken, proxyType);
+            il.EmitCall(OpCodes.Call, DuckType.GetTypeFromHandleMethodInfo, null);
+
+            // Load the instance type to the stack.
+            WriteLoadLocal(instanceLocal.LocalIndex, il);
+            il.EmitCall(OpCodes.Callvirt, DuckType.ObjectGetTypeMethodInfo, null);
+
+            // Gets the CreateTypeResult from calling DuckType.GetOrCreateProxyTypeMethodInfo() to the stack
+            // and store it to the local var.
+            il.EmitCall(OpCodes.Call, DuckType.GetOrCreateProxyTypeMethodInfo, null);
+            WriteStoreLocal(createResultLocal.LocalIndex, il);
+
+            // Load the address of CreateTypeResult (to call an instance method) and load the instance from the local var.
+            il.Emit(OpCodes.Ldloca_S, createResultLocal.LocalIndex);
+            WriteLoadLocal(instanceLocal.LocalIndex, il);
+
+            // Call DuckType.CreateInstanceMethod() with both values from the stack
+            il.EmitCall(OpCodes.Call, DuckType.CreateInstanceMethodInfo, null);
+
+            // Jump and skip the null handling.
+            il.Emit(OpCodes.Br, endLabel);
+
+            // ***
+            // Is null
+            // ***
+            il.MarkLabel(isNullLabel);
+            il.Emit(OpCodes.Ldnull);
+
+            // End
+            il.MarkLabel(endLabel);
+        }
     }
 }
