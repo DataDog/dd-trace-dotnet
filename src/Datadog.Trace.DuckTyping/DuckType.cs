@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Threading;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -25,9 +27,10 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="instance">Instance object</param>
         /// <typeparam name="T">Duck type</typeparam>
         /// <returns>Duck type proxy</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T Create<T>(object instance)
         {
-            return (T)Create(typeof(T), instance);
+            return (T)CreateCache<T>.Create(instance);
         }
 
         /// <summary>
@@ -36,6 +39,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="proxyType">Duck type</param>
         /// <param name="instance">Instance object</param>
         /// <returns>Duck Type proxy</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IDuckType Create(Type proxyType, object instance)
         {
             // Validate arguments
@@ -144,11 +148,11 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create Type
                 Type pType = proxyTypeBuilder.CreateTypeInfo().AsType();
-                return new CreateTypeResult(pType, GetCreateProxyInstanceDelegate(pType, targetType), null);
+                return new CreateTypeResult(pType, targetType, GetCreateProxyInstanceDelegate(pType, targetType), null);
             }
             catch (Exception ex)
             {
-                return new CreateTypeResult(null, null, ExceptionDispatchInfo.Capture(ex));
+                return new CreateTypeResult(null, targetType, null, ExceptionDispatchInfo.Capture(ex));
             }
         }
 
@@ -391,6 +395,11 @@ namespace Datadog.Trace.DuckTyping
             /// </summary>
             public readonly bool Success;
 
+            /// <summary>
+            /// Target type
+            /// </summary>
+            public readonly Type TargetType;
+
             private readonly Type _proxyType;
             private readonly ExceptionDispatchInfo _exceptionInfo;
             private readonly CreateProxyInstance _activator;
@@ -398,15 +407,17 @@ namespace Datadog.Trace.DuckTyping
             /// <summary>
             /// Initializes a new instance of the <see cref="CreateTypeResult"/> struct.
             /// </summary>
-            /// <param name="proxyTypeDefinition">Proxy type definition class</param>
+            /// <param name="proxyType">Proxy type</param>
+            /// <param name="targetType">Target type</param>
             /// <param name="activator">Proxy activator</param>
             /// <param name="exceptionInfo">Exception dispatch info instance</param>
-            internal CreateTypeResult(Type proxyTypeDefinition, CreateProxyInstance activator, ExceptionDispatchInfo exceptionInfo)
+            internal CreateTypeResult(Type proxyType, Type targetType, CreateProxyInstance activator, ExceptionDispatchInfo exceptionInfo)
             {
-                _proxyType = proxyTypeDefinition;
+                _proxyType = proxyType;
+                TargetType = targetType;
                 _activator = activator;
                 _exceptionInfo = exceptionInfo;
-                Success = proxyTypeDefinition != null && exceptionInfo == null;
+                Success = proxyType != null && exceptionInfo == null;
             }
 
             /// <summary>
@@ -430,6 +441,58 @@ namespace Datadog.Trace.DuckTyping
             {
                 _exceptionInfo?.Throw();
                 return _activator(instance);
+            }
+        }
+
+        /// <summary>
+        /// Generics Create Cache FastPath
+        /// </summary>
+        /// <typeparam name="T">Type of proxy definition</typeparam>
+        public static class CreateCache<T>
+        {
+            private static CreateTypeResult _fastPath = default;
+
+            /// <summary>
+            /// Gets the proxy type for a target type using the T proxy definition
+            /// </summary>
+            /// <param name="targetType">Target type</param>
+            /// <returns>CreateTypeResult instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static CreateTypeResult GetProxy(Type targetType)
+            {
+                // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
+                CreateTypeResult fastPath = _fastPath;
+                if (fastPath.TargetType == targetType)
+                {
+                    return fastPath;
+                }
+
+                Type proxyTypeDefinition = typeof(T);
+                CreateTypeResult result = GetOrCreateProxyType(proxyTypeDefinition, targetType);
+
+                fastPath = _fastPath;
+                if (fastPath.TargetType is null)
+                {
+                    _fastPath = result;
+                }
+
+                return result;
+            }
+
+            /// <summary>
+            /// Create a new instance of a proxy type for a target instance using the T proxy definition
+            /// </summary>
+            /// <param name="instance">Object instance</param>
+            /// <returns>Proxy instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static IDuckType Create(object instance)
+            {
+                if (instance is null)
+                {
+                    return null;
+                }
+
+                return GetProxy(instance.GetType()).CreateInstance(instance);
             }
         }
     }

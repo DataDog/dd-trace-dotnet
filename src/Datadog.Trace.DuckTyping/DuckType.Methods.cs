@@ -411,8 +411,11 @@ namespace Datadog.Trace.DuckTyping
                             !proxyArgumentType.IsGenericParameter &&
                             !proxyArgumentType.IsAssignableFrom(localType))
                         {
-                            // Write the DuckType chaining code
-                            ILHelpers.WriteGetDuckTypeChaining(il, localType, proxyArgumentType);
+                            // We call DuckType.CreateCache<>.Create()
+                            MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
+                                .MakeGenericType(proxyArgumentType).GetMethod("Create");
+
+                            il.Emit(OpCodes.Call, getProxyMethodInfo);
                         }
                         else
                         {
@@ -431,8 +434,11 @@ namespace Datadog.Trace.DuckTyping
                     // Check if the type can be converted or if we need to enable duck chaining
                     if (proxyMethodDefinition.ReturnType != targetMethod.ReturnType && !proxyMethodDefinition.ReturnType.IsValueType && !proxyMethodDefinition.ReturnType.IsAssignableFrom(targetMethod.ReturnType))
                     {
-                        // Write the DuckType chaining code
-                        ILHelpers.WriteGetDuckTypeChaining(il, returnType, proxyMethodDefinition.ReturnType);
+                        // We call DuckType.CreateCache<>.Create()
+                        MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
+                            .MakeGenericType(proxyMethodDefinition.ReturnType).GetMethod("Create");
+
+                        il.Emit(OpCodes.Call, getProxyMethodInfo);
                     }
                     else if (returnType != proxyMethodDefinition.ReturnType)
                     {

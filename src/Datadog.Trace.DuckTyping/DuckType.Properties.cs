@@ -134,8 +134,11 @@ namespace Datadog.Trace.DuckTyping
             // Check if the type can be converted or if we need to enable duck chaining
             if (proxyProperty.PropertyType != targetProperty.PropertyType && !proxyProperty.PropertyType.IsValueType && !proxyProperty.PropertyType.IsAssignableFrom(targetProperty.PropertyType))
             {
-                // Write the DuckType chaining code
-                ILHelpers.WriteGetDuckTypeChaining(il, returnType, proxyProperty.PropertyType);
+                // We call DuckType.CreateCache<>.Create()
+                MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
+                    .MakeGenericType(proxyProperty.PropertyType).GetMethod("Create");
+
+                il.Emit(OpCodes.Call, getProxyMethodInfo);
             }
             else if (returnType != proxyProperty.PropertyType)
             {
