@@ -8,6 +8,13 @@ using System.Runtime.ExceptionServices;
 namespace Datadog.Trace.DuckTyping
 {
     /// <summary>
+    /// Create proxy instance delegate
+    /// </summary>
+    /// <param name="instance">Object instance</param>
+    /// <returns>Proxy instance</returns>
+    public delegate IDuckType CreateProxyInstance(object instance);
+
+    /// <summary>
     /// Duck Type
     /// </summary>
     public static partial class DuckType
@@ -38,7 +45,7 @@ namespace Datadog.Trace.DuckTyping
             CreateTypeResult result = GetOrCreateProxyType(proxyType, instance.GetType());
 
             // Create instance
-            return (IDuckType)Activator.CreateInstance(result.ProxyType, instance);
+            return result.CreateInstance(instance);
         }
 
         /// <summary>
@@ -136,11 +143,12 @@ namespace Datadog.Trace.DuckTyping
                 CreateMethods(proxyTypeBuilder, proxyType, targetType, instanceField);
 
                 // Create Type
-                return new CreateTypeResult(proxyTypeBuilder.CreateTypeInfo().AsType(), null);
+                Type pType = proxyTypeBuilder.CreateTypeInfo().AsType();
+                return new CreateTypeResult(pType, GetCreateProxyInstanceDelegate(pType, targetType), null);
             }
             catch (Exception ex)
             {
-                return new CreateTypeResult(null, ExceptionDispatchInfo.Capture(ex));
+                return new CreateTypeResult(null, null, ExceptionDispatchInfo.Capture(ex));
             }
         }
 
@@ -345,6 +353,32 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        private static CreateProxyInstance GetCreateProxyInstanceDelegate(Type proxyType, Type targetType)
+        {
+            ConstructorInfo ctor = proxyType.GetConstructors()[0];
+
+            DynamicMethod converterMethod = new DynamicMethod(
+                $"CreateProxyInstance<{proxyType.Name}>",
+                typeof(IDuckType),
+                new[] { typeof(object) });
+            ILGenerator il = converterMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            if (targetType.IsPublic || targetType.IsNestedPublic)
+            {
+                il.Emit(OpCodes.Castclass, targetType);
+            }
+
+            il.Emit(OpCodes.Newobj, ctor);
+
+            if (proxyType.IsValueType)
+            {
+                il.Emit(OpCodes.Box, proxyType);
+            }
+
+            il.Emit(OpCodes.Ret);
+            return (CreateProxyInstance)converterMethod.CreateDelegate(typeof(CreateProxyInstance));
+        }
+
         /// <summary>
         /// Struct to store the result of creating a proxy type
         /// </summary>
@@ -357,15 +391,18 @@ namespace Datadog.Trace.DuckTyping
 
             private readonly Type _proxyType;
             private readonly ExceptionDispatchInfo _exceptionInfo;
+            private readonly CreateProxyInstance _activator;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="CreateTypeResult"/> struct.
             /// </summary>
             /// <param name="proxyTypeDefinition">Proxy type definition class</param>
+            /// <param name="activator">Proxy activator</param>
             /// <param name="exceptionInfo">Exception dispatch info instance</param>
-            internal CreateTypeResult(Type proxyTypeDefinition, ExceptionDispatchInfo exceptionInfo)
+            internal CreateTypeResult(Type proxyTypeDefinition, CreateProxyInstance activator, ExceptionDispatchInfo exceptionInfo)
             {
                 _proxyType = proxyTypeDefinition;
+                _activator = activator;
                 _exceptionInfo = exceptionInfo;
                 Success = proxyTypeDefinition != null && exceptionInfo == null;
             }
@@ -380,6 +417,17 @@ namespace Datadog.Trace.DuckTyping
                     _exceptionInfo?.Throw();
                     return _proxyType;
                 }
+            }
+
+            /// <summary>
+            /// Create a new proxy instance from a target instance
+            /// </summary>
+            /// <param name="instance">Target instance value</param>
+            /// <returns>Proxy instance</returns>
+            public IDuckType CreateInstance(object instance)
+            {
+                _exceptionInfo?.Throw();
+                return _activator(instance);
             }
         }
     }

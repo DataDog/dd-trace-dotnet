@@ -166,7 +166,7 @@ namespace Datadog.Trace.DuckTyping
                         if (proxyParamInfo.IsOut != targetParamInfo.IsOut || proxyParamInfo.IsIn != targetParamInfo.IsIn)
                         {
                             // the proxy and target parameters doesn't have the same signature
-                            throw new DuckTypeProxyAndTargetMethodParameterSignatureMismatch(proxyMethodDefinition, targetMethod);
+                            throw new DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(proxyMethodDefinition, targetMethod);
                         }
 
                         Type proxyParamType = proxyParamInfo.ParameterType;

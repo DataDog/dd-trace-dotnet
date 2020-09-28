@@ -140,9 +140,9 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType parameter signature mismatch between proxy and target method
     /// </summary>
-    public class DuckTypeProxyAndTargetMethodParameterSignatureMismatch : DuckTypeException
+    public class DuckTypeProxyAndTargetMethodParameterSignatureMismatchException : DuckTypeException
     {
-        internal DuckTypeProxyAndTargetMethodParameterSignatureMismatch(MethodInfo proxyMethod, MethodInfo targetMethod)
+        internal DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(MethodInfo proxyMethod, MethodInfo targetMethod)
             : base($"Parameter signature mismatch between proxy '{proxyMethod}' and target method '{targetMethod}'")
         {
         }

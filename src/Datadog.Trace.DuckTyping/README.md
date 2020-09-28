@@ -213,7 +213,7 @@ public interface IMyProxy
 
 In order to support all accessor modifiers for: instance types, parameters and return value types, the Duck Type library applies some `tricks` to avoid the visibility checks. This is done automatically when the library is creating the proxy type. In summary the following logic is applied depending on each case:
 
-|      Target Instance AM      | Target Member Type |       Target Member AM       | Access Method                                 |
+|        Target Type AM        | Target Member Type |       Target Member AM       | Access Method                                 |
 |------------------------------|--------------------|------------------------------|-----------------------------------------------|
 | Public                       | Field              | Public                       | Direct                                        |
 | Public                       | Field              | Private, Protected, Internal | through DynamicMethod                         |
@@ -331,6 +331,10 @@ In this example the non public instance of `MyHandlerConfiguration` when calling
 Several benchmark tests were run for multiple cases to keep track of the time execution and heap allocations of the library, these are the results:
 
 ### Fields Getter and Setter
+
+The `proxy` column indicates the target type access modifier.
+
+Tests with `blank` proxy are the direct access of the value through an interface without creating any ducktype proxy.
 
 ``` ini
 BenchmarkDotNet=v0.12.1, OS=Windows 10.0.19041.508 (2004/?/20H1)

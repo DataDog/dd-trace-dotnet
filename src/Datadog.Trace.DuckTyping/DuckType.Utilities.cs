@@ -24,7 +24,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             CreateTypeResult result = GetOrCreateProxyType(proxyType, originalValue.GetType());
-            return (IDuckType)Activator.CreateInstance(result.ProxyType, originalValue);
+            return result.CreateInstance(originalValue);
         }
 
         /// <summary>
