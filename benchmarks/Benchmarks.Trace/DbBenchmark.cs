@@ -19,7 +19,6 @@ namespace Benchmarks.Trace
         static DbCommandBenchmark()
         {
             TracerSettings.DisableSharedInstance = true;
-            GlobalSettings.Source.DiagnosticSourceEnabled = false;
 
             var settings = new TracerSettings
             {
