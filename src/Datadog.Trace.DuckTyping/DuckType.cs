@@ -360,7 +360,9 @@ namespace Datadog.Trace.DuckTyping
             DynamicMethod converterMethod = new DynamicMethod(
                 $"CreateProxyInstance<{proxyType.Name}>",
                 typeof(IDuckType),
-                new[] { typeof(object) });
+                new[] { typeof(object) },
+                typeof(DuckType).Module,
+                true);
             ILGenerator il = converterMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
             if (targetType.IsPublic || targetType.IsNestedPublic)
