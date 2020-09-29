@@ -40,21 +40,13 @@ namespace Receive
                         // Parse parentId header
                         if (headers?[HttpHeaderNames.ParentId] is byte[] parentSpanIdBytes)
                         {
-                            var parentSpanIdString = Encoding.UTF8.GetString(parentSpanIdBytes);
-                            if (ulong.TryParse(parentSpanIdString, System.Globalization.NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
-                            {
-                                parentSpanId = result;
-                            }
+                            parentSpanId = BitConverter.ToUInt64(parentSpanIdBytes, 0);
                         }
 
                         // Parse traceId header
                         if (headers?[HttpHeaderNames.TraceId] is byte[] traceIdBytes)
                         {
-                            var traceIdString = Encoding.UTF8.GetString(traceIdBytes);
-                            if (ulong.TryParse(traceIdString, System.Globalization.NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
-                            {
-                                traceId = result;
-                            }
+                            traceId = BitConverter.ToUInt64(traceIdBytes, 0);
                         }
 
                         // Parse samplingPriority header

@@ -42,9 +42,9 @@ namespace Send
                         //  - "x-datadog-trace-id": "<trace_id>"
                         //  - "x-dataadog-parent-id": "<span_id>"
                         //  - "x-datadog-sampling-priority": "<sampling_priority>"
-                        properties.Headers.Add(HttpHeaderNames.TraceId, traceId.ToString(CultureInfo.InvariantCulture));
-                        properties.Headers.Add(HttpHeaderNames.ParentId, spanId.ToString(CultureInfo.InvariantCulture));
-                        properties.Headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority);
+                        properties.Headers.Add(HttpHeaderNames.TraceId, BitConverter.GetBytes(traceId));
+                        properties.Headers.Add(HttpHeaderNames.ParentId, BitConverter.GetBytes(spanId));
+                        properties.Headers.Add(HttpHeaderNames.SamplingPriority, Encoding.UTF8.GetBytes(samplingPriority));
 
                         // Publish message
                         channel.BasicPublish(exchange: "",
@@ -54,9 +54,9 @@ namespace Send
 
                         // Log message and properties to screen
                         Console.WriteLine(" [x] Sent {0}", message);
-                        Console.WriteLine("     {0}:{1}", HttpHeaderNames.TraceId, properties.Headers[HttpHeaderNames.TraceId]);
-                        Console.WriteLine("     {0}:{1}", HttpHeaderNames.ParentId, properties.Headers[HttpHeaderNames.ParentId]);
-                        Console.WriteLine("     {0}:{1}", HttpHeaderNames.SamplingPriority, properties.Headers[HttpHeaderNames.SamplingPriority]);
+                        Console.WriteLine("     {0}:{1}", HttpHeaderNames.TraceId, traceId);
+                        Console.WriteLine("     {0}:{1}", HttpHeaderNames.ParentId, spanId);
+                        Console.WriteLine("     {0}:{1}", HttpHeaderNames.SamplingPriority, samplingPriority);
 
                         // Set Datadog tags
                         var span = scope.Span;
