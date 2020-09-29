@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 34 : 30;
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 35 : 31;
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
 
