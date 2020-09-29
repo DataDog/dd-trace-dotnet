@@ -281,7 +281,7 @@ namespace Datadog.Trace.DuckTyping
                             // Check if the target property can be read
                             if (!targetProperty.CanRead)
                             {
-                                throw new DuckTypePropertyCantBeReadException(targetProperty);
+                                DuckTypePropertyCantBeReadException.Throw(targetProperty);
                             }
 
                             propertyBuilder.SetGetMethod(GetPropertyGetMethod(proxyTypeBuilder, targetType, proxyProperty, targetProperty, instanceField));
@@ -292,13 +292,13 @@ namespace Datadog.Trace.DuckTyping
                             // Check if the target property can be written
                             if (!targetProperty.CanWrite)
                             {
-                                throw new DuckTypePropertyCantBeWrittenException(targetProperty);
+                                DuckTypePropertyCantBeWrittenException.Throw(targetProperty);
                             }
 
                             // Check if the target property declaring type is an struct (structs modification is not supported)
                             if (targetProperty.DeclaringType.IsValueType)
                             {
-                                throw new DuckTypeStructMembersCannotBeChangedException(targetProperty.DeclaringType);
+                                DuckTypeStructMembersCannotBeChangedException.Throw(targetProperty.DeclaringType);
                             }
 
                             propertyBuilder.SetSetMethod(GetPropertySetMethod(proxyTypeBuilder, targetType, proxyProperty, targetProperty, instanceField));
@@ -325,13 +325,13 @@ namespace Datadog.Trace.DuckTyping
                             // Check if the target field is marked as InitOnly (readonly) and throw an exception in that case
                             if ((targetField.Attributes & FieldAttributes.InitOnly) != 0)
                             {
-                                throw new DuckTypeFieldIsReadonlyException(targetField);
+                                DuckTypeFieldIsReadonlyException.Throw(targetField);
                             }
 
                             // Check if the target field declaring type is an struct (structs modification is not supported)
                             if (targetField.DeclaringType.IsValueType)
                             {
-                                throw new DuckTypeStructMembersCannotBeChangedException(targetField.DeclaringType);
+                                DuckTypeStructMembersCannotBeChangedException.Throw(targetField.DeclaringType);
                             }
 
                             propertyBuilder.SetSetMethod(GetFieldSetMethod(proxyTypeBuilder, targetType, proxyProperty, targetField, instanceField));
@@ -347,12 +347,12 @@ namespace Datadog.Trace.DuckTyping
 
                 if (proxyProperty.CanRead && propertyBuilder.GetMethod is null)
                 {
-                    throw new DuckTypePropertyOrFieldNotFoundException(proxyProperty.Name);
+                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
                 }
 
                 if (proxyProperty.CanWrite && propertyBuilder.SetMethod is null)
                 {
-                    throw new DuckTypePropertyOrFieldNotFoundException(proxyProperty.Name);
+                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
                 }
             }
         }
@@ -467,8 +467,7 @@ namespace Datadog.Trace.DuckTyping
                     return fastPath;
                 }
 
-                Type proxyTypeDefinition = typeof(T);
-                CreateTypeResult result = GetOrCreateProxyType(proxyTypeDefinition, targetType);
+                CreateTypeResult result = GetProxySlow(targetType);
 
                 fastPath = _fastPath;
                 if (fastPath.TargetType is null)
@@ -493,6 +492,17 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 return GetProxy(instance.GetType()).CreateInstance(instance);
+            }
+
+            private static CreateTypeResult GetProxySlow(Type targetType)
+            {
+                Type proxyTypeDefinition = typeof(T);
+                if (!proxyTypeDefinition.IsPublic && !proxyTypeDefinition.IsNestedPublic)
+                {
+                    DuckTypeTypeIsNotPublicException.Throw(proxyTypeDefinition, nameof(proxyTypeDefinition));
+                }
+
+                return GetOrCreateProxyType(proxyTypeDefinition, targetType);
             }
         }
     }

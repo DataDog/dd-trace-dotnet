@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType.ProxiesDefinitions
 {
     public class ObscureDuckTypeVirtualClass
@@ -49,6 +51,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType.ProxiesDefinitions
         public virtual int? PublicNullableInt { get; set; }
 
         public virtual int? PrivateNullableInt { get; set; }
+
+        // *
+
+        public virtual TaskStatus Status
+        {
+            get => default;
+            set { }
+        }
 
         // *
 

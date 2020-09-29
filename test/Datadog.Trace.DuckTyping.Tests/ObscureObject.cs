@@ -458,10 +458,6 @@ namespace Datadog.Trace.DuckTyping.Tests
                 return new Tuple<T1, T2>(a, b);
             }
 
-            public void Add(DummyFieldObject obj)
-            {
-            }
-
             public void Add(string name, DummyFieldObject obj)
             {
             }
@@ -688,10 +684,6 @@ namespace Datadog.Trace.DuckTyping.Tests
                 return new Tuple<T1, T2>(a, b);
             }
 
-            public void Add(DummyFieldObject obj)
-            {
-            }
-
             public void Add(string name, DummyFieldObject obj)
             {
             }
@@ -915,10 +907,6 @@ namespace Datadog.Trace.DuckTyping.Tests
             public Tuple<T1, T2> Wrap<T1, T2>(T1 a, T2 b)
             {
                 return new Tuple<T1, T2>(a, b);
-            }
-
-            public void Add(DummyFieldObject obj)
-            {
             }
 
             public void Add(string name, DummyFieldObject obj)

@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType.ProxiesDefinitions
 {
     public interface IObscureDuckType
@@ -49,6 +51,10 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType.ProxiesDefinitions
         int? PublicNullableInt { get; set; }
 
         int? PrivateNullableInt { get; set; }
+
+        // *
+
+        TaskStatus Status { get; set; }
 
         // *
 

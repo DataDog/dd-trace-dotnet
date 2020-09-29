@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Datadog.Trace.DuckTyping
@@ -8,6 +10,8 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal static class ILHelpers
     {
+        private static Func<DynamicMethod, RuntimeMethodHandle> _dynamicGetMethodDescriptor;
+
         /// <summary>
         /// Load instance argument
         /// </summary>
@@ -175,65 +179,47 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="expectedType">Expected type</param>
         internal static void TypeConversion(ILGenerator il, Type actualType, Type expectedType)
         {
-            if (actualType == expectedType)
-            {
-                return;
-            }
-
-            if (actualType.IsGenericParameter && expectedType.IsGenericParameter)
-            {
-                return;
-            }
-
             var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
             var expectedUnderlyingType = expectedType.IsEnum ? Enum.GetUnderlyingType(expectedType) : expectedType;
 
+            if (actualUnderlyingType == expectedUnderlyingType)
+            {
+                return;
+            }
+
+            if (actualUnderlyingType.IsGenericParameter && expectedUnderlyingType.IsGenericParameter)
+            {
+                return;
+            }
+
             if (actualUnderlyingType.IsValueType)
             {
-                if (expectedUnderlyingType.IsValueType && actualUnderlyingType != expectedUnderlyingType)
+                if (expectedUnderlyingType.IsValueType)
                 {
                     // If both underlying types are value types then both must be of the same type.
-                    throw new InvalidCastException();
+                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
                 }
-                else if (!expectedUnderlyingType.IsValueType)
+                else
                 {
                     // An underlying type can be boxed and converted to an object or interface type if the actual type support this
                     // if not we should throw.
-                    if (expectedUnderlyingType == typeof(object) || expectedUnderlyingType.IsAssignableFrom(actualUnderlyingType))
+                    if (expectedUnderlyingType == typeof(object))
                     {
+                        // If the expected type is object we just need to box the value
                         il.Emit(OpCodes.Box, actualType);
-                        il.Emit(OpCodes.Castclass, expectedType);
                     }
                     else if (expectedUnderlyingType.IsAssignableFrom(actualUnderlyingType))
                     {
-                        // WARNING: The actual type instance can't be detected at this point, we have to check it at runtime.
-                        /*
-                         * In this case we emit something like:
-                         * {
-                         *      if (!(value is [expectedType])) {
-                         *          throw new InvalidCastException();
-                         *      }
-                         *
-                         *      return ([expectedType])value;
-                         * }
-                         */
-                        Label lblIsExpected = il.DefineLabel();
-
+                        // If the expected type can be assigned from the value type (ex: struct implementing an interface)
                         il.Emit(OpCodes.Box, actualType);
-                        il.Emit(OpCodes.Dup);
-
-                        il.Emit(OpCodes.Isinst, expectedType);
-                        il.Emit(OpCodes.Brtrue_S, lblIsExpected);
-
-                        il.Emit(OpCodes.Pop);
-                        il.ThrowException(typeof(InvalidCastException));
-
-                        il.MarkLabel(lblIsExpected);
                         il.Emit(OpCodes.Castclass, expectedType);
                     }
                     else
                     {
-                        throw new InvalidCastException();
+                        // If the expected type can't be assigned from the actual value type.
+                        // Means if the expected type is an interface the actual type doesn't implement it.
+                        // So no possible conversion or casting can be made here.
+                        DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
                     }
                 }
             }
@@ -249,11 +235,6 @@ namespace Datadog.Trace.DuckTyping
                         /*
                          * In this case we emit something like:
                          * {
-                         *      if (value is null)
-                         *      {
-                         *          throw new InvalidCastException();
-                         *      }
-                         *
                          *      if (!(value is [expectedType])) {
                          *          throw new InvalidCastException();
                          *      }
@@ -261,16 +242,8 @@ namespace Datadog.Trace.DuckTyping
                          *      return ([expectedType])value;
                          * }
                          */
-                        Label lblNotNull = il.DefineLabel();
                         Label lblIsExpected = il.DefineLabel();
 
-                        il.Emit(OpCodes.Dup);
-                        il.Emit(OpCodes.Brtrue_S, lblNotNull);
-
-                        il.Emit(OpCodes.Pop);
-                        il.ThrowException(typeof(InvalidCastException));
-
-                        il.MarkLabel(lblNotNull);
                         il.Emit(OpCodes.Dup);
                         il.Emit(OpCodes.Isinst, expectedType);
                         il.Emit(OpCodes.Brtrue_S, lblIsExpected);
@@ -283,7 +256,7 @@ namespace Datadog.Trace.DuckTyping
                     }
                     else
                     {
-                        throw new InvalidCastException();
+                        DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
                     }
                 }
                 else if (expectedUnderlyingType != typeof(object))
@@ -291,6 +264,44 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Castclass, expectedUnderlyingType);
                 }
             }
+        }
+
+        /// <summary>
+        /// Write a Call to a method using Calli
+        /// </summary>
+        /// <param name="il">ILGenerator</param>
+        /// <param name="method">Method to get called</param>
+        /// <param name="methodParameters">Method parameters (to avoid the allocations of calculating it)</param>
+        internal static void WriteMethodCalli(ILGenerator il, MethodInfo method, Type[] methodParameters = null)
+        {
+            long fnPointer = 0;
+            if (method is DynamicMethod dynMethod)
+            {
+                // Dynamic methods doesn't expose the internal function pointer
+                // so we have to get it using a delegate from reflection.
+                fnPointer = (long)GetRuntimeHandle(dynMethod).GetFunctionPointer();
+            }
+            else
+            {
+                fnPointer = (long)method.MethodHandle.GetFunctionPointer();
+            }
+
+            il.Emit(OpCodes.Ldc_I8, fnPointer);
+            il.Emit(OpCodes.Conv_I);
+            il.EmitCalli(
+                OpCodes.Calli,
+                method.CallingConvention,
+                method.ReturnType,
+                methodParameters ?? method.GetParameters().Select(p => p.ParameterType).ToArray(),
+                null);
+        }
+
+        private static RuntimeMethodHandle GetRuntimeHandle(DynamicMethod dynamicMethod)
+        {
+            _dynamicGetMethodDescriptor ??= (Func<DynamicMethod, RuntimeMethodHandle>)typeof(DynamicMethod)
+                .GetMethod("GetMethodDescriptor", BindingFlags.NonPublic | BindingFlags.Instance)
+                .CreateDelegate(typeof(Func<DynamicMethod, RuntimeMethodHandle>));
+            return _dynamicGetMethodDescriptor(dynamicMethod);
         }
     }
 }

@@ -35,7 +35,5 @@ namespace Datadog.Trace.DuckTyping
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static ModuleBuilder _moduleBuilder = null;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static Func<DynamicMethod, RuntimeMethodHandle> _dynamicGetMethodDescriptor;
      }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping.Tests.Properties.ValueType.ProxiesDefinitions;
 using Xunit;
 
@@ -389,6 +390,37 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Null(duckInterface.PrivateNullableInt);
             Assert.Null(duckAbstract.PrivateNullableInt);
             Assert.Null(duckVirtual.PrivateNullableInt);
+        }
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public void KnownEnum(object obscureObject)
+        {
+            var duckInterface = obscureObject.As<IObscureDuckType>();
+            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+
+            Assert.Equal(TaskStatus.RanToCompletion, duckInterface.Status);
+            Assert.Equal(TaskStatus.RanToCompletion, duckAbstract.Status);
+            Assert.Equal(TaskStatus.RanToCompletion, duckVirtual.Status);
+
+            duckInterface.Status = TaskStatus.Running;
+
+            Assert.Equal(TaskStatus.Running, duckInterface.Status);
+            Assert.Equal(TaskStatus.Running, duckAbstract.Status);
+            Assert.Equal(TaskStatus.Running, duckVirtual.Status);
+
+            duckAbstract.Status = TaskStatus.Faulted;
+
+            Assert.Equal(TaskStatus.Faulted, duckInterface.Status);
+            Assert.Equal(TaskStatus.Faulted, duckAbstract.Status);
+            Assert.Equal(TaskStatus.Faulted, duckVirtual.Status);
+
+            duckVirtual.Status = TaskStatus.WaitingForActivation;
+
+            Assert.Equal(TaskStatus.WaitingForActivation, duckInterface.Status);
+            Assert.Equal(TaskStatus.WaitingForActivation, duckAbstract.Status);
+            Assert.Equal(TaskStatus.WaitingForActivation, duckVirtual.Status);
         }
     }
 }

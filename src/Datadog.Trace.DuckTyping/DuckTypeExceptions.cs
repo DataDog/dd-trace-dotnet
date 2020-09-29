@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Reflection;
 #pragma warning disable SA1649 // File name must match first type name
 #pragma warning disable SA1402 // File may only contain a single class
@@ -17,13 +18,70 @@ namespace Datadog.Trace.DuckTyping
     }
 
     /// <summary>
+    /// DuckType proxy type definition is null
+    /// </summary>
+    public class DuckTypeProxyTypeDefinitionIsNull : DuckTypeException
+    {
+        private DuckTypeProxyTypeDefinitionIsNull()
+            : base($"The proxy type definition is null.")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw()
+        {
+            throw new DuckTypeProxyTypeDefinitionIsNull();
+        }
+    }
+
+    /// <summary>
+    /// DuckType target object instance is null
+    /// </summary>
+    public class DuckTypeTargetObjectInstanceIsNull : DuckTypeException
+    {
+        private DuckTypeTargetObjectInstanceIsNull()
+            : base($"The target object instance is null.")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw()
+        {
+            throw new DuckTypeTargetObjectInstanceIsNull();
+        }
+    }
+
+    /// <summary>
+    /// DuckType invalid type conversion exception
+    /// </summary>
+    public class DuckTypeInvalidTypeConversionException : DuckTypeException
+    {
+        private DuckTypeInvalidTypeConversionException(Type actualType, Type expectedType)
+            : base($"Invalid type conversion from {actualType.FullName} to {expectedType.FullName}")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(Type actualType, Type expectedType)
+        {
+            throw new DuckTypeInvalidTypeConversionException(actualType, expectedType);
+        }
+    }
+
+    /// <summary>
     /// DuckType property can't be read
     /// </summary>
     public class DuckTypePropertyCantBeReadException : DuckTypeException
     {
-        internal DuckTypePropertyCantBeReadException(PropertyInfo property)
-            : base($"The property '{property.Name}' can't be read, you should remove the getter from the base type class or interface.")
+        private DuckTypePropertyCantBeReadException(PropertyInfo property)
+            : base($"The property '{property.Name}' can't be read, you should remove the getter from the proxy definition base type class or interface.")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(PropertyInfo property)
+        {
+            throw new DuckTypePropertyCantBeReadException(property);
         }
     }
 
@@ -32,9 +90,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypePropertyCantBeWrittenException : DuckTypeException
     {
-        internal DuckTypePropertyCantBeWrittenException(PropertyInfo property)
-            : base($"The property '{property.Name}' can't be written, you should remove the setter from the base type class or interface.")
+        private DuckTypePropertyCantBeWrittenException(PropertyInfo property)
+            : base($"The property '{property.Name}' can't be written, you should remove the setter from the proxy definition base type class or interface.")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(PropertyInfo property)
+        {
+            throw new DuckTypePropertyCantBeWrittenException(property);
         }
     }
 
@@ -43,9 +107,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypePropertyArgumentsLengthException : DuckTypeException
     {
-        internal DuckTypePropertyArgumentsLengthException(PropertyInfo property)
+        private DuckTypePropertyArgumentsLengthException(PropertyInfo property)
             : base($"The property '{property.Name}' doesn't have the same number of arguments as the original property.")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(PropertyInfo property)
+        {
+            throw new DuckTypePropertyArgumentsLengthException(property);
         }
     }
 
@@ -54,9 +124,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypeFieldIsReadonlyException : DuckTypeException
     {
-        internal DuckTypeFieldIsReadonlyException(FieldInfo field)
+        private DuckTypeFieldIsReadonlyException(FieldInfo field)
             : base($"The field '{field.Name}' is marked as readonly, you should remove the setter from the base type class or interface.")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(FieldInfo field)
+        {
+            throw new DuckTypeFieldIsReadonlyException(field);
         }
     }
 
@@ -65,20 +141,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypePropertyOrFieldNotFoundException : DuckTypeException
     {
-        internal DuckTypePropertyOrFieldNotFoundException(string name)
-            : base($"The property or field  for '{name}' was not found in the instance.")
+        private DuckTypePropertyOrFieldNotFoundException(string name, string duckAttributeName)
+            : base($"The property or field '{duckAttributeName}' for the proxy property '{name}' was not found in the instance.")
         {
         }
-    }
 
-    /// <summary>
-    /// DuckType type is not an interface exception
-    /// </summary>
-    public class DuckTypeTypeIsNotValidException : DuckTypeException
-    {
-        internal DuckTypeTypeIsNotValidException(Type type, string argumentName)
-            : base($"The type '{type.FullName}' is not a valid type, argument: '{argumentName}'")
+        [DebuggerHidden]
+        internal static void Throw(string name, string duckAttributeName)
         {
+            throw new DuckTypePropertyOrFieldNotFoundException(name, duckAttributeName);
         }
     }
 
@@ -87,9 +158,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypeTypeIsNotPublicException : DuckTypeException
     {
-        internal DuckTypeTypeIsNotPublicException(Type type, string argumentName)
+        private DuckTypeTypeIsNotPublicException(Type type, string argumentName)
             : base($"The type '{type.FullName}' must be public, argument: '{argumentName}'")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(Type type, string argumentName)
+        {
+            throw new DuckTypeTypeIsNotPublicException(type, argumentName);
         }
     }
 
@@ -98,9 +175,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypeStructMembersCannotBeChangedException : DuckTypeException
     {
-        internal DuckTypeStructMembersCannotBeChangedException(Type type)
+        private DuckTypeStructMembersCannotBeChangedException(Type type)
             : base($"Modifying struct members is not supported. [{type.FullName}]")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(Type type)
+        {
+            throw new DuckTypeStructMembersCannotBeChangedException(type);
         }
     }
 
@@ -109,20 +192,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypeTargetMethodNotFoundException : DuckTypeException
     {
-        internal DuckTypeTargetMethodNotFoundException(MethodInfo method)
+        private DuckTypeTargetMethodNotFoundException(MethodInfo method)
             : base($"The target method for the proxy method '{method}' was not found.")
         {
         }
-    }
 
-    /// <summary>
-    /// DuckType target method parameter is missing exception
-    /// </summary>
-    public class DuckTypeTargetMethodParameterIsMissingException : DuckTypeException
-    {
-        internal DuckTypeTargetMethodParameterIsMissingException(MethodInfo targetMethod, ParameterInfo proxyParameterInfo)
-            : base($"The target method '{targetMethod.Name}' is missing parameter '{proxyParameterInfo.Name}' declared in the proxy method.")
+        [DebuggerHidden]
+        internal static void Throw(MethodInfo method)
         {
+            throw new DuckTypeTargetMethodNotFoundException(method);
         }
     }
 
@@ -131,9 +209,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypeProxyMethodParameterIsMissingException : DuckTypeException
     {
-        internal DuckTypeProxyMethodParameterIsMissingException(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
+        private DuckTypeProxyMethodParameterIsMissingException(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
             : base($"The proxy method '{proxyMethod.Name}' is missing parameter '{targetParameterInfo.Name}' declared in the target method.")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
+        {
+            throw new DuckTypeProxyMethodParameterIsMissingException(proxyMethod, targetParameterInfo);
         }
     }
 
@@ -142,9 +226,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypeProxyAndTargetMethodParameterSignatureMismatchException : DuckTypeException
     {
-        internal DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(MethodInfo proxyMethod, MethodInfo targetMethod)
+        private DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(MethodInfo proxyMethod, MethodInfo targetMethod)
             : base($"Parameter signature mismatch between proxy '{proxyMethod}' and target method '{targetMethod}'")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod)
+        {
+            throw new DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(proxyMethod, targetMethod);
         }
     }
 
@@ -153,9 +243,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException : DuckTypeException
     {
-        internal DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(MethodInfo proxyMethod)
+        private DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(MethodInfo proxyMethod)
             : base($"The proxy method with generic parameters '{proxyMethod}' are not supported on non public instances")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(MethodInfo proxyMethod)
+        {
+            throw new DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(proxyMethod);
         }
     }
 
@@ -164,9 +260,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public class DuckTypeTargetMethodAmbiguousMatchException : DuckTypeException
     {
-        internal DuckTypeTargetMethodAmbiguousMatchException(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
+        private DuckTypeTargetMethodAmbiguousMatchException(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
             : base($"The proxy method '{proxyMethod}' matches at least two methods in the target type. Method1 = '{targetMethod}' and Method2 = '{targetMethod2}'")
         {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
+        {
+            throw new DuckTypeTargetMethodAmbiguousMatchException(proxyMethod, targetMethod, targetMethod2);
         }
     }
 }

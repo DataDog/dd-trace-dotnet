@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType.ProxiesDefinitions
 {
     public abstract class ObscureDuckTypeAbstractClass
@@ -49,6 +51,10 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType.ProxiesDefinitions
         public abstract int? PublicNullableInt { get; set; }
 
         public abstract int? PrivateNullableInt { get; set; }
+
+        // *
+
+        public abstract TaskStatus Status { get; set; }
 
         // *
 

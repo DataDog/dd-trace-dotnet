@@ -68,14 +68,12 @@ namespace Datadog.Trace.DuckTyping
                 ILHelpers.TypeConversion(dynIL, targetField.FieldType, returnType);
                 dynIL.Emit(OpCodes.Ret);
 
-                // Emit the Call to the dynamic method pointer [Calli]
-                il.Emit(OpCodes.Ldc_I8, (long)GetRuntimeHandle(dynMethod).GetFunctionPointer());
-                il.Emit(OpCodes.Conv_I);
-                il.EmitCalli(OpCodes.Calli, dynMethod.CallingConvention, returnType, dynParameters, null);
+                // Emit the call to the dynamic method
+                ILHelpers.WriteMethodCalli(il, dynMethod, dynParameters);
             }
 
             // Check if the type can be converted or if we need to enable duck chaining
-            if (proxyProperty.PropertyType != targetField.FieldType && !proxyProperty.PropertyType.IsValueType && !proxyProperty.PropertyType.IsAssignableFrom(targetField.FieldType))
+            if (NeedsDuckChaining(targetField.FieldType, proxyProperty.PropertyType))
             {
                 // We call DuckType.CreateCache<>.Create()
                 MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
@@ -113,7 +111,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // Check if the type can be converted of if we need to enable duck chaining
-            if (proxyProperty.PropertyType != targetField.FieldType && !proxyProperty.PropertyType.IsValueType && !proxyProperty.PropertyType.IsAssignableFrom(targetField.FieldType))
+            if (NeedsDuckChaining(targetField.FieldType, proxyProperty.PropertyType))
             {
                 // Load the argument and convert it to Duck type
                 il.Emit(OpCodes.Ldarg_1);
@@ -177,9 +175,7 @@ namespace Datadog.Trace.DuckTyping
                 dynIL.Emit(OpCodes.Ret);
 
                 // Emit the call to the dynamic method
-                il.Emit(OpCodes.Ldc_I8, (long)GetRuntimeHandle(dynMethod).GetFunctionPointer());
-                il.Emit(OpCodes.Conv_I);
-                il.EmitCalli(OpCodes.Calli, dynMethod.CallingConvention, typeof(void), dynParameters, null);
+                ILHelpers.WriteMethodCalli(il, dynMethod, dynParameters);
             }
 
             il.Emit(OpCodes.Ret);
