@@ -1,5 +1,4 @@
 using System.IO;
-using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -10,8 +9,6 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class GlobalSettings
     {
-        private bool _diagnosticSourceEnabled;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="GlobalSettings"/> class with default values.
         /// </summary>
@@ -45,33 +42,17 @@ namespace Datadog.Trace.Configuration
         public bool DebugEnabled { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the use
-        /// of System.Diagnostics.DiagnosticSource is enabled.
-        /// </summary>
-        public bool DiagnosticSourceEnabled
-        {
-            get => _diagnosticSourceEnabled;
-            set
-            {
-                _diagnosticSourceEnabled = value;
-
-#if NETSTANDARD || NETCOREAPP
-                if (value)
-                {
-                    DiagnosticManager.Instance?.Start();
-                }
-                else
-                {
-                    DiagnosticManager.Instance?.Stop();
-                }
-#endif
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the global settings instance.
         /// </summary>
         internal static GlobalSettings Source { get; set; } = FromDefaultSources();
+
+        /// <summary>
+        /// Gets a value indicating whether the use
+        /// of System.Diagnostics.DiagnosticSource is enabled.
+        /// This value can only be set with environment variables
+        /// or a configuration file, not through code.
+        /// </summary>
+        internal bool DiagnosticSourceEnabled { get; }
 
         /// <summary>
         /// Set whether debug mode is enabled.

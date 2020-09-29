@@ -22,8 +22,6 @@ namespace Benchmarks.Trace
 
         static HttpClientBenchmark()
         {
-            GlobalSettings.Source.DiagnosticSourceEnabled = false;
-
             var settings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false

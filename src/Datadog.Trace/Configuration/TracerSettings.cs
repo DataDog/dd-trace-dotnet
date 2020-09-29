@@ -258,12 +258,17 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets a value indicating whether the use
         /// of System.Diagnostics.DiagnosticSource is enabled.
+        /// Default is <c>true</c>.
         /// </summary>
-        [Obsolete("Use Datadog.Trace.Configuration.GlobalSettings.DiagnosticSourceEnabled", error: false)]
+        /// <remark>
+        /// This value cannot be set in code. Instead,
+        /// set it using the <c>DD_TRACE_DIAGNOSTIC_SOURCE_ENABLED</c>
+        /// environment variable or in configuration files.
+        /// </remark>
         public bool DiagnosticSourceEnabled
         {
             get => GlobalSettings.Source.DiagnosticSourceEnabled;
-            set => GlobalSettings.Source.DiagnosticSourceEnabled = value;
+            set { }
         }
 
         /// <summary>

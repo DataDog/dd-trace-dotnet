@@ -97,7 +97,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var reportedType = callOpCode == OpCodeValue.Call ? httpMessageHandler : handler.GetType();
             var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
 
-            if (!(reportedType.FullName.Equals(HttpClientHandler, StringComparison.OrdinalIgnoreCase) || IsSocketsHttpHandlerEnabled(reportedType)) ||
+            var isHttpClientHandler = handler.GetInstrumentedType(SystemNetHttp, HttpClientHandlerTypeName) != null;
+
+            if (!(isHttpClientHandler || IsSocketsHttpHandlerEnabled(reportedType)) ||
                 !IsTracingEnabled(headers))
             {
                 // skip instrumentation
@@ -197,8 +199,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
             var reportedType = callOpCode == OpCodeValue.Call ? httpClientHandler : handler.GetType();
 
-            if (!(reportedType.FullName.Equals(HttpClientHandler, StringComparison.OrdinalIgnoreCase) || IsSocketsHttpHandlerEnabled(reportedType)) ||
-                !IsTracingEnabled(headers))
+            if (!IsTracingEnabled(headers))
             {
                 // skip instrumentation
                 return instrumentedMethod(handler, request, cancellationToken);

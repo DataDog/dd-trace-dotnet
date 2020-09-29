@@ -25,8 +25,6 @@ namespace Benchmarks.Trace
 
         static AspNetCoreBenchmark()
         {
-            GlobalSettings.Source.DiagnosticSourceEnabled = true;
-
             var settings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false,

@@ -23,8 +23,6 @@ namespace Benchmarks.Trace
 
         static RedisBenchmark()
         {
-            GlobalSettings.Source.DiagnosticSourceEnabled = false;
-
             var settings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false
