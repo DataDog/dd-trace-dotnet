@@ -23,7 +23,6 @@ namespace Datadog.Trace
     {
         private const string UnknownServiceName = "UnknownService";
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
-        private static readonly object GlobalInstanceLock = new object();
 
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
@@ -38,6 +37,9 @@ namespace Datadog.Trace
         private static int _firstInitialization = 1;
 
         private static Tracer _instance;
+        private static bool _globalInstanceInitialized;
+        private static object _globalInstanceLock = new object();
+
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
 
@@ -185,19 +187,17 @@ namespace Datadog.Trace
         {
             get
             {
-                var instance = _instance;
+                return LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
+            }
 
-                if (instance != null)
+            set
+            {
+                lock (_globalInstanceLock)
                 {
-                    return instance;
-                }
-
-                lock (GlobalInstanceLock)
-                {
-                    return _instance ??= new Tracer();
+                    _instance = value;
+                    _globalInstanceInitialized = true;
                 }
             }
-            set => _instance = value;
         }
 
         /// <summary>
