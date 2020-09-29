@@ -33,4 +33,4 @@ docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-manag
 For further setup instructions, see the official RabbitMQ docs at https://www.rabbitmq.com/download.html
 
 ## Results
-![Datadog UI with one RabbitMQ producer span and one RabbitMQ consumer span](./rabbitmq-trace-ui.png)
+![Datadog UI with one RabbitMQ producer span and one RabbitMQ consumer span](https://user-images.githubusercontent.com/13769665/94503165-b0ff5380-01ba-11eb-9ad0-47518662feca.png)
