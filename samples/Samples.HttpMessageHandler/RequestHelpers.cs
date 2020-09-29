@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -156,6 +157,20 @@ namespace Samples.HttpMessageHandler
                         await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead, CancellationToken.None);
                         Console.WriteLine("Received response for client.PostAsync(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
                     }
+                }
+            }
+            
+            using (var clientWithCustomHandler = new HttpClient(new CustomHandler()))
+            {
+                if (tracingDisabled)
+                {
+                    clientWithCustomHandler.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                }
+
+                using (Tracer.Instance.StartActive("CustomHandler"))
+                {
+                    await clientWithCustomHandler.GetAsync(url);
+                    Console.WriteLine("Received response for clientWithCustomHandler.GetAsync");
                 }
             }
         }
