@@ -1,17 +1,46 @@
 ﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <PropertyGroup>
+  </PropertyGroup>
+  
   <ItemGroup>
+    <TracerHomeDirectory Include="$(MSBuildThisFileDirectory)home" />
+    <CSharpProjects Include="..\**\*.csproj"/>
     <NativeWinProject Include="..\**\*.vcxproj" />
     <NativeWinX64OutputFolder Include=".\home\win-x64" />
     <NativeWinX86OutputFolder Include=".\home\win-x86" />
     <NativeLinuxX64Output Include="$(MSBuildThisFileDirectory)home\linux-x64\Datadog.Trace.ClrProfiler.Native.so" />
   </ItemGroup>
 
-  <Target Name="Build" DependsOnTargets="BuildNativeWindows;BuildNativeLinux">
-    <Error Text="To build this tool a windows machine is required." Condition="'$(OS)' != 'Windows_NT'" />
-    <MSBuild Targets="Build" Projects="Datadog.Trace.Tools.Runner.csproj" Properties="Configuration=Release;" />
+  <Target Name="Build" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
   </Target>
+  
+  <Target Name="BuildCSharpProjects">
+    <Error Text="To build this tool a windows machine is required." Condition="'$(OS)' != 'Windows_NT'" />
+    
+    <ItemGroup>
+      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+        <Properties>TargetFramework=net45;PublishDir=@(TracerHomeDirectory)\net45</Properties>
+      </ManagedProfilerPublishProject>
 
+      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+        <Properties>TargetFramework=net461;PublishDir=@(TracerHomeDirectory)\net461</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+        <Properties>TargetFramework=netstandard2.0;PublishDir=@(TracerHomeDirectory)\netstandard2.0</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+        <Properties>TargetFramework=netcoreapp3.1;PublishDir=@(TracerHomeDirectory)\netcoreapp3.1</Properties>
+      </ManagedProfilerPublishProject>
+    </ItemGroup>
+
+    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="true" RemoveProperties="Platform">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+  
   <Target Name="BuildNativeWindows">
     <Message Importance="high" Text="%0A *** Native projects to build: %0A   @(NativeWinProject, '%0A   ')%0A" />
 
