@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tools.Runner
 
         private static Dictionary<string, string> GetProfilerEnvironmentVariables()
         {
-            string tracerHome = RunnerFolder;
+            string tracerHome = Path.Combine(RunnerFolder, "home");
             string tracerMsBuild = Path.Combine(tracerHome, "Datadog.Trace.MSBuild.dll");
             string tracerIntegrations = Path.Combine(tracerHome, "integrations.json");
             string tracerProfiler32 = string.Empty;
@@ -102,12 +102,12 @@ namespace Datadog.Trace.Tools.Runner
 
             if (Platform == Platform.Windows)
             {
-                tracerProfiler32 = Path.Combine(tracerHome, "runtimes", "win-x86", "native", "Datadog.Trace.ClrProfiler.Native.dll");
-                tracerProfiler64 = Path.Combine(tracerHome, "runtimes", "win-x64", "native", "Datadog.Trace.ClrProfiler.Native.dll");
+                tracerProfiler32 = Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll");
+                tracerProfiler64 = Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll");
             }
             else if (Platform == Platform.Linux)
             {
-                tracerProfiler64 = Path.Combine(tracerHome, "runtimes", "linux-x64", "native", "Datadog.Trace.ClrProfiler.Native.so");
+                tracerProfiler64 = Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so");
             }
 
             return new Dictionary<string, string>

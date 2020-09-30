@@ -2,9 +2,9 @@
 
   <ItemGroup>
     <NativeWinProject Include="..\**\*.vcxproj" />
-    <NativeWinX64OutputFolder Include=".\runtimes\win-x64\native" />
-    <NativeWinX86OutputFolder Include=".\runtimes\win-x86\native" />
-    <NativeLinuxX64Output Include="$(MSBuildThisFileDirectory)runtimes\linux-x64\native\Datadog.Trace.ClrProfiler.Native.so" />
+    <NativeWinX64OutputFolder Include=".\home\win-x64" />
+    <NativeWinX86OutputFolder Include=".\home\win-x86" />
+    <NativeLinuxX64Output Include="$(MSBuildThisFileDirectory)home\linux-x64\Datadog.Trace.ClrProfiler.Native.so" />
   </ItemGroup>
 
   <Target Name="Build" DependsOnTargets="BuildNativeWindows;BuildNativeLinux">

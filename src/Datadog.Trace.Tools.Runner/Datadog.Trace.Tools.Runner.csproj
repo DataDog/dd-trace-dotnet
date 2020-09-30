@@ -12,15 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\integrations.json" Link="integrations.json">
+    <Content Include="..\..\integrations.json" Link="home\integrations.json" Pack="false">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup Label="References">
-    <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-    <ProjectReference Include="..\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj" />
-    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
   
   <ItemGroup>
@@ -31,13 +25,16 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20371.2" />
   </ItemGroup>
-
+  
   <ItemGroup>
-    <None Update="runtimes\**\*.dll">
+    <None Update="home\**\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="runtimes\**\*.so">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Update="home\**\readme.txt">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
