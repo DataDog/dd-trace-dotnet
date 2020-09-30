@@ -6,20 +6,30 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp3.1;netcoreapp2.1</TargetFrameworks>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dotnet-ddtrace</ToolCommandName>
+    <ToolCommandName>dd-autotrace</ToolCommandName>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\integrations.json" Link="integrations.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup Label="References">
-    <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj" />
     <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
     <ProjectReference Include="..\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
   
   <ItemGroup>
+    <None Include="..\..\docker\linux-build.dockerfile" Link="linux-build.dockerfile" />
     <None Include="Datadog.Trace.Tools.Runner.proj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20371.2" />
   </ItemGroup>
 
   <ItemGroup>

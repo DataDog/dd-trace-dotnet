@@ -4,9 +4,11 @@
     <NativeWinProject Include="..\**\*.vcxproj" />
     <NativeWinX64OutputFolder Include=".\runtimes\win-x64\native" />
     <NativeWinX86OutputFolder Include=".\runtimes\win-x86\native" />
+    <NativeLinuxX64Output Include="$(MSBuildThisFileDirectory)runtimes\linux-x64\native\Datadog.Trace.ClrProfiler.Native.so" />
   </ItemGroup>
 
   <Target Name="Build" DependsOnTargets="BuildNativeWindows;BuildNativeLinux">
+    <Error Text="To build this tool a windows machine is required." Condition="'$(OS)' != 'Windows_NT'" />
     <MSBuild Targets="Build" Projects="Datadog.Trace.Tools.Runner.csproj" Properties="Configuration=Release;" />
   </Target>
 
@@ -30,20 +32,54 @@
     <Copy SourceFiles="@(NativeWinX86Output)" DestinationFolder="@(NativeWinX86OutputFolder)"
           SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
   </Target>
-  
-  <Target Name="BuildNativeLinux">
-    
+
+  <Target Name="BuildNativeLinux" DependsOnTargets="BuildNativeLinux_Exist;BuildNativeLinux_NotExist">
   </Target>
 
-  <!--<UsingTask TaskName="Sleep" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+  <Target Name="BuildNativeLinux_Exist" Condition="Exists(@(NativeLinuxX64Output))">
+    <Message Importance="high" Text="A linux binary already exist in the folder, skipping the build." />
+  </Target>
+
+  <Target Name="BuildNativeLinux_NotExist" Condition="!Exists(@(NativeLinuxX64Output))">
+    <Message Importance="high" Text="%0A *** Checking for docker daemon...%0A" />
+    <CheckProcessExist ProcessName="com.docker.proxy">
+      <Output TaskParameter="ReturnValue" PropertyName="IsDockerRunning" />
+    </CheckProcessExist>
+    <Error Text="Docker is not running. Docker is required to build the linux native binaries." Condition="!$(IsDockerRunning)" />
+
+    <Exec Command="linux-native-build.cmd" />
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Targets="Clean" Projects="Datadog.Trace.Tools.Runner.csproj" Properties="Configuration=Release;" />
+    <ItemGroup>
+      <NativeWinX64Output Include="..\*Native\bin\Release\x64\*.dll" />
+      <NativeWinX86Output Include="..\*Native\bin\Release\x86\*.dll" />
+    </ItemGroup>
+    <Delete Files="@(NativeLinuxX64Output)" />
+    <Delete Files="@(NativeWinX64Output)" />
+    <Delete Files="@(NativeWinX86Output)" />
+  </Target>
+
+  <UsingTask TaskName="CheckProcessExist" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
     <ParameterGroup>
-      --><!-- Delay in milliseconds --><!--
-      <Delay ParameterType="System.Int32" Required="true" />
+      <ProcessName ParameterType="System.String" Required="true" />
+      <ReturnValue ParameterType="System.Boolean" Output="true" />
     </ParameterGroup>
     <Task>
+      <Using Namespace="System.Diagnostics" />
       <Code Type="Fragment" Language="cs">
-        <![CDATA[System.Threading.Thread.Sleep(this.Delay);]]>
+        <![CDATA[
+        try
+        {
+          ReturnValue = Process.GetProcessesByName(ProcessName)?.Length > 0;
+        }
+        catch
+        {
+          ReturnValue = false;
+        }
+        ]]>
       </Code>
     </Task>
-  </UsingTask>-->
+  </UsingTask>
 </Project>
