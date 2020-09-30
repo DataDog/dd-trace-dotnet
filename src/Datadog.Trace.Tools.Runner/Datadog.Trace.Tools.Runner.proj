@@ -19,19 +19,21 @@
     <Error Text="To build this tool a windows machine is required." Condition="'$(OS)' != 'Windows_NT'" />
     
     <ItemGroup>
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+      <ManagedProject Include="..\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+      
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
         <Properties>TargetFramework=net45;PublishDir=@(TracerHomeDirectory)\net45</Properties>
       </ManagedProfilerPublishProject>
 
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
         <Properties>TargetFramework=net461;PublishDir=@(TracerHomeDirectory)\net461</Properties>
       </ManagedProfilerPublishProject>
 
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
         <Properties>TargetFramework=netstandard2.0;PublishDir=@(TracerHomeDirectory)\netstandard2.0</Properties>
       </ManagedProfilerPublishProject>
 
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
         <Properties>TargetFramework=netcoreapp3.1;PublishDir=@(TracerHomeDirectory)\netcoreapp3.1</Properties>
       </ManagedProfilerPublishProject>
     </ItemGroup>
