@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <Target Name="Build" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
+    <MSBuild Targets="Build" Projects="Datadog.Trace.Tools.Runner.csproj" Properties="Configuration=Release" />
   </Target>
   
   <Target Name="BuildCSharpProjects">
