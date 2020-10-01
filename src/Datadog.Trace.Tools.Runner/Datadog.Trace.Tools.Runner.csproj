@@ -35,9 +35,9 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Update="home\**\readme.txt">
+    <Content Update="home\**\readme.txt" Pack="false">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>
