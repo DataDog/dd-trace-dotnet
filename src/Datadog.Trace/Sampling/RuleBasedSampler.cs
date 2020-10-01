@@ -77,16 +77,9 @@ namespace Datadog.Trace.Sampling
             var sample = ((span.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
             var priority = SamplingPriority.AutoReject;
 
-            if (sample)
+            if (sample && (agentSampling || _limiter.Allowed(span)))
             {
-                if (agentSampling)
-                {
-                    priority = SamplingPriority.AutoKeep;
-                }
-                else if (_limiter.Allowed(span))
-                {
-                    priority = SamplingPriority.AutoKeep;
-                }
+                priority = SamplingPriority.AutoKeep;
             }
 
             return priority;
