@@ -23,7 +23,6 @@ namespace Benchmarks.Trace
         static GraphQLBenchmark()
         {
             TracerSettings.DisableSharedInstance = true;
-            GlobalSettings.Source.DiagnosticSourceEnabled = false;
 
             var settings = new TracerSettings
             {
