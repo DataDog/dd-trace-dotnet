@@ -8,7 +8,6 @@ namespace Datadog.Trace.Sampling
         private const ulong KnuthFactor = 1_111_111_111_111_111_111;
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RuleBasedSampler>();
-        private static bool _tracingWithoutLimitsEnabled = false;
 
         private readonly IRateLimiter _limiter;
         private readonly DefaultSamplingRule _defaultRule = new DefaultSamplingRule();
@@ -18,11 +17,6 @@ namespace Datadog.Trace.Sampling
         {
             _limiter = limiter ?? new RateLimiter(null);
             RegisterRule(_defaultRule);
-        }
-
-        public static void OptInTracingWithoutLimits()
-        {
-            _tracingWithoutLimitsEnabled = true;
         }
 
         public void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates)

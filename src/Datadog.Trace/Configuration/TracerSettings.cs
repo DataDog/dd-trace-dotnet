@@ -94,17 +94,7 @@ namespace Datadog.Trace.Configuration
 
             var maxTracesPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond);
 
-            if (maxTracesPerSecond != null)
-            {
-                // Ensure our flag for the rate limiter is enabled
-                RuleBasedSampler.OptInTracingWithoutLimits();
-            }
-            else
-            {
-                maxTracesPerSecond = 100; // default
-            }
-
-            MaxTracesSubmittedPerSecond = maxTracesPerSecond.Value;
+            MaxTracesSubmittedPerSecond = maxTracesPerSecond ?? 100;
 
             Integrations = new IntegrationSettingsCollection(source);
 
