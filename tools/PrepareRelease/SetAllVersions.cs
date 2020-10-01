@@ -58,6 +58,10 @@ namespace PrepareRelease
                 "src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
                 NugetVersionReplace);
 
+            SynchronizeVersion(
+                "src/Datadog.Trace.DuckTyping/Datadog.Trace.DuckTyping.csproj",
+                NugetVersionReplace);
+
             // Fully qualified name updates
             SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
