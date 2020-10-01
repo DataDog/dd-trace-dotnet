@@ -23,8 +23,6 @@ namespace Benchmarks.Trace
 
         static RedisBenchmark()
         {
-            TracerSettings.DisableSharedInstance = true;
-
             var settings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false

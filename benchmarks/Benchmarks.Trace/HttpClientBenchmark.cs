@@ -22,8 +22,6 @@ namespace Benchmarks.Trace
 
         static HttpClientBenchmark()
         {
-            TracerSettings.DisableSharedInstance = true;
-
             var settings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false
