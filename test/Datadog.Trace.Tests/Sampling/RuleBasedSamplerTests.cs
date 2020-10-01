@@ -17,6 +17,17 @@ namespace Datadog.Trace.Tests.Sampling
         private static ulong _id = 1;
 
         [Fact]
+        public void RateLimiter_Never_Applied_For_DefaultRule()
+        {
+            var sampler = new RuleBasedSampler(new DenyAll());
+            RunSamplerTest(
+                sampler,
+                500,
+                1,
+                0);
+        }
+
+        [Fact]
         public void RateLimiter_Denies_All_Traces()
         {
             var sampler = new RuleBasedSampler(new DenyAll());
