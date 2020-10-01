@@ -42,6 +42,32 @@
     <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="true" RemoveProperties="Platform">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
+
+
+    <ItemGroup>
+      <ManagedProject Include="..\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj" />
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=net45;PublishDir=@(TracerHomeDirectory)\net45</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=net461;PublishDir=@(TracerHomeDirectory)\net461</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=netstandard2.0;PublishDir=@(TracerHomeDirectory)\netstandard2.0</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=netcoreapp3.1;PublishDir=@(TracerHomeDirectory)\netcoreapp3.1</Properties>
+      </ManagedProfilerPublishProject>
+    </ItemGroup>
+
+    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="true" RemoveProperties="Platform">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
   </Target>
   
   <Target Name="BuildNativeWindows">

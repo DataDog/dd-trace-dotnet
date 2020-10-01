@@ -1,15 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.CommandLine;
-using System.CommandLine.Invocation;
-using System.CommandLine.IO;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
+using CommandLine;
 
 namespace Datadog.Trace.Tools.Runner
 {
@@ -17,13 +15,9 @@ namespace Datadog.Trace.Tools.Runner
     {
         private const string PROFILERID = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
-        private static RootCommand _rootCommand;
+        private static Parser _parser;
 
-        private static IConsole _console;
-
-        private static object _globalLock = new object();
-
-        private static System.Diagnostics.Process _childProcess = null;
+        private static CancellationTokenSource _tokenSource = new CancellationTokenSource();
 
         private static string RunnerFolder { get; set; }
 
@@ -31,7 +25,18 @@ namespace Datadog.Trace.Tools.Runner
 
         private static void Main(string[] args)
         {
-            RunnerFolder = Path.GetDirectoryName(RootCommand.ExecutablePath);
+            // Initializing
+            string executablePath = (Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).Location;
+            string location = executablePath;
+            if (string.IsNullOrEmpty(location))
+            {
+                location = Environment.GetCommandLineArgs().FirstOrDefault();
+            }
+
+            string executableName = Path.GetFileNameWithoutExtension(location).Replace(" ", string.Empty);
+
+            RunnerFolder = Path.GetDirectoryName(location);
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Platform = Platform.Windows;
@@ -40,59 +45,79 @@ namespace Datadog.Trace.Tools.Runner
             {
                 Platform = Platform.Linux;
             }
+            else
+            {
+                Console.Error.WriteLine("The current platform is not supported. Supported platforms are: Windows and Linux.");
+                Environment.Exit(-1);
+                return;
+            }
 
-            _rootCommand = new RootCommand($"Datadog .NET Autoinstrumentation Runner ({Platform}-{(Environment.Is64BitProcess ? "x64" : "x86")})");
-            _rootCommand.Add(new Option<bool>(new string[] { "/init-ci", "-init-ci" }, "Setup profiler for all following CI steps."));
-            _rootCommand.TreatUnmatchedTokensAsErrors = false;
-            _rootCommand.Handler = CommandHandler.Create(new Func<bool, IConsole, CancellationToken, int>(Handler));
-            _rootCommand.Invoke(args);
+            // ***
+
+            Console.CancelKeyPress += Console_CancelKeyPress;
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            AppDomain.CurrentDomain.DomainUnload += CurrentDomain_ProcessExit;
+
+            _parser = new Parser(settings =>
+            {
+                settings.AutoHelp = true;
+                settings.AutoVersion = true;
+                settings.EnableDashDash = true;
+                settings.HelpWriter = Console.Out;
+            });
+
+            _parser.ParseArguments<Options>(args)
+                .MapResult(ParsedOptions, ParsedErrors);
         }
 
-        private static int Handler(bool initCI, IConsole console, CancellationToken cancellationToken)
+        private static int ParsedOptions(Options options)
         {
-            try
+            // Extract remaining args not parsed by options.
+            string[] optionsArgs = SplitArgs(_parser.FormatCommandLine(options));
+            string[] currentArgs = Environment.GetCommandLineArgs();
+            List<string> remainingArgs = new List<string>(currentArgs.Length);
+            for (int i = 1; i < currentArgs.Length; i++)
             {
-                _console = console;
-
-                if (Platform == Platform.Unknown)
+                if (Array.IndexOf(optionsArgs, currentArgs[i]) == -1)
                 {
-                    console.Error.WriteLine("The current platform is not supported. Supported platforms are: Windows and Linux.");
-                    return 1;
+                    remainingArgs.Add(currentArgs[i]);
                 }
+            }
 
-                if (initCI)
+            string[] args = remainingArgs.ToArray();
+
+            // Start logic
+
+            if (options.InitCI)
+            {
+                Console.WriteLine("Setting up the CI environment variables.");
+            }
+            else
+            {
+                string cmdLine = string.Join(' ', args);
+                if (!string.IsNullOrWhiteSpace(cmdLine))
                 {
-                    console.Out.WriteLine("Setting up the CI environment variables.");
-                }
-                else
-                {
-                    string cmdLine = Environment.CommandLine.Replace(RootCommand.ExecutablePath, string.Empty).Trim();
-                    if (!string.IsNullOrWhiteSpace(cmdLine))
+                    Console.WriteLine("Running: " + cmdLine);
+
+                    ProcessStartInfo processInfo = GetProcessStartInfo(args[0], Environment.CurrentDirectory, GetProfilerEnvironmentVariables(options));
+                    if (args.Length > 1)
                     {
-                        console.Out.WriteLine("Running: " + cmdLine);
-
-                        string[] args = Environment.GetCommandLineArgs();
-                        ProcessStartInfo processInfo = GetProcessStartInfo(args[1], Environment.CurrentDirectory, GetProfilerEnvironmentVariables());
-                        if (args.Length > 2)
-                        {
-                            processInfo.Arguments = string.Join(' ', args.Skip(2).ToArray());
-                        }
-
-                        return RunProcess(processInfo, cancellationToken);
+                        processInfo.Arguments = string.Join(' ', args.Skip(1).ToArray());
                     }
 
-                    console.Out.WriteLine(RunnerFolder);
+                    return RunProcess(processInfo, _tokenSource.Token);
                 }
+            }
 
-                return 0;
-            }
-            catch (OperationCanceledException)
-            {
-                return 1;
-            }
+            return 0;
         }
 
-        private static Dictionary<string, string> GetProfilerEnvironmentVariables()
+        private static int ParsedErrors(IEnumerable<Error> errors)
+        {
+            return 1;
+        }
+
+        private static Dictionary<string, string> GetProfilerEnvironmentVariables(Options options)
         {
             // In the current nuspec structure RunnerFolder has the following format:
             //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\tools\netcoreapp3.1\any
@@ -101,23 +126,23 @@ namespace Datadog.Trace.Tools.Runner
             //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\home
             // So we have to go up 3 folders.
 
-            string tracerHome = Path.Combine(RunnerFolder, "..", "..", "..", "home");
-            string tracerMsBuild = Path.Combine(tracerHome, "Datadog.Trace.MSBuild.dll");
-            string tracerIntegrations = Path.Combine(tracerHome, "integrations.json");
+            string tracerHome = EnsureFolder(Path.Combine(RunnerFolder, "..", "..", "..", "home"));
+            string tracerMsBuild = EnsureFile(Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.MSBuild.dll"));
+            string tracerIntegrations = EnsureFile(Path.Combine(tracerHome, "integrations.json"));
             string tracerProfiler32 = string.Empty;
             string tracerProfiler64 = string.Empty;
 
             if (Platform == Platform.Windows)
             {
-                tracerProfiler32 = Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll");
-                tracerProfiler64 = Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll");
+                tracerProfiler32 = EnsureFile(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
+                tracerProfiler64 = EnsureFile(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
             }
             else if (Platform == Platform.Linux)
             {
-                tracerProfiler64 = Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so");
+                tracerProfiler64 = EnsureFile(Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
             }
 
-            return new Dictionary<string, string>
+            var envVars = new Dictionary<string, string>
             {
                 ["DD_DOTNET_TRACER_HOME"] = tracerHome,
                 ["DD_DOTNET_TRACER_MSBUILD"] = tracerMsBuild,
@@ -131,6 +156,38 @@ namespace Datadog.Trace.Tools.Runner
                 ["COR_PROFILER_PATH_32"] = tracerProfiler32,
                 ["COR_PROFILER_PATH_64"] = tracerProfiler64,
             };
+
+            if (!string.IsNullOrWhiteSpace(options.Environment))
+            {
+                envVars["DD_ENV"] = options.Environment;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.AgentUrl))
+            {
+                envVars["DD_TRACE_AGENT_URL"] = options.AgentUrl;
+            }
+
+            return envVars;
+        }
+
+        private static string EnsureFolder(string folderName)
+        {
+            if (!Directory.Exists(folderName))
+            {
+                Console.Error.WriteLine($"Error: The folder '{folderName}' can't be found.");
+            }
+
+            return folderName;
+        }
+
+        private static string EnsureFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"Error: The file '{filePath}' can't be found.");
+            }
+
+            return filePath;
         }
 
         private static ProcessStartInfo GetProcessStartInfo(string filename, string currentDirectory, IDictionary<string, string> environmentVariables)
@@ -169,39 +226,29 @@ namespace Datadog.Trace.Tools.Runner
         {
             try
             {
-                _childProcess = new System.Diagnostics.Process();
-                _childProcess.StartInfo = startInfo;
-                _childProcess.OutputDataReceived += Process_OutputDataReceived;
-                _childProcess.ErrorDataReceived += Process_ErrorDataReceived;
-                _childProcess.EnableRaisingEvents = true;
-                _childProcess.Start();
-                _childProcess.BeginOutputReadLine();
-                _childProcess.BeginErrorReadLine();
-
-                while (!(_childProcess.WaitForExit(250) || cancellationToken.IsCancellationRequested))
+                using (Process childProcess = new Process())
                 {
-                }
+                    childProcess.StartInfo = startInfo;
+                    childProcess.OutputDataReceived += Process_OutputDataReceived;
+                    childProcess.ErrorDataReceived += Process_ErrorDataReceived;
+                    childProcess.EnableRaisingEvents = true;
+                    childProcess.Start();
+                    childProcess.BeginOutputReadLine();
+                    childProcess.BeginErrorReadLine();
 
-                int exitCode = 0;
+                    using (cancellationToken.Register(() =>
+                    {
+                        childProcess?.StandardInput.Close();
+                        childProcess?.Kill();
+                    }))
+                    {
+                        while (!childProcess.WaitForExit(250))
+                        {
+                        }
 
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    _childProcess.StandardInput.Close();
-                    _childProcess.Kill();
-                    return -1;
+                        return cancellationToken.IsCancellationRequested ? -1 : childProcess.ExitCode;
+                    }
                 }
-                else
-                {
-                    exitCode = _childProcess.ExitCode;
-                }
-
-                lock (_globalLock)
-                {
-                    _childProcess.Dispose();
-                    _childProcess = null;
-                }
-
-                return exitCode;
             }
             catch (Exception ex)
             {
@@ -213,18 +260,59 @@ namespace Datadog.Trace.Tools.Runner
 
         private static void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
-            lock (_globalLock)
-            {
-                _console.Error.Write(e.Data);
-            }
+            Console.Error.Write(e.Data);
         }
 
         private static void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            lock (_globalLock)
+            Console.WriteLine(e.Data);
+        }
+
+        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
+            _tokenSource.Cancel();
+        }
+
+        private static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        {
+            _tokenSource.Cancel();
+        }
+
+        private static string[] SplitArgs(string command, bool keepQuote = false)
+        {
+            if (string.IsNullOrEmpty(command))
             {
-                _console.Out.WriteLine(e.Data);
+                return new string[0];
             }
+
+            var inQuote = false;
+            var chars = command.ToCharArray().Select(v =>
+            {
+                if (v == '"')
+                {
+                    inQuote = !inQuote;
+                }
+
+                return !inQuote && v == ' ' ? '\n' : v;
+            }).ToArray();
+
+            return new string(chars).Split('\n')
+                .Select(x => keepQuote ? x : x.Trim('"'))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToArray();
+        }
+
+        private class Options
+        {
+            [Option("init-ci", Required = false, Default = false, HelpText = "Setup the clr profiler for the following ci steps.")]
+            public bool InitCI { get; set; }
+
+            [Option("env", Required = false, HelpText = "Environment name.")]
+            public string Environment { get; set; }
+
+            [Option("agent-url", Required = false, HelpText = "Datadog trace agent url.")]
+            public string AgentUrl { get; set; }
         }
     }
 }

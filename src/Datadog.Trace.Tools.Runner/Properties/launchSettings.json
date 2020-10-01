@@ -2,7 +2,7 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "dotnet test"
+      "commandLineArgs": "--env CI dotnet test"
     }
   }
 }
