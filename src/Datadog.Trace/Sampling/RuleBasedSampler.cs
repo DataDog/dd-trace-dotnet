@@ -79,14 +79,11 @@ namespace Datadog.Trace.Sampling
 
             if (sample)
             {
-                if (!agentSampling)
+                if (agentSampling)
                 {
-                    if (_limiter.Allowed(span))
-                    {
-                        priority = SamplingPriority.AutoKeep;
-                    }
+                    priority = SamplingPriority.AutoKeep;
                 }
-                else
+                else if (_limiter.Allowed(span))
                 {
                     priority = SamplingPriority.AutoKeep;
                 }
