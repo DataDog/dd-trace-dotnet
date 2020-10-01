@@ -48,7 +48,7 @@ namespace Datadog.Trace.Sampling
                             sampleRate,
                             traceId);
 
-                        return GetSamplingPriority(span, sampleRate);
+                        return GetSamplingPriority(span, sampleRate, agentSampling: rule is DefaultSamplingRule);
                     }
                 }
             }
@@ -65,8 +65,6 @@ namespace Datadog.Trace.Sampling
         /// <param name="rule">The new rule being registered.</param>
         public void RegisterRule(ISamplingRule rule)
         {
-            OptInTracingWithoutLimits();
-
             for (var i = 0; i < _rules.Count; i++)
             {
                 if (_rules[i].Priority < rule.Priority)
@@ -80,14 +78,14 @@ namespace Datadog.Trace.Sampling
             _rules.Add(rule);
         }
 
-        private SamplingPriority GetSamplingPriority(Span span, float rate)
+        private SamplingPriority GetSamplingPriority(Span span, float rate, bool agentSampling)
         {
             var sample = ((span.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
             var priority = SamplingPriority.AutoReject;
 
             if (sample)
             {
-                if (_tracingWithoutLimitsEnabled)
+                if (!agentSampling)
                 {
                     if (_limiter.Allowed(span))
                     {
