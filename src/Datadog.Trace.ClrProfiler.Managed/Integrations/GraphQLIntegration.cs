@@ -149,9 +149,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                var graphQLAssembly = executionStrategy.GetType().Assembly;
-                graphQLExecutionResultType = graphQLAssembly.GetType(GraphQLExecutionResultName, throwOnError: true);
-                executionStrategyInterfaceType = graphQLAssembly.GetType(GraphQLExecutionStrategyInterfaceName, throwOnError: true);
+                executionStrategyInterfaceType = executionStrategy.GetInstrumentedInterface(GraphQLExecutionStrategyInterfaceName);
+                graphQLExecutionResultType = executionStrategyInterfaceType.Assembly.GetType(GraphQLExecutionResultName, throwOnError: true);
             }
             catch (Exception ex)
             {

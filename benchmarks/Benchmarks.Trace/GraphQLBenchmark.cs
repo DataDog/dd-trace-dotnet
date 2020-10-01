@@ -53,7 +53,7 @@ namespace Benchmarks.Trace
             return task.GetAwaiter().GetResult().Value;
         }
 
-        private class GraphQLClient
+        private class GraphQLClient : IExecutionStrategy
         {
             public Task<ExecutionResult> ExecuteAsync(ExecutionContext context)
             {
