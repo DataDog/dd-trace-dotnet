@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,8 +13,6 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal class Program
     {
-        private static Parser _parser;
-
         private static CancellationTokenSource _tokenSource = new CancellationTokenSource();
 
         private static string RunnerFolder { get; set; }
@@ -57,7 +54,7 @@ namespace Datadog.Trace.Tools.Runner
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.DomainUnload += CurrentDomain_ProcessExit;
 
-            _parser = new Parser(settings =>
+            Parser parser = new Parser(settings =>
             {
                 settings.AutoHelp = true;
                 settings.AutoVersion = true;
@@ -65,8 +62,7 @@ namespace Datadog.Trace.Tools.Runner
                 settings.HelpWriter = null;
             });
 
-            ParserResult<Options> result = _parser.ParseArguments<Options>(args);
-
+            ParserResult<Options> result = parser.ParseArguments<Options>(args);
             result.MapResult(ParsedOptions, errors => ParsedErrors(result, errors));
         }
 
