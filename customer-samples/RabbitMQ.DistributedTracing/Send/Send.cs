@@ -40,7 +40,7 @@ namespace Send
 
                         // Add properties to the Headers dictionary in the following way:
                         //  - "x-datadog-trace-id": "<trace_id>"
-                        //  - "x-dataadog-parent-id": "<span_id>"
+                        //  - "x-datadog-parent-id": "<span_id>"
                         //  - "x-datadog-sampling-priority": "<sampling_priority>"
                         properties.Headers.Add(HttpHeaderNames.TraceId, BitConverter.GetBytes(traceId));
                         properties.Headers.Add(HttpHeaderNames.ParentId, BitConverter.GetBytes(spanId));
