@@ -94,7 +94,14 @@ namespace Datadog.Trace.Tools.Runner
 
         private static Dictionary<string, string> GetProfilerEnvironmentVariables()
         {
-            string tracerHome = Path.Combine(RunnerFolder, "home");
+            // In the current nuspec structure RunnerFolder has the following format:
+            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\tools\netcoreapp3.1\any
+            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\tools\netcoreapp2.1\any
+            // And the Home folder is:
+            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\home
+            // So we have to go up 3 folders.
+
+            string tracerHome = Path.Combine(RunnerFolder, "..", "..", "..", "home");
             string tracerMsBuild = Path.Combine(tracerHome, "Datadog.Trace.MSBuild.dll");
             string tracerIntegrations = Path.Combine(tracerHome, "integrations.json");
             string tracerProfiler32 = string.Empty;

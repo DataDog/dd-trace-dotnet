@@ -4,16 +4,17 @@
     <Version>1.19.3</Version>
     <Title>Datadog APM - DD Autoinstrumentation Runner</Title>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp3.1;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1</TargetFrameworks>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dd-autotrace</ToolCommandName>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <NoWarn>NU5100</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\integrations.json" Link="home\integrations.json" Pack="false">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="..\..\integrations.json" Link="home\integrations.json" Pack="true" PackagePath="\home">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   
@@ -27,9 +28,9 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Update="home\**\*.*">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <Content Include="home\**\*.*" Pack="true" PackagePath="\home">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   
   <ItemGroup>
