@@ -70,16 +70,14 @@ namespace Benchmarks.Trace
     /// </summary>
     public class HomeController : Controller
     {
-        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage();
-        private static readonly HttpMessageHandler Handler = new CustomHttpMessageHandler();
+        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
+        private static readonly HttpMessageHandler Handler = new CustomHttpClientHandler();
         private static readonly object BoxedCancellationToken = new CancellationToken();
         private static int _mdToken;
         private static IntPtr _guidPtr;
 
         internal static void Initialize()
         {
-            HttpMessageHandlerIntegration.HttpClientHandler = typeof(CustomHttpMessageHandler).FullName;
-
             var methodInfo = typeof(HttpMessageHandler).GetMethod("SendAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             _mdToken = methodInfo.MetadataToken;
@@ -105,7 +103,7 @@ namespace Benchmarks.Trace
             return "OK";
         }
 
-        internal class CustomHttpMessageHandler : HttpMessageHandler
+        internal class CustomHttpClientHandler : HttpClientHandler
         {
             private static readonly Task<HttpResponseMessage> CachedResult = Task.FromResult(new HttpResponseMessage());
 
