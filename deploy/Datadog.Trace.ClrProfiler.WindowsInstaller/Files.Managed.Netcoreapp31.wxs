@@ -6,26 +6,31 @@
   <Fragment>
     <ComponentGroup Id="Files.Managed.Netcoreapp31" Directory="netcoreapp3.1">
       <Component Win64="$(var.Win64)">
+        
         <File Id="netcoreapp31_Datadog.Trace.ClrProfiler.Managed.Core.dll"
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.ClrProfiler.Managed.Core.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        
         <File Id="netcoreapp31_Datadog.Trace.ClrProfiler.Managed.dll"
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.ClrProfiler.Managed.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        
         <File Id="netcoreapp31_Datadog.Trace.dll"
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        
         <File Id="netcoreapp31_Datadog.Trace.MSBuild.dll"
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.MSBuild.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        
         <File Id="netcoreapp31_Sigil.dll"
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Sigil.dll"
               KeyPath="yes" Checksum="yes"/>
