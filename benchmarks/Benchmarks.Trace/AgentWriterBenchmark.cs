@@ -32,7 +32,7 @@ namespace Benchmarks.Trace
 
             var api = new Api(settings.AgentUri, new FakeHttpHandler() , statsd: null);
 
-            _agentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
+            AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
 
             Spans = new Span[SpanCount];
             EnrichedSpans = new Span[SpanCount];
@@ -40,8 +40,8 @@ namespace Benchmarks.Trace
 
             for (int i = 0; i < SpanCount; i++)
             {
-                Spans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
-                EnrichedSpans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
+                Spans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark"), now);
+                EnrichedSpans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark"), now);
                 EnrichedSpans[i].SetTag(Tags.Env, "Benchmark");
                 EnrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
@@ -57,8 +57,8 @@ namespace Benchmarks.Trace
         [Benchmark]
         public Task WriteAndFlushTraces()
         {
-            _agentWriter.WriteTrace(_spans);
-            return _agentWriter.FlushTracesAsync();
+            AgentWriter.WriteTrace(Spans);
+            return AgentWriter.FlushTracesAsync();
         }
 
         /// <summary>
