@@ -16,8 +16,9 @@ namespace Benchmarks.Trace
     {
         private const int SpanCount = 1000;
 
-        private static readonly IAgentWriter _agentWriter;
-        private static readonly Span[] _spans;
+        private static readonly IAgentWriter AgentWriter;
+        private static readonly Span[] Spans;
+        private static readonly Span[] EnrichedSpans;
 
         static AgentWriterBenchmark()
         {
@@ -33,13 +34,21 @@ namespace Benchmarks.Trace
 
             _agentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
 
-            _spans = new Span[SpanCount];
+            Spans = new Span[SpanCount];
+            EnrichedSpans = new Span[SpanCount];
             var now = DateTimeOffset.UtcNow;
 
             for (int i = 0; i < SpanCount; i++)
             {
-                _spans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
+                Spans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
+                EnrichedSpans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
+                EnrichedSpans[i].SetTag(Tags.Env, "Benchmark");
+                EnrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
+
+            // Run benchmarks once to reduce noise
+            new AgentWriterBenchmark().WriteAndFlushTraces().GetAwaiter().GetResult();
+            new AgentWriterBenchmark().WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -50,6 +59,16 @@ namespace Benchmarks.Trace
         {
             _agentWriter.WriteTrace(_spans);
             return _agentWriter.FlushTracesAsync();
+        }
+
+        /// <summary>
+        /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics)
+        /// </summary>
+        [Benchmark]
+        public Task WriteAndFlushEnrichedTraces()
+        {
+            AgentWriter.WriteTrace(EnrichedSpans);
+            return AgentWriter.FlushTracesAsync();
         }
 
         /// <summary>
