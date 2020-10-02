@@ -15,11 +15,11 @@ namespace PrepareRelease
         private const string FileIdPrefixTemplate = @"{{file_id_prefix}}";
         private const string FrameworkMonikerTemplate = @"{{framework_moniker}}";
         private const string Net461Property = "WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED";
-        private const string Net461Condition = "<Condition>" + Net461Property + "</Condition>";
+        private const string Net461Condition = @"
+        <Condition>" + Net461Property + "</Condition>";
 
         private static readonly string ItemTemplate = $@"
-      <Component Win64=""$(var.Win64)"">
-        {Net461Condition}
+      <Component Win64=""$(var.Win64)"">{Net461Condition}
         <File Id=""{FileIdPrefixTemplate}{FileNameTemplate}""
               Source=""$(var.TracerHomeDirectory)\{FrameworkMonikerTemplate}\{FileNameTemplate}""
               KeyPath=""yes"" Checksum=""yes"" Assembly="".net""/>
