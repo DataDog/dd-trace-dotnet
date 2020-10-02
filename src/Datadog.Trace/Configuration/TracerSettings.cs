@@ -266,15 +266,6 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
-<<<<<<< refs/remotes/origin/master
-=======
-        /// Gets or sets a value indicating whether the shared Tracer instance is disabled.
-        /// To be used to prevent the automatic instantiation of Tracer.Instance when running tests/benchmarks
-        /// </summary>
-        internal static bool DisableSharedInstance { get; set; }
-
-        /// <summary>
->>>>>>> Remove extra types and implement SqlTags
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.
         /// </summary>
