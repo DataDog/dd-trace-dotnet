@@ -32,7 +32,7 @@ namespace Benchmarks.Trace
 
             var api = new Api(settings.AgentUri, new FakeApiRequestFactory(), statsd: null);
 
-            _agentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
+            AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
 
             Spans = new Span[SpanCount];
             EnrichedSpans = new Span[SpanCount];
@@ -57,8 +57,8 @@ namespace Benchmarks.Trace
         [Benchmark]
         public Task WriteAndFlushTraces()
         {
-            _agentWriter.WriteTrace(_spans);
-            return _agentWriter.FlushTracesAsync();
+            AgentWriter.WriteTrace(Spans);
+            return AgentWriter.FlushTracesAsync();
         }
 
         /// <summary>

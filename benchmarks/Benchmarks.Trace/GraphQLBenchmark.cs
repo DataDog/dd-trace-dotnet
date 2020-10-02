@@ -22,6 +22,8 @@ namespace Benchmarks.Trace
 
         static GraphQLBenchmark()
         {
+            TracerSettings.DisableSharedInstance = true;
+
             var settings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false
