@@ -26,7 +26,7 @@ namespace PrepareRelease
                 text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
             SynchronizeVersion(
-                "reproductions/AutomapperTest/Dockerfile",
+                "test/test-applications/regression/AutomapperTest/Dockerfile",
                 text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
             // Managed project / NuGet package updates

@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly IisFixture _iisFixture;
 
         public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output)
-            : base("AspNetMvc5", "samples-aspnet", output)
+            : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
 

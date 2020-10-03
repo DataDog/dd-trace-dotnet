@@ -21,9 +21,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.N
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample-libs", "sample-libs", "{B9AA20A4-0F9A-47FB-B3BE-A5BDEA42EFF0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibrary", "sample-libs\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj", "{901F02A8-8776-4D18-80C9-05C58262C1C7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibrary", "test\test-applications\integrations\dependency-libs\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj", "{901F02A8-8776-4D18-80C9-05C58262C1C7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibraryTracer", "sample-libs\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj", "{6CE95C50-9533-4650-8F11-BCE30908DCDF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibraryTracer", "test\test-applications\integrations\dependency-libs\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj", "{6CE95C50-9533-4650-8F11-BCE30908DCDF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Loader", "src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj", "{0686E907-996A-4D6D-A685-D9C0F932C405}"
 EndProject

@@ -37,12 +37,12 @@ namespace Datadog.Trace.TestHelpers
             string sampleName,
             Type anchorType,
             ITestOutputHelper output,
-            string samplesDirectory = "samples",
+            string samplesDirectory = "test/test-applications/integrations",
             bool prependSamplesToAppName = true,
             bool requiresProfiling = true)
         {
             SampleName = sampleName;
-            _samplesDirectory = samplesDirectory ?? "samples";
+            _samplesDirectory = samplesDirectory ?? "test/test-applications/integrations";
             _anchorType = anchorType;
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();

@@ -6,7 +6,7 @@ RUN Add-WindowsFeature NET-Framework-45-ASPNET; \
     Add-WindowsFeature Web-Asp-Net45
 
 # Copy IIS websites
-ADD samples-iis/Samples.AspNet472.LoaderOptimizationRegKey/bin/Release/Publish LoaderOptimizationRegKey
+ADD test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/Release/Publish LoaderOptimizationRegKey
 
 # Set up IIS websites
 ARG ENABLE_32_BIT

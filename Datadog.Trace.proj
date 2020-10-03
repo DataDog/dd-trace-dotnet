@@ -10,14 +10,14 @@
     <CsharpTestProject Include="test\**\*.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <SampleProject Include="samples*\**\*.csproj"/>
-    <SampleLibProject Include="sample-libs\**\*.csproj" Exclude="sample-libs\**\Samples.MultiDomainHost.App.*.csproj" />
+    <SampleProject Include="test\test-applications\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
+    <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
   </ItemGroup>
 
   <ItemGroup>
-    <FrameworkReproduction Include="reproductions\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
-    <FrameworkReproduction Include="reproductions\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
+    <FrameworkReproduction Include="test\test-applications\regression\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
+    <FrameworkReproduction Include="test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
   </ItemGroup>
 
   <Import Condition="'$(PerformComprehensiveTesting)'=='true'" Project="build\PackageVersionsComprehensive.g.props" />
