@@ -5,6 +5,9 @@
     <RootNamespace>Datadog.Trace</RootNamespace>
     <Nullable>enable</Nullable>
 
+    <!-- Microsoft.ServiceFabric.Services.Remoting only supports x64 -->
+    <Platforms>x64</Platforms>
+
     <!-- NuGet -->
     <Version>0.1.0-alpha1</Version>
     <Title>Datadog APM</Title>
