@@ -199,7 +199,7 @@ namespace Datadog.Trace
                 }
 
                 var tracer = Tracer.Instance;
-                var span = CreateSpan(tracer, context, SpanKinds.Client, eventArgs, messageHeaders, enabledAnalyticsWithGlobalSetting: true);
+                var span = CreateSpan(tracer, context, SpanKinds.Server, eventArgs, messageHeaders, enabledAnalyticsWithGlobalSetting: true);
 
                 if (!string.IsNullOrEmpty(origin))
                 {
