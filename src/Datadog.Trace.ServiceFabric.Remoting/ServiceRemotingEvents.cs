@@ -81,7 +81,11 @@ namespace Datadog.Trace
                 if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out _))
                 {
                     string origin = span.GetTag(Tags.Origin);
-                    messageHeaders.AddHeader(HttpHeaderNames.Origin, Encoding.UTF8.GetBytes(origin));
+
+                    if (!string.IsNullOrEmpty(origin))
+                    {
+                        messageHeaders.AddHeader(HttpHeaderNames.Origin, Encoding.UTF8.GetBytes(origin));
+                    }
                 }
             }
 
@@ -130,29 +134,29 @@ namespace Datadog.Trace
                 ulong? parentId = null;
                 SamplingPriority? samplingPriority = null;
 
-                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out byte[] traceIdBytes))
+                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out byte[] traceIdBytes) && traceIdBytes?.Length == 8)
                 {
                     traceId = BitConverter.ToUInt64(traceIdBytes, 0);
                 }
 
-                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out byte[] parentIdBytes))
+                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out byte[] parentIdBytes) && parentIdBytes?.Length == 8)
                 {
                     parentId = BitConverter.ToUInt64(parentIdBytes, 0);
                 }
 
-                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out byte[] samplingPriorityBytes))
+                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out byte[] samplingPriorityBytes) && samplingPriorityBytes?.Length == 4)
                 {
                     samplingPriority = (SamplingPriority)BitConverter.ToInt32(samplingPriorityBytes, 0);
                 }
 
-                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out byte[] originBytes))
+                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out byte[] originBytes) && originBytes?.Length > 0)
                 {
                     origin = Encoding.UTF8.GetString(originBytes);
                 }
 
                 if (traceId != null && parentId != null)
                 {
-                    context = new SpanContext(traceId.Value, parentId.Value, samplingPriority);
+                    context = new SpanContext(traceId, parentId.Value, samplingPriority);
                 }
             }
 
