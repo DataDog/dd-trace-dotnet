@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
+    <ProjectReference Include="..\..\..\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
   </ItemGroup>
 
 </Project>

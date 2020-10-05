@@ -11,7 +11,7 @@
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <DelaySign>false</DelaySign>
     <NoWarn>1591</NoWarn>
@@ -31,10 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />
-    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-    <ProjectReference Include="..\..\src\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj" />
-    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />
+    <ProjectReference Include="..\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+    <ProjectReference Include="..\..\..\src\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj" />
+    <ProjectReference Include="..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">

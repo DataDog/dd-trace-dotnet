@@ -28,7 +28,7 @@ namespace Performance.StackExchange.Redis
             var averageRuntime = debugModeConcurrencyRunner.GetAverageActionRuntime();
 #else
             var redisSummary = BenchmarkRunner.Run<StackExchangeRedisBenchmarks>();
-            Save("Performance.StackExchange.Redis", DateTime.Now);
+            // Save("Performance.StackExchange.Redis", DateTime.Now);
 #endif
         }
 
