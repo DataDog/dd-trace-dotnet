@@ -14,7 +14,6 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Target type</typeparam>
         /// <returns>DuckType instance</returns>
         public static T As<T>(this object instance)
-            where T : class
             => DuckType.Create<T>(instance);
 
         /// <summary>

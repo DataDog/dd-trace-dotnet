@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -10,12 +9,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
-        private static MethodBuilder GetFieldGetMethod(TypeBuilder proxyTypeBuilder, Type targetType, PropertyInfo proxyProperty, FieldInfo targetField, FieldInfo instanceField)
+        private static MethodBuilder GetFieldGetMethod(TypeBuilder proxyTypeBuilder, Type targetType, MemberInfo proxyMember, FieldInfo targetField, FieldInfo instanceField)
         {
+            string proxyMemberName = proxyMember.Name;
+            Type proxyMemberReturnType = proxyMember is PropertyInfo pinfo ? pinfo.PropertyType : proxyMember is FieldInfo finfo ? finfo.FieldType : typeof(object);
+
             MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(
-                "get_" + proxyProperty.Name,
+                "get_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
-                proxyProperty.PropertyType,
+                proxyMemberReturnType,
                 Type.EmptyTypes);
 
             ILGenerator il = proxyMethod.GetILGenerator();
@@ -73,35 +75,38 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // Check if the type can be converted or if we need to enable duck chaining
-            if (NeedsDuckChaining(targetField.FieldType, proxyProperty.PropertyType))
+            if (NeedsDuckChaining(targetField.FieldType, proxyMemberReturnType))
             {
                 // We call DuckType.CreateCache<>.Create()
                 MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
-                    .MakeGenericType(proxyProperty.PropertyType).GetMethod("Create");
+                    .MakeGenericType(proxyMemberReturnType).GetMethod("Create");
 
                 il.Emit(OpCodes.Call, getProxyMethodInfo);
             }
-            else if (returnType != proxyProperty.PropertyType)
+            else if (returnType != proxyMemberReturnType)
             {
                 // If the type is not the expected type we try a conversion.
-                ILHelpers.TypeConversion(il, returnType, proxyProperty.PropertyType);
+                ILHelpers.TypeConversion(il, returnType, proxyMemberReturnType);
             }
 
             il.Emit(OpCodes.Ret);
             return proxyMethod;
         }
 
-        private static MethodBuilder GetFieldSetMethod(TypeBuilder proxyTypeBuilder, Type targetType, PropertyInfo proxyProperty, FieldInfo targetField, FieldInfo instanceField)
+        private static MethodBuilder GetFieldSetMethod(TypeBuilder proxyTypeBuilder, Type targetType, MemberInfo proxyMember, FieldInfo targetField, FieldInfo instanceField)
         {
+            string proxyMemberName = proxyMember.Name;
+            Type proxyMemberReturnType = proxyMember is PropertyInfo pinfo ? pinfo.PropertyType : proxyMember is FieldInfo finfo ? finfo.FieldType : typeof(object);
+
             MethodBuilder method = proxyTypeBuilder.DefineMethod(
-                "set_" + proxyProperty.Name,
+                "set_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
                 typeof(void),
-                new[] { proxyProperty.PropertyType });
+                new[] { proxyMemberReturnType });
 
             ILGenerator il = method.GetILGenerator();
             bool isPublicInstance = targetType.IsPublic || targetType.IsNestedPublic;
-            Type currentValueType = proxyProperty.PropertyType;
+            Type currentValueType = proxyMemberReturnType;
 
             // Load instance
             if (!targetField.IsStatic)
@@ -111,11 +116,11 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // Check if the type can be converted of if we need to enable duck chaining
-            if (NeedsDuckChaining(targetField.FieldType, proxyProperty.PropertyType))
+            if (NeedsDuckChaining(targetField.FieldType, proxyMemberReturnType))
             {
                 // Load the argument and convert it to Duck type
                 il.Emit(OpCodes.Ldarg_1);
-                ILHelpers.TypeConversion(il, proxyProperty.PropertyType, typeof(IDuckType));
+                ILHelpers.TypeConversion(il, proxyMemberReturnType, typeof(IDuckType));
 
                 // Call IDuckType.Instance property to get the actual value
                 il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);

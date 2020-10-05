@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using System.Reflection.Emit;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -36,15 +35,16 @@ namespace Datadog.Trace.DuckTyping
         private static bool NeedsDuckChaining(Type targetType, Type proxyType)
         {
             // The condition to apply duck chaining is:
-            // 1. Both types must be differents.
-            // 2. The proxy type (duck chaining proxy definition type) can't be a struct
-            // 3. The proxy type can't be a generic parameter (should be a well known type)
-            // 4. Can't be a base type or an iterface implemented by the targetType type.
-            return
-                proxyType != targetType &&
+            // 1. Is a struct with the DuckAttribute.Struct attribute
+            // 2. Both types must be differents.
+            // 3. The proxy type (duck chaining proxy definition type) can't be a struct
+            // 4. The proxy type can't be a generic parameter (should be a well known type)
+            // 5. Can't be a base type or an iterface implemented by the targetType type.
+            return proxyType.GetCustomAttribute<DuckCopyAttribute>() != null ||
+                (proxyType != targetType &&
                 !proxyType.IsValueType &&
                 !proxyType.IsGenericParameter &&
-                !proxyType.IsAssignableFrom(targetType);
+                !proxyType.IsAssignableFrom(targetType));
         }
     }
 }

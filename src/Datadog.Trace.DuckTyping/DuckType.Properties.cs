@@ -11,19 +11,36 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
-        private static MethodBuilder GetPropertyGetMethod(TypeBuilder proxyTypeBuilder, Type targetType, PropertyInfo proxyProperty, PropertyInfo targetProperty, FieldInfo instanceField)
+        private static MethodBuilder GetPropertyGetMethod(TypeBuilder proxyTypeBuilder, Type targetType, MemberInfo proxyMember, PropertyInfo targetProperty, FieldInfo instanceField)
         {
-            Type[] proxyParameterTypes = GetPropertyGetParametersTypes(proxyProperty, true).ToArray();
+            string proxyMemberName = proxyMember.Name;
+            Type proxyMemberReturnType = typeof(object);
+            Type[] proxyParameterTypes = Type.EmptyTypes;
             Type[] targetParametersTypes = GetPropertyGetParametersTypes(targetProperty, true).ToArray();
-            if (proxyParameterTypes.Length != targetParametersTypes.Length)
+
+            if (proxyMember is PropertyInfo proxyProperty)
             {
-                DuckTypePropertyArgumentsLengthException.Throw(proxyProperty);
+                proxyMemberReturnType = proxyProperty.PropertyType;
+                proxyParameterTypes = GetPropertyGetParametersTypes(proxyProperty, true).ToArray();
+                if (proxyParameterTypes.Length != targetParametersTypes.Length)
+                {
+                    DuckTypePropertyArgumentsLengthException.Throw(proxyProperty);
+                }
+            }
+            else if (proxyMember is FieldInfo proxyField)
+            {
+                proxyMemberReturnType = proxyField.FieldType;
+                proxyParameterTypes = Type.EmptyTypes;
+                if (proxyParameterTypes.Length != targetParametersTypes.Length)
+                {
+                    DuckTypePropertyArgumentsLengthException.Throw(targetProperty);
+                }
             }
 
             MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(
-                "get_" + proxyProperty.Name,
+                "get_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
-                proxyProperty.PropertyType,
+                proxyMemberReturnType,
                 proxyParameterTypes);
 
             ILGenerator il = proxyMethod.GetILGenerator();
@@ -123,35 +140,51 @@ namespace Datadog.Trace.DuckTyping
 
             // Handle the return value
             // Check if the type can be converted or if we need to enable duck chaining
-            if (NeedsDuckChaining(targetProperty.PropertyType, proxyProperty.PropertyType))
+            if (NeedsDuckChaining(targetProperty.PropertyType, proxyMemberReturnType))
             {
                 // We call DuckType.CreateCache<>.Create()
                 MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
-                    .MakeGenericType(proxyProperty.PropertyType).GetMethod("Create");
+                    .MakeGenericType(proxyMemberReturnType).GetMethod("Create");
 
                 il.Emit(OpCodes.Call, getProxyMethodInfo);
             }
-            else if (returnType != proxyProperty.PropertyType)
+            else if (returnType != proxyMemberReturnType)
             {
                 // If the type is not the expected type we try a conversion.
-                ILHelpers.TypeConversion(il, returnType, proxyProperty.PropertyType);
+                ILHelpers.TypeConversion(il, returnType, proxyMemberReturnType);
             }
 
             il.Emit(OpCodes.Ret);
             return proxyMethod;
         }
 
-        private static MethodBuilder GetPropertySetMethod(TypeBuilder proxyTypeBuilder, Type targetType, PropertyInfo proxyProperty, PropertyInfo targetProperty, FieldInfo instanceField)
+        private static MethodBuilder GetPropertySetMethod(TypeBuilder proxyTypeBuilder, Type targetType, MemberInfo proxyMember, PropertyInfo targetProperty, FieldInfo instanceField)
         {
-            Type[] proxyParameterTypes = GetPropertySetParametersTypes(proxyProperty, true).ToArray();
+            string proxyMemberName = null;
+            Type[] proxyParameterTypes = Type.EmptyTypes;
             Type[] targetParametersTypes = GetPropertySetParametersTypes(targetProperty, true).ToArray();
-            if (proxyParameterTypes.Length != targetParametersTypes.Length)
+
+            if (proxyMember is PropertyInfo proxyProperty)
             {
-                DuckTypePropertyArgumentsLengthException.Throw(proxyProperty);
+                proxyMemberName = proxyProperty.Name;
+                proxyParameterTypes = GetPropertySetParametersTypes(proxyProperty, true).ToArray();
+                if (proxyParameterTypes.Length != targetParametersTypes.Length)
+                {
+                    DuckTypePropertyArgumentsLengthException.Throw(proxyProperty);
+                }
+            }
+            else if (proxyMember is FieldInfo proxyField)
+            {
+                proxyMemberName = proxyField.Name;
+                proxyParameterTypes = new Type[] { proxyField.FieldType };
+                if (proxyParameterTypes.Length != targetParametersTypes.Length)
+                {
+                    DuckTypePropertyArgumentsLengthException.Throw(targetProperty);
+                }
             }
 
             MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(
-                "set_" + proxyProperty.Name,
+                "set_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
                 typeof(void),
                 proxyParameterTypes);
