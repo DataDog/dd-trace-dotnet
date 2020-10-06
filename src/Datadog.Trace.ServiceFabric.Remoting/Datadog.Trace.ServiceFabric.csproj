@@ -1,8 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <RootNamespace>Datadog.Trace</RootNamespace>
     <Nullable>enable</Nullable>
 
     <!-- Microsoft.ServiceFabric.Services.Remoting only supports x64 -->

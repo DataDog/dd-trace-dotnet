@@ -10,9 +10,9 @@ https://github.com/microsoft/ApplicationInsights-ServiceFabric/blob/master/src/A
 https://github.com/microsoft/ApplicationInsights-ServiceFabric/blob/master/src/ApplicationInsights.ServiceFabric.Native.Shared/RequestTrackingModule/ServiceRemotingServerEventListener.cs
 */
 
-namespace Datadog.Trace
+namespace Datadog.Trace.ServiceFabric
 {
-    public static class ServiceRemotingEvents
+    public static class Remoting
     {
         public const string IntegrationName = "ServiceRemoting";
 
