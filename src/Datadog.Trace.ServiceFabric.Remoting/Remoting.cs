@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Text;
+using System.Threading;
 using Microsoft.ServiceFabric.Services.Remoting.V2;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Client;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Runtime;
@@ -20,19 +21,23 @@ namespace Datadog.Trace.ServiceFabric
         private const string IntegrationName = "ServiceRemoting";
         private const string SpanNamePrefix = "service-remoting";
 
+        private static int _enabled;
+
         /// <summary>
         /// Start tracing Service Remoting requests.
         /// </summary>
         public static void StartTracing()
         {
-            // client
-            ServiceRemotingClientEvents.SendRequest += ServiceRemotingClientEvents_SendRequest;
-            ServiceRemotingClientEvents.ReceiveResponse += ServiceRemotingClientEvents_ReceiveResponse;
+            if (Interlocked.CompareExchange(ref _enabled, 1, 0) == 0)
+            {
+                // client
+                ServiceRemotingClientEvents.SendRequest += ServiceRemotingClientEvents_SendRequest;
+                ServiceRemotingClientEvents.ReceiveResponse += ServiceRemotingClientEvents_ReceiveResponse;
 
-
-            // server
-            ServiceRemotingServiceEvents.ReceiveRequest += ServiceRemotingServiceEvents_ReceiveRequest;
-            ServiceRemotingServiceEvents.SendResponse += ServiceRemotingServiceEvents_SendResponse;
+                // server
+                ServiceRemotingServiceEvents.ReceiveRequest += ServiceRemotingServiceEvents_ReceiveRequest;
+                ServiceRemotingServiceEvents.SendResponse += ServiceRemotingServiceEvents_SendResponse;
+            }
         }
 
         /// <summary>
@@ -40,18 +45,25 @@ namespace Datadog.Trace.ServiceFabric
         /// </summary>
         public static void StopTracing()
         {
-            // client
-            ServiceRemotingClientEvents.SendRequest -= ServiceRemotingClientEvents_SendRequest;
-            ServiceRemotingClientEvents.ReceiveResponse -= ServiceRemotingClientEvents_ReceiveResponse;
+            if (Interlocked.CompareExchange(ref _enabled, 0, 1) == 1)
+            {
+                // client
+                ServiceRemotingClientEvents.SendRequest -= ServiceRemotingClientEvents_SendRequest;
+                ServiceRemotingClientEvents.ReceiveResponse -= ServiceRemotingClientEvents_ReceiveResponse;
 
-
-            // server
-            ServiceRemotingServiceEvents.ReceiveRequest -= ServiceRemotingServiceEvents_ReceiveRequest;
-            ServiceRemotingServiceEvents.SendResponse -= ServiceRemotingServiceEvents_SendResponse;
+                // server
+                ServiceRemotingServiceEvents.ReceiveRequest -= ServiceRemotingServiceEvents_ReceiveRequest;
+                ServiceRemotingServiceEvents.SendResponse -= ServiceRemotingServiceEvents_SendResponse;
+            }
         }
 
         private static void ServiceRemotingClientEvents_SendRequest(object? sender, EventArgs e)
         {
+            if (_enabled == 0)
+            {
+                return;
+            }
+
             try
             {
                 var eventArgs = e as ServiceRemotingRequestEventArgs;
@@ -120,6 +132,11 @@ namespace Datadog.Trace.ServiceFabric
 
         private static void ServiceRemotingClientEvents_ReceiveResponse(object? sender, EventArgs e)
         {
+            if (_enabled == 0)
+            {
+                return;
+            }
+
             // var successfulResponseArg = e as ServiceRemotingResponseEventArgs;
             // var failedResponseArg = e as ServiceRemotingFailedResponseEventArgs;
 
@@ -146,6 +163,11 @@ namespace Datadog.Trace.ServiceFabric
 
         private static void ServiceRemotingServiceEvents_ReceiveRequest(object? sender, EventArgs e)
         {
+            if (_enabled == 0)
+            {
+                return;
+            }
+
             try
             {
                 var eventArgs = e as ServiceRemotingRequestEventArgs;
@@ -225,6 +247,11 @@ namespace Datadog.Trace.ServiceFabric
 
         private static void ServiceRemotingServiceEvents_SendResponse(object? sender, EventArgs e)
         {
+            if (_enabled == 0)
+            {
+                return;
+            }
+
             // var successfulResponseArg = e as ServiceRemotingResponseEventArgs;
             // var failedResponseArg = e as ServiceRemotingFailedResponseEventArgs;
 
