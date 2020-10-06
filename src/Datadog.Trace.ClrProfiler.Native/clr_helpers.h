@@ -297,9 +297,9 @@ struct FunctionInfo {
   bool IsValid() const { return id != 0; }
 };
 
-RuntimeInformation GetRuntimeInformation(ICorProfilerInfo3* info);
+RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4* info);
 
-AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
+AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4* info,
                              const AssemblyID& assembly_id);
 
 AssemblyMetadata GetAssemblyMetadata(
@@ -316,7 +316,7 @@ AssemblyMetadata GetReferencedAssemblyMetadata(
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                              const mdToken& token);
 
-ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id);
+ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id);
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                      const mdToken& token);

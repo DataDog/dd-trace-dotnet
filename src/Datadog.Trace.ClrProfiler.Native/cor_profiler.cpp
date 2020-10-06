@@ -81,10 +81,10 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // get Profiler interface
-  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
+  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo4>(
       &this->info_);
   if (FAILED(hr)) {
-    Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo3 not found.");
+    Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo4 not found.");
     return E_FAIL;
   }
 
@@ -526,7 +526,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
                                             &function_token);
 
   if (FAILED(hr)) {
-    Warn("JITCompilationStarted: Call to ICorProfilerInfo3.GetFunctionInfo() failed for ", function_id);
+    Warn("JITCompilationStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ", function_id);
     return S_OK;
   }
 
