@@ -38,7 +38,7 @@ namespace PrepareRelease
             if (JobShouldRun(Msi, args))
             {
                 Environment.SetEnvironmentVariable("SOLUTION_DIR", solutionDir);
-                var publishBatch = Path.Combine(solutionDir, "tools", "PrepareRelease", "publish-all.bat");
+                var publishBatch = Path.Combine(solutionDir, "build", "tools", "PrepareRelease", "publish-all.bat");
                 ExecuteCommand(publishBatch);
 
                 Console.WriteLine("--------------- MSI Job Started ---------------");

@@ -108,7 +108,7 @@ namespace PrepareRelease
                 FullAssemblyNameReplace);
 
             SynchronizeVersion(
-                "docker/package.sh",
+                "build/docker/package.sh",
                 text => Regex.Replace(text, $"VERSION={VersionPattern()}", $"VERSION={VersionString()}"));
 
             SynchronizeVersion(

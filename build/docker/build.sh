@@ -3,7 +3,7 @@ set -euxo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-cd "$DIR/.."
+cd "$DIR/../.."
 
 PUBLISH_OUTPUT="$( pwd )/src/bin/managed-publish"
 mkdir -p "$PUBLISH_OUTPUT/netstandard2.0"

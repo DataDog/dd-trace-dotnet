@@ -38,7 +38,7 @@ namespace GeneratePackageVersions
                     _baseXunitPath,
                     "PackageVersions.g.cs"));
 
-            var definitionsFilename = Path.Combine(args[0], "PackageVersionsGeneratorDefinitions.json");
+            var definitionsFilename = Path.Combine(args[0], "build", "PackageVersionsGeneratorDefinitions.json");
 
             if (!File.Exists(definitionsFilename))
             {
@@ -116,7 +116,7 @@ namespace GeneratePackageVersions
             {
                 var className = $"PackageVersions{postfix}";
 
-                var outputPackageVersionsPropsFilename = Path.Combine(_solutionDirectory, $"PackageVersions{postfix}.g.props");
+                var outputPackageVersionsPropsFilename = Path.Combine(_solutionDirectory, "build", $"PackageVersions{postfix}.g.props");
 
                 var outputPackageVersionsXunitFilename = Path.Combine(
                     _baseXunitPath,

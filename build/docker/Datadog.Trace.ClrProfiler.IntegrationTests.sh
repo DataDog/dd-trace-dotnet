@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euxo pipefail
 
-cd "$( dirname "${BASH_SOURCE[0]}" )"/../
+cd "$( dirname "${BASH_SOURCE[0]}" )"/../../
 
 mkdir -p /var/log/datadog/dotnet
 touch /var/log/datadog/dotnet/dotnet-profiler.log

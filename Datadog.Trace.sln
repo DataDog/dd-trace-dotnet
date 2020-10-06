@@ -40,7 +40,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		integrations.json = integrations.json
 		LICENSE = LICENSE
 		LICENSE-3rdparty.csv = LICENSE-3rdparty.csv
-		PackageVersionsGeneratorDefinitions.json = PackageVersionsGeneratorDefinitions.json
 		docs\README.md = docs\README.md
 		stylecop.json = stylecop.json
 		Test.Common.props = Test.Common.props
@@ -186,7 +185,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMessageHandler.StackOve
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeneratePackageVersions", "tools\GeneratePackageVersions\GeneratePackageVersions.csproj", "{24B0357D-B0C8-46C7-96F6-006E3F66662A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeneratePackageVersions", "build\tools\GeneratePackageVersions\GeneratePackageVersions.csproj", "{24B0357D-B0C8-46C7-96F6-006E3F66662A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ServiceStack.Redis", "samples\Samples.ServiceStack.Redis\Samples.ServiceStack.Redis.csproj", "{8E1555D1-13D5-4DBF-9631-117D840C3158}"
 EndProject
@@ -228,15 +227,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoad.FileNotFoundEx
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD006-E206-488E-ACA1-1AA73F9B5146}"
 	ProjectSection(SolutionItems) = preProject
-		docker\build.sh = docker\build.sh
-		docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
-		docker\Datadog.Trace.ClrProfiler.Native.sh = docker\Datadog.Trace.ClrProfiler.Native.sh
-		docker\dotnet.dockerfile = docker\dotnet.dockerfile
-		docker\native.dockerfile = docker\native.dockerfile
-		docker\package.dockerfile = docker\package.dockerfile
-		docker\package.sh = docker\package.sh
-		docker\with-profiler-logs.bash = docker\with-profiler-logs.bash
-		docker\with-profiler.bash = docker\with-profiler.bash
+		build\docker\build.sh = build\docker\build.sh
+		build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
+		build\docker\Datadog.Trace.ClrProfiler.Native.sh = build\docker\Datadog.Trace.ClrProfiler.Native.sh
+		build\docker\dotnet.dockerfile = build\docker\dotnet.dockerfile
+		build\docker\native.dockerfile = build\docker\native.dockerfile
+		build\docker\package.dockerfile = build\docker\package.dockerfile
+		build\docker\package.sh = build\docker\package.sh
+		build\docker\with-profiler-logs.bash = build\docker\with-profiler-logs.bash
+		build\docker\with-profiler.bash = build\docker\with-profiler.bash
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-pipelines", "{C52D6695-4E05-4930-88F8-0EFF8056A967}"
@@ -294,7 +293,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc21", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NLog10LogsInjection.NullReferenceException", "reproductions\NLog10LogsInjection.NullReferenceException\NLog10LogsInjection.NullReferenceException.csproj", "{6209C19B-42E4-4FCF-A539-FD1E4F4A34DB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrepareRelease", "tools\PrepareRelease\PrepareRelease.csproj", "{DAA6B000-5BED-4081-B5E0-B698BFB89415}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrepareRelease", "build\tools\PrepareRelease\PrepareRelease.csproj", "{DAA6B000-5BED-4081-B5E0-B698BFB89415}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FakeKudu", "samples\Samples.FakeKudu\Samples.FakeKudu.csproj", "{317D3C64-E4F6-4D77-83C0-C69FC3923471}"
 EndProject
@@ -313,11 +312,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Dapper", "samples\Samples.Dapper\Samples.Dapper.csproj", "{7E563BF6-47F2-4531-A1CE-FB9445DF3253}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "linux", "linux", "{7DB68365-AA9E-4C3E-A553-31BFB5704B01}"
-	ProjectSection(SolutionItems) = preProject
-		createLogPath.sh = createLogPath.sh
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Core", "src\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj", "{D95D5E26-F32A-481D-A15A-EF7B3B56D2E0}"
@@ -355,6 +349,20 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.DuckTyping", "src\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj", "{77B80C3C-6437-4627-87FA-B38ABDD5D58D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping.Tests", "test\Datadog.Trace.DuckTyping.Tests\Datadog.Trace.DuckTyping.Tests.csproj", "{91E50134-0E55-4D22-B180-6967174FCE0B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}"
+	ProjectSection(SolutionItems) = preProject
+		build\PackageVersionsComprehensive.g.props = build\PackageVersionsComprehensive.g.props
+		build\PackageVersionsGeneratorDefinitions.json = build\PackageVersionsGeneratorDefinitions.json
+		build\PackageVersionsLatestMinors.g.props = build\PackageVersionsLatestMinors.g.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{C70D6696-23F0-4C3D-9C2A-94C4868D5249}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "artifacts", "artifacts", "{CC53E5C5-9D3E-4AD9-A9CA-D2190463EB5B}"
+	ProjectSection(SolutionItems) = preProject
+		build\artifacts\createLogPath.sh = build\artifacts\createLogPath.sh
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -1335,7 +1343,7 @@ Global
 		{AD119B05-A092-41AD-B68E-4AE2DB5A96D9} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{2AD18622-9A02-41B4-915E-798BD64044D5} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{F47F206E-4CCA-4AD0-AEBA-FD9F491E05EC} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{24B0357D-B0C8-46C7-96F6-006E3F66662A} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
+		{24B0357D-B0C8-46C7-96F6-006E3F66662A} = {C70D6696-23F0-4C3D-9C2A-94C4868D5249}
 		{8E1555D1-13D5-4DBF-9631-117D840C3158} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{DC7D131A-AF99-46AB-9AA6-463443E3B992} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{673826CD-9219-4231-8FCF-4F9C8BE61F76} = {65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}
@@ -1348,7 +1356,7 @@ Global
 		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
 		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{6ABAD006-E206-488E-ACA1-1AA73F9B5146} = {FEBCE7DC-9FD1-48A6-B911-71ABB240A030}
+		{6ABAD006-E206-488E-ACA1-1AA73F9B5146} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{C52D6695-4E05-4930-88F8-0EFF8056A967} = {FEBCE7DC-9FD1-48A6-B911-71ABB240A030}
 		{42FA33DD-AEA3-4FF3-8319-F30244A666A4} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{DF923186-5397-4E15-A95B-F15C8327ED53} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
@@ -1369,7 +1377,7 @@ Global
 		{303F8E41-691F-4453-AB7D-88A0036C0465} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{D141BD06-DD95-4CAF-85CD-657116E0DAD4} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{6209C19B-42E4-4FCF-A539-FD1E4F4A34DB} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{DAA6B000-5BED-4081-B5E0-B698BFB89415} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
+		{DAA6B000-5BED-4081-B5E0-B698BFB89415} = {C70D6696-23F0-4C3D-9C2A-94C4868D5249}
 		{317D3C64-E4F6-4D77-83C0-C69FC3923471} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{9A2AE41B-251F-4A21-89FA-E5C55A737BBB} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{24BE488C-A5F3-4228-8CAB-E60EBEA444EE} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
@@ -1395,6 +1403,8 @@ Global
 		{ED2742D3-2AA3-4D62-BB63-CFA43CEACCF3} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{77B80C3C-6437-4627-87FA-B38ABDD5D58D} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{91E50134-0E55-4D22-B180-6967174FCE0B} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{C70D6696-23F0-4C3D-9C2A-94C4868D5249} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
+		{CC53E5C5-9D3E-4AD9-A9CA-D2190463EB5B} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
