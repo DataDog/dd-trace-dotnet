@@ -12,12 +12,17 @@ https://github.com/microsoft/ApplicationInsights-ServiceFabric/blob/master/src/A
 
 namespace Datadog.Trace.ServiceFabric
 {
+    /// <summary>
+    /// Provides methods used start and stop tracing Service Remoting requests.
+    /// </summary>
     public static class Remoting
     {
-        public const string IntegrationName = "ServiceRemoting";
-
+        private const string IntegrationName = "ServiceRemoting";
         private const string SpanNamePrefix = "service-remoting";
 
+        /// <summary>
+        /// Start tracing Service Remoting requests.
+        /// </summary>
         public static void StartTracing()
         {
             // client
@@ -30,6 +35,9 @@ namespace Datadog.Trace.ServiceFabric
             ServiceRemotingServiceEvents.SendResponse += ServiceRemotingServiceEvents_SendResponse;
         }
 
+        /// <summary>
+        /// Stop tracing Service Remoting requests.
+        /// </summary>
         public static void StopTracing()
         {
             // client
