@@ -16,6 +16,8 @@ namespace Datadog.Trace.ServiceFabric
         private const string IntegrationName = "ServiceRemoting";
         private const string SpanNamePrefix = "service-remoting";
 
+        private static readonly Datadog.Trace.Vendors.Serilog.ILogger Log = Datadog.Trace.Logging.DatadogLogging.GetLogger(typeof(Remoting));
+
         private static int _enabled;
 
         /// <summary>
@@ -52,77 +54,40 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
-        private static void ServiceRemotingClientEvents_SendRequest(object? sender, EventArgs e)
+        private static void ServiceRemotingClientEvents_SendRequest(object? sender, EventArgs? e)
         {
             if (_enabled == 0)
             {
                 return;
             }
 
+            GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
+
+            var tracer = Tracer.Instance;
+            var span = CreateSpan(tracer, context: null, SpanKinds.Client, eventArgs, messageHeaders, enableAnalyticsWithGlobalSetting: false);
+
             try
             {
-                var eventArgs = e as ServiceRemotingRequestEventArgs;
-
-                if (eventArgs == null)
+                // inject propagation context into message headers for distributed tracing
+                if (messageHeaders != null)
                 {
-                    // TODO: log
+                    var context = new PropagationContext
+                                  {
+                                      TraceId = span.TraceId,
+                                      ParentSpanId = span.SpanId,
+                                      SamplingPriority = span.GetTag(Tags.SamplingPriority),
+                                      Origin = span.GetTag(Tags.Origin)
+                                  };
+
+                    InjectContext(context, messageHeaders);
                 }
-
-                var messageHeaders = eventArgs?.Request?.GetHeader();
-
-                if (messageHeaders == null)
-                {
-                    // TODO: log
-                }
-
-                var tracer = Tracer.Instance;
-                var span = CreateSpan(tracer, context: null, SpanKinds.Client, eventArgs, messageHeaders, enabledAnalyticsWithGlobalSetting: false);
-
-                try
-                {
-                    // inject trace propagation headers for distributed tracing
-                    if (messageHeaders != null)
-                    {
-                        if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out _))
-                        {
-                            messageHeaders.AddHeader(HttpHeaderNames.TraceId, BitConverter.GetBytes(span.TraceId));
-                        }
-
-                        if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out _))
-                        {
-                            messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(span.SpanId));
-                        }
-
-                        if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out _) &&
-                            ulong.TryParse(span.GetTag(Tags.SamplingPriority), out ulong samplingPriority))
-                        {
-                            messageHeaders.AddHeader(HttpHeaderNames.SamplingPriority, BitConverter.GetBytes(samplingPriority));
-                        }
-
-                        if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out _))
-                        {
-                            string origin = span.GetTag(Tags.Origin);
-
-                            if (!string.IsNullOrEmpty(origin))
-                            {
-                                messageHeaders.AddHeader(HttpHeaderNames.Origin, Encoding.UTF8.GetBytes(origin));
-                            }
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    // TODO: log
-                    throw;
-                }
-
-                tracer.ActivateSpan(span);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // TODO: log
-                throw;
+                Log.Error(ex, "Error injecting message headers.");
             }
+
+            tracer.ActivateSpan(span);
         }
 
         private static void ServiceRemotingClientEvents_ReceiveResponse(object? sender, EventArgs e)
@@ -134,25 +99,26 @@ namespace Datadog.Trace.ServiceFabric
 
             // var successfulResponseArg = e as ServiceRemotingResponseEventArgs;
             // var failedResponseArg = e as ServiceRemotingFailedResponseEventArgs;
+            Scope? scope = null;
 
             try
             {
-                var scope = Tracer.Instance.ActiveScope;
+                scope = Tracer.Instance.ActiveScope;
 
-                if (scope != null)
+                if (scope != null &&
+                    e is ServiceRemotingFailedResponseEventArgs failedResponseArg &&
+                    failedResponseArg.Error != null)
                 {
-                    if (e is ServiceRemotingFailedResponseEventArgs failedResponseArg && failedResponseArg.Error != null)
-                    {
-                        scope.Span?.SetException(failedResponseArg.Error);
-                    }
-
-                    scope.Dispose();
+                    scope.Span?.SetException(failedResponseArg.Error);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // TODO: log
-                throw;
+                Log.Error(ex, "Error accessing active scope or setting error tags.");
+            }
+            finally
+            {
+                scope?.Dispose();
             }
         }
 
@@ -163,81 +129,41 @@ namespace Datadog.Trace.ServiceFabric
                 return;
             }
 
+            GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
+
+            var propagationContext = default(PropagationContext);
+
             try
             {
-                var eventArgs = e as ServiceRemotingRequestEventArgs;
+                messageHeaders = eventArgs?.Request?.GetHeader();
 
-                if (eventArgs == null)
+                // extract propagation context from message headers for distributed tracing
+                if (messageHeaders != null)
                 {
-                    // TODO: log
+                    propagationContext = ExtractContext(messageHeaders, propagationContext);
                 }
-
-                IServiceRemotingRequestMessageHeader? messageHeaders = null;
-                SpanContext? context = null;
-                string? origin = null;
-
-                try
-                {
-                    messageHeaders = eventArgs?.Request?.GetHeader();
-
-                    if (messageHeaders == null)
-                    {
-                        // TODO: log
-                    }
-                    else
-                    {
-                        // extract trace propagation headers for distributed tracing
-                        ulong? traceId = null;
-                        ulong? parentId = null;
-                        SamplingPriority? samplingPriority = null;
-
-                        if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out byte[] traceIdBytes) && traceIdBytes?.Length == sizeof(ulong))
-                        {
-                            traceId = BitConverter.ToUInt64(traceIdBytes, 0);
-                        }
-
-                        if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out byte[] parentIdBytes) && parentIdBytes?.Length == sizeof(ulong))
-                        {
-                            parentId = BitConverter.ToUInt64(parentIdBytes, 0);
-                        }
-
-                        if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out byte[] samplingPriorityBytes) && samplingPriorityBytes?.Length == sizeof(int))
-                        {
-                            samplingPriority = (SamplingPriority)BitConverter.ToInt32(samplingPriorityBytes, 0);
-                        }
-
-                        if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out byte[] originBytes) && originBytes?.Length > 0)
-                        {
-                            origin = Encoding.UTF8.GetString(originBytes);
-                        }
-
-                        if (traceId != null && parentId != null)
-                        {
-                            context = new SpanContext(traceId, parentId.Value, samplingPriority);
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    // TODO: log
-                    throw;
-                }
-
-                var tracer = Tracer.Instance;
-                var span = CreateSpan(tracer, context, SpanKinds.Server, eventArgs, messageHeaders, enabledAnalyticsWithGlobalSetting: true);
-
-                if (!string.IsNullOrEmpty(origin))
-                {
-                    span.SetTag(Tags.Origin, origin);
-                }
-
-                tracer.ActivateSpan(span);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // TODO: log
-                throw;
+                Log.Error(ex, "Error extracting message headers.");
             }
+
+            SpanContext? spanContext = null;
+
+            if (propagationContext.TraceId > 0 && propagationContext.ParentSpanId > 0)
+            {
+                spanContext = new SpanContext(propagationContext.TraceId, propagationContext.ParentSpanId, (SamplingPriority)propagationContext.SamplingPriority);
+            }
+
+            var tracer = Tracer.Instance;
+            var span = CreateSpan(tracer, spanContext, SpanKinds.Server, eventArgs, messageHeaders, enableAnalyticsWithGlobalSetting: true);
+
+            if (!string.IsNullOrEmpty(propagationContext.Origin))
+            {
+                span.SetTag(Tags.Origin, propagationContext.Origin);
+            }
+
+            tracer.ActivateSpan(span);
         }
 
         private static void ServiceRemotingServiceEvents_SendResponse(object? sender, EventArgs e)
@@ -263,13 +189,89 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
+        private static void GetMessageHeaders(EventArgs? eventArgs, out ServiceRemotingRequestEventArgs? requestEventArgs, out IServiceRemotingRequestMessageHeader? messageHeaders)
+        {
+            requestEventArgs = null;
+            messageHeaders = null;
+
+            try
+            {
+                requestEventArgs = eventArgs as ServiceRemotingRequestEventArgs;
+
+                if (requestEventArgs == null)
+                {
+                    Log.Warning("Unexpected EventArgs type: {0}", eventArgs?.GetType().FullName ?? "null");
+                }
+
+                messageHeaders = requestEventArgs?.Request?.GetHeader();
+
+                if (messageHeaders == null)
+                {
+                    Log.Warning("Cannot access request headers.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error accessing request headers.");
+            }
+        }
+
+        private static void InjectContext(PropagationContext context, IServiceRemotingRequestMessageHeader messageHeaders)
+        {
+            if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out _))
+            {
+                messageHeaders.AddHeader(HttpHeaderNames.TraceId, BitConverter.GetBytes(context.TraceId));
+            }
+
+            if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out _))
+            {
+                messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(context.ParentSpanId));
+            }
+
+            if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out _))
+            {
+                messageHeaders.AddHeader(HttpHeaderNames.SamplingPriority, BitConverter.GetBytes(context.SamplingPriority));
+            }
+
+            if (!string.IsNullOrEmpty(context.Origin) &&
+                !messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out _))
+            {
+                messageHeaders.AddHeader(HttpHeaderNames.Origin, Encoding.UTF8.GetBytes(context.Origin));
+            }
+        }
+
+        private static PropagationContext ExtractContext(IServiceRemotingRequestMessageHeader messageHeaders, PropagationContext propagationContext)
+        {
+            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out byte[] traceIdBytes) && traceIdBytes?.Length == sizeof(ulong))
+            {
+                propagationContext.TraceId = BitConverter.ToUInt64(traceIdBytes, 0);
+            }
+
+            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out byte[] parentIdBytes) && parentIdBytes?.Length == sizeof(ulong))
+            {
+                propagationContext.ParentSpanId = BitConverter.ToUInt64(parentIdBytes, 0);
+            }
+
+            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out byte[] samplingPriorityBytes) && samplingPriorityBytes?.Length == sizeof(int))
+            {
+                propagationContext.SamplingPriority = BitConverter.ToInt32(samplingPriorityBytes, 0);
+            }
+
+            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out byte[] originBytes) && originBytes?.Length > 0)
+            {
+                propagationContext.Origin = Encoding.UTF8.GetString(originBytes);
+            }
+
+            return propagationContext;
+        }
+
         private static Span CreateSpan(
             Tracer tracer,
             SpanContext? context,
             string spanKind,
             ServiceRemotingRequestEventArgs? eventArgs,
             IServiceRemotingRequestMessageHeader? messageHeader,
-            bool enabledAnalyticsWithGlobalSetting)
+            bool enableAnalyticsWithGlobalSetting)
         {
             string? methodName = null;
             string? resourceName = null;
@@ -313,7 +315,7 @@ namespace Datadog.Trace.ServiceFabric
                 }
             }
 
-            double? analyticsSampleRate = GetAnalyticsSampleRate(tracer, enabledAnalyticsWithGlobalSetting);
+            double? analyticsSampleRate = GetAnalyticsSampleRate(tracer, enableAnalyticsWithGlobalSetting);
 
             if (analyticsSampleRate != null)
             {
