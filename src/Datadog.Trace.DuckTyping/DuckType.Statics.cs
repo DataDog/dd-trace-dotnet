@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -27,7 +26,7 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly object _locker = new object();
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly Dictionary<TypesTuple, CreateTypeResult> DuckTypeCache = new Dictionary<TypesTuple, CreateTypeResult>();
+        private static readonly ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>> DuckTypeCache = new ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>>();
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentBag<DynamicMethod> DynamicMethods = new ConcurrentBag<DynamicMethod>();
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]

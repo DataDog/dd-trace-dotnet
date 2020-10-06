@@ -31,7 +31,13 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>Hashcode</returns>
         public override int GetHashCode()
         {
-            return ProxyDefinitionType.GetHashCode() + TargetType.GetHashCode();
+            unchecked
+            {
+                var hash = (int)2166136261;
+                hash = (hash ^ ProxyDefinitionType.GetHashCode()) * 16777619;
+                hash = (hash ^ TargetType.GetHashCode()) * 16777619;
+                return hash;
+            }
         }
 
         /// <summary>

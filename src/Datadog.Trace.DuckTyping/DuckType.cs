@@ -9,13 +9,6 @@ using System.Runtime.ExceptionServices;
 namespace Datadog.Trace.DuckTyping
 {
     /// <summary>
-    /// Create proxy instance delegate
-    /// </summary>
-    /// <param name="instance">Object instance</param>
-    /// <returns>Proxy instance</returns>
-    public delegate IDuckType CreateProxyInstance(object instance);
-
-    /// <summary>
     /// Create struct proxy instance delegate
     /// </summary>
     /// <typeparam name="T">Type of struct</typeparam>
@@ -67,23 +60,10 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>CreateTypeResult instance</returns>
         public static CreateTypeResult GetOrCreateProxyType(Type proxyType, Type targetType)
         {
-            TypesTuple key = new TypesTuple(proxyType, targetType);
-
-            if (DuckTypeCache.TryGetValue(key, out CreateTypeResult proxyTypeResult))
-            {
-                return proxyTypeResult;
-            }
-
-            lock (DuckTypeCache)
-            {
-                if (!DuckTypeCache.TryGetValue(key, out proxyTypeResult))
-                {
-                    proxyTypeResult = CreateProxyType(proxyType, targetType);
-                    DuckTypeCache[key] = proxyTypeResult;
-                }
-
-                return proxyTypeResult;
-            }
+            return DuckTypeCache.GetOrAdd(
+                new TypesTuple(proxyType, targetType),
+                key => new Lazy<CreateTypeResult>(() => CreateProxyType(key.ProxyDefinitionType, key.TargetType)))
+                .Value;
         }
 
         private static CreateTypeResult CreateProxyType(Type proxyDefinitionType, Type targetType)
@@ -162,7 +142,7 @@ namespace Datadog.Trace.DuckTyping
 
                     // Create Type
                     Type proxyType = proxyTypeBuilder.CreateTypeInfo().AsType();
-                    return new CreateTypeResult(proxyType, targetType, null, CreateStructCopyMethod(proxyDefinitionType, proxyType, targetType), null);
+                    return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, CreateStructCopyMethod(proxyDefinitionType, proxyType, targetType), null);
                 }
                 else
                 {
@@ -174,12 +154,12 @@ namespace Datadog.Trace.DuckTyping
 
                     // Create Type
                     Type proxyType = proxyTypeBuilder.CreateTypeInfo().AsType();
-                    return new CreateTypeResult(proxyType, targetType, GetCreateProxyInstanceDelegate(proxyType, targetType), null, null);
+                    return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(proxyDefinitionType, proxyType, targetType), null);
                 }
             }
             catch (Exception ex)
             {
-                return new CreateTypeResult(null, targetType, null, null, ExceptionDispatchInfo.Capture(ex));
+                return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex));
             }
         }
 
@@ -432,13 +412,13 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static CreateProxyInstance GetCreateProxyInstanceDelegate(Type proxyType, Type targetType)
+        private static Delegate GetCreateProxyInstanceDelegate(Type proxyDefinitionType, Type proxyType, Type targetType)
         {
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
 
             DynamicMethod createProxyMethod = new DynamicMethod(
                 $"CreateProxyInstance<{proxyType.Name}>",
-                typeof(IDuckType),
+                proxyDefinitionType,
                 new[] { typeof(object) },
                 typeof(DuckType).Module,
                 true);
@@ -457,7 +437,8 @@ namespace Datadog.Trace.DuckTyping
             }
 
             il.Emit(OpCodes.Ret);
-            return (CreateProxyInstance)createProxyMethod.CreateDelegate(typeof(CreateProxyInstance));
+            Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
+            return createProxyMethod.CreateDelegate(delegateType);
         }
 
         private static Delegate CreateStructCopyMethod(Type proxyDefinitionType, Type proxyType, Type targetType)
@@ -507,7 +488,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // Return
-            ILHelpers.WriteLoadLocal(structLocal.LocalIndex, il);
+            il.WriteLoadLocal(structLocal.LocalIndex);
             il.Emit(OpCodes.Ret);
 
             Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
@@ -525,35 +506,38 @@ namespace Datadog.Trace.DuckTyping
             public readonly bool Success;
 
             /// <summary>
-            /// Proxy definition type
-            /// </summary>
-
-            /// <summary>
             /// Target type
             /// </summary>
             public readonly Type TargetType;
 
             private readonly Type _proxyType;
             private readonly ExceptionDispatchInfo _exceptionInfo;
-            private readonly CreateProxyInstance _activator;
-            private readonly Delegate _structActivator;
+            private readonly Delegate _activator;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="CreateTypeResult"/> struct.
             /// </summary>
+            /// <param name="proxyTypeDefinition">Proxy type definition</param>
             /// <param name="proxyType">Proxy type</param>
             /// <param name="targetType">Target type</param>
             /// <param name="activator">Proxy activator</param>
-            /// <param name="structActivator">Struct activator</param>
             /// <param name="exceptionInfo">Exception dispatch info instance</param>
-            internal CreateTypeResult(Type proxyType, Type targetType, CreateProxyInstance activator, Delegate structActivator, ExceptionDispatchInfo exceptionInfo)
+            internal CreateTypeResult(Type proxyTypeDefinition, Type proxyType, Type targetType, Delegate activator, ExceptionDispatchInfo exceptionInfo)
             {
                 _proxyType = proxyType;
                 TargetType = targetType;
                 _activator = activator;
-                _structActivator = structActivator;
                 _exceptionInfo = exceptionInfo;
                 Success = proxyType != null && exceptionInfo == null;
+                if (exceptionInfo != null)
+                {
+                    MethodInfo methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance);
+                    _activator = methodInfo
+                        .MakeGenericMethod(proxyTypeDefinition)
+                        .CreateDelegate(
+                        typeof(CreateProxyInstance<>).MakeGenericType(proxyTypeDefinition),
+                        this);
+                }
             }
 
             /// <summary>
@@ -576,13 +560,13 @@ namespace Datadog.Trace.DuckTyping
             /// <returns>Proxy instance</returns>
             public T CreateInstance<T>(object instance)
             {
-                _exceptionInfo?.Throw();
-                if (_activator is null)
-                {
-                    return ((CreateProxyInstance<T>)_structActivator)(instance);
-                }
+                return ((CreateProxyInstance<T>)_activator)(instance);
+            }
 
-                return (T)_activator(instance);
+            private T ThrowOnError<T>(object instance)
+            {
+                _exceptionInfo.Throw();
+                return default;
             }
         }
 
@@ -599,7 +583,6 @@ namespace Datadog.Trace.DuckTyping
             /// </summary>
             /// <param name="targetType">Target type</param>
             /// <returns>CreateTypeResult instance</returns>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static CreateTypeResult GetProxy(Type targetType)
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)

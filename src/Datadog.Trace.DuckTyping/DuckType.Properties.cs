@@ -65,7 +65,7 @@ namespace Datadog.Trace.DuckTyping
                 if (NeedsDuckChaining(targetParamType, proxyParamType))
                 {
                     // Load the argument and cast it as Duck type
-                    ILHelpers.WriteLoadArgument(pIndex, il, false);
+                    il.WriteLoadArgument(pIndex, false);
                     il.Emit(OpCodes.Castclass, typeof(IDuckType));
 
                     // Call IDuckType.Instance property to get the actual value
@@ -73,12 +73,12 @@ namespace Datadog.Trace.DuckTyping
                 }
                 else
                 {
-                    ILHelpers.WriteLoadArgument(pIndex, il, false);
+                    il.WriteLoadArgument(pIndex, false);
                 }
 
                 // If the target parameter type is public or if it's by ref we have to actually use the original target type.
                 targetParamType = targetParamType.IsPublic || targetParamType.IsNestedPublic || targetParamType.IsByRef ? targetParamType : typeof(object);
-                ILHelpers.TypeConversion(il, proxyParamType, targetParamType);
+                il.WriteTypeConversion(proxyParamType, targetParamType);
 
                 targetParametersTypes[pIndex] = targetParamType;
             }
@@ -97,7 +97,7 @@ namespace Datadog.Trace.DuckTyping
                 else
                 {
                     // In case we have a public instance and a non public property method we can use [Calli] with the function pointer
-                    ILHelpers.WriteMethodCalli(il, targetMethod);
+                    il.WriteMethodCalli(targetMethod);
                 }
             }
             else
@@ -121,21 +121,21 @@ namespace Datadog.Trace.DuckTyping
 
                 if (!targetMethod.IsStatic)
                 {
-                    ILHelpers.LoadInstanceArgument(dynIL, typeof(object), targetProperty.DeclaringType);
+                    dynIL.LoadInstanceArgument(typeof(object), targetProperty.DeclaringType);
                 }
 
                 for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
                 {
-                    ILHelpers.WriteLoadArgument(idx, dynIL, true);
-                    ILHelpers.TypeConversion(dynIL, dynParameters[idx], targetParameters[idx]);
+                    dynIL.WriteLoadArgument(idx, true);
+                    dynIL.WriteTypeConversion(dynParameters[idx], targetParameters[idx]);
                 }
 
                 dynIL.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
-                ILHelpers.TypeConversion(dynIL, targetProperty.PropertyType, returnType);
+                dynIL.WriteTypeConversion(targetProperty.PropertyType, returnType);
                 dynIL.Emit(OpCodes.Ret);
 
                 // Emit the call to the dynamic method
-                ILHelpers.WriteMethodCalli(il, dynMethod, dynParameters);
+                il.WriteMethodCalli(dynMethod, dynParameters);
             }
 
             // Handle the return value
@@ -151,7 +151,7 @@ namespace Datadog.Trace.DuckTyping
             else if (returnType != proxyMemberReturnType)
             {
                 // If the type is not the expected type we try a conversion.
-                ILHelpers.TypeConversion(il, returnType, proxyMemberReturnType);
+                il.WriteTypeConversion(returnType, proxyMemberReturnType);
             }
 
             il.Emit(OpCodes.Ret);
@@ -210,7 +210,7 @@ namespace Datadog.Trace.DuckTyping
                 if (NeedsDuckChaining(targetParamType, proxyParamType))
                 {
                     // Load the argument and cast it as Duck type
-                    ILHelpers.WriteLoadArgument(pIndex, il, false);
+                    il.WriteLoadArgument(pIndex, false);
                     il.Emit(OpCodes.Castclass, typeof(IDuckType));
 
                     // Call IDuckType.Instance property to get the actual value
@@ -220,12 +220,12 @@ namespace Datadog.Trace.DuckTyping
                 }
                 else
                 {
-                    ILHelpers.WriteLoadArgument(pIndex, il, false);
+                    il.WriteLoadArgument(pIndex, false);
                 }
 
                 // If the target parameter type is public or if it's by ref we have to actually use the original target type.
                 targetParamType = targetParamType.IsPublic || targetParamType.IsNestedPublic || targetParamType.IsByRef ? targetParamType : typeof(object);
-                ILHelpers.TypeConversion(il, proxyParamType, targetParamType);
+                il.WriteTypeConversion(proxyParamType, targetParamType);
 
                 targetParametersTypes[pIndex] = targetParamType;
             }
@@ -243,7 +243,7 @@ namespace Datadog.Trace.DuckTyping
                 else
                 {
                     // In case we have a public instance and a non public property method we can use [Calli] with the function pointer
-                    ILHelpers.WriteMethodCalli(il, targetMethod);
+                    il.WriteMethodCalli(targetMethod);
                 }
             }
             else
@@ -275,15 +275,15 @@ namespace Datadog.Trace.DuckTyping
 
                 for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
                 {
-                    ILHelpers.WriteLoadArgument(idx, dynIL, true);
-                    ILHelpers.TypeConversion(dynIL, dynParameters[idx], targetParameters[idx]);
+                    dynIL.WriteLoadArgument(idx, true);
+                    dynIL.WriteTypeConversion(dynParameters[idx], targetParameters[idx]);
                 }
 
                 dynIL.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
                 dynIL.Emit(OpCodes.Ret);
 
                 // Emit the call to the dynamic method
-                ILHelpers.WriteMethodCalli(il, dynMethod, dynParameters);
+                il.WriteMethodCalli(dynMethod, dynParameters);
             }
 
             il.Emit(OpCodes.Ret);

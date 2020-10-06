@@ -67,11 +67,11 @@ namespace Datadog.Trace.DuckTyping
 
                 // Emit the field and convert before returning (in case of boxing)
                 dynIL.Emit(targetField.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, targetField);
-                ILHelpers.TypeConversion(dynIL, targetField.FieldType, returnType);
+                dynIL.WriteTypeConversion(targetField.FieldType, returnType);
                 dynIL.Emit(OpCodes.Ret);
 
                 // Emit the call to the dynamic method
-                ILHelpers.WriteMethodCalli(il, dynMethod, dynParameters);
+                il.WriteMethodCalli(dynMethod, dynParameters);
             }
 
             // Check if the type can be converted or if we need to enable duck chaining
@@ -86,7 +86,7 @@ namespace Datadog.Trace.DuckTyping
             else if (returnType != proxyMemberReturnType)
             {
                 // If the type is not the expected type we try a conversion.
-                ILHelpers.TypeConversion(il, returnType, proxyMemberReturnType);
+                il.WriteTypeConversion(returnType, proxyMemberReturnType);
             }
 
             il.Emit(OpCodes.Ret);
@@ -120,7 +120,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 // Load the argument and convert it to Duck type
                 il.Emit(OpCodes.Ldarg_1);
-                ILHelpers.TypeConversion(il, proxyMemberReturnType, typeof(IDuckType));
+                il.WriteTypeConversion(proxyMemberReturnType, typeof(IDuckType));
 
                 // Call IDuckType.Instance property to get the actual value
                 il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
@@ -137,7 +137,7 @@ namespace Datadog.Trace.DuckTyping
             if (isPublicInstance && targetField.IsPublic)
             {
                 // If the instance and the field are public then is easy to set.
-                ILHelpers.TypeConversion(il, currentValueType, targetField.FieldType);
+                il.WriteTypeConversion(currentValueType, targetField.FieldType);
 
                 il.Emit(targetField.IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, targetField);
             }
@@ -149,7 +149,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Convert the field type for the dynamic method
                 Type dynValueType = targetField.FieldType.IsPublic || targetField.FieldType.IsNestedPublic ? targetField.FieldType : typeof(object);
-                ILHelpers.TypeConversion(il, currentValueType, dynValueType);
+                il.WriteTypeConversion(currentValueType, dynValueType);
 
                 // Create dynamic method
                 Type[] dynParameters = targetField.IsStatic ? new[] { dynValueType } : new[] { typeof(object), dynValueType };
@@ -162,7 +162,7 @@ namespace Datadog.Trace.DuckTyping
 
                 if (targetField.IsStatic)
                 {
-                    ILHelpers.TypeConversion(dynIL, dynValueType, targetField.FieldType);
+                    dynIL.WriteTypeConversion(dynValueType, targetField.FieldType);
                     dynIL.Emit(OpCodes.Stsfld, targetField);
                 }
                 else
@@ -173,14 +173,14 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     dynIL.Emit(OpCodes.Ldarg_1);
-                    ILHelpers.TypeConversion(dynIL, dynValueType, targetField.FieldType);
+                    dynIL.WriteTypeConversion(dynValueType, targetField.FieldType);
                     dynIL.Emit(OpCodes.Stfld, targetField);
                 }
 
                 dynIL.Emit(OpCodes.Ret);
 
                 // Emit the call to the dynamic method
-                ILHelpers.WriteMethodCalli(il, dynMethod, dynParameters);
+                il.WriteMethodCalli(dynMethod, dynParameters);
             }
 
             il.Emit(OpCodes.Ret);

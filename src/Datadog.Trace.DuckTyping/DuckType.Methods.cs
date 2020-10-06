@@ -196,7 +196,7 @@ namespace Datadog.Trace.DuckTyping
                             }
                             else
                             {
-                                ILHelpers.WriteLoadArgument(idx, il, false);
+                                il.WriteLoadArgument(idx, false);
                             }
                         }
                         else if (proxyParamType.IsByRef)
@@ -227,7 +227,7 @@ namespace Datadog.Trace.DuckTyping
                                 outputAndRefParameters.Add(new OutputAndRefParameterData(localTargetArg.LocalIndex, targetParamType, idx, proxyParamType));
 
                                 // Load the argument (ref)
-                                ILHelpers.WriteLoadArgument(idx, il, false);
+                                il.WriteLoadArgument(idx, false);
 
                                 // Load the value inside the ref
                                 il.Emit(OpCodes.Ldind_Ref);
@@ -254,17 +254,17 @@ namespace Datadog.Trace.DuckTyping
                                 }
 
                                 // Cast the value to the target type
-                                ILHelpers.TypeConversion(il, proxyParamTypeElementType, targetParamTypeElementType);
+                                il.WriteSafeTypeConversion(proxyParamTypeElementType, targetParamTypeElementType);
 
                                 // Store the casted value to the local var
-                                ILHelpers.WriteStoreLocal(localTargetArg.LocalIndex, il);
+                                il.WriteStoreLocal(localTargetArg.LocalIndex);
 
                                 // Load the local var ref (to be used in the target method param)
                                 il.Emit(OpCodes.Ldloca_S, localTargetArg.LocalIndex);
                             }
                             else
                             {
-                                ILHelpers.WriteLoadArgument(idx, il, false);
+                                il.WriteLoadArgument(idx, false);
                             }
                         }
                         else
@@ -273,7 +273,7 @@ namespace Datadog.Trace.DuckTyping
                             if (NeedsDuckChaining(targetParamType, proxyParamType))
                             {
                                 // Load the argument and cast it as Duck type
-                                ILHelpers.WriteLoadArgument(idx, il, false);
+                                il.WriteLoadArgument(idx, false);
                                 il.Emit(OpCodes.Castclass, typeof(IDuckType));
 
                                 // Call IDuckType.Instance property to get the actual value
@@ -281,12 +281,12 @@ namespace Datadog.Trace.DuckTyping
                             }
                             else
                             {
-                                ILHelpers.WriteLoadArgument(idx, il, false);
+                                il.WriteLoadArgument(idx, false);
                             }
 
                             // If the target parameter type is public or if it's by ref we have to actually use the original target type.
                             targetParamType = targetParamType.IsPublic || targetParamType.IsNestedPublic ? targetParamType : typeof(object);
-                            ILHelpers.TypeConversion(il, proxyParamType, targetParamType);
+                            il.WriteSafeTypeConversion(proxyParamType, targetParamType);
 
                             targetMethodParametersTypes[idx] = targetParamType;
                         }
@@ -313,7 +313,7 @@ namespace Datadog.Trace.DuckTyping
                     else
                     {
                         // In case we have a public instance and a non public target method we can use [Calli] with the function pointer
-                        ILHelpers.WriteMethodCalli(il, targetMethod);
+                        il.WriteMethodCalli(targetMethod);
                     }
                 }
                 else
@@ -344,13 +344,13 @@ namespace Datadog.Trace.DuckTyping
 
                     if (!targetMethod.IsStatic)
                     {
-                        ILHelpers.LoadInstanceArgument(dynIL, typeof(object), targetMethod.DeclaringType);
+                        dynIL.LoadInstanceArgument(typeof(object), targetMethod.DeclaringType);
                     }
 
                     for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
                     {
-                        ILHelpers.WriteLoadArgument(idx, dynIL, true);
-                        ILHelpers.TypeConversion(dynIL, dynParameters[idx], targetParameters[idx]);
+                        dynIL.WriteLoadArgument(idx, true);
+                        dynIL.WriteSafeTypeConversion(dynParameters[idx], targetParameters[idx]);
                     }
 
                     // Check if we can emit a normal Call/CallVirt to the target method
@@ -362,14 +362,14 @@ namespace Datadog.Trace.DuckTyping
                     {
                         // We can't emit a call to a method with generics from a DynamicMethod
                         // Instead we emit a Calli with the function pointer.
-                        ILHelpers.WriteMethodCalli(dynIL, targetMethod);
+                        dynIL.WriteMethodCalli(targetMethod);
                     }
 
-                    ILHelpers.TypeConversion(dynIL, targetMethod.ReturnType, returnType);
+                    dynIL.WriteSafeTypeConversion(targetMethod.ReturnType, returnType);
                     dynIL.Emit(OpCodes.Ret);
 
                     // Emit the call to the dynamic method
-                    ILHelpers.WriteMethodCalli(il, dynMethod, dynParameters);
+                    il.WriteMethodCalli(dynMethod, dynParameters);
                 }
 
                 // We check if we have output or ref parameters to set in the proxy method
@@ -381,10 +381,10 @@ namespace Datadog.Trace.DuckTyping
                         Type localType = outOrRefParameter.LocalType.GetElementType();
 
                         // We load the argument to be set
-                        ILHelpers.WriteLoadArgument(outOrRefParameter.ProxyArgumentIndex, il, false);
+                        il.WriteLoadArgument(outOrRefParameter.ProxyArgumentIndex, false);
 
                         // We load the value from the local
-                        ILHelpers.WriteLoadLocal(outOrRefParameter.LocalIndex, il);
+                        il.WriteLoadLocal(outOrRefParameter.LocalIndex);
 
                         // If we detect duck chaining we create a new proxy instance with the output of the original target method
                         if (NeedsDuckChaining(localType, proxyArgumentType))
@@ -397,7 +397,7 @@ namespace Datadog.Trace.DuckTyping
                         }
                         else
                         {
-                            ILHelpers.TypeConversion(il, localType, proxyArgumentType);
+                            il.WriteSafeTypeConversion(localType, proxyArgumentType);
                         }
 
                         // We store the value
@@ -421,7 +421,7 @@ namespace Datadog.Trace.DuckTyping
                     else if (returnType != proxyMethodDefinition.ReturnType)
                     {
                         // If the type is not the expected type we try a conversion.
-                        ILHelpers.TypeConversion(il, returnType, proxyMethodDefinition.ReturnType);
+                        il.WriteSafeTypeConversion(returnType, proxyMethodDefinition.ReturnType);
                     }
                 }
 
@@ -562,6 +562,17 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return targetMethod;
+        }
+
+        private static void WriteSafeTypeConversion(this ILGenerator il, Type actualType, Type expectedType)
+        {
+            // If both types are generics, we expect that the generic parameter are the same type (passthrough)
+            if (actualType.IsGenericParameter && expectedType.IsGenericParameter)
+            {
+                return;
+            }
+
+            il.WriteTypeConversion(actualType, expectedType);
         }
 
         private readonly struct OutputAndRefParameterData

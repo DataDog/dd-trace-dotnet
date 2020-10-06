@@ -21,7 +21,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Duck attribute
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Field, AllowMultiple = false)]
     public class DuckAttribute : Attribute
     {
         /// <summary>
