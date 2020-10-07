@@ -14,15 +14,15 @@ namespace PrepareRelease
 
             // Dockerfile updates
             SynchronizeVersion(
-                "customer-samples/ConsoleApp/Alpine3.9.dockerfile",
+                "samples/ConsoleApp/Alpine3.9.dockerfile",
                 text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
             SynchronizeVersion(
-                "customer-samples/ConsoleApp/Alpine3.10.dockerfile",
+                "samples/ConsoleApp/Alpine3.10.dockerfile",
                 text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
             SynchronizeVersion(
-                "customer-samples/ConsoleApp/Debian.dockerfile",
+                "samples/ConsoleApp/Debian.dockerfile",
                 text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
             SynchronizeVersion(
