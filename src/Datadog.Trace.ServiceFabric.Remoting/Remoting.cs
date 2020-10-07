@@ -64,7 +64,7 @@ namespace Datadog.Trace.ServiceFabric
             GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
 
             var tracer = Tracer.Instance;
-            var span = CreateSpan(tracer, context: null, SpanKinds.Client, eventArgs, messageHeaders, enableAnalyticsWithGlobalSetting: false);
+            var span = CreateSpan(tracer, context: null, SpanKinds.Client, eventArgs, messageHeaders);
 
             try
             {
