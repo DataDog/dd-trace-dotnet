@@ -149,15 +149,14 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
-
-            var propagationContext = default(PropagationContext);
+            PropagationContext propagationContext = default;
 
             try
             {
                 // extract propagation context from message headers for distributed tracing
                 if (messageHeaders != null)
                 {
-                    propagationContext = ExtractContext(messageHeaders, propagationContext);
+                    propagationContext = ExtractContext(messageHeaders);
                 }
             }
             catch (Exception ex)
@@ -241,59 +240,76 @@ namespace Datadog.Trace.ServiceFabric
 
         private static void InjectContext(PropagationContext context, IServiceRemotingRequestMessageHeader messageHeaders)
         {
-            if (context.TraceId > 0 && context.ParentSpanId > 0)
+            try
             {
-                if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out _))
+                if (context.TraceId > 0 && context.ParentSpanId > 0)
                 {
-                    messageHeaders.AddHeader(HttpHeaderNames.TraceId, BitConverter.GetBytes(context.TraceId));
+                    if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out _))
+                    {
+                        messageHeaders.AddHeader(HttpHeaderNames.TraceId, BitConverter.GetBytes(context.TraceId));
+                    }
+
+                    if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out _))
+                    {
+                        messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(context.ParentSpanId));
+                    }
                 }
 
-                if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out _))
+                if (context.SamplingPriority != null &&
+                    !messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out _))
                 {
-                    messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(context.ParentSpanId));
+                    messageHeaders.AddHeader(HttpHeaderNames.SamplingPriority, BitConverter.GetBytes(context.SamplingPriority.Value));
+                }
+
+                if (!string.IsNullOrEmpty(context.Origin) &&
+                    !messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out _))
+                {
+                    messageHeaders.AddHeader(HttpHeaderNames.Origin, Encoding.UTF8.GetBytes(context.Origin));
                 }
             }
-
-            if (context.SamplingPriority != null &&
-                !messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out _))
+            catch (Exception ex)
             {
-                messageHeaders.AddHeader(HttpHeaderNames.SamplingPriority, BitConverter.GetBytes(context.SamplingPriority.Value));
-            }
-
-            if (!string.IsNullOrEmpty(context.Origin) &&
-                !messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out _))
-            {
-                messageHeaders.AddHeader(HttpHeaderNames.Origin, Encoding.UTF8.GetBytes(context.Origin));
+                Log.Error(ex, "Error injecting message headers.");
             }
         }
 
-        private static PropagationContext ExtractContext(IServiceRemotingRequestMessageHeader messageHeaders, PropagationContext propagationContext)
+        private static PropagationContext ExtractContext(IServiceRemotingRequestMessageHeader messageHeaders)
         {
-            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out byte[] traceIdBytes) &&
-                traceIdBytes?.Length == sizeof(ulong))
+            try
             {
-                propagationContext.TraceId = BitConverter.ToUInt64(traceIdBytes, 0);
-            }
+                PropagationContext propagationContext = default;
 
-            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out byte[] parentIdBytes) &&
-                parentIdBytes?.Length == sizeof(ulong))
+                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out byte[] traceIdBytes) &&
+                    traceIdBytes?.Length == sizeof(ulong))
+                {
+                    propagationContext.TraceId = BitConverter.ToUInt64(traceIdBytes, 0);
+                }
+
+                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out byte[] parentIdBytes) &&
+                    parentIdBytes?.Length == sizeof(ulong))
+                {
+                    propagationContext.ParentSpanId = BitConverter.ToUInt64(parentIdBytes, 0);
+                }
+
+                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out byte[] samplingPriorityBytes) &&
+                    samplingPriorityBytes?.Length == sizeof(int))
+                {
+                    propagationContext.SamplingPriority = BitConverter.ToInt32(samplingPriorityBytes, 0);
+                }
+
+                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out byte[] originBytes) &&
+                    originBytes?.Length > 0)
+                {
+                    propagationContext.Origin = Encoding.UTF8.GetString(originBytes);
+                }
+
+                return propagationContext;
+            }
+            catch (Exception ex)
             {
-                propagationContext.ParentSpanId = BitConverter.ToUInt64(parentIdBytes, 0);
+                Log.Error(ex, "Error extracting message headers.");
+                return default;
             }
-
-            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out byte[] samplingPriorityBytes) &&
-                samplingPriorityBytes?.Length == sizeof(int))
-            {
-                propagationContext.SamplingPriority = BitConverter.ToInt32(samplingPriorityBytes, 0);
-            }
-
-            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out byte[] originBytes) &&
-                originBytes?.Length > 0)
-            {
-                propagationContext.Origin = Encoding.UTF8.GetString(originBytes);
-            }
-
-            return propagationContext;
         }
 
         private static Span CreateSpan(
