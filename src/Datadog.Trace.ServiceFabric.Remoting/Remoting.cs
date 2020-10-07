@@ -54,6 +54,11 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
+        /// <summary>
+        /// Event handler called when the Service Remoting client sends a request.
+        /// </summary>
+        /// <param name="sender">The object that raised the event.</param>
+        /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingClientEvents_SendRequest(object? sender, EventArgs? e)
         {
             if (_enabled == 0)
@@ -90,6 +95,12 @@ namespace Datadog.Trace.ServiceFabric
             tracer.ActivateSpan(span);
         }
 
+        /// <summary>
+        /// Event handler called when the Service Remoting client receives a response
+        /// from the server after it finishes processing a request.
+        /// </summary>
+        /// <param name="sender">The object that raised the event.</param>
+        /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingClientEvents_ReceiveResponse(object? sender, EventArgs e)
         {
             if (_enabled == 0)
@@ -122,6 +133,11 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
+        /// <summary>
+        /// Event handler called when the Service Remoting server receives an incoming request.
+        /// </summary>
+        /// <param name="sender">The object that raised the event.</param>
+        /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingServiceEvents_ReceiveRequest(object? sender, EventArgs e)
         {
             if (_enabled == 0)
@@ -166,6 +182,12 @@ namespace Datadog.Trace.ServiceFabric
             tracer.ActivateSpan(span);
         }
 
+        /// <summary>
+        /// Event handler called when the Service Remoting server sends a response
+        /// after processing an incoming request.
+        /// </summary>
+        /// <param name="sender">The object that raised the event.</param>
+        /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingServiceEvents_SendResponse(object? sender, EventArgs e)
         {
             if (_enabled == 0)
