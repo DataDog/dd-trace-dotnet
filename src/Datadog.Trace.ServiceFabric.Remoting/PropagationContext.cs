@@ -4,7 +4,7 @@ namespace Datadog.Trace.ServiceFabric
     {
         public ulong TraceId;
         public ulong ParentSpanId;
-        public int SamplingPriority;
+        public int? SamplingPriority;
         public string Origin;
     }
 }

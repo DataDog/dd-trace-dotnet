@@ -76,11 +76,14 @@ namespace Datadog.Trace.ServiceFabric
                 // inject propagation context into message headers for distributed tracing
                 if (messageHeaders != null)
                 {
+                    string samplingPriorityTag = span.GetTag(Tags.SamplingPriority);
+                    int? samplingPriority = int.TryParse(samplingPriorityTag, NumberStyles.None, CultureInfo.InvariantCulture, out var priority) ? priority : default;
+
                     var context = new PropagationContext
                                   {
                                       TraceId = span.TraceId,
                                       ParentSpanId = span.SpanId,
-                                      SamplingPriority = span.GetTag(Tags.SamplingPriority),
+                                      SamplingPriority = samplingPriority,
                                       Origin = span.GetTag(Tags.Origin)
                                   };
 
