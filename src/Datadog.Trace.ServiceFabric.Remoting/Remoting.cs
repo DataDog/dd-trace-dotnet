@@ -253,9 +253,10 @@ namespace Datadog.Trace.ServiceFabric
                 messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(context.ParentSpanId));
             }
 
-            if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out _))
+            if (context.SamplingPriority != null &&
+                !messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out _))
             {
-                messageHeaders.AddHeader(HttpHeaderNames.SamplingPriority, BitConverter.GetBytes(context.SamplingPriority));
+                messageHeaders.AddHeader(HttpHeaderNames.SamplingPriority, BitConverter.GetBytes(context.SamplingPriority.Value));
             }
 
             if (!string.IsNullOrEmpty(context.Origin) &&
