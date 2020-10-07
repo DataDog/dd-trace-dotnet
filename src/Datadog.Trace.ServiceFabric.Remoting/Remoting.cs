@@ -243,14 +243,17 @@ namespace Datadog.Trace.ServiceFabric
 
         private static void InjectContext(PropagationContext context, IServiceRemotingRequestMessageHeader messageHeaders)
         {
-            if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out _))
+            if (context.TraceId > 0 && context.ParentSpanId > 0)
             {
-                messageHeaders.AddHeader(HttpHeaderNames.TraceId, BitConverter.GetBytes(context.TraceId));
-            }
+                if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out _))
+                {
+                    messageHeaders.AddHeader(HttpHeaderNames.TraceId, BitConverter.GetBytes(context.TraceId));
+                }
 
-            if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out _))
-            {
-                messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(context.ParentSpanId));
+                if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out _))
+                {
+                    messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(context.ParentSpanId));
+                }
             }
 
             if (context.SamplingPriority != null &&
