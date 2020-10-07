@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <Compile Remove="DuckTyping\DuckTypeMethodBenchmark.cs" />
+    <Compile Remove="DuckTyping\DuckTypeStructCopyValueTypePropertyBenchmark.cs" />
     <Compile Remove="DuckTyping\DuckTypeValueTypeFieldBenchmark.cs" />
     <Compile Remove="DuckTyping\DuckTypeValueTypePropertyBenchmark.cs" />
     <Compile Remove="DuckTyping\ObscureObject.cs" />
@@ -53,6 +54,7 @@
 
   <ItemGroup>
     <None Include="DuckTyping\DuckTypeMethodBenchmark.cs" />
+    <None Include="DuckTyping\DuckTypeStructCopyValueTypePropertyBenchmark.cs" />
     <None Include="DuckTyping\DuckTypeValueTypeFieldBenchmark.cs" />
     <None Include="DuckTyping\DuckTypeValueTypePropertyBenchmark.cs" />
     <None Include="DuckTyping\ObscureObject.cs" />
