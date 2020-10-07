@@ -42,23 +42,6 @@ namespace Datadog.Trace.ServiceFabric
         }
 
         /// <summary>
-        /// Stop tracing Service Remoting requests.
-        /// </summary>
-        public static void StopTracing()
-        {
-            if (Interlocked.CompareExchange(ref _enabled, 0, 1) == 1)
-            {
-                // client
-                ServiceRemotingClientEvents.SendRequest -= ServiceRemotingClientEvents_SendRequest;
-                ServiceRemotingClientEvents.ReceiveResponse -= ServiceRemotingClientEvents_ReceiveResponse;
-
-                // server
-                ServiceRemotingServiceEvents.ReceiveRequest -= ServiceRemotingServiceEvents_ReceiveRequest;
-                ServiceRemotingServiceEvents.SendResponse -= ServiceRemotingServiceEvents_SendResponse;
-            }
-        }
-
-        /// <summary>
         /// Event handler called when the Service Remoting client sends a request.
         /// </summary>
         /// <param name="sender">The object that raised the event.</param>
