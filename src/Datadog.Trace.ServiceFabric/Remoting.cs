@@ -18,7 +18,7 @@ namespace Datadog.Trace.ServiceFabric
         private const string SpanNamePrefix = "service-remoting";
 
         // ILogger and DatadogLogging are internal to Datadog.Trade.dll, so we use NuGet package IgnoresAccessChecksToGenerator
-        // to generate [IgnoresAccessChecksToAttribute] and reference assemblies where they are public
+        // to generate [IgnoresAccessChecksToAttribute] and generate reference assemblies where they are public
         private static readonly Datadog.Trace.Vendors.Serilog.ILogger Log = Datadog.Trace.Logging.DatadogLogging.GetLogger(typeof(Remoting));
 
         private static int _firstInitialization = 1;
