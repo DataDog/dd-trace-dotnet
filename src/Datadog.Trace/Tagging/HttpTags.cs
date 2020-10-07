@@ -35,6 +35,27 @@ namespace Datadog.Trace.Tagging
 
         public double? AnalyticsSampleRate { get; set; }
 
+        public static string ConvertStatusCodeToString(int statusCode)
+        {
+            switch (statusCode)
+            {
+                case 200:
+                    return "200";
+
+                case 302:
+                    return "302";
+
+                case 500:
+                    return "500";
+
+                case 503:
+                    return "503";
+
+                default:
+                    return statusCode.ToString();
+            }
+        }
+
         protected override IProperty<string>[] GetAdditionalTags() => HttpTagsProperties;
 
         protected override IProperty<double?>[] GetAdditionalMetrics() => HttpMetricsProperties;
