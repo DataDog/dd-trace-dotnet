@@ -13,6 +13,8 @@
     <Description>Service Remoting instrumentation for Datadog APM</Description>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- used by IgnoresAccessChecksToGenerator package reference -->
     <InternalsAssemblyNames>Datadog.Trace</InternalsAssemblyNames>
   </PropertyGroup>
 
