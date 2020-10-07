@@ -72,7 +72,7 @@ namespace Benchmarks.Trace
     /// </summary>
     public class HomeController : Controller
     {
-        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage();
+        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
         private static readonly HttpMessageHandler Handler = new CustomHttpMessageHandler();
         private static readonly object BoxedCancellationToken = new CancellationToken();
         private static int _mdToken;
@@ -107,7 +107,7 @@ namespace Benchmarks.Trace
             return "OK";
         }
 
-        internal class CustomHttpMessageHandler : HttpMessageHandler
+        internal class CustomHttpMessageHandler : HttpClientHandler
         {
             private static readonly Task<HttpResponseMessage> CachedResult = Task.FromResult(new HttpResponseMessage());
 
