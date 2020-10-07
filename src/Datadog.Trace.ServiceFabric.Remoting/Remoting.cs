@@ -154,8 +154,6 @@ namespace Datadog.Trace.ServiceFabric
 
             try
             {
-                messageHeaders = eventArgs?.Request?.GetHeader();
-
                 // extract propagation context from message headers for distributed tracing
                 if (messageHeaders != null)
                 {
