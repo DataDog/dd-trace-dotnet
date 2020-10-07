@@ -271,22 +271,26 @@ namespace Datadog.Trace.ServiceFabric
 
         private static PropagationContext ExtractContext(IServiceRemotingRequestMessageHeader messageHeaders, PropagationContext propagationContext)
         {
-            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out byte[] traceIdBytes) && traceIdBytes?.Length == sizeof(ulong))
+            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out byte[] traceIdBytes) &&
+                traceIdBytes?.Length == sizeof(ulong))
             {
                 propagationContext.TraceId = BitConverter.ToUInt64(traceIdBytes, 0);
             }
 
-            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out byte[] parentIdBytes) && parentIdBytes?.Length == sizeof(ulong))
+            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out byte[] parentIdBytes) &&
+                parentIdBytes?.Length == sizeof(ulong))
             {
                 propagationContext.ParentSpanId = BitConverter.ToUInt64(parentIdBytes, 0);
             }
 
-            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out byte[] samplingPriorityBytes) && samplingPriorityBytes?.Length == sizeof(int))
+            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out byte[] samplingPriorityBytes) &&
+                samplingPriorityBytes?.Length == sizeof(int))
             {
                 propagationContext.SamplingPriority = BitConverter.ToInt32(samplingPriorityBytes, 0);
             }
 
-            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out byte[] originBytes) && originBytes?.Length > 0)
+            if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out byte[] originBytes) &&
+                originBytes?.Length > 0)
             {
                 propagationContext.Origin = Encoding.UTF8.GetString(originBytes);
             }
