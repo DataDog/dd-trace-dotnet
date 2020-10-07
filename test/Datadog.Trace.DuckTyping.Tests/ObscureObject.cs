@@ -47,6 +47,12 @@ namespace Datadog.Trace.DuckTyping.Tests
             internal static DummyFieldObject Default = new DummyFieldObject();
 
             public int MagicNumber = 42;
+
+            internal TypesTuple this[TypesTuple index]
+            {
+                get => index;
+                set { }
+            }
         }
 
         private class PrivateDummyFieldObject
@@ -54,6 +60,12 @@ namespace Datadog.Trace.DuckTyping.Tests
             internal static PrivateDummyFieldObject Default = new PrivateDummyFieldObject();
 
             public int MagicNumber = 42;
+
+            internal TypesTuple this[TypesTuple index]
+            {
+                get => index;
+                set { }
+            }
         }
 
         // ***
@@ -409,6 +421,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             // ***
 
+            private PrivateDummyFieldObject PrivateDummyGetSetSelfType { get; set; } = PrivateDummyFieldObject.Default;
+
+            // ***
+
             public static int? PublicStaticNullableInt { get; set; }
 
             private static int? PrivateStaticNullableInt { get; set; }
@@ -507,6 +523,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 obj = new PrivateDummyFieldObject { MagicNumber = (obj?.MagicNumber ?? 99) + 1 };
                 return true;
+            }
+
+            private DummyFieldObject Bypass(DummyFieldObject obj)
+            {
+                return obj;
             }
         }
 
@@ -635,6 +656,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             // ***
 
+            private PrivateDummyFieldObject PrivateDummyGetSetSelfType { get; set; } = PrivateDummyFieldObject.Default;
+
+            // ***
+
             public static int? PublicStaticNullableInt { get; set; }
 
             private static int? PrivateStaticNullableInt { get; set; }
@@ -733,6 +758,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 obj = new PrivateDummyFieldObject { MagicNumber = (obj?.MagicNumber ?? 99) + 1 };
                 return true;
+            }
+
+            private DummyFieldObject Bypass(DummyFieldObject obj)
+            {
+                return obj;
             }
         }
 
@@ -861,6 +891,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             // ***
 
+            private PrivateDummyFieldObject PrivateDummyGetSetSelfType { get; set; } = PrivateDummyFieldObject.Default;
+
+            // ***
+
             public static int? PublicStaticNullableInt { get; set; }
 
             private static int? PrivateStaticNullableInt { get; set; }
@@ -959,6 +993,20 @@ namespace Datadog.Trace.DuckTyping.Tests
                 obj = new PrivateDummyFieldObject { MagicNumber = (obj?.MagicNumber ?? 99) + 1 };
                 return true;
             }
+
+            private DummyFieldObject Bypass(DummyFieldObject obj)
+            {
+                return obj;
+            }
+        }
+
+        // ***
+
+        public struct PublicStruct
+        {
+            public int PublicGetSetValueType { get; set; }
+
+            private int PrivateGetSetValueType { get; set; }
         }
     }
 }

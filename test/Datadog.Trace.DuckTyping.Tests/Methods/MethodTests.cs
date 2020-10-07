@@ -54,6 +54,12 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
             Assert.Equal(20, duckInterface.InternalSum(10, 10));
             Assert.Equal(20, duckAbstract.InternalSum(10, 10));
             Assert.Equal(20, duckVirtual.InternalSum(10, 10));
+
+            var dummy = new ObscureObject.DummyFieldObject { MagicNumber = 987654 };
+            var dummyInt = dummy.As<IDummyFieldObject>();
+            Assert.Equal(dummy.MagicNumber, duckInterface.Bypass(dummyInt).MagicNumber);
+            Assert.Equal(dummy.MagicNumber, duckAbstract.Bypass(dummyInt).MagicNumber);
+            Assert.Equal(dummy.MagicNumber, duckVirtual.Bypass(dummyInt).MagicNumber);
         }
 
         [Theory]

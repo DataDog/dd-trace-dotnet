@@ -92,6 +92,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("60", duckAbstract.PublicStaticGetSetReferenceType);
             Assert.Equal("60", duckVirtual.PublicStaticGetSetReferenceType);
 
+            duckInterface.PublicStaticGetSetReferenceType = "20";
+
             // *
 
             Assert.Equal("21", duckInterface.InternalStaticGetSetReferenceType);
@@ -112,6 +114,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("60", duckInterface.InternalStaticGetSetReferenceType);
             Assert.Equal("60", duckAbstract.InternalStaticGetSetReferenceType);
             Assert.Equal("60", duckVirtual.InternalStaticGetSetReferenceType);
+
+            duckInterface.InternalStaticGetSetReferenceType = "21";
 
             // *
 
@@ -134,6 +138,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("60", duckAbstract.ProtectedStaticGetSetReferenceType);
             Assert.Equal("60", duckVirtual.ProtectedStaticGetSetReferenceType);
 
+            duckInterface.ProtectedStaticGetSetReferenceType = "22";
+
             // *
 
             Assert.Equal("23", duckInterface.PrivateStaticGetSetReferenceType);
@@ -154,6 +160,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("60", duckInterface.PrivateStaticGetSetReferenceType);
             Assert.Equal("60", duckAbstract.PrivateStaticGetSetReferenceType);
             Assert.Equal("60", duckVirtual.PrivateStaticGetSetReferenceType);
+
+            duckInterface.PrivateStaticGetSetReferenceType = "23";
         }
 
         [Theory]
@@ -212,6 +220,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("60", duckAbstract.PublicGetSetReferenceType);
             Assert.Equal("60", duckVirtual.PublicGetSetReferenceType);
 
+            duckInterface.PublicGetSetReferenceType = "40";
+
             // *
 
             Assert.Equal("41", duckInterface.InternalGetSetReferenceType);
@@ -232,6 +242,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("60", duckInterface.InternalGetSetReferenceType);
             Assert.Equal("60", duckAbstract.InternalGetSetReferenceType);
             Assert.Equal("60", duckVirtual.InternalGetSetReferenceType);
+
+            duckInterface.InternalGetSetReferenceType = "41";
 
             // *
 
@@ -254,6 +266,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("60", duckAbstract.ProtectedGetSetReferenceType);
             Assert.Equal("60", duckVirtual.ProtectedGetSetReferenceType);
 
+            duckInterface.ProtectedGetSetReferenceType = "42";
+
             // *
 
             Assert.Equal("43", duckInterface.PrivateGetSetReferenceType);
@@ -274,6 +288,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("60", duckInterface.PrivateGetSetReferenceType);
             Assert.Equal("60", duckAbstract.PrivateGetSetReferenceType);
             Assert.Equal("60", duckVirtual.PrivateGetSetReferenceType);
+
+            duckInterface.PrivateGetSetReferenceType = "43";
         }
 
         [Theory]
@@ -298,6 +314,74 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType
             Assert.Equal("300", duckInterface["3"]);
             Assert.Equal("300", duckAbstract["3"]);
             Assert.Equal("300", duckVirtual["3"]);
+        }
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public void StructCopy(object obscureObject)
+        {
+            var duckStructCopy = obscureObject.As<ObscureDuckTypeStruct>();
+
+            Assert.Equal("10", duckStructCopy.PublicStaticGetReferenceType);
+            Assert.Equal("11", duckStructCopy.InternalStaticGetReferenceType);
+            Assert.Equal("12", duckStructCopy.ProtectedStaticGetReferenceType);
+            Assert.Equal("13", duckStructCopy.PrivateStaticGetReferenceType);
+
+            Assert.Equal("20", duckStructCopy.PublicStaticGetSetReferenceType);
+            Assert.Equal("21", duckStructCopy.InternalStaticGetSetReferenceType);
+            Assert.Equal("22", duckStructCopy.ProtectedStaticGetSetReferenceType);
+            Assert.Equal("23", duckStructCopy.PrivateStaticGetSetReferenceType);
+
+            Assert.Equal("30", duckStructCopy.PublicGetReferenceType);
+            Assert.Equal("31", duckStructCopy.InternalGetReferenceType);
+            Assert.Equal("32", duckStructCopy.ProtectedGetReferenceType);
+            Assert.Equal("33", duckStructCopy.PrivateGetReferenceType);
+
+            Assert.Equal("40", duckStructCopy.PublicGetSetReferenceType);
+            Assert.Equal("41", duckStructCopy.InternalGetSetReferenceType);
+            Assert.Equal("42", duckStructCopy.ProtectedGetSetReferenceType);
+            Assert.Equal("43", duckStructCopy.PrivateGetSetReferenceType);
+        }
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public void UnionTest(object obscureObject)
+        {
+            var duckInterface = obscureObject.As<IDuckTypeUnion>();
+
+            Assert.Equal("40", duckInterface.PublicGetSetReferenceType);
+
+            duckInterface.PublicGetSetReferenceType = "42";
+            Assert.Equal("42", duckInterface.PublicGetSetReferenceType);
+
+            duckInterface.PublicGetSetReferenceType = "40";
+
+            // *
+
+            Assert.Equal("41", duckInterface.InternalGetSetReferenceType);
+
+            duckInterface.InternalGetSetReferenceType = "42";
+            Assert.Equal("42", duckInterface.InternalGetSetReferenceType);
+
+            duckInterface.InternalGetSetReferenceType = "41";
+
+            // *
+
+            Assert.Equal("42", duckInterface.ProtectedGetSetReferenceType);
+
+            duckInterface.ProtectedGetSetReferenceType = "45";
+            Assert.Equal("45", duckInterface.ProtectedGetSetReferenceType);
+
+            duckInterface.ProtectedGetSetReferenceType = "42";
+
+            // *
+
+            Assert.Equal("43", duckInterface.PrivateGetSetReferenceType);
+
+            duckInterface.PrivateGetSetReferenceType = "42";
+            Assert.Equal("42", duckInterface.PrivateGetSetReferenceType);
+
+            duckInterface.PrivateGetSetReferenceType = "43";
         }
     }
 }

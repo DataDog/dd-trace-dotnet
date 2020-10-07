@@ -98,5 +98,12 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
         {
             return false;
         }
+
+        public void NormalMethod()
+        {
+            // .
+        }
+
+        public virtual IDummyFieldObject Bypass(IDummyFieldObject obj) => null;
     }
 }

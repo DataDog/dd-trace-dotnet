@@ -93,6 +93,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(60, duckAbstract.PublicStaticGetSetValueType);
             Assert.Equal(60, duckVirtual.PublicStaticGetSetValueType);
 
+            duckInterface.PublicStaticGetSetValueType = 20;
+
             // *
 
             Assert.Equal(21, duckInterface.InternalStaticGetSetValueType);
@@ -113,6 +115,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(60, duckInterface.InternalStaticGetSetValueType);
             Assert.Equal(60, duckAbstract.InternalStaticGetSetValueType);
             Assert.Equal(60, duckVirtual.InternalStaticGetSetValueType);
+
+            duckInterface.InternalStaticGetSetValueType = 21;
 
             // *
 
@@ -135,6 +139,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(60, duckAbstract.ProtectedStaticGetSetValueType);
             Assert.Equal(60, duckVirtual.ProtectedStaticGetSetValueType);
 
+            duckInterface.ProtectedStaticGetSetValueType = 22;
+
             // *
 
             Assert.Equal(23, duckInterface.PrivateStaticGetSetValueType);
@@ -155,6 +161,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(60, duckInterface.PrivateStaticGetSetValueType);
             Assert.Equal(60, duckAbstract.PrivateStaticGetSetValueType);
             Assert.Equal(60, duckVirtual.PrivateStaticGetSetValueType);
+
+            duckInterface.PrivateStaticGetSetValueType = 23;
         }
 
         [Theory]
@@ -213,6 +221,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(60, duckAbstract.PublicGetSetValueType);
             Assert.Equal(60, duckVirtual.PublicGetSetValueType);
 
+            duckInterface.PublicGetSetValueType = 40;
+
             // *
 
             Assert.Equal(41, duckInterface.InternalGetSetValueType);
@@ -233,6 +243,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(60, duckInterface.InternalGetSetValueType);
             Assert.Equal(60, duckAbstract.InternalGetSetValueType);
             Assert.Equal(60, duckVirtual.InternalGetSetValueType);
+
+            duckInterface.InternalGetSetValueType = 41;
 
             // *
 
@@ -255,6 +267,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(60, duckAbstract.ProtectedGetSetValueType);
             Assert.Equal(60, duckVirtual.ProtectedGetSetValueType);
 
+            duckInterface.ProtectedGetSetValueType = 42;
+
             // *
 
             Assert.Equal(43, duckInterface.PrivateGetSetValueType);
@@ -275,6 +289,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(60, duckInterface.PrivateGetSetValueType);
             Assert.Equal(60, duckAbstract.PrivateGetSetValueType);
             Assert.Equal(60, duckVirtual.PrivateGetSetValueType);
+
+            duckInterface.PrivateGetSetValueType = 43;
         }
 
         [Theory]
@@ -421,6 +437,43 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(TaskStatus.WaitingForActivation, duckInterface.Status);
             Assert.Equal(TaskStatus.WaitingForActivation, duckAbstract.Status);
             Assert.Equal(TaskStatus.WaitingForActivation, duckVirtual.Status);
+        }
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public void StructCopy(object obscureObject)
+        {
+            var duckStructCopy = obscureObject.As<ObscureDuckTypeStruct>();
+
+            Assert.Equal(10, duckStructCopy.PublicStaticGetValueType);
+            Assert.Equal(11, duckStructCopy.InternalStaticGetValueType);
+            Assert.Equal(12, duckStructCopy.ProtectedStaticGetValueType);
+            Assert.Equal(13, duckStructCopy.PrivateStaticGetValueType);
+
+            Assert.Equal(20, duckStructCopy.PublicStaticGetSetValueType);
+            Assert.Equal(21, duckStructCopy.InternalStaticGetSetValueType);
+            Assert.Equal(22, duckStructCopy.ProtectedStaticGetSetValueType);
+            Assert.Equal(23, duckStructCopy.PrivateStaticGetSetValueType);
+
+            Assert.Equal(30, duckStructCopy.PublicGetValueType);
+            Assert.Equal(31, duckStructCopy.InternalGetValueType);
+            Assert.Equal(32, duckStructCopy.ProtectedGetValueType);
+            Assert.Equal(33, duckStructCopy.PrivateGetValueType);
+
+            Assert.Equal(40, duckStructCopy.PublicGetSetValueType);
+            Assert.Equal(41, duckStructCopy.InternalGetSetValueType);
+            Assert.Equal(42, duckStructCopy.ProtectedGetSetValueType);
+            Assert.Equal(43, duckStructCopy.PrivateGetSetValueType);
+        }
+
+        [Fact]
+        public void StructDuckType()
+        {
+            ObscureObject.PublicStruct source = default;
+            source.PublicGetSetValueType = 42;
+
+            var dest = source.As<IStructDuckType>();
+            Assert.Equal(source.PublicGetSetValueType, dest.PublicGetSetValueType);
         }
     }
 }

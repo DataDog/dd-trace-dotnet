@@ -1,10 +1,11 @@
 namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining.ProxiesDefinitions
 {
-    public interface IDummyFieldObject
+#pragma warning disable 649
+
+    [DuckCopy]
+    public struct DummyFieldStruct
     {
         [Duck(Kind = DuckKind.Field)]
-        int MagicNumber { get; set; }
-
-        ITypesTuple this[ITypesTuple index] { get; set; }
+        public int MagicNumber;
     }
 }

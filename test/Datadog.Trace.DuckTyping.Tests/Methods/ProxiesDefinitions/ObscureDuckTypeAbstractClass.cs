@@ -52,5 +52,12 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
 
         [Duck(Name = "TryGetPrivateReference")]
         public abstract bool TryGetPrivateReferenceObject(ref object obj);
+
+        public void NormalMethod()
+        {
+            // .
+        }
+
+        public abstract IDummyFieldObject Bypass(IDummyFieldObject obj);
     }
 }

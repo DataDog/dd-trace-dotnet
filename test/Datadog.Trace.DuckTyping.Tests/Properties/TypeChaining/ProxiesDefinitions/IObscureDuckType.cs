@@ -1,3 +1,5 @@
+using System;
+
 namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining.ProxiesDefinitions
 {
     public interface IObscureDuckType
@@ -39,5 +41,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining.ProxiesDefiniti
         IDummyFieldObject ProtectedGetSetSelfType { get; set; }
 
         IDummyFieldObject PrivateGetSetSelfType { get; set; }
+
+        // *
+
+        IDummyFieldObject PrivateDummyGetSetSelfType { get; set; }
     }
 }

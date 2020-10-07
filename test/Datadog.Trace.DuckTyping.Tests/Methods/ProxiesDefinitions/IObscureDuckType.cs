@@ -2,7 +2,11 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
 {
     public interface IObscureDuckType
     {
+#if INTERFACE_DEFAULTS
+        int Sum(int a, int b) => a + b;
+#else
         int Sum(int a, int b);
+#endif
 
         float Sum(float a, float b);
 
@@ -52,5 +56,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
 
         [Duck(Name = "TryGetPrivateReference")]
         bool TryGetPrivateReferenceObject(ref object obj);
+
+        IDummyFieldObject Bypass(IDummyFieldObject obj);
     }
 }
