@@ -28,7 +28,7 @@ namespace Datadog.Trace.DuckTyping
             if (!targetField.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldfld, instanceField);
+                il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
             }
 
             // Load the field value to the stack
@@ -112,7 +112,7 @@ namespace Datadog.Trace.DuckTyping
             if (!targetField.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldfld, instanceField);
+                il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
             }
 
             // Check if the type can be converted of if we need to enable duck chaining

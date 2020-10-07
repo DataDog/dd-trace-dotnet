@@ -99,13 +99,8 @@ namespace Datadog.Trace.DuckTyping
                 ParameterInfo[] targetMethodParameters = targetMethod.GetParameters();
                 Type[] targetMethodParametersTypes = targetMethodParameters.Select(p => p.ParameterType).ToArray();
 
-                // Make sure we have the right methods attributes, for proxy methods declared in abstract and virtual classes
-                // a new slot on the vtable is not required, for interfaces is required.
+                // Make sure we have the right methods attributes.
                 MethodAttributes proxyMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
-                if (!proxyMethodDefinition.IsAbstract && !proxyMethodDefinition.IsVirtual)
-                {
-                    proxyMethodAttributes |= MethodAttributes.NewSlot;
-                }
 
                 // Create the proxy method implementation
                 ParameterBuilder[] proxyMethodParametersBuilders = new ParameterBuilder[proxyMethodDefinitionParameters.Length];
@@ -137,7 +132,7 @@ namespace Datadog.Trace.DuckTyping
                 if (!targetMethod.IsStatic)
                 {
                     il.Emit(OpCodes.Ldarg_0);
-                    il.Emit(OpCodes.Ldfld, instanceField);
+                    il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
                 }
 
                 // Load all the arguments / parameters

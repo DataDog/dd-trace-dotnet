@@ -40,11 +40,13 @@ namespace Datadog.Trace.DuckTyping
             // 3. The proxy type (duck chaining proxy definition type) can't be a struct
             // 4. The proxy type can't be a generic parameter (should be a well known type)
             // 5. Can't be a base type or an iterface implemented by the targetType type.
+            // 6. The proxy type can't be a CLR type
             return proxyType.GetCustomAttribute<DuckCopyAttribute>() != null ||
                 (proxyType != targetType &&
                 !proxyType.IsValueType &&
                 !proxyType.IsGenericParameter &&
-                !proxyType.IsAssignableFrom(targetType));
+                !proxyType.IsAssignableFrom(targetType) &&
+                proxyType.Module != typeof(string).Module);
         }
     }
 }

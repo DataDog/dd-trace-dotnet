@@ -52,7 +52,7 @@ namespace Datadog.Trace.DuckTyping
             if (!targetMethod.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldfld, instanceField);
+                il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
             }
 
             // Load the indexer keys to the stack
@@ -109,7 +109,7 @@ namespace Datadog.Trace.DuckTyping
                 returnType = targetProperty.PropertyType.IsPublic || targetProperty.PropertyType.IsNestedPublic ? targetProperty.PropertyType : typeof(object);
 
                 // We create the dynamic method
-                Type[] targetParameters = GetPropertyGetParametersTypes(targetProperty, true, !targetMethod.IsStatic).ToArray();
+                Type[] targetParameters = GetPropertyGetParametersTypes(targetProperty, false, !targetMethod.IsStatic).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, typeof(DuckType).Module, true);
 
@@ -197,7 +197,7 @@ namespace Datadog.Trace.DuckTyping
             if (!targetMethod.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldfld, instanceField);
+                il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
             }
 
             // Load the indexer keys and set value to the stack
@@ -254,7 +254,7 @@ namespace Datadog.Trace.DuckTyping
                 string dynMethodName = $"_setNonPublicProperty+{targetProperty.DeclaringType.Name}.{targetProperty.Name}";
 
                 // We create the dynamic method
-                Type[] targetParameters = GetPropertySetParametersTypes(targetProperty, true, !targetMethod.IsStatic).ToArray();
+                Type[] targetParameters = GetPropertySetParametersTypes(targetProperty, false, !targetMethod.IsStatic).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, typeof(DuckType).Module, true);
 
@@ -266,11 +266,7 @@ namespace Datadog.Trace.DuckTyping
 
                 if (!targetMethod.IsStatic)
                 {
-                    dynIL.Emit(OpCodes.Ldarg_0);
-                    if (targetProperty.DeclaringType != targetType)
-                    {
-                        dynIL.Emit(OpCodes.Castclass, targetProperty.DeclaringType);
-                    }
+                    dynIL.LoadInstanceArgument(typeof(object), targetProperty.DeclaringType);
                 }
 
                 for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
@@ -300,7 +296,7 @@ namespace Datadog.Trace.DuckTyping
             ParameterInfo[] idxParams = property.GetIndexParameters();
             foreach (ParameterInfo parameter in idxParams)
             {
-                if (originalTypes || property.PropertyType.IsPublic || property.PropertyType.IsNestedPublic)
+                if (originalTypes || parameter.ParameterType.IsPublic || parameter.ParameterType.IsNestedPublic)
                 {
                     yield return parameter.ParameterType;
                 }
