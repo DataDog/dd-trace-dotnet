@@ -20,6 +20,8 @@ namespace Datadog.Trace.ServiceFabric
 
         private static int _firstInitialization = 1;
         private static bool _initialized;
+        private static string? _clientAnalyticsSampleRate;
+        private static string? _serverAnalyticsSampleRate;
 
         /// <summary>
         /// Start tracing Service Remoting requests.
@@ -29,14 +31,19 @@ namespace Datadog.Trace.ServiceFabric
             // only run this code once
             if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
             {
-                // client
+                // cache settings
+                _clientAnalyticsSampleRate = GetAnalyticsSampleRate(Tracer.Instance, enabledWithGlobalSetting: false)?.ToString(CultureInfo.InvariantCulture);
+                _serverAnalyticsSampleRate = GetAnalyticsSampleRate(Tracer.Instance, enabledWithGlobalSetting: true)?.ToString(CultureInfo.InvariantCulture);
+
+                // client events
                 ServiceRemotingClientEvents.SendRequest += ServiceRemotingClientEvents_SendRequest;
                 ServiceRemotingClientEvents.ReceiveResponse += ServiceRemotingClientEvents_ReceiveResponse;
 
-                // server
+                // server events
                 ServiceRemotingServiceEvents.ReceiveRequest += ServiceRemotingServiceEvents_ReceiveRequest;
                 ServiceRemotingServiceEvents.SendResponse += ServiceRemotingServiceEvents_SendResponse;
 
+                // don't handle any events until we have subscribed to all of them
                 _initialized = true;
             }
         }
@@ -341,11 +348,14 @@ namespace Datadog.Trace.ServiceFabric
                 }
             }
 
-            double? analyticsSampleRate = GetAnalyticsSampleRate(tracer, enableAnalyticsWithGlobalSetting);
-
-            if (analyticsSampleRate != null)
+            switch (spanKind)
             {
-                span.SetTag(Tags.Analytics, analyticsSampleRate.Value.ToString(CultureInfo.InvariantCulture));
+                case SpanKinds.Client when _clientAnalyticsSampleRate != null:
+                    span.SetTag(Tags.Analytics, _clientAnalyticsSampleRate);
+                    break;
+                case SpanKinds.Server when _serverAnalyticsSampleRate != null:
+                    span.SetTag(Tags.Analytics, _serverAnalyticsSampleRate);
+                    break;
             }
 
             return span;
