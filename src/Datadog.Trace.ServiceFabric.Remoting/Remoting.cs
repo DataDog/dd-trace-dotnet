@@ -150,25 +150,17 @@ namespace Datadog.Trace.ServiceFabric
 
             GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
             PropagationContext propagationContext = default;
-
-            try
-            {
-                // extract propagation context from message headers for distributed tracing
-                if (messageHeaders != null)
-                {
-                    propagationContext = ExtractContext(messageHeaders);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error extracting message headers.");
-            }
-
             SpanContext? spanContext = null;
 
-            if (propagationContext.TraceId > 0 && propagationContext.ParentSpanId > 0)
+            // extract propagation context from message headers for distributed tracing
+            if (messageHeaders != null)
             {
-                spanContext = new SpanContext(propagationContext.TraceId, propagationContext.ParentSpanId, (SamplingPriority)propagationContext.SamplingPriority);
+                propagationContext = ExtractContext(messageHeaders);
+
+                if (propagationContext.TraceId > 0 && propagationContext.ParentSpanId > 0)
+                {
+                    spanContext = new SpanContext(propagationContext.TraceId, propagationContext.ParentSpanId, (SamplingPriority?)propagationContext.SamplingPriority);
+                }
             }
 
             var tracer = Tracer.Instance;
@@ -213,13 +205,10 @@ namespace Datadog.Trace.ServiceFabric
 
         private static void GetMessageHeaders(EventArgs? eventArgs, out ServiceRemotingRequestEventArgs? requestEventArgs, out IServiceRemotingRequestMessageHeader? messageHeaders)
         {
-            requestEventArgs = null;
-            messageHeaders = null;
+            requestEventArgs = eventArgs as ServiceRemotingRequestEventArgs;
 
             try
             {
-                requestEventArgs = eventArgs as ServiceRemotingRequestEventArgs;
-
                 if (requestEventArgs == null)
                 {
                     Log.Warning("Unexpected EventArgs type: {0}", eventArgs?.GetType().FullName ?? "null");
@@ -235,24 +224,27 @@ namespace Datadog.Trace.ServiceFabric
             catch (Exception ex)
             {
                 Log.Error(ex, "Error accessing request headers.");
+                messageHeaders = null;
             }
         }
 
         private static void InjectContext(PropagationContext context, IServiceRemotingRequestMessageHeader messageHeaders)
         {
+            if (context.TraceId == 0 || context.ParentSpanId == 0)
+            {
+                return;
+            }
+
             try
             {
-                if (context.TraceId > 0 && context.ParentSpanId > 0)
+                if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out _))
                 {
-                    if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out _))
-                    {
-                        messageHeaders.AddHeader(HttpHeaderNames.TraceId, BitConverter.GetBytes(context.TraceId));
-                    }
+                    messageHeaders.AddHeader(HttpHeaderNames.TraceId, BitConverter.GetBytes(context.TraceId));
+                }
 
-                    if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out _))
-                    {
-                        messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(context.ParentSpanId));
-                    }
+                if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out _))
+                {
+                    messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(context.ParentSpanId));
                 }
 
                 if (context.SamplingPriority != null &&
