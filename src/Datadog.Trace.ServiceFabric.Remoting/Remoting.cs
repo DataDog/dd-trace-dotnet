@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.Configuration;
 using Microsoft.ServiceFabric.Services.Remoting.V2;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Client;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Runtime;
@@ -71,7 +72,7 @@ namespace Datadog.Trace.ServiceFabric
                 if (messageHeaders != null)
                 {
                     string samplingPriorityTag = span.GetTag(Tags.SamplingPriority);
-                    int? samplingPriority = int.TryParse(samplingPriorityTag, NumberStyles.None, CultureInfo.InvariantCulture, out var priority) ? priority : default;
+                    int? samplingPriority = int.TryParse(samplingPriorityTag, NumberStyles.None, CultureInfo.InvariantCulture, out int priority) ? priority : (int?)null;
 
                     var context = new PropagationContext
                                   {
@@ -158,7 +159,7 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             var tracer = Tracer.Instance;
-            var span = CreateSpan(tracer, spanContext, SpanKinds.Server, eventArgs, messageHeaders, enableAnalyticsWithGlobalSetting: true);
+            var span = CreateSpan(tracer, spanContext, SpanKinds.Server, eventArgs, messageHeaders);
 
             if (!string.IsNullOrEmpty(propagationContext.Origin))
             {
@@ -303,8 +304,7 @@ namespace Datadog.Trace.ServiceFabric
             SpanContext? context,
             string spanKind,
             ServiceRemotingRequestEventArgs? eventArgs,
-            IServiceRemotingRequestMessageHeader? messageHeader,
-            bool enableAnalyticsWithGlobalSetting)
+            IServiceRemotingRequestMessageHeader? messageHeader)
         {
             string? methodName = null;
             string? resourceName = null;
@@ -363,8 +363,8 @@ namespace Datadog.Trace.ServiceFabric
 
         private static double? GetAnalyticsSampleRate(Tracer tracer, bool enabledWithGlobalSetting)
         {
-            var integrationSettings = tracer.Settings.Integrations[IntegrationName];
-            var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && tracer.Settings.AnalyticsEnabled);
+            IntegrationSettings integrationSettings = tracer.Settings.Integrations[IntegrationName];
+            bool analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && tracer.Settings.AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }
     }
