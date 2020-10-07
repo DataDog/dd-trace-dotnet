@@ -14,8 +14,8 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class HttpClientBenchmark
     {
-        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage();
-        private static readonly HttpMessageHandler Handler = new CustomHttpMessageHandler();
+        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
+        private static readonly HttpMessageHandler Handler = new CustomHttpClientHandler();
         private static readonly object BoxedCancellationToken = new CancellationToken();
         private static readonly int MdToken;
         private static readonly IntPtr GuidPtr;
@@ -32,7 +32,7 @@ namespace Benchmarks.Trace
 
             Tracer.Instance = new Tracer(settings, new DummyAgentWriter(), null, null, null);
 
-            HttpMessageHandlerIntegration.HttpClientHandler = typeof(CustomHttpMessageHandler).FullName;
+            HttpMessageHandlerIntegration.HttpClientHandler = typeof(CustomHttpClientHandler).FullName;
 
             var methodInfo = typeof(HttpMessageHandler).GetMethod("SendAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
@@ -46,7 +46,7 @@ namespace Benchmarks.Trace
             new HttpClientBenchmark().SendAsync().GetAwaiter().GetResult();
         }
 
-        internal class CustomHttpMessageHandler : HttpMessageHandler
+        internal class CustomHttpClientHandler : HttpClientHandler
         {
             private static readonly Task<HttpResponseMessage> CachedResult = Task.FromResult(new HttpResponseMessage());
 
