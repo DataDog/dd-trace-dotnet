@@ -18,14 +18,16 @@ namespace Datadog.Trace.ServiceFabric
 
         private static readonly Datadog.Trace.Vendors.Serilog.ILogger Log = Datadog.Trace.Logging.DatadogLogging.GetLogger(typeof(Remoting));
 
-        private static int _enabled;
+        private static int _firstInitialization = 1;
+        private static bool _initialized;
 
         /// <summary>
         /// Start tracing Service Remoting requests.
         /// </summary>
         public static void StartTracing()
         {
-            if (Interlocked.CompareExchange(ref _enabled, 1, 0) == 0)
+            // only run this code once
+            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
             {
                 // client
                 ServiceRemotingClientEvents.SendRequest += ServiceRemotingClientEvents_SendRequest;
@@ -34,6 +36,8 @@ namespace Datadog.Trace.ServiceFabric
                 // server
                 ServiceRemotingServiceEvents.ReceiveRequest += ServiceRemotingServiceEvents_ReceiveRequest;
                 ServiceRemotingServiceEvents.SendResponse += ServiceRemotingServiceEvents_SendResponse;
+
+                _initialized = true;
             }
         }
 
@@ -61,7 +65,7 @@ namespace Datadog.Trace.ServiceFabric
         /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingClientEvents_SendRequest(object? sender, EventArgs? e)
         {
-            if (_enabled == 0)
+            if (!_initialized)
             {
                 return;
             }
@@ -106,7 +110,7 @@ namespace Datadog.Trace.ServiceFabric
         /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingClientEvents_ReceiveResponse(object? sender, EventArgs e)
         {
-            if (_enabled == 0)
+            if (!_initialized)
             {
                 return;
             }
@@ -143,7 +147,7 @@ namespace Datadog.Trace.ServiceFabric
         /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingServiceEvents_ReceiveRequest(object? sender, EventArgs e)
         {
-            if (_enabled == 0)
+            if (!_initialized)
             {
                 return;
             }
@@ -182,7 +186,7 @@ namespace Datadog.Trace.ServiceFabric
         /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingServiceEvents_SendResponse(object? sender, EventArgs e)
         {
-            if (_enabled == 0)
+            if (!_initialized)
             {
                 return;
             }
