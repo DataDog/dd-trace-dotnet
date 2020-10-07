@@ -89,7 +89,7 @@ namespace PrepareRelease
             var wixProjectRoot =
                 Path.Combine(
                     solutionDirectory,
-                    "deploy",
+                    "src",
                     "Datadog.Trace.ClrProfiler.WindowsInstaller");
 
             var filePaths = DependencyHelpers.GetTracerBinContent(frameworkMoniker);

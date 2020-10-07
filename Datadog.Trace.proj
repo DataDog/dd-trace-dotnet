@@ -12,7 +12,7 @@
     <CppTestProject Include="test\**\*.vcxproj"/>
     <SampleProject Include="test\test-applications\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
-    <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
+    <WindowsInstallerProject Include="src\**\*.wixproj"/>
   </ItemGroup>
 
   <ItemGroup>

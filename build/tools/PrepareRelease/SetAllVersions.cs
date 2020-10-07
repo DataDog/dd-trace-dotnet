@@ -112,7 +112,7 @@ namespace PrepareRelease
                 text => Regex.Replace(text, $"VERSION={VersionPattern()}", $"VERSION={VersionString()}"));
 
             SynchronizeVersion(
-                "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
+                "src/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
                 WixProjReplace);
 
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
