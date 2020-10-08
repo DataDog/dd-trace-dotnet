@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var process = ProfilerHelper.StartProcessWithProfiler(
                 EnvironmentHelper.GetSampleExecutionSource(),
-                EnvironmentHelper.GetSampleApplicationPath(),
+                EnvironmentHelper.GetSampleExecutionSource(),
                 EnvironmentHelper,
                 integrationPaths,
                 arguments: string.Join(" ", args),
