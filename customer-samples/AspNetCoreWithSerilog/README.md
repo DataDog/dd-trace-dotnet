@@ -1,4 +1,4 @@
-# ASP.NET Core Custom Instrumentation with Serilog
+# Custom Instrumentation of an ASP.NET Core app with Serilog
 The .NET Tracer provides out-of-the-box automatic instrumentation for ASP.NET Core and automatic trace injection, but if you would like to instrument the application yourself, this sample application serves as a starting point to easily add these features to your application.
 
 This sample follows the [Setting up Serilog in ASP.NET Core 3](https://nblumhardt.com/2019/10/serilog-in-aspnetcore-3/) tutorial to create an ASP.NET Core 3.1 app from scratch and add automatic request logging when an endpoint is requested.
