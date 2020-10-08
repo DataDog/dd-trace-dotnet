@@ -5,8 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -14,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Tracer integration for HttpClientHandler.
     /// </summary>
-    public static class HttpMessageHandlerIntegration
+    public static class HttpMessageHandlerIntegration_Old
     {
         private const string IntegrationName = "HttpMessageHandler";
         private const string SystemNetHttp = "System.Net.Http";
@@ -95,12 +93,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             var reportedType = callOpCode == OpCodeValue.Call ? httpMessageHandler : handler.GetType();
-            var requestValue = request.As<HttpRequestMessageStruct>();
+            var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
 
             var isHttpClientHandler = handler.GetInstrumentedType(SystemNetHttp, HttpClientHandlerTypeName) != null;
 
             if (!(isHttpClientHandler || IsSocketsHttpHandlerEnabled(reportedType)) ||
-                !IsTracingEnabled(requestValue.Headers))
+                !IsTracingEnabled(headers))
             {
                 // skip instrumentation
                 return instrumentedMethod(handler, request, cancellationToken);
@@ -128,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return SendAsyncInternal(
                     instrumentedMethod,
                     reportedType,
-                    requestValue,
+                    headers,
                     handler,
                     request,
                     cancellationToken)
@@ -196,10 +194,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            var requestValue = request.As<HttpRequestMessageStruct>();
+            var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
             var reportedType = callOpCode == OpCodeValue.Call ? httpClientHandler : handler.GetType();
 
-            if (!IsTracingEnabled(requestValue.Headers))
+            if (!IsTracingEnabled(headers))
             {
                 // skip instrumentation
                 return instrumentedMethod(handler, request, cancellationToken);
@@ -227,7 +225,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return SendAsyncInternal(
                     instrumentedMethod,
                     reportedType,
-                    requestValue,
+                    headers,
                     handler,
                     request,
                     cancellationToken)
@@ -237,13 +235,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static async Task<object> SendAsyncInternal(
             Func<object, object, CancellationToken, object> sendAsync,
             Type reportedType,
-            HttpRequestMessageStruct requestValue,
+            object headers,
             object handler,
             object request,
             CancellationToken cancellationToken)
         {
-            var httpMethod = requestValue.Method.Method;
-            var requestUri = requestValue.RequestUri;
+            var httpMethod = request.GetProperty("Method").GetProperty<string>("Method").GetValueOrDefault();
+            var requestUri = request.GetProperty<Uri>("RequestUri").GetValueOrDefault();
 
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationName))
             {
@@ -254,16 +252,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
 
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.Inject(scope.Span.Context, new HttpHeadersCollection(requestValue.Headers));
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, new ReflectionHttpHeadersCollection(headers));
                     }
 
                     var task = (Task)sendAsync(handler, request, cancellationToken);
                     await task.ConfigureAwait(false);
 
-                    var response = task.As<TaskObjectStruct>().Result;
+                    var response = task.GetProperty("Result").Value;
 
                     // this tag can only be set after the response is returned
-                    int statusCode = response.As<HttpResponseMessageStruct>().StatusCode;
+                    int statusCode = response.GetProperty<int>("StatusCode").GetValueOrDefault();
                     scope?.Span.SetTag(Tags.HttpStatusCode, (statusCode).ToString());
 
                     return response;
@@ -281,23 +279,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return Tracer.Instance.Settings.IsOptInIntegrationEnabled("HttpSocketsHandler") && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsTracingEnabled(IRequestHeaders headers)
+        private static bool IsTracingEnabled(object headers)
         {
-            if (headers.TryGetValues(HttpHeaderNames.TracingEnabled, out var headerValues))
+            if (headers.CallMethod<string, bool>("Contains", HttpHeaderNames.TracingEnabled).Value)
             {
-                if (headerValues is string[] arrayValues)
-                {
-                    for (var i = 0; i < arrayValues.Length; i++)
-                    {
-                        if (string.Equals(arrayValues[i], "false", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
-
+                var headerValues = headers.CallMethod<string, IEnumerable<string>>("GetValues", HttpHeaderNames.TracingEnabled).Value;
                 if (headerValues != null && headerValues.Any(s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
                 {
                     // tracing is disabled for this request via http header
@@ -306,83 +292,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             return true;
-        }
-
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable SA1201 // Elements must appear in the correct order
-#pragma warning disable SA1600 // Elements must be documented
-
-        [DuckCopy]
-        public struct HttpRequestMessageStruct
-        {
-            public HttpMethodStruct Method;
-
-            public Uri RequestUri;
-
-            public IRequestHeaders Headers;
-        }
-
-        [DuckCopy]
-        public struct HttpMethodStruct
-        {
-            public string Method;
-        }
-
-        public interface IRequestHeaders
-        {
-            bool TryGetValues(string name, out IEnumerable<string> values);
-
-            bool Remove(string name);
-
-            void Add(string name, string value);
-        }
-
-        [DuckCopy]
-        public struct HttpResponseMessageStruct
-        {
-            public int StatusCode;
-        }
-
-        [DuckCopy]
-        public struct TaskObjectStruct
-        {
-            public object Result;
-        }
-
-        internal readonly struct HttpHeadersCollection : IHeadersCollection
-        {
-            private readonly IRequestHeaders _headers;
-
-            public HttpHeadersCollection(IRequestHeaders headers)
-            {
-                _headers = headers ?? throw new ArgumentNullException(nameof(headers));
-            }
-
-            public IEnumerable<string> GetValues(string name)
-            {
-                if (_headers.TryGetValues(name, out IEnumerable<string> values))
-                {
-                    return values;
-                }
-
-                return Enumerable.Empty<string>();
-            }
-
-            public void Set(string name, string value)
-            {
-                _headers.Remove(name);
-                _headers.Add(name, value);
-            }
-
-            public void Add(string name, string value)
-            {
-                _headers.Add(name, value);
-            }
-
-            public void Remove(string name)
-            {
-                _headers.Remove(name);
-            }
         }
     }
 }
