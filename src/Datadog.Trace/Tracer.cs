@@ -124,9 +124,6 @@ namespace Datadog.Trace
 
             if (!string.IsNullOrWhiteSpace(Settings.CustomSamplingRules))
             {
-                // User has opted in, ensure rate limiter is used
-                RuleBasedSampler.OptInTracingWithoutLimits();
-
                 foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(Settings.CustomSamplingRules))
                 {
                     Sampler.RegisterRule(rule);

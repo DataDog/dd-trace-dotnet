@@ -8,7 +8,6 @@ namespace Datadog.Trace.Sampling
         private const ulong KnuthFactor = 1_111_111_111_111_111_111;
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RuleBasedSampler>();
-        private static bool _tracingWithoutLimitsEnabled = false;
 
         private readonly IRateLimiter _limiter;
         private readonly DefaultSamplingRule _defaultRule = new DefaultSamplingRule();
@@ -18,11 +17,6 @@ namespace Datadog.Trace.Sampling
         {
             _limiter = limiter ?? new RateLimiter(null);
             RegisterRule(_defaultRule);
-        }
-
-        public static void OptInTracingWithoutLimits()
-        {
-            _tracingWithoutLimitsEnabled = true;
         }
 
         public void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates)
@@ -48,7 +42,7 @@ namespace Datadog.Trace.Sampling
                             sampleRate,
                             traceId);
 
-                        return GetSamplingPriority(span, sampleRate);
+                        return GetSamplingPriority(span, sampleRate, agentSampling: rule is DefaultSamplingRule);
                     }
                 }
             }
@@ -65,8 +59,6 @@ namespace Datadog.Trace.Sampling
         /// <param name="rule">The new rule being registered.</param>
         public void RegisterRule(ISamplingRule rule)
         {
-            OptInTracingWithoutLimits();
-
             for (var i = 0; i < _rules.Count; i++)
             {
                 if (_rules[i].Priority < rule.Priority)
@@ -80,24 +72,14 @@ namespace Datadog.Trace.Sampling
             _rules.Add(rule);
         }
 
-        private SamplingPriority GetSamplingPriority(Span span, float rate)
+        private SamplingPriority GetSamplingPriority(Span span, float rate, bool agentSampling)
         {
             var sample = ((span.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
             var priority = SamplingPriority.AutoReject;
 
-            if (sample)
+            if (sample && (agentSampling || _limiter.Allowed(span)))
             {
-                if (_tracingWithoutLimitsEnabled)
-                {
-                    if (_limiter.Allowed(span))
-                    {
-                        priority = SamplingPriority.AutoKeep;
-                    }
-                }
-                else
-                {
-                    priority = SamplingPriority.AutoKeep;
-                }
+                priority = SamplingPriority.AutoKeep;
             }
 
             return priority;
