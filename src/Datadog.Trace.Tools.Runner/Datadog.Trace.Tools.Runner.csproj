@@ -7,10 +7,11 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dd-trace</ToolCommandName>
+    <ToolCommandName>ddtrace</ToolCommandName>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU5100</NoWarn>
+    <PackageId>ddtrace</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

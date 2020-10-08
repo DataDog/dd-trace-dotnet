@@ -57,6 +57,16 @@ namespace Datadog.Trace.Tools.Runner
                 envVars["DD_ENV"] = options.Environment;
             }
 
+            if (!string.IsNullOrWhiteSpace(options.Service))
+            {
+                envVars["DD_SERVICE"] = options.Service;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.Version))
+            {
+                envVars["DD_VERSION"] = options.Version;
+            }
+
             if (!string.IsNullOrWhiteSpace(options.AgentUrl))
             {
                 envVars["DD_TRACE_AGENT_URL"] = options.AgentUrl;
