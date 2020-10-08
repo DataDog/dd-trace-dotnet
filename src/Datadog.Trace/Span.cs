@@ -198,14 +198,14 @@ namespace Datadog.Trace
 
                     // value is a string and can represent a bool ("true") or a double ("0.5"),
                     // so try to parse both. note that "1" and "0" will parse as boolean, which is fine.
-                    bool? boolean = value.ToBoolean();
+                    bool? analyticsSamplingRate = value.ToBoolean();
 
-                    if (boolean == true)
+                    if (analyticsSamplingRate == true)
                     {
                         // always sample
                         SetMetric(Trace.Tags.Analytics, 1.0);
                     }
-                    else if (boolean == false)
+                    else if (analyticsSamplingRate == false)
                     {
                         // never sample
                         SetMetric(Trace.Tags.Analytics, 0.0);
