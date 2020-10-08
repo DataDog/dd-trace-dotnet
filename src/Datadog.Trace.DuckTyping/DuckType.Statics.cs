@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -34,5 +36,12 @@ namespace Datadog.Trace.DuckTyping
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static ModuleBuilder _moduleBuilder = null;
-     }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static AssemblyBuilder _assemblyBuilder = null;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static ConstructorInfo _ignoresAccessChecksToAttributeCtor = typeof(IgnoresAccessChecksToAttribute).GetConstructor(new Type[] { typeof(string) });
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static HashSet<string> _ignoresAccessChecksToAssembliesSet = new HashSet<string>();
+    }
 }

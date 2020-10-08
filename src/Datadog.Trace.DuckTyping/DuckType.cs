@@ -6,7 +6,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 
-[assembly:InternalsVisibleTo("Datadog.Trace.DuckTyping.Tests, PublicKey=002400000480000094000000060200000024000052534131000400000100010025b855c8bc41b1d47e777fc247392999ca6f553cdb030fac8e3bd010171ded9982540d988553935f44f7dd58cb4b17fbb92653d5c2dc5112696886665b317c6f92795bf64beab2405c501c8a30cb1b31b1541ed66e27d9823169ec2815b00ceeeecc8d5a1bf43db67d2961a3e9bea1397f043ec07491709649252f5565b756c5")]
+[assembly: InternalsVisibleTo("Datadog.Trace.DuckTyping.Tests, PublicKey=002400000480000094000000060200000024000052534131000400000100010025b855c8bc41b1d47e777fc247392999ca6f553cdb030fac8e3bd010171ded9982540d988553935f44f7dd58cb4b17fbb92653d5c2dc5112696886665b317c6f92795bf64beab2405c501c8a30cb1b31b1541ed66e27d9823169ec2815b00ceeeecc8d5a1bf43db67d2961a3e9bea1397f043ec07491709649252f5565b756c5")]
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -107,11 +107,18 @@ namespace Datadog.Trace.DuckTyping
                         if (_moduleBuilder is null)
                         {
                             AssemblyName aName = new AssemblyName("DuckTypeAssembly");
-                            AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.Run);
-                            _moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
+                            _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.Run);
+                            _moduleBuilder = _assemblyBuilder.DefineDynamicModule("MainModule");
+                            EnsureTypeVisibility(typeof(DuckType));
                         }
                     }
                 }
+
+#if !NET45
+                // Adds both attributes to ignore the visibility checks
+                EnsureTypeVisibility(targetType);
+                EnsureTypeVisibility(proxyDefinitionType);
+#endif
 
                 // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
                 string proxyTypeName = $"{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}___{targetType.FullName.Replace(".", "_").Replace("+", "__")}";
@@ -168,7 +175,7 @@ namespace Datadog.Trace.DuckTyping
         private static FieldInfo CreateIDuckTypeImplementation(TypeBuilder proxyTypeBuilder, Type targetType)
         {
             Type instanceType = targetType;
-            if (!targetType.IsPublic && !targetType.IsNestedPublic)
+            if (!UseDirectAccessTo(targetType))
             {
                 instanceType = typeof(object);
             }
@@ -427,7 +434,7 @@ namespace Datadog.Trace.DuckTyping
                 true);
             ILGenerator il = createProxyMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
-            if (targetType.IsPublic || targetType.IsNestedPublic)
+            if (UseDirectAccessTo(targetType))
             {
                 if (targetType.IsValueType)
                 {
@@ -470,7 +477,7 @@ namespace Datadog.Trace.DuckTyping
             // We create an instance of the proxy type
             il.Emit(OpCodes.Ldloca_S, proxyLocal.LocalIndex);
             il.Emit(OpCodes.Ldarg_0);
-            if (targetType.IsPublic || targetType.IsNestedPublic)
+            if (UseDirectAccessTo(targetType))
             {
                 if (targetType.IsValueType)
                 {
@@ -630,11 +637,13 @@ namespace Datadog.Trace.DuckTyping
             private static CreateTypeResult GetProxySlow(Type targetType)
             {
                 Type proxyTypeDefinition = typeof(T);
-                if (!proxyTypeDefinition.IsValueType && !proxyTypeDefinition.IsPublic && !proxyTypeDefinition.IsNestedPublic)
+#if NET45
+                if (!proxyTypeDefinition.IsValueType && !UseDirectAccessTo(proxyTypeDefinition))
                 {
                     DuckTypeTypeIsNotPublicException.Throw(proxyTypeDefinition, nameof(proxyTypeDefinition));
                 }
 
+#endif
                 return GetOrCreateProxyType(proxyTypeDefinition, targetType);
             }
         }

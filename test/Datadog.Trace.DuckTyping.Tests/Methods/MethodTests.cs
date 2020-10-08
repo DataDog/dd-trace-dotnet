@@ -281,43 +281,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
         [MemberData(nameof(Data))]
         public void DefaultGenericsMethods(object obscureObject)
         {
-            if (obscureObject.GetType().IsPublic || obscureObject.GetType().IsNestedPublic)
-            {
-                var duckInterface = obscureObject.As<IDefaultGenericMethodDuckType>();
-                var duckAbstract = obscureObject.As<DefaultGenericMethodDuckTypeAbstractClass>();
-                var duckVirtual = obscureObject.As<DefaultGenericMethodDuckTypeVirtualClass>();
-
-                // GetDefault int
-                Assert.Equal(0, duckInterface.GetDefault<int>());
-                Assert.Equal(0, duckAbstract.GetDefault<int>());
-                Assert.Equal(0, duckVirtual.GetDefault<int>());
-
-                // GetDefault double
-                Assert.Equal(0d, duckInterface.GetDefault<double>());
-                Assert.Equal(0d, duckAbstract.GetDefault<double>());
-                Assert.Equal(0d, duckVirtual.GetDefault<double>());
-
-                // GetDefault string
-                Assert.Null(duckInterface.GetDefault<string>());
-                Assert.Null(duckAbstract.GetDefault<string>());
-                Assert.Null(duckVirtual.GetDefault<string>());
-
-                // Wrap ints
-                Tuple<int, int> wrapper = duckInterface.Wrap(10, 20);
-                Assert.Equal(10, wrapper.Item1);
-                Assert.Equal(20, wrapper.Item2);
-
-                // Wrap string
-                Tuple<string, string> wrapper2 = duckAbstract.Wrap("Hello", "World");
-                Assert.Equal("Hello", wrapper2.Item1);
-                Assert.Equal("World", wrapper2.Item2);
-
-                // Wrap object
-                Tuple<object, string> wrapper3 = duckAbstract.Wrap<object, string>(null, "World");
-                Assert.Null(wrapper3.Item1);
-                Assert.Equal("World", wrapper3.Item2);
-            }
-            else
+#if NET452
+            if (!obscureObject.GetType().IsPublic && !obscureObject.GetType().IsNestedPublic)
             {
                 Assert.Throws<DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException>(
                     () =>
@@ -334,7 +299,43 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
                     {
                         obscureObject.As<DefaultGenericMethodDuckTypeVirtualClass>();
                     });
+                return;
             }
+#endif
+
+            var duckInterface = obscureObject.As<IDefaultGenericMethodDuckType>();
+            var duckAbstract = obscureObject.As<DefaultGenericMethodDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.As<DefaultGenericMethodDuckTypeVirtualClass>();
+
+            // GetDefault int
+            Assert.Equal(0, duckInterface.GetDefault<int>());
+            Assert.Equal(0, duckAbstract.GetDefault<int>());
+            Assert.Equal(0, duckVirtual.GetDefault<int>());
+
+            // GetDefault double
+            Assert.Equal(0d, duckInterface.GetDefault<double>());
+            Assert.Equal(0d, duckAbstract.GetDefault<double>());
+            Assert.Equal(0d, duckVirtual.GetDefault<double>());
+
+            // GetDefault string
+            Assert.Null(duckInterface.GetDefault<string>());
+            Assert.Null(duckAbstract.GetDefault<string>());
+            Assert.Null(duckVirtual.GetDefault<string>());
+
+            // Wrap ints
+            Tuple<int, int> wrapper = duckInterface.Wrap(10, 20);
+            Assert.Equal(10, wrapper.Item1);
+            Assert.Equal(20, wrapper.Item2);
+
+            // Wrap string
+            Tuple<string, string> wrapper2 = duckAbstract.Wrap("Hello", "World");
+            Assert.Equal("Hello", wrapper2.Item1);
+            Assert.Equal("World", wrapper2.Item2);
+
+            // Wrap object
+            Tuple<object, string> wrapper3 = duckAbstract.Wrap<object, string>(null, "World");
+            Assert.Null(wrapper3.Item1);
+            Assert.Equal("World", wrapper3.Item2);
         }
 
         [Theory]

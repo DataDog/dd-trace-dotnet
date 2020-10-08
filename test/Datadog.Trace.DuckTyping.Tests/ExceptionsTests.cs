@@ -215,7 +215,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         // *
-
+#if NET452
         [Fact]
         public void TypeIsNotPublicException()
         {
@@ -241,7 +241,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             public string Name { get; set; }
         }
-
+#endif
         // *
 
         [Fact]
@@ -407,7 +407,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         // *
-
+#if NET452
         [Fact]
         public void ProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException()
         {
@@ -430,7 +430,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
             }
         }
-
+#endif
         // *
 
         [Fact]
