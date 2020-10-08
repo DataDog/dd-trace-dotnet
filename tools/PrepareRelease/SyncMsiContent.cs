@@ -14,15 +14,18 @@ namespace PrepareRelease
         private const string ComponentGroupDirectoryTemplate = @"{{component_group_directory}}";
         private const string FileIdPrefixTemplate = @"{{file_id_prefix}}";
         private const string FrameworkMonikerTemplate = @"{{framework_moniker}}";
+        private const string Net461Property = "WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED";
+        private const string Net461Condition = @"
+        <Condition>" + Net461Property + "</Condition>";
 
-        private static readonly string Gac45ItemTemplate = $@"
-      <Component Win64=""$(var.Win64)"">
+        private static readonly string ItemTemplate = $@"
+      <Component Win64=""$(var.Win64)"">{Net461Condition}
         <File Id=""{FileIdPrefixTemplate}{FileNameTemplate}""
               Source=""$(var.TracerHomeDirectory)\{FrameworkMonikerTemplate}\{FileNameTemplate}""
               KeyPath=""yes"" Checksum=""yes"" Assembly="".net""/>
       </Component>";
 
-        private static readonly string Gac45FileTemplate = $@"<?xml version=""1.0"" encoding=""UTF-8""?>
+        private static readonly string FileTemplate = $@"<?xml version=""1.0"" encoding=""UTF-8""?>
 
 <Wix xmlns=""http://schemas.microsoft.com/wix/2006/wi""
      xmlns:util=""http://schemas.microsoft.com/wix/UtilExtension"">
@@ -34,6 +37,13 @@ namespace PrepareRelease
 </Wix>
 ";
 
+        private enum GacStatus
+        {
+            NotInGac = 0,
+            Net45 = 1,
+            Net461 = 2
+        }
+
         public static void Run()
         {
             CreateWixFile(
@@ -41,7 +51,13 @@ namespace PrepareRelease
                 frameworkMoniker: "net45",
                 groupDirectory: "net45.GAC",
                 filePrefix: "net45_GAC_",
-                isGac: true);
+                GacStatus.Net45);
+            CreateWixFile(
+                groupId: "Files.Managed.Net461.GAC",
+                frameworkMoniker: "net461",
+                groupDirectory: "net461.GAC",
+                filePrefix: "net461_GAC_",
+                GacStatus.Net461);
             CreateWixFile(
                 groupId: "Files.Managed.Net45",
                 frameworkMoniker: "net45");
@@ -61,7 +77,7 @@ namespace PrepareRelease
             string frameworkMoniker,
             string groupDirectory = null,
             string filePrefix = null,
-            bool isGac = false)
+            GacStatus gac = GacStatus.NotInGac)
         {
             Console.WriteLine($"Creating the {groupId} Group");
 
@@ -84,21 +100,26 @@ namespace PrepareRelease
             {
                 var fileName = Path.GetFileName(filePath);
                 var component =
-                        Gac45ItemTemplate
+                        ItemTemplate
                            .Replace(FileIdPrefixTemplate, filePrefix)
                            .Replace(FrameworkMonikerTemplate, frameworkMoniker)
                            .Replace(FileNameTemplate, fileName);
 
-                if (!isGac)
+                if (gac == GacStatus.NotInGac)
                 {
                     component = component.Replace(@" Assembly="".net""", string.Empty);
+                    component = component.Replace(Net461Condition, string.Empty);
+                }
+                else if (gac == GacStatus.Net45)
+                {
+                    component = component.Replace(Net461Property, $"NOT {Net461Property}");
                 }
 
                 components += component;
             }
 
             var wixFileContent =
-                Gac45FileTemplate
+                FileTemplate
                    .Replace(ComponentGroupDirectoryTemplate, groupDirectory)
                    .Replace(ComponentGroupIdTemplate, groupId)
                    .Replace(ComponentListTemplate, components);
