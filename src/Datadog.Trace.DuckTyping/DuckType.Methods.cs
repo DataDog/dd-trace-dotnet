@@ -124,7 +124,6 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 ILGenerator il = proxyMethod.GetILGenerator();
-                bool publicInstance = targetType.IsPublic || targetType.IsNestedPublic;
                 Type returnType = targetMethod.ReturnType;
                 List<OutputAndRefParameterData> outputAndRefParameters = null;
 
@@ -205,7 +204,7 @@ namespace Datadog.Trace.DuckTyping
                                 Type proxyParamTypeElementType = proxyParamType.GetElementType();
                                 Type targetParamTypeElementType = targetParamType.GetElementType();
 
-                                if (!targetParamTypeElementType.IsPublic && !targetParamTypeElementType.IsNestedPublic)
+                                if (!UseDirectAccessTo(targetParamTypeElementType))
                                 {
                                     targetParamType = typeof(object).MakeByRefType();
                                     targetParamTypeElementType = typeof(object);
@@ -280,7 +279,7 @@ namespace Datadog.Trace.DuckTyping
                             }
 
                             // If the target parameter type is public or if it's by ref we have to actually use the original target type.
-                            targetParamType = targetParamType.IsPublic || targetParamType.IsNestedPublic ? targetParamType : typeof(object);
+                            targetParamType = UseDirectAccessTo(targetParamType) ? targetParamType : typeof(object);
                             il.WriteSafeTypeConversion(proxyParamType, targetParamType);
 
                             targetMethodParametersTypes[idx] = targetParamType;
@@ -289,7 +288,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Call the target method
-                if (publicInstance)
+                if (UseDirectAccessTo(targetType))
                 {
                     // If the instance is public we can emit directly without any dynamic method
 
@@ -323,7 +322,7 @@ namespace Datadog.Trace.DuckTyping
                     // we can't access non public types so we have to cast to object type (in the instance object and the return type).
 
                     string dynMethodName = $"_callMethod+{targetMethod.DeclaringType.Name}.{targetMethod.Name}";
-                    returnType = (targetMethod.ReturnType.IsPublic || targetMethod.ReturnType.IsNestedPublic) && !targetMethod.ReturnType.IsGenericParameter ? targetMethod.ReturnType : typeof(object);
+                    returnType = UseDirectAccessTo(targetMethod.ReturnType) && !targetMethod.ReturnType.IsGenericParameter ? targetMethod.ReturnType : typeof(object);
 
                     // We create the dynamic method
                     Type[] originalTargetParameters = targetMethod.GetParameters().Select(p => p.ParameterType).ToArray();

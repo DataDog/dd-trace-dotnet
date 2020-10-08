@@ -45,7 +45,6 @@ namespace Datadog.Trace.DuckTyping
 
             ILGenerator il = proxyMethod.GetILGenerator();
             MethodInfo targetMethod = targetProperty.GetMethod;
-            bool publicInstance = targetType.IsPublic || targetType.IsNestedPublic;
             Type returnType = targetProperty.PropertyType;
 
             // Load the instance if needed
@@ -70,6 +69,7 @@ namespace Datadog.Trace.DuckTyping
 
                     // Call IDuckType.Instance property to get the actual value
                     il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
+                    targetParamType = typeof(object);
                 }
                 else
                 {
@@ -77,14 +77,14 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // If the target parameter type is public or if it's by ref we have to actually use the original target type.
-                targetParamType = targetParamType.IsPublic || targetParamType.IsNestedPublic || targetParamType.IsByRef ? targetParamType : typeof(object);
+                targetParamType = UseDirectAccessTo(targetParamType) || targetParamType.IsByRef ? targetParamType : typeof(object);
                 il.WriteTypeConversion(proxyParamType, targetParamType);
 
                 targetParametersTypes[pIndex] = targetParamType;
             }
 
             // Call the getter method
-            if (publicInstance)
+            if (UseDirectAccessTo(targetType))
             {
                 // If the instance is public we can emit directly without any dynamic method
 
@@ -106,7 +106,7 @@ namespace Datadog.Trace.DuckTyping
                 // we can't access non public types so we have to cast to object type (in the instance object and the return type).
 
                 string dynMethodName = $"_getNonPublicProperty+{targetProperty.DeclaringType.Name}.{targetProperty.Name}";
-                returnType = targetProperty.PropertyType.IsPublic || targetProperty.PropertyType.IsNestedPublic ? targetProperty.PropertyType : typeof(object);
+                returnType = UseDirectAccessTo(targetProperty.PropertyType) ? targetProperty.PropertyType : typeof(object);
 
                 // We create the dynamic method
                 Type[] targetParameters = GetPropertyGetParametersTypes(targetProperty, false, !targetMethod.IsStatic).ToArray();
@@ -191,7 +191,6 @@ namespace Datadog.Trace.DuckTyping
 
             ILGenerator il = proxyMethod.GetILGenerator();
             MethodInfo targetMethod = targetProperty.SetMethod;
-            bool publicInstance = targetType.IsPublic || targetType.IsNestedPublic;
 
             // Load the instance if needed
             if (!targetMethod.IsStatic)
@@ -224,14 +223,14 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // If the target parameter type is public or if it's by ref we have to actually use the original target type.
-                targetParamType = targetParamType.IsPublic || targetParamType.IsNestedPublic || targetParamType.IsByRef ? targetParamType : typeof(object);
+                targetParamType = UseDirectAccessTo(targetParamType) || targetParamType.IsByRef ? targetParamType : typeof(object);
                 il.WriteTypeConversion(proxyParamType, targetParamType);
 
                 targetParametersTypes[pIndex] = targetParamType;
             }
 
             // Call the setter method
-            if (publicInstance)
+            if (UseDirectAccessTo(targetType))
             {
                 // If the instance is public we can emit directly without any dynamic method
 
@@ -296,7 +295,7 @@ namespace Datadog.Trace.DuckTyping
             ParameterInfo[] idxParams = property.GetIndexParameters();
             foreach (ParameterInfo parameter in idxParams)
             {
-                if (originalTypes || parameter.ParameterType.IsPublic || parameter.ParameterType.IsNestedPublic)
+                if (originalTypes || UseDirectAccessTo(parameter.ParameterType))
                 {
                     yield return parameter.ParameterType;
                 }
@@ -319,7 +318,7 @@ namespace Datadog.Trace.DuckTyping
                 yield return indexType;
             }
 
-            if (originalTypes || property.PropertyType.IsPublic || property.PropertyType.IsNestedPublic)
+            if (originalTypes || UseDirectAccessTo(property.PropertyType))
             {
                 yield return property.PropertyType;
             }
