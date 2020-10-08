@@ -11,6 +11,7 @@ using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -124,9 +125,6 @@ namespace Datadog.Trace
 
             if (!string.IsNullOrWhiteSpace(Settings.CustomSamplingRules))
             {
-                // User has opted in, ensure rate limiter is used
-                RuleBasedSampler.OptInTracingWithoutLimits();
-
                 foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(Settings.CustomSamplingRules))
                 {
                     Sampler.RegisterRule(rule);
@@ -396,6 +394,72 @@ namespace Datadog.Trace
             {
                 _agentWriter.WriteTrace(trace);
             }
+        }
+
+        internal Scope StartActiveWithTags(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true, ITags tags = null)
+        {
+            var span = StartSpan(operationName, tags, parent, serviceName, startTime, ignoreActiveScope);
+            return _scopeManager.Activate(span, finishOnClose);
+        }
+
+        internal Span StartSpan(string operationName, ITags tags, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
+        {
+            if (parent == null && !ignoreActiveScope)
+            {
+                parent = _scopeManager.Active?.Span?.Context;
+            }
+
+            ITraceContext traceContext;
+
+            // try to get the trace context (from local spans) or
+            // sampling priority (from propagated spans),
+            // otherwise start a new trace context
+            if (parent is SpanContext parentSpanContext)
+            {
+                traceContext = parentSpanContext.TraceContext ??
+                               new TraceContext(this)
+                               {
+                                   SamplingPriority = parentSpanContext.SamplingPriority
+                               };
+            }
+            else
+            {
+                traceContext = new TraceContext(this);
+            }
+
+            var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;
+            var spanContext = new SpanContext(parent, traceContext, finalServiceName);
+
+            var span = new Span(spanContext, startTime, tags)
+            {
+                OperationName = operationName,
+            };
+
+            // Apply any global tags
+            if (Settings.GlobalTags.Count > 0)
+            {
+                foreach (var entry in Settings.GlobalTags)
+                {
+                    span.SetTag(entry.Key, entry.Value);
+                }
+            }
+
+            // automatically add the "env" tag if defined, taking precedence over an "env" tag set from a global tag
+            var env = Settings.Environment;
+            if (!string.IsNullOrWhiteSpace(env))
+            {
+                span.SetTag(Tags.Env, env);
+            }
+
+            // automatically add the "version" tag if defined, taking precedence over an "version" tag set from a global tag
+            var version = Settings.ServiceVersion;
+            if (!string.IsNullOrWhiteSpace(version) && string.Equals(finalServiceName, DefaultServiceName))
+            {
+                span.SetTag(Tags.Version, version);
+            }
+
+            traceContext.AddSpan(span);
+            return span;
         }
 
         internal Task FlushAsync()

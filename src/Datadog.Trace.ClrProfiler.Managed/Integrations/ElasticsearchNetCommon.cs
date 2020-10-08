@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -11,9 +12,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public const string ServiceName = "elasticsearch";
         public const string SpanType = "elasticsearch";
         public const string ComponentValue = "elasticsearch-net";
-        public const string ElasticsearchActionKey = "elasticsearch.action";
-        public const string ElasticsearchMethodKey = "elasticsearch.method";
-        public const string ElasticsearchUrlKey = "elasticsearch.url";
 
         public static readonly Type CancellationTokenType = typeof(CancellationToken);
         public static readonly Type RequestPipelineType = Type.GetType("Elasticsearch.Net.IRequestPipeline, Elasticsearch.Net");
@@ -41,25 +39,30 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string method = requestData.GetProperty("Method").GetValueOrDefault()?.ToString();
             var url = requestData.GetProperty("Uri").GetValueOrDefault()?.ToString();
 
-            var serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            var serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
             Scope scope = null;
 
             try
             {
-                scope = tracer.StartActive(OperationName, serviceName: serviceName);
+                var tags = new ElasticsearchTags();
+                scope = tracer.StartActiveWithTags(OperationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
                 span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
                 span.Type = SpanType;
-                span.SetTag(Tags.InstrumentationName, ComponentValue);
-                span.SetTag(Tags.SpanKind, SpanKinds.Client);
-                span.SetTag(ElasticsearchActionKey, requestName);
-                span.SetTag(ElasticsearchMethodKey, method);
-                span.SetTag(ElasticsearchUrlKey, url);
+                tags.InstrumentationName = ComponentValue;
+                tags.SpanKind = SpanKinds.Client;
+                tags.Action = requestName;
+                tags.Method = method;
+                tags.Url = url;
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {

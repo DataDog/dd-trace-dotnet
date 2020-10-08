@@ -189,7 +189,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManual_SetOperationName_OperationNameIsSet()
         {
-            var span = _tracer.StartSpan("Operation", null);
+            var span = _tracer.StartSpan("Operation");
 
             Assert.Equal("Operation", span.OperationName);
         }
@@ -197,7 +197,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManual_SetOperationName_ActiveScopeIsNotSet()
         {
-            _tracer.StartSpan("Operation", null);
+            _tracer.StartSpan("Operation");
 
             Assert.Null(_tracer.ActiveScope);
         }
@@ -205,7 +205,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManual_NoActiveScope_RootSpan()
         {
-            var scope = _tracer.StartActive("Operation", null);
+            var scope = _tracer.StartActive("Operation");
 
             Assert.True(scope.Span.IsRootSpan);
         }

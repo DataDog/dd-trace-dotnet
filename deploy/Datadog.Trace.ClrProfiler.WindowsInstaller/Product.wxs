@@ -15,6 +15,7 @@
              Description="$(var.ProductName)" />
 
     <Icon Id="datadog.ico" SourceFile="datadog-icon.ico"/>
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED" />
     <Property Id="ARPPRODUCTICON">datadog.ico</Property>
     <Property Id="ARPURLINFOABOUT">https://datadoghq.com/</Property>
     <Property Id="ARPHELPLINK">https://datadoghq.com/support/</Property>

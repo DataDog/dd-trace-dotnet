@@ -23,15 +23,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 len++;
             }
 
-            if (value.Tags != null)
-            {
-                len++;
-            }
-
-            if (value.Metrics != null)
-            {
-                len++;
-            }
+            len += 2; // Tags and metrics
 
             int originalOffset = offset;
 
@@ -73,29 +65,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteByte(ref bytes, offset, 1);
             }
 
-            if (value.Tags != null)
-            {
-                offset += MessagePackBinary.WriteString(ref bytes, offset, "meta");
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, value.Tags.Count);
-
-                foreach (var pair in value.Tags)
-                {
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Key);
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Value);
-                }
-            }
-
-            if (value.Metrics != null)
-            {
-                offset += MessagePackBinary.WriteString(ref bytes, offset, "metrics");
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, value.Metrics.Count);
-
-                foreach (var pair in value.Metrics)
-                {
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Key);
-                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, pair.Value);
-                }
-            }
+            offset += value.Tags.SerializeTo(ref bytes, offset);
 
             return offset - originalOffset;
         }

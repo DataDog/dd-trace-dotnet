@@ -1,5 +1,6 @@
 using System;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -18,12 +19,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return null;
             }
 
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
             Scope scope = null;
 
             try
             {
-                scope = tracer.StartActive(OperationName, serviceName: serviceName);
+                var tags = new RedisTags();
+
+                scope = tracer.StartActiveWithTags(OperationName, serviceName: serviceName, tags: tags);
                 int separatorIndex = rawCommand.IndexOf(' ');
                 string command;
 
@@ -39,13 +42,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var span = scope.Span;
                 span.Type = SpanTypes.Redis;
                 span.ResourceName = command;
-                span.SetTag(Tags.RedisRawCommand, rawCommand);
-                span.SetTag(Tags.OutHost, host);
-                span.SetTag(Tags.OutPort, port);
+                tags.RawCommand = rawCommand;
+                tags.Host = host;
+                tags.Port = port;
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {

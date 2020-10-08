@@ -5,6 +5,7 @@ using System.Linq;
 using System.Web;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AspNet
@@ -127,12 +128,17 @@ namespace Datadog.Trace.AspNet
                 string path = UriHelpers.GetRelativeUrl(httpRequest.Url, tryRemoveIds: true);
                 string resourceName = $"{httpMethod} {path.ToLowerInvariant()}";
 
-                scope = tracer.StartActive(_requestOperationName, propagatedContext);
-                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tagsFromHeaders);
+                var tags = new WebTags();
+                scope = tracer.StartActiveWithTags(_requestOperationName, propagatedContext, tags: tags);
+                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
             }

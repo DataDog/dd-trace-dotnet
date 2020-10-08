@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -217,11 +218,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static void DecorateSpan(Span span)
+        private static void DecorateSpan(Span span, GraphQLTags tags)
         {
             span.Type = SpanTypes.GraphQL;
-            span.SetTag(Tags.SpanKind, SpanKinds.Server);
-            span.SetTag(Tags.Language, TracerConstants.Language);
+            tags.SpanKind = SpanKinds.Server;
+            tags.Language = TracerConstants.Language;
         }
 
         private static Scope CreateScopeFromValidate(object document)
@@ -235,20 +236,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Tracer tracer = Tracer.Instance;
             string source = document.GetProperty<string>("OriginalQuery")
                                     .GetValueOrDefault();
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
             Scope scope = null;
 
             try
             {
-                scope = tracer.StartActive(ValidateOperationName, serviceName: serviceName);
+                var tags = new GraphQLTags();
+                scope = tracer.StartActiveWithTags(ValidateOperationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
-                DecorateSpan(span);
-                span.SetTag(Tags.GraphQLSource, source);
+                DecorateSpan(span, tags);
+                tags.Source = source;
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {
@@ -277,24 +283,29 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                                        .GetProperty<Enum>("OperationType")
                                                        .GetValueOrDefault()
                                                        .ToString();
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
             Scope scope = null;
 
             try
             {
-                scope = tracer.StartActive(ExecuteOperationName, serviceName: serviceName);
+                var tags = new GraphQLTags();
+                scope = tracer.StartActiveWithTags(ExecuteOperationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
-                DecorateSpan(span);
+                DecorateSpan(span, tags);
                 span.ResourceName = $"{operationType} {operationName ?? "operation"}";
 
-                span.SetTag(Tags.GraphQLSource, source);
-                span.SetTag(Tags.GraphQLOperationName, operationName);
-                span.SetTag(Tags.GraphQLOperationType, operationType);
+                tags.Source = source;
+                tags.OperationName = operationName;
+                tags.OperationType = operationType;
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {

@@ -6,6 +6,7 @@ using System.Net;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -145,7 +146,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                scope = tracer.StartActive("wcf.request", propagatedContext);
+                var tags = new WebTags();
+                scope = tracer.StartActiveWithTags("wcf.request", propagatedContext, tags: tags);
                 var span = scope.Span;
 
                 object requestHeaders = requestMessage.GetProperty<object>("Headers").GetValueOrDefault();
@@ -157,11 +159,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     httpMethod,
                     host,
                     httpUrl: requestHeadersTo?.AbsoluteUri,
-                    tags: tagsFromHeaders);
+                    tags,
+                    tagsFromHeaders);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {

@@ -4,7 +4,7 @@
     <RootNamespace>Datadog.Trace.ClrProfiler</RootNamespace>
 
     <!-- NuGet -->
-    <Version>1.19.4</Version>
+    <Version>1.19.6-prerelease</Version>
     <Title>Datadog APM - ClrProfiler</Title>
     <PackageDescription>
 DEPRECATED. This package exists only for backwards compatibility. If your project references this package ("Datadog.Trace.ClrProfiler.Managed") or "Datadog.Trace.AspNet", you can remove them both.
@@ -29,6 +29,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
  

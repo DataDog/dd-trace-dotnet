@@ -32,7 +32,7 @@ namespace Datadog.Trace.Agent
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
-            _apiRequestFactory = apiRequestFactory ?? new ApiWebRequestFactory();
+            _apiRequestFactory = apiRequestFactory ?? CreateRequestFactory();
 
             // report runtime details
             try
@@ -152,6 +152,15 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        private static IApiRequestFactory CreateRequestFactory()
+        {
+#if NETCOREAPP
+            return new HttpClientRequestFactory();
+#else
+            return new ApiWebRequestFactory();
+#endif
+        }
+
         private static HashSet<ulong> GetUniqueTraceIds(Span[][] traces)
         {
             var uniqueTraceIds = new HashSet<ulong>();
@@ -203,7 +212,7 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    if (response.ContentLength > 0 && Tracer.Instance.Sampler != null)
+                    if (response.ContentLength != 0 && Tracer.Instance.Sampler != null)
                     {
                         var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
 

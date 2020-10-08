@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -457,25 +458,30 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             Tracer tracer = Tracer.Instance;
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
             Scope scope = null;
 
             try
             {
-                scope = tracer.StartActive(OperationName, serviceName: serviceName);
+                var tags = new MongoDbTags();
+                scope = tracer.StartActiveWithTags(OperationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
                 span.Type = SpanTypes.MongoDb;
                 span.ResourceName = resourceName;
-                span.SetTag(Tags.DbName, databaseName);
-                span.SetTag(Tags.MongoDbQuery, query);
-                span.SetTag(Tags.MongoDbCollection, collectionName);
-                span.SetTag(Tags.OutHost, host);
-                span.SetTag(Tags.OutPort, port);
+                tags.DbName = databaseName;
+                tags.Query = query;
+                tags.Collection = collectionName;
+                tags.Host = host;
+                tags.Port = port;
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {

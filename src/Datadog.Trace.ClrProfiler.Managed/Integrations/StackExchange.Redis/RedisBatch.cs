@@ -1,7 +1,7 @@
 using System;
-using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
@@ -146,12 +146,52 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static Scope CreateScope(object batch, object message)
         {
-            var multiplexer = StackExchangeRedisHelper.GetMultiplexer(batch);
-            var config = StackExchangeRedisHelper.GetConfiguration(multiplexer);
-            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
-            var cmd = StackExchangeRedisHelper.GetRawCommand(batch, message);
+            var multiplexerData = batch.As<BatchData>().Multiplexer;
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
+            var rawCommand = message.As<MessageData>().CommandAndKey ?? "COMMAND";
 
-            return RedisHelper.CreateScope(Tracer.Instance, IntegrationName, hostAndPort.Item1, hostAndPort.Item2, cmd);
+            return RedisHelper.CreateScope(Tracer.Instance, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
+        }
+
+        /*
+         * DuckTyping Types
+         */
+
+        /// <summary>
+        /// Batch data structure for duck typing
+        /// </summary>
+        [DuckCopy]
+        public struct BatchData
+        {
+            /// <summary>
+            /// Multiplexer data structure
+            /// </summary>
+            [Duck(Name = "multiplexer", Kind = DuckKind.Field)]
+            public MultiplexerData Multiplexer;
+        }
+
+        /// <summary>
+        /// Multiplexer data structure for duck typing
+        /// </summary>
+        [DuckCopy]
+        public struct MultiplexerData
+        {
+            /// <summary>
+            /// Multiplexer configuration
+            /// </summary>
+            public string Configuration;
+        }
+
+        /// <summary>
+        /// Message data structure for duck typing
+        /// </summary>
+        [DuckCopy]
+        public struct MessageData
+        {
+            /// <summary>
+            /// Message command and key
+            /// </summary>
+            public string CommandAndKey;
         }
     }
 }

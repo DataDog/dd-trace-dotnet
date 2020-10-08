@@ -6,6 +6,43 @@
   <Fragment>
     <ComponentGroup Id="Files.Managed.Net461.GAC" Directory="net461.GAC">
       <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.Trace.AspNet.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.AspNet.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.Trace.ClrProfiler.Managed.Core.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.ClrProfiler.Managed.Core.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.Trace.ClrProfiler.Managed.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.ClrProfiler.Managed.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.Trace.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.Trace.DuckTyping.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.DuckTyping.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.Trace.MSBuild.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.MSBuild.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
         <File Id="net461_GAC_Sigil.dll"
               Source="$(var.TracerHomeDirectory)\net461\Sigil.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>

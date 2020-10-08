@@ -1,7 +1,9 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -80,11 +82,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
+            RedisNativeClientData clientData = redisNativeClient.As<RedisNativeClientData>();
+
             using (var scope = RedisHelper.CreateScope(
                 Tracer.Instance,
                 IntegrationName,
-                GetHost(redisNativeClient),
-                GetPort(redisNativeClient),
+                clientData.Host ?? string.Empty,
+                clientData.Port.ToString(CultureInfo.InvariantCulture),
                 GetRawCommand(cmdWithBinaryArgs)))
             {
                 try
@@ -97,16 +101,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     throw;
                 }
             }
-        }
-
-        private static string GetHost(object redisNativeClient)
-        {
-            return redisNativeClient.GetProperty<string>("Host").GetValueOrDefault() ?? string.Empty;
-        }
-
-        private static string GetPort(object redisNativeClient)
-        {
-            return redisNativeClient.GetProperty<int>("Port").GetValueOrDefault().ToString();
         }
 
         private static string GetRawCommand(byte[][] cmdWithBinaryArgs)
@@ -125,6 +119,27 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                             return string.Empty;
                         }
                     }));
+        }
+
+        /*
+         * Ducktyping types
+         */
+
+        /// <summary>
+        /// Redis native client struct data for duck typing
+        /// </summary>
+        [DuckCopy]
+        public struct RedisNativeClientData
+        {
+            /// <summary>
+            /// Client Hostname
+            /// </summary>
+            public string Host;
+
+            /// <summary>
+            /// Client Port
+            /// </summary>
+            public int Port;
         }
     }
 }

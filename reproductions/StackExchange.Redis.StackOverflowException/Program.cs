@@ -61,7 +61,7 @@ namespace StackExchange.Redis.StackOverflowException
 
             while (true)
             {
-                yield return new KeyValuePair<RedisKey, RedisValue>($"key{count}", $"value{count}");
+                yield return new KeyValuePair<RedisKey, RedisValue>($"StackOverflowExceptionKey{count}", $"value{count}");
                 count++;
             }
         }
