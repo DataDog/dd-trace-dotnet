@@ -148,8 +148,27 @@ namespace Datadog.Trace
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
-            // AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            // Console.CancelKeyPress += Console_CancelKeyPress;
+
+            try
+            {
+                // Registering for the AppDomain.UnhandledException event cannot be called by a security transparent method
+                // This will only happen if the Tracer is not run full-trust
+                AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
+            }
+
+            try
+            {
+                // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
+                Console.CancelKeyPress += Console_CancelKeyPress;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
+            }
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
