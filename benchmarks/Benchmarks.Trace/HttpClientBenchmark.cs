@@ -38,8 +38,7 @@ namespace Benchmarks.Trace
 
             Marshal.StructureToPtr(guid, GuidPtr, false);
 
-            new HttpClientBenchmark().SendAsync_OLD().GetAwaiter().GetResult();
-            new HttpClientBenchmark().SendAsync_NEW().GetAwaiter().GetResult();
+            new HttpClientBenchmark().SendAsync().GetAwaiter().GetResult();
         }
 
         internal class CustomHttpClientHandler : HttpClientHandler
@@ -55,23 +54,7 @@ namespace Benchmarks.Trace
         }
 
         [Benchmark]
-        public async Task<string> SendAsync_OLD()
-        {
-            var task = (Task)HttpMessageHandlerIntegration_Old.HttpMessageHandler_SendAsync(
-                Handler,
-                HttpRequest,
-                BoxedCancellationToken,
-                (int)OpCodeValue.Callvirt,
-                MdToken,
-                (long)GuidPtr);
-
-            await task;
-
-            return "OK";
-        }
-
-        [Benchmark]
-        public async Task<string> SendAsync_NEW()
+        public async Task<string> SendAsync()
         {
             var task = (Task)HttpMessageHandlerIntegration.HttpMessageHandler_SendAsync(
                 Handler,

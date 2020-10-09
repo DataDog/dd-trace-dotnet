@@ -308,6 +308,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return true;
         }
 
+        /********************
+         * Duck Typing Types
+         */
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1600 // Elements must be documented
