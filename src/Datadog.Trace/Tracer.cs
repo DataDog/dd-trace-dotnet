@@ -525,7 +525,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Environment.OSVersion.ToString());
 
                     writer.WritePropertyName("version");
-                    writer.WriteValue(typeof(Tracer).Assembly.GetName().Version.ToString());
+                    writer.WriteValue(TracerConstants.AssemblyVersion);
 
                     writer.WritePropertyName("platform");
                     writer.WriteValue(frameworkDescription.ProcessArchitecture);
