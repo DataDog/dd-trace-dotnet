@@ -686,6 +686,7 @@ namespace Datadog.Trace
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
+            Log.Warning("Application threw an unhandled exception: {0}", e.ExceptionObject);
             RunShutdownTasks();
         }
 
