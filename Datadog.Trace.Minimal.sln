@@ -62,6 +62,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.BenchmarkDotN
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Core", "src\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj", "{934FE26D-885D-4FAD-9AFC-BFA975DFCBB5}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping", "src\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj", "{09BB1816-84AA-410F-AF85-8082379D3C57}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}*SharedItemsImports = 5
@@ -266,6 +268,18 @@ Global
 		{934FE26D-885D-4FAD-9AFC-BFA975DFCBB5}.Release|x64.Build.0 = Release|Any CPU
 		{934FE26D-885D-4FAD-9AFC-BFA975DFCBB5}.Release|x86.ActiveCfg = Release|Any CPU
 		{934FE26D-885D-4FAD-9AFC-BFA975DFCBB5}.Release|x86.Build.0 = Release|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Debug|x64.Build.0 = Debug|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Debug|x86.Build.0 = Debug|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Release|x64.ActiveCfg = Release|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Release|x64.Build.0 = Release|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Release|x86.ActiveCfg = Release|Any CPU
+		{09BB1816-84AA-410F-AF85-8082379D3C57}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -288,6 +302,7 @@ Global
 		{4CF9D42F-9C63-4657-AB05-4FE9ADCA16A3} = {915263A4-822A-4A6F-87D9-930F82CBC4BE}
 		{B40276C5-764C-48AB-91A4-72F3D2A66611} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{934FE26D-885D-4FAD-9AFC-BFA975DFCBB5} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{09BB1816-84AA-410F-AF85-8082379D3C57} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
