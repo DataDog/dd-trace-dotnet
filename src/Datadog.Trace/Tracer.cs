@@ -616,17 +616,19 @@ namespace Datadog.Trace
         {
             try
             {
-#if NETFRAMEWORK
-                /*
-                // System.Web.dll is only available on .NET Framework
-                if (System.Web.Hosting.HostingEnvironment.IsHosted)
+                try
                 {
-                    // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
-                    // note that ApplicationVirtualPath includes a leading slash.
-                    return (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
+                    if (TryLoadAspNetSiteName(out var siteName))
+                    {
+                        return siteName;
+                    }
                 }
-                */
-#endif
+                catch (Exception ex)
+                {
+                    // Unable to call into System.Web.dll
+                    Log.SafeLogError(ex, "Unable to get application name through ASP.NET settings");
+                }
+
                 return Assembly.GetEntryAssembly()?.GetName().Name ??
                    ProcessHelpers.GetCurrentProcessName();
             }
@@ -635,6 +637,23 @@ namespace Datadog.Trace
                 Log.SafeLogError(ex, "Error creating default service name.");
                 return null;
             }
+        }
+
+        private static bool TryLoadAspNetSiteName(out string siteName)
+        {
+#if NETFRAMEWORK
+            // System.Web.dll is only available on .NET Framework
+            if (System.Web.Hosting.HostingEnvironment.IsHosted)
+            {
+                // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
+                // note that ApplicationVirtualPath includes a leading slash.
+                siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
+                return true;
+            }
+
+#endif
+            siteName = default;
+            return false;
         }
 
         private static IBatchStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)

@@ -126,16 +126,19 @@ namespace Datadog.Trace.Configuration
             {
                 string currentDirectory = System.Environment.CurrentDirectory;
 
-#if NETFRAMEWORK
-                /*
-                // on .NET Framework only, use application's root folder
-                // as default path when looking for datadog.json
-                if (System.Web.Hosting.HostingEnvironment.IsHosted)
+                try
                 {
-                    currentDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~");
+                    if (TryLoadHostingEnvironmentPath(out var hostingPath))
+                    {
+                        currentDirectory = hostingPath;
+                    }
                 }
-                */
-#endif
+                catch (Exception)
+                {
+                    // Unable to call into System.Web.dll
+                    // The configuration manager should not depend on a logger being bootstrapped yet
+                    // so do not do anything
+                }
 
                 // if environment variable is not set, look for default file name in the current directory
                 var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
@@ -157,6 +160,22 @@ namespace Datadog.Trace.Configuration
             }
 
             jsonConfigurationSource = default;
+            return false;
+        }
+
+        private static bool TryLoadHostingEnvironmentPath(out string hostingPath)
+        {
+#if NETFRAMEWORK
+            // on .NET Framework only, use application's root folder
+            // as default path when looking for datadog.json
+            if (System.Web.Hosting.HostingEnvironment.IsHosted)
+            {
+                hostingPath = System.Web.Hosting.HostingEnvironment.MapPath("~");
+                return true;
+            }
+
+#endif
+            hostingPath = default;
             return false;
         }
     }
