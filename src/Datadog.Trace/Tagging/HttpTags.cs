@@ -37,23 +37,27 @@ namespace Datadog.Trace.Tagging
 
         public static string ConvertStatusCodeToString(int statusCode)
         {
-            switch (statusCode)
+            if (statusCode == 200)
             {
-                case 200:
-                    return "200";
-
-                case 302:
-                    return "302";
-
-                case 500:
-                    return "500";
-
-                case 503:
-                    return "503";
-
-                default:
-                    return statusCode.ToString();
+                return "200";
             }
+
+            if (statusCode == 302)
+            {
+                return "302";
+            }
+
+            if (statusCode == 500)
+            {
+                return "500";
+            }
+
+            if (statusCode == 503)
+            {
+                return "503";
+            }
+
+            return statusCode.ToString();
         }
 
         protected override IProperty<string>[] GetAdditionalTags() => HttpTagsProperties;
