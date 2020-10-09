@@ -6,8 +6,6 @@ namespace Datadog.Trace.Tagging
     {
         internal static readonly IProperty<string>[] HttpTagsProperties =
             CommonTagsProperties.Concat(
-                new Property<HttpTags, string>(Trace.Tags.Env, t => t.Environment, (t, v) => t.Environment = v),
-                new Property<HttpTags, string>(Trace.Tags.Version, t => t.Version, (t, v) => t.Version = v),
                 new Property<HttpTags, string>(Trace.Tags.HttpStatusCode, t => t.HttpStatusCode, (t, v) => t.HttpStatusCode = v),
                 new Property<HttpTags, string>(HttpClientHandlerTypeKey, t => t.HttpClientHandlerType, (t, v) => t.HttpClientHandlerType = v),
                 new Property<HttpTags, string>(Trace.Tags.SpanKind, t => t.SpanKind, (t, v) => t.SpanKind = v),
