@@ -171,7 +171,7 @@ namespace Datadog.Trace
 #pragma warning disable CS0618 // Type or member is obsolete
                 case Trace.Tags.ForceKeep:
                 case Trace.Tags.ManualKeep:
-                    if (value.ToBoolean() ?? false)
+                    if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserKeep priority
                         Context.TraceContext.SamplingPriority = SamplingPriority.UserKeep;
@@ -180,7 +180,7 @@ namespace Datadog.Trace
                     break;
                 case Trace.Tags.ForceDrop:
                 case Trace.Tags.ManualDrop:
-                    if (value.ToBoolean() ?? false)
+                    if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserReject priority
                         Context.TraceContext.SamplingPriority = SamplingPriority.UserReject;
@@ -189,18 +189,23 @@ namespace Datadog.Trace
                     break;
 #pragma warning restore CS0618 // Type or member is obsolete
                 case Trace.Tags.Analytics:
-                    // value is a string and can represent a bool ("true") or a double ("0.5"),
-                    // so try to parse both.
-                    // note that "1" and "0" can parse as either type,
-                    // but they mean the same thing in this case, so it's fine.
-                    bool? boolean = value.ToBoolean();
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        // remove metric
+                        SetMetric(Trace.Tags.Analytics, null);
+                        return this;
+                    }
 
-                    if (boolean == true)
+                    // value is a string and can represent a bool ("true") or a double ("0.5"),
+                    // so try to parse both. note that "1" and "0" will parse as boolean, which is fine.
+                    bool? analyticsSamplingRate = value.ToBoolean();
+
+                    if (analyticsSamplingRate == true)
                     {
                         // always sample
                         SetMetric(Trace.Tags.Analytics, 1.0);
                     }
-                    else if (boolean == false)
+                    else if (analyticsSamplingRate == false)
                     {
                         // never sample
                         SetMetric(Trace.Tags.Analytics, 0.0);

@@ -31,6 +31,11 @@ namespace Datadog.Trace.ExtensionMethods
         {
             if (value == null) { throw new ArgumentNullException(nameof(value)); }
 
+            if (value.Length == 0)
+            {
+                return null;
+            }
+
             if (value.Length == 1)
             {
                 if (value[0] == 'T' || value[0] == 't' ||
