@@ -10,6 +10,9 @@ namespace Datadog.Trace.Util
     {
         private const string UnknownName = "unknown";
         private static Process _currentProcess;
+        private static string _currentProcessName;
+        private static string _currentProcessMachineName;
+        private static int _currentProcessId;
         private static bool _processDataPoisoned;
         private static bool _domainDataPoisoned;
         private static bool? _isAppInsightsAppDomain;
@@ -23,15 +26,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                try
-                {
-                    return !_processDataPoisoned ? _currentProcess.ProcessName : UnknownName;
-                }
-                catch
-                {
-                    _processDataPoisoned = true;
-                    return UnknownName;
-                }
+                return !_processDataPoisoned ? _currentProcessName : UnknownName;
             }
         }
 
@@ -39,15 +34,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                try
-                {
-                    return !_processDataPoisoned ? _currentProcess.MachineName : UnknownName;
-                }
-                catch
-                {
-                    _processDataPoisoned = true;
-                    return UnknownName;
-                }
+                return !_processDataPoisoned ? _currentProcessMachineName : UnknownName;
             }
         }
 
@@ -55,15 +42,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                try
-                {
-                    return !_processDataPoisoned ? _currentProcess.Id : -1;
-                }
-                catch
-                {
-                    _processDataPoisoned = true;
-                    return -1;
-                }
+                return !_processDataPoisoned ? _currentProcessId : -1;
             }
         }
 
@@ -115,7 +94,10 @@ namespace Datadog.Trace.Util
             {
                 if (!_processDataPoisoned && _currentProcess == null)
                 {
-                    _currentProcess = Process.GetCurrentProcess();
+                    _currentProcess = ProcessHelpers.GetCurrentProcess();
+                    _currentProcessName = ProcessHelpers.GetCurrentProcessName();
+                    _currentProcessMachineName = ProcessHelpers.GetCurrentProcessMachineName();
+                    _currentProcessId = ProcessHelpers.GetCurrentProcessId();
                 }
             }
             catch
