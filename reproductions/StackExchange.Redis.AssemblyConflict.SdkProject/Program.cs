@@ -55,7 +55,7 @@ namespace StackExchange.Redis.AssemblyConflict.SdkProject
             Console.WriteLine($"Running test with {cache.GetType().Name}");
             Console.WriteLine("Running sync operations");
 
-            const string name = "name1";
+            const string name = "AssemblyConflictSdkProjectName1";
             const string expectedValue = "value1";
 
             Console.WriteLine("Setting string...");
