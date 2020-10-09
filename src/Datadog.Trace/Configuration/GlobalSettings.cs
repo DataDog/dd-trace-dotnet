@@ -112,6 +112,16 @@ namespace Datadog.Trace.Configuration
 #endif
             };
 
+            if (TryLoadJsonConfigurationFile(configurationSource, out var jsonConfigurationSource))
+            {
+                configurationSource.Add(jsonConfigurationSource);
+            }
+
+            return configurationSource;
+        }
+
+        private static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, out IConfigurationSource jsonConfigurationSource)
+        {
             try
             {
                 string currentDirectory = System.Environment.CurrentDirectory;
@@ -135,15 +145,19 @@ namespace Datadog.Trace.Configuration
                 if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
                     File.Exists(configurationFileName))
                 {
-                    configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
+                    jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName);
+                    return true;
                 }
             }
             catch (Exception)
             {
-                // Uh oh
+                // Unable to load the JSON file from disk
+                // The configuration manager should not depend on a logger being bootstrapped yet
+                // so do not do anything
             }
 
-            return configurationSource;
+            jsonConfigurationSource = default;
+            return false;
         }
     }
 }
