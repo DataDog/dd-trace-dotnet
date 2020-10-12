@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -93,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {
-                        tags.HttpStatusCode = ((int)webResponse.StatusCode).ToString();
+                        tags.HttpStatusCode = HttpTags.ConvertStatusCodeToString((int)webResponse.StatusCode);
                     }
 
                     return response;
@@ -178,7 +179,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {
-                        tags.HttpStatusCode = ((int)webResponse.StatusCode).ToString();
+                        tags.HttpStatusCode = HttpTags.ConvertStatusCodeToString((int)webResponse.StatusCode);
                     }
 
                     return response;

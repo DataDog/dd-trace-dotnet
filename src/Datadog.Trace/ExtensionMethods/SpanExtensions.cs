@@ -71,7 +71,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         internal static void SetServerStatusCode(this Span span, int statusCode)
         {
-            span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
+            span.SetTag(Tags.HttpStatusCode, HttpTags.ConvertStatusCodeToString(statusCode));
 
             // 5xx codes are server-side errors
             if (statusCode / 100 == 5)
