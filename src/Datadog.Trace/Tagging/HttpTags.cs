@@ -45,6 +45,21 @@ namespace Datadog.Trace.Tagging
                 return "302";
             }
 
+            if (statusCode == 401)
+            {
+                return "401";
+            }
+
+            if (statusCode == 403)
+            {
+                return "403";
+            }
+
+            if (statusCode == 404)
+            {
+                return "404";
+            }
+
             if (statusCode == 500)
             {
                 return "500";
