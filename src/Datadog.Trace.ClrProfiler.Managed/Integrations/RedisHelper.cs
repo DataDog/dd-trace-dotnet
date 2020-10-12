@@ -1,4 +1,5 @@
 using System;
+using Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -46,13 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.Host = host;
                 tags.Port = port;
 
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-
-                if (analyticsSampleRate != null)
-                {
-                    tags.AnalyticsSampleRate = analyticsSampleRate;
-                }
+                tags.SetAnalyticsSampleRate(integrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

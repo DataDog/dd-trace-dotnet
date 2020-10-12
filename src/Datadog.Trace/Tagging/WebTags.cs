@@ -2,22 +2,17 @@ using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class WebTags : CommonTags
+    internal class WebTags : InstrumentationTags
     {
-        internal static readonly IProperty<string>[] WebTagsProperties =
-            CommonTagsProperties.Concat(
-                new Property<WebTags, string>(Trace.Tags.SpanKind, t => t.SpanKind, (t, v) => t.SpanKind = v),
+        protected static readonly IProperty<string>[] WebTagsProperties =
+            InstrumentationTagsProperties.Concat(
                 new Property<WebTags, string>(Trace.Tags.HttpStatusCode, t => t.StatusCode, (t, v) => t.StatusCode = v),
                 new Property<WebTags, string>(Trace.Tags.HttpMethod, t => t.HttpMethod, (t, v) => t.HttpMethod = v),
                 new Property<WebTags, string>(Trace.Tags.HttpRequestHeadersHost, t => t.HttpRequestHeadersHost, (t, v) => t.HttpRequestHeadersHost = v),
                 new Property<WebTags, string>(Trace.Tags.HttpUrl, t => t.HttpUrl, (t, v) => t.HttpUrl = v),
-                new Property<WebTags, string>(Trace.Tags.Language, t => t.Language, (t, v) => t.Language = v));
+                new ReadOnlyProperty<WebTags, string>(Trace.Tags.Language, t => t.Language));
 
-        internal static readonly IProperty<double?>[] WebMetricsProperties =
-            CommonMetricsProperties.Concat(
-                new Property<WebTags, double?>(Trace.Tags.Analytics, t => t.AnalyticsSampleRate, (t, v) => t.AnalyticsSampleRate = v));
-
-        public string SpanKind { get; set; }
+        public override string SpanKind => SpanKinds.Server;
 
         public string HttpMethod { get; set; }
 
@@ -25,14 +20,10 @@ namespace Datadog.Trace.Tagging
 
         public string HttpUrl { get; set; }
 
-        public string Language { get; set; }
+        public string Language => TracerConstants.Language;
 
         public string StatusCode { get; set; }
 
-        public double? AnalyticsSampleRate { get; set; }
-
         protected override IProperty<string>[] GetAdditionalTags() => WebTagsProperties;
-
-        protected override IProperty<double?>[] GetAdditionalMetrics() => WebMetricsProperties;
     }
 }

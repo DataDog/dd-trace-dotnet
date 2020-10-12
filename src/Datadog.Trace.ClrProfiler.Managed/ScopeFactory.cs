@@ -1,6 +1,6 @@
 using System;
 using System.Data;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -63,21 +63,11 @@ namespace Datadog.Trace.ClrProfiler
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
 
-                tags.SpanKind = SpanKinds.Client;
                 tags.HttpMethod = httpMethod?.ToUpperInvariant();
                 tags.HttpUrl = httpUrl;
                 tags.InstrumentationName = integrationName;
 
-                // set analytics sample rate if enabled
-                if (integrationName != null)
-                {
-                    var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-
-                    if (analyticsSampleRate != null)
-                    {
-                        tags.AnalyticsSampleRate = analyticsSampleRate;
-                    }
-                }
+                tags.SetAnalyticsSampleRate(integrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {
@@ -89,9 +79,9 @@ namespace Datadog.Trace.ClrProfiler
             return scope;
         }
 
-        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, string integrationName)
+        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integrationName))
+            if (!tracer.Settings.IsIntegrationEnabled(AdoNetConstants.IntegrationName))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -130,17 +120,10 @@ namespace Datadog.Trace.ClrProfiler
                 var span = scope.Span;
 
                 tags.DbType = dbType;
-                tags.InstrumentationName = integrationName;
 
                 span.AddTagsFromDbCommand(command);
 
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-
-                if (analyticsSampleRate != null)
-                {
-                    tags.AnalyticsSampleRate = analyticsSampleRate;
-                }
+                tags.SetAnalyticsSampleRate(AdoNetConstants.IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

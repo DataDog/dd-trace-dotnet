@@ -11,6 +11,8 @@ namespace Datadog.Trace.Tagging
             Setter = (tags, value) => setter((TTags)tags, value);
         }
 
+        public virtual bool IsReadOnly => false;
+
         public string Key { get; }
 
         public Func<ITags, TResult> Getter { get; }

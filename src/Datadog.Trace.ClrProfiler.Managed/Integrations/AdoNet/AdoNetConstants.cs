@@ -2,6 +2,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 {
     internal static class AdoNetConstants
     {
+        internal const string IntegrationName = "AdoNet";
+
         public static class AssemblyNames
         {
             // .NET Framework
