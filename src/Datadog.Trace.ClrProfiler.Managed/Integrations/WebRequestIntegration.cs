@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return callGetResponse(webRequest);
             }
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationName))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationName, out var tags))
             {
                 try
                 {
@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {
-                        scope.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
+                        tags.HttpStatusCode = ((int)webResponse.StatusCode).ToString();
                     }
 
                     return response;
@@ -164,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return await originalMethod(webRequest).ConfigureAwait(false);
             }
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, webRequest.Method, webRequest.RequestUri, IntegrationName))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, webRequest.Method, webRequest.RequestUri, IntegrationName, out var tags))
             {
                 try
                 {
@@ -178,7 +178,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {
-                        scope.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
+                        tags.HttpStatusCode = ((int)webResponse.StatusCode).ToString();
                     }
 
                     return response;

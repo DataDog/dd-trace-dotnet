@@ -7,6 +7,7 @@ using System.Web.Routing;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -125,7 +126,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
+                var tags = new AspNetTags();
+                scope = Tracer.Instance.StartActiveWithTags(OperationName, propagatedContext, tags: tags);
                 Span span = scope.Span;
 
                 // Fail safe to catch templates in routing values
@@ -139,14 +141,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     method: httpMethod,
                     host: host,
                     httpUrl: url,
-                    tags: tagsFromHeaders);
-                span.SetTag(Tags.AspNetRoute, route?.Url);
-                span.SetTag(Tags.AspNetController, controllerName);
-                span.SetTag(Tags.AspNetAction, actionName);
+                    tags,
+                    tagsFromHeaders);
+
+                tags.AspNetRoute = route?.Url;
+                tags.AspNetController = controllerName;
+                tags.AspNetAction = actionName;
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {

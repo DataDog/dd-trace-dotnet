@@ -91,7 +91,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (expected.Tags != null)
             {
-                Assert.Equal(expected.Tags, actual.Tags());
+                Assert.Equal((Dictionary<string, string>)expected.Tags, actual.Tags());
             }
         }
 

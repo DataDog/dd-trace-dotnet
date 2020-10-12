@@ -6,6 +6,7 @@ using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
@@ -39,7 +40,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("httpContext");
         private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("actionDescriptor");
 
-        private readonly IDatadogTracer _tracer;
+        private readonly Tracer _tracer;
         private readonly bool _isLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         public AspNetCoreDiagnosticObserver()
@@ -47,7 +48,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
         }
 
-        public AspNetCoreDiagnosticObserver(IDatadogTracer tracer)
+        public AspNetCoreDiagnosticObserver(Tracer tracer)
         {
             _tracer = tracer;
         }
@@ -167,16 +168,20 @@ namespace Datadog.Trace.DiagnosticListeners
             SpanContext propagatedContext = ExtractPropagatedContext(request);
             var tagsFromHeaders = ExtractHeaderTags(request, tracer);
 
-            Span span = tracer.StartSpan(HttpRequestInOperationName, propagatedContext)
-                              .SetTag(Tags.InstrumentationName, ComponentName);
+            var tags = new AspNetCoreTags();
+            var scope = tracer.StartActiveWithTags(HttpRequestInOperationName, propagatedContext, tags: tags);
 
-            span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tagsFromHeaders);
+            tags.InstrumentationName = ComponentName;
+
+            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
             // set analytics sample rate if enabled
             var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-            span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
-            Scope scope = tracer.ActivateSpan(span);
+            if (analyticsSampleRate != null)
+            {
+                tags.AnalyticsSampleRate = analyticsSampleRate;
+            }
         }
 
         private void OnMvcBeforeAction(object arg)
@@ -190,7 +195,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var httpContext = BeforeActionHttpContextFetcher.Fetch<HttpContext>(arg);
 
-            Span span = tracer.ScopeManager.Active?.Span;
+            Span span = tracer.ActiveScope?.Span;
 
             if (span != null)
             {
@@ -219,7 +224,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            IScope scope = tracer.ScopeManager.Active;
+            IScope scope = tracer.ActiveScope;
 
             if (scope != null)
             {
@@ -255,7 +260,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            ISpan span = tracer.ScopeManager.Active?.Span;
+            ISpan span = tracer.ActiveScope?.Span;
 
             if (span != null)
             {

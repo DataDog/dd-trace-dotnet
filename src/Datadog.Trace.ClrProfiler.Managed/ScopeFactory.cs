@@ -1,7 +1,9 @@
 using System;
 using System.Data;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
@@ -23,9 +25,12 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="httpMethod">The HTTP method used by the request.</param>
         /// <param name="requestUri">The URI requested by the request.</param>
         /// <param name="integrationName">The name of the integration creating this scope.</param>
+        /// <param name="tags">The tags associated to the scope</param>
         /// <returns>A new pre-populated scope.</returns>
-        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, string integrationName)
+        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, string integrationName, out HttpTags tags)
         {
+            tags = null;
+
             if (!tracer.Settings.IsIntegrationEnabled(integrationName))
             {
                 // integration disabled, don't create a scope, skip this trace
@@ -51,22 +56,27 @@ namespace Datadog.Trace.ClrProfiler
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
                 string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
-                scope = tracer.StartActive(OperationName, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
+                tags = new HttpTags();
+                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
 
-                span.SetTag(Tags.SpanKind, SpanKinds.Client);
-                span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
-                span.SetTag(Tags.HttpUrl, httpUrl);
-                span.SetTag(Tags.InstrumentationName, integrationName);
+                tags.SpanKind = SpanKinds.Client;
+                tags.HttpMethod = httpMethod?.ToUpperInvariant();
+                tags.HttpUrl = httpUrl;
+                tags.InstrumentationName = integrationName;
 
                 // set analytics sample rate if enabled
                 if (integrationName != null)
                 {
                     var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-                    span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                    if (analyticsSampleRate != null)
+                    {
+                        tags.AnalyticsSampleRate = analyticsSampleRate;
+                    }
                 }
             }
             catch (Exception ex)
@@ -115,15 +125,22 @@ namespace Datadog.Trace.ClrProfiler
                 string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
                 string operationName = $"{dbType}.query";
 
-                scope = tracer.StartActive(operationName, serviceName: serviceName);
+                var tags = new SqlTags();
+                scope = tracer.StartActiveWithTags(operationName, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
-                span.SetTag(Tags.DbType, dbType);
-                span.SetTag(Tags.InstrumentationName, integrationName);
+
+                tags.DbType = dbType;
+                tags.InstrumentationName = integrationName;
+
                 span.AddTagsFromDbCommand(command);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {

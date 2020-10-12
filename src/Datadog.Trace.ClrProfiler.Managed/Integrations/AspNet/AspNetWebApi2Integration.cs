@@ -9,6 +9,7 @@ using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -150,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object controllerContext,
             CancellationToken cancellationToken)
         {
-            Scope scope = CreateScope(controllerContext);
+            Scope scope = CreateScope(controllerContext, out var tags);
 
             try
             {
@@ -161,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 if (scope != null)
                 {
                     // some fields aren't set till after execution, so populate anything missing
-                    UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
+                    UpdateSpan(controllerContext, scope.Span, tags, Enumerable.Empty<KeyValuePair<string, string>>());
 
                     var statusCode = responseMessage.GetProperty("StatusCode");
                     scope.Span.SetServerStatusCode((int)statusCode.Value);
@@ -175,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 if (scope != null)
                 {
                     // some fields aren't set till after execution, so populate anything missing
-                    UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
+                    UpdateSpan(controllerContext, scope.Span, tags, Enumerable.Empty<KeyValuePair<string, string>>());
                     scope.Span.SetException(ex);
 
                     // We don't have access to the final status code at this point
@@ -200,9 +201,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScope(object controllerContext)
+        private static Scope CreateScope(object controllerContext, out AspNetTags tags)
         {
             Scope scope = null;
+            tags = null;
 
             try
             {
@@ -234,12 +236,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                scope = tracer.StartActive(OperationName, propagatedContext);
-                UpdateSpan(controllerContext, scope.Span, tagsFromHeaders);
+                tags = new AspNetTags();
+                scope = tracer.StartActiveWithTags(OperationName, propagatedContext, tags: tags);
+                UpdateSpan(controllerContext, scope.Span, tags, tagsFromHeaders);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+                if (analyticsSampleRate != null)
+                {
+                    tags.AnalyticsSampleRate = analyticsSampleRate;
+                }
             }
             catch (Exception ex)
             {
@@ -249,7 +256,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return scope;
         }
 
-        private static void UpdateSpan(object controllerContext, Span span, IEnumerable<KeyValuePair<string, string>> headerTags)
+        private static void UpdateSpan(object controllerContext, Span span, AspNetTags tags, IEnumerable<KeyValuePair<string, string>> headerTags)
         {
             try
             {
@@ -307,10 +314,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     method: method,
                     host: host,
                     httpUrl: rawUrl,
-                    tags: headerTags);
-                span.SetTag(Tags.AspNetAction, action);
-                span.SetTag(Tags.AspNetController, controller);
-                span.SetTag(Tags.AspNetRoute, route);
+                    tags,
+                    headerTags);
+
+                tags.AspNetAction = action;
+                tags.AspNetController = controller;
+                tags.AspNetRoute = route;
             }
             catch (Exception ex)
             {
