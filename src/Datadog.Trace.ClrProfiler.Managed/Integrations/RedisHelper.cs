@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return null;
             }
 
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
             Scope scope = null;
 
             try

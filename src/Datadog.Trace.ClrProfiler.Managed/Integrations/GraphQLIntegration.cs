@@ -236,7 +236,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Tracer tracer = Tracer.Instance;
             string source = document.GetProperty<string>("OriginalQuery")
                                     .GetValueOrDefault();
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
             Scope scope = null;
 
@@ -283,7 +283,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                                        .GetProperty<Enum>("OperationType")
                                                        .GetValueOrDefault()
                                                        .ToString();
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
             Scope scope = null;
 

@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string method = requestData.GetProperty("Method").GetValueOrDefault()?.ToString();
             var url = requestData.GetProperty("Uri").GetValueOrDefault()?.ToString();
 
-            var serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            var serviceName = $"{tracer.DefaultServiceName} - {ServiceName}";
 
             Scope scope = null;
 
