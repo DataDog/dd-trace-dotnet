@@ -90,7 +90,7 @@ namespace PrepareRelease
                 Path.Combine(
                     solutionDirectory,
                     "src",
-                    "Datadog.Trace.ClrProfiler.WindowsInstaller");
+                    "WindowsInstaller");
 
             var filePaths = DependencyHelpers.GetTracerBinContent(frameworkMoniker);
 

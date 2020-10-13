@@ -64,7 +64,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5", "test\
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Datadog.Trace.ClrProfiler.WindowsInstaller", "src\Datadog.Trace.ClrProfiler.WindowsInstaller\Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj", "{3054DE0E-F140-4758-B2DA-0B9470C6EDE1}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "WindowsInstaller", "src\WindowsInstaller\WindowsInstaller.wixproj", "{3054DE0E-F140-4758-B2DA-0B9470C6EDE1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{E02B141F-E7C0-46CF-B9F6-39427218E714} = {E02B141F-E7C0-46CF-B9F6-39427218E714}
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}

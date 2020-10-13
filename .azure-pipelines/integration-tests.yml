@@ -228,7 +228,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    msiOutputDirectory: src/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
+    msiOutputDirectory: src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
 
   steps:
   - task: UseDotNet@2
