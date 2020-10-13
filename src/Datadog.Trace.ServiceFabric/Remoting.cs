@@ -100,7 +100,8 @@ namespace Datadog.Trace.ServiceFabric
         /// from the server after it finishes processing a request.
         /// </summary>
         /// <param name="sender">The object that raised the event.</param>
-        /// <param name="e">The event arguments.</param>
+        /// <param name="e">The event arguments. Can be of type <see cref="ServiceRemotingResponseEventArgs"/> on success
+        /// or <see cref="ServiceRemotingFailedResponseEventArgs"/> on failure.</param>
         private static void ServiceRemotingClientEvents_ReceiveResponse(object? sender, EventArgs e)
         {
             if (!_initialized)
@@ -108,8 +109,6 @@ namespace Datadog.Trace.ServiceFabric
                 return;
             }
 
-            // var successfulResponseArg = e as ServiceRemotingResponseEventArgs;
-            // var failedResponseArg = e as ServiceRemotingFailedResponseEventArgs;
             Scope? scope = null;
 
             try
@@ -176,16 +175,14 @@ namespace Datadog.Trace.ServiceFabric
         /// after processing an incoming request.
         /// </summary>
         /// <param name="sender">The object that raised the event.</param>
-        /// <param name="e">The event arguments.</param>
+        /// <param name="e">The event arguments. Can be of type <see cref="ServiceRemotingResponseEventArgs"/> on success
+        /// or <see cref="ServiceRemotingFailedResponseEventArgs"/> on failure.</param>
         private static void ServiceRemotingServiceEvents_SendResponse(object? sender, EventArgs e)
         {
             if (!_initialized)
             {
                 return;
             }
-
-            // var successfulResponseArg = e as ServiceRemotingResponseEventArgs;
-            // var failedResponseArg = e as ServiceRemotingFailedResponseEventArgs;
 
             var scope = Tracer.Instance.ActiveScope;
 
