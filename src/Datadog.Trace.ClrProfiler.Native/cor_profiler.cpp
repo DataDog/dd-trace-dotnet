@@ -88,6 +88,9 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  // Initialize ReJIT handler
+  rejit_handler = new RejitHandler(this->info_);
+
   Info("Environment variables:");
 
   for (auto&& env_var : env_vars_to_display) {
@@ -170,6 +173,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
                      COR_PRF_MONITOR_ASSEMBLY_LOADS |
+                     COR_PRF_ENABLE_REJIT |
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
   if (DisableOptimizations()) {
@@ -1004,6 +1008,16 @@ HRESULT CorProfiler::ProcessReplacementCalls(
              " caller_name=", caller.type.name, ".", caller.name, "()",
              " target_name=", target.type.name, ".", target.name, "()");
         continue;
+      }
+
+      if (target.type.name == "Xunit.Sdk.TestOutputHelper"_W) {
+        ModuleID modules = { module_id };
+        mdMethodDef methodsDefs = { function_token };
+        Info("Requesting ReJIT for: [functionId: ", function_id, ", moduleId: ", module_id, " methodId: ", function_token, "]");
+        this->info_->RequestReJIT(1, &modules, &methodsDefs);
+        this->info_->RequestReJIT(1, &modules, &methodsDefs);
+        this->info_->RequestReJIT(1, &modules, &methodsDefs);
+        return hr;
       }
 
       const auto original_argument = pInstr->m_Arg32;
@@ -2013,5 +2027,59 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
   *pSymbolsArray = (BYTE*)pdb_start;
 #endif
   return;
+}
+
+
+// 
+// ReJIT Methods
+// 
+
+HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(
+    FunctionID functionId, ReJITID rejitId, BOOL fIsSafeToBlock) {
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+  Info("ReJITCompilationStarted: [functionId: ", functionId,
+       ", rejitId: ", rejitId, ", safeToBlock: ", fIsSafeToBlock, "]");
+
+  rejit_handler->ReJITCompilationStarted(functionId, rejitId);
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(
+    ModuleID moduleId, mdMethodDef methodId,
+    ICorProfilerFunctionControl* pFunctionControl) {
+  
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+  Info("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId,
+       "]");
+
+  if (module_id_to_info_map_.count(moduleId) > 0) {
+    rejit_handler->SetReJITParameters(moduleId, methodId, pFunctionControl,
+                                     module_id_to_info_map_[moduleId]);
+  }
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(
+    FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
+    BOOL fIsSafeToBlock) {
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+  Info("ReJITCompilationFinished: [functionId: ", functionId,
+       ", rejitId: ", rejitId, ", hrStatus: ", hrStatus,
+       ", safeToBlock: ", fIsSafeToBlock, "]");
+  rejit_handler->Dump();
+
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId,
+                                                      mdMethodDef methodId,
+                                                      FunctionID functionId,
+                                                      HRESULT hrStatus) {
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+  Info("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId,
+       ", methodId: ", methodId, ", hrStatus: ", hrStatus, "]");
+  return S_OK;
 }
 }  // namespace trace

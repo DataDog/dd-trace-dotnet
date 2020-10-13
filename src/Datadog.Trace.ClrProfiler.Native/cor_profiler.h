@@ -15,6 +15,7 @@
 #include "module_metadata.h"
 #include "pal.h"
 #include "il_rewriter.h"
+#include "rejit_handler.h"
 
 namespace trace {
 
@@ -23,6 +24,9 @@ class CorProfiler : public CorProfilerBase {
   bool is_attached_ = false;
   RuntimeInformation runtime_information_;
   std::vector<IntegrationMethod> integration_methods_;
+
+  // ReJIT handler
+  RejitHandler* rejit_handler;
 
   // Startup helper variables
   bool first_jit_compilation_completed = false;
@@ -107,6 +111,25 @@ class CorProfiler : public CorProfilerBase {
   HRESULT STDMETHODCALLTYPE Shutdown() override;
 
   HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
+
+  //
+  // ReJIT Methods
+  //
+
+  HRESULT STDMETHODCALLTYPE ReJITCompilationStarted(
+      FunctionID functionId, ReJITID rejitId, BOOL fIsSafeToBlock) override;
+
+  HRESULT STDMETHODCALLTYPE
+  GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
+                     ICorProfilerFunctionControl* pFunctionControl) override;
+
+  HRESULT STDMETHODCALLTYPE ReJITCompilationFinished(
+      FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
+      BOOL fIsSafeToBlock) override;
+
+  HRESULT STDMETHODCALLTYPE ReJITError(ModuleID moduleId, mdMethodDef methodId,
+                                       FunctionID functionId,
+                                       HRESULT hrStatus) override;
 
   //
   // ICorProfilerCallback6 methods
