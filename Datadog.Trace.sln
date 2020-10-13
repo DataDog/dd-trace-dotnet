@@ -42,7 +42,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		LICENSE-3rdparty.csv = LICENSE-3rdparty.csv
 		docs\README.md = docs\README.md
 		stylecop.json = stylecop.json
-		Test.Common.props = Test.Common.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9E5F0022-0A50-40BF-AC6A-C3078585ECAB}"
@@ -313,6 +312,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WebRequest", "test\test-applications\integrations\Samples.WebRequest\Samples.WebRequest.csproj", "{ED2742D3-2AA3-4D62-BB63-CFA43CEACCF3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-applications", "test-applications", "{9518425A-36A5-4B8F-B0B8-6137DB88441D}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\Directory.Build.props = test\test-applications\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "regression", "regression", "{498A300E-D036-49B7-A43D-821D1CAF11A5}"
 	ProjectSection(SolutionItems) = preProject
