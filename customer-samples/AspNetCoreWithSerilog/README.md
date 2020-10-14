@@ -14,3 +14,10 @@ To run this application, run the following commands:
 cd AspNetCoreWithSerilog
 dotnet run
 ```
+
+## Results
+### Successful request
+![Datadog UI for a successful request with one ASP.NET Core span](https://user-images.githubusercontent.com/13769665/96035537-fefd9380-0e17-11eb-9af1-3f5d4aeb9764.PNG)
+
+### Failing request
+![Datadog UI for a failing request with one ASP.NET Core span](https://user-images.githubusercontent.com/13769665/96035674-366c4000-0e18-11eb-9b92-4fc9d252af57.PNG)
