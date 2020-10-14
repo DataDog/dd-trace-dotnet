@@ -7,7 +7,6 @@
   <ItemGroup>
     <PackageReference Include="Datadog.Trace" Version="1.19.3" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
-    <!-- <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.3.3" /> -->
   </ItemGroup>
 
 </Project>
