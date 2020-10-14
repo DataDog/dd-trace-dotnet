@@ -4,7 +4,10 @@ namespace trace {
 
 void RejitHandlerModuleMethod::AddFunctionId(FunctionID functionId) {
   std::lock_guard<std::mutex> guard(functionsIds_lock);
+  auto moduleHandler = (RejitHandlerModule*)module;
+  auto rejitHandler = (RejitHandler*)moduleHandler->GetHandler();
   functionsIds.insert(functionId);
+  rejitHandler->_addFunctionToSet(functionId, this);
 }
 bool RejitHandlerModuleMethod::ExistFunctionId(FunctionID functionId) {
   std::lock_guard<std::mutex> guard(functionsIds_lock);
@@ -13,14 +16,15 @@ bool RejitHandlerModuleMethod::ExistFunctionId(FunctionID functionId) {
 
 void RejitHandlerModuleMethod::Dump() {
   Info("   RejitHandlerModuleMethod [MethodDef = ", methodDef,
-       ", FunctionControl = ", pFunctionControl != nullptr, "]");
+       ", FunctionControl = ", pFunctionControl != nullptr, 
+       ", FunctionInfo = ", functionInfo != nullptr, 
+       ", MethodReplacement = ", methodReplacement != nullptr, "]");
   for (auto functionId : functionsIds) {
     Info("      FunctionID: ", functionId);
   }
 }
 
-RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(
-    mdMethodDef methodDef, ICorProfilerFunctionControl* pFunctionControl) {
+RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(mdMethodDef methodDef) {
   std::lock_guard<std::mutex> guard(methods_lock);
 
   if (methods.count(methodDef) > 0) {
@@ -28,7 +32,7 @@ RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(
   }
 
   RejitHandlerModuleMethod* methodHandler =
-      new RejitHandlerModuleMethod(methodDef, pFunctionControl);
+      new RejitHandlerModuleMethod(methodDef, this);
   methods[methodDef] = methodHandler;
   return methodHandler;
 }
@@ -44,38 +48,64 @@ void RejitHandlerModule::Dump() {
   }
 }
 
-RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId,
-                                                 ModuleMetadata* metadata) {
+RejitHandlerModuleMethod* RejitHandler::GetModuleMethodFromFunctionId(
+    FunctionID functionId) {
+  {
+    std::lock_guard<std::mutex> guard(methodByFunctionId_lock);
+    if (methodByFunctionId.count(functionId) > 0) {
+      return methodByFunctionId[functionId];
+    }
+  }
+
+  ModuleID moduleId;
+  mdToken function_token = mdTokenNil;
+
+  HRESULT hr = profilerInfo->GetFunctionInfo(functionId, nullptr, &moduleId,
+                                             &function_token);
+
+  if (FAILED(hr)) {
+    Warn(
+        "RejitHandler::GetModuleMethodFromFunctionId: Call to "
+        "ICorProfilerInfo4.GetFunctionInfo() "
+        "failed for ",
+        functionId);
+    methodByFunctionId[functionId] = nullptr;
+    return nullptr;
+  }
+
+  auto moduleHandler = GetOrAddModule(moduleId);
+  auto methodHandler = moduleHandler->GetOrAddMethod(function_token);
+  methodHandler->AddFunctionId(functionId);
+  return methodHandler;
+}
+
+RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId) {
   std::lock_guard<std::mutex> guard(modules_lock);
 
   if (modules.count(moduleId) > 0) {
     return modules[moduleId];
   }
 
-  RejitHandlerModule* moduleHandler =
-      new RejitHandlerModule(moduleId, metadata);
+  RejitHandlerModule* moduleHandler = new RejitHandlerModule(moduleId, this);
   modules[moduleId] = moduleHandler;
   return moduleHandler;
 }
 
-void RejitHandler::SetReJITParameters(
+void RejitHandler::NotifyReJITParameters(
     ModuleID moduleId, mdMethodDef methodId,
     ICorProfilerFunctionControl* pFunctionControl, ModuleMetadata* metadata) {
-  GetOrAddModule(moduleId, metadata)
-      ->GetOrAddMethod(methodId, pFunctionControl);
+  auto moduleHandler = GetOrAddModule(moduleId);
+  moduleHandler->SetModuleMetadata(metadata);
+  auto methodHandler = moduleHandler->GetOrAddMethod(methodId);
+  methodHandler->SetFunctionControl(pFunctionControl);
 }
 
-void RejitHandler::ReJITCompilationStarted(FunctionID functionId,
-    ReJITID rejitId) {
-  ModuleID moduleId;
-  mdToken function_token = mdTokenNil;
+void RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId,
+                                                 ReJITID rejitId) {
+  RejitHandlerModuleMethod* methodHandler = GetModuleMethodFromFunctionId(functionId);
+  RejitHandlerModule* moduleHandler =
+      (RejitHandlerModule*)methodHandler->GetModule();
 
-  HRESULT hr = profilerInfo->GetFunctionInfo(functionId, nullptr, &moduleId,
-                                            &function_token);
-
-  auto moduleHandler = GetOrAddModule(moduleId, NULL);
-  auto methodHandler = moduleHandler->GetOrAddMethod(function_token, NULL);
-  methodHandler->AddFunctionId(functionId);
 }
 
 void RejitHandler::Dump() {
@@ -83,6 +113,11 @@ void RejitHandler::Dump() {
   for (std::pair<const ModuleID, RejitHandlerModule*> pair : this->modules) {
     pair.second->Dump();
   }
+}
+void RejitHandler::_addFunctionToSet(FunctionID functionId,
+                                     RejitHandlerModuleMethod* method) {
+  std::lock_guard<std::mutex> guard(methodByFunctionId_lock);
+  methodByFunctionId[functionId] = method;
 }
 
 }  // namespace trace

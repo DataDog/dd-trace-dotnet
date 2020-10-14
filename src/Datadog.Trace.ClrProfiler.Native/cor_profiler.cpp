@@ -626,6 +626,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     return S_OK;
   }
 
+  if (CallTarget_ShouldInstrumentMethod(function_id)) {
+    ModuleID modules = {module_id};
+    mdMethodDef methodsDefs = {function_token};
+    Info("Requesting ReJIT for: [functionId: ", function_id,
+         ", moduleId: ", module_id, " methodId: ", function_token, "]");
+    this->info_->RequestReJIT(1, &modules, &methodsDefs);
+    return S_OK;
+  }
+
   // Perform method insertion calls
   hr = ProcessInsertionCalls(module_metadata,
                              function_id,
@@ -1008,16 +1017,6 @@ HRESULT CorProfiler::ProcessReplacementCalls(
              " caller_name=", caller.type.name, ".", caller.name, "()",
              " target_name=", target.type.name, ".", target.name, "()");
         continue;
-      }
-
-      if (target.type.name == "Xunit.Sdk.TestOutputHelper"_W) {
-        ModuleID modules = { module_id };
-        mdMethodDef methodsDefs = { function_token };
-        Info("Requesting ReJIT for: [functionId: ", function_id, ", moduleId: ", module_id, " methodId: ", function_token, "]");
-        this->info_->RequestReJIT(1, &modules, &methodsDefs);
-        this->info_->RequestReJIT(1, &modules, &methodsDefs);
-        this->info_->RequestReJIT(1, &modules, &methodsDefs);
-        return hr;
       }
 
       const auto original_argument = pInstr->m_Arg32;
@@ -2040,7 +2039,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(
   Info("ReJITCompilationStarted: [functionId: ", functionId,
        ", rejitId: ", rejitId, ", safeToBlock: ", fIsSafeToBlock, "]");
 
-  rejit_handler->ReJITCompilationStarted(functionId, rejitId);
+  rejit_handler->NotifyReJITCompilationStarted(functionId, rejitId);
   return S_OK;
 }
 
@@ -2053,7 +2052,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(
        "]");
 
   if (module_id_to_info_map_.count(moduleId) > 0) {
-    rejit_handler->SetReJITParameters(moduleId, methodId, pFunctionControl,
+    rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl,
                                      module_id_to_info_map_[moduleId]);
   }
   return S_OK;
@@ -2082,4 +2081,93 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId,
        ", methodId: ", methodId, ", hrStatus: ", hrStatus, "]");
   return S_OK;
 }
+
+//
+// CallTarget Methods
+//
+
+bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
+  std::lock_guard<std::mutex> guard(callTarget_shouldInstrumentMethod_cache_lock_);
+  if (callTarget_shouldInstrumentMethod_map_.count(functionId) > 0) {
+    return callTarget_shouldInstrumentMethod_map_[functionId];
+  }
+
+  ModuleID module_id;
+  mdToken function_token = mdTokenNil;
+
+  HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id,
+                                            &function_token);
+
+  if (FAILED(hr)) {
+    Warn(
+        "CallTarget_ShouldInstrumentMethod: Call to ICorProfilerInfo4.GetFunctionInfo() "
+        "failed for ",
+        functionId);
+    callTarget_shouldInstrumentMethod_map_[functionId] = false;
+    return false;
+  }
+
+  // Verify that we have the metadata for this module
+  ModuleMetadata* module_metadata = nullptr;
+  if (module_id_to_info_map_.count(module_id) > 0) {
+    module_metadata = module_id_to_info_map_[module_id];
+  }
+
+  if (module_metadata == nullptr) {
+    // we haven't stored a ModuleMetadata for this module,
+    // so we can't modify its IL
+    callTarget_shouldInstrumentMethod_map_[functionId] = false;
+    return false;
+  }
+  
+  // get function info
+  auto caller =
+      GetFunctionInfo(module_metadata->metadata_import, function_token);
+  if (!caller.IsValid()) {
+    callTarget_shouldInstrumentMethod_map_[functionId] = false;
+    return false;
+  }
+  
+  // Get valid method replacements for this caller method
+  auto method_replacements = module_metadata->GetMethodReplacementsForCaller(caller);
+  if (method_replacements.empty()) {
+    callTarget_shouldInstrumentMethod_map_[functionId] = false;
+    return false;
+  }
+
+  for (auto& method_replacement : method_replacements) {
+    // Exit early if the method replacement isn't actually doing a replacement
+    if (method_replacement.wrapper_method.action != "ReplaceTargetMethod"_W) {
+    //if (method_replacement.wrapper_method.action != "CallTargetModification"_W) {
+      continue;
+    }
+
+    const auto& wrapper_method_key = method_replacement.wrapper_method.get_method_cache_key();
+    // Exit early if we previously failed to store the method ref for this
+    // wrapper_method
+    if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
+      continue;
+    }
+
+    
+    if (method_replacement.target_method.assembly.name == module_metadata->assemblyName &&
+        method_replacement.target_method.type_name == caller.type.name &&
+        method_replacement.target_method.method_name == caller.name) {
+
+      callTarget_shouldInstrumentMethod_map_[functionId] = true;
+      auto moduleHandler = rejit_handler->GetOrAddModule(module_id);
+      moduleHandler->SetModuleMetadata(module_metadata);
+
+      auto methodHandler = moduleHandler->GetOrAddMethod(function_token);
+      methodHandler->SetFunctionInfo(&caller);
+      methodHandler->SetMethodReplacement(&method_replacement);
+
+      return true;
+    }
+
+  }
+  callTarget_shouldInstrumentMethod_map_[functionId] = false;
+  return false;
+}
+
 }  // namespace trace

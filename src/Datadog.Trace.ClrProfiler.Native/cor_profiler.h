@@ -25,8 +25,14 @@ class CorProfiler : public CorProfilerBase {
   RuntimeInformation runtime_information_;
   std::vector<IntegrationMethod> integration_methods_;
 
-  // ReJIT handler
+  // 
+  // CallTarget Members
+  //
   RejitHandler* rejit_handler;
+  std::mutex callTarget_shouldInstrumentMethod_cache_lock_;
+  std::unordered_map<FunctionID, bool> callTarget_shouldInstrumentMethod_map_;
+
+  //
 
   // Startup helper variables
   bool first_jit_compilation_completed = false;
@@ -82,6 +88,11 @@ class CorProfiler : public CorProfilerBase {
                              const mdToken function_token);
   HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
                            mdMethodDef* ret_method_token);
+
+  //
+  // CallTarget Methods
+  //
+  bool CallTarget_ShouldInstrumentMethod(FunctionID functionId);
 
  public:
   CorProfiler() = default;
