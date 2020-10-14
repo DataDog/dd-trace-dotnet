@@ -341,8 +341,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependency-libs", "dependen
 		test\test-applications\integrations\dependency-libs\Directory.Build.props = test\test-applications\integrations\dependency-libs\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Tool", "src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.Tool.csproj", "{1FCFD2BB-1610-4522-AD5E-074127211D0D}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping", "src\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj", "{77B80C3C-6437-4627-87FA-B38ABDD5D58D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping.Tests", "test\Datadog.Trace.DuckTyping.Tests\Datadog.Trace.DuckTyping.Tests.csproj", "{91E50134-0E55-4D22-B180-6967174FCE0B}"
@@ -363,6 +361,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "artifacts", "artifacts", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{E5439139-6F94-44FA-9590-C32FCC1C7A93}"
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Console", "src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.Console.csproj", "{6199A2AD-172C-4447-9593-82793E58F45C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Standalone", "src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.Standalone.csproj", "{6199A2AD-172C-4447-9593-82793E58F45C}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

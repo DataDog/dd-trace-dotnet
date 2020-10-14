@@ -14,21 +14,21 @@
   </ItemGroup>
 
   <Target Name="BuildTool" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
-    <Message Text="Building the tool" />
+    <Message Text="Building the dotnet tool" />
     <Delete Files="@(ObjPath)" />
     <RemoveDir Directories="obj" />
     <MSBuild Targets="Restore" Projects="Datadog.Trace.Tools.Runner.Tool.csproj" />
     <MSBuild Targets="Build" Projects="Datadog.Trace.Tools.Runner.Tool.csproj" Properties="Configuration=Release" />
   </Target>
 
-  <Target Name="BuildConsole" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
-    <Message Text="Building the console app" />
+  <Target Name="BuildStandalone" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
+    <Message Text="Building the standalone app" />
     <Delete Files="@(ObjPath)" />
     <RemoveDir Directories="obj" />
-    <MSBuild Targets="Restore" Projects="Datadog.Trace.Tools.Runner.Console.csproj" />
-    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Console.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x64" />
-    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Console.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x86" />
-    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Console.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64" />
+    <MSBuild Targets="Restore" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x64" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x86" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64" />
   </Target>
 
   <Target Name="BuildCSharpProjects">
