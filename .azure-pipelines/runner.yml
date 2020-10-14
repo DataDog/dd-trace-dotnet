@@ -64,6 +64,20 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
 
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      projects: |
+        src/**/*.csproj
+        test/**/*.Tests.csproj
+        benchmarks/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet
+
   - task: MSBuild@1
     displayName: tool build
     inputs:
