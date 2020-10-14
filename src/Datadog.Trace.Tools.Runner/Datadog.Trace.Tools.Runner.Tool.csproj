@@ -12,6 +12,8 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU5100</NoWarn>
     <PackageId>dd-trace</PackageId>
+    <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
+    <OutputPath>bin\$(Configuration)\Tool</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

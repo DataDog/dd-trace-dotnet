@@ -20,8 +20,17 @@ namespace Datadog.Trace.Tools.Runner
             // And the Home folder is:
             //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\home
             // So we have to go up 3 folders.
+            string tracerHome = null;
+            if (!string.IsNullOrEmpty(options.TracerHomeFolder))
+            {
+                tracerHome = options.TracerHomeFolder;
+                if (!Directory.Exists(tracerHome))
+                {
+                    Console.Error.WriteLine("ERROR: The specified home folder doesn't exist.");
+                }
+            }
 
-            string tracerHome = DirectoryExists(options.TracerHomeFolder ?? Path.Combine(runnerFolder, "..", "..", "..", "home"));
+            tracerHome ??= DirectoryExists("Home", Path.Combine(runnerFolder, "..", "..", "..", "home"), Path.Combine(runnerFolder, "home"));
             string tracerMsBuild = FileExists(Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.MSBuild.dll"));
             string tracerIntegrations = FileExists(Path.Combine(tracerHome, "integrations.json"));
             string tracerProfiler32 = string.Empty;
@@ -75,18 +84,29 @@ namespace Datadog.Trace.Tools.Runner
             return envVars;
         }
 
-        public static string DirectoryExists(string folderName)
+        public static string DirectoryExists(string name, params string[] paths)
         {
+            string folderName = null;
+
             try
             {
-                if (!Directory.Exists(folderName))
+                for (int i = 0; i < paths.Length; i++)
                 {
-                    Console.Error.WriteLine($"Error: The directory '{folderName}' can't be found.");
+                    if (Directory.Exists(paths[i]))
+                    {
+                        folderName = paths[i];
+                        break;
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error: The directory '{folderName}' check thrown an exception: {ex}");
+                Console.Error.WriteLine($"Error: The '{name}' directory check thrown an exception: {ex}");
+            }
+
+            if (folderName == null)
+            {
+                Console.Error.WriteLine($"Error: The '{name}' directory can't be found.");
             }
 
             return folderName;

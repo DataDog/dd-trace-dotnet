@@ -1,8 +1,8 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project DefaultTargets="BuildTool" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <TracerHomeDirectory Include="$(MSBuildThisFileDirectory)home" />
     <CSharpProjects Include="..\**\*.csproj"/>
@@ -10,18 +10,33 @@
     <NativeWinX64OutputFolder Include=".\home\win-x64" />
     <NativeWinX86OutputFolder Include=".\home\win-x86" />
     <NativeLinuxX64Output Include="$(MSBuildThisFileDirectory)home\linux-x64\Datadog.Trace.ClrProfiler.Native.so" />
+    <ObjPath Include="obj\**\*" />
   </ItemGroup>
 
-  <Target Name="Build" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
-    <MSBuild Targets="Build" Projects="Datadog.Trace.Tools.Runner.csproj" Properties="Configuration=Release" />
+  <Target Name="BuildTool" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
+    <Message Text="Building the tool" />
+    <Delete Files="@(ObjPath)" />
+    <RemoveDir Directories="obj" />
+    <MSBuild Targets="Restore" Projects="Datadog.Trace.Tools.Runner.Tool.csproj" />
+    <MSBuild Targets="Build" Projects="Datadog.Trace.Tools.Runner.Tool.csproj" Properties="Configuration=Release" />
   </Target>
-  
+
+  <Target Name="BuildConsole" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
+    <Message Text="Building the console app" />
+    <Delete Files="@(ObjPath)" />
+    <RemoveDir Directories="obj" />
+    <MSBuild Targets="Restore" Projects="Datadog.Trace.Tools.Runner.Console.csproj" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Console.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x64" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Console.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x86" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Console.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64" />
+  </Target>
+
   <Target Name="BuildCSharpProjects">
     <Error Text="To build this tool a Windows machine is required." Condition="'$(OS)' != 'Windows_NT'" />
-    
+
     <ItemGroup>
       <ManagedProject Include="..\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-      
+
       <ManagedProfilerPublishProject Include="@(ManagedProject)">
         <Properties>TargetFramework=net45;PublishDir=@(TracerHomeDirectory)\net45</Properties>
       </ManagedProfilerPublishProject>
@@ -69,7 +84,7 @@
     </MSBuild>
 
   </Target>
-  
+
   <Target Name="BuildNativeWindows">
     <Message Importance="high" Text="%0A *** Native projects to build: %0A   @(NativeWinProject, '%0A   ')%0A" />
 
