@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -80,11 +81,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
+            RedisNativeClientData clientData = redisNativeClient.As<RedisNativeClientData>();
+
             using (var scope = RedisHelper.CreateScope(
                 Tracer.Instance,
                 IntegrationName,
-                GetHost(redisNativeClient),
-                GetPort(redisNativeClient),
+                clientData.Host,
+                clientData.Port.ToString(),
                 GetRawCommand(cmdWithBinaryArgs)))
             {
                 try
@@ -97,16 +100,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     throw;
                 }
             }
-        }
-
-        private static string GetHost(object redisNativeClient)
-        {
-            return redisNativeClient.GetProperty<string>("Host").GetValueOrDefault() ?? string.Empty;
-        }
-
-        private static string GetPort(object redisNativeClient)
-        {
-            return redisNativeClient.GetProperty<int>("Port").GetValueOrDefault().ToString();
         }
 
         private static string GetRawCommand(byte[][] cmdWithBinaryArgs)
@@ -125,6 +118,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                             return string.Empty;
                         }
                     }));
+        }
+
+        /*
+         * Ducktyping types
+         */
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable SA1600 // Elements must be documented
+        [DuckCopy]
+        public struct RedisNativeClientData
+        {
+            public string Host;
+            public int Port;
         }
     }
 }
