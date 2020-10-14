@@ -17,7 +17,7 @@ dotnet run
 
 ## Results
 ### Successful request
-![Datadog UI for a successful request with one ASP.NET Core span](https://user-images.githubusercontent.com/13769665/96035537-fefd9380-0e17-11eb-9af1-3f5d4aeb9764.PNG)
+![Datadog UI for a successful request with one ASP.NET Core span](https://user-images.githubusercontent.com/13769665/96036749-c2cb3280-0e19-11eb-9ff1-b9771778d032.PNG)
 
 ### Failing request
-![Datadog UI for a failing request with one ASP.NET Core span](https://user-images.githubusercontent.com/13769665/96035674-366c4000-0e18-11eb-9b92-4fc9d252af57.PNG)
+![Datadog UI for a failing request with one ASP.NET Core span](https://user-images.githubusercontent.com/13769665/96036754-c5c62300-0e19-11eb-9401-5796747b9ae3.PNG)
