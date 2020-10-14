@@ -31,20 +31,24 @@ namespace AspNetCoreWithSerilog
         {
             if (env.IsDevelopment())
             {
+                // Initialize the Datadog middleware before all other middleware to capture the outermost request
+                app.UseDatadogTracingRequestStartMiddleware();
                 app.UseDeveloperExceptionPage();
             }
             else
             {
+                // Initialize the Datadog middleware before all other middleware to capture the outermost request
+                app.UseDatadogTracingRequestStartMiddleware();
                 app.UseExceptionHandler("/Home/Error");
             }
 
-            // Both Serilog and the custom Datadog middleware in this project are added to the pipeline first so that static files
-            // are logged and traces. If you'd like to avoid creating logs and traces for these endpoints, move the
-            // app.UseStaticFiles() call before these two calls
-            app.UseSerilogRequestLogging();
+            // Initialize the remaining Datadog middleware
+            app.UseDatadogTracingExceptionLoggerMiddleware(); // Required to store exceptions in the captured span
+            app.UseDatadogSerilogLogCorrelationMiddleware(); // Optional
 
-            app.UseMiddleware<DatadogTracingMiddleware>();
-            app.UseMiddleware<DatadogManualTraceLogCorrelationMiddleware>();
+            // Initialize the Serilog middleware.
+            // This may be optionally initialized after the static file middleware so request logging does not occur for static files
+            app.UseSerilogRequestLogging();
 
             app.UseStaticFiles();
 

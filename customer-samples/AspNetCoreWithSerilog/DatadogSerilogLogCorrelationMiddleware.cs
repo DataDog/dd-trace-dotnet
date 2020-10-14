@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Serilog.Context;
 
@@ -13,11 +12,11 @@ namespace AspNetCoreWithSerilog
     /// depends on a Datadog span already being started. This middleware is not needed if
     /// automatic logs injection is enabled by setting DD_LOGS_INJECTION=true.
     /// </summary>
-    public class DatadogManualTraceLogCorrelationMiddleware
+    public class DatadogSerilogLogCorrelationMiddleware
     {
         private readonly RequestDelegate _next;
 
-        public DatadogManualTraceLogCorrelationMiddleware(RequestDelegate next)
+        public DatadogSerilogLogCorrelationMiddleware(RequestDelegate next)
         {
             _next = next;
         }
@@ -32,6 +31,15 @@ namespace AspNetCoreWithSerilog
             {
                 await _next(context);
             }
+        }
+    }
+
+    // Extension method used to add the middleware to the HTTP request pipeline.
+    public static class DatadogSerilogLogCorrelationMiddlewareExtensions
+    {
+        public static IApplicationBuilder UseDatadogSerilogLogCorrelationMiddleware(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<DatadogSerilogLogCorrelationMiddleware>();
         }
     }
 }
