@@ -33,6 +33,46 @@ namespace Datadog.Trace.Tagging
 
         public double? AnalyticsSampleRate { get; set; }
 
+        public static string ConvertStatusCodeToString(int statusCode)
+        {
+            if (statusCode == 200)
+            {
+                return "200";
+            }
+
+            if (statusCode == 302)
+            {
+                return "302";
+            }
+
+            if (statusCode == 401)
+            {
+                return "401";
+            }
+
+            if (statusCode == 403)
+            {
+                return "403";
+            }
+
+            if (statusCode == 404)
+            {
+                return "404";
+            }
+
+            if (statusCode == 500)
+            {
+                return "500";
+            }
+
+            if (statusCode == 503)
+            {
+                return "503";
+            }
+
+            return statusCode.ToString();
+        }
+
         protected override IProperty<string>[] GetAdditionalTags() => HttpTagsProperties;
 
         protected override IProperty<double?>[] GetAdditionalMetrics() => HttpMetricsProperties;

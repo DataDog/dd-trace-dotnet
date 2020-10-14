@@ -230,16 +230,9 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 var httpContext = HttpRequestInStopHttpContextFetcher.Fetch<HttpContext>(arg);
 
-                var statusCode = httpContext.Response.StatusCode;
+                var statusCode = HttpTags.ConvertStatusCodeToString(httpContext.Response.StatusCode);
 
-                if (statusCode == 200)
-                {
-                    scope.Span.SetTag(Tags.HttpStatusCode, "200");
-                }
-                else
-                {
-                    scope.Span.SetTag(Tags.HttpStatusCode, httpContext.Response.StatusCode.ToString());
-                }
+                scope.Span.SetTag(Tags.HttpStatusCode, statusCode);
 
                 if (httpContext.Response.StatusCode / 100 == 5)
                 {
