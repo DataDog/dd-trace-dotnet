@@ -29,16 +29,15 @@ namespace AspNetCoreWithSerilog
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            // Initialize the Datadog middleware before all other middleware to capture the outermost request
+            app.UseDatadogTracingRequestStartMiddleware();
+
             if (env.IsDevelopment())
             {
-                // Initialize the Datadog middleware before all other middleware to capture the outermost request
-                app.UseDatadogTracingRequestStartMiddleware();
                 app.UseDeveloperExceptionPage();
             }
             else
             {
-                // Initialize the Datadog middleware before all other middleware to capture the outermost request
-                app.UseDatadogTracingRequestStartMiddleware();
                 app.UseExceptionHandler("/Home/Error");
             }
 
