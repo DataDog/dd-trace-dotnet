@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
@@ -228,11 +229,29 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static Scope CreateScope(object multiplexer, object message)
         {
-            var config = StackExchangeRedisHelper.GetConfiguration(multiplexer);
-            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
-            var rawCommand = StackExchangeRedisHelper.GetRawCommand(multiplexer, message);
+            var multiplexerData = multiplexer.As<MultiplexerData>();
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
+            var rawCommand = message.As<MessageData>().CommandAndKey ?? "COMMAND";
 
-            return RedisHelper.CreateScope(Tracer.Instance, IntegrationName, hostAndPort.Item1, hostAndPort.Item2, rawCommand);
+            return RedisHelper.CreateScope(Tracer.Instance, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
+        }
+
+        /*
+         * DuckTyping Types
+         */
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable SA1600 // Elements must be documented
+
+        [DuckCopy]
+        public struct MultiplexerData
+        {
+            public string Configuration;
+        }
+
+        [DuckCopy]
+        public struct MessageData
+        {
+            public string CommandAndKey;
         }
     }
 }

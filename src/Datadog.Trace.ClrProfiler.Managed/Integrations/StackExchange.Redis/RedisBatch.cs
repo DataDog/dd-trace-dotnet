@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
@@ -145,12 +146,36 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static Scope CreateScope(object batch, object message)
         {
-            var multiplexer = StackExchangeRedisHelper.GetMultiplexer(batch);
-            var config = StackExchangeRedisHelper.GetConfiguration(multiplexer);
-            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
-            var cmd = StackExchangeRedisHelper.GetRawCommand(batch, message);
+            var multiplexerData = batch.As<BatchData>().Multiplexer;
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
+            var rawCommand = message.As<MessageData>().CommandAndKey ?? "COMMAND";
 
-            return RedisHelper.CreateScope(Tracer.Instance, IntegrationName, hostAndPort.Item1, hostAndPort.Item2, cmd);
+            return RedisHelper.CreateScope(Tracer.Instance, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
+        }
+
+        /*
+         * DuckTyping Types
+         */
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable SA1600 // Elements must be documented
+
+        [DuckCopy]
+        public struct BatchData
+        {
+            [Duck(Name = "multiplexer", Kind = DuckKind.Field)]
+            public MultiplexerData Multiplexer;
+        }
+
+        [DuckCopy]
+        public struct MultiplexerData
+        {
+            public string Configuration;
+        }
+
+        [DuckCopy]
+        public struct MessageData
+        {
+            public string CommandAndKey;
         }
     }
 }
