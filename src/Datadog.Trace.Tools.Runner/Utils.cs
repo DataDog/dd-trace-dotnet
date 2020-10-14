@@ -21,20 +21,20 @@ namespace Datadog.Trace.Tools.Runner
             //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\home
             // So we have to go up 3 folders.
 
-            string tracerHome = EnsureFolder(options.TracerHomeFolder ?? Path.Combine(runnerFolder, "..", "..", "..", "home"));
-            string tracerMsBuild = EnsureFile(Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.MSBuild.dll"));
-            string tracerIntegrations = EnsureFile(Path.Combine(tracerHome, "integrations.json"));
+            string tracerHome = DirectoryExists(options.TracerHomeFolder ?? Path.Combine(runnerFolder, "..", "..", "..", "home"));
+            string tracerMsBuild = FileExists(Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.MSBuild.dll"));
+            string tracerIntegrations = FileExists(Path.Combine(tracerHome, "integrations.json"));
             string tracerProfiler32 = string.Empty;
             string tracerProfiler64 = string.Empty;
 
             if (platform == Platform.Windows)
             {
-                tracerProfiler32 = EnsureFile(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
-                tracerProfiler64 = EnsureFile(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
+                tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
+                tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
             }
             else if (platform == Platform.Linux)
             {
-                tracerProfiler64 = EnsureFile(Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
+                tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
             }
 
             var envVars = new Dictionary<string, string>
@@ -75,21 +75,24 @@ namespace Datadog.Trace.Tools.Runner
             return envVars;
         }
 
-        public static string EnsureFolder(string folderName)
+        public static string DirectoryExists(string folderName)
         {
             try
             {
                 if (!Directory.Exists(folderName))
                 {
-                    Console.Error.WriteLine($"Error: The folder '{folderName}' can't be found.");
+                    Console.Error.WriteLine($"Error: The directory '{folderName}' can't be found.");
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: The directory '{folderName}' check thrown an exception: {ex}");
+            }
 
             return folderName;
         }
 
-        public static string EnsureFile(string filePath)
+        public static string FileExists(string filePath)
         {
             try
             {
@@ -98,7 +101,10 @@ namespace Datadog.Trace.Tools.Runner
                     Console.Error.WriteLine($"Error: The file '{filePath}' can't be found.");
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: The file '{filePath}' check thrown an exception: {ex}");
+            }
 
             return filePath;
         }
