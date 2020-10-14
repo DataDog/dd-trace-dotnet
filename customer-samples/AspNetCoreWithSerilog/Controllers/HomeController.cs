@@ -20,14 +20,20 @@ namespace AspNetCoreWithSerilog.Controllers
 
         public IActionResult Index()
         {
-            _logger.LogInformation("Entered Home/Index action");
+            _logger.LogInformation("Entered Home/Index action.");
             return View();
         }
 
         public IActionResult Privacy()
         {
-            _logger.LogInformation("Entered Home/Index action");
+            _logger.LogInformation("Entered Home/Index action.");
             return View();
+        }
+
+        public IActionResult CustomExceptionRoute()
+        {
+            _logger.LogInformation("Entered Home/CustomExceptionRoute action.");
+            throw new Exception("The Home/CustomExceptionRoute action was reached.");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
