@@ -10,14 +10,16 @@ namespace Datadog.Trace.OpenTracing
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<OpenTracingTracer>();
 
+        private readonly OpenTracingTracerFactory.SpanLogger _spanLogger;
+
         private readonly Dictionary<string, ICodec> _codecs;
 
-        public OpenTracingTracer(IDatadogTracer datadogTracer)
-            : this(datadogTracer, new global::OpenTracing.Util.AsyncLocalScopeManager())
+        public OpenTracingTracer(IDatadogTracer datadogTracer, OpenTracingTracerFactory.SpanLogger spanLogger)
+            : this(datadogTracer, new global::OpenTracing.Util.AsyncLocalScopeManager(), spanLogger)
         {
         }
 
-        public OpenTracingTracer(IDatadogTracer datadogTracer, global::OpenTracing.IScopeManager scopeManager)
+        public OpenTracingTracer(IDatadogTracer datadogTracer, global::OpenTracing.IScopeManager scopeManager, OpenTracingTracerFactory.SpanLogger spanLogger)
         {
             DatadogTracer = datadogTracer;
             DefaultServiceName = datadogTracer.DefaultServiceName;
@@ -27,6 +29,8 @@ namespace Datadog.Trace.OpenTracing
                 { BuiltinFormats.HttpHeaders.ToString(), new HttpHeadersCodec() },
                 { BuiltinFormats.TextMap.ToString(), new HttpHeadersCodec() } // the HttpHeadersCodec can support an unconstrained ITextMap
             };
+
+            _spanLogger = spanLogger;
         }
 
         public IDatadogTracer DatadogTracer { get; }
@@ -41,7 +45,7 @@ namespace Datadog.Trace.OpenTracing
 
         public ISpanBuilder BuildSpan(string operationName)
         {
-            return new OpenTracingSpanBuilder(this, operationName);
+            return new OpenTracingSpanBuilder(this, operationName, _spanLogger);
         }
 
         public global::OpenTracing.ISpanContext Extract<TCarrier>(IFormat<TCarrier> format, TCarrier carrier)

@@ -8,10 +8,13 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpan : ISpan
     {
-        internal OpenTracingSpan(Span span)
+        private OpenTracingTracerFactory.SpanLogger _spanLogger;
+
+        internal OpenTracingSpan(Span span, OpenTracingTracerFactory.SpanLogger spanLogger)
         {
             Span = span;
             Context = new OpenTracingSpanContext(span.Context);
+            _spanLogger = spanLogger;
         }
 
         public OpenTracingSpanContext Context { get; }
@@ -30,13 +33,29 @@ namespace Datadog.Trace.OpenTracing
 
         public string GetBaggageItem(string key) => null;
 
-        public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields) => this;
+        public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields)
+        {
+            _spanLogger(timestamp, fields);
+            return this;
+        }
 
-        public ISpan Log(string eventName) => this;
+        public ISpan Log(string eventName)
+        {
+            _spanLogger(null, new Dictionary<string, object> { ["eventName"] = eventName });
+            return this;
+        }
 
-        public ISpan Log(DateTimeOffset timestamp, string eventName) => this;
+        public ISpan Log(DateTimeOffset timestamp, string eventName)
+        {
+            _spanLogger(timestamp, new Dictionary<string, object> { ["eventName"] = eventName });
+            return this;
+        }
 
-        public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields) => this;
+        public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields)
+        {
+            _spanLogger(null, fields);
+            return this;
+        }
 
         public ISpan SetBaggageItem(string key, string value) => this;
 

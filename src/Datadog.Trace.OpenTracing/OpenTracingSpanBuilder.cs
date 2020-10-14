@@ -19,11 +19,13 @@ namespace Datadog.Trace.OpenTracing
         private Dictionary<string, string> _tags;
         private string _serviceName;
         private bool _ignoreActiveSpan;
+        private OpenTracingTracerFactory.SpanLogger _spanLogger;
 
-        internal OpenTracingSpanBuilder(OpenTracingTracer tracer, string operationName)
+        internal OpenTracingSpanBuilder(OpenTracingTracer tracer, string operationName, OpenTracingTracerFactory.SpanLogger spanLogger)
         {
             _tracer = tracer;
             _operationName = operationName;
+            _spanLogger = spanLogger;
         }
 
         public ISpanBuilder AddReference(string referenceType, global::OpenTracing.ISpanContext referencedContext)
@@ -71,7 +73,7 @@ namespace Datadog.Trace.OpenTracing
             {
                 ISpanContext parentContext = GetParentContext();
                 Span ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, _serviceName, _start, _ignoreActiveSpan);
-                var otSpan = new OpenTracingSpan(ddSpan);
+                var otSpan = new OpenTracingSpan(ddSpan, _spanLogger);
 
                 if (_tags != null)
                 {
