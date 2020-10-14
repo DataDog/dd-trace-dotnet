@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Version>1.19.3</Version>
-    <Title>Datadog APM - DD Autoinstrumentation Runner</Title>
+    <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>

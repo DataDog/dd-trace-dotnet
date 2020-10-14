@@ -17,7 +17,7 @@
   </Target>
   
   <Target Name="BuildCSharpProjects">
-    <Error Text="To build this tool a windows machine is required." Condition="'$(OS)' != 'Windows_NT'" />
+    <Error Text="To build this tool a Windows machine is required." Condition="'$(OS)' != 'Windows_NT'" />
     
     <ItemGroup>
       <ManagedProject Include="..\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
@@ -103,7 +103,7 @@
     <CheckProcessExist ProcessName="com.docker.proxy">
       <Output TaskParameter="ReturnValue" PropertyName="IsDockerRunning" />
     </CheckProcessExist>
-    <Error Text="Docker is not running. Docker is required to build the linux native binaries." Condition="!$(IsDockerRunning)" />
+    <Error Text="Docker is not running. Docker is required to build the Linux native binaries." Condition="!$(IsDockerRunning)" />
 
     <Exec Command="linux-native-build.cmd" />
   </Target>
