@@ -104,7 +104,7 @@ jobs:
 
   # Enable the Datadog Agent service for this job
   services:
-    dd_agent: dd_agent_dev_windows
+    dd_agent: dd_agent
 
   steps:
 
