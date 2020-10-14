@@ -77,6 +77,15 @@ jobs:
         !src/Datadog.Trace.Tools.Runner/*.csproj
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet
+      
+  - task: NuGetToolInstaller@1
+    displayName: install nuget
+
+  - task: NuGetCommand@2
+    displayName: nuget restore
+    inputs:
+      restoreSolution: Datadog.Trace.Native.sln
+      verbosityRestore: Normal
 
   - task: MSBuild@1
     displayName: tool build
