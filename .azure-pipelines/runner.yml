@@ -38,6 +38,7 @@ jobs:
     dd_agent: dd_agent
 
   steps:
+  - pwsh: Get-Process
 
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
   # The script exposes the required environment variables to the following steps
