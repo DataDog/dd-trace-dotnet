@@ -80,6 +80,10 @@ namespace PrepareRelease
                 "src/Datadog.Trace.ClrProfiler.Managed.Core/AssemblyInfo.cs",
                 text => MajorAssemblyVersionReplace(text, "."));
 
+            SynchronizeVersion(
+                "src/Datadog.Trace.DuckTyping/AssemblyInfo.cs",
+                text => MajorAssemblyVersionReplace(text, "."));
+
             // Native profiler updates
             SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
