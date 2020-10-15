@@ -115,9 +115,9 @@
 
   <Target Name="BuildNativeLinux_NotExist" Condition="!Exists(@(NativeLinuxX64Output))">
     <Message Importance="high" Text="%0A *** Checking for docker daemon...%0A" />
-    <CheckProcessExist ProcessName="com.docker.proxy">
+    <CheckAnyProcessExist ProcessNames="com.docker.proxy;dockerd">
       <Output TaskParameter="ReturnValue" PropertyName="IsDockerRunning" />
-    </CheckProcessExist>
+    </CheckAnyProcessExist>
     <Error Text="Docker is not running. Docker is required to build the Linux native binaries." Condition="!$(IsDockerRunning)" />
 
     <Exec Command="linux-native-build.cmd" />
@@ -134,22 +134,31 @@
     <Delete Files="@(NativeWinX86Output)" />
   </Target>
 
-  <UsingTask TaskName="CheckProcessExist" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+  <UsingTask TaskName="CheckAnyProcessExist" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
     <ParameterGroup>
-      <ProcessName ParameterType="System.String" Required="true" />
+      <ProcessNames ParameterType="System.String" Required="true" />
       <ReturnValue ParameterType="System.Boolean" Output="true" />
     </ParameterGroup>
     <Task>
       <Using Namespace="System.Diagnostics" />
       <Code Type="Fragment" Language="cs">
         <![CDATA[
-        try
+        ReturnValue = false;
+        foreach (var pName in ProcessNames.Split(';')) 
         {
-          ReturnValue = Process.GetProcessesByName(ProcessName)?.Length > 0;
-        }
-        catch
-        {
-          ReturnValue = false;
+            try 
+            {
+                ReturnValue = Process.GetProcessesByName(pName)?.Length > 0;
+            }
+            catch
+            {
+                ReturnValue = false;
+            }
+            
+            if (ReturnValue)
+            {
+                break;
+            }
         }
         ]]>
       </Code>
