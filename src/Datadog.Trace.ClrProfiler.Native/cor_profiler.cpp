@@ -360,6 +360,32 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
        module_info.assembly.name == "System.Private.CoreLib"_W)) {
     corlib_module_loaded = true;
     corlib_app_domain_id = app_domain_id;
+    
+    ComPtr<IUnknown> metadata_interfaces;
+    auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+    
+    // Get the IMetaDataAssemblyImport interface to get metadata from the
+    // managed assembly
+    const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+    const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
+
+    hr = assembly_import->GetAssemblyProps(
+        assembly_metadata.assembly_token, &corAssemblyProperty.ppbPublicKey,
+        &corAssemblyProperty.pcbPublicKey, &corAssemblyProperty.pulHashAlgId,
+        NULL, 0, NULL, &corAssemblyProperty.pMetaData,
+        &corAssemblyProperty.assemblyFlags);
+
+    if (FAILED(hr)) {
+      Warn("AssemblyLoadFinished failed to get properties for COR assembly ");
+    }
+
+    corAssemblyProperty.szName = module_info.assembly.name;
+
+    Info("COR library: ", corAssemblyProperty.szName, " ",
+         corAssemblyProperty.pMetaData.usMajorVersion, ".",
+         corAssemblyProperty.pMetaData.usMinorVersion, ".",
+         corAssemblyProperty.pMetaData.usRevisionNumber);
+
     return S_OK;
   }
 
@@ -773,7 +799,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
     const FunctionID function_id,
     const ModuleID module_id,
     const mdToken function_token,
-    const trace::FunctionInfo& caller,
+    const FunctionInfo& caller,
     const std::vector<MethodReplacement> method_replacements) {
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
@@ -881,10 +907,12 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       // to define a MethodSpec
       // Generate a method ref token for the wrapper method
       mdMemberRef wrapper_method_ref = mdMemberRefNil;
+      mdTypeRef wrapper_type_ref = mdTypeRefNil;
       auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
                                                               module_id,
                                                               method_replacement,
-                                                              wrapper_method_ref);
+                                                              wrapper_method_ref, 
+                                                              wrapper_type_ref);
       if (!generated_wrapper_method_ref) {
         Warn(
           "JITCompilationStarted failed to obtain wrapper method ref for ",
@@ -1203,10 +1231,12 @@ HRESULT CorProfiler::ProcessInsertionCalls(
 
     // Generate a method ref token for the wrapper method
     mdMemberRef wrapper_method_ref = mdMemberRefNil;
+    mdTypeRef wrapper_type_ref = mdTypeRefNil;
     auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
                                                             module_id,
                                                             method_replacement,
-                                                            wrapper_method_ref);
+                                                            wrapper_method_ref, 
+                                                            wrapper_type_ref);
     if (!generated_wrapper_method_ref) {
       Warn(
         "JITCompilationStarted failed to obtain wrapper method ref for ",
@@ -1248,9 +1278,12 @@ bool CorProfiler::GetWrapperMethodRef(
     ModuleMetadata* module_metadata,
     ModuleID module_id,
     const MethodReplacement& method_replacement,
-    mdMemberRef& wrapper_method_ref) {
+    mdMemberRef& wrapper_method_ref,
+    mdTypeRef& wrapper_type_ref) {
   const auto& wrapper_method_key =
       method_replacement.wrapper_method.get_method_cache_key();
+  const auto& wrapper_type_key =
+      method_replacement.wrapper_method.get_type_cache_key();
 
   // Resolve the MethodRef now. If the method is generic, we'll need to use it
   // later to define a MethodSpec
@@ -1301,7 +1334,8 @@ bool CorProfiler::GetWrapperMethodRef(
                                               wrapper_method_ref);
     }
   }
-
+  module_metadata->TryGetWrapperParentTypeRef(wrapper_type_key,
+                                              wrapper_type_ref);
   return true;
 }
 
@@ -2173,7 +2207,8 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
 HRESULT CorProfiler::CallTarget_RewriterCallback(
     FunctionID functionId, RejitHandlerModule* moduleHandler,
     RejitHandlerModuleMethod* methodHandler) {
-  /*Info("CallTarget_RewriterCallback !!!: ", functionId);
+  Info("CallTarget_RewriterCallback !!!: ", functionId);
+  /*
   Info(moduleHandler->GetModuleId());
   Info(moduleHandler->GetModuleMetadata()->app_domain_id);
   Info(moduleHandler->GetModuleMetadata()->assemblyName);

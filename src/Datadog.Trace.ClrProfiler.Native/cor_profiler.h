@@ -25,15 +25,6 @@ class CorProfiler : public CorProfilerBase {
   RuntimeInformation runtime_information_;
   std::vector<IntegrationMethod> integration_methods_;
 
-  // 
-  // CallTarget Members
-  //
-  RejitHandler* rejit_handler;
-  std::mutex callTarget_shouldInstrumentMethod_cache_lock_;
-  std::unordered_map<FunctionID, bool> callTarget_shouldInstrumentMethod_map_;
-
-  //
-
   // Startup helper variables
   bool first_jit_compilation_completed = false;
 
@@ -45,6 +36,16 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
   bool is_desktop_iis = false;
+  
+  //
+  // CallTarget Members
+  //
+  RejitHandler* rejit_handler;
+  std::mutex callTarget_shouldInstrumentMethod_cache_lock_;
+  std::unordered_map<FunctionID, bool> callTarget_shouldInstrumentMethod_map_;
+
+  // Cor assembly properties
+  AssemblyProperty corAssemblyProperty{};
 
   //
   // OpCodes helper
@@ -63,7 +64,8 @@ class CorProfiler : public CorProfilerBase {
   bool GetWrapperMethodRef(ModuleMetadata* module_metadata,
                            ModuleID module_id,
                            const MethodReplacement& method_replacement,
-                           mdMemberRef& wrapper_method_ref);
+                           mdMemberRef& wrapper_method_ref,
+                           mdTypeRef& wrapper_type_ref);
   HRESULT ProcessReplacementCalls(ModuleMetadata* module_metadata,
                                          const FunctionID function_id,
                                          const ModuleID module_id,

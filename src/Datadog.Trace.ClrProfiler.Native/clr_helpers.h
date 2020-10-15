@@ -9,12 +9,37 @@
 #include "com_ptr.h"
 #include "integration.h"
 #include <set>
+#include "util.h"
 
 namespace trace {
 class ModuleMetadata;
 
 const size_t kNameMaxSize = 1024;
 const ULONG kEnumeratorMax = 256;
+
+const auto SystemBoolean = "System.Boolean"_W;
+const auto SystemChar = "System.Char"_W;
+const auto SystemByte = "System.Byte"_W;
+const auto SystemSByte = "System.SByte"_W;
+const auto SystemUInt16 = "System.UInt16"_W;
+const auto SystemInt16 = "System.Int16"_W;
+const auto SystemInt32 = "System.Int32"_W;
+const auto SystemUInt32 = "System.UInt32"_W;
+const auto SystemInt64 = "System.Int64"_W;
+const auto SystemUInt64 = "System.UInt64"_W;
+const auto SystemSingle = "System.Single"_W;
+const auto SystemDouble = "System.Double"_W;
+const auto SystemIntPtr = "System.IntPtr"_W;
+const auto SystemUIntPtr = "System.UIntPtr"_W;
+const auto SystemString = "System.String"_W;
+const auto SystemObject = "System.Object"_W;
+const auto SystemException = "System.Exception"_W;
+const auto SystemTypeName = "System.Type"_W;
+const auto GetTypeFromHandleMethodName = "GetTypeFromHandle"_W;
+const auto RuntimeTypeHandleTypeName = "System.RuntimeTypeHandle"_W;
+const auto SystemReflectionMethodBaseName = "System.Reflection.MethodBase"_W;
+const auto GetMethodFromHandleMethodName = "GetMethodFromHandle"_W;
+const auto RuntimeMethodHandleTypeName = "System.RuntimeMethodHandle"_W;
 
 template <typename T>
 class EnumeratorIterator;
@@ -235,6 +260,18 @@ struct AssemblyMetadata {
   bool IsValid() const { return module_id != 0; }
 };
 
+struct AssemblyProperty {
+  const void* ppbPublicKey;
+  ULONG pcbPublicKey;
+  ULONG pulHashAlgId;
+  ASSEMBLYMETADATA pMetaData{};
+  WSTRING szName;
+  DWORD assemblyFlags = 0;
+
+  AssemblyProperty()
+      : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(""_W) {}
+};
+
 struct ModuleInfo {
   const ModuleID id;
   const WSTRING path;
@@ -262,6 +299,54 @@ struct TypeInfo {
   bool IsValid() const { return id != 0; }
 };
 
+enum MethodArgumentTypeFlag {
+  TypeFlagByRef = 0x01,
+  TypeFlagVoid = 0x02,
+  TypeFlagBoxedType = 0x04
+};
+
+struct FunctionMethodArgument {
+  ULONG offset;
+  ULONG length;
+  PCCOR_SIGNATURE pbBase;
+  mdToken GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit,
+                     mdAssemblyRef corLibRef) const;
+  WSTRING GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const;
+  int GetTypeFlags(unsigned& elementType) const;
+  ULONG GetSignature(PCCOR_SIGNATURE& data) const;
+};
+
+struct FunctionMethodSignature {
+ private:
+  PCCOR_SIGNATURE pbBase;
+  unsigned len;
+  ULONG numberOfTypeArguments = 0;
+  ULONG numberOfArguments = 0;
+  FunctionMethodArgument ret{};
+  std::vector<FunctionMethodArgument> params;
+
+ public:
+  FunctionMethodSignature() : pbBase(nullptr), len(0) {}
+  FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer) {
+    pbBase = pb;
+    len = cbBuffer;
+  };
+  ULONG NumberOfTypeArguments() const { return numberOfTypeArguments; }
+  ULONG NumberOfArguments() const { return numberOfArguments; }
+  WSTRING str() const { return HexStr(pbBase, len); }
+  FunctionMethodArgument GetRet() const { return ret; }
+  std::vector<FunctionMethodArgument> GetMethodArguments() const { return params; }
+  HRESULT TryParse();
+  bool operator==(const FunctionMethodSignature& other) const {
+    return memcmp(pbBase, other.pbBase, len);
+  }
+  CorCallingConvention CallingConvention() const {
+    return CorCallingConvention(len == 0 ? 0 : pbBase[0]);
+  }
+  bool IsEmpty() const { return len == 0; }
+};
+
+
 struct FunctionInfo {
   const mdToken id;
   const WSTRING name;
@@ -270,29 +355,35 @@ struct FunctionInfo {
   const MethodSignature signature;
   const MethodSignature function_spec_signature;
   const mdToken method_def_id;
+  FunctionMethodSignature method_signature;
 
   FunctionInfo()
-      : id(0), name(""_W), type({}), is_generic(false), method_def_id(0) {}
+      : id(0), name(""_W), type({}), is_generic(false), method_def_id(0), method_signature({}) {}
 
   FunctionInfo(mdToken id, WSTRING name, TypeInfo type,
                MethodSignature signature,
-               MethodSignature function_spec_signature, mdToken method_def_id)
+               MethodSignature function_spec_signature, 
+               mdToken method_def_id,
+               FunctionMethodSignature method_signature)
       : id(id),
         name(name),
         type(type),
         is_generic(true),
         signature(signature),
         function_spec_signature(function_spec_signature),
-        method_def_id(method_def_id) {}
+        method_def_id(method_def_id),
+        method_signature(method_signature) {}
 
   FunctionInfo(mdToken id, WSTRING name, TypeInfo type,
-               MethodSignature signature)
+               MethodSignature signature,
+               FunctionMethodSignature method_signature)
       : id(id),
         name(name),
         type(type),
         is_generic(false),
         signature(signature),
-        method_def_id(0) {}
+        method_def_id(0),
+        method_signature(method_signature) {}
 
   bool IsValid() const { return id != 0; }
 };

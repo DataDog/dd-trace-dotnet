@@ -2,6 +2,8 @@
 
 ILRewriter* ILRewriterWrapper::GetILRewriter() const { return m_ILRewriter; }
 
+ILInstr* ILRewriterWrapper::GetCurrentILInstr() const { return m_ILInstr; }
+
 void ILRewriterWrapper::SetILPosition(ILInstr* pILInstr) {
   m_ILInstr = pILInstr;
 }
@@ -108,12 +110,13 @@ void ILRewriterWrapper::CreateArray(const mdTypeRef type_ref,
   m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
-void ILRewriterWrapper::CallMember(const mdMemberRef& member_ref,
+ILInstr* ILRewriterWrapper::CallMember(const mdMemberRef& member_ref,
                                    const bool is_virtual) const {
   ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
   pNewInstr->m_opcode = is_virtual ? CEE_CALLVIRT : CEE_CALL;
   pNewInstr->m_Arg32 = member_ref;
   m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
 }
 
 void ILRewriterWrapper::Duplicate() const {
@@ -153,4 +156,178 @@ bool ILRewriterWrapper::ReplaceMethodCalls(
   }
 
   return modified;
+}
+
+// https://github.com/dotnet/coreclr/blob/master/src/vm/stubgen.cpp EmitLDIND_T
+void ILRewriterWrapper::LoadIND(unsigned elementType) const {
+  unsigned op_code = 0;
+  switch (elementType) {
+    case ELEMENT_TYPE_I1:
+      op_code = CEE_LDIND_I1;
+      break;
+    case ELEMENT_TYPE_BOOLEAN:  // fall through
+    case ELEMENT_TYPE_U1:
+      op_code = CEE_LDIND_U1;
+      break;
+    case ELEMENT_TYPE_I2:
+      op_code = CEE_LDIND_I2;
+      break;
+    case ELEMENT_TYPE_CHAR:  // fall through
+    case ELEMENT_TYPE_U2:
+      op_code = CEE_LDIND_U2;
+      break;
+    case ELEMENT_TYPE_I4:
+      op_code = CEE_LDIND_I4;
+      break;
+    case ELEMENT_TYPE_U4:
+      op_code = CEE_LDIND_U4;
+      break;
+    case ELEMENT_TYPE_I8:
+      op_code = CEE_LDIND_I8;
+      break;
+    case ELEMENT_TYPE_U8:
+      op_code = CEE_LDIND_I8;
+      break;
+    case ELEMENT_TYPE_R4:
+      op_code = CEE_LDIND_R4;
+      break;
+    case ELEMENT_TYPE_R8:
+      op_code = CEE_LDIND_R8;
+      break;
+    case ELEMENT_TYPE_PTR:    // same as ELEMENT_TYPE_I
+    case ELEMENT_TYPE_FNPTR:  // same as ELEMENT_TYPE_I
+    case ELEMENT_TYPE_I:
+      op_code = CEE_LDIND_I;
+      break;
+    case ELEMENT_TYPE_U:
+      op_code = CEE_LDIND_I;
+      break;
+    case ELEMENT_TYPE_STRING:  // fall through
+    case ELEMENT_TYPE_CLASS:   // fall through
+    case ELEMENT_TYPE_ARRAY:
+    case ELEMENT_TYPE_SZARRAY:
+    case ELEMENT_TYPE_OBJECT:
+      op_code = CEE_LDIND_REF;
+      break;
+
+    case ELEMENT_TYPE_INTERNAL: {
+      op_code = CEE_LDIND_REF;
+      break;
+    }
+    default:
+      break;
+  }
+
+  if (op_code > 0) {
+    ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+    pNewInstr->m_opcode = op_code;
+    m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  }
+}
+
+ILInstr* ILRewriterWrapper::LoadToken(mdToken token) const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = CEE_LDTOKEN;
+  pNewInstr->m_Arg32 = token;
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::StLocal(unsigned index) const {
+  static const std::vector<OPCODE> opcodes = {
+      CEE_STLOC_0,
+      CEE_STLOC_1,
+      CEE_STLOC_2,
+      CEE_STLOC_3,
+  };
+
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  if (index <= 3) {
+    pNewInstr->m_opcode = opcodes[index];
+  } else if (index <= 255) {
+    pNewInstr->m_opcode = CEE_STLOC_S;
+    pNewInstr->m_Arg8 = static_cast<UINT8>(index);
+  } else {
+    pNewInstr->m_opcode = CEE_STLOC;
+    pNewInstr->m_Arg16 = index;
+  }
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::LoadLocal(unsigned index) const {
+  static const std::vector<OPCODE> opcodes = {
+      CEE_LDLOC_0,
+      CEE_LDLOC_1,
+      CEE_LDLOC_2,
+      CEE_LDLOC_3,
+  };
+
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  if (index <= 3) {
+    pNewInstr->m_opcode = opcodes[index];
+  } else if (index <= 255) {
+    pNewInstr->m_opcode = CEE_LDLOC_S;
+    pNewInstr->m_Arg8 = static_cast<UINT8>(index);
+  } else {
+    pNewInstr->m_opcode = CEE_LDLOC;
+    pNewInstr->m_Arg16 = index;
+  }
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::LoadLocalAddress(unsigned index) const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  if (index <= 255) {
+    pNewInstr->m_opcode = CEE_LDLOCA_S;
+    pNewInstr->m_Arg8 = static_cast<UINT8>(index);
+  } else {
+    pNewInstr->m_opcode = CEE_LDLOCA;
+    pNewInstr->m_Arg16 = index;
+  }
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::Return() const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = CEE_RET;
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::Rethrow() const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = CEE_RETHROW;
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::EndFinally() const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = CEE_ENDFINALLY;
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::NOP() const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = CEE_NOP;
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::CreateInstr(unsigned opCode) const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = opCode;
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+ILInstr* ILRewriterWrapper::InitObj(mdTypeRef type_ref) const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = CEE_INITOBJ;
+  pNewInstr->m_Arg32 = type_ref;
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
 }

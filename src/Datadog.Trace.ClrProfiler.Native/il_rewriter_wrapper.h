@@ -14,6 +14,7 @@ class ILRewriterWrapper {
       : m_ILRewriter(il_rewriter), m_ILInstr(nullptr) {}
 
   ILRewriter* GetILRewriter() const;
+  ILInstr* GetCurrentILInstr() const;
   void SetILPosition(ILInstr* pILInstr);
   void Pop() const;
   void LoadNull() const;
@@ -25,12 +26,24 @@ class ILRewriterWrapper {
   void UnboxAny(mdTypeRef type_ref) const;
   void UnboxAnyAfter(mdTypeRef type_ref) const;
   void CreateArray(mdTypeRef type_ref, INT32 size) const;
-  void CallMember(const mdMemberRef& member_ref, bool is_virtual) const;
+  ILInstr* CallMember(const mdMemberRef& member_ref, bool is_virtual) const;
   void Duplicate() const;
   void BeginLoadValueIntoArray(INT32 arrayIndex) const;
   void EndLoadValueIntoArray() const;
   bool ReplaceMethodCalls(mdMemberRef old_method_ref,
                           mdMemberRef new_method_ref) const;
+  void LoadIND(unsigned elementType) const;
+  ILInstr* LoadToken(mdToken token) const;
+  ILInstr* StLocal(unsigned index) const;
+  ILInstr* LoadLocal(unsigned index) const;
+  ILInstr* LoadLocalAddress(unsigned index) const;
+  ILInstr* Return() const;
+  ILInstr* NOP() const;
+  ILInstr* Rethrow() const;
+  ILInstr* EndFinally() const;
+
+  ILInstr* CreateInstr(unsigned opCode) const;
+  ILInstr* InitObj(mdTypeRef type_ref) const;
 };
 
 #endif  // DD_CLR_PROFILER_IL_REWRITER_WRAPPER_H_
