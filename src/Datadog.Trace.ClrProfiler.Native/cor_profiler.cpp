@@ -89,7 +89,12 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // Initialize ReJIT handler
-  rejit_handler = new RejitHandler(this->info_);
+  rejit_handler = new RejitHandler(
+      this->info_, 
+      [this](FunctionID fId, RejitHandlerModule* mod,
+                          RejitHandlerModuleMethod* method) {
+        return this->CallTarget_RewriterCallback(fId, mod, method);
+      });
 
   Info("Environment variables:");
 
@@ -2035,20 +2040,17 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(
     FunctionID functionId, ReJITID rejitId, BOOL fIsSafeToBlock) {
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-  Info("ReJITCompilationStarted: [functionId: ", functionId,
+  Debug("ReJITCompilationStarted: [functionId: ", functionId,
        ", rejitId: ", rejitId, ", safeToBlock: ", fIsSafeToBlock, "]");
-
-  rejit_handler->NotifyReJITCompilationStarted(functionId, rejitId);
-  return S_OK;
+  return rejit_handler->NotifyReJITCompilationStarted(functionId, rejitId);
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(
     ModuleID moduleId, mdMethodDef methodId,
     ICorProfilerFunctionControl* pFunctionControl) {
-  
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-  Info("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId,
+  
+  Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId,
        "]");
 
   if (module_id_to_info_map_.count(moduleId) > 0) {
@@ -2061,12 +2063,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(
     FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
     BOOL fIsSafeToBlock) {
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-
-  Info("ReJITCompilationFinished: [functionId: ", functionId,
+  Debug("ReJITCompilationFinished: [functionId: ", functionId,
        ", rejitId: ", rejitId, ", hrStatus: ", hrStatus,
        ", safeToBlock: ", fIsSafeToBlock, "]");
-  rejit_handler->Dump();
+  if (debug_logging_enabled) {
+    rejit_handler->Dump();
+  }
 
   return S_OK;
 }
@@ -2075,9 +2077,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId,
                                                       mdMethodDef methodId,
                                                       FunctionID functionId,
                                                       HRESULT hrStatus) {
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-
-  Info("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId,
+  Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId,
        ", methodId: ", methodId, ", hrStatus: ", hrStatus, "]");
   return S_OK;
 }
@@ -2121,7 +2121,7 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
   }
   
   // get function info
-  auto caller =
+  const auto caller =
       GetFunctionInfo(module_metadata->metadata_import, function_token);
   if (!caller.IsValid()) {
     callTarget_shouldInstrumentMethod_map_[functionId] = false;
@@ -2159,8 +2159,8 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
       moduleHandler->SetModuleMetadata(module_metadata);
 
       auto methodHandler = moduleHandler->GetOrAddMethod(function_token);
-      methodHandler->SetFunctionInfo(&caller);
-      methodHandler->SetMethodReplacement(&method_replacement);
+      methodHandler->SetFunctionInfo(new FunctionInfo(caller));
+      methodHandler->SetMethodReplacement(new MethodReplacement(method_replacement));
 
       return true;
     }
@@ -2168,6 +2168,27 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
   }
   callTarget_shouldInstrumentMethod_map_[functionId] = false;
   return false;
+}
+
+HRESULT CorProfiler::CallTarget_RewriterCallback(
+    FunctionID functionId, RejitHandlerModule* moduleHandler,
+    RejitHandlerModuleMethod* methodHandler) {
+  /*Info("CallTarget_RewriterCallback !!!: ", functionId);
+  Info(moduleHandler->GetModuleId());
+  Info(moduleHandler->GetModuleMetadata()->app_domain_id);
+  Info(moduleHandler->GetModuleMetadata()->assemblyName);
+  Info(methodHandler->GetMethodDef());
+  Info(methodHandler->GetFunctionInfo() != nullptr);
+  Info(methodHandler->GetFunctionInfo()->id);
+  Info(methodHandler->GetFunctionInfo()->method_def_id);
+  Info(methodHandler->GetFunctionInfo()->name);
+  Info(methodHandler->GetFunctionInfo()->type.name);
+  Info(methodHandler->GetFunctionControl() != nullptr);
+  Info(methodHandler->GetMethodReplacement() != nullptr);
+  Info(methodHandler->GetMethodReplacement()->wrapper_method.method_name);
+  Info(methodHandler->GetMethodReplacement()->wrapper_method.type_name);
+  Info(methodHandler->GetMethodReplacement()->wrapper_method.assembly.name);*/
+  return S_OK;
 }
 
 }  // namespace trace
