@@ -2161,7 +2161,7 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
     callTarget_shouldInstrumentMethod_map_[functionId] = false;
     return false;
   }
-  
+
   // Get valid method replacements for this caller method
   auto method_replacements = module_metadata->GetMethodReplacementsForCaller(caller);
   if (method_replacements.empty()) {
@@ -2188,12 +2188,19 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
         method_replacement.target_method.type_name == caller.type.name &&
         method_replacement.target_method.method_name == caller.name) {
 
+      auto functionInfo = new FunctionInfo(caller);
+      hr = functionInfo->method_signature.TryParse();
+      if (FAILED(hr)) {
+        callTarget_shouldInstrumentMethod_map_[functionId] = false;
+        return false;
+      }
+
       callTarget_shouldInstrumentMethod_map_[functionId] = true;
       auto moduleHandler = rejit_handler->GetOrAddModule(module_id);
       moduleHandler->SetModuleMetadata(module_metadata);
 
       auto methodHandler = moduleHandler->GetOrAddMethod(function_token);
-      methodHandler->SetFunctionInfo(new FunctionInfo(caller));
+      methodHandler->SetFunctionInfo(functionInfo);
       methodHandler->SetMethodReplacement(new MethodReplacement(method_replacement));
 
       return true;
