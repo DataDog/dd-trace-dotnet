@@ -35,11 +35,6 @@
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Sigil.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_lzma.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\lzma.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>
