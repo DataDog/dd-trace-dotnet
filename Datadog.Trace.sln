@@ -205,6 +205,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD0
 		build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
 		build\docker\Datadog.Trace.ClrProfiler.Native.sh = build\docker\Datadog.Trace.ClrProfiler.Native.sh
 		build\docker\dotnet.dockerfile = build\docker\dotnet.dockerfile
+		build\docker\linux-build.dockerfile = build\docker\linux-build.dockerfile
 		build\docker\native.dockerfile = build\docker\native.dockerfile
 		build\docker\package.dockerfile = build\docker\package.dockerfile
 		build\docker\package.sh = build\docker\package.sh
