@@ -42,8 +42,18 @@ class ModuleMetadata {
   mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
   mdTypeRef callTargetTypeRef = mdTypeRefNil;
   mdTypeRef callTargetStateTypeRef = mdTypeRefNil;
-  mdMemberRef beginMemberRef = mdMemberRefNil;
-  mdMemberRef endMemberRef = mdMemberRefNil;
+  
+  mdMemberRef beginSlowMemberRef = mdMemberRefNil;
+  mdMemberRef beginP0MemberRef = mdMemberRefNil;
+  mdMemberRef beginP1MemberRef = mdMemberRefNil;
+  mdMemberRef beginP2MemberRef = mdMemberRefNil;
+  mdMemberRef beginP3MemberRef = mdMemberRefNil;
+  mdMemberRef beginP4MemberRef = mdMemberRefNil;
+  mdMemberRef beginP5MemberRef = mdMemberRefNil;
+
+  mdMemberRef endReturnMemberRef = mdMemberRefNil;
+  mdMemberRef endVoidMemberRef = mdMemberRefNil;
+
   mdMemberRef logExceptionRef = mdMemberRefNil;
   mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
