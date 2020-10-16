@@ -36,7 +36,10 @@ if ($env:os -eq "Windows_NT")
 } 
 else 
 {
-    $url = "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$($release_version)/datadog-dotnet-apm-$($release_version).tar.gz"
+    # File version is the same as the release version without the prerelease suffix.
+    $file_version = $release_version.replace("-prerelease", "")
+
+    $url = "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$($release_version)/datadog-dotnet-apm-$($file_version).tar.gz"
 
     Invoke-WebRequest -Uri $url -OutFile linux.tar.gz
     mkdir release
