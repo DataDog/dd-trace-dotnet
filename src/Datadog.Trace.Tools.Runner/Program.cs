@@ -29,8 +29,6 @@ namespace Datadog.Trace.Tools.Runner
                 location = Environment.GetCommandLineArgs().FirstOrDefault();
             }
 
-            string executableName = Path.GetFileNameWithoutExtension(location).Replace(" ", string.Empty);
-
             RunnerFolder = Path.GetDirectoryName(location);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
