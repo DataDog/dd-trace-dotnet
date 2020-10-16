@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -86,8 +87,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             using (var scope = RedisHelper.CreateScope(
                 Tracer.Instance,
                 IntegrationName,
-                clientData.Host,
-                clientData.Port.ToString(),
+                clientData.Host ?? string.Empty,
+                clientData.Port.ToString(CultureInfo.InvariantCulture),
                 GetRawCommand(cmdWithBinaryArgs)))
             {
                 try
@@ -123,12 +124,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /*
          * Ducktyping types
          */
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable SA1600 // Elements must be documented
+
+        /// <summary>
+        /// Redis native client struct data for duck typing
+        /// </summary>
         [DuckCopy]
         public struct RedisNativeClientData
         {
+            /// <summary>
+            /// Client Hostname
+            /// </summary>
             public string Host;
+
+            /// <summary>
+            /// Client Port
+            /// </summary>
             public int Port;
         }
     }

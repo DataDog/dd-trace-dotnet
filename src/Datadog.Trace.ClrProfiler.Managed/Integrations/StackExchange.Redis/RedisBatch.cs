@@ -156,25 +156,41 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /*
          * DuckTyping Types
          */
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable SA1600 // Elements must be documented
 
+        /// <summary>
+        /// Batch data structure for duck typing
+        /// </summary>
         [DuckCopy]
         public struct BatchData
         {
+            /// <summary>
+            /// Multiplexer data structure
+            /// </summary>
             [Duck(Name = "multiplexer", Kind = DuckKind.Field)]
             public MultiplexerData Multiplexer;
         }
 
+        /// <summary>
+        /// Multiplexer data structure for duck typing
+        /// </summary>
         [DuckCopy]
         public struct MultiplexerData
         {
+            /// <summary>
+            /// Multiplexer configuration
+            /// </summary>
             public string Configuration;
         }
 
+        /// <summary>
+        /// Message data structure for duck typing
+        /// </summary>
         [DuckCopy]
         public struct MessageData
         {
+            /// <summary>
+            /// Message command and key
+            /// </summary>
             public string CommandAndKey;
         }
     }
