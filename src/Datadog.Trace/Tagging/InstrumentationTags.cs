@@ -19,14 +19,9 @@ namespace Datadog.Trace.Tagging
 
         public void SetAnalyticsSampleRate(string integrationName, TracerSettings settings, bool enabledWithGlobalSetting)
         {
-            if (integrationName != null)
+            if (integrationName != null && settings != null)
             {
-                var analyticsSampleRate = settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting);
-
-                if (analyticsSampleRate != null)
-                {
-                    AnalyticsSampleRate = analyticsSampleRate;
-                }
+                AnalyticsSampleRate = settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting);
             }
         }
 
