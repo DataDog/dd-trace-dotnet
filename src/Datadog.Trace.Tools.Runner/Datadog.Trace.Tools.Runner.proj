@@ -32,8 +32,6 @@
   </Target>
 
   <Target Name="BuildCSharpProjects">
-    <Error Text="To build this tool a Windows machine is required." Condition="'$(OS)' != 'Windows_NT'" />
-
     <ItemGroup>
       <ManagedProject Include="..\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
 
