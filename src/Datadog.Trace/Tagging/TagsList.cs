@@ -1,15 +1,13 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Tagging
 {
     internal abstract class TagsList : ITags
     {
-        private static readonly IProperty<string>[] EmptyTags = new IProperty<string>[0];
-        private static readonly IProperty<double?>[] EmptyMetrics = new IProperty<double?>[0];
-
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
 
@@ -234,15 +232,9 @@ namespace Datadog.Trace.Tagging
             return sb.ToString();
         }
 
-        protected virtual IProperty<string>[] GetAdditionalTags()
-        {
-            return EmptyTags;
-        }
+        protected virtual IProperty<string>[] GetAdditionalTags() => ArrayHelper.Empty<IProperty<string>>();
 
-        protected virtual IProperty<double?>[] GetAdditionalMetrics()
-        {
-            return EmptyMetrics;
-        }
+        protected virtual IProperty<double?>[] GetAdditionalMetrics() => ArrayHelper.Empty<IProperty<double?>>();
 
         private int WriteTags(ref byte[] bytes, int offset)
         {

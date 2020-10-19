@@ -21,8 +21,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MethodBuilder<TDelegate>));
 
-        private static readonly Type[] EmptyTypeArray = new Type[0];
-
         /// <summary>
         /// Feature flag used primarily for forcing testing of the token lookup strategy.
         /// </summary>
@@ -46,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private MethodBase _methodBase;
         private Type _concreteType;
         private string _concreteTypeName;
-        private Type[] _parameters = EmptyTypeArray;
+        private Type[] _parameters = ArrayHelper.Empty<Type>();
         private Type[] _explicitParameterTypes = null;
         private string[] _namespaceAndNameFilter = null;
         private Type[] _declaringTypeGenerics;
