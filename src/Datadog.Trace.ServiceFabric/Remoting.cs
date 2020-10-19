@@ -76,14 +76,7 @@ namespace Datadog.Trace.ServiceFabric
                     string samplingPriorityTag = span.GetTag(Tags.SamplingPriority);
                     int? samplingPriority = int.TryParse(samplingPriorityTag, NumberStyles.None, CultureInfo.InvariantCulture, out int priority) ? priority : (int?)null;
 
-                    var context = new PropagationContext
-                                  {
-                                      TraceId = span.TraceId,
-                                      ParentSpanId = span.SpanId,
-                                      SamplingPriority = samplingPriority,
-                                      Origin = span.GetTag(Tags.Origin)
-                                  };
-
+                    var context = new PropagationContext(span.TraceId, span.SpanId, samplingPriority, span.GetTag(Tags.Origin));
                     InjectContext(context, messageHeaders);
                 }
             }
@@ -231,26 +224,18 @@ namespace Datadog.Trace.ServiceFabric
 
             try
             {
-                if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out _))
+                messageHeaders.TryAddHeader(HttpHeaderNames.TraceId, context, ctx => BitConverter.GetBytes(ctx.TraceId));
+
+                messageHeaders.TryAddHeader(HttpHeaderNames.ParentId, context, ctx => BitConverter.GetBytes(ctx.ParentSpanId));
+
+                if (context.SamplingPriority != null)
                 {
-                    messageHeaders.AddHeader(HttpHeaderNames.TraceId, BitConverter.GetBytes(context.TraceId));
+                    messageHeaders.TryAddHeader(HttpHeaderNames.SamplingPriority, context, ctx => BitConverter.GetBytes(ctx.SamplingPriority!.Value));
                 }
 
-                if (!messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out _))
+                if (!string.IsNullOrEmpty(context.Origin))
                 {
-                    messageHeaders.AddHeader(HttpHeaderNames.ParentId, BitConverter.GetBytes(context.ParentSpanId));
-                }
-
-                if (context.SamplingPriority != null &&
-                    !messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out _))
-                {
-                    messageHeaders.AddHeader(HttpHeaderNames.SamplingPriority, BitConverter.GetBytes(context.SamplingPriority.Value));
-                }
-
-                if (!string.IsNullOrEmpty(context.Origin) &&
-                    !messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out _))
-                {
-                    messageHeaders.AddHeader(HttpHeaderNames.Origin, Encoding.UTF8.GetBytes(context.Origin));
+                    messageHeaders.TryAddHeader(HttpHeaderNames.Origin, context, ctx => Encoding.UTF8.GetBytes(ctx.Origin));
                 }
             }
             catch (Exception ex)
@@ -263,33 +248,18 @@ namespace Datadog.Trace.ServiceFabric
         {
             try
             {
-                PropagationContext propagationContext = default;
+                ulong traceId = messageHeaders.TryGetHeaderValueUInt64(HttpHeaderNames.TraceId) ?? 0;
+                ulong parentSpanId = messageHeaders.TryGetHeaderValueUInt64(HttpHeaderNames.ParentId) ?? 0;
+                int? samplingPriority = null;
+                string? origin = null;
 
-                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.TraceId, out byte[] traceIdBytes) &&
-                    traceIdBytes?.Length == sizeof(ulong))
+                if (traceId > 0 && parentSpanId > 0)
                 {
-                    propagationContext.TraceId = BitConverter.ToUInt64(traceIdBytes, 0);
+                    samplingPriority = messageHeaders.TryGetHeaderValueInt32(HttpHeaderNames.SamplingPriority);
+                    origin = messageHeaders.TryGetHeaderValueString(HttpHeaderNames.Origin);
                 }
 
-                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.ParentId, out byte[] parentIdBytes) &&
-                    parentIdBytes?.Length == sizeof(ulong))
-                {
-                    propagationContext.ParentSpanId = BitConverter.ToUInt64(parentIdBytes, 0);
-                }
-
-                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.SamplingPriority, out byte[] samplingPriorityBytes) &&
-                    samplingPriorityBytes?.Length == sizeof(int))
-                {
-                    propagationContext.SamplingPriority = BitConverter.ToInt32(samplingPriorityBytes, 0);
-                }
-
-                if (messageHeaders.TryGetHeaderValue(HttpHeaderNames.Origin, out byte[] originBytes) &&
-                    originBytes?.Length > 0)
-                {
-                    propagationContext.Origin = Encoding.UTF8.GetString(originBytes);
-                }
-
-                return propagationContext;
+                return new PropagationContext(traceId, parentSpanId, samplingPriority, origin);
             }
             catch (Exception ex)
             {

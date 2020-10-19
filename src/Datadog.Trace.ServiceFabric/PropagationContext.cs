@@ -1,10 +1,18 @@
 namespace Datadog.Trace.ServiceFabric
 {
-    internal struct PropagationContext
+    internal readonly struct PropagationContext
     {
-        public ulong TraceId;
-        public ulong ParentSpanId;
-        public int? SamplingPriority;
-        public string Origin;
+        public readonly ulong TraceId;
+        public readonly ulong ParentSpanId;
+        public readonly int? SamplingPriority;
+        public readonly string? Origin;
+
+        public PropagationContext(ulong traceId, ulong parentSpanId, int? samplingPriority, string? origin)
+        {
+            TraceId = traceId;
+            ParentSpanId = parentSpanId;
+            SamplingPriority = samplingPriority;
+            Origin = origin;
+        }
     }
 }
