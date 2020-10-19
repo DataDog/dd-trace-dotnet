@@ -5,7 +5,7 @@ namespace Datadog.Trace.DogStatsd
 {
     internal class NoOpStatsd : IBatchStatsd
     {
-        public Batch StartBatch() => default;
+        public Batch StartBatch(int initialCapacity = 0) => default;
 
         public string GetCommand<TCommandType, T>(string name, T value, double sampleRate = 1, string[] tags = null)
             where TCommandType : Statsd.Metric
