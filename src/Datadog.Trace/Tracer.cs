@@ -72,7 +72,7 @@ namespace Datadog.Trace
         {
         }
 
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IStatsd statsd)
+        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IBatchStatsd statsd)
         {
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -227,7 +227,7 @@ namespace Datadog.Trace
 
         internal ISampler Sampler { get; }
 
-        internal IStatsd Statsd { get; private set; }
+        internal IBatchStatsd Statsd { get; private set; }
 
         /// <summary>
         /// Create a new Tracer with the given parameters
@@ -616,7 +616,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
+        private static IBatchStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
         {
             try
             {
@@ -642,7 +642,7 @@ namespace Datadog.Trace
                 }
 
                 var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
-                return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags.ToArray());
+                return new BatchStatsd(statsdUdp, prefix: string.Empty, constantTags.ToArray());
             }
             catch (Exception ex)
             {
@@ -704,8 +704,9 @@ namespace Datadog.Trace
                 // use the count of Tracer instances as the heartbeat value
                 // to estimate the number of "live" Tracers than can potentially
                 // send traces to the Agent
-                Statsd.AppendSetGauge(TracerMetricNames.Health.Heartbeat, _liveTracerCount);
-                Statsd.Send();
+
+                var command = Statsd.GetSetGauge(TracerMetricNames.Health.Heartbeat, _liveTracerCount);
+                Statsd.Send(command);
             }
         }
     }
