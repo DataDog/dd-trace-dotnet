@@ -490,7 +490,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   ModuleMetadata* module_metadata = new ModuleMetadata(
       metadata_import, metadata_emit, assembly_import, assembly_emit,
       module_info.assembly.name, app_domain_id,
-      module_version_id, filtered_integrations);
+      module_version_id, filtered_integrations, &corAssemblyProperty);
 
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
