@@ -65,27 +65,34 @@ namespace Datadog.Trace.ServiceFabric
 
             GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
 
-            var tracer = Tracer.Instance;
-            var span = CreateSpan(tracer, context: null, SpanKinds.Client, eventArgs, messageHeaders);
-
             try
             {
-                // inject propagation context into message headers for distributed tracing
-                if (messageHeaders != null)
-                {
-                    string samplingPriorityTag = span.GetTag(Tags.SamplingPriority);
-                    int? samplingPriority = int.TryParse(samplingPriorityTag, NumberStyles.None, CultureInfo.InvariantCulture, out int priority) ? priority : (int?)null;
+                var tracer = Tracer.Instance;
+                var span = CreateSpan(tracer, context: null, SpanKinds.Client, eventArgs, messageHeaders);
 
-                    var context = new PropagationContext(span.TraceId, span.SpanId, samplingPriority, span.GetTag(Tags.Origin));
-                    InjectContext(context, messageHeaders);
+                try
+                {
+                    // inject propagation context into message headers for distributed tracing
+                    if (messageHeaders != null)
+                    {
+                        string samplingPriorityTag = span.GetTag(Tags.SamplingPriority);
+                        int? samplingPriority = int.TryParse(samplingPriorityTag, NumberStyles.None, CultureInfo.InvariantCulture, out int priority) ? priority : (int?)null;
+
+                        var context = new PropagationContext(span.TraceId, span.SpanId, samplingPriority, span.GetTag(Tags.Origin));
+                        InjectContext(context, messageHeaders);
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error injecting message headers.");
+                }
+
+                tracer.ActivateSpan(span);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error injecting message headers.");
+                Log.Error(ex, "Error creating or activating span.");
             }
-
-            tracer.ActivateSpan(span);
         }
 
         /// <summary>
