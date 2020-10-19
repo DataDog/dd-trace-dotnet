@@ -4,10 +4,10 @@ namespace Datadog.Trace.ServiceFabric
     {
         public readonly ulong TraceId;
         public readonly ulong ParentSpanId;
-        public readonly int? SamplingPriority;
+        public readonly SamplingPriority? SamplingPriority;
         public readonly string? Origin;
 
-        public PropagationContext(ulong traceId, ulong parentSpanId, int? samplingPriority, string? origin)
+        public PropagationContext(ulong traceId, ulong parentSpanId, SamplingPriority? samplingPriority, string? origin)
         {
             TraceId = traceId;
             ParentSpanId = parentSpanId;

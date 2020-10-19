@@ -75,10 +75,10 @@ namespace Datadog.Trace.ServiceFabric
                     // inject propagation context into message headers for distributed tracing
                     if (messageHeaders != null)
                     {
-                        string samplingPriorityTag = span.GetTag(Tags.SamplingPriority);
-                        int? samplingPriority = int.TryParse(samplingPriorityTag, NumberStyles.None, CultureInfo.InvariantCulture, out int priority) ? priority : (int?)null;
+                        SamplingPriority? samplingPriority = span.Context.TraceContext?.SamplingPriority ?? span.Context.SamplingPriority;
+                        string? origin = span.GetTag(Tags.Origin);
+                        var context = new PropagationContext(span.TraceId, span.SpanId, samplingPriority, origin);
 
-                        var context = new PropagationContext(span.TraceId, span.SpanId, samplingPriority, span.GetTag(Tags.Origin));
                         InjectContext(context, messageHeaders);
                     }
                 }
@@ -125,7 +125,7 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
-            PropagationContext propagationContext = default;
+            PropagationContext? propagationContext = null;
             SpanContext? spanContext = null;
 
             try
@@ -135,9 +135,9 @@ namespace Datadog.Trace.ServiceFabric
                 {
                     propagationContext = ExtractContext(messageHeaders);
 
-                    if (propagationContext.TraceId > 0 && propagationContext.ParentSpanId > 0)
+                    if (propagationContext != null)
                     {
-                        spanContext = new SpanContext(propagationContext.TraceId, propagationContext.ParentSpanId, (SamplingPriority?)propagationContext.SamplingPriority);
+                        spanContext = new SpanContext(propagationContext.Value.TraceId, propagationContext.Value.ParentSpanId, propagationContext.Value.SamplingPriority);
                     }
                 }
             }
@@ -153,9 +153,11 @@ namespace Datadog.Trace.ServiceFabric
 
                 try
                 {
-                    if (!string.IsNullOrEmpty(propagationContext.Origin))
+                    string? origin = propagationContext?.Origin;
+
+                    if (!string.IsNullOrEmpty(origin))
                     {
-                        span.SetTag(Tags.Origin, propagationContext.Origin);
+                        span.SetTag(Tags.Origin, origin);
                     }
                 }
                 catch (Exception ex)
@@ -228,12 +230,12 @@ namespace Datadog.Trace.ServiceFabric
 
                 if (context.SamplingPriority != null)
                 {
-                    messageHeaders.TryAddHeader(HttpHeaderNames.SamplingPriority, context, ctx => BitConverter.GetBytes(ctx.SamplingPriority!.Value));
+                    messageHeaders.TryAddHeader(HttpHeaderNames.SamplingPriority, context, ctx => BitConverter.GetBytes((int)ctx.SamplingPriority!));
                 }
 
                 if (!string.IsNullOrEmpty(context.Origin))
                 {
-                    messageHeaders.TryAddHeader(HttpHeaderNames.Origin, context, ctx => Encoding.UTF8.GetBytes(ctx.Origin));
+                    messageHeaders.TryAddHeader(HttpHeaderNames.Origin, context, ctx => Encoding.UTF8.GetBytes(ctx.Origin!));
                 }
             }
             catch (Exception ex)
@@ -242,22 +244,26 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
-        private static PropagationContext ExtractContext(IServiceRemotingRequestMessageHeader messageHeaders)
+        private static PropagationContext? ExtractContext(IServiceRemotingRequestMessageHeader messageHeaders)
         {
             try
             {
                 ulong traceId = messageHeaders.TryGetHeaderValueUInt64(HttpHeaderNames.TraceId) ?? 0;
-                ulong parentSpanId = messageHeaders.TryGetHeaderValueUInt64(HttpHeaderNames.ParentId) ?? 0;
-                int? samplingPriority = null;
-                string? origin = null;
 
-                if (traceId > 0 && parentSpanId > 0)
+                if (traceId > 0)
                 {
-                    samplingPriority = messageHeaders.TryGetHeaderValueInt32(HttpHeaderNames.SamplingPriority);
-                    origin = messageHeaders.TryGetHeaderValueString(HttpHeaderNames.Origin);
+                    ulong parentSpanId = messageHeaders.TryGetHeaderValueUInt64(HttpHeaderNames.ParentId) ?? 0;
+
+                    if (parentSpanId > 0)
+                    {
+                        SamplingPriority? samplingPriority = (SamplingPriority?)messageHeaders.TryGetHeaderValueInt32(HttpHeaderNames.SamplingPriority);
+                        string? origin = messageHeaders.TryGetHeaderValueString(HttpHeaderNames.Origin);
+
+                        return new PropagationContext(traceId, parentSpanId, samplingPriority, origin);
+                    }
                 }
 
-                return new PropagationContext(traceId, parentSpanId, samplingPriority, origin);
+                return null;
             }
             catch (Exception ex)
             {
