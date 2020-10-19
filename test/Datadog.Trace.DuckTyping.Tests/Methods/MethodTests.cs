@@ -281,7 +281,6 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
         [MemberData(nameof(Data))]
         public void DefaultGenericsMethods(object obscureObject)
         {
-#if NET452
             if (!obscureObject.GetType().IsPublic && !obscureObject.GetType().IsNestedPublic)
             {
                 Assert.Throws<DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException>(
@@ -301,7 +300,6 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
                     });
                 return;
             }
-#endif
 
             var duckInterface = obscureObject.As<IDefaultGenericMethodDuckType>();
             var duckAbstract = obscureObject.As<DefaultGenericMethodDuckTypeAbstractClass>();
