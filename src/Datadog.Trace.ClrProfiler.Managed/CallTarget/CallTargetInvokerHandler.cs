@@ -24,6 +24,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     Log.Warning("DuckTypeException has been detected, the integration will be disabled.");
                     _disableIntegration = true;
                 }
+                else if (exception is CallTargetInvokerException)
+                {
+                    Log.Warning("CallTargetInvokerException has been detected, the integration will be disabled.");
+                    _disableIntegration = true;
+                }
             }
         }
 

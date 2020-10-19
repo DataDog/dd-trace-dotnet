@@ -1,4 +1,5 @@
 using System;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
 {
@@ -7,6 +8,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// </summary>
     public static class CallTargetInvoker
     {
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(CallTargetInvoker));
+
         /// <summary>
         /// Begin Method Invoker
         /// </summary>
@@ -16,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Call target state</returns>
         public static CallTargetState BeginMethod<TIntegration, TInstance>(TInstance instance)
         {
+            Log.Information($"Begin Method [Integration={typeof(TIntegration)}, Instance={typeof(TInstance)}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance>.Invoke(instance);
@@ -35,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Call target state</returns>
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1>(TInstance instance, TArg1 arg1)
         {
+            Log.Information($"Begin Method [Integration={typeof(TIntegration)}, Instance={typeof(TInstance)}, TArg1={typeof(TArg1)}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1>.Invoke(instance, arg1);
@@ -56,6 +61,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Call target state</returns>
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2>(TInstance instance, TArg1 arg1, TArg2 arg2)
         {
+            Log.Information($"Begin Method [Integration={typeof(TIntegration)}, Instance={typeof(TInstance)}, TArg1={typeof(TArg1)}, TArg2={typeof(TArg2)}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2>.Invoke(instance, arg1, arg2);
@@ -79,6 +85,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Call target state</returns>
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3)
         {
+            Log.Information($"Begin Method [Integration={typeof(TIntegration)}, Instance={typeof(TInstance)}, TArg1={typeof(TArg1)}, TArg2={typeof(TArg2)}, TArg3={typeof(TArg3)}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2, TArg3>.Invoke(instance, arg1, arg2, arg3);
@@ -104,6 +111,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Call target state</returns>
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
         {
+            Log.Information($"Begin Method [Integration={typeof(TIntegration)}, Instance={typeof(TInstance)}, TArg1={typeof(TArg1)}, TArg2={typeof(TArg2)}, TArg3={typeof(TArg3)}, TArg4={typeof(TArg4)}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4>.Invoke(instance, arg1, arg2, arg3, arg4);
@@ -131,6 +139,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Call target state</returns>
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5)
         {
+            Log.Information($"Begin Method [Integration={typeof(TIntegration)}, Instance={typeof(TInstance)}, TArg1={typeof(TArg1)}, TArg2={typeof(TArg2)}, TArg3={typeof(TArg3)}, TArg4={typeof(TArg4)}, TArg5={typeof(TArg5)}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5>.Invoke(instance, arg1, arg2, arg3, arg4, arg5);
@@ -160,6 +169,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Call target state</returns>
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6)
         {
+            Log.Information($"Begin Method [Integration={typeof(TIntegration)}, Instance={typeof(TInstance)}, TArg1={typeof(TArg1)}, TArg2={typeof(TArg2)}, TArg3={typeof(TArg3)}, TArg4={typeof(TArg4)}, TArg5={typeof(TArg5)}, TArg6={typeof(TArg6)}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>.Invoke(instance, arg1, arg2, arg3, arg4, arg5, arg6);
@@ -178,6 +188,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Call target state</returns>
         public static CallTargetState BeginMethod<TIntegration, TInstance>(TInstance instance, object[] arguments)
         {
+            Log.Information($"Begin Method Slow [Integration={typeof(TIntegration)}, Instance={typeof(TInstance)}, ArgumentsLength={arguments?.Length}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.BeginMethodSlowHandler<TIntegration, TInstance>.Invoke(instance, arguments);
@@ -196,6 +207,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>CallTarget return structure</returns>
         public static CallTargetReturn EndMethod<TIntegration, TInstance>(Exception exception, CallTargetState state)
         {
+            Log.Information($"End Method [Exception={exception}, State={state}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.EndMethodHandler<TIntegration, TInstance>.Invoke(exception, state);
@@ -216,6 +228,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>CallTarget return structure</returns>
         public static CallTargetReturn<TReturn> EndMethod<TIntegration, TInstance, TReturn>(TReturn returnValue, Exception exception, CallTargetState state)
         {
+            Log.Information($"End Method [ReturnValue={returnValue}, Exception={exception}, State={state}]");
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
             {
                 return CallTargetInvokerHandler.EndMethodHandler<TIntegration, TInstance, TReturn>.Invoke(returnValue, exception, state);
