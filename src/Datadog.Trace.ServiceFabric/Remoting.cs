@@ -102,7 +102,7 @@ namespace Datadog.Trace.ServiceFabric
                 return;
             }
 
-            FinishSpan(e);
+            FinishSpan(e, SpanKinds.Client);
         }
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace Datadog.Trace.ServiceFabric
                 return;
             }
 
-            FinishSpan(e);
+            FinishSpan(e, SpanKinds.Server);
         }
 
         private static void GetMessageHeaders(EventArgs? eventArgs, out ServiceRemotingRequestEventArgs? requestEventArgs, out IServiceRemotingRequestMessageHeader? messageHeaders)
@@ -326,7 +326,7 @@ namespace Datadog.Trace.ServiceFabric
             return span;
         }
 
-        private static void FinishSpan(EventArgs e)
+        private static void FinishSpan(EventArgs e, string spanKind)
         {
             if (!_initialized)
             {
@@ -337,26 +337,37 @@ namespace Datadog.Trace.ServiceFabric
             {
                 var scope = Tracer.Instance.ActiveScope;
 
-                if (scope != null)
+                if (scope == null)
                 {
-                    try
-                    {
-                        if (e is ServiceRemotingFailedResponseEventArgs failedResponseArg && failedResponseArg.Error != null)
-                        {
-                            scope.Span?.SetException(failedResponseArg.Error);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error setting exception tags on span.");
-                    }
-
-                    scope.Dispose();
+                    Log.Warning("Expected an active scope, but there is none.");
+                    return;
                 }
+
+                string expectedSpanName = GetSpanName(spanKind);
+
+                if (expectedSpanName != scope.Span.OperationName)
+                {
+                    Log.Warning("Expected span name {0}, but found {1} instead.", expectedSpanName, scope.Span.OperationName);
+                    return;
+                }
+
+                try
+                {
+                    if (e is ServiceRemotingFailedResponseEventArgs failedResponseArg && failedResponseArg.Error != null)
+                    {
+                        scope.Span?.SetException(failedResponseArg.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error setting exception tags on span.");
+                }
+
+                scope.Dispose();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error accessing or finishing span.");
+                Log.Error(ex, "Error accessing or finishing active span.");
             }
         }
 
