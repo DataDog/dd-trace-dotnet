@@ -62,7 +62,7 @@ namespace Datadog.Trace.Agent
             var sleepDuration = 100; // in milliseconds
             var traceIds = GetUniqueTraceIds(traces);
 
-            var batch = _statsd?.StartBatch() ?? default;
+            var batch = _statsd?.StartBatch(initialCapacity: 2) ?? default;
 
             while (true)
             {

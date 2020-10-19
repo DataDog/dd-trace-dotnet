@@ -54,7 +54,7 @@ namespace Datadog.Trace.Agent
 
             if (_statsd != null)
             {
-                var batch = _statsd.StartBatch();
+                var batch = _statsd.StartBatch(initialCapacity: 2);
 
                 batch.Append(_statsd.GetIncrementCount(TracerMetricNames.Queue.EnqueuedTraces));
                 batch.Append(_statsd.GetIncrementCount(TracerMetricNames.Queue.EnqueuedSpans, trace.Length));
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Agent
             {
                 var spanCount = traces.Sum(t => t.Length);
 
-                var batch = _statsd.StartBatch();
+                var batch = _statsd.StartBatch(initialCapacity: 3);
 
                 batch.Append(_statsd.GetIncrementCount(TracerMetricNames.Queue.DequeuedTraces, traces.Length));
                 batch.Append(_statsd.GetIncrementCount(TracerMetricNames.Queue.DequeuedSpans, spanCount));

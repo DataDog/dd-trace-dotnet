@@ -17,9 +17,9 @@ namespace Datadog.Trace.DogStatsd
             _constantTags = constantTags;
         }
 
-        public Batch StartBatch()
+        public Batch StartBatch(int initialCapacity = 0)
         {
-            return new Batch(this);
+            return new Batch(this, initialCapacity);
         }
 
         // Method is virtual for unit-tests

@@ -7,10 +7,10 @@ namespace Datadog.Trace.DogStatsd
         private readonly IBatchStatsd _statsd;
         private readonly List<string> _commands;
 
-        public Batch(IBatchStatsd statsd)
+        public Batch(IBatchStatsd statsd, int initialCapacity)
         {
             _statsd = statsd;
-            _commands = statsd != null ? new List<string>() : null;
+            _commands = statsd != null ? new List<string>(initialCapacity) : null;
         }
 
         public void Append(string command)
