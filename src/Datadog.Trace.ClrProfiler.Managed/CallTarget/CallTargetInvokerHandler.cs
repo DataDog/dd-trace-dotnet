@@ -1,4 +1,5 @@
 using System;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
@@ -18,6 +19,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             internal static void LogException(Exception exception)
             {
                 Log.SafeLogError(exception, exception?.Message, null);
+                if (exception is DuckTypeException)
+                {
+                    Log.Warning("DuckTypeException has been detected, the integration will be disabled.");
+                    _disableIntegration = true;
+                }
             }
         }
 
