@@ -78,7 +78,11 @@ namespace Datadog.Trace.ExtensionMethods
             if (statusCode / 100 == 5)
             {
                 span.Error = true;
-                span.SetTag(Trace.Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
+
+                if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                {
+                    span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
+                }
             }
         }
     }
