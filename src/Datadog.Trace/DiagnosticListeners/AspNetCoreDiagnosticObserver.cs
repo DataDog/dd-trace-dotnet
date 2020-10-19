@@ -224,22 +224,13 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            IScope scope = tracer.ActiveScope;
+            var scope = tracer.ActiveScope;
 
             if (scope != null)
             {
                 var httpContext = HttpRequestInStopHttpContextFetcher.Fetch<HttpContext>(arg);
 
-                var statusCode = HttpTags.ConvertStatusCodeToString(httpContext.Response.StatusCode);
-
-                scope.Span.SetTag(Tags.HttpStatusCode, statusCode);
-
-                if (httpContext.Response.StatusCode / 100 == 5)
-                {
-                    // 5xx codes are server-side errors
-                    scope.Span.Error = true;
-                }
-
+                scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
                 scope.Dispose();
             }
         }
@@ -253,12 +244,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            ISpan span = tracer.ActiveScope?.Span;
+            var span = tracer.ActiveScope?.Span;
 
             if (span != null)
             {
                 var exception = UnhandledExceptionExceptionFetcher.Fetch<Exception>(arg);
-                var httpContext = UnhandledExceptionHttpContextFetcher.Fetch<HttpContext>(arg);
 
                 span.SetException(exception);
             }
