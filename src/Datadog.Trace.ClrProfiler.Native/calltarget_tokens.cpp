@@ -107,6 +107,12 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
     }
   }
 
+  return S_OK;
+}
+
+HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() { 
+  ModuleMetadata* module_metadata = GetMetadata();
+
   // *** Ensure profiler assembly ref
   if (profilerAssemblyRef == mdAssemblyRefNil) {
     const AssemblyReference assemblyReference =
@@ -142,9 +148,42 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
     }
   }
 
-  return S_OK;
-}
+  // *** Ensure calltarget type ref
+  if (callTargetTypeRef == mdTypeRefNil) {
+    auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
+        profilerAssemblyRef,
+        managed_profiler_calltarget_type.data(),
+        &callTargetTypeRef);
+    if (FAILED(hr)) {
+      Warn("Wrapper callTargetTypeRef could not be defined.");
+      return hr;
+    }
+  }
 
-HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() { return S_OK; }
+  // *** Ensure calltargetstate type ref
+  if (callTargetStateTypeRef == mdTypeRefNil) {
+    auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
+        profilerAssemblyRef,
+        managed_profiler_calltarget_statetype.data(),
+        &callTargetStateTypeRef);
+    if (FAILED(hr)) {
+      Warn("Wrapper callTargetStateTypeRef could not be defined.");
+      return hr;
+    }
+  }
+
+  // *** Ensure calltargetreturn void type ref
+  if (callTargetReturnVoidTypeRef == mdTypeRefNil) {
+    auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
+        profilerAssemblyRef, managed_profiler_calltarget_returntype.data(),
+        &callTargetReturnVoidTypeRef);
+    if (FAILED(hr)) {
+      Warn("Wrapper callTargetReturnVoidTypeRef could not be defined.");
+      return hr;
+    }
+  }
+
+  return S_OK; 
+}
 
 }  // namespace trace

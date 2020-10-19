@@ -30,6 +30,7 @@ class CallTargetTokens {
   mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
   mdTypeRef callTargetTypeRef = mdTypeRefNil;
   mdTypeRef callTargetStateTypeRef = mdTypeRefNil;
+  mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
 
   mdMemberRef beginSlowMemberRef = mdMemberRefNil;
   mdMemberRef beginP0MemberRef = mdMemberRefNil;
