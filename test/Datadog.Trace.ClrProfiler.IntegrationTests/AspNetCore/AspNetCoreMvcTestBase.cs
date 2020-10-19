@@ -38,6 +38,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}", serviceVersion: ServiceVersion);
 
             CreateTopLevelExpectation(
+                url: "/status-code/500",
+                httpMethod: "GET",
+                httpStatus: "500",
+                resourceUrl: "status-code/{statusCode}",
+                serviceVersion: ServiceVersion,
+                additionalCheck: span =>
+                                 {
+                                     var failures = new List<string>();
+
+                                     if (span.Error == 0)
+                                     {
+                                         failures.Add($"Expected Error flag set within {span.Resource}");
+                                     }
+
+                                     if (SpanExpectation.GetTag(span, Tags.ErrorType) != null)
+                                     {
+                                         failures.Add($"Did not expect exception type within {span.Resource}");
+                                     }
+
+                                     var errorMessage = SpanExpectation.GetTag(span, Tags.ErrorMsg);
+
+                                     if (errorMessage != "The HTTP response has status code 500.")
+                                     {
+                                         failures.Add($"Expected specific error message within {span.Resource}. Found \"{errorMessage}\"");
+                                     }
+
+                                     return failures;
+                                 });
+
+            CreateTopLevelExpectation(
                 url: "/bad-request",
                 httpMethod: "GET",
                 httpStatus: "500",

@@ -24,18 +24,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetWebApi2Integration))]
-        [InlineData("/api/environment", "GET api/environment", HttpStatusCode.OK, false)]
-        [InlineData("/api/delay/0", "GET api/delay/{seconds}", HttpStatusCode.OK, false)]
-        [InlineData("/api/delay-async/0", "GET api/delay-async/{seconds}", HttpStatusCode.OK, false)]
-        [InlineData("/api/transient-failure/true", "GET api/transient-failure/{value}", HttpStatusCode.OK, false)]
-        [InlineData("/api/transient-failure/false", "GET api/transient-failure/{value}", HttpStatusCode.InternalServerError, true)]
-        [InlineData("/api/statuscode/201", "GET api/statuscode/{value}", HttpStatusCode.Created, false)]
-        [InlineData("/api/statuscode/503", "GET api/statuscode/{value}", HttpStatusCode.ServiceUnavailable, true)]
+        [InlineData("/api/environment", "GET api/environment", HttpStatusCode.OK, false, null, null)]
+        [InlineData("/api/delay/0", "GET api/delay/{seconds}", HttpStatusCode.OK, false, null, null)]
+        [InlineData("/api/delay-async/0", "GET api/delay-async/{seconds}", HttpStatusCode.OK, false, null, null)]
+        [InlineData("/api/transient-failure/true", "GET api/transient-failure/{value}", HttpStatusCode.OK, false, null, null)]
+        [InlineData("/api/transient-failure/false", "GET api/transient-failure/{value}", HttpStatusCode.InternalServerError, true, null, null)]
+        [InlineData("/api/statuscode/201", "GET api/statuscode/{value}", HttpStatusCode.Created, false, null, null)]
+        [InlineData("/api/statuscode/503", "GET api/statuscode/{value}", HttpStatusCode.ServiceUnavailable, true, null, "The HTTP response has status code 503.")]
         public async Task SubmitsTraces(
             string path,
             string expectedResourceName,
             HttpStatusCode expectedStatusCode,
-            bool isError)
+            bool isError,
+            string expectedErrorType,
+            string expectedErrorMessage)
         {
             await AssertWebServerSpan(
                 path,
@@ -43,6 +45,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.HttpPort,
                 expectedStatusCode,
                 isError,
+                expectedErrorType,
+                expectedErrorMessage,
                 "web",
                 "aspnet-webapi.request",
                 expectedResourceName,
