@@ -102,27 +102,7 @@ namespace Datadog.Trace.ServiceFabric
                 return;
             }
 
-            Scope? scope = null;
-
-            try
-            {
-                scope = Tracer.Instance.ActiveScope;
-
-                if (scope != null &&
-                    e is ServiceRemotingFailedResponseEventArgs failedResponseArg &&
-                    failedResponseArg.Error != null)
-                {
-                    scope.Span?.SetException(failedResponseArg.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error accessing active scope or setting error tags.");
-            }
-            finally
-            {
-                scope?.Dispose();
-            }
+            FinishSpan(e);
         }
 
         /// <summary>
@@ -141,26 +121,47 @@ namespace Datadog.Trace.ServiceFabric
             PropagationContext propagationContext = default;
             SpanContext? spanContext = null;
 
-            // extract propagation context from message headers for distributed tracing
-            if (messageHeaders != null)
+            try
             {
-                propagationContext = ExtractContext(messageHeaders);
-
-                if (propagationContext.TraceId > 0 && propagationContext.ParentSpanId > 0)
+                // extract propagation context from message headers for distributed tracing
+                if (messageHeaders != null)
                 {
-                    spanContext = new SpanContext(propagationContext.TraceId, propagationContext.ParentSpanId, (SamplingPriority?)propagationContext.SamplingPriority);
+                    propagationContext = ExtractContext(messageHeaders);
+
+                    if (propagationContext.TraceId > 0 && propagationContext.ParentSpanId > 0)
+                    {
+                        spanContext = new SpanContext(propagationContext.TraceId, propagationContext.ParentSpanId, (SamplingPriority?)propagationContext.SamplingPriority);
+                    }
                 }
             }
-
-            var tracer = Tracer.Instance;
-            var span = CreateSpan(tracer, spanContext, SpanKinds.Server, eventArgs, messageHeaders);
-
-            if (!string.IsNullOrEmpty(propagationContext.Origin))
+            catch (Exception ex)
             {
-                span.SetTag(Tags.Origin, propagationContext.Origin);
+                Log.Error(ex, "Error using propagation context to initialize span context.");
             }
 
-            tracer.ActivateSpan(span);
+            try
+            {
+                var tracer = Tracer.Instance;
+                var span = CreateSpan(tracer, spanContext, SpanKinds.Server, eventArgs, messageHeaders);
+
+                try
+                {
+                    if (!string.IsNullOrEmpty(propagationContext.Origin))
+                    {
+                        span.SetTag(Tags.Origin, propagationContext.Origin);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error setting origin tag on span.");
+                }
+
+                tracer.ActivateSpan(span);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or activating new span.");
+            }
         }
 
         /// <summary>
@@ -177,17 +178,7 @@ namespace Datadog.Trace.ServiceFabric
                 return;
             }
 
-            var scope = Tracer.Instance.ActiveScope;
-
-            if (scope != null)
-            {
-                if (e is ServiceRemotingFailedResponseEventArgs failedResponseArg && failedResponseArg.Error != null)
-                {
-                    scope.Span?.SetException(failedResponseArg.Error);
-                }
-
-                scope.Dispose();
-            }
+            FinishSpan(e);
         }
 
         private static void GetMessageHeaders(EventArgs? eventArgs, out ServiceRemotingRequestEventArgs? requestEventArgs, out IServiceRemotingRequestMessageHeader? messageHeaders)
@@ -268,6 +259,11 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
+        private static string GetSpanName(string spanKind)
+        {
+            return $"{SpanNamePrefix}.{spanKind}";
+        }
+
         private static Span CreateSpan(
             Tracer tracer,
             SpanContext? context,
@@ -292,7 +288,7 @@ namespace Datadog.Trace.ServiceFabric
                 resourceName = serviceUrl == null ? methodName : $"{serviceUrl}/{methodName}";
             }
 
-            Span span = tracer.StartSpan($"{SpanNamePrefix}.{spanKind}", context);
+            Span span = tracer.StartSpan(GetSpanName(spanKind), context);
             span.ResourceName = resourceName ?? "unknown";
             span.SetTag(Tags.SpanKind, spanKind);
 
@@ -328,6 +324,40 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             return span;
+        }
+
+        private static void FinishSpan(EventArgs e)
+        {
+            if (!_initialized)
+            {
+                return;
+            }
+
+            try
+            {
+                var scope = Tracer.Instance.ActiveScope;
+
+                if (scope != null)
+                {
+                    try
+                    {
+                        if (e is ServiceRemotingFailedResponseEventArgs failedResponseArg && failedResponseArg.Error != null)
+                        {
+                            scope.Span?.SetException(failedResponseArg.Error);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error setting exception tags on span.");
+                    }
+
+                    scope.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error accessing or finishing span.");
+            }
         }
 
         private static double? GetAnalyticsSampleRate(Tracer tracer, bool enabledWithGlobalSetting)
