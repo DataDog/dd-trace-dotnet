@@ -40,10 +40,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		integrations.json = integrations.json
 		LICENSE = LICENSE
 		LICENSE-3rdparty.csv = LICENSE-3rdparty.csv
-		PackageVersionsGeneratorDefinitions.json = PackageVersionsGeneratorDefinitions.json
 		docs\README.md = docs\README.md
 		stylecop.json = stylecop.json
-		Test.Common.props = Test.Common.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9E5F0022-0A50-40BF-AC6A-C3078585ECAB}"
@@ -60,31 +58,26 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{8CEC2042-F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed", "src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj", "{85F35AAF-D102-4960-8B41-3BD9CBD0E77F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AA6F5582-3B71-49AC-AA39-8F7815AC46BE}"
-	ProjectSection(SolutionItems) = preProject
-		samples\Directory.Build.props = samples\Directory.Build.props
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5", "samples-aspnet\Samples.AspNetMvc5\Samples.AspNetMvc5.csproj", "{3C6DD42E-9214-4747-92BA-78DE29AACE59}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5", "test\test-applications\aspnet\Samples.AspNetMvc5\Samples.AspNetMvc5.csproj", "{3C6DD42E-9214-4747-92BA-78DE29AACE59}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{C1B5EA8C-C190-4EAE-871B-A7E95B5EC482}"
-EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Datadog.Trace.ClrProfiler.WindowsInstaller", "deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj", "{3054DE0E-F140-4758-B2DA-0B9470C6EDE1}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "WindowsInstaller", "src\WindowsInstaller\WindowsInstaller.wixproj", "{3054DE0E-F140-4758-B2DA-0B9470C6EDE1}"
 	ProjectSection(ProjectDependencies) = postProject
+		{E02B141F-E7C0-46CF-B9F6-39427218E714} = {E02B141F-E7C0-46CF-B9F6-39427218E714}
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 		{5DFDF781-F24C-45B1-82EF-9125875A80A4} = {5DFDF781-F24C-45B1-82EF-9125875A80A4}
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}
 		{B34EDBC7-C5FB-409D-8472-BC7469D6F2BD} = {B34EDBC7-C5FB-409D-8472-BC7469D6F2BD}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native.Tests", "test\Datadog.Trace.ClrProfiler.Native.Tests\Datadog.Trace.ClrProfiler.Native.Tests.vcxproj", "{5728056A-51AA-4FF5-AD0C-E86E44E36102}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibrary", "sample-libs\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj", "{FDB5C8D0-018D-4FF9-9680-C6A5078F819B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibrary", "test\test-applications\integrations\dependency-libs\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj", "{FDB5C8D0-018D-4FF9-9680-C6A5078F819B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibraryTracer", "sample-libs\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj", "{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibraryTracer", "test\test-applications\integrations\dependency-libs\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj", "{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.IntegrationTests", "test\Datadog.Trace.ClrProfiler.IntegrationTests\Datadog.Trace.ClrProfiler.IntegrationTests.csproj", "{0D546118-B70A-44D0-B675-39EDB99FCEEE}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -122,18 +115,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.I
 		{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68} = {38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer", "samples\Samples.SqlServer\Samples.SqlServer.csproj", "{086FF8A0-9CEE-470A-9751-78B0F1340649}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer", "test\test-applications\integrations\Samples.SqlServer\Samples.SqlServer.csproj", "{086FF8A0-9CEE-470A-9751-78B0F1340649}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch", "samples\Samples.Elasticsearch\Samples.Elasticsearch.csproj", "{C98950B1-DC4B-43DA-974F-EF2CF325EC2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch", "test\test-applications\integrations\Samples.Elasticsearch\Samples.Elasticsearch.csproj", "{C98950B1-DC4B-43DA-974F-EF2CF325EC2B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc4", "samples-aspnet\Samples.AspNetMvc4\Samples.AspNetMvc4.csproj", "{6D86109F-B7C9-477D-86D7-45735A3A0818}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc4", "test\test-applications\aspnet\Samples.AspNetMvc4\Samples.AspNetMvc4.csproj", "{6D86109F-B7C9-477D-86D7-45735A3A0818}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{5D8E1F81-B820-4736-B797-271B0FE787EE}"
 	ProjectSection(SolutionItems) = preProject
@@ -143,100 +136,80 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{5D8E1F81
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Tests", "test\Datadog.Trace.ClrProfiler.Managed.Tests\Datadog.Trace.ClrProfiler.Managed.Tests.csproj", "{5B52C0C0-A554-4E53-9D17-B121E78FF919}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MongoDB", "samples\Samples.MongoDB\Samples.MongoDB.csproj", "{3493346B-44F6-4F50-8FB4-51D0090DF544}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MongoDB", "test\test-applications\integrations\Samples.MongoDB\Samples.MongoDB.csproj", "{3493346B-44F6-4F50-8FB4-51D0090DF544}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Npgsql", "samples\Samples.Npgsql\Samples.Npgsql.csproj", "{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Npgsql", "test\test-applications\integrations\Samples.Npgsql\Samples.Npgsql.csproj", "{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample-libs", "sample-libs", "{FA03944C-2391-4C25-8979-2E078A8CE0DD}"
-	ProjectSection(SolutionItems) = preProject
-		sample-libs\Directory.Build.props = sample-libs\Directory.Build.props
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Shared", "test\test-applications\integrations\dependency-libs\Samples.Shared\Samples.Shared.csproj", "{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples-aspnet", "samples-aspnet", "{65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}"
-	ProjectSection(SolutionItems) = preProject
-		samples-aspnet\Directory.Build.props = samples-aspnet\Directory.Build.props
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Shared", "sample-libs\Samples.Shared\Samples.Shared.csproj", "{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WebForms", "samples-aspnet\Samples.WebForms\Samples.WebForms.csproj", "{99A62CCF-8E7F-4D57-8383-D38C371C8087}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WebForms", "test\test-applications\aspnet\Samples.WebForms\Samples.WebForms.csproj", "{99A62CCF-8E7F-4D57-8383-D38C371C8087}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reproductions", "reproductions", "{550AE553-2BBB-4021-B55A-137EF31A6B1F}"
-	ProjectSection(SolutionItems) = preProject
-		reproductions\Directory.Build.props = reproductions\Directory.Build.props
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpenseItDemo", "test\test-applications\regression\Reproduction.Wpf.ExpenseIt\ExpenseIt\ExpenseItDemo\ExpenseItDemo.csproj", "{D1729F17-99A5-45AF-AB38-72FA6ECCE609}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpenseItDemo", "reproductions\Reproduction.Wpf.ExpenseIt\ExpenseIt\ExpenseItDemo\ExpenseItDemo.csproj", "{D1729F17-99A5-45AF-AB38-72FA6ECCE609}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.V5", "test\test-applications\integrations\Samples.Elasticsearch.V5\Samples.Elasticsearch.V5.csproj", "{AD119B05-A092-41AD-B68E-4AE2DB5A96D9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.V5", "samples\Samples.Elasticsearch.V5\Samples.Elasticsearch.V5.csproj", "{AD119B05-A092-41AD-B68E-4AE2DB5A96D9}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomapperTest", "reproductions\AutomapperTest\AutomapperTest.csproj", "{2AD18622-9A02-41B4-915E-798BD64044D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomapperTest", "test\test-applications\regression\AutomapperTest\AutomapperTest.csproj", "{2AD18622-9A02-41B4-915E-798BD64044D5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMessageHandler.StackOverflowException", "reproductions\HttpMessageHandler.StackOverflowException\HttpMessageHandler.StackOverflowException.csproj", "{F47F206E-4CCA-4AD0-AEBA-FD9F491E05EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMessageHandler.StackOverflowException", "test\test-applications\regression\HttpMessageHandler.StackOverflowException\HttpMessageHandler.StackOverflowException.csproj", "{F47F206E-4CCA-4AD0-AEBA-FD9F491E05EC}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeneratePackageVersions", "tools\GeneratePackageVersions\GeneratePackageVersions.csproj", "{24B0357D-B0C8-46C7-96F6-006E3F66662A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeneratePackageVersions", "build\tools\GeneratePackageVersions\GeneratePackageVersions.csproj", "{24B0357D-B0C8-46C7-96F6-006E3F66662A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ServiceStack.Redis", "samples\Samples.ServiceStack.Redis\Samples.ServiceStack.Redis.csproj", "{8E1555D1-13D5-4DBF-9631-117D840C3158}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ServiceStack.Redis", "test\test-applications\integrations\Samples.ServiceStack.Redis\Samples.ServiceStack.Redis.csproj", "{8E1555D1-13D5-4DBF-9631-117D840C3158}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.StackExchange.Redis", "samples\Samples.StackExchange.Redis\Samples.StackExchange.Redis.csproj", "{DC7D131A-AF99-46AB-9AA6-463443E3B992}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.StackExchange.Redis", "test\test-applications\integrations\Samples.StackExchange.Redis\Samples.StackExchange.Redis.csproj", "{DC7D131A-AF99-46AB-9AA6-463443E3B992}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WebForms.Empty", "samples-aspnet\Samples.WebForms.Empty\Samples.WebForms.Empty.csproj", "{673826CD-9219-4231-8FCF-4F9C8BE61F76}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WebForms.Empty", "test\test-applications\aspnet\Samples.WebForms.Empty\Samples.WebForms.Empty.csproj", "{673826CD-9219-4231-8FCF-4F9C8BE61F76}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Wcf", "samples\Samples.Wcf\Samples.Wcf.csproj", "{DA0A44FB-D562-4776-AAFB-8266E78AA1A6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Wcf", "test\test-applications\integrations\Samples.Wcf\Samples.Wcf.csproj", "{DA0A44FB-D562-4776-AAFB-8266E78AA1A6}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataDogThreadTest", "reproductions\DataDogThreadTest\DataDogThreadTest.csproj", "{3CDCE3AA-7CAF-4A27-B1D3-9D558B74D084}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataDogThreadTest", "test\test-applications\regression\DataDogThreadTest\DataDogThreadTest.csproj", "{3CDCE3AA-7CAF-4A27-B1D3-9D558B74D084}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrleansCrash", "reproductions\OrleansCrash\OrleansCrash.csproj", "{DAD5E1F2-A158-4624-9FB4-C89E98DFF0D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrleansCrash", "test\test-applications\regression\OrleansCrash\OrleansCrash.csproj", "{DAD5E1F2-A158-4624-9FB4-C89E98DFF0D4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL", "samples\Samples.GraphQL\Samples.GraphQL.csproj", "{43782238-E7BB-49D0-9541-1121DACA6EB5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL", "test\test-applications\integrations\Samples.GraphQL\Samples.GraphQL.csproj", "{43782238-E7BB-49D0-9541-1121DACA6EB5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.StackOverflowException", "reproductions\StackExchange.Redis.StackOverflowException\StackExchange.Redis.StackOverflowException.csproj", "{FA487690-E88C-4A57-9187-B71CB70C1AAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.StackOverflowException", "test\test-applications\regression\StackExchange.Redis.StackOverflowException\StackExchange.Redis.StackOverflowException.csproj", "{FA487690-E88C-4A57-9187-B71CB70C1AAE}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetMvcCorePerformance", "reproductions\AspNetMvcCorePerformance\AspNetMvcCorePerformance.csproj", "{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetMvcCorePerformance", "test\test-applications\regression\AspNetMvcCorePerformance\AspNetMvcCorePerformance.csproj", "{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reproduction-dependencies", "reproduction-dependencies", "{641C9C61-53FD-4504-B8D9-84008BDB89D1}"
-	ProjectSection(SolutionItems) = preProject
-		reproduction-dependencies\Directory.Build.props = reproduction-dependencies\Directory.Build.props
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Instance", "reproduction-dependencies\AppDomain.Instance\AppDomain.Instance.csproj", "{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Instance", "test\test-applications\regression\dependency-libs\AppDomain.Instance\AppDomain.Instance.csproj", "{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Loader", "src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj", "{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoad.FileNotFoundException", "reproductions\AssemblyLoad.FileNotFoundException\AssemblyLoad.FileNotFoundException.csproj", "{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoad.FileNotFoundException", "test\test-applications\regression\AssemblyLoad.FileNotFoundException\AssemblyLoad.FileNotFoundException.csproj", "{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD006-E206-488E-ACA1-1AA73F9B5146}"
 	ProjectSection(SolutionItems) = preProject
-		docker\build.sh = docker\build.sh
-		docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
-		docker\Datadog.Trace.ClrProfiler.Native.sh = docker\Datadog.Trace.ClrProfiler.Native.sh
-		docker\dotnet.dockerfile = docker\dotnet.dockerfile
-		docker\native.dockerfile = docker\native.dockerfile
-		docker\package.dockerfile = docker\package.dockerfile
-		docker\package.sh = docker\package.sh
-		docker\with-profiler-logs.bash = docker\with-profiler-logs.bash
-		docker\with-profiler.bash = docker\with-profiler.bash
+		build\docker\build.sh = build\docker\build.sh
+		build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
+		build\docker\Datadog.Trace.ClrProfiler.Native.sh = build\docker\Datadog.Trace.ClrProfiler.Native.sh
+		build\docker\dotnet.dockerfile = build\docker\dotnet.dockerfile
+		build\docker\native.dockerfile = build\docker\native.dockerfile
+		build\docker\package.dockerfile = build\docker\package.dockerfile
+		build\docker\package.sh = build\docker\package.sh
+		build\docker\with-profiler-logs.bash = build\docker\with-profiler-logs.bash
+		build\docker\with-profiler.bash = build\docker\with-profiler.bash
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-pipelines", "{C52D6695-4E05-4930-88F8-0EFF8056A967}"
@@ -248,93 +221,81 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-
 		.azure-pipelines\unit-tests.yml = .azure-pipelines\unit-tests.yml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySql", "samples\Samples.MySql\Samples.MySql.csproj", "{42FA33DD-AEA3-4FF3-8319-F30244A666A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySql", "test\test-applications\integrations\Samples.MySql\Samples.MySql.csproj", "{42FA33DD-AEA3-4FF3-8319-F30244A666A4}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TraceContext.InvalidOperationException", "reproductions\TraceContext.InvalidOperationException\TraceContext.InvalidOperationException.csproj", "{DF923186-5397-4E15-A95B-F15C8327ED53}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TraceContext.InvalidOperationException", "test\test-applications\regression\TraceContext.InvalidOperationException\TraceContext.InvalidOperationException.csproj", "{DF923186-5397-4E15-A95B-F15C8327ED53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityFramework6x.MdTokenLookupFailure", "reproductions\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj", "{E1706893-D3A5-43B9-9036-AEF49DB9600B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityFramework6x.MdTokenLookupFailure", "test\test-applications\regression\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj", "{E1706893-D3A5-43B9-9036-AEF49DB9600B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WcfClient", "samples\Samples.WcfClient\Samples.WcfClient.csproj", "{21D420EB-06D0-489D-A71C-C748BB46B8EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WcfClient", "test\test-applications\integrations\Samples.WcfClient\Samples.WcfClient.csproj", "{21D420EB-06D0-489D-A71C-C748BB46B8EF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper", "sample-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj", "{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper", "test\test-applications\integrations\dependency-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj", "{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UpdateVendors", "tools\UpdateVendors\UpdateVendors.csproj", "{72FB583A-A1B0-4B5F-8658-617B100DCD8E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Log4Net.SerializationException", "reproductions\Log4Net.SerializationException\Log4Net.SerializationException.csproj", "{35F581E9-3D7C-4E80-8DFF-D437B0D86710}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Log4Net.SerializationException", "test\test-applications\regression\Log4Net.SerializationException\Log4Net.SerializationException.csproj", "{35F581E9-3D7C-4E80-8DFF-D437B0D86710}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApplicationWithLog4Net", "reproduction-dependencies\ApplicationWithLog4Net\ApplicationWithLog4Net.csproj", "{1C34D970-6081-4EFA-8F2F-5AD2B146AC58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApplicationWithLog4Net", "test\test-applications\regression\dependency-libs\ApplicationWithLog4Net\ApplicationWithLog4Net.csproj", "{1C34D970-6081-4EFA-8F2F-5AD2B146AC58}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Core.Tools", "tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj", "{3BEACB10-89FE-4F74-8022-1A52F223CE82}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "performance", "performance", "{CD9D9813-A195-464A-A0F1-59E02D16E181}"
-	ProjectSection(SolutionItems) = preProject
-		performance\Directory.Build.props = performance\Directory.Build.props
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyResolveMscorlibResources.InfiniteRecursionCrash", "test\test-applications\regression\AssemblyResolveMscorlibResources.InfiniteRecursionCrash\AssemblyResolveMscorlibResources.InfiniteRecursionCrash.csproj", "{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyResolveMscorlibResources.InfiniteRecursionCrash", "reproductions\AssemblyResolveMscorlibResources.InfiniteRecursionCrash\AssemblyResolveMscorlibResources.InfiniteRecursionCrash.csproj", "{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Performance.StackExchange.Redis", "performance\Performance.StackExchange.Redis\Performance.StackExchange.Redis.csproj", "{E41C87E9-7339-4FC0-8791-D57752C5BC12}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5_0", "samples-aspnet\Samples.AspNetMvc5_0\Samples.AspNetMvc5_0.csproj", "{D0424A27-4ED4-406E-80D5-2EFDCC53399B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5_0", "test\test-applications\aspnet\Samples.AspNetMvc5_0\Samples.AspNetMvc5_0.csproj", "{D0424A27-4ED4-406E-80D5-2EFDCC53399B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNet", "src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj", "{B34EDBC7-C5FB-409D-8472-BC7469D6F2BD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TracingWithoutLimits", "samples\Samples.TracingWithoutLimits\Samples.TracingWithoutLimits.csproj", "{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TracingWithoutLimits", "test\test-applications\integrations\Samples.TracingWithoutLimits\Samples.TracingWithoutLimits.csproj", "{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.RateLimiter", "samples\Samples.RateLimiter\Samples.RateLimiter.csproj", "{EF718502-7760-45B5-A563-5F1B22A6B840}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.RateLimiter", "test\test-applications\integrations\Samples.RateLimiter\Samples.RateLimiter.csproj", "{EF718502-7760-45B5-A563-5F1B22A6B840}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc30", "samples\Samples.AspNetCoreMvc30\Samples.AspNetCoreMvc30.csproj", "{8B457E8F-8716-4F29-BBE2-DD6C7BC4AC37}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc30", "test\test-applications\integrations\Samples.AspNetCoreMvc30\Samples.AspNetCoreMvc30.csproj", "{8B457E8F-8716-4F29-BBE2-DD6C7BC4AC37}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc31", "samples\Samples.AspNetCoreMvc31\Samples.AspNetCoreMvc31.csproj", "{303F8E41-691F-4453-AB7D-88A0036C0465}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc31", "test\test-applications\integrations\Samples.AspNetCoreMvc31\Samples.AspNetCoreMvc31.csproj", "{303F8E41-691F-4453-AB7D-88A0036C0465}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc21", "samples\Samples.AspNetCoreMvc21\Samples.AspNetCoreMvc21.csproj", "{D141BD06-DD95-4CAF-85CD-657116E0DAD4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc21", "test\test-applications\integrations\Samples.AspNetCoreMvc21\Samples.AspNetCoreMvc21.csproj", "{D141BD06-DD95-4CAF-85CD-657116E0DAD4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NLog10LogsInjection.NullReferenceException", "reproductions\NLog10LogsInjection.NullReferenceException\NLog10LogsInjection.NullReferenceException.csproj", "{6209C19B-42E4-4FCF-A539-FD1E4F4A34DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NLog10LogsInjection.NullReferenceException", "test\test-applications\regression\NLog10LogsInjection.NullReferenceException\NLog10LogsInjection.NullReferenceException.csproj", "{6209C19B-42E4-4FCF-A539-FD1E4F4A34DB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrepareRelease", "tools\PrepareRelease\PrepareRelease.csproj", "{DAA6B000-5BED-4081-B5E0-B698BFB89415}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrepareRelease", "build\tools\PrepareRelease\PrepareRelease.csproj", "{DAA6B000-5BED-4081-B5E0-B698BFB89415}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FakeKudu", "samples\Samples.FakeKudu\Samples.FakeKudu.csproj", "{317D3C64-E4F6-4D77-83C0-C69FC3923471}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FakeKudu", "test\test-applications\integrations\Samples.FakeKudu\Samples.FakeKudu.csproj", "{317D3C64-E4F6-4D77-83C0-C69FC3923471}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FakeAzureAppServices", "samples\Samples.FakeAzureAppServices\Samples.FakeAzureAppServices.csproj", "{9A2AE41B-251F-4A21-89FA-E5C55A737BBB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FakeAzureAppServices", "test\test-applications\integrations\Samples.FakeAzureAppServices\Samples.FakeAzureAppServices.csproj", "{9A2AE41B-251F-4A21-89FA-E5C55A737BBB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.StackExchange.Redis.Abstractions", "reproduction-dependencies\Datadog.StackExchange.Redis.Abstractions\Datadog.StackExchange.Redis.Abstractions.csproj", "{24BE488C-A5F3-4228-8CAB-E60EBEA444EE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.StackExchange.Redis.Abstractions", "test\test-applications\regression\dependency-libs\Datadog.StackExchange.Redis.Abstractions\Datadog.StackExchange.Redis.Abstractions.csproj", "{24BE488C-A5F3-4228-8CAB-E60EBEA444EE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.StackExchange.Redis", "reproduction-dependencies\Datadog.StackExchange.Redis\Datadog.StackExchange.Redis.csproj", "{EB0B88E2-589A-4F65-8F98-D5B958D8104F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.StackExchange.Redis", "test\test-applications\regression\dependency-libs\Datadog.StackExchange.Redis\Datadog.StackExchange.Redis.csproj", "{EB0B88E2-589A-4F65-8F98-D5B958D8104F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.StackExchange.Redis.StrongName", "reproduction-dependencies\Datadog.StackExchange.Redis.StrongName\Datadog.StackExchange.Redis.StrongName.csproj", "{4E83BFB5-F225-4C3B-B96E-0AD1951A5630}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.StackExchange.Redis.StrongName", "test\test-applications\regression\dependency-libs\Datadog.StackExchange.Redis.StrongName\Datadog.StackExchange.Redis.StrongName.csproj", "{4E83BFB5-F225-4C3B-B96E-0AD1951A5630}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StackExchange.Redis.AssemblyConflict.LegacyProject", "reproductions\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj", "{7B0822F6-80DE-4B49-8125-93975678D0D5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StackExchange.Redis.AssemblyConflict.LegacyProject", "test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj", "{7B0822F6-80DE-4B49-8125-93975678D0D5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.AssemblyConflict.SdkProject", "reproductions\StackExchange.Redis.AssemblyConflict.SdkProject\StackExchange.Redis.AssemblyConflict.SdkProject.csproj", "{C41023C9-65C3-4FB3-9053-4DE963A81500}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.AssemblyConflict.SdkProject", "test\test-applications\regression\StackExchange.Redis.AssemblyConflict.SdkProject\StackExchange.Redis.AssemblyConflict.SdkProject.csproj", "{C41023C9-65C3-4FB3-9053-4DE963A81500}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Dapper", "samples\Samples.Dapper\Samples.Dapper.csproj", "{7E563BF6-47F2-4531-A1CE-FB9445DF3253}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Dapper", "test\test-applications\integrations\Samples.Dapper\Samples.Dapper.csproj", "{7E563BF6-47F2-4531-A1CE-FB9445DF3253}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "linux", "linux", "{7DB68365-AA9E-4C3E-A553-31BFB5704B01}"
-	ProjectSection(SolutionItems) = preProject
-		createLogPath.sh = createLogPath.sh
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Core", "src\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj", "{D95D5E26-F32A-481D-A15A-EF7B3B56D2E0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DogStatsD.RaceCondition", "reproductions\DogStatsD.RaceCondition\DogStatsD.RaceCondition.csproj", "{AAD9038B-8F16-4E09-93AF-B13E9F7ACD66}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DogStatsD.RaceCondition", "test\test-applications\regression\DogStatsD.RaceCondition\DogStatsD.RaceCondition.csproj", "{AAD9038B-8F16-4E09-93AF-B13E9F7ACD66}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.Runner", "samples\Samples.MultiDomainHost.Runner\Samples.MultiDomainHost.Runner.csproj", "{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.Runner", "test\test-applications\integrations\Samples.MultiDomainHost.Runner\Samples.MultiDomainHost.Runner.csproj", "{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.FrameworkHttpNoRedirects", "sample-libs\Samples.MultiDomainHost.App.FrameworkHttpNoRedirects\Samples.MultiDomainHost.App.FrameworkHttpNoRedirects.csproj", "{24D3E547-8897-4111-BAA2-B92F50CC13D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.FrameworkHttpNoRedirects", "test\test-applications\integrations\dependency-libs\Samples.MultiDomainHost.App.FrameworkHttpNoRedirects\Samples.MultiDomainHost.App.FrameworkHttpNoRedirects.csproj", "{24D3E547-8897-4111-BAA2-B92F50CC13D4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetHttpNoRedirects", "sample-libs\Samples.MultiDomainHost.App.NuGetHttpNoRedirects\Samples.MultiDomainHost.App.NuGetHttpNoRedirects.csproj", "{C41B289A-A344-49DF-A1BD-081753F9A286}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetHttpNoRedirects", "test\test-applications\integrations\dependency-libs\Samples.MultiDomainHost.App.NuGetHttpNoRedirects\Samples.MultiDomainHost.App.NuGetHttpNoRedirects.csproj", "{C41B289A-A344-49DF-A1BD-081753F9A286}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetHttpWithRedirects", "sample-libs\Samples.MultiDomainHost.App.NuGetHttpWithRedirects\Samples.MultiDomainHost.App.NuGetHttpWithRedirects.csproj", "{77EAF70B-4C16-499D-8096-91AC84E12EC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetHttpWithRedirects", "test\test-applications\integrations\dependency-libs\Samples.MultiDomainHost.App.NuGetHttpWithRedirects\Samples.MultiDomainHost.App.NuGetHttpWithRedirects.csproj", "{77EAF70B-4C16-499D-8096-91AC84E12EC4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetJsonWithRedirects", "sample-libs\Samples.MultiDomainHost.App.NuGetJsonWithRedirects\Samples.MultiDomainHost.App.NuGetJsonWithRedirects.csproj", "{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetJsonWithRedirects", "test\test-applications\integrations\dependency-libs\Samples.MultiDomainHost.App.NuGetJsonWithRedirects\Samples.MultiDomainHost.App.NuGetJsonWithRedirects.csproj", "{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper.netstandard", "sample-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj", "{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper.netstandard", "test\test-applications\integrations\dependency-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj", "{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StartDistributedTrace", "tools\StartDistributedTrace\StartDistributedTrace.csproj", "{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}"
 EndProject
@@ -344,17 +305,61 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.MSBuild", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.BenchmarkDotNet", "src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj", "{C00D8070-A38A-4267-9730-E9985CAE77DF}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{13EB9C02-357D-4BC3-9314-50162DAA0C97}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Trace", "test\benchmarks\Benchmarks.Trace\Benchmarks.Trace.csproj", "{B8D132F6-43E3-44D9-902C-78051DBAD01C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Trace", "benchmarks\Benchmarks.Trace\Benchmarks.Trace.csproj", "{B8D132F6-43E3-44D9-902C-78051DBAD01C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpMessageHandler", "test\test-applications\integrations\Samples.HttpMessageHandler\Samples.HttpMessageHandler.csproj", "{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpMessageHandler", "samples\Samples.HttpMessageHandler\Samples.HttpMessageHandler.csproj", "{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WebRequest", "test\test-applications\integrations\Samples.WebRequest\Samples.WebRequest.csproj", "{ED2742D3-2AA3-4D62-BB63-CFA43CEACCF3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WebRequest", "samples\Samples.WebRequest\Samples.WebRequest.csproj", "{ED2742D3-2AA3-4D62-BB63-CFA43CEACCF3}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-applications", "test-applications", "{9518425A-36A5-4B8F-B0B8-6137DB88441D}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\Directory.Build.props = test\test-applications\Directory.Build.props
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.DuckTyping", "src\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj", "{77B80C3C-6437-4627-87FA-B38ABDD5D58D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "regression", "regression", "{498A300E-D036-49B7-A43D-821D1CAF11A5}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\regression\Directory.Build.props = test\test-applications\regression\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependency-libs", "dependency-libs", "{EFE48691-1FBA-41D5-9BFD-676771973F0C}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\regression\dependency-libs\Directory.Build.props = test\test-applications\regression\dependency-libs\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integrations", "integrations", "{BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\integrations\Directory.Build.props = test\test-applications\integrations\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnet", "aspnet", "{AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\aspnet\Directory.Build.props = test\test-applications\aspnet\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependency-libs", "dependency-libs", "{8683D82A-2BBE-4199-9C36-C59F48804F90}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\integrations\dependency-libs\Directory.Build.props = test\test-applications\integrations\dependency-libs\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping", "src\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj", "{77B80C3C-6437-4627-87FA-B38ABDD5D58D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping.Tests", "test\Datadog.Trace.DuckTyping.Tests\Datadog.Trace.DuckTyping.Tests.csproj", "{91E50134-0E55-4D22-B180-6967174FCE0B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}"
+	ProjectSection(SolutionItems) = preProject
+		build\PackageVersionsComprehensive.g.props = build\PackageVersionsComprehensive.g.props
+		build\PackageVersionsGeneratorDefinitions.json = build\PackageVersionsGeneratorDefinitions.json
+		build\PackageVersionsLatestMinors.g.props = build\PackageVersionsLatestMinors.g.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{C70D6696-23F0-4C3D-9C2A-94C4868D5249}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "artifacts", "artifacts", "{CC53E5C5-9D3E-4AD9-A9CA-D2190463EB5B}"
+	ProjectSection(SolutionItems) = preProject
+		build\artifacts\createLogPath.sh = build\artifacts\createLogPath.sh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{E5439139-6F94-44FA-9590-C32FCC1C7A93}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -924,16 +929,6 @@ Global
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x64.Build.0 = Release|x64
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x86.ActiveCfg = Release|x86
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x86.Build.0 = Release|x86
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Debug|x64.ActiveCfg = Debug|x64
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Debug|x64.Build.0 = Debug|x64
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Debug|x86.ActiveCfg = Debug|x86
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Debug|x86.Build.0 = Debug|x86
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Release|Any CPU.ActiveCfg = Release|x86
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Release|x64.ActiveCfg = Release|x64
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Release|x64.Build.0 = Release|x64
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Release|x86.ActiveCfg = Release|x86
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12}.Release|x86.Build.0 = Release|x86
 		{D0424A27-4ED4-406E-80D5-2EFDCC53399B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D0424A27-4ED4-406E-80D5-2EFDCC53399B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0424A27-4ED4-406E-80D5-2EFDCC53399B}.Debug|x64.ActiveCfg = Debug|x64
@@ -1317,84 +1312,92 @@ Global
 		{EFBFC324-B459-4D39-8E19-CE4AD0DBF15F} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
-		{3C6DD42E-9214-4747-92BA-78DE29AACE59} = {65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}
-		{3054DE0E-F140-4758-B2DA-0B9470C6EDE1} = {C1B5EA8C-C190-4EAE-871B-A7E95B5EC482}
+		{3C6DD42E-9214-4747-92BA-78DE29AACE59} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
+		{3054DE0E-F140-4758-B2DA-0B9470C6EDE1} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{5728056A-51AA-4FF5-AD0C-E86E44E36102} = {8CEC2042-F11C-49F5-A674-2355793B600A}
-		{FDB5C8D0-018D-4FF9-9680-C6A5078F819B} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
-		{4B243CF1-4269-45C6-A238-1A9BFA58B8CC} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
+		{FDB5C8D0-018D-4FF9-9680-C6A5078F819B} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
+		{4B243CF1-4269-45C6-A238-1A9BFA58B8CC} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE} = {8CEC2042-F11C-49F5-A674-2355793B600A}
-		{086FF8A0-9CEE-470A-9751-78B0F1340649} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{C98950B1-DC4B-43DA-974F-EF2CF325EC2B} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{6D86109F-B7C9-477D-86D7-45735A3A0818} = {65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}
+		{086FF8A0-9CEE-470A-9751-78B0F1340649} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{C98950B1-DC4B-43DA-974F-EF2CF325EC2B} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{6D86109F-B7C9-477D-86D7-45735A3A0818} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
 		{5B52C0C0-A554-4E53-9D17-B121E78FF919} = {8CEC2042-F11C-49F5-A674-2355793B600A}
-		{3493346B-44F6-4F50-8FB4-51D0090DF544} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087} = {65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}
-		{D1729F17-99A5-45AF-AB38-72FA6ECCE609} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{AD119B05-A092-41AD-B68E-4AE2DB5A96D9} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{2AD18622-9A02-41B4-915E-798BD64044D5} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{F47F206E-4CCA-4AD0-AEBA-FD9F491E05EC} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{24B0357D-B0C8-46C7-96F6-006E3F66662A} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
-		{8E1555D1-13D5-4DBF-9631-117D840C3158} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{DC7D131A-AF99-46AB-9AA6-463443E3B992} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{673826CD-9219-4231-8FCF-4F9C8BE61F76} = {65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}
-		{DA0A44FB-D562-4776-AAFB-8266E78AA1A6} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{3CDCE3AA-7CAF-4A27-B1D3-9D558B74D084} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{DAD5E1F2-A158-4624-9FB4-C89E98DFF0D4} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{43782238-E7BB-49D0-9541-1121DACA6EB5} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{FA487690-E88C-4A57-9187-B71CB70C1AAE} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
+		{3493346B-44F6-4F50-8FB4-51D0090DF544} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
+		{D1729F17-99A5-45AF-AB38-72FA6ECCE609} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{AD119B05-A092-41AD-B68E-4AE2DB5A96D9} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{2AD18622-9A02-41B4-915E-798BD64044D5} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{F47F206E-4CCA-4AD0-AEBA-FD9F491E05EC} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{24B0357D-B0C8-46C7-96F6-006E3F66662A} = {C70D6696-23F0-4C3D-9C2A-94C4868D5249}
+		{8E1555D1-13D5-4DBF-9631-117D840C3158} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{DC7D131A-AF99-46AB-9AA6-463443E3B992} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
+		{DA0A44FB-D562-4776-AAFB-8266E78AA1A6} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{3CDCE3AA-7CAF-4A27-B1D3-9D558B74D084} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{DAD5E1F2-A158-4624-9FB4-C89E98DFF0D4} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{43782238-E7BB-49D0-9541-1121DACA6EB5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{FA487690-E88C-4A57-9187-B71CB70C1AAE} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2} = {EFE48691-1FBA-41D5-9BFD-676771973F0C}
 		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
-		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{6ABAD006-E206-488E-ACA1-1AA73F9B5146} = {FEBCE7DC-9FD1-48A6-B911-71ABB240A030}
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{6ABAD006-E206-488E-ACA1-1AA73F9B5146} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{C52D6695-4E05-4930-88F8-0EFF8056A967} = {FEBCE7DC-9FD1-48A6-B911-71ABB240A030}
-		{42FA33DD-AEA3-4FF3-8319-F30244A666A4} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{DF923186-5397-4E15-A95B-F15C8327ED53} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{E1706893-D3A5-43B9-9036-AEF49DB9600B} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
+		{42FA33DD-AEA3-4FF3-8319-F30244A666A4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{DF923186-5397-4E15-A95B-F15C8327ED53} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{E1706893-D3A5-43B9-9036-AEF49DB9600B} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{21D420EB-06D0-489D-A71C-C748BB46B8EF} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 		{72FB583A-A1B0-4B5F-8658-617B100DCD8E} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
-		{35F581E9-3D7C-4E80-8DFF-D437B0D86710} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{1C34D970-6081-4EFA-8F2F-5AD2B146AC58} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
+		{35F581E9-3D7C-4E80-8DFF-D437B0D86710} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{1C34D970-6081-4EFA-8F2F-5AD2B146AC58} = {EFE48691-1FBA-41D5-9BFD-676771973F0C}
 		{3BEACB10-89FE-4F74-8022-1A52F223CE82} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
-		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{E41C87E9-7339-4FC0-8791-D57752C5BC12} = {CD9D9813-A195-464A-A0F1-59E02D16E181}
-		{D0424A27-4ED4-406E-80D5-2EFDCC53399B} = {65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{D0424A27-4ED4-406E-80D5-2EFDCC53399B} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
 		{B34EDBC7-C5FB-409D-8472-BC7469D6F2BD} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
-		{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{EF718502-7760-45B5-A563-5F1B22A6B840} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{8B457E8F-8716-4F29-BBE2-DD6C7BC4AC37} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{303F8E41-691F-4453-AB7D-88A0036C0465} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{D141BD06-DD95-4CAF-85CD-657116E0DAD4} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{6209C19B-42E4-4FCF-A539-FD1E4F4A34DB} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{DAA6B000-5BED-4081-B5E0-B698BFB89415} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
-		{317D3C64-E4F6-4D77-83C0-C69FC3923471} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{9A2AE41B-251F-4A21-89FA-E5C55A737BBB} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{24BE488C-A5F3-4228-8CAB-E60EBEA444EE} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
-		{EB0B88E2-589A-4F65-8F98-D5B958D8104F} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
-		{4E83BFB5-F225-4C3B-B96E-0AD1951A5630} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
-		{7B0822F6-80DE-4B49-8125-93975678D0D5} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{C41023C9-65C3-4FB3-9053-4DE963A81500} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{7E563BF6-47F2-4531-A1CE-FB9445DF3253} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{EF718502-7760-45B5-A563-5F1B22A6B840} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{8B457E8F-8716-4F29-BBE2-DD6C7BC4AC37} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{303F8E41-691F-4453-AB7D-88A0036C0465} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{D141BD06-DD95-4CAF-85CD-657116E0DAD4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{6209C19B-42E4-4FCF-A539-FD1E4F4A34DB} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{DAA6B000-5BED-4081-B5E0-B698BFB89415} = {C70D6696-23F0-4C3D-9C2A-94C4868D5249}
+		{317D3C64-E4F6-4D77-83C0-C69FC3923471} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{9A2AE41B-251F-4A21-89FA-E5C55A737BBB} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{24BE488C-A5F3-4228-8CAB-E60EBEA444EE} = {EFE48691-1FBA-41D5-9BFD-676771973F0C}
+		{EB0B88E2-589A-4F65-8F98-D5B958D8104F} = {EFE48691-1FBA-41D5-9BFD-676771973F0C}
+		{4E83BFB5-F225-4C3B-B96E-0AD1951A5630} = {EFE48691-1FBA-41D5-9BFD-676771973F0C}
+		{7B0822F6-80DE-4B49-8125-93975678D0D5} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{C41023C9-65C3-4FB3-9053-4DE963A81500} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{7E563BF6-47F2-4531-A1CE-FB9445DF3253} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{D95D5E26-F32A-481D-A15A-EF7B3B56D2E0} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
-		{AAD9038B-8F16-4E09-93AF-B13E9F7ACD66} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{24D3E547-8897-4111-BAA2-B92F50CC13D4} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
-		{C41B289A-A344-49DF-A1BD-081753F9A286} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
-		{77EAF70B-4C16-499D-8096-91AC84E12EC4} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
-		{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
-		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
+		{AAD9038B-8F16-4E09-93AF-B13E9F7ACD66} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{24D3E547-8897-4111-BAA2-B92F50CC13D4} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
+		{C41B289A-A344-49DF-A1BD-081753F9A286} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
+		{77EAF70B-4C16-499D-8096-91AC84E12EC4} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
+		{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
+		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{A1D7653A-C409-414A-B9B0-7879953EBCDD} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{E02B141F-E7C0-46CF-B9F6-39427218E714} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{C00D8070-A38A-4267-9730-E9985CAE77DF} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
-		{B8D132F6-43E3-44D9-902C-78051DBAD01C} = {13EB9C02-357D-4BC3-9314-50162DAA0C97}
-		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{ED2742D3-2AA3-4D62-BB63-CFA43CEACCF3} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{B8D132F6-43E3-44D9-902C-78051DBAD01C} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
+		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{ED2742D3-2AA3-4D62-BB63-CFA43CEACCF3} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{9518425A-36A5-4B8F-B0B8-6137DB88441D} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{498A300E-D036-49B7-A43D-821D1CAF11A5} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
+		{EFE48691-1FBA-41D5-9BFD-676771973F0C} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
+		{AFA0AB23-64F0-4AC1-9050-6CE8FE06F580} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
+		{8683D82A-2BBE-4199-9C36-C59F48804F90} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{77B80C3C-6437-4627-87FA-B38ABDD5D58D} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{91E50134-0E55-4D22-B180-6967174FCE0B} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{C70D6696-23F0-4C3D-9C2A-94C4868D5249} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
+		{CC53E5C5-9D3E-4AD9-A9CA-D2190463EB5B} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
+		{E5439139-6F94-44FA-9590-C32FCC1C7A93} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

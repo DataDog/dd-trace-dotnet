@@ -228,7 +228,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    msiOutputDirectory: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
+    msiOutputDirectory: src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
 
   steps:
   - task: UseDotNet@2
@@ -282,11 +282,11 @@ jobs:
     inputs:
       command: build
       projects: |
-        reproductions/**/*.csproj
+        test/test-applications/regression/**/*.csproj
         test/*.IntegrationTests/*.IntegrationTests.csproj
-        !reproductions/**/ExpenseItDemo*.csproj
-        !reproductions/**/EntityFramework6x*.csproj
-        !reproductions/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+        !test/test-applications/regression/**/ExpenseItDemo*.csproj
+        !test/test-applications/regression/**/EntityFramework6x*.csproj
+        !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
 
   - task: DotNetCoreCLI@2
@@ -294,7 +294,8 @@ jobs:
     inputs:
       command: build
       projects: |
-        samples/**/*.csproj
+        test/test-applications/integrations/**/*.csproj
+        !test/test-applications/integrations/dependency-libs/**/*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false
 
   - task: DotNetCoreCLI@2
@@ -335,7 +336,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    msiOutputDirectory: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
+    msiOutputDirectory: src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
 
   steps:
   - task: UseDotNet@2
@@ -389,11 +390,11 @@ jobs:
     inputs:
       command: build
       projects: |
-        reproductions/**/*.csproj
+        test/test-applications/regression/**/*.csproj
         test/*.IntegrationTests/*.IntegrationTests.csproj
-        !reproductions/**/ExpenseItDemo*.csproj
-        !reproductions/**/EntityFramework6x*.csproj
-        !reproductions/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+        !test/test-applications/regression/**/ExpenseItDemo*.csproj
+        !test/test-applications/regression/**/EntityFramework6x*.csproj
+        !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
 
   - task: DotNetCoreCLI@2
@@ -401,19 +402,20 @@ jobs:
     inputs:
       command: build
       projects: |
-        samples/**/*.csproj
+        test/test-applications/integrations/**/*.csproj
+        !test/test-applications/integrations/dependency-libs/**/*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false
 
   - task: NuGetCommand@2
     displayName: nuget restore IIS samples
     inputs:
-      restoreSolution: samples-iis/samples-iis.sln
+      restoreSolution: test/test-applications/aspnet/samples-iis.sln
       verbosityRestore: Normal
 
   - task: MSBuild@1
     displayName: Publish IIS samples
     inputs:
-      solution: samples-iis/samples-iis.sln
+      solution: test/test-applications/aspnet/samples-iis.sln
       configuration: '$(buildConfiguration)'
       msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml'
       maximumCpuCount: true

@@ -11,6 +11,7 @@ namespace Datadog.Core.Tools
             var projectBin =
                 Path.Combine(
                     solutionDirectory,
+                    "build",
                     "tools",
                     "PrepareRelease",
                     "bin",

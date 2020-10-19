@@ -269,3 +269,4 @@ BenchmarkDotNet.Artifacts/
 
 deploy/linux/
 deploy/AzureAppServices/
+!build/artifacts
