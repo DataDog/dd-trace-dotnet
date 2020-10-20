@@ -70,8 +70,8 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run Profiler
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64/Datadog.Trace.ClrProfiler.Native.so
-    artifact: linux-tracer-native-binary
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+    artifact: linux-tracer-home
 
 - job: build_runner_tool_and_standalone
   dependsOn: build_linux_profiler
@@ -86,12 +86,13 @@ jobs:
 
   steps:
   - download: current
-    artifact: linux-tracer-native-binary
+    artifact: linux-tracer-home
+    patterns: '**/*.so'
 
   - task: CopyFiles@2
     displayName: Copying native linux binary from previous job
     inputs:
-      sourceFolder: $(Pipeline.Workspace)/linux-tracer-native-binary
+      sourceFolder: $(Pipeline.Workspace)/linux-tracer-home
       targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
 
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
