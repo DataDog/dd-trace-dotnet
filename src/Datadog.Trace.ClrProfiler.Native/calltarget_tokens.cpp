@@ -167,6 +167,71 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
   return S_OK;
 }
 
+mdMethodSpec CallTargetTokens::GetBeginMethodWithArgumentsArrayMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWithoutArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith1ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith2ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith3ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith4ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
+    mdTypeRef arg4TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith5ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
+    mdTypeRef arg4TypeRef, mdTypeRef arg5TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith6ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
+    mdTypeRef arg4TypeRef, mdTypeRef arg5TypeRef, mdTypeRef arg6TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetEndVoidReturnMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetEndReturnMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef returnTypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetLogExceptionMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
+  return mdMethodSpecNil;
+}
+
 mdTypeRef CallTargetTokens::GetTargetStateTypeRef() {
   auto hr = EnsureBaseCalltargetTokens();
   if (FAILED(hr)) {
@@ -211,20 +276,27 @@ mdTypeRef CallTargetTokens::GetTargetVoidReturnTypeRef() {
 }
 
 mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
-    mdTypeRef returnTypeRef) {
+    FunctionMethodArgument* returnArgument) {
+  {
+    std::lock_guard<std::mutex> guard(mdTypeSpecMap_lock);
+    if (mdTypeSpecMap.count(returnArgument) > 0) {
+      return mdTypeSpecMap[returnArgument];
+    }
+  }
+
   auto hr = EnsureBaseCalltargetTokens();
   if (FAILED(hr)) {
     return mdTypeSpecNil;
   }
 
   ModuleMetadata* module_metadata = GetMetadata();
+  mdTypeSpec returnValueTypeSpec = mdTypeSpecNil;
 
   // *** Ensure calltargetreturn type ref
   if (callTargetReturnTypeRef == mdTypeRefNil) {
-    // TODO
-
     hr = module_metadata->metadata_emit->DefineTypeRefByName(
-        profilerAssemblyRef, managed_profiler_calltarget_returntype.data(),
+        profilerAssemblyRef,
+        managed_profiler_calltarget_returntype_generics.data(),
         &callTargetReturnTypeRef);
     if (FAILED(hr)) {
       Warn("Wrapper callTargetReturnTypeRef could not be defined.");
@@ -232,7 +304,101 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
     }
   }
 
-  return mdTypeSpecNil;
+  PCCOR_SIGNATURE returnSignatureBuffer;
+  auto returnSignatureLength =
+      returnArgument->GetSignature(returnSignatureBuffer);
+
+  // Get The base calltargetReturnTypeRef Buffer and Size
+  unsigned callTargetReturnTypeRefBuffer;
+  auto callTargetReturnTypeRefSize = CorSigCompressToken(
+      callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
+
+  auto signatureLength =
+      4 + callTargetReturnTypeRefSize + returnSignatureLength;
+  auto* signature = new COR_SIGNATURE[signatureLength];
+  unsigned offset = 0;
+
+  signature[offset++] = ELEMENT_TYPE_GENERICINST;
+  signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+  memcpy(&signature[offset], &callTargetReturnTypeRefBuffer,
+         callTargetReturnTypeRefSize);
+  offset += callTargetReturnTypeRefSize;
+  signature[offset++] = 0x01;
+  memcpy(&signature[offset], &returnSignatureBuffer, returnSignatureLength);
+  offset += returnSignatureLength;
+
+  hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(
+      signature, signatureLength, &returnValueTypeSpec);
+  if (FAILED(hr)) {
+    Warn("Error creating return value type spec");
+    return mdTypeSpecNil;
+  }
+
+  {
+    std::lock_guard<std::mutex> guard(mdTypeSpecMap_lock);
+    mdTypeSpecMap[returnArgument] = returnValueTypeSpec;
+  }
+
+  return returnValueTypeSpec;
+}
+
+HRESULT CallTargetTokens::ModifyLocalSig(
+    ILRewriter& reWriter, FunctionMethodArgument* methodReturnValue) {
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return mdTypeSpecNil;
+  }
+
+  ModuleMetadata* module_metadata = GetMetadata();
+
+  PCCOR_SIGNATURE originalSignature = NULL;
+  ULONG originalSignatureSize = 0;
+  mdToken localVarSig = reWriter.GetTkLocalVarSig();
+
+  if (localVarSig != mdTokenNil) {
+    IfFailRet(module_metadata->metadata_import->GetSigFromToken(
+        localVarSig, &originalSignature, &originalSignatureSize));
+
+    // Check if the localvarsig has been already rewritten
+    unsigned temp = 0;
+    const auto len = CorSigCompressToken(callTargetStateTypeRef, &temp);
+    if (originalSignatureSize - len > 0) {
+      if (originalSignature[originalSignatureSize - len - 1] ==
+          ELEMENT_TYPE_CLASS) {
+        if (memcmp(&originalSignature[originalSignatureSize - len], &temp,
+                   len) == 0)
+          return E_FAIL;
+      }
+    }
+  }
+
+  // Gets the calltarget state type buffer and size
+  unsigned callTargetStateTypeRefBuffer;
+  auto callTargetStateTypeRefSize = CorSigCompressToken(
+      callTargetStateTypeRef, &callTargetStateTypeRefBuffer);
+
+  // Gets the exception type buffer and size
+  unsigned exTypeRefBuffer;
+  auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
+
+  // Gets the Return type signature
+  PCCOR_SIGNATURE returnSignatureType = NULL;
+  ULONG returnSignatureTypeSize;
+
+  // Gets the CallTargetReturn<T> mdTypeSpec
+  mdToken callTargetReturn = mdTokenNil;
+
+  unsigned retTypeElementType;
+  auto retTypeFlags = methodReturnValue->GetTypeFlags(retTypeElementType);
+  if (retTypeFlags != TypeFlagVoid) {
+    returnSignatureTypeSize =
+        methodReturnValue->GetSignature(returnSignatureType);
+    callTargetReturn = GetTargetReturnValueTypeRef(methodReturnValue);
+  } else {
+    callTargetReturn = GetTargetVoidReturnTypeRef();
+  }
+
+  return S_OK;
 }
 
 }  // namespace trace

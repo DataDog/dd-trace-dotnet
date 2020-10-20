@@ -3,11 +3,13 @@
 
 #include <corhlpr.h>
 
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "clr_helpers.h"
 #include "com_ptr.h"
+#include "il_rewriter.h"
 #include "integration.h"
 #include "string.h"
 
@@ -32,6 +34,9 @@ class CallTargetTokens {
   mdTypeRef callTargetStateTypeRef = mdTypeRefNil;
   mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
   mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
+
+  std::mutex mdTypeSpecMap_lock;
+  std::unordered_map<FunctionMethodArgument*, mdTypeSpec> mdTypeSpecMap;
 
   mdMemberRef beginArrayMemberRef = mdMemberRefNil;
   mdMemberRef beginP0MemberRef = mdMemberRefNil;
@@ -96,7 +101,11 @@ class CallTargetTokens {
 
   mdTypeRef GetTargetStateTypeRef();
   mdTypeRef GetTargetVoidReturnTypeRef();
-  mdTypeSpec GetTargetReturnValueTypeRef(mdTypeRef returnTypeRef);
+  mdTypeSpec GetTargetReturnValueTypeRef(
+      FunctionMethodArgument* returnArgument);
+
+  HRESULT ModifyLocalSig(ILRewriter& reWriter,
+                         FunctionMethodArgument* methodReturnValue);
 };
 
 }  // namespace trace

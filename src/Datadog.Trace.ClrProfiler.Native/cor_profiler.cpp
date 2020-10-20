@@ -2215,6 +2215,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     FunctionID functionId, RejitHandlerModule* moduleHandler,
     RejitHandlerModuleMethod* methodHandler) {
   Info("CallTarget_RewriterCallback !!!: ", functionId);
+
+  // methodHandler->GetFunctionInfo()->method_signature.GetRet().
   /*
   Info(moduleHandler->GetModuleId());
   Info(moduleHandler->GetModuleMetadata()->app_domain_id);
