@@ -161,7 +161,7 @@ jobs:
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet-runner-tool
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/*.nupkg
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool
     displayName: Uploading runner dotnet tool artifact
     artifact: runner-dotnet-tool
 
