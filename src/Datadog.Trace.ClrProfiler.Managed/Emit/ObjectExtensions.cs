@@ -252,7 +252,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (containerType.IsValueType)
             {
-                il.Emit(OpCodes.Unbox, containerType);
+                il.Emit(OpCodes.Unbox_Any, containerType);
             }
             else
             {

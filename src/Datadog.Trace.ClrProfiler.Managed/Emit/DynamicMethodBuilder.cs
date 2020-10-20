@@ -166,7 +166,24 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 Type delegateParameterType = parameterTypes[argumentIndex];
                 Type underlyingParameterType = effectiveParameterTypes[argumentIndex];
 
-                il.Emit(OpCodes.Ldarg, argumentIndex);
+                switch (argumentIndex)
+                {
+                    case 0:
+                        il.Emit(OpCodes.Ldarg_0);
+                        break;
+                    case 1:
+                        il.Emit(OpCodes.Ldarg_1);
+                        break;
+                    case 2:
+                        il.Emit(OpCodes.Ldarg_2);
+                        break;
+                    case 3:
+                        il.Emit(OpCodes.Ldarg_3);
+                        break;
+                    default:
+                        il.Emit(OpCodes.Ldarg_S, argumentIndex);
+                        break;
+                }
 
                 if (underlyingParameterType.IsValueType && delegateParameterType == typeof(object))
                 {
