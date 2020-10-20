@@ -164,6 +164,17 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
     }
   }
 
+  // *** Ensure calltargetstate type ref
+  if (callTargetStateTypeRef == mdTypeRefNil) {
+    hr = module_metadata->metadata_emit->DefineTypeRefByName(
+        profilerAssemblyRef, managed_profiler_calltarget_statetype.data(),
+        &callTargetStateTypeRef);
+    if (FAILED(hr)) {
+      Warn("Wrapper callTargetStateTypeRef could not be defined.");
+      return hr;
+    }
+  }
+
   return S_OK;
 }
 
@@ -236,19 +247,6 @@ mdTypeRef CallTargetTokens::GetTargetStateTypeRef() {
   auto hr = EnsureBaseCalltargetTokens();
   if (FAILED(hr)) {
     return mdTypeRefNil;
-  }
-
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  // *** Ensure calltargetstate type ref
-  if (callTargetStateTypeRef == mdTypeRefNil) {
-    hr = module_metadata->metadata_emit->DefineTypeRefByName(
-        profilerAssemblyRef, managed_profiler_calltarget_statetype.data(),
-        &callTargetStateTypeRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper callTargetStateTypeRef could not be defined.");
-      return mdTypeRefNil;
-    }
   }
   return callTargetStateTypeRef;
 }
@@ -343,7 +341,8 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
 }
 
 HRESULT CallTargetTokens::ModifyLocalSig(
-    ILRewriter& reWriter, FunctionMethodArgument* methodReturnValue) {
+    ILRewriter& reWriter, FunctionMethodArgument* methodReturnValue,
+    ULONG* localsCount) {
   auto hr = EnsureBaseCalltargetTokens();
   if (FAILED(hr)) {
     return mdTypeSpecNil;
@@ -372,6 +371,8 @@ HRESULT CallTargetTokens::ModifyLocalSig(
     }
   }
 
+  ULONG newLocalsCount = 3;
+
   // Gets the calltarget state type buffer and size
   unsigned callTargetStateTypeRefBuffer;
   auto callTargetStateTypeRefSize = CorSigCompressToken(
@@ -394,11 +395,96 @@ HRESULT CallTargetTokens::ModifyLocalSig(
     returnSignatureTypeSize =
         methodReturnValue->GetSignature(returnSignatureType);
     callTargetReturn = GetTargetReturnValueTypeRef(methodReturnValue);
+    newLocalsCount++;
   } else {
     callTargetReturn = GetTargetVoidReturnTypeRef();
   }
 
-  return S_OK;
+  // Get Buffer and Size for CallTargetReturn<T> mdTypeRef/mdTypeSpec
+  unsigned callTargetReturnBuffer;
+  auto callTargetReturnSize =
+      CorSigCompressToken(callTargetReturn, &callTargetReturnBuffer);
+
+  // New signature size
+  ULONG newSignatureSize = originalSignatureSize +
+                           (1 + callTargetStateTypeRefSize) +
+                           (1 + exTypeRefSize) + (1 + callTargetReturnSize) +
+                           returnSignatureTypeSize;
+  ULONG newSignatureOffset = 0;
+
+  ULONG oldLocalsBuffer;
+  ULONG oldLocalsLen = 0;
+  unsigned newLocalsBuffer;
+  ULONG newLocalsLen;
+
+  // Calculate the new locals count
+  if (originalSignatureSize == 0) {
+    newSignatureSize += 2;
+    newLocalsLen = CorSigCompressData(newLocalsCount, &newLocalsBuffer);
+  } else {
+    oldLocalsLen =
+        CorSigUncompressData(originalSignature + 1, &oldLocalsBuffer);
+    newLocalsCount += oldLocalsBuffer;
+    newLocalsLen = CorSigCompressData(newLocalsCount, &newLocalsBuffer);
+    newSignatureSize += newLocalsLen - oldLocalsLen;
+  }
+
+  // New signature declaration
+  auto* newSignatureBuffer = new COR_SIGNATURE[newSignatureSize];
+  newSignatureBuffer[newSignatureOffset++] = IMAGE_CEE_CS_CALLCONV_LOCAL_SIG;
+
+  // Set the locals count
+  memcpy(&newSignatureBuffer[newSignatureOffset], &newLocalsBuffer,
+         newLocalsLen);
+  newSignatureOffset += newLocalsLen;
+
+  // Copy previous locals to the signature
+  if (originalSignatureSize > 0) {
+    const auto copyLength = originalSignatureSize - 1 - oldLocalsLen;
+    memcpy(&newSignatureBuffer[newSignatureOffset],
+           originalSignature + 1 + oldLocalsLen, copyLength);
+    newSignatureOffset += copyLength;
+  }
+
+  // Add new locals
+
+  // CallTarget state value
+  newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
+  memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetStateTypeRefBuffer,
+         callTargetStateTypeRefSize);
+  newSignatureOffset += callTargetStateTypeRefSize;
+
+  // Exception value
+  newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_CLASS;
+  memcpy(&newSignatureBuffer[newSignatureOffset], &exTypeRefBuffer,
+         exTypeRefSize);
+  newSignatureOffset += exTypeRefSize;
+
+  // CallTarget Return value
+  newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
+  memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetReturnBuffer,
+         callTargetReturnSize);
+  newSignatureOffset += callTargetReturnSize;
+
+  // Return value local
+  if (returnSignatureType != NULL) {
+    memcpy(&newSignatureBuffer[newSignatureOffset], returnSignatureType,
+           returnSignatureTypeSize);
+    newSignatureOffset += returnSignatureTypeSize;
+  }
+
+  // Get new locals token
+  mdToken newLocalVarSig;
+  hr = module_metadata->metadata_emit->GetTokenFromSig(
+      newSignatureBuffer, newSignatureSize, &newLocalVarSig);
+  if (FAILED(hr)) {
+    Warn("Error creating new locals var signature.");
+  }
+
+  reWriter.SetTkLocalVarSig(newLocalVarSig);
+  *localsCount = newLocalsCount;
+
+  return hr;
 }
 
 }  // namespace trace

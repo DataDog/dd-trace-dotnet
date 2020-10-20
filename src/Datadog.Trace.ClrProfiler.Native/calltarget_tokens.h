@@ -105,7 +105,8 @@ class CallTargetTokens {
       FunctionMethodArgument* returnArgument);
 
   HRESULT ModifyLocalSig(ILRewriter& reWriter,
-                         FunctionMethodArgument* methodReturnValue);
+                         FunctionMethodArgument* methodReturnValue,
+                         ULONG* localsCount);
 };
 
 }  // namespace trace
