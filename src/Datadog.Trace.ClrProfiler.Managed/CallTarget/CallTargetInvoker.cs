@@ -247,5 +247,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.LogException(exception);
         }
+
+        /// <summary>
+        /// Gets the default value of a type
+        /// </summary>
+        /// <typeparam name="T">Type to get the default value</typeparam>
+        /// <returns>Default value of T</returns>
+        public static T GetDefaultValue<T>() => default(T);
     }
 }

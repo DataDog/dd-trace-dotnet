@@ -18,15 +18,16 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         }
 
         /// <summary>
-        /// Gets the return value
-        /// </summary>
-        public T ReturnValue => _returnValue;
-
-        /// <summary>
         /// Gets the default call target return value (used by the native side to initialize the locals)
         /// </summary>
         /// <returns>Default call target return value</returns>
         public static CallTargetReturn<T> GetDefault() => new CallTargetReturn<T>(default);
+
+        /// <summary>
+        /// Gets the return value
+        /// </summary>
+        /// <returns>Return value</returns>
+        public T GetReturnValue() => _returnValue;
     }
 
     /// <summary>

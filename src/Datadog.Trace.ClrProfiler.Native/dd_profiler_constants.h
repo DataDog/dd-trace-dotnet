@@ -72,11 +72,16 @@ namespace trace {
   WSTRING managed_profiler_calltarget_beginmethod_name = "BeginMethod"_W;
   WSTRING managed_profiler_calltarget_endmethod_name = "EndMethod"_W;
   WSTRING managed_profiler_calltarget_logexception_name = "LogException"_W;
+  WSTRING managed_profiler_calltarget_getdefaultvalue_name = "GetDefaultValue"_W;
   
   WSTRING managed_profiler_calltarget_statetype = "Datadog.Trace.ClrProfiler.CallTarget.CallTargetState"_W;
   WSTRING managed_profiler_calltarget_statetype_getdefault_name = "GetDefault"_W;
 
   WSTRING managed_profiler_calltarget_returntype = "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn"_W;
   WSTRING managed_profiler_calltarget_returntype_getdefault_name = "GetDefault"_W;
+
+  WSTRING managed_profiler_calltarget_returntype_generics = "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1"_W;
+  WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = "GetReturnValue"_W;
+
 
 }  // namespace trace
