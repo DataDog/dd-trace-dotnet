@@ -5,7 +5,6 @@
 
   <ItemGroup>
     <TracerHomeDirectory Include="$(MSBuildThisFileDirectory)home" />
-    <CSharpProjects Include="..\**\*.csproj"/>
     <NativeWinProject Include="..\**\*.vcxproj" />
     <NativeWinX64OutputFolder Include=".\home\win-x64" />
     <NativeWinX86OutputFolder Include=".\home\win-x86" />

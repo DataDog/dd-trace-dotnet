@@ -23,7 +23,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Include="..\..\docker\linux-build.dockerfile" Link="linux-build.dockerfile" />
+    <None Include="..\..\build\docker\linux-build.dockerfile" Link="linux-build.dockerfile" />
     <None Include="Datadog.Trace.Tools.Runner.proj" />
   </ItemGroup>
   
