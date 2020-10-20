@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
         {
             var aspNetCoreMvc2Port = TcpPortProvider.GetOpenPort();
             var aspNetCoreMvc2Url = GetUrl(aspNetCoreMvc2Port);
-            RegisterPart(applicationName: CoreMvc, directory: "samples", requiresAgent: true, port: aspNetCoreMvc2Port);
+            RegisterPart(applicationName: CoreMvc, directory: "test/test-applications/integrations", requiresAgent: true, port: aspNetCoreMvc2Port);
             RegisterPart(
                 applicationName: LoadTestConsole,
                 directory: "reproductions",

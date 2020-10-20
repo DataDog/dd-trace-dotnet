@@ -10,5 +10,5 @@ packages/
 **/bin/
 **/obj/
 
-!samples-iis/*/bin/
-!deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/
+!test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/
+!src/WindowsInstaller/bin/

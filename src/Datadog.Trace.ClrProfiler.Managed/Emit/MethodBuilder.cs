@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Sigil;
@@ -451,8 +450,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
             if (statsd != null)
             {
                 string[] tags = { $"instrumented-method:{_concreteTypeName}.{_methodName}" };
-                statsd.AppendWarning(source: $"{nameof(MethodBuilder)}.{nameof(TryFindMethod)}", message: "Using fallback method matching", tags);
-                statsd.Send();
+                var command = statsd.GetWarning(source: $"{nameof(MethodBuilder)}.{nameof(TryFindMethod)}", message: "Using fallback method matching", tags);
+                statsd.Send(command);
             }
 
             var methods =
