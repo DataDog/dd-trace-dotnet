@@ -1,0 +1,164 @@
+﻿<Project DefaultTargets="BuildTool" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TracerHomeDirectory Include="$(MSBuildThisFileDirectory)home" />
+    <NativeWinProject Include="..\**\*.vcxproj" />
+    <NativeWinX64OutputFolder Include=".\home\win-x64" />
+    <NativeWinX86OutputFolder Include=".\home\win-x86" />
+    <NativeLinuxX64Output Include="$(MSBuildThisFileDirectory)home\linux-x64\Datadog.Trace.ClrProfiler.Native.so" />
+    <ObjPath Include="obj\**\*" />
+  </ItemGroup>
+
+  <Target Name="BuildTool" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
+    <Message Text="Building the dotnet tool" />
+    <Delete Files="@(ObjPath)" />
+    <RemoveDir Directories="obj" />
+    <MSBuild Targets="Restore" Projects="Datadog.Trace.Tools.Runner.Tool.csproj" />
+    <MSBuild Targets="Build" Projects="Datadog.Trace.Tools.Runner.Tool.csproj" Properties="Configuration=Release" />
+  </Target>
+
+  <Target Name="BuildStandalone" DependsOnTargets="BuildCSharpProjects;BuildNativeWindows;BuildNativeLinux">
+    <Message Text="Building the standalone app" />
+    <Delete Files="@(ObjPath)" />
+    <RemoveDir Directories="obj" />
+    <MSBuild Targets="Restore" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x64" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x86" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64" />
+  </Target>
+
+  <Target Name="BuildCSharpProjects">
+    <ItemGroup>
+      <ManagedProject Include="..\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=net45;PublishDir=@(TracerHomeDirectory)\net45</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=net461;PublishDir=@(TracerHomeDirectory)\net461</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=netstandard2.0;PublishDir=@(TracerHomeDirectory)\netstandard2.0</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=netcoreapp3.1;PublishDir=@(TracerHomeDirectory)\netcoreapp3.1</Properties>
+      </ManagedProfilerPublishProject>
+    </ItemGroup>
+
+    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="true" RemoveProperties="Platform">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
+
+    <ItemGroup>
+      <ManagedProject Include="..\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj" />
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=net45;PublishDir=@(TracerHomeDirectory)\net45</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=net461;PublishDir=@(TracerHomeDirectory)\net461</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=netstandard2.0;PublishDir=@(TracerHomeDirectory)\netstandard2.0</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="@(ManagedProject)">
+        <Properties>TargetFramework=netcoreapp3.1;PublishDir=@(TracerHomeDirectory)\netcoreapp3.1</Properties>
+      </ManagedProfilerPublishProject>
+    </ItemGroup>
+
+    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="true" RemoveProperties="Platform">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
+  </Target>
+
+  <Target Name="BuildNativeWindows">
+    <Message Importance="high" Text="%0A *** Native projects to build: %0A   @(NativeWinProject, '%0A   ')%0A" />
+
+    <Message Importance="high" Text="%0A *** Building Native ClrProfiler for Win-x64 *** %0A" />
+    <MSBuild Targets="Build" Projects="@(NativeWinProject)" Properties="Configuration=Release;Platform=x64" />
+
+    <Message Importance="high" Text="%0A *** Building Native ClrProfiler for Win-x86 *** %0A" />
+    <MSBuild Targets="Build" Projects="@(NativeWinProject)" Properties="Configuration=Release;Platform=x86" />
+
+    <ItemGroup>
+      <NativeWinX64Output Include="..\*Native\bin\Release\x64\*.dll" />
+      <NativeWinX86Output Include="..\*Native\bin\Release\x86\*.dll" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(NativeWinX64Output)" DestinationFolder="@(NativeWinX64OutputFolder)"
+          SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
+
+    <Copy SourceFiles="@(NativeWinX86Output)" DestinationFolder="@(NativeWinX86OutputFolder)"
+          SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
+  </Target>
+
+  <Target Name="BuildNativeLinux" DependsOnTargets="BuildNativeLinux_Exist;BuildNativeLinux_NotExist">
+  </Target>
+
+  <Target Name="BuildNativeLinux_Exist" Condition="Exists(@(NativeLinuxX64Output))">
+    <Message Importance="high" Text="A linux binary already exist in the folder, skipping the build." />
+  </Target>
+
+  <Target Name="BuildNativeLinux_NotExist" Condition="!Exists(@(NativeLinuxX64Output))">
+    <Message Importance="high" Text="%0A *** Checking for docker daemon...%0A" />
+    <CheckAnyProcessExist ProcessNames="com.docker.proxy;dockerd">
+      <Output TaskParameter="ReturnValue" PropertyName="IsDockerRunning" />
+    </CheckAnyProcessExist>
+    <Error Text="Docker is not running. Docker is required to build the Linux native binaries." Condition="!$(IsDockerRunning)" />
+
+    <Exec Command="linux-native-build.cmd" />
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Targets="Clean" Projects="Datadog.Trace.Tools.Runner.csproj" Properties="Configuration=Release;" />
+    <ItemGroup>
+      <NativeWinX64Output Include="..\*Native\bin\Release\x64\*.dll" />
+      <NativeWinX86Output Include="..\*Native\bin\Release\x86\*.dll" />
+    </ItemGroup>
+    <Delete Files="@(NativeLinuxX64Output)" />
+    <Delete Files="@(NativeWinX64Output)" />
+    <Delete Files="@(NativeWinX86Output)" />
+  </Target>
+
+  <UsingTask TaskName="CheckAnyProcessExist" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <ProcessNames ParameterType="System.String" Required="true" />
+      <ReturnValue ParameterType="System.Boolean" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.Diagnostics" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        ReturnValue = false;
+        foreach (var pName in ProcessNames.Split(';')) 
+        {
+            try 
+            {
+                ReturnValue = Process.GetProcessesByName(pName)?.Length > 0;
+            }
+            catch
+            {
+                ReturnValue = false;
+            }
+            
+            if (ReturnValue)
+            {
+                break;
+            }
+        }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+</Project>

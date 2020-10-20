@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <CsharpProject Include="src\**\*.csproj"/>
+    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Tools.Runner/*.csproj" />
     <CsharpTestProject Include="test\**\*.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
@@ -22,7 +22,7 @@
 
   <Import Condition="'$(PerformComprehensiveTesting)'=='true'" Project="build\PackageVersionsComprehensive.g.props" />
   <Import Condition="'$(PerformComprehensiveTesting)'!='true'" Project="build\PackageVersionsLatestMinors.g.props" />
-
+  
   <Target Name="Restore">
     <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject)"/>
   </Target>

@@ -205,6 +205,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD0
 		build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
 		build\docker\Datadog.Trace.ClrProfiler.Native.sh = build\docker\Datadog.Trace.ClrProfiler.Native.sh
 		build\docker\dotnet.dockerfile = build\docker\dotnet.dockerfile
+		build\docker\linux-build.dockerfile = build\docker\linux-build.dockerfile
 		build\docker\native.dockerfile = build\docker\native.dockerfile
 		build\docker\package.dockerfile = build\docker\package.dockerfile
 		build\docker\package.sh = build\docker\package.sh
@@ -217,6 +218,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-
 		.azure-pipelines\benchmarks.yml = .azure-pipelines\benchmarks.yml
 		.azure-pipelines\integration-tests.yml = .azure-pipelines\integration-tests.yml
 		.azure-pipelines\packages.yml = .azure-pipelines\packages.yml
+		.azure-pipelines\runner.yml = .azure-pipelines\runner.yml
 		.azure-pipelines\setup_tracer.ps1 = .azure-pipelines\setup_tracer.ps1
 		.azure-pipelines\unit-tests.yml = .azure-pipelines\unit-tests.yml
 	EndProjectSection
@@ -360,6 +362,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "artifacts", "artifacts", "{
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{E5439139-6F94-44FA-9590-C32FCC1C7A93}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Tool", "src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.Tool.csproj", "{1F146D40-8B21-4630-8049-14FA4BBBB217}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Standalone", "src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.Standalone.csproj", "{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -1297,6 +1303,30 @@ Global
 		{91E50134-0E55-4D22-B180-6967174FCE0B}.Release|x64.Build.0 = Release|Any CPU
 		{91E50134-0E55-4D22-B180-6967174FCE0B}.Release|x86.ActiveCfg = Release|Any CPU
 		{91E50134-0E55-4D22-B180-6967174FCE0B}.Release|x86.Build.0 = Release|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Debug|x64.Build.0 = Debug|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Debug|x86.Build.0 = Debug|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|x64.ActiveCfg = Release|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|x64.Build.0 = Release|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|x86.ActiveCfg = Release|Any CPU
+		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|x86.Build.0 = Release|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Debug|x64.Build.0 = Debug|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Debug|x86.Build.0 = Debug|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|x64.ActiveCfg = Release|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|x64.Build.0 = Release|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|x86.ActiveCfg = Release|Any CPU
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1398,6 +1428,8 @@ Global
 		{C70D6696-23F0-4C3D-9C2A-94C4868D5249} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{CC53E5C5-9D3E-4AD9-A9CA-D2190463EB5B} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{E5439139-6F94-44FA-9590-C32FCC1C7A93} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{1F146D40-8B21-4630-8049-14FA4BBBB217} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
