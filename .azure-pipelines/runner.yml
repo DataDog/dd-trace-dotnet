@@ -10,7 +10,8 @@ trigger:
       - .github/*
 
 variables:
-  buildConfiguration: Debug
+  buildConfiguration: Release
+  publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
   dotnetCoreSdkVersion: 3.1.107
   ddApiKey: $(DD_API_KEY)
   DD_DOTNET_TRACER_MSBUILD:
@@ -28,7 +29,53 @@ resources:
 
 jobs:
 
-- job: runner
+- job: build_linux_profiler
+
+  steps:
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 3.1
+    inputs:
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+    inputs:
+      command: build
+      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+      arguments: --configuration $(buildConfiguration)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
+      
+  - task: DockerCompose@0
+    displayName: docker-compose run Profiler
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run Profiler
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64/Datadog.Trace.ClrProfiler.Native.so
+    artifact: linux-tracer-native-binary
+
+- job: build_runner_tool_and_standalone
+  dependsOn: build_linux_profiler
+  condition: succeeded()
 
   pool:
     vmImage: windows-2019
@@ -38,6 +85,15 @@ jobs:
     dd_agent: dd_agent
 
   steps:
+  - download: current
+    artifact: linux-tracer-native-binary
+
+  - task: CopyFiles@2
+    displayName: Copying native linux binary from previous job
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/linux-tracer-native-binary
+      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
+
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
   # The script exposes the required environment variables to the following steps
   - task: PowerShell@2
