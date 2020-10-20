@@ -23,6 +23,7 @@ variables:
   buildConfiguration: Debug
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
   dotnetCoreSdkVersion: 3.1.107
+  dotnetCoreSdk5Version: 5.0.100-rc.2.20475.5
 
 jobs:
 
@@ -33,6 +34,11 @@ jobs:
     displayName: install dotnet core sdk 3.1
     inputs:
       version: $(dotnetCoreSdkVersion)
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5
+    inputs:
+      version: $(dotnetCoreSdk5Version)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
@@ -81,7 +87,9 @@ jobs:
         publishTargetFramework: netcoreapp3.0
       netcoreapp3_1:
         publishTargetFramework: netcoreapp3.1
-
+      net5_0:
+        publishTargetFramework: net5.0
+        
   variables:
     TestAllPackageVersions: true
 
@@ -249,6 +257,12 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
 
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+      
   - task: NuGetToolInstaller@1
     displayName: install nuget
 
@@ -356,6 +370,12 @@ jobs:
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
 
   - task: NuGetToolInstaller@1
     displayName: install nuget
