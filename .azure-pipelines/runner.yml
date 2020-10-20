@@ -70,6 +70,7 @@ jobs:
       dockerComposeCommand: run Profiler
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64
+    displayName: Uploading linux tracer home artifact
     artifact: linux-tracer-home
 
 - job: build_runner_tool_and_standalone
@@ -159,3 +160,19 @@ jobs:
       maximumCpuCount: true
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet-runner-tool
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/*.nupkg
+    displayName: Uploading runner dotnet tool artifact
+    artifact: runner-dotnet-tool
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64
+    displayName: Uploading runner standalone win-x64 artifact
+    artifact: runner-standalone-win-x64
+    
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86
+    displayName: Uploading runner standalone win-x86 artifact
+    artifact: runner-standalone-win-x86
+    
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64
+    displayName: Uploading runner standalone linux-x64 artifact
+    artifact: runner-standalone-linux-x64
