@@ -1,0 +1,178 @@
+trigger:
+  branches:
+    include:
+      - '*'
+    exclude:
+      - refs/pull/*/head
+  paths:
+    exclude:
+      - docs/*
+      - .github/*
+
+variables:
+  publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
+  dotnetCoreSdkVersion: 3.1.107
+  ddApiKey: $(DD_API_KEY)
+  DD_DOTNET_TRACER_MSBUILD:
+
+# Declare the datadog agent as a resource to be used as a pipeline service
+resources:
+  containers:
+  - container: dd_agent
+    image: datadog/agent
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_INSIDE_CI: true
+
+jobs:
+
+- job: build_linux_profiler
+
+  steps:
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 3.1
+    inputs:
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+    inputs:
+      command: build
+      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+      arguments: --configuration Release
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
+      
+  - task: DockerCompose@0
+    displayName: docker-compose run Profiler
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run Profiler
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64
+    displayName: Uploading linux tracer home artifact
+    artifact: linux-tracer-home
+
+- job: build_runner_tool_and_standalone
+  dependsOn: build_linux_profiler
+  condition: succeeded()
+
+  pool:
+    vmImage: windows-2019
+
+  # Enable the Datadog Agent service for this job
+  services:
+    dd_agent: dd_agent
+
+  steps:
+  - download: current
+    artifact: linux-tracer-home
+    patterns: '**/*.so'
+
+  - task: CopyFiles@2
+    displayName: Copying native linux binary from previous job
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/linux-tracer-home
+      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
+
+  # Install the tracer latest stable release to attach the profiler to the build and test steps.
+  # The script exposes the required environment variables to the following steps
+  - task: PowerShell@2
+    displayName: Install profiler latest release
+    inputs:
+      filePath: ./.azure-pipelines/setup_tracer.ps1
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 2.1
+    inputs:
+      packageType: runtime
+      version: 2.1.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 3.0
+    inputs:
+      packageType: runtime
+      version: 3.0.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 3.1
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      projects: |
+        src/**/*.csproj
+        test/**/*.Tests.csproj
+        benchmarks/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet
+      
+  - task: NuGetToolInstaller@1
+    displayName: install nuget
+
+  - task: NuGetCommand@2
+    displayName: nuget restore
+    inputs:
+      restoreSolution: Datadog.Trace.Native.sln
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: tool build
+    inputs:
+      solution: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.proj
+      msbuildArguments: /t:BuildTool /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      maximumCpuCount: true
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet-runner-tool
+
+  - task: MSBuild@1
+    displayName: standalone build
+    inputs:
+      solution: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.proj
+      msbuildArguments: /t:BuildStandalone /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      maximumCpuCount: true
+    env:
+      DD_SERVICE_NAME: dd-tracer-dotnet-runner-tool
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool
+    displayName: Uploading runner dotnet tool artifact
+    artifact: runner-dotnet-tool
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64
+    displayName: Uploading runner standalone win-x64 artifact
+    artifact: runner-standalone-win-x64
+    
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86
+    displayName: Uploading runner standalone win-x86 artifact
+    artifact: runner-standalone-win-x86
+    
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64
+    displayName: Uploading runner standalone linux-x64 artifact
+    artifact: runner-standalone-linux-x64

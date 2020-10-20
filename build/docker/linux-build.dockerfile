@@ -119,6 +119,12 @@ COPY --from=build-native ${PUBLISH_FOLDER} ${TRACER_HOME}
 COPY --from=build-native /var/log/datadog/ /var/log/datadog/
 
 
+FROM build-native as native-linux-binary
+ARG PUBLISH_FOLDER
+COPY --from=build-native ${PUBLISH_FOLDER}/Datadog.Trace.ClrProfiler.Native.so Datadog.Trace.ClrProfiler.Native.so
+CMD cp -f Datadog.Trace.ClrProfiler.Native.so /home/linux-x64/Datadog.Trace.ClrProfiler.Native.so
+
+
 FROM build-managed-base as dotnet-sdk-with-dd-tracer
 ARG TRACER_HOME
 COPY --from=tracer-build . ./

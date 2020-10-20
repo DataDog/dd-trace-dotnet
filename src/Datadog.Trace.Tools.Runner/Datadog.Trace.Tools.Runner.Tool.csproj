@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>1.19.3</Version>
+    <Title>Datadog APM Auto-instrumentation Runner</Title>
+    <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dd-trace</ToolCommandName>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <NoWarn>NU5100</NoWarn>
+    <PackageId>dd-trace</PackageId>
+    <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
+    <OutputPath>bin\$(Configuration)\Tool</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\integrations.json" Link="home\integrations.json" Pack="true" PackagePath="\home">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="..\..\build\docker\linux-build.dockerfile" Link="linux-build.dockerfile" />
+    <None Include="Datadog.Trace.Tools.Runner.proj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Content Include="home\**\*.*" Pack="true" PackagePath="\home">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Content Update="home\**\readme.txt" Pack="false">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

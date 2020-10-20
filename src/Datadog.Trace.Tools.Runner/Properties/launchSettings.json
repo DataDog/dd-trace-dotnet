@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Datadog.Trace.Tools.Runner": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    }
+  }
+}
