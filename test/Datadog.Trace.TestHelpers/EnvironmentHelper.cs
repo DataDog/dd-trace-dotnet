@@ -93,7 +93,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static bool IsCoreClr()
         {
-            return RuntimeFrameworkDescription.Contains("core");
+            return RuntimeFrameworkDescription.Contains("core") || Environment.Version.Major >= 5;
         }
 
         public static string GetRuntimeIdentifier()
