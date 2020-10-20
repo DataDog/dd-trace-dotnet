@@ -10,7 +10,6 @@ trigger:
       - .github/*
 
 variables:
-  buildConfiguration: Release
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
   dotnetCoreSdkVersion: 3.1.107
   ddApiKey: $(DD_API_KEY)
@@ -42,7 +41,7 @@ jobs:
     inputs:
       command: build
       projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-      arguments: --configuration $(buildConfiguration)
+      arguments: --configuration Release
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
@@ -52,7 +51,7 @@ jobs:
       modifyOutputPath: false
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+      arguments: --configuration Release --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
@@ -62,7 +61,7 @@ jobs:
       modifyOutputPath: false
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
+      arguments: --configuration Release --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
       
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
@@ -70,7 +69,7 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run Profiler
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64
     artifact: linux-tracer-home
 
 - job: build_runner_tool_and_standalone
