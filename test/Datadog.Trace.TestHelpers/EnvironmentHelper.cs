@@ -391,6 +391,11 @@ namespace Datadog.Trace.TestHelpers
         {
             if (_isCoreClr)
             {
+                if (_major >= 5)
+                {
+                    return $"net{_major}.{_minor}";
+                }
+
                 return $"netcoreapp{_major}.{_minor}";
             }
 
