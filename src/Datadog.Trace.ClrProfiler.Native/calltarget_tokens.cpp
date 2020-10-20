@@ -110,7 +110,12 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
   return S_OK;
 }
 
-HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() { 
+HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
+  auto hr = EnsureCorLibTokens();
+  if (FAILED(hr)) {
+    return hr;
+  }
+
   ModuleMetadata* module_metadata = GetMetadata();
 
   // *** Ensure profiler assembly ref
@@ -137,7 +142,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
       public_key_size = 0;
     }
 
-    auto hr = module_metadata->assembly_emit->DefineAssemblyRef(
+    hr = module_metadata->assembly_emit->DefineAssemblyRef(
         &assemblyReference.public_key.data, public_key_size,
         assemblyReference.name.data(), &assembly_metadata, NULL, NULL, 0,
         &profilerAssemblyRef);
@@ -150,9 +155,8 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
 
   // *** Ensure calltarget type ref
   if (callTargetTypeRef == mdTypeRefNil) {
-    auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
-        profilerAssemblyRef,
-        managed_profiler_calltarget_type.data(),
+    hr = module_metadata->metadata_emit->DefineTypeRefByName(
+        profilerAssemblyRef, managed_profiler_calltarget_type.data(),
         &callTargetTypeRef);
     if (FAILED(hr)) {
       Warn("Wrapper callTargetTypeRef could not be defined.");
@@ -160,30 +164,75 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
     }
   }
 
+  return S_OK;
+}
+
+mdTypeRef CallTargetTokens::GetTargetStateTypeRef() {
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return mdTypeRefNil;
+  }
+
+  ModuleMetadata* module_metadata = GetMetadata();
+
   // *** Ensure calltargetstate type ref
   if (callTargetStateTypeRef == mdTypeRefNil) {
-    auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
-        profilerAssemblyRef,
-        managed_profiler_calltarget_statetype.data(),
+    hr = module_metadata->metadata_emit->DefineTypeRefByName(
+        profilerAssemblyRef, managed_profiler_calltarget_statetype.data(),
         &callTargetStateTypeRef);
     if (FAILED(hr)) {
       Warn("Wrapper callTargetStateTypeRef could not be defined.");
-      return hr;
+      return mdTypeRefNil;
     }
   }
+  return callTargetStateTypeRef;
+}
+
+mdTypeRef CallTargetTokens::GetTargetVoidReturnTypeRef() {
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return mdTypeRefNil;
+  }
+
+  ModuleMetadata* module_metadata = GetMetadata();
 
   // *** Ensure calltargetreturn void type ref
   if (callTargetReturnVoidTypeRef == mdTypeRefNil) {
-    auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
+    hr = module_metadata->metadata_emit->DefineTypeRefByName(
         profilerAssemblyRef, managed_profiler_calltarget_returntype.data(),
         &callTargetReturnVoidTypeRef);
     if (FAILED(hr)) {
       Warn("Wrapper callTargetReturnVoidTypeRef could not be defined.");
-      return hr;
+      return mdTypeRefNil;
     }
   }
 
-  return S_OK; 
+  return callTargetReturnVoidTypeRef;
+}
+
+mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
+    mdTypeRef returnTypeRef) {
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return mdTypeSpecNil;
+  }
+
+  ModuleMetadata* module_metadata = GetMetadata();
+
+  // *** Ensure calltargetreturn type ref
+  if (callTargetReturnTypeRef == mdTypeRefNil) {
+    // TODO
+
+    hr = module_metadata->metadata_emit->DefineTypeRefByName(
+        profilerAssemblyRef, managed_profiler_calltarget_returntype.data(),
+        &callTargetReturnTypeRef);
+    if (FAILED(hr)) {
+      Warn("Wrapper callTargetReturnTypeRef could not be defined.");
+      return mdTypeSpecNil;
+    }
+  }
+
+  return mdTypeSpecNil;
 }
 
 }  // namespace trace
