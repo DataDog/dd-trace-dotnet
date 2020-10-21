@@ -178,6 +178,8 @@ jobs:
         publishTargetFramework: netcoreapp3.0
       netcoreapp3_1:
         publishTargetFramework: netcoreapp3.1
+      net5_0:
+        publishTargetFramework: net5.0
 
   variables:
     TestAllPackageVersions: true
@@ -214,6 +216,13 @@ jobs:
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core31
     condition: eq(variables['publishTargetFramework'], 'netcoreapp3.1')
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests.Alpine.Core50
+    condition: eq(variables['publishTargetFramework'], 'net5.0')
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
