@@ -23,15 +23,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [InlineData("/Home/Index", "GET /home/index", HttpStatusCode.OK, false)]
-        [InlineData("/Home/BadRequest", "GET /home/badrequest", HttpStatusCode.InternalServerError, true)]
-        [InlineData("/Home/StatusCode?value=201", "GET /home/statuscode", HttpStatusCode.Created, false)]
-        [InlineData("/Home/StatusCode?value=503", "GET /home/statuscode", HttpStatusCode.ServiceUnavailable, true)]
+        [InlineData("/Home/Index", "GET /home/index", HttpStatusCode.OK, false, null, null)]
+        [InlineData("/Home/BadRequest", "GET /home/badrequest", HttpStatusCode.InternalServerError, true, null, null)]
+        [InlineData("/Home/StatusCode?value=201", "GET /home/statuscode", HttpStatusCode.Created, false, null, null)]
+        [InlineData("/Home/StatusCode?value=503", "GET /home/statuscode", HttpStatusCode.ServiceUnavailable, true, null, "The HTTP response has status code 503.")]
         public async Task SubmitsTraces(
             string path,
             string expectedResourceName,
             HttpStatusCode expectedStatusCode,
-            bool isError)
+            bool isError,
+            string expectedErrorType,
+            string expectedErrorMessage)
         {
             await AssertWebServerSpan(
                 path,
@@ -39,6 +41,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.HttpPort,
                 expectedStatusCode,
                 isError,
+                expectedErrorType,
+                expectedErrorMessage,
                 "web",
                 "aspnet-mvc.request",
                 expectedResourceName,

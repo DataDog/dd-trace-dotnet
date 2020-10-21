@@ -24,18 +24,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [InlineData("/Home/Index", "GET", "/home/index", HttpStatusCode.OK, false)]
-        [InlineData("/delay/0", "GET", "/delay/{seconds}", HttpStatusCode.OK, false)]
-        [InlineData("/delay-async/0", "GET", "/delay-async/{seconds}", HttpStatusCode.OK, false)]
-        [InlineData("/badrequest", "GET", "/badrequest", HttpStatusCode.InternalServerError, true)]
-        [InlineData("/statuscode/201", "GET", "/statuscode/{value}", HttpStatusCode.Created, false)]
-        [InlineData("/statuscode/503", "GET", "/statuscode/{value}", HttpStatusCode.ServiceUnavailable, true)]
+        [InlineData("/Home/Index", "GET", "/home/index", HttpStatusCode.OK, false, null, null)]
+        [InlineData("/delay/0", "GET", "/delay/{seconds}", HttpStatusCode.OK, false, null, null)]
+        [InlineData("/delay-async/0", "GET", "/delay-async/{seconds}", HttpStatusCode.OK, false, null, null)]
+        [InlineData("/badrequest", "GET", "/badrequest", HttpStatusCode.InternalServerError, true, null, null)]
+        [InlineData("/statuscode/201", "GET", "/statuscode/{value}", HttpStatusCode.Created, false, null, null)]
+        [InlineData("/statuscode/503", "GET", "/statuscode/{value}", HttpStatusCode.ServiceUnavailable, true, null, "The HTTP response has status code 503.")]
         public async Task SubmitsTraces(
             string path,
             string expectedVerb,
             string expectedResourceSuffix,
             HttpStatusCode expectedStatusCode,
-            bool isError)
+            bool isError,
+            string expectedErrorType,
+            string expectedErrorMessage)
         {
             await AssertWebServerSpan(
                 path,
@@ -43,6 +45,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.HttpPort,
                 expectedStatusCode,
                 isError,
+                expectedErrorType,
+                expectedErrorMessage,
                 "web",
                 "aspnet-mvc.request",
                 $"{expectedVerb} {expectedResourceSuffix}",

@@ -40,6 +40,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
                 isError,
+                expectedErrorType: null,
+                expectedErrorMessage: null,
                 SpanTypes.Web,
                 "aspnet.request",
                 expectedResourceName,

@@ -234,6 +234,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int httpPort,
             HttpStatusCode expectedHttpStatusCode,
             bool isError,
+            string expectedErrorType,
+            string expectedErrorMessage,
             string expectedSpanType,
             string expectedOperationName,
             string expectedResourceName,
@@ -260,10 +262,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             MockTracerAgent.Span span = spans[0];
-            Assert.Equal(isError, span.Error == 1);
+
+            // base properties
             Assert.Equal(expectedSpanType, span.Type);
             Assert.Equal(expectedOperationName, span.Name);
             Assert.Equal(expectedResourceName, span.Resource);
+
+            // errors
+            Assert.Equal(isError, span.Error == 1);
+            Assert.Equal(expectedErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
+            Assert.Equal(expectedErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
+
+            // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
