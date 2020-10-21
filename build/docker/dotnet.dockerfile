@@ -10,7 +10,7 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y aspnetcore-runtime-2.1 && \
     apt-get install -y aspnetcore-runtime-3.0 && \
-	apt-get install -y aspnetcore-runtime-3.1 && \
+	apt-get install -y aspnetcore-runtime-3.1
 
 ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /bin/wait-for-it
 RUN chmod +x /bin/wait-for-it
