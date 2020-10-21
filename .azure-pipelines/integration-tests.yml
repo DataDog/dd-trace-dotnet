@@ -225,7 +225,7 @@ jobs:
     condition: eq(variables['publishTargetFramework'], 'net5.0')
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core50
 
   - task: PublishTestResults@2
     displayName: publish test results
