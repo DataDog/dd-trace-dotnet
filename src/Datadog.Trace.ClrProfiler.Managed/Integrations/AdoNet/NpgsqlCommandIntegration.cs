@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     {
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
+        private const string Major5 = "5";
 
         private const string NpgsqlAssemblyName = "Npgsql";
         private const string NpgsqlCommandTypeName = "Npgsql.NpgsqlCommand";
@@ -538,7 +539,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = NpgsqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         public static object ExecuteScalarAsync(
             object command,
             object boxedCancellationToken,

@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     {
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
+        private const string Major5 = "5";
         private const string Major2 = "2";
 
         // ReSharper disable once InconsistentNaming
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = IDbCommandTypeName,
             TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.IDataReader },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = IDbCommandTypeName,
@@ -104,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = IDbCommandTypeName,
             TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.IDataReader, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
@@ -177,7 +178,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = IDbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = IDbCommandTypeName,
@@ -246,7 +247,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = IDbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = IDbCommandTypeName,
