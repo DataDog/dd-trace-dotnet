@@ -32,7 +32,7 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name,
 std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name);
 
 // Convert Hex to string
-WSTRING HexStr(const unsigned char *data, int len);
+WSTRING HexStr(const void *data, int len);
 
 // Convert string to hex bytes
 std::vector<BYTE> HexToBytes(const std::string &hex);

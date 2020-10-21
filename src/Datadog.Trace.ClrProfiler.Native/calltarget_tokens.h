@@ -75,6 +75,10 @@ class CallTargetTokens {
   mdMemberRef endVoidMemberRef = mdMemberRefNil;
 
   mdMemberRef logExceptionRef = mdMemberRefNil;
+
+
+  mdMemberRef callTargetStateTypeGetDefault = mdMemberRefNil;
+  mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
   mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
   inline ModuleMetadata* GetMetadata() {
@@ -133,6 +137,13 @@ class CallTargetTokens {
                          ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                          mdToken* callTargetStateToken, mdToken* exceptionToken,
                          mdToken* callTargetReturnToken);
+
+  mdMemberRef GetCallTargetStateDefaultMemberRef();
+  mdMemberRef GetCallTargetReturnVoidDefaultMemberRef();
+  mdMemberRef GetCallTargetReturnValueDefaultMemberRef(
+      mdTypeSpec callTargetReturnMemberSpec);
+  mdMethodSpec GetCallTargetDefaultValueMethodSpec(
+      FunctionMethodArgument* methodReturnValue);
 };
 
 }  // namespace trace

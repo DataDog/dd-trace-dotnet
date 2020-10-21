@@ -85,7 +85,8 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name) {
 constexpr char HexMap[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-WSTRING HexStr(const unsigned char *data, int len) {
+WSTRING HexStr(const void *dataPtr, int len) {
+  const unsigned char *data = (unsigned char *)dataPtr;
   WSTRING s(len * 2, ' ');
   for (int i = 0; i < len; ++i) {
     s[2 * i] = HexMap[(data[i] & 0xF0) >> 4];

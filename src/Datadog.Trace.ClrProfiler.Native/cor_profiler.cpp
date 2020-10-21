@@ -2188,6 +2188,18 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
         method_replacement.target_method.type_name == caller.type.name &&
         method_replacement.target_method.method_name == caller.name) {
 
+      auto retFuncArg = caller.method_signature.GetRet();
+
+      // return ref is not supported
+      /*unsigned elementType;
+      auto retTypeFlags = retFuncArg.GetTypeFlags(elementType);
+      if (retTypeFlags & TypeFlagByRef) {
+        callTarget_shouldInstrumentMethod_map_[functionId] = false;
+        Warn("[UNSUPPORTED RETURN REF] Module: ", module_metadata->assemblyName,
+             " Type: ", caller.type.name, " Method: ", caller.name);
+        return false;
+      }*/
+
       auto functionInfo = new FunctionInfo(caller);
       hr = functionInfo->method_signature.TryParse();
       if (FAILED(hr)) {
@@ -2216,15 +2228,17 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     RejitHandlerModuleMethod* methodHandler) {
   Info("CallTarget_RewriterCallback !!!: ", functionId);
 
+  // Local vars
   auto module_id = moduleHandler->GetModuleId();
   auto module_metadata = moduleHandler->GetModuleMetadata();
   auto caller = methodHandler->GetFunctionInfo();
+  auto callTargetTokens = module_metadata->GetCallTargetTokens();
   auto function_token = caller->id;
 
-  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  // Create rewriter
+  ILRewriter rewriter(this->info_, methodHandler->GetFunctionControl(), module_id, function_token);
   bool modified = false;
   auto hr = rewriter.Import();
-
   if (FAILED(hr)) {
     Warn(
         "CallTarget_RewriterCallback: Call to ILRewriter.Import() failed "
@@ -2235,52 +2249,70 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
 
   Info("REJIT: ", caller->name);
   Info("REJIT Starting rewriting.");
-  Info(GetILCodes("REJIT Original Code: ", &rewriter, *caller));
+  // Info(GetILCodes("REJIT Original Code: ", &rewriter, *caller));
 
+  //// Modify the Local Var Signature of the method
+  //auto returnFunctionMethod = caller->method_signature.GetRet();
 
-  auto callTargetTokens = module_metadata->GetCallTargetTokens();
-  auto returnFunctionMethod = caller->method_signature.GetRet();
+  //ULONG callTargetStateIndex = -1;
+  //ULONG exceptionIndex = -1;
+  //ULONG callTargetReturnIndex = -1;
+  //ULONG returnValueIndex = -1;
+  //mdToken callTargetStateToken = mdTokenNil;
+  //mdToken exceptionToken = mdTokenNil;
+  //mdToken callTargetReturnToken = mdTokenNil;
 
-  ULONG callTargetStateIndex = -1;
-  ULONG exceptionIndex = -1;
-  ULONG callTargetReturnIndex = -1;
-  ULONG returnValueIndex = -1;
-  mdToken callTargetStateToken = mdTokenNil;
-  mdToken exceptionToken = mdTokenNil;
-  mdToken callTargetReturnToken = mdTokenNil;
+  //Info("REJIT: Modifying the locals var signature.");
+  //hr = callTargetTokens->ModifyLocalSig(
+  //    &rewriter, &returnFunctionMethod, 
+  //    &callTargetStateIndex, &exceptionIndex, &callTargetReturnIndex, &returnValueIndex, 
+  //    &callTargetStateToken, &exceptionToken, &callTargetReturnToken);
+  //if (FAILED(hr)) {
+  //  Warn("Something failed.");
+  //  return hr;
+  //}
 
-  hr = callTargetTokens->ModifyLocalSig(
-      &rewriter, &returnFunctionMethod, 
-      &callTargetStateIndex, &exceptionIndex, &callTargetReturnIndex, &returnValueIndex, 
-      &callTargetStateToken, &exceptionToken, &callTargetReturnToken);
+  //Info(returnValueIndex);
+  //Info(exceptionIndex);
+  //Info(callTargetReturnIndex);
+  //Info(callTargetStateIndex);
+
+  //Info(callTargetStateToken);
+  //Info(exceptionToken);
+  //Info(callTargetReturnToken);
+
+  //// Create the rewriter wrapper helper
+  //ILRewriterWrapper reWriterWrapper(&rewriter);
+  //ILInstr* pFirstOriginalInstr = rewriter.GetILList()->m_pNext;
+  //reWriterWrapper.SetILPosition(pFirstOriginalInstr);
+
+  //// Init locals
+  //if (returnValueIndex != -1) {
+  //  reWriterWrapper.CallMember(callTargetTokens->GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
+  //  reWriterWrapper.StLocal(returnValueIndex);
+
+  //  reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnValueDefaultMemberRef(callTargetReturnToken), false);
+  //  reWriterWrapper.StLocal(callTargetReturnIndex);
+  //} else {
+  //  reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnVoidDefaultMemberRef(), false);
+  //  reWriterWrapper.StLocal(callTargetReturnIndex);
+  //}
+  //reWriterWrapper.LoadNull();
+  //reWriterWrapper.StLocal(exceptionIndex);
+  //reWriterWrapper.CallMember(callTargetTokens->GetCallTargetStateDefaultMemberRef(), false);
+  //reWriterWrapper.StLocal(callTargetStateIndex);
+
+  
+  // Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));
+  hr = rewriter.Export();
 
   if (FAILED(hr)) {
-    Warn(
-        "CallTarget_RewriterCallback: Call to ModifyLocalSig() failed for "
-        "ModuleID=",
-        module_id, " ", function_token);
-    return hr;
-  }
-
-  Info(returnValueIndex);
-  Info(exceptionIndex);
-  Info(callTargetReturnIndex);
-  Info(callTargetStateIndex);
-
-  Info(callTargetStateToken);
-  Info(exceptionToken);
-  Info(callTargetReturnToken);
-  
-  Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));
-  // hr = rewriter.Export();
-
-  /*if (FAILED(hr)) {
     Warn(
         "CallTarget_RewriterCallback: Call to ILRewriter.Export() failed for "
         "ModuleID=",
         module_id, " ", function_token);
     return hr;
-  }*/
+  }
 
   Info("CallTarget_RewriterCallback END !!!: ", functionId);
 
