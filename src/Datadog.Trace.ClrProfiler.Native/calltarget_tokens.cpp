@@ -178,71 +178,6 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
   return S_OK;
 }
 
-mdMethodSpec CallTargetTokens::GetBeginMethodWithArgumentsArrayMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetBeginMethodWithoutArgumentsMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetBeginMethodWith1ArgumentsMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-    mdTypeRef arg1TypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetBeginMethodWith2ArgumentsMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetBeginMethodWith3ArgumentsMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetBeginMethodWith4ArgumentsMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
-    mdTypeRef arg4TypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetBeginMethodWith5ArgumentsMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
-    mdTypeRef arg4TypeRef, mdTypeRef arg5TypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetBeginMethodWith6ArgumentsMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
-    mdTypeRef arg4TypeRef, mdTypeRef arg5TypeRef, mdTypeRef arg6TypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetEndVoidReturnMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetEndReturnMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-    mdTypeRef returnTypeRef) {
-  return mdMethodSpecNil;
-}
-
-mdMethodSpec CallTargetTokens::GetLogExceptionMemberRef(
-    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
-  return mdMethodSpecNil;
-}
-
 mdTypeRef CallTargetTokens::GetTargetStateTypeRef() {
   auto hr = EnsureBaseCalltargetTokens();
   if (FAILED(hr)) {
@@ -340,19 +275,90 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
   return returnValueTypeSpec;
 }
 
+mdMethodSpec CallTargetTokens::GetBeginMethodWithArgumentsArrayMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWithoutArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith1ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith2ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith3ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith4ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
+    mdTypeRef arg4TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith5ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
+    mdTypeRef arg4TypeRef, mdTypeRef arg5TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetBeginMethodWith6ArgumentsMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
+    mdTypeRef arg4TypeRef, mdTypeRef arg5TypeRef, mdTypeRef arg6TypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetEndVoidReturnMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetEndReturnMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
+    mdTypeRef returnTypeRef) {
+  return mdMethodSpecNil;
+}
+
+mdMethodSpec CallTargetTokens::GetLogExceptionMemberRef(
+    mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef) {
+  return mdMethodSpecNil;
+}
+
 HRESULT CallTargetTokens::ModifyLocalSig(
-    ILRewriter& reWriter, FunctionMethodArgument* methodReturnValue,
-    ULONG* localsCount) {
+    ILRewriter* reWriter, FunctionMethodArgument* methodReturnValue,
+    ULONG* callTargetStateIndex,
+    ULONG* exceptionIndex, ULONG* callTargetReturnIndex,
+    ULONG* returnValueIndex, mdToken* callTargetStateToken,
+    mdToken* exceptionToken, mdToken* callTargetReturnToken) {
   auto hr = EnsureBaseCalltargetTokens();
   if (FAILED(hr)) {
     return mdTypeSpecNil;
   }
 
   ModuleMetadata* module_metadata = GetMetadata();
+  // ILRewriter* reWriter = (ILRewriter*)reWriterPtr;
+  //FunctionMethodArgument* methodReturnValue =
+  //    (FunctionMethodArgument*)methodReturnValuePtr;
 
   PCCOR_SIGNATURE originalSignature = NULL;
   ULONG originalSignatureSize = 0;
-  mdToken localVarSig = reWriter.GetTkLocalVarSig();
+  mdToken localVarSig = reWriter->GetTkLocalVarSig();
 
   if (localVarSig != mdTokenNil) {
     IfFailRet(module_metadata->metadata_import->GetSigFromToken(
@@ -363,7 +369,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
     const auto len = CorSigCompressToken(callTargetStateTypeRef, &temp);
     if (originalSignatureSize - len > 0) {
       if (originalSignature[originalSignatureSize - len - 1] ==
-          ELEMENT_TYPE_CLASS) {
+          ELEMENT_TYPE_VALUETYPE) {
         if (memcmp(&originalSignature[originalSignatureSize - len], &temp,
                    len) == 0)
           return E_FAIL;
@@ -406,10 +412,9 @@ HRESULT CallTargetTokens::ModifyLocalSig(
       CorSigCompressToken(callTargetReturn, &callTargetReturnBuffer);
 
   // New signature size
-  ULONG newSignatureSize = originalSignatureSize +
-                           (1 + callTargetStateTypeRefSize) +
+  ULONG newSignatureSize = originalSignatureSize + returnSignatureTypeSize +
                            (1 + exTypeRefSize) + (1 + callTargetReturnSize) +
-                           returnSignatureTypeSize;
+                           (1 + callTargetStateTypeRefSize);
   ULONG newSignatureOffset = 0;
 
   ULONG oldLocalsBuffer;
@@ -448,11 +453,12 @@ HRESULT CallTargetTokens::ModifyLocalSig(
 
   // Add new locals
 
-  // CallTarget state value
-  newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
-  memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetStateTypeRefBuffer,
-         callTargetStateTypeRefSize);
-  newSignatureOffset += callTargetStateTypeRefSize;
+  // Return value local
+  if (returnSignatureType != NULL) {
+    memcpy(&newSignatureBuffer[newSignatureOffset], returnSignatureType,
+           returnSignatureTypeSize);
+    newSignatureOffset += returnSignatureTypeSize;
+  }
 
   // Exception value
   newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_CLASS;
@@ -466,12 +472,11 @@ HRESULT CallTargetTokens::ModifyLocalSig(
          callTargetReturnSize);
   newSignatureOffset += callTargetReturnSize;
 
-  // Return value local
-  if (returnSignatureType != NULL) {
-    memcpy(&newSignatureBuffer[newSignatureOffset], returnSignatureType,
-           returnSignatureTypeSize);
-    newSignatureOffset += returnSignatureTypeSize;
-  }
+  // CallTarget state value
+  newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
+  memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetStateTypeRefBuffer,
+         callTargetStateTypeRefSize);
+  newSignatureOffset += callTargetStateTypeRefSize;
 
   // Get new locals token
   mdToken newLocalVarSig;
@@ -481,9 +486,18 @@ HRESULT CallTargetTokens::ModifyLocalSig(
     Warn("Error creating new locals var signature.");
   }
 
-  reWriter.SetTkLocalVarSig(newLocalVarSig);
-  *localsCount = newLocalsCount;
-
+  reWriter->SetTkLocalVarSig(newLocalVarSig);
+  *callTargetStateToken = callTargetStateTypeRef;
+  *exceptionToken = exTypeRef;
+  *callTargetReturnToken = callTargetReturn;
+  if (returnSignatureType != NULL) {
+    *returnValueIndex = newLocalsCount - 4;
+  } else {
+    *returnValueIndex = -1;
+  }
+  *exceptionIndex = newLocalsCount - 3;
+  *callTargetReturnIndex = newLocalsCount - 2;
+  *callTargetStateIndex = newLocalsCount - 1;
   return hr;
 }
 

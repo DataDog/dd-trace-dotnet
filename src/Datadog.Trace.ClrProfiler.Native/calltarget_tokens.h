@@ -11,13 +11,37 @@
 #include "com_ptr.h"
 #include "il_rewriter.h"
 #include "integration.h"
-#include "string.h"
+#include "string.h" // NOLINT
 
 namespace trace {
 
 class CallTargetTokens {
  private:
   void* module_metadata_ptr = nullptr;
+
+  // CallTarget constants
+  WSTRING managed_profiler_calltarget_type =
+      "Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker"_W;
+  WSTRING managed_profiler_calltarget_beginmethod_name = "BeginMethod"_W;
+  WSTRING managed_profiler_calltarget_endmethod_name = "EndMethod"_W;
+  WSTRING managed_profiler_calltarget_logexception_name = "LogException"_W;
+  WSTRING managed_profiler_calltarget_getdefaultvalue_name =
+      "GetDefaultValue"_W;
+
+  WSTRING managed_profiler_calltarget_statetype =
+      "Datadog.Trace.ClrProfiler.CallTarget.CallTargetState"_W;
+  WSTRING managed_profiler_calltarget_statetype_getdefault_name =
+      "GetDefault"_W;
+
+  WSTRING managed_profiler_calltarget_returntype =
+      "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn"_W;
+  WSTRING managed_profiler_calltarget_returntype_getdefault_name =
+      "GetDefault"_W;
+
+  WSTRING managed_profiler_calltarget_returntype_generics =
+      "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1"_W;
+  WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name =
+      "GetReturnValue"_W;
 
   // CorLib tokens
   mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;
@@ -58,6 +82,10 @@ class CallTargetTokens {
   }
   HRESULT EnsureCorLibTokens();
   HRESULT EnsureBaseCalltargetTokens();
+  mdTypeRef GetTargetStateTypeRef();
+  mdTypeRef GetTargetVoidReturnTypeRef();
+  mdTypeSpec GetTargetReturnValueTypeRef(
+      FunctionMethodArgument* returnArgument);
 
  public:
   CallTargetTokens(void* module_metadata_ptr) {
@@ -99,14 +127,12 @@ class CallTargetTokens {
   mdMethodSpec GetLogExceptionMemberRef(mdTypeRef integrationTypeRef,
                                         mdTypeRef currentTypeRef);
 
-  mdTypeRef GetTargetStateTypeRef();
-  mdTypeRef GetTargetVoidReturnTypeRef();
-  mdTypeSpec GetTargetReturnValueTypeRef(
-      FunctionMethodArgument* returnArgument);
-
-  HRESULT ModifyLocalSig(ILRewriter& reWriter,
+  HRESULT ModifyLocalSig(ILRewriter* reWriter,
                          FunctionMethodArgument* methodReturnValue,
-                         ULONG* localsCount);
+                         ULONG* callTargetStateIndex, ULONG* exceptionIndex,
+                         ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+                         mdToken* callTargetStateToken, mdToken* exceptionToken,
+                         mdToken* callTargetReturnToken);
 };
 
 }  // namespace trace

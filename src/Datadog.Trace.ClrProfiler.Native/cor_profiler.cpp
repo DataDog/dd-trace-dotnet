@@ -2216,7 +2216,74 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     RejitHandlerModuleMethod* methodHandler) {
   Info("CallTarget_RewriterCallback !!!: ", functionId);
 
-  // methodHandler->GetFunctionInfo()->method_signature.GetRet().
+  auto module_id = moduleHandler->GetModuleId();
+  auto module_metadata = moduleHandler->GetModuleMetadata();
+  auto caller = methodHandler->GetFunctionInfo();
+  auto function_token = caller->id;
+
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  bool modified = false;
+  auto hr = rewriter.Import();
+
+  if (FAILED(hr)) {
+    Warn(
+        "CallTarget_RewriterCallback: Call to ILRewriter.Import() failed "
+        "for ",
+        module_id, " ", function_token);
+    return hr;
+  }
+
+  Info("REJIT: ", caller->name);
+  Info("REJIT Starting rewriting.");
+  Info(GetILCodes("REJIT Original Code: ", &rewriter, *caller));
+
+
+  auto callTargetTokens = module_metadata->GetCallTargetTokens();
+  auto returnFunctionMethod = caller->method_signature.GetRet();
+
+  ULONG callTargetStateIndex = -1;
+  ULONG exceptionIndex = -1;
+  ULONG callTargetReturnIndex = -1;
+  ULONG returnValueIndex = -1;
+  mdToken callTargetStateToken = mdTokenNil;
+  mdToken exceptionToken = mdTokenNil;
+  mdToken callTargetReturnToken = mdTokenNil;
+
+  hr = callTargetTokens->ModifyLocalSig(
+      &rewriter, &returnFunctionMethod, 
+      &callTargetStateIndex, &exceptionIndex, &callTargetReturnIndex, &returnValueIndex, 
+      &callTargetStateToken, &exceptionToken, &callTargetReturnToken);
+
+  if (FAILED(hr)) {
+    Warn(
+        "CallTarget_RewriterCallback: Call to ModifyLocalSig() failed for "
+        "ModuleID=",
+        module_id, " ", function_token);
+    return hr;
+  }
+
+  Info(returnValueIndex);
+  Info(exceptionIndex);
+  Info(callTargetReturnIndex);
+  Info(callTargetStateIndex);
+
+  Info(callTargetStateToken);
+  Info(exceptionToken);
+  Info(callTargetReturnToken);
+  
+  Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));
+  // hr = rewriter.Export();
+
+  /*if (FAILED(hr)) {
+    Warn(
+        "CallTarget_RewriterCallback: Call to ILRewriter.Export() failed for "
+        "ModuleID=",
+        module_id, " ", function_token);
+    return hr;
+  }*/
+
+  Info("CallTarget_RewriterCallback END !!!: ", functionId);
+
   /*
   Info(moduleHandler->GetModuleId());
   Info(moduleHandler->GetModuleMetadata()->app_domain_id);

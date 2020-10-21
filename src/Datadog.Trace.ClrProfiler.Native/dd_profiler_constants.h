@@ -1,4 +1,6 @@
-#pragma once
+#ifndef DD_PROFILER_CONSTANTS_H
+#define DD_PROFILER_CONSTANTS_H
+
 #include <string>
 
 #include "environment_variables.h"
@@ -6,7 +8,7 @@
 
 namespace trace {
 
-  WSTRING env_vars_to_display[]{
+  inline WSTRING env_vars_to_display[]{
     environment::tracing_enabled,
     environment::debug_enabled,
     environment::profiler_home_path,
@@ -29,7 +31,7 @@ namespace trace {
     environment::azure_app_services_app_pool_id,
     environment::azure_app_services_cli_telemetry_profile_value};
 
-  WSTRING skip_assembly_prefixes[]{
+  inline WSTRING skip_assembly_prefixes[]{
     "Datadog.Trace"_W,
     "MessagePack"_W,
     "Microsoft.AI"_W,
@@ -53,7 +55,7 @@ namespace trace {
     "System.Xml"_W,
     "Newtonsoft"_W,};
 
-  WSTRING skip_assemblies[]{
+  inline WSTRING skip_assemblies[]{
       "mscorlib"_W,
       "netstandard"_W,
       "System.Configuration"_W,
@@ -62,26 +64,8 @@ namespace trace {
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
 
-  WSTRING managed_profiler_full_assembly_version = "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W;
-
-  //
-  // CallTarget constants
-  //
-
-  WSTRING managed_profiler_calltarget_type = "Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker"_W;
-  WSTRING managed_profiler_calltarget_beginmethod_name = "BeginMethod"_W;
-  WSTRING managed_profiler_calltarget_endmethod_name = "EndMethod"_W;
-  WSTRING managed_profiler_calltarget_logexception_name = "LogException"_W;
-  WSTRING managed_profiler_calltarget_getdefaultvalue_name = "GetDefaultValue"_W;
-  
-  WSTRING managed_profiler_calltarget_statetype = "Datadog.Trace.ClrProfiler.CallTarget.CallTargetState"_W;
-  WSTRING managed_profiler_calltarget_statetype_getdefault_name = "GetDefault"_W;
-
-  WSTRING managed_profiler_calltarget_returntype = "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn"_W;
-  WSTRING managed_profiler_calltarget_returntype_getdefault_name = "GetDefault"_W;
-
-  WSTRING managed_profiler_calltarget_returntype_generics = "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1"_W;
-  WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = "GetReturnValue"_W;
-
+  inline WSTRING managed_profiler_full_assembly_version = "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W;
 
 }  // namespace trace
+
+#endif  // DD_PROFILER_CONSTANTS_H
