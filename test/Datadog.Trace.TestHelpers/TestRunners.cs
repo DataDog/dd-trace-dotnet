@@ -8,6 +8,8 @@ namespace Datadog.Trace.TestHelpers
                                                                 {
                                                                     "testhost",
                                                                     "testhost.x86",
+                                                                    "testhost.net452.x86",
+                                                                    "testhost.net461.x86",
                                                                     "vstest.console",
                                                                     "xunit.console.x86",
                                                                     "xunit.console.x64",
