@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+
+    <!-- Microsoft.ServiceFabric.Services.Remoting only supports x64 -->
+    <Platforms>x64</Platforms>
+
+    <!-- NuGet -->
+    <Version>1.19.4-alpha1</Version>
+    <Title>Datadog APM</Title>
+    <Description>Service Remoting instrumentation for Datadog APM</Description>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ServiceFabric.Services.Remoting" Version="4.0.470" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+</Project>
