@@ -253,6 +253,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// </summary>
         /// <typeparam name="T">Type to get the default value</typeparam>
         /// <returns>Default value of T</returns>
-        public static T GetDefaultValue<T>() => default(T);
+        public static T GetDefaultValue<T>()
+        {
+            Log.Information($"CallTargetInvoker.GetDefaultValue<{typeof(T).FullName}>() called");
+            return default;
+        }
     }
 }

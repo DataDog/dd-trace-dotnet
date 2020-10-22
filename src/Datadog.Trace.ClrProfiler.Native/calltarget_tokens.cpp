@@ -116,6 +116,8 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
     return hr;
   }
 
+  Info("EnsureBaseCalltargetTokens");
+
   ModuleMetadata* module_metadata = GetMetadata();
 
   // *** Ensure profiler assembly ref
@@ -176,7 +178,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
   }
 
   // *** Ensure CallTargetState.GetDefault() member ref
-  if (callTargetStateTypeGetDefault == mdTypeRefNil) {
+  if (callTargetStateTypeGetDefault == mdMemberRefNil) {
     unsigned callTargetStateTypeBuffer;
     auto callTargetStateTypeSize =
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateTypeBuffer);
@@ -201,6 +203,8 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
       Warn("Wrapper callTargetStateTypeGetDefault could not be defined.");
       return hr;
     }
+
+    Info("callTargetStateTypeGetDefault: ", HexStr(signature, signatureLength));
   }
 
   return S_OK;
@@ -405,7 +409,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
     }
   }
 
-  ULONG newLocalsCount = 3;
+  ULONG newLocalsCount = 2;  // 3;
 
   // Gets the calltarget state type buffer and size
   unsigned callTargetStateTypeRefBuffer;
@@ -452,8 +456,9 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   }
 
   // New signature size
-  ULONG newSignatureSize = originalSignatureSize + returnSignatureTypeSize +
-                           (1 + exTypeRefSize) + (1 + callTargetReturnSize) +
+  ULONG newSignatureSize =
+      originalSignatureSize + returnSignatureTypeSize + (1 + exTypeRefSize) + 
+  //+(1 + callTargetReturnSize) +
                            (1 + callTargetStateTypeRefSize);
   ULONG newSignatureOffset = 0;
 
@@ -506,11 +511,11 @@ HRESULT CallTargetTokens::ModifyLocalSig(
          exTypeRefSize);
   newSignatureOffset += exTypeRefSize;
 
-  // CallTarget Return value
-  newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
-  memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetReturnBuffer,
-         callTargetReturnSize);
-  newSignatureOffset += callTargetReturnSize;
+  //// CallTarget Return value
+  //newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
+  //memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetReturnBuffer,
+  //       callTargetReturnSize);
+  //newSignatureOffset += callTargetReturnSize;
 
   // CallTarget state value
   newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
@@ -534,12 +539,12 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   *exceptionToken = exTypeRef;
   *callTargetReturnToken = callTargetReturn;
   if (returnSignatureType != NULL) {
-    *returnValueIndex = newLocalsCount - 4;
+    *returnValueIndex = newLocalsCount - 3; // 4;
   } else {
     *returnValueIndex = -1;
   }
-  *exceptionIndex = newLocalsCount - 3;
-  *callTargetReturnIndex = newLocalsCount - 2;
+  *exceptionIndex = newLocalsCount - 2; // 3;
+  // *callTargetReturnIndex = newLocalsCount - 2;
   *callTargetStateIndex = newLocalsCount - 1;
   return hr;
 }
@@ -637,7 +642,7 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(
 }
 
 mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
-    FunctionMethodArgument* methodReturnValue) {
+    FunctionMethodArgument* methodArgument) {
   auto hr = EnsureBaseCalltargetTokens();
   if (FAILED(hr)) {
     return mdMethodSpecNil;
@@ -657,7 +662,7 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
     signature[offset++] = 0x00;
 
     signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
+    signature[offset++] = 0x00;
 
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef,
@@ -673,25 +678,19 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
   // *** Create de MethodSpec using the FunctionMethodArgument
 
   // Gets the Return type signature
-  PCCOR_SIGNATURE returnSignatureType = NULL;
-  ULONG returnSignatureTypeSize;
+  PCCOR_SIGNATURE methodArgumentSignature = NULL;
+  ULONG methodArgumentSignatureSize;
+  methodArgumentSignatureSize = methodArgument->GetSignature(methodArgumentSignature);
 
-  unsigned retTypeElementType;
-  auto retTypeFlags = methodReturnValue->GetTypeFlags(retTypeElementType);
-  if (retTypeFlags == TypeFlagVoid) {
-    return mdMethodSpecNil;
-  }
-
-  returnSignatureTypeSize = methodReturnValue->GetSignature(returnSignatureType);
-  
-  auto signatureLength = 2 + returnSignatureTypeSize;
+  auto signatureLength = 2 + methodArgumentSignatureSize;
   auto* signature = new COR_SIGNATURE[signatureLength];
   unsigned offset = 0;
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
   signature[offset++] = 0x01;
 
-  memcpy(&signature[offset], returnSignatureType, returnSignatureTypeSize);
-  offset += returnSignatureTypeSize;
+   memcpy(&signature[offset], methodArgumentSignature,
+         methodArgumentSignatureSize);
+  offset += methodArgumentSignatureSize;
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       getDefaultMemberRef, signature, signatureLength,

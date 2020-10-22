@@ -91,9 +91,9 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // Initialize ReJIT handler
   rejit_handler = new RejitHandler(
       this->info_, 
-      [this](FunctionID fId, RejitHandlerModule* mod,
+      [this](RejitHandlerModule* mod,
                           RejitHandlerModuleMethod* method) {
-        return this->CallTarget_RewriterCallback(fId, mod, method);
+        return this->CallTarget_RewriterCallback(mod, method);
       });
 
   Info("Environment variables:");
@@ -662,7 +662,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     mdMethodDef methodsDefs = {function_token};
     Info("Requesting ReJIT for: [functionId: ", function_id,
          ", moduleId: ", module_id, " methodId: ", function_token, "]");
-    this->info_->RequestReJIT(1, &modules, &methodsDefs);
+     this->info_->RequestReJIT(1, &modules, &methodsDefs);
+    //rejit_handler->NotifyReJITParameters(module_id, function_token, nullptr, module_metadata);
     return S_OK;
   }
 
@@ -2224,9 +2225,8 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
 }
 
 HRESULT CorProfiler::CallTarget_RewriterCallback(
-    FunctionID functionId, RejitHandlerModule* moduleHandler,
+    RejitHandlerModule* moduleHandler,
     RejitHandlerModuleMethod* methodHandler) {
-  Info("CallTarget_RewriterCallback !!!: ", functionId);
 
   // Local vars
   auto module_id = moduleHandler->GetModuleId();
@@ -2234,6 +2234,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   auto caller = methodHandler->GetFunctionInfo();
   auto callTargetTokens = module_metadata->GetCallTargetTokens();
   auto function_token = caller->id;
+
+  Info("CallTarget_RewriterCallback !!!: ", caller->name);
 
   // Create rewriter
   ILRewriter rewriter(this->info_, methodHandler->GetFunctionControl(), module_id, function_token);
@@ -2247,63 +2249,62 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     return hr;
   }
 
-  Info("REJIT: ", caller->name);
   Info("REJIT Starting rewriting.");
-  // Info(GetILCodes("REJIT Original Code: ", &rewriter, *caller));
+  Info(GetILCodes("REJIT Original Code: ", &rewriter, *caller));
 
-  //// Modify the Local Var Signature of the method
-  //auto returnFunctionMethod = caller->method_signature.GetRet();
+  // Modify the Local Var Signature of the method
+  auto returnFunctionMethod = caller->method_signature.GetRet();
 
-  //ULONG callTargetStateIndex = -1;
-  //ULONG exceptionIndex = -1;
-  //ULONG callTargetReturnIndex = -1;
-  //ULONG returnValueIndex = -1;
-  //mdToken callTargetStateToken = mdTokenNil;
-  //mdToken exceptionToken = mdTokenNil;
-  //mdToken callTargetReturnToken = mdTokenNil;
+  ULONG callTargetStateIndex = -1;
+  ULONG exceptionIndex = -1;
+  ULONG callTargetReturnIndex = -1;
+  ULONG returnValueIndex = -1;
+  mdToken callTargetStateToken = mdTokenNil;
+  mdToken exceptionToken = mdTokenNil;
+  mdToken callTargetReturnToken = mdTokenNil;
 
-  //Info("REJIT: Modifying the locals var signature.");
-  //hr = callTargetTokens->ModifyLocalSig(
-  //    &rewriter, &returnFunctionMethod, 
-  //    &callTargetStateIndex, &exceptionIndex, &callTargetReturnIndex, &returnValueIndex, 
-  //    &callTargetStateToken, &exceptionToken, &callTargetReturnToken);
-  //if (FAILED(hr)) {
-  //  Warn("Something failed.");
-  //  return hr;
-  //}
+  Info("REJIT: Modifying the locals var signature.");
+  hr = callTargetTokens->ModifyLocalSig(
+      &rewriter, &returnFunctionMethod, 
+      &callTargetStateIndex, &exceptionIndex, &callTargetReturnIndex, &returnValueIndex, 
+      &callTargetStateToken, &exceptionToken, &callTargetReturnToken);
+  if (FAILED(hr)) {
+    Warn("Something failed.");
+    return hr;
+  }
 
-  //Info(returnValueIndex);
-  //Info(exceptionIndex);
-  //Info(callTargetReturnIndex);
-  //Info(callTargetStateIndex);
+  Info(returnValueIndex);
+  Info(exceptionIndex);
+  Info(callTargetReturnIndex);
+  Info(callTargetStateIndex);
 
-  //Info(callTargetStateToken);
-  //Info(exceptionToken);
-  //Info(callTargetReturnToken);
+  Info(callTargetStateToken);
+  Info(exceptionToken);
+  Info(callTargetReturnToken);
 
-  //// Create the rewriter wrapper helper
-  //ILRewriterWrapper reWriterWrapper(&rewriter);
-  //ILInstr* pFirstOriginalInstr = rewriter.GetILList()->m_pNext;
-  //reWriterWrapper.SetILPosition(pFirstOriginalInstr);
+  // Create the rewriter wrapper helper
+  ILRewriterWrapper reWriterWrapper(&rewriter);
+  ILInstr* pFirstOriginalInstr = rewriter.GetILList()->m_pNext;
+  reWriterWrapper.SetILPosition(pFirstOriginalInstr);
 
-  //// Init locals
-  //if (returnValueIndex != -1) {
-  //  reWriterWrapper.CallMember(callTargetTokens->GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
-  //  reWriterWrapper.StLocal(returnValueIndex);
+  // Init locals
+  if (returnValueIndex != -1) {
+    reWriterWrapper.CallMember(callTargetTokens->GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
+    reWriterWrapper.StLocal(returnValueIndex);
 
-  //  reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnValueDefaultMemberRef(callTargetReturnToken), false);
-  //  reWriterWrapper.StLocal(callTargetReturnIndex);
-  //} else {
-  //  reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnVoidDefaultMemberRef(), false);
-  //  reWriterWrapper.StLocal(callTargetReturnIndex);
-  //}
-  //reWriterWrapper.LoadNull();
-  //reWriterWrapper.StLocal(exceptionIndex);
-  //reWriterWrapper.CallMember(callTargetTokens->GetCallTargetStateDefaultMemberRef(), false);
-  //reWriterWrapper.StLocal(callTargetStateIndex);
+    //reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnValueDefaultMemberRef(callTargetReturnToken), false);
+    //reWriterWrapper.StLocal(callTargetReturnIndex);
+  } else {
+    //reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnVoidDefaultMemberRef(), false);
+    //reWriterWrapper.StLocal(callTargetReturnIndex);
+  }
+  reWriterWrapper.LoadNull();
+  reWriterWrapper.StLocal(exceptionIndex);
+  reWriterWrapper.CallMember(callTargetTokens->GetCallTargetStateDefaultMemberRef(), false);
+  reWriterWrapper.StLocal(callTargetStateIndex);
 
   
-  // Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));
+  Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));
   hr = rewriter.Export();
 
   if (FAILED(hr)) {
@@ -2314,7 +2315,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     return hr;
   }
 
-  Info("CallTarget_RewriterCallback END !!!: ", functionId);
+  Info("CallTarget_RewriterCallback END !!!: ", caller->name);
 
   /*
   Info(moduleHandler->GetModuleId());

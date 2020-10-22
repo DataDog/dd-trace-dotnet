@@ -143,7 +143,7 @@ class CallTargetTokens {
   mdMemberRef GetCallTargetReturnValueDefaultMemberRef(
       mdTypeSpec callTargetReturnMemberSpec);
   mdMethodSpec GetCallTargetDefaultValueMethodSpec(
-      FunctionMethodArgument* methodReturnValue);
+      FunctionMethodArgument* methodArgument);
 };
 
 }  // namespace trace

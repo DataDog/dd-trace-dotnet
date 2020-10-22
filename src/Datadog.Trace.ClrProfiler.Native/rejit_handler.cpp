@@ -91,13 +91,64 @@ RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId) {
   return moduleHandler;
 }
 
-void RejitHandler::NotifyReJITParameters(
+HRESULT RejitHandler::NotifyReJITParameters(
     ModuleID moduleId, mdMethodDef methodId,
     ICorProfilerFunctionControl* pFunctionControl, ModuleMetadata* metadata) {
   auto moduleHandler = GetOrAddModule(moduleId);
   moduleHandler->SetModuleMetadata(metadata);
   auto methodHandler = moduleHandler->GetOrAddMethod(methodId);
   methodHandler->SetFunctionControl(pFunctionControl);
+  
+  if (methodHandler->GetMethodDef() == mdMethodDefNil) {
+    Warn(
+        "NotifyReJITCompilationStarted: mdMethodDef is missing for "
+        "MethodDef: ", 
+        methodId);
+    return S_FALSE;
+  }
+
+  if (methodHandler->GetFunctionControl() == nullptr) {
+    Warn(
+        "NotifyReJITCompilationStarted: ICorProfilerFunctionControl is missing "
+        "for "
+        "MethodDef: ",
+        methodId);
+    return S_FALSE;
+  }
+
+  if (methodHandler->GetFunctionInfo() == nullptr) {
+    Warn(
+        "NotifyReJITCompilationStarted: FunctionInfo is missing for "
+        "MethodDef: ",
+        methodId);
+    return S_FALSE;
+  }
+
+  if (methodHandler->GetMethodReplacement() == nullptr) {
+    Warn(
+        "NotifyReJITCompilationStarted: MethodReplacement is missing for "
+        "MethodDef: ",
+        methodId);
+    return S_FALSE;
+  }
+
+  if (moduleHandler->GetModuleId() == NULL) {
+    Warn(
+        "NotifyReJITCompilationStarted: ModuleID is missing for "
+        "MethodDef: ",
+        methodId);
+    return S_FALSE;
+  }
+
+  if (moduleHandler->GetModuleMetadata() == nullptr) {
+    Warn(
+        "NotifyReJITCompilationStarted: ModuleMetadata is missing for "
+        "MethodDef: ",
+        methodId);
+    return S_FALSE;
+  }
+
+  return rewriteCallback(moduleHandler, methodHandler);
 }
 
 HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId,
@@ -105,55 +156,7 @@ HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId,
   RejitHandlerModuleMethod* methodHandler = GetModuleMethodFromFunctionId(functionId);
   RejitHandlerModule* moduleHandler =
       (RejitHandlerModule*)methodHandler->GetModule();
-
-  if (methodHandler->GetMethodDef() == mdMethodDefNil) {
-    Warn(
-        "NotifyReJITCompilationStarted: mdMethodDef is missing for "
-        "FunctionId: ",
-        functionId);
-    return S_FALSE;
-  }
-
-  if (methodHandler->GetFunctionControl() == nullptr) {
-    Warn(
-        "NotifyReJITCompilationStarted: ICorProfilerFunctionControl is missing for "
-        "FunctionId: ",
-        functionId);
-    return S_FALSE;
-  }
-
-  if (methodHandler->GetFunctionInfo() == nullptr) {
-    Warn(
-        "NotifyReJITCompilationStarted: FunctionInfo is missing for "
-        "FunctionId: ",
-        functionId);
-    return S_FALSE;
-  }
-
-  if (methodHandler->GetMethodReplacement() == nullptr) {
-    Warn(
-        "NotifyReJITCompilationStarted: MethodReplacement is missing for "
-        "FunctionId: ",
-        functionId);
-    return S_FALSE;
-  }
-  
-  if (moduleHandler->GetModuleId() == NULL) {
-    Warn(
-        "NotifyReJITCompilationStarted: ModuleID is missing for "
-        "FunctionId: ",
-        functionId);
-    return S_FALSE;
-  }
-
-  if (moduleHandler->GetModuleMetadata() == nullptr) {
-    Warn(
-        "NotifyReJITCompilationStarted: ModuleMetadata is missing for "
-        "FunctionId: ",
-        functionId);
-    return S_FALSE;
-  }
-  return rewriteCallback(functionId, moduleHandler, methodHandler);
+  return S_OK;
 }
 
 void RejitHandler::Dump() {

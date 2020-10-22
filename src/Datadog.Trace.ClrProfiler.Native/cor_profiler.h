@@ -95,7 +95,7 @@ class CorProfiler : public CorProfilerBase {
   // CallTarget Methods
   //
   bool CallTarget_ShouldInstrumentMethod(FunctionID functionId);
-  HRESULT CallTarget_RewriterCallback(FunctionID functionId, RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
+  HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
  public:
   CorProfiler() = default;

@@ -1,3 +1,5 @@
+using Datadog.Trace.Logging;
+
 namespace Datadog.Trace.ClrProfiler.CallTarget
 {
     /// <summary>
@@ -5,6 +7,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// </summary>
     public readonly struct CallTargetState
     {
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(CallTargetState));
+
         private readonly object _state;
 
         /// <summary>
@@ -25,6 +29,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Gets the default call target state (used by the native side to initialize the locals)
         /// </summary>
         /// <returns>Default call target state</returns>
-        public static CallTargetState GetDefault() => new CallTargetState(null);
+        public static CallTargetState GetDefault()
+        {
+            Log.Information("CallTargetState.GetDefault() called");
+            return new CallTargetState(null);
+        }
     }
 }

@@ -85,21 +85,21 @@ class RejitHandler {
   std::mutex methodByFunctionId_lock;
   std::unordered_map<FunctionID, RejitHandlerModuleMethod*> methodByFunctionId;
   ICorProfilerInfo4* profilerInfo;
-  std::function<HRESULT(FunctionID, RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback;
+  std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback;
 
   RejitHandlerModuleMethod* GetModuleMethodFromFunctionId(
       FunctionID functionId);
 
  public:
   RejitHandler(ICorProfilerInfo4* pInfo,
-               std::function<HRESULT(FunctionID, RejitHandlerModule*,
+               std::function<HRESULT(RejitHandlerModule*,
                                      RejitHandlerModuleMethod*)> rewriteCallback) {
     this->profilerInfo = pInfo;
     this->rewriteCallback = rewriteCallback;
   }
   RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
 
-  void NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
+  HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                              ICorProfilerFunctionControl* pFunctionControl,
                              ModuleMetadata* metadata);
   HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
