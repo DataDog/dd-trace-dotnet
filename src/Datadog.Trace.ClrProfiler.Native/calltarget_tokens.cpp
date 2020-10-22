@@ -1,6 +1,7 @@
 #include "calltarget_tokens.h"
 
 #include "dd_profiler_constants.h"
+#include "il_rewriter_wrapper.h"
 #include "logging.h"
 #include "module_metadata.h"
 
@@ -728,6 +729,53 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
   Info("getDefaultMethodSpec signature: ", HexStr(signature, signatureLength));
 
   return getDefaultMethodSpec;
+}
+
+HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
+    void* rewriterWrapperPtr, FunctionInfo* functionInfo) {
+  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+
+  // Modify the Local Var Signature of the method
+  auto returnFunctionMethod = functionInfo->method_signature.GetRet();
+
+  ULONG callTargetStateIndex = ULONG_MAX;
+  ULONG exceptionIndex = ULONG_MAX;
+  ULONG callTargetReturnIndex = ULONG_MAX;
+  ULONG returnValueIndex = ULONG_MAX;
+  mdToken callTargetStateToken = mdTokenNil;
+  mdToken exceptionToken = mdTokenNil;
+  mdToken callTargetReturnToken = mdTokenNil;
+
+  Info("ModifyLocalSigAndInitialize: Modifying the locals var signature.");
+  auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(),
+                           &returnFunctionMethod, &callTargetStateIndex,
+                           &exceptionIndex,
+      &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
+      &exceptionToken, &callTargetReturnToken);
+
+  if (FAILED(hr)) {
+    Warn("ModifyLocalSig() failed.");
+    return hr;
+  }
+
+   // Init locals
+  Info("ModifyLocalSigAndInitialize: Initializing new locals vars.");
+  if (returnValueIndex != ULONG_MAX) {
+    rewriterWrapper->CallMember(GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
+    rewriterWrapper->StLocal(returnValueIndex);
+
+    rewriterWrapper->CallMember(GetCallTargetReturnValueDefaultMemberRef(callTargetReturnToken), false);
+    rewriterWrapper->StLocal(callTargetReturnIndex);
+  } else {
+    rewriterWrapper->CallMember(GetCallTargetReturnVoidDefaultMemberRef(), false);
+    rewriterWrapper->StLocal(callTargetReturnIndex);
+  }
+  rewriterWrapper->LoadNull();
+  rewriterWrapper->StLocal(exceptionIndex);
+  rewriterWrapper->CallMember(GetCallTargetStateDefaultMemberRef(), false);
+  rewriterWrapper->StLocal(callTargetStateIndex);
+
+  return S_OK;
 }
 
 }  // namespace trace

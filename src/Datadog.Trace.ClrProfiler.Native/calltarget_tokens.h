@@ -138,6 +138,9 @@ class CallTargetTokens {
                          mdToken* callTargetStateToken, mdToken* exceptionToken,
                          mdToken* callTargetReturnToken);
 
+  HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
+      FunctionInfo* functionInfo);
+
   mdMemberRef GetCallTargetStateDefaultMemberRef();
   mdMemberRef GetCallTargetReturnVoidDefaultMemberRef();
   mdMemberRef GetCallTargetReturnValueDefaultMemberRef(

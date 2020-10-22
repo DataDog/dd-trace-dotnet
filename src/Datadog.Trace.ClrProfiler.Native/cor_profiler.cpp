@@ -2252,56 +2252,13 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   Info("REJIT Starting rewriting.");
   Info(GetILCodes("REJIT Original Code: ", &rewriter, *caller));
 
-  // Modify the Local Var Signature of the method
-  auto returnFunctionMethod = caller->method_signature.GetRet();
-
-  ULONG callTargetStateIndex = -1;
-  ULONG exceptionIndex = -1;
-  ULONG callTargetReturnIndex = -1;
-  ULONG returnValueIndex = -1;
-  mdToken callTargetStateToken = mdTokenNil;
-  mdToken exceptionToken = mdTokenNil;
-  mdToken callTargetReturnToken = mdTokenNil;
-
-  Info("REJIT: Modifying the locals var signature.");
-  hr = callTargetTokens->ModifyLocalSig(
-      &rewriter, &returnFunctionMethod, 
-      &callTargetStateIndex, &exceptionIndex, &callTargetReturnIndex, &returnValueIndex, 
-      &callTargetStateToken, &exceptionToken, &callTargetReturnToken);
-  if (FAILED(hr)) {
-    Warn("Something failed.");
-    return hr;
-  }
-
-  Info(returnValueIndex);
-  Info(exceptionIndex);
-  Info(callTargetReturnIndex);
-  Info(callTargetStateIndex);
-
-  Info(callTargetStateToken);
-  Info(exceptionToken);
-  Info(callTargetReturnToken);
-
   // Create the rewriter wrapper helper
   ILRewriterWrapper reWriterWrapper(&rewriter);
   ILInstr* pFirstOriginalInstr = rewriter.GetILList()->m_pNext;
   reWriterWrapper.SetILPosition(pFirstOriginalInstr);
 
-  // Init locals
-  if (returnValueIndex != ULONG_MAX) {
-    reWriterWrapper.CallMember(callTargetTokens->GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
-    reWriterWrapper.StLocal(returnValueIndex);
-
-    reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnValueDefaultMemberRef(callTargetReturnToken), false);
-    reWriterWrapper.StLocal(callTargetReturnIndex);
-  } else {
-    reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnVoidDefaultMemberRef(), false);
-    reWriterWrapper.StLocal(callTargetReturnIndex);
-  }
-  reWriterWrapper.LoadNull();
-  reWriterWrapper.StLocal(exceptionIndex);
-  reWriterWrapper.CallMember(callTargetTokens->GetCallTargetStateDefaultMemberRef(), false);
-  reWriterWrapper.StLocal(callTargetStateIndex);
+  // Modify the Local Var Signature of the method and initialize new local vars
+  callTargetTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, caller);
 
   
   Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));
