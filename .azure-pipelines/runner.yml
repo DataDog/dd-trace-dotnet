@@ -12,6 +12,7 @@ trigger:
 variables:
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
   dotnetCoreSdkVersion: 3.1.107
+  dotnetCoreSdk5Version: 5.0.100-rc.2.20479.15
   ddApiKey: $(DD_API_KEY)
   DD_DOTNET_TRACER_MSBUILD:
 
@@ -32,9 +33,11 @@ jobs:
 
   steps:
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.1
+    displayName: install dotnet core sdk 5.0
     inputs:
-      version: $(dotnetCoreSdkVersion)
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+      includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
@@ -119,7 +122,14 @@ jobs:
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
-
+      
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+      includePreviewVersions: true
+      
   - task: DotNetCoreCLI@2
     displayName: dotnet build
     inputs:
