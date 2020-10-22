@@ -242,16 +242,24 @@ namespace Datadog.Trace.Tagging
 
             offset += MessagePackBinary.WriteString(ref bytes, offset, "meta");
 
-            int headerOffset = offset;
-            int count;
+            int count = 0;
 
             var tags = Tags;
+            var additionalTags = GetAdditionalTags();
+
+            foreach (var property in additionalTags)
+            {
+                if (property.Getter(this) != null)
+                {
+                    count++;
+                }
+            }
 
             if (tags != null)
             {
                 lock (tags)
                 {
-                    count = tags.Count;
+                    count += tags.Count;
 
                     offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
 
@@ -264,24 +272,19 @@ namespace Datadog.Trace.Tagging
             }
             else
             {
-                count = 0;
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
             }
 
-            foreach (var property in GetAdditionalTags())
+            foreach (var property in additionalTags)
             {
                 var value = property.Getter(this);
 
                 if (value != null)
                 {
-                    count++;
                     offset += MessagePackBinary.WriteString(ref bytes, offset, property.Key);
                     offset += MessagePackBinary.WriteString(ref bytes, offset, value);
                 }
             }
-
-            // Write updated count
-            MessagePackBinary.WriteMapHeader(ref bytes, headerOffset, count);
 
             return offset - originalOffset;
         }
@@ -292,16 +295,24 @@ namespace Datadog.Trace.Tagging
 
             offset += MessagePackBinary.WriteString(ref bytes, offset, "metrics");
 
-            var metrics = Metrics;
+            int count = 0;
 
-            int headerOffset = offset;
-            int count;
+            var metrics = Metrics;
+            var additionalMetrics = GetAdditionalMetrics();
+
+            foreach (var property in additionalMetrics)
+            {
+                if (property.Getter(this) != null)
+                {
+                    count++;
+                }
+            }
 
             if (metrics != null)
             {
                 lock (metrics)
                 {
-                    count = metrics.Count;
+                    count += metrics.Count;
 
                     offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
 
@@ -314,7 +325,6 @@ namespace Datadog.Trace.Tagging
             }
             else
             {
-                count = 0;
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, count);
             }
 
@@ -324,14 +334,10 @@ namespace Datadog.Trace.Tagging
 
                 if (value != null)
                 {
-                    count++;
                     offset += MessagePackBinary.WriteString(ref bytes, offset, property.Key);
                     offset += MessagePackBinary.WriteDouble(ref bytes, offset, value.Value);
                 }
             }
-
-            // Write updated count
-            MessagePackBinary.WriteMapHeader(ref bytes, headerOffset, count);
 
             return offset - originalOffset;
         }
