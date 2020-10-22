@@ -141,7 +141,7 @@ class CallTargetTokens {
   mdMemberRef GetCallTargetStateDefaultMemberRef();
   mdMemberRef GetCallTargetReturnVoidDefaultMemberRef();
   mdMemberRef GetCallTargetReturnValueDefaultMemberRef(
-      mdTypeSpec callTargetReturnMemberSpec);
+      mdTypeSpec callTargetReturnTypeSpec);
   mdMethodSpec GetCallTargetDefaultValueMethodSpec(
       FunctionMethodArgument* methodArgument);
 };

@@ -2288,15 +2288,15 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   reWriterWrapper.SetILPosition(pFirstOriginalInstr);
 
   // Init locals
-  if (returnValueIndex != -1) {
+  if (returnValueIndex != ULONG_MAX) {
     reWriterWrapper.CallMember(callTargetTokens->GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
     reWriterWrapper.StLocal(returnValueIndex);
 
-    //reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnValueDefaultMemberRef(callTargetReturnToken), false);
-    //reWriterWrapper.StLocal(callTargetReturnIndex);
+    reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnValueDefaultMemberRef(callTargetReturnToken), false);
+    reWriterWrapper.StLocal(callTargetReturnIndex);
   } else {
-    //reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnVoidDefaultMemberRef(), false);
-    //reWriterWrapper.StLocal(callTargetReturnIndex);
+    reWriterWrapper.CallMember(callTargetTokens->GetCallTargetReturnVoidDefaultMemberRef(), false);
+    reWriterWrapper.StLocal(callTargetReturnIndex);
   }
   reWriterWrapper.LoadNull();
   reWriterWrapper.StLocal(exceptionIndex);
