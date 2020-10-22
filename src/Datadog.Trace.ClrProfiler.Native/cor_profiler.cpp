@@ -2189,22 +2189,25 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
         method_replacement.target_method.type_name == caller.type.name &&
         method_replacement.target_method.method_name == caller.name) {
 
-      auto retFuncArg = caller.method_signature.GetRet();
+      auto functionInfo = new FunctionInfo(caller);
+      hr = functionInfo->method_signature.TryParse();
+      if (FAILED(hr)) {
+        delete functionInfo;
+        callTarget_shouldInstrumentMethod_map_[functionId] = false;
+        return false;
+      }
+
+      auto retFuncArg = functionInfo->method_signature.GetRet();
 
       // return ref is not supported
-      /*unsigned elementType;
+      unsigned elementType;
       auto retTypeFlags = retFuncArg.GetTypeFlags(elementType);
       if (retTypeFlags & TypeFlagByRef) {
         callTarget_shouldInstrumentMethod_map_[functionId] = false;
         Warn("[UNSUPPORTED RETURN REF] Module: ", module_metadata->assemblyName,
-             " Type: ", caller.type.name, " Method: ", caller.name);
-        return false;
-      }*/
-
-      auto functionInfo = new FunctionInfo(caller);
-      hr = functionInfo->method_signature.TryParse();
-      if (FAILED(hr)) {
-        callTarget_shouldInstrumentMethod_map_[functionId] = false;
+             " Type: ", functionInfo->type.name,
+             " Method: ", functionInfo->name);
+        delete functionInfo;
         return false;
       }
 
