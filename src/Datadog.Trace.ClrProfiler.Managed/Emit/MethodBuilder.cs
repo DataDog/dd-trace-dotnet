@@ -366,11 +366,19 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 throw new NotSupportedException($"OpCode {_originalOpCodeValue} not supported when calling a method.");
             }
 
-            if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
+            if (methodInfo.ReturnType.IsValueType && !returnType.IsValueType)
             {
                 il.Emit(OpCodes.Box, methodInfo.ReturnType);
             }
-            else if (methodInfo.ReturnType != returnType)
+            else if (methodInfo.ReturnType.IsValueType && returnType.IsValueType && methodInfo.ReturnType != returnType)
+            {
+                throw new ArgumentException($"Cannot convert the target method's return type {methodInfo.ReturnType.FullName} (value type) to the delegate method's return type {returnType.FullName} (value type)");
+            }
+            else if (!methodInfo.ReturnType.IsValueType && returnType.IsValueType)
+            {
+                throw new ArgumentException($"Cannot reliably convert the target method's return type {methodInfo.ReturnType.FullName} (reference type) to the delegate method's return type {returnType.FullName} (value type)");
+            }
+            else if (!methodInfo.ReturnType.IsValueType && !returnType.IsValueType && methodInfo.ReturnType != returnType)
             {
                 il.Emit(OpCodes.Castclass, returnType);
             }
