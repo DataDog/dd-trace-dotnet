@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -50,19 +49,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var span = scope.Span;
                 span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
                 span.Type = SpanType;
-                tags.InstrumentationName = ComponentValue;
-                tags.SpanKind = SpanKinds.Client;
                 tags.Action = requestName;
                 tags.Method = method;
                 tags.Url = url;
 
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-
-                if (analyticsSampleRate != null)
-                {
-                    tags.AnalyticsSampleRate = analyticsSampleRate;
-                }
+                tags.SetAnalyticsSampleRate(integrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

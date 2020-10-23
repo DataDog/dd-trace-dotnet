@@ -57,11 +57,9 @@ namespace Datadog.Trace.ExtensionMethods
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
-            tags.SpanKind = SpanKinds.Server;
             tags.HttpMethod = method;
             tags.HttpRequestHeadersHost = host;
             tags.HttpUrl = httpUrl;
-            tags.Language = TracerConstants.Language;
 
             foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
             {

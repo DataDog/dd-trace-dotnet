@@ -148,13 +148,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.AspNetController = controllerName;
                 tags.AspNetAction = actionName;
 
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-
-                if (analyticsSampleRate != null)
-                {
-                    tags.AnalyticsSampleRate = analyticsSampleRate;
-                }
+                tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: true);
             }
             catch (Exception ex)
             {

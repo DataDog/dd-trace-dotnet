@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// </summary>
     public static class ConnectionMultiplexer
     {
-        private const string IntegrationName = "StackExchangeRedis";
+        private const string IntegrationName = RedisBatch.IntegrationName;
         private const string RedisAssembly = "StackExchange.Redis";
         private const string StrongNameRedisAssembly = "StackExchange.Redis.StrongName";
         private const string ConnectionMultiplexerTypeName = "StackExchange.Redis.ConnectionMultiplexer";

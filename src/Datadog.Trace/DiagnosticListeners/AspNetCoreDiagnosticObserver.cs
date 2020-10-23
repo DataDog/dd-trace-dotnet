@@ -25,7 +25,6 @@ namespace Datadog.Trace.DiagnosticListeners
         public const string IntegrationName = "AspNetCore";
 
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
-        private const string ComponentName = "aspnet_core";
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
@@ -167,17 +166,9 @@ namespace Datadog.Trace.DiagnosticListeners
             var tags = new AspNetCoreTags();
             var scope = tracer.StartActiveWithTags(HttpRequestInOperationName, propagatedContext, tags: tags);
 
-            tags.InstrumentationName = ComponentName;
-
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
-            // set analytics sample rate if enabled
-            var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-
-            if (analyticsSampleRate != null)
-            {
-                tags.AnalyticsSampleRate = analyticsSampleRate;
-            }
+            tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: true);
         }
 
         private void OnMvcBeforeAction(object arg)

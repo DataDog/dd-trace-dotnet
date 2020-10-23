@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.MessagePack;
 using Xunit;
@@ -14,9 +15,9 @@ namespace Datadog.Trace.Tests.Tagging
         [Fact]
         public void CheckProperties()
         {
-            var assembly = typeof(TagsList).Assembly;
+            var assemblies = new[] { typeof(TagsList).Assembly, typeof(SqlTags).Assembly };
 
-            foreach (var type in assembly.GetTypes())
+            foreach (var type in assemblies.SelectMany(a => a.GetTypes()))
             {
                 if (!typeof(TagsList).IsAssignableFrom(type))
                 {
@@ -82,15 +83,23 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var instance = (ITags)Activator.CreateInstance(type);
 
-            var tags = (IProperty<T>[])type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)
+            var allTags = (IProperty<T>[])type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)
                 .Invoke(instance, null);
 
-            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            var tags = allTags.Where(t => !t.IsReadOnly).ToArray();
+            var readonlyTags = allTags.Where(t => t.IsReadOnly).ToArray();
+
+            var allProperties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                 .Where(p => p.PropertyType == typeof(T))
                 .ToArray();
 
-            Assert.Equal(properties.Length, tags.Length);
+            var properties = allProperties.Where(p => p.CanWrite).ToArray();
+            var readonlyProperties = allProperties.Where(p => !p.CanWrite).ToArray();
 
+            Assert.True(properties.Length == tags.Length, $"Mismatch between readonly properties and tags count for type {type}");
+            Assert.True(readonlyProperties.Length == readonlyTags.Length, $"Mismatch between readonly properties and tags count for type {type}");
+
+            // ---------- Test read-write properties
             var testValues = Enumerable.Range(0, tags.Length).Select(_ => valueGenerator()).ToArray();
 
             // Check for each tag that the getter and the setter are mapped on the same property
@@ -103,12 +112,20 @@ namespace Datadog.Trace.Tests.Tagging
                 Assert.True(testValues[i].Equals(tag.Getter(instance)), $"Getter and setter mismatch for tag {tag.Key} of type {type.Name}");
             }
 
-            // Check that all properties were mapped
+            // Check that all read/write properties were mapped
             var remainingValues = new HashSet<T>(testValues);
 
             foreach (var property in properties)
             {
                 Assert.True(remainingValues.Remove((T)property.GetValue(instance)), $"Property {property.Name} of type {type.Name} is not mapped");
+            }
+
+            // ---------- Test readonly properties
+            remainingValues = new HashSet<T>(readonlyProperties.Select(p => (T)p.GetValue(instance)));
+
+            foreach (var tag in readonlyTags)
+            {
+                Assert.True(remainingValues.Remove(tag.Getter(instance)), $"Tag {tag.Key} of type {type.Name} is not mapped");
             }
         }
 

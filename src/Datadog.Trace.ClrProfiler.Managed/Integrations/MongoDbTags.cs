@@ -1,20 +1,22 @@
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.ClrProfiler.Integrations
 {
-    internal class MongoDbTags : CommonTags
+    internal class MongoDbTags : InstrumentationTags
     {
-        internal static readonly IProperty<string>[] MongoDbTagsProperties =
-            CommonTagsProperties.Concat(
+        protected static readonly IProperty<string>[] MongoDbTagsProperties =
+            InstrumentationTagsProperties.Concat(
+                new ReadOnlyProperty<MongoDbTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
                 new Property<MongoDbTags, string>(Trace.Tags.DbName, t => t.DbName, (t, v) => t.DbName = v),
                 new Property<MongoDbTags, string>(Trace.Tags.MongoDbQuery, t => t.Query, (t, v) => t.Query = v),
                 new Property<MongoDbTags, string>(Trace.Tags.MongoDbCollection, t => t.Collection, (t, v) => t.Collection = v),
                 new Property<MongoDbTags, string>(Trace.Tags.OutHost, t => t.Host, (t, v) => t.Host = v),
                 new Property<MongoDbTags, string>(Trace.Tags.OutPort, t => t.Port, (t, v) => t.Port = v));
 
-        internal static readonly IProperty<double?>[] MongoDbMetricsProperties =
-            CommonMetricsProperties.Concat(
-                new Property<MongoDbTags, double?>(Trace.Tags.Analytics, t => t.AnalyticsSampleRate, (t, v) => t.AnalyticsSampleRate = v));
+        public override string SpanKind => SpanKinds.Client;
+
+        public string InstrumentationName => MongoDbIntegration.IntegrationName;
 
         public string DbName { get; set; }
 
@@ -26,10 +28,6 @@ namespace Datadog.Trace.Tagging
 
         public string Port { get; set; }
 
-        public double? AnalyticsSampleRate { get; set; }
-
         protected override IProperty<string>[] GetAdditionalTags() => MongoDbTagsProperties;
-
-        protected override IProperty<double?>[] GetAdditionalMetrics() => MongoDbMetricsProperties;
     }
 }
