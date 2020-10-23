@@ -103,9 +103,6 @@ class CallTargetTokens {
                          mdToken* callTargetStateToken, mdToken* exceptionToken,
                          mdToken* callTargetReturnToken);
 
-  mdMethodSpec GetBeginMethodWithArgumentsArrayMemberRef(
-      mdTypeRef integrationTypeRef, const TypeInfo* currentType);
-
   mdMethodSpec GetEndVoidReturnMemberRef(mdTypeRef integrationTypeRef,
                                          mdTypeRef currentTypeRef);
   mdMethodSpec GetEndReturnMemberRef(mdTypeRef integrationTypeRef,
@@ -174,6 +171,11 @@ class CallTargetTokens {
       FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
       FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
       FunctionMethodArgument* arg6, ILInstr** instruction);
+
+  HRESULT WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr,
+                                             mdTypeRef integrationTypeRef,
+                                             const TypeInfo* currentType,
+                                             ILInstr** instruction);
 };
 
 }  // namespace trace

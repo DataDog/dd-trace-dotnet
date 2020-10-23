@@ -1648,9 +1648,103 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   return S_OK;
 }
 
-mdMethodSpec CallTargetTokens::GetBeginMethodWithArgumentsArrayMemberRef(
-    mdTypeRef integrationTypeRef, const TypeInfo* currentType) {
-  return mdMethodSpecNil;
+HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
+    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+    const TypeInfo* currentType, ILInstr** instruction) {
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+  ModuleMetadata* module_metadata = GetMetadata();
+
+  if (beginArrayMemberRef == mdMemberRefNil) {
+    unsigned callTargetStateBuffer;
+    auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+
+    auto signatureLength = 8 + callTargetStateSize;
+    auto* signature = new COR_SIGNATURE[signatureLength];
+    unsigned offset = 0;
+
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+    signature[offset++] = 0x02;
+    signature[offset++] = 0x02;
+
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+    offset += callTargetStateSize;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x01;
+    
+    signature[offset++] = ELEMENT_TYPE_SZARRAY;
+    signature[offset++] = ELEMENT_TYPE_OBJECT;
+
+    auto hr = module_metadata->metadata_emit->DefineMemberRef(
+        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
+        signature, signatureLength, &beginArrayMemberRef);
+    if (FAILED(hr)) {
+      Warn("Wrapper beginArrayMemberRef could not be defined.");
+      return hr;
+    }
+
+    Info("BeginMethod signature: ", HexStr(signature, signatureLength));
+  }
+
+  mdMethodSpec beginArrayMethodSpec = mdMethodSpecNil;
+
+  unsigned integrationTypeBuffer;
+  ULONG integrationTypeSize = CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
+
+  bool isValueType = currentType->valueType;
+  mdToken currentTypeRef = mdTokenNil;
+  if (currentType->type_spec != mdTypeSpecNil) {
+    currentTypeRef = currentType->type_spec;
+  } else if (currentType->name.find("`1"_W) == std::string::npos) {
+    currentTypeRef = currentType->id;
+  } else {
+    currentTypeRef = objectTypeRef;
+    if (isValueType) {
+      rewriterWrapper->Box(currentType->id);
+    }
+  }
+
+  unsigned currentTypeBuffer;
+  ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+
+  Info("Current Type Ref: ", currentTypeRef);
+  Info("Current Type Name: ", currentType->name);
+
+  auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
+  auto* signature = new COR_SIGNATURE[signatureLength];
+  unsigned offset = 0;
+  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+  signature[offset++] = 0x02;
+
+  signature[offset++] = ELEMENT_TYPE_CLASS;
+  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
+  offset += integrationTypeSize;
+
+  if (isValueType) {
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+  } else {
+    signature[offset++] = ELEMENT_TYPE_CLASS;
+  }
+  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
+  offset += currentTypeSize;
+
+  hr = module_metadata->metadata_emit->DefineMethodSpec(
+      beginArrayMemberRef, signature, signatureLength, &beginArrayMethodSpec);
+
+  if (FAILED(hr)) {
+    Warn("Error creating begin method spec.");
+    return hr;
+  }
+
+  Info("BeginMethod spec signature: ", HexStr(signature, signatureLength));
+
+  *instruction = rewriterWrapper->CallMember(beginArrayMethodSpec, false);
+  return S_OK;
 }
 
 mdMethodSpec CallTargetTokens::GetEndVoidReturnMemberRef(
