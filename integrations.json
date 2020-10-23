@@ -1604,6 +1604,30 @@
       {
         "caller": {},
         "target": {
+          "assembly": "Microsoft.Data.SqlClient",
+          "type": "Microsoft.Data.SqlClient.SqlCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "Microsoft.Data.SqlClient.SqlDataReader"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
+          "method": "ExecuteReader",
+          "signature": "00 04 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "System.Data",
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteReader",
@@ -1645,6 +1669,31 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
+          "method": "ExecuteReaderWithBehavior",
+          "signature": "00 05 1C 1C 08 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Data.SqlClient",
+          "type": "Microsoft.Data.SqlClient.SqlCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "Microsoft.Data.SqlClient.SqlDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -1706,6 +1755,32 @@
       {
         "caller": {},
         "target": {
+          "assembly": "Microsoft.Data.SqlClient",
+          "type": "Microsoft.Data.SqlClient.SqlCommand",
+          "method": "ExecuteReaderAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>",
+            "System.Data.CommandBehavior",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
+          "method": "ExecuteReaderAsync",
+          "signature": "00 06 1C 1C 08 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "System.Data",
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteNonQuery",
@@ -1745,6 +1820,30 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
+          "method": "ExecuteNonQuery",
+          "signature": "00 04 08 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Data.SqlClient",
+          "type": "Microsoft.Data.SqlClient.SqlCommand",
+          "method": "ExecuteNonQuery",
+          "signature_types": [
+            "System.Int32"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "ExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -1804,6 +1903,31 @@
       {
         "caller": {},
         "target": {
+          "assembly": "Microsoft.Data.SqlClient",
+          "type": "Microsoft.Data.SqlClient.SqlCommand",
+          "method": "ExecuteNonQueryAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Int32>",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
+          "method": "ExecuteNonQueryAsync",
+          "signature": "00 05 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "System.Data",
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteScalar",
@@ -1843,6 +1967,30 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
+          "method": "ExecuteScalar",
+          "signature": "00 04 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Data.SqlClient",
+          "type": "Microsoft.Data.SqlClient.SqlCommand",
+          "method": "ExecuteScalar",
+          "signature_types": [
+            "System.Object"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "ExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -1893,6 +2041,31 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
+          "method": "ExecuteScalarAsync",
+          "signature": "00 05 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Data.SqlClient",
+          "type": "Microsoft.Data.SqlClient.SqlCommand",
+          "method": "ExecuteScalarAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Object>",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "ExecuteScalarAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
