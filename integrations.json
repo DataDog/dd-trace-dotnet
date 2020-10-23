@@ -104,7 +104,7 @@
           "signature_types": [
             "System.Data.Common.DbDataReader"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
@@ -177,7 +177,7 @@
             "System.Data.Common.DbDataReader",
             "System.Data.CommandBehavior"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
@@ -329,7 +329,7 @@
           "signature_types": [
             "System.Int32"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
@@ -476,7 +476,7 @@
           "signature_types": [
             "System.Object"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
@@ -865,7 +865,7 @@
           "signature_types": [
             "System.Data.IDataReader"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
@@ -938,7 +938,7 @@
             "System.Data.IDataReader",
             "System.Data.CommandBehavior"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
@@ -1012,7 +1012,7 @@
           "signature_types": [
             "System.Int32"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
@@ -1084,7 +1084,7 @@
           "signature_types": [
             "System.Object"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
@@ -1562,7 +1562,7 @@
           "signature_types": [
             "System.Data.SqlClient.SqlDataReader"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -1611,7 +1611,7 @@
             "System.Data.SqlClient.SqlDataReader",
             "System.Data.CommandBehavior"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -1712,7 +1712,7 @@
           "signature_types": [
             "System.Int32"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -1810,7 +1810,7 @@
           "signature_types": [
             "System.Object"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
