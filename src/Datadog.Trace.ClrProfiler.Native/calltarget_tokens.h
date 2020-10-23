@@ -11,7 +11,7 @@
 #include "com_ptr.h"
 #include "il_rewriter.h"
 #include "integration.h"
-#include "string.h" // NOLINT
+#include "string.h"  // NOLINT
 
 namespace trace {
 
@@ -76,7 +76,6 @@ class CallTargetTokens {
 
   mdMemberRef logExceptionRef = mdMemberRefNil;
 
-
   mdMemberRef callTargetStateTypeGetDefault = mdMemberRefNil;
   mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
   mdMemberRef getDefaultMemberRef = mdMemberRefNil;
@@ -90,37 +89,22 @@ class CallTargetTokens {
   mdTypeRef GetTargetVoidReturnTypeRef();
   mdTypeSpec GetTargetReturnValueTypeRef(
       FunctionMethodArgument* returnArgument);
+  mdMemberRef GetCallTargetStateDefaultMemberRef();
+  mdMemberRef GetCallTargetReturnVoidDefaultMemberRef();
+  mdMemberRef GetCallTargetReturnValueDefaultMemberRef(
+      mdTypeSpec callTargetReturnTypeSpec);
+  mdMethodSpec GetCallTargetDefaultValueMethodSpec(
+      FunctionMethodArgument* methodArgument);
 
- public:
-  CallTargetTokens(void* module_metadata_ptr) {
-    this->module_metadata_ptr = module_metadata_ptr;
-  }
+  HRESULT ModifyLocalSig(ILRewriter* reWriter,
+                         FunctionMethodArgument* methodReturnValue,
+                         ULONG* callTargetStateIndex, ULONG* exceptionIndex,
+                         ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+                         mdToken* callTargetStateToken, mdToken* exceptionToken,
+                         mdToken* callTargetReturnToken);
 
   mdMethodSpec GetBeginMethodWithArgumentsArrayMemberRef(
-      mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef);
-  mdMethodSpec GetBeginMethodWithoutArgumentsMemberRef(
-      mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef);
-  mdMethodSpec GetBeginMethodWith1ArgumentsMemberRef(
-      mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-      mdTypeRef arg1TypeRef);
-  mdMethodSpec GetBeginMethodWith2ArgumentsMemberRef(
-      mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-      mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef);
-  mdMethodSpec GetBeginMethodWith3ArgumentsMemberRef(
-      mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-      mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef);
-  mdMethodSpec GetBeginMethodWith4ArgumentsMemberRef(
-      mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-      mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
-      mdTypeRef arg4TypeRef);
-  mdMethodSpec GetBeginMethodWith5ArgumentsMemberRef(
-      mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-      mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
-      mdTypeRef arg4TypeRef, mdTypeRef arg5TypeRef);
-  mdMethodSpec GetBeginMethodWith6ArgumentsMemberRef(
-      mdTypeRef integrationTypeRef, mdTypeRef currentTypeRef,
-      mdTypeRef arg1TypeRef, mdTypeRef arg2TypeRef, mdTypeRef arg3TypeRef,
-      mdTypeRef arg4TypeRef, mdTypeRef arg5TypeRef, mdTypeRef arg6TypeRef);
+      mdTypeRef integrationTypeRef, const TypeInfo* currentType);
 
   mdMethodSpec GetEndVoidReturnMemberRef(mdTypeRef integrationTypeRef,
                                          mdTypeRef currentTypeRef);
@@ -131,22 +115,65 @@ class CallTargetTokens {
   mdMethodSpec GetLogExceptionMemberRef(mdTypeRef integrationTypeRef,
                                         mdTypeRef currentTypeRef);
 
-  HRESULT ModifyLocalSig(ILRewriter* reWriter,
-                         FunctionMethodArgument* methodReturnValue,
-                         ULONG* callTargetStateIndex, ULONG* exceptionIndex,
-                         ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
-                         mdToken* callTargetStateToken, mdToken* exceptionToken,
-                         mdToken* callTargetReturnToken);
+ public:
+  CallTargetTokens(void* module_metadata_ptr) {
+    this->module_metadata_ptr = module_metadata_ptr;
+  }
+  mdTypeRef GetObjectTypeRef();
+  mdAssemblyRef GetCorLibAssemblyRef();
 
-  HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
-      FunctionInfo* functionInfo);
+  HRESULT ModifyLocalSigAndInitialize(
+      void* rewriterWrapperPtr, FunctionInfo* functionInfo,
+      ULONG* callTargetStateIndex, ULONG* exceptionIndex,
+      ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+      mdToken* callTargetStateToken, mdToken* exceptionToken,
+      mdToken* callTargetReturnToken);
 
-  mdMemberRef GetCallTargetStateDefaultMemberRef();
-  mdMemberRef GetCallTargetReturnVoidDefaultMemberRef();
-  mdMemberRef GetCallTargetReturnValueDefaultMemberRef(
-      mdTypeSpec callTargetReturnTypeSpec);
-  mdMethodSpec GetCallTargetDefaultValueMethodSpec(
-      FunctionMethodArgument* methodArgument);
+  HRESULT WriteBeginMethodWithoutArguments(void* rewriterWrapperPtr,
+                                           mdTypeRef integrationTypeRef,
+                                           const TypeInfo* currentType,
+                                           ILInstr** instruction);
+
+  HRESULT WriteBeginMethodWithArguments(void* rewriterWrapperPtr,
+                                        mdTypeRef integrationTypeRef,
+                                        const TypeInfo* currentType,
+                                        FunctionMethodArgument* arg1,
+                                        ILInstr** instruction);
+
+  HRESULT WriteBeginMethodWithArguments(void* rewriterWrapperPtr,
+                                        mdTypeRef integrationTypeRef,
+                                        const TypeInfo* currentType,
+                                        FunctionMethodArgument* arg1,
+                                        FunctionMethodArgument* arg2,
+                                        ILInstr** instruction);
+
+  HRESULT WriteBeginMethodWithArguments(void* rewriterWrapperPtr,
+                                        mdTypeRef integrationTypeRef,
+                                        const TypeInfo* currentType,
+                                        FunctionMethodArgument* arg1,
+                                        FunctionMethodArgument* arg2,
+                                        FunctionMethodArgument* arg3,
+                                        ILInstr** instruction);
+
+  HRESULT WriteBeginMethodWithArguments(
+      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+      const TypeInfo* currentType, FunctionMethodArgument* arg1,
+      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
+      FunctionMethodArgument* arg4, ILInstr** instruction);
+
+  HRESULT WriteBeginMethodWithArguments(
+      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+      const TypeInfo* currentType, FunctionMethodArgument* arg1,
+      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
+      FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
+      ILInstr** instruction);
+
+  HRESULT WriteBeginMethodWithArguments(
+      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+      const TypeInfo* currentType, FunctionMethodArgument* arg1,
+      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
+      FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
+      FunctionMethodArgument* arg6, ILInstr** instruction);
 };
 
 }  // namespace trace

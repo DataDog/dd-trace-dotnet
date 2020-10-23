@@ -205,6 +205,10 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   mdToken parent_token = mdTokenNil;
   WCHAR type_name[kNameMaxSize]{};
   DWORD type_name_len = 0;
+  DWORD type_flags;
+  TypeInfo* extendsInfo = nullptr;
+  mdToken type_extends = mdTokenNil;
+  bool type_valueType;
 
   HRESULT hr = E_FAIL;
   const auto token_type = TypeFromToken(token);
@@ -212,7 +216,13 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   switch (token_type) {
     case mdtTypeDef:
       hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize,
-                                            &type_name_len, nullptr, nullptr);
+                                            &type_name_len, &type_flags,
+                                            &type_extends);
+      if (type_extends != mdTokenNil) {
+        extendsInfo = new TypeInfo(GetTypeInfo(metadata_import, type_extends));
+        type_valueType = extendsInfo->name == "System.ValueType"_W ||
+                         extendsInfo->name == "System.Enum"_W;
+      }
       break;
     case mdtTypeRef:
       hr = metadata_import->GetTypeRefProps(token, &parent_token, type_name,
@@ -228,11 +238,13 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       if (FAILED(hr) || signature_length < 3) {
         return {};
       }
-
+      
       if (signature[0] & ELEMENT_TYPE_GENERICINST) {
         mdToken type_token;
         CorSigUncompressToken(&signature[2], &type_token);
-        return GetTypeInfo(metadata_import, type_token);
+        const auto baseType = GetTypeInfo(metadata_import, type_token);
+        return {baseType.id, baseType.name, token, token_type,
+                baseType.extend_from, baseType.valueType};
       }
     } break;
     case mdtModuleRef:
@@ -250,7 +262,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
     return {};
   }
 
-  return {token, WSTRING(type_name)};
+  return { token, WSTRING(type_name), mdTypeSpecNil, token_type, extendsInfo, type_valueType };
 }
 
 mdAssemblyRef FindAssemblyRef(

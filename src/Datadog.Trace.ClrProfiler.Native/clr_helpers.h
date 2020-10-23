@@ -292,9 +292,26 @@ struct ModuleInfo {
 struct TypeInfo {
   const mdToken id;
   const WSTRING name;
+  const mdTypeSpec type_spec;
+  const ULONG32 token_type;
+  const TypeInfo* extend_from;
+  const bool valueType;
 
-  TypeInfo() : id(0), name(""_W) {}
-  TypeInfo(mdToken id, WSTRING name) : id(id), name(name) {}
+  TypeInfo()
+      : id(0),
+        name(""_W),
+        type_spec(0),
+        token_type(0),
+        extend_from(nullptr),
+        valueType(false) {}
+  TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type,
+           const TypeInfo* extend_from, bool valueType) 
+      : id(id),
+        name(name),
+        type_spec(type_spec),
+        token_type(token_type),
+        extend_from(extend_from),
+        valueType(valueType) {}
 
   bool IsValid() const { return id != 0; }
 };

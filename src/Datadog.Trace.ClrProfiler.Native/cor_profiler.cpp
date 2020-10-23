@@ -2231,38 +2231,166 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     RejitHandlerModule* moduleHandler,
     RejitHandlerModuleMethod* methodHandler) {
 
-  // Local vars
-  auto module_id = moduleHandler->GetModuleId();
-  auto module_metadata = moduleHandler->GetModuleMetadata();
-  auto caller = methodHandler->GetFunctionInfo();
-  auto callTargetTokens = module_metadata->GetCallTargetTokens();
-  auto function_token = caller->id;
+  ModuleID module_id = moduleHandler->GetModuleId();
+  ModuleMetadata* module_metadata = moduleHandler->GetModuleMetadata();
+  FunctionInfo* caller = methodHandler->GetFunctionInfo();
+  CallTargetTokens* callTargetTokens = module_metadata->GetCallTargetTokens();
+  mdToken function_token = caller->id;
+  FunctionMethodArgument retFuncArg = caller->method_signature.GetRet();
+  MethodReplacement* method_replacement = methodHandler->GetMethodReplacement();
+  unsigned int retFuncElementType;
+  int retTypeFlags = retFuncArg.GetTypeFlags(retFuncElementType);
+  bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
+  bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
+  std::vector<FunctionMethodArgument> methodArguments = caller->method_signature.GetMethodArguments();
+  int numArgs = caller->method_signature.NumberOfArguments();
+  auto metaEmit = module_metadata->metadata_emit;
+  auto metaImport = module_metadata->metadata_import;
 
-  Info("CallTarget_RewriterCallback !!!: ", caller->name);
+  // *** Get all references to the wrapper type
+  mdMemberRef wrapper_method_ref = mdMemberRefNil;
+  mdTypeRef wrapper_type_ref = mdTypeRefNil;
+  GetWrapperMethodRef(module_metadata, module_id, *method_replacement, wrapper_method_ref, wrapper_type_ref);
 
-  // Create rewriter
+  Info("CallTarget_RewriterCallback !!!: ", caller->name, 
+       " [IsVoid=", isVoid, 
+       ", IsStatic=", isStatic, 
+       ", Replacement=", method_replacement->wrapper_method.type_name,
+       ", Arguments=", numArgs, 
+       "]");
+
+  // *** Create rewriter
+  Info("REJIT Starting rewriting.");
   ILRewriter rewriter(this->info_, methodHandler->GetFunctionControl(), module_id, function_token);
   bool modified = false;
   auto hr = rewriter.Import();
   if (FAILED(hr)) {
-    Warn(
-        "CallTarget_RewriterCallback: Call to ILRewriter.Import() failed "
-        "for ",
-        module_id, " ", function_token);
+    Warn("CallTarget_RewriterCallback: Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
     return hr;
   }
 
-  Info("REJIT Starting rewriting.");
   Info(GetILCodes("REJIT Original Code: ", &rewriter, *caller));
 
-  // Create the rewriter wrapper helper
+  // *** Create the rewriter wrapper helper
   ILRewriterWrapper reWriterWrapper(&rewriter);
   ILInstr* pFirstOriginalInstr = rewriter.GetILList()->m_pNext;
   reWriterWrapper.SetILPosition(pFirstOriginalInstr);
 
-  // Modify the Local Var Signature of the method and initialize new local vars
-  callTargetTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, caller);
+  // *** Modify the Local Var Signature of the method and initialize new local vars
+  ULONG callTargetStateIndex = ULONG_MAX;
+  ULONG exceptionIndex = ULONG_MAX;
+  ULONG callTargetReturnIndex = ULONG_MAX;
+  ULONG returnValueIndex = ULONG_MAX;
+  mdToken callTargetStateToken = mdTokenNil;
+  mdToken exceptionToken = mdTokenNil;
+  mdToken callTargetReturnToken = mdTokenNil;
+  callTargetTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, caller, 
+      &callTargetStateIndex, &exceptionIndex, 
+      &callTargetReturnIndex, &returnValueIndex, 
+      &callTargetStateToken, &exceptionToken, &callTargetReturnToken);
 
+  // *** Load instance into the stack (if not static)
+  if (isStatic) {
+    reWriterWrapper.LoadNull();
+  } else {
+    reWriterWrapper.LoadArgument(0);
+  }
+
+  // *** Load the method arguments to the stack
+  if (numArgs <= 6) {
+    // Load the arguments directly (FastPath)
+    for (int i = 0; i < numArgs; i++) {
+      reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+    }
+  } else {
+    // Load the arguments inside an object array (SlowPath)
+    unsigned elementType;
+    reWriterWrapper.CreateArray(callTargetTokens->GetObjectTypeRef(), numArgs);
+    for (int i = 0; i < numArgs; i++) {
+      reWriterWrapper.BeginLoadValueIntoArray(i);
+      reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+      auto argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+      if (argTypeFlags & TypeFlagByRef) {
+        reWriterWrapper.LoadIND(elementType);
+      }
+      if (argTypeFlags & TypeFlagBoxedType) {
+        auto tok = methodArguments[i].GetTypeTok(
+            metaEmit, callTargetTokens->GetCorLibAssemblyRef());
+        if (tok == mdTokenNil) {
+          return S_OK;
+        }
+        reWriterWrapper.Box(tok);
+      }
+    }
+    reWriterWrapper.EndLoadValueIntoArray();
+  }
+
+  Info("Caller Token Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
+  Info("Caller Token Name: ", caller->type.name);
+  Info("Caller Token Spec: ", HexStr(&caller->type.type_spec, sizeof(mdToken)));
+  Info("Caller Token Parent Id: ",
+       HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
+  Info("Caller Token Parent Name: ", caller->type.extend_from->name);
+  Info("Caller Token Parent Spec: ",
+       HexStr(&caller->type.extend_from->type_spec, sizeof(mdToken)));
+  Info("Caller Token IsValueType: ", caller->type.valueType);
+
+  ILInstr* beginCallInstruction;
+  // *** Emit BeginMethod call
+  switch (numArgs) { 
+    case 0: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithoutArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type, 
+          &beginCallInstruction));
+      break;
+    }
+    case 1: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &beginCallInstruction));
+      break;
+    }
+    case 2: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1],
+          &beginCallInstruction));
+      break;
+    }
+    case 3: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &beginCallInstruction));
+      break;
+    }
+    case 4: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &beginCallInstruction));
+      break;
+    }
+    case 5: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &methodArguments[4], &beginCallInstruction));
+      break;
+    }
+    case 6: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &methodArguments[4], &methodArguments[5],
+          &beginCallInstruction));
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  reWriterWrapper.StLocal(callTargetStateIndex);
   
   Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));
   hr = rewriter.Export();
