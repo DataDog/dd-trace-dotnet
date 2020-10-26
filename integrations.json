@@ -1,5 +1,1930 @@
 [
   {
+    "name": "CallTargetTests",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0Arguments",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0Arguments",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0Arguments",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0Arguments",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsGeneric`1",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsGeneric`1",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsStruct",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsStruct",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsStruct",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsStruct",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsStatic",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsStatic",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsStatic",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsStatic",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1Arguments",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1Arguments",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1Arguments",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1Arguments",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsGeneric`1",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsGeneric`1",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsStruct",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsStruct",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsStruct",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsStruct",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsStatic",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsStatic",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsStatic",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With1ArgumentsStatic",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2Arguments",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2Arguments",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2Arguments",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2Arguments",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsGeneric`1",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsGeneric`1",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsStruct",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsStruct",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsStruct",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsStruct",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsStatic",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsStatic",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsStatic",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With2ArgumentsStatic",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3Arguments",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3Arguments",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3Arguments",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3Arguments",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsGeneric`1",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsGeneric`1",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsStruct",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsStruct",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsStruct",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsStruct",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsStatic",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsStatic",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsStatic",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With3ArgumentsStatic",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4Arguments",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4Arguments",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4Arguments",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4Arguments",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsGeneric`1",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsGeneric`1",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsStruct",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsStruct",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsStruct",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsStruct",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsStatic",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsStatic",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsStatic",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With4ArgumentsStatic",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5Arguments",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5Arguments",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5Arguments",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5Arguments",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsGeneric`1",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsGeneric`1",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsStruct",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsStruct",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsStruct",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsStruct",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsStatic",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsStatic",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsStatic",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With5ArgumentsStatic",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6Arguments",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6Arguments",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6Arguments",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6Arguments",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsGeneric`1",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsGeneric`1",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsStruct",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsStruct",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsStruct",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsStruct",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsStatic",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsStatic",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsStatic",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With6ArgumentsStatic",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7Arguments",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7Arguments",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7Arguments",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7Arguments",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsGeneric`1",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsGeneric`1",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsStruct",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsStruct",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsStruct",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsStruct",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsStatic",
+          "method": "VoidMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsStatic",
+          "method": "ReturnValueMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsStatic",
+          "method": "ReturnReferenceMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With7ArgumentsStatic",
+          "method": "ReturnGenericMethod"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "AspNetMvc",
     "method_replacements": [
       {

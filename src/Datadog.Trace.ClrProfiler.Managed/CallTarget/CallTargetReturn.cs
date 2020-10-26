@@ -8,8 +8,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// <typeparam name="T">Type of the return value</typeparam>
     public readonly struct CallTargetReturn<T>
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(CallTargetReturn<T>));
-
         private readonly T _returnValue;
 
         /// <summary>
@@ -27,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Default call target return value</returns>
         public static CallTargetReturn<T> GetDefault()
         {
-            Log.Information($"CallTargetReturn<{typeof(T).FullName}>.GetDefault() called");
             return new CallTargetReturn<T>(default);
         }
 
@@ -43,15 +40,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// </summary>
     public readonly struct CallTargetReturn
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(CallTargetReturn));
-
         /// <summary>
         /// Gets the default call target return value (used by the native side to initialize the locals)
         /// </summary>
         /// <returns>Default call target return value</returns>
         public static CallTargetReturn GetDefault()
         {
-            Log.Information("CallTargetReturn.GetDefault() called");
             return default;
         }
     }

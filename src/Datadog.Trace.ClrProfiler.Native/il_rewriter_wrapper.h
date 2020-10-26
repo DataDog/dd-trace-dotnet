@@ -34,6 +34,7 @@ class ILRewriterWrapper {
                           mdMemberRef new_method_ref) const;
   void LoadIND(unsigned elementType) const;
   ILInstr* LoadToken(mdToken token) const;
+  ILInstr* LoadObj(mdToken token) const;
   ILInstr* StLocal(unsigned index) const;
   ILInstr* LoadLocal(unsigned index) const;
   ILInstr* LoadLocalAddress(unsigned index) const;

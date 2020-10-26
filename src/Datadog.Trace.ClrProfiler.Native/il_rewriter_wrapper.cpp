@@ -233,6 +233,14 @@ ILInstr* ILRewriterWrapper::LoadToken(mdToken token) const {
   return pNewInstr;
 }
 
+ILInstr* ILRewriterWrapper::LoadObj(mdToken token) const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = CEE_LDOBJ;
+  pNewInstr->m_Arg32 = token;
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
 ILInstr* ILRewriterWrapper::StLocal(unsigned index) const {
   static const std::vector<OPCODE> opcodes = {
       CEE_STLOC_0,

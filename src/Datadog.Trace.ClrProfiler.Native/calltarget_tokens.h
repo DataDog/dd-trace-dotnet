@@ -59,9 +59,6 @@ class CallTargetTokens {
   mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
   mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
 
-  std::mutex mdTypeSpecMap_lock;
-  std::unordered_map<FunctionMethodArgument*, mdTypeSpec> mdTypeSpecMap;
-
   mdMemberRef beginArrayMemberRef = mdMemberRefNil;
   mdMemberRef beginP0MemberRef = mdMemberRefNil;
   mdMemberRef beginP1MemberRef = mdMemberRefNil;

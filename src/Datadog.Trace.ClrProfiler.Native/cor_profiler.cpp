@@ -2172,8 +2172,8 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
 
   for (auto& method_replacement : method_replacements) {
     // Exit early if the method replacement isn't actually doing a replacement
-    if (method_replacement.wrapper_method.action != "ReplaceTargetMethod"_W) {
-    //if (method_replacement.wrapper_method.action != "CallTargetModification"_W) {
+    //if (method_replacement.wrapper_method.action != "ReplaceTargetMethod"_W) {
+    if (method_replacement.wrapper_method.action != "CallTargetModification"_W) {
       continue;
     }
 
@@ -2184,6 +2184,9 @@ bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
       continue;
     }
 
+    //Info("Assembly Name = ", module_metadata->assemblyName);
+    //Info("Type Name = ", caller.type.name);
+    //Info("Method Name = ", caller.name);
     
     if (method_replacement.target_method.assembly.name == module_metadata->assemblyName &&
         method_replacement.target_method.type_name == caller.type.name &&
@@ -2291,9 +2294,27 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
 
   // *** Load instance into the stack (if not static)
   if (isStatic) {
+    if (caller->type.valueType) {
+      // Static methods in a ValueType can't be instrumented. 
+      // In the future this can be supported by adding a local for the valuetype and initialize it to the default value.
+      // After the signature modification we need to emit the following IL to initialize and load into the stack.
+      //    ldloca.s [localIndex]
+      //    initobj [valueType]
+      //    ldloc.s [localIndex]
+      Warn("CallTarget_RewriterCallback: Static methods in a ValueType cannot be instrumented. ");
+      return E_FAIL;
+    }
     reWriterWrapper.LoadNull();
   } else {
     reWriterWrapper.LoadArgument(0);
+    if (caller->type.valueType) {
+      if (caller->type.type_spec != mdTypeSpecNil) {
+        reWriterWrapper.LoadObj(caller->type.type_spec);
+      } 
+      if (caller->type.name.find("`1"_W) == std::string::npos) {
+        reWriterWrapper.LoadObj(caller->type.id);
+      }
+    }
   }
 
   // *** Load the method arguments to the stack
@@ -2321,19 +2342,19 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
         }
         reWriterWrapper.Box(tok);
       }
+      reWriterWrapper.EndLoadValueIntoArray();
     }
-    reWriterWrapper.EndLoadValueIntoArray();
   }
 
-  Info("Caller Token Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
-  Info("Caller Token Name: ", caller->type.name);
-  Info("Caller Token Spec: ", HexStr(&caller->type.type_spec, sizeof(mdToken)));
-  Info("Caller Token Parent Id: ",
-       HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
-  Info("Caller Token Parent Name: ", caller->type.extend_from->name);
-  Info("Caller Token Parent Spec: ",
-       HexStr(&caller->type.extend_from->type_spec, sizeof(mdToken)));
-  Info("Caller Token IsValueType: ", caller->type.valueType);
+  //Info("Caller Token Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
+  //Info("Caller Token Name: ", caller->type.name);
+  //Info("Caller Token Spec: ", HexStr(&caller->type.type_spec, sizeof(mdToken)));
+  //Info("Caller Token Parent Id: ",
+  //     HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
+  //Info("Caller Token Parent Name: ", caller->type.extend_from->name);
+  //Info("Caller Token Parent Spec: ",
+  //     HexStr(&caller->type.extend_from->type_spec, sizeof(mdToken)));
+  //Info("Caller Token IsValueType: ", caller->type.valueType);
 
   ILInstr* beginCallInstruction;
   // *** Emit BeginMethod call
@@ -2387,6 +2408,9 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
       break;
     }
     default: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArgumentsArray(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &beginCallInstruction));
       break;
     }
   }
@@ -2404,22 +2428,6 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   }
 
   Info("CallTarget_RewriterCallback END !!!: ", caller->name);
-
-  /*
-  Info(moduleHandler->GetModuleId());
-  Info(moduleHandler->GetModuleMetadata()->app_domain_id);
-  Info(moduleHandler->GetModuleMetadata()->assemblyName);
-  Info(methodHandler->GetMethodDef());
-  Info(methodHandler->GetFunctionInfo() != nullptr);
-  Info(methodHandler->GetFunctionInfo()->id);
-  Info(methodHandler->GetFunctionInfo()->method_def_id);
-  Info(methodHandler->GetFunctionInfo()->name);
-  Info(methodHandler->GetFunctionInfo()->type.name);
-  Info(methodHandler->GetFunctionControl() != nullptr);
-  Info(methodHandler->GetMethodReplacement() != nullptr);
-  Info(methodHandler->GetMethodReplacement()->wrapper_method.method_name);
-  Info(methodHandler->GetMethodReplacement()->wrapper_method.type_name);
-  Info(methodHandler->GetMethodReplacement()->wrapper_method.assembly.name);*/
   return S_OK;
 }
 

@@ -7,8 +7,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// </summary>
     public readonly struct CallTargetState
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(CallTargetState));
-
         private readonly object _state;
 
         /// <summary>
@@ -31,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>Default call target state</returns>
         public static CallTargetState GetDefault()
         {
-            Log.Information("CallTargetState.GetDefault() called");
             return new CallTargetState(null);
         }
     }

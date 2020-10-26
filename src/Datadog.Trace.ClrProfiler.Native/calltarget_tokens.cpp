@@ -245,13 +245,6 @@ mdTypeRef CallTargetTokens::GetTargetVoidReturnTypeRef() {
 
 mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
     FunctionMethodArgument* returnArgument) {
-  {
-    std::lock_guard<std::mutex> guard(mdTypeSpecMap_lock);
-    if (mdTypeSpecMap.count(returnArgument) > 0) {
-      return mdTypeSpecMap[returnArgument];
-    }
-  }
-
   auto hr = EnsureBaseCalltargetTokens();
   if (FAILED(hr)) {
     return mdTypeSpecNil;
@@ -303,12 +296,6 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
   }
 
   Info("GetTargetReturnValueTypeRef: ", HexStr(signature, signatureLength));
-
-  {
-    std::lock_guard<std::mutex> guard(mdTypeSpecMap_lock);
-    mdTypeSpecMap[returnArgument] = returnValueTypeSpec;
-  }
-
   return returnValueTypeSpec;
 }
 
@@ -694,7 +681,6 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
   // Modify the Local Var Signature of the method
   auto returnFunctionMethod = functionInfo->method_signature.GetRet();
 
-  Info("ModifyLocalSigAndInitialize: Modifying the locals var signature.");
   auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(),
                            &returnFunctionMethod, callTargetStateIndex,
                            exceptionIndex, callTargetReturnIndex,
@@ -707,7 +693,6 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
   }
 
   // Init locals
-  Info("ModifyLocalSigAndInitialize: Initializing new locals vars.");
   if (*returnValueIndex != ULONG_MAX) {
     rewriterWrapper->CallMember(
         GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
@@ -787,6 +772,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
     currentTypeRef = objectTypeRef;
     if (isValueType) {
       rewriterWrapper->Box(currentType->id);
+      isValueType = false;
     }
   }
 
@@ -891,6 +877,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     currentTypeRef = objectTypeRef;
     if (isValueType) {
       rewriterWrapper->Box(currentType->id);
+      isValueType = false;
     }
   }
 
@@ -1006,6 +993,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     currentTypeRef = objectTypeRef;
     if (isValueType) {
       rewriterWrapper->Box(currentType->id);
+      isValueType = false;
     }
   }
 
@@ -1131,6 +1119,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     currentTypeRef = objectTypeRef;
     if (isValueType) {
       rewriterWrapper->Box(currentType->id);
+      isValueType = false;
     }
   }
 
@@ -1266,6 +1255,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     currentTypeRef = objectTypeRef;
     if (isValueType) {
       rewriterWrapper->Box(currentType->id);
+      isValueType = false;
     }
   }
 
@@ -1411,6 +1401,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     currentTypeRef = objectTypeRef;
     if (isValueType) {
       rewriterWrapper->Box(currentType->id);
+      isValueType = false;
     }
   }
 
@@ -1566,6 +1557,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     currentTypeRef = objectTypeRef;
     if (isValueType) {
       rewriterWrapper->Box(currentType->id);
+      isValueType = false;
     }
   }
 
@@ -1706,6 +1698,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
     currentTypeRef = objectTypeRef;
     if (isValueType) {
       rewriterWrapper->Box(currentType->id);
+      isValueType = false;
     }
   }
 
