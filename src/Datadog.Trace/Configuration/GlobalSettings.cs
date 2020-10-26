@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -111,26 +112,35 @@ namespace Datadog.Trace.Configuration
 #endif
             };
 
-            string currentDirectory = System.Environment.CurrentDirectory;
+            try
+            {
+                string currentDirectory = System.Environment.CurrentDirectory;
 
 #if NETFRAMEWORK
-            // on .NET Framework only, use application's root folder
-            // as default path when looking for datadog.json
-            if (System.Web.Hosting.HostingEnvironment.IsHosted)
-            {
-                currentDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~");
-            }
+                /*
+                // on .NET Framework only, use application's root folder
+                // as default path when looking for datadog.json
+                if (System.Web.Hosting.HostingEnvironment.IsHosted)
+                {
+                    currentDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~");
+                }
+                */
 #endif
 
-            // if environment variable is not set, look for default file name in the current directory
-            var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
-                                        configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
-                                        Path.Combine(currentDirectory, "datadog.json");
+                // if environment variable is not set, look for default file name in the current directory
+                var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
+                                            configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
+                                            Path.Combine(currentDirectory, "datadog.json");
 
-            if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
-                File.Exists(configurationFileName))
+                if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
+                    File.Exists(configurationFileName))
+                {
+                    configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
+                }
+            }
+            catch (Exception)
             {
-                configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
+                // Uh oh
             }
 
             return configurationSource;
