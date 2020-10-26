@@ -21,12 +21,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                 Log.SafeLogError(exception, exception?.Message, null);
                 if (exception is DuckTypeException)
                 {
-                    Log.Warning("DuckTypeException has been detected, the integration will be disabled.");
+                    Log.Warning($"DuckTypeException has been detected, the integration <{typeof(TIntegration)}, {typeof(TInstance)}> will be disabled.");
                     _disableIntegration = true;
                 }
                 else if (exception is CallTargetInvokerException)
                 {
-                    Log.Warning("CallTargetInvokerException has been detected, the integration will be disabled.");
+                    Log.Warning($"CallTargetInvokerException has been detected, the integration <{typeof(TIntegration)}, {typeof(TInstance)}> will be disabled.");
                     _disableIntegration = true;
                 }
             }

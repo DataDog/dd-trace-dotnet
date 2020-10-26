@@ -2276,8 +2276,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
 
   // *** Create the rewriter wrapper helper
   ILRewriterWrapper reWriterWrapper(&rewriter);
-  ILInstr* pFirstOriginalInstr = rewriter.GetILList()->m_pNext;
-  reWriterWrapper.SetILPosition(pFirstOriginalInstr);
+  reWriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
 
   // *** Modify the Local Var Signature of the method and initialize new local vars
   ULONG callTargetStateIndex = ULONG_MAX;
@@ -2287,10 +2286,14 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   mdToken callTargetStateToken = mdTokenNil;
   mdToken exceptionToken = mdTokenNil;
   mdToken callTargetReturnToken = mdTokenNil;
+  ILInstr* firstInstruction;
   callTargetTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, caller, 
       &callTargetStateIndex, &exceptionIndex, 
       &callTargetReturnIndex, &returnValueIndex, 
-      &callTargetStateToken, &exceptionToken, &callTargetReturnToken);
+      &callTargetStateToken,
+      &exceptionToken, &callTargetReturnToken, &firstInstruction);
+
+  Info("Load Instance and arguments");
 
   // *** Load instance into the stack (if not static)
   if (isStatic) {
@@ -2346,18 +2349,18 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     }
   }
 
-  //Info("Caller Token Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
-  //Info("Caller Token Name: ", caller->type.name);
-  //Info("Caller Token Spec: ", HexStr(&caller->type.type_spec, sizeof(mdToken)));
-  //Info("Caller Token Parent Id: ",
-  //     HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
-  //Info("Caller Token Parent Name: ", caller->type.extend_from->name);
-  //Info("Caller Token Parent Spec: ",
-  //     HexStr(&caller->type.extend_from->type_spec, sizeof(mdToken)));
-  //Info("Caller Token IsValueType: ", caller->type.valueType);
+  Info("Caller Token Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
+  Info("Caller Token Name: ", caller->type.name);
+  Info("Caller Token Spec: ", HexStr(&caller->type.type_spec, sizeof(mdToken)));
+  Info("Caller Token Parent Id: ",
+       HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
+  Info("Caller Token Parent Name: ", caller->type.extend_from->name);
+  Info("Caller Token Parent Spec: ",
+       HexStr(&caller->type.extend_from->type_spec, sizeof(mdToken)));
+  Info("Caller Token IsValueType: ", caller->type.valueType);
 
-  ILInstr* beginCallInstruction;
   // *** Emit BeginMethod call
+  ILInstr* beginCallInstruction;
   switch (numArgs) { 
     case 0: {
       IfFailRet(callTargetTokens->WriteBeginMethodWithoutArguments(
@@ -2415,6 +2418,44 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     }
   }
   reWriterWrapper.StLocal(callTargetStateIndex);
+  ILInstr* pStateLeaveToBeginOriginalMethodInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+  // *** BeginMethod call catch
+  ILInstr* beginMethodCatchFirstInstr = nullptr;
+  callTargetTokens->WriteLogException(&reWriterWrapper, wrapper_type_ref,
+                                      &caller->type,
+                                      &beginMethodCatchFirstInstr);
+  ILInstr* beginMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+  // *** BeginMethod exception handling clause
+  EHClause beginMethodExClause{};
+  beginMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+  beginMethodExClause.m_pTryBegin = firstInstruction;
+  beginMethodExClause.m_pTryEnd = beginMethodCatchFirstInstr;
+  beginMethodExClause.m_pHandlerBegin = beginMethodCatchFirstInstr;
+  beginMethodExClause.m_pHandlerEnd = beginMethodCatchLeaveInstr;
+  beginMethodExClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
+
+  // ***
+  // METHOD EXECUTION
+  // ***
+  ILInstr* beginOriginalMethodInstr = reWriterWrapper.GetCurrentILInstr();
+  pStateLeaveToBeginOriginalMethodInstr->m_pTarget = beginOriginalMethodInstr;
+  beginMethodCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+
+
+
+  // *** Update exception clauses
+  auto ehCount = rewriter.GetEHCount();
+  auto newEHClauses = new EHClause[ehCount + 1];
+  for (unsigned i = 0; i < ehCount; i++) {
+    newEHClauses[i] = rewriter.GetEHPointer()[i];
+  }
+
+  // *** Add the new EH clauses
+  ehCount += 1;
+  newEHClauses[ehCount - 1] = beginMethodExClause;
+  rewriter.SetEHClause(newEHClauses, ehCount);
   
   Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));
   hr = rewriter.Export();

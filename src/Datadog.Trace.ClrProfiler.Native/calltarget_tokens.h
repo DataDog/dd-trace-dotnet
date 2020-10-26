@@ -100,20 +100,23 @@ class CallTargetTokens {
                          mdToken* callTargetStateToken, mdToken* exceptionToken,
                          mdToken* callTargetReturnToken);
 
-  mdMethodSpec GetEndVoidReturnMemberRef(mdTypeRef integrationTypeRef,
-                                         mdTypeRef currentTypeRef);
-  mdMethodSpec GetEndReturnMemberRef(mdTypeRef integrationTypeRef,
-                                     mdTypeRef currentTypeRef,
-                                     mdTypeRef returnTypeRef);
+  mdMethodSpec GetEndVoidReturnMemberRef(void* rewriterWrapperPtr,
+                                         mdTypeRef integrationTypeRef,
+                                         const TypeInfo* currentType,
+                                         ILInstr** instruction);
+  mdMethodSpec GetEndReturnMemberRef(void* rewriterWrapperPtr,
+                                     mdTypeRef integrationTypeRef,
+                                     const TypeInfo* currentType,
+                                     FunctionMethodArgument* returnArgument,
+                                     ILInstr** instruction);
 
-  mdMethodSpec GetLogExceptionMemberRef(mdTypeRef integrationTypeRef,
-                                        mdTypeRef currentTypeRef);
 
  public:
   CallTargetTokens(void* module_metadata_ptr) {
     this->module_metadata_ptr = module_metadata_ptr;
   }
   mdTypeRef GetObjectTypeRef();
+  mdTypeRef GetExceptionTypeRef();
   mdAssemblyRef GetCorLibAssemblyRef();
 
   HRESULT ModifyLocalSigAndInitialize(
@@ -121,7 +124,7 @@ class CallTargetTokens {
       ULONG* callTargetStateIndex, ULONG* exceptionIndex,
       ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
       mdToken* callTargetStateToken, mdToken* exceptionToken,
-      mdToken* callTargetReturnToken);
+      mdToken* callTargetReturnToken, ILInstr** firstInstruction);
 
   HRESULT WriteBeginMethodWithoutArguments(void* rewriterWrapperPtr,
                                            mdTypeRef integrationTypeRef,
@@ -173,6 +176,10 @@ class CallTargetTokens {
                                              mdTypeRef integrationTypeRef,
                                              const TypeInfo* currentType,
                                              ILInstr** instruction);
+
+  HRESULT WriteLogException(void* rewriterWrapperPtr,
+                            mdTypeRef integrationTypeRef,
+                            const TypeInfo* currentType, ILInstr** instruction);
 };
 
 }  // namespace trace
