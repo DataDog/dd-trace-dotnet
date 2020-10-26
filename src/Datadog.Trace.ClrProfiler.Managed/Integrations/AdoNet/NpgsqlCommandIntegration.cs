@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
@@ -172,34 +173,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
             var cancellationToken = (CancellationToken)boxedCancellationToken;
 
-            return ExecuteReaderAsyncInternal(
-                (DbCommand)command,
-                cancellationToken,
-                opCode,
-                mdToken,
-                moduleVersionPtr);
-        }
-
-        private static async Task<DbDataReader> ExecuteReaderAsyncInternal(
-            DbCommand command,
-            CancellationToken cancellationToken,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
-            const string methodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
-            Func<DbCommand, CancellationToken, Task<DbDataReader>> instrumentedMethod;
+            Type npgsqlComandType;
+            Type npgsqlDataReaderType;
 
             try
             {
-                var targetType = command.GetInstrumentedType(NpgsqlCommandTypeName);
+                npgsqlComandType = command.GetInstrumentedType(NpgsqlCommandTypeName);
+                npgsqlDataReaderType = npgsqlComandType.Assembly.GetType(NpgsqlDataReaderTypeName);
+            }
+            catch (Exception ex)
+            {
+                // This shouldn't happen because the assembly holding the Npgsql.NpgsqlDataReader type should have been loaded already
+                // profiled app will not continue working as expected without this method
+                Log.Error(ex, "Error finding the Npgsql.NpgsqlDataReader type");
+                throw;
+            }
 
+            Func<DbCommand, CancellationToken, object> instrumentedMethod;
+
+            try
+            {
                 instrumentedMethod =
-                    MethodBuilder<Func<DbCommand, CancellationToken, Task<DbDataReader>>>
+                    MethodBuilder<Func<DbCommand, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(targetType)
+                       .WithConcreteType(npgsqlComandType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
@@ -217,11 +217,35 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
+            return AsyncHelper.InvokeGenericTaskDelegate(
+                owningType: command.GetType(),
+                taskResultType: npgsqlDataReaderType,
+                nameOfIntegrationMethod: nameof(ExecuteReaderAsyncInternal),
+                integrationType: typeof(NpgsqlCommandIntegration),
+                (DbCommand)command,
+                cancellationToken,
+                instrumentedMethod);
+        }
+
+        /// <summary>
+        /// Calls the underlying ExecuteReaderAsync and traces the request.
+        /// </summary>
+        /// <typeparam name="T">The type of the generic Task instantiation</typeparam>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="instrumentedMethod">A delegate for the method we are instrumenting</param>
+        /// <returns>A task with the result</returns>
+        private static async Task<T> ExecuteReaderAsyncInternal<T>(
+            DbCommand command,
+            CancellationToken cancellationToken,
+            Func<DbCommand, CancellationToken, object> instrumentedMethod)
+        {
             using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command))
             {
                 try
                 {
-                    return await instrumentedMethod(command, cancellationToken).ConfigureAwait(false);
+                    var task = (Task<T>)instrumentedMethod(command, cancellationToken);
+                    return await task.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -256,34 +280,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            var cancellationToken = (CancellationToken)boxedCancellationToken;
-
-            return ExecuteReaderAsyncWithBehaviorAndCancellationInternal(
-                (DbCommand)command,
-                (CommandBehavior)behavior,
-                cancellationToken,
-                opCode,
-                mdToken,
-                moduleVersionPtr);
-        }
-
-        private static async Task<DbDataReader> ExecuteReaderAsyncWithBehaviorAndCancellationInternal(
-            DbCommand command,
-            CommandBehavior commandBehavior,
-            CancellationToken cancellationToken,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
             const string methodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
-            Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>> instrumentedMethod;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
+            var commandBehavior = (CommandBehavior)behavior;
+
+            Type npgsqlComandType;
+            Type npgsqlDataReaderType;
+
+            try
+            {
+                npgsqlComandType = command.GetInstrumentedType(NpgsqlCommandTypeName);
+                npgsqlDataReaderType = npgsqlComandType.Assembly.GetType(NpgsqlDataReaderTypeName);
+            }
+            catch (Exception ex)
+            {
+                // This shouldn't happen because the assembly holding the Npgsql.NpgsqlDataReader type should have been loaded already
+                // profiled app will not continue working as expected without this method
+                Log.Error(ex, "Error finding the Npgsql.NpgsqlDataReader type");
+                throw;
+            }
+
+            Func<DbCommand, CommandBehavior, CancellationToken, object> instrumentedMethod;
 
             try
             {
                 var targetType = command.GetInstrumentedType(NpgsqlCommandTypeName);
 
                 instrumentedMethod =
-                    MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
+                    MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(commandBehavior, cancellationToken)
@@ -303,11 +327,38 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
+            return AsyncHelper.InvokeGenericTaskDelegate(
+                owningType: command.GetType(),
+                taskResultType: npgsqlDataReaderType,
+                nameOfIntegrationMethod: nameof(ExecuteReaderAsyncWithBehaviorAndCancellationInternal),
+                integrationType: typeof(NpgsqlCommandIntegration),
+                (DbCommand)command,
+                commandBehavior,
+                cancellationToken,
+                instrumentedMethod);
+        }
+
+        /// <summary>
+        /// Calls the underlying ExecuteReaderAsync and traces the request.
+        /// </summary>
+        /// <typeparam name="T">The type of the generic Task instantiation</typeparam>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="commandBehavior">The command behavior</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="instrumentedMethod">A delegate for the method we are instrumenting</param>
+        /// <returns>A task with the result</returns>
+        private static async Task<T> ExecuteReaderAsyncWithBehaviorAndCancellationInternal<T>(
+            DbCommand command,
+            CommandBehavior commandBehavior,
+            CancellationToken cancellationToken,
+            Func<DbCommand, CommandBehavior, CancellationToken, object> instrumentedMethod)
+        {
             using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command))
             {
                 try
                 {
-                    return await instrumentedMethod(command, commandBehavior, cancellationToken).ConfigureAwait(false);
+                    var task = (Task<T>)instrumentedMethod(command, commandBehavior, cancellationToken);
+                    return await task.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

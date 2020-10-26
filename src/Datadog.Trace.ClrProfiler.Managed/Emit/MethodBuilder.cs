@@ -8,11 +8,11 @@ using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Sigil;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
     internal class MethodBuilder<TDelegate>
+        where TDelegate : Delegate
     {
         /// <summary>
         /// Global dictionary for caching reflected delegates
@@ -312,7 +312,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
                                          .ToArray();
             }
 
-            var dynamicMethod = Emit<TDelegate>.NewDynamicMethod(methodInfo.Name);
+            DynamicMethod dynamicMethod = new DynamicMethod(methodInfo.Name, returnType, delegateParameterTypes, ObjectExtensions.Module, skipVisibility: true);
+            ILGenerator il = dynamicMethod.GetILGenerator();
 
             // load each argument and cast or unbox as necessary
             for (ushort argumentIndex = 0; argumentIndex < delegateParameterTypes.Length; argumentIndex++)
@@ -320,45 +321,70 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 Type delegateParameterType = delegateParameterTypes[argumentIndex];
                 Type underlyingParameterType = effectiveParameterTypes[argumentIndex];
 
-                dynamicMethod.LoadArgument(argumentIndex);
+                switch (argumentIndex)
+                {
+                    case 0:
+                        il.Emit(OpCodes.Ldarg_0);
+                        break;
+                    case 1:
+                        il.Emit(OpCodes.Ldarg_1);
+                        break;
+                    case 2:
+                        il.Emit(OpCodes.Ldarg_2);
+                        break;
+                    case 3:
+                        il.Emit(OpCodes.Ldarg_3);
+                        break;
+                    default:
+                        il.Emit(OpCodes.Ldarg_S, argumentIndex);
+                        break;
+                }
 
                 if (underlyingParameterType.IsValueType && delegateParameterType == typeof(object))
                 {
-                    dynamicMethod.UnboxAny(underlyingParameterType);
+                    il.Emit(OpCodes.Unbox_Any, underlyingParameterType);
                 }
                 else if (underlyingParameterType != delegateParameterType)
                 {
-                    dynamicMethod.CastClass(underlyingParameterType);
+                    il.Emit(OpCodes.Castclass, underlyingParameterType);
                 }
             }
 
             if (_opCode == OpCodeValue.Call || methodInfo.IsStatic)
             {
                 // non-virtual call (e.g. static method, or method override calling overriden implementation)
-                dynamicMethod.Call(methodInfo);
+                il.Emit(OpCodes.Call, methodInfo);
             }
             else if (_opCode == OpCodeValue.Callvirt)
             {
                 // Note: C# compiler uses CALLVIRT for non-virtual
                 // instance methods to get the cheap null check
-                dynamicMethod.CallVirtual(methodInfo);
+                il.Emit(OpCodes.Callvirt, methodInfo);
             }
             else
             {
                 throw new NotSupportedException($"OpCode {_originalOpCodeValue} not supported when calling a method.");
             }
 
-            if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
+            if (methodInfo.ReturnType.IsValueType && !returnType.IsValueType)
             {
-                dynamicMethod.Box(methodInfo.ReturnType);
+                il.Emit(OpCodes.Box, methodInfo.ReturnType);
             }
-            else if (methodInfo.ReturnType != returnType)
+            else if (methodInfo.ReturnType.IsValueType && returnType.IsValueType && methodInfo.ReturnType != returnType)
             {
-                dynamicMethod.CastClass(returnType);
+                throw new ArgumentException($"Cannot convert the target method's return type {methodInfo.ReturnType.FullName} (value type) to the delegate method's return type {returnType.FullName} (value type)");
+            }
+            else if (!methodInfo.ReturnType.IsValueType && returnType.IsValueType)
+            {
+                throw new ArgumentException($"Cannot reliably convert the target method's return type {methodInfo.ReturnType.FullName} (reference type) to the delegate method's return type {returnType.FullName} (value type)");
+            }
+            else if (!methodInfo.ReturnType.IsValueType && !returnType.IsValueType && methodInfo.ReturnType != returnType)
+            {
+                il.Emit(OpCodes.Castclass, returnType);
             }
 
-            dynamicMethod.Return();
-            return dynamicMethod.CreateDelegate();
+            il.Emit(OpCodes.Ret);
+            return (TDelegate)dynamicMethod.CreateDelegate(typeof(TDelegate));
         }
 
         private MethodInfo MakeGenericMethod(MethodInfo methodInfo)

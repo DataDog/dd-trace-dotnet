@@ -31,16 +31,6 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_Sigil.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\Sigil.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Collections.Immutable.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Collections.Immutable.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Diagnostics.DiagnosticSource.dll"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Diagnostics.DiagnosticSource.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -58,16 +48,6 @@
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Reflection.Emit.Lightweight.dll"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.Emit.Lightweight.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Reflection.Metadata.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.Metadata.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Reflection.TypeExtensions.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.TypeExtensions.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">

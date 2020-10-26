@@ -252,7 +252,127 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
+        [Fact]
+        public void TargetReturnsValueType_DelegateReturnsSameValueType_IsOk()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            int arg = 42;
+
+            var methodToInvoke = MethodReference.Get(() => instance.ReturnInputInt(arg));
+            var methodCall = MethodBuilder<Func<object, int, int>>
+                                .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputInt")
+                                .WithConcreteType(typeof(ObscenelyAnnoyingClass))
+                                .WithParameters(arg)
+                                .Build();
+
+            var actual = methodCall(instance, arg);
+            Assert.Equal(arg, actual);
+        }
+
+        [Fact]
+        public void TargetReturnsValueType_DelegateReturnsObject_IsOk()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            int arg = 42;
+
+            var methodToInvoke = MethodReference.Get(() => instance.ReturnInputInt(arg));
+            var methodCall = MethodBuilder<Func<object, int, object>>
+                                .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputInt")
+                                .WithConcreteType(typeof(ObscenelyAnnoyingClass))
+                                .WithParameters(arg)
+                                .Build();
+
+            var actual = methodCall(instance, arg);
+            Assert.Equal(arg, actual);
+        }
+
+        [Fact]
+        public void TargetReturnsValueType_DelegateReturnsDifferentValueType_ThrowsException()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            int arg = 42;
+
+            var methodToInvoke = MethodReference.Get(() => instance.ReturnInputInt(arg));
+
+            // Throws
+            Assert.ThrowsAny<Exception>(() =>
+                MethodBuilder<Func<object, int, double>>
+                                .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputInt")
+                                .WithConcreteType(typeof(ObscenelyAnnoyingClass))
+                                .WithParameters(arg)
+                                .Build());
+        }
+
+        [Fact]
+        public void TargetReturnsObject_DelegateReturnsObject_IsOk()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            object arg = new ClassA();
+
+            var methodToInvoke = MethodReference.Get(() => instance.ReturnInputObject(arg));
+            var methodCall = MethodBuilder<Func<object, object, object>>
+                                .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputObject")
+                                .WithConcreteType(typeof(ObscenelyAnnoyingClass))
+                                .WithParameters(arg)
+                                .Build();
+
+            var actual = methodCall(instance, arg);
+            Assert.Equal(arg, actual);
+        }
+
+        [Fact]
+        public void TargetReturnsReferenceType_DelegateReturnsObject_IsOk()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            ClassA arg = new ClassA();
+
+            var methodToInvoke = MethodReference.Get(() => instance.ReturnInputClassA(arg));
+            var methodCall = MethodBuilder<Func<object, object, object>>
+                                .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputClassA")
+                                .WithConcreteType(typeof(ObscenelyAnnoyingClass))
+                                .WithParameters(arg)
+                                .Build();
+
+            var actual = methodCall(instance, arg);
+            Assert.Equal(arg, actual);
+        }
+
+        [Fact]
+        public void TargetReturnsReferenceType_DelegateReturnsDifferentReferenceType_IsOk()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            ClassB arg = new ClassB();
+
+            var methodToInvoke = MethodReference.Get(() => instance.ReturnInputClassA(arg));
+            var methodCall = MethodBuilder<Func<object, object, ClassB>>
+                                .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputClassA")
+                                .WithConcreteType(typeof(ObscenelyAnnoyingClass))
+                                .WithParameters(arg)
+                                .Build();
+
+            var actual = methodCall(instance, arg);
+            Assert.Equal(arg, actual);
+        }
+
+        [Fact]
+        public void TargetReturnsReferenceType_DelegateReturnsValueType_ThrowsException()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            object arg = new ClassA();
+
+            var methodToInvoke = MethodReference.Get(() => instance.ReturnInputObject(arg));
+
+            // Throws
+            Assert.ThrowsAny<Exception>(() =>
+                MethodBuilder<Func<object, object, int>>
+                                .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputObject")
+                                .WithConcreteType(typeof(ObscenelyAnnoyingClass))
+                                .WithParameters(arg)
+                                .Build());
+        }
+
         private MethodBuilder<T> Build<T>(string methodName, Type overrideType = null)
+            where T : Delegate
         {
             return MethodBuilder<T>
                   .Start(_moduleVersionId, 0, (int)OpCodeValue.Callvirt, methodName)

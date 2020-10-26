@@ -30,11 +30,6 @@
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.MSBuild.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_Sigil.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Sigil.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>

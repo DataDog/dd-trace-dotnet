@@ -69,6 +69,24 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             SetLastCall(MethodBase.GetCurrentMethod(), p1, p2, p3);
         }
 
+        public int ReturnInputInt(int ret)
+        {
+            SetLastCall(MethodBase.GetCurrentMethod(), ret);
+            return ret;
+        }
+
+        public object ReturnInputObject(object obj)
+        {
+            SetLastCall(MethodBase.GetCurrentMethod(), obj);
+            return obj;
+        }
+
+        public ClassA ReturnInputClassA(ClassA obj)
+        {
+            SetLastCall(MethodBase.GetCurrentMethod(), obj);
+            return obj;
+        }
+
         // There is intentionally no method matching double ClassC signature to force non-explicit fuzzy matching
         // public void Method(ClassC p1, ClassC p2)
 

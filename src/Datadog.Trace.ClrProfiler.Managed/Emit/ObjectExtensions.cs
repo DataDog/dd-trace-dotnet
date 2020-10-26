@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Reflection.Emit;
 using Datadog.Trace.Util;
-using Sigil;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
@@ -11,8 +11,22 @@ namespace Datadog.Trace.ClrProfiler.Emit
     /// </summary>
     internal static class ObjectExtensions
     {
+        // A new module to be emitted in the current AppDomain which will contain DynamicMethods
+        // and have same evidence/permissions as this AppDomain
+        internal static readonly ModuleBuilder Module;
+
         private static readonly ConcurrentDictionary<PropertyFetcherCacheKey, object> Cache = new ConcurrentDictionary<PropertyFetcherCacheKey, object>();
         private static readonly ConcurrentDictionary<PropertyFetcherCacheKey, PropertyFetcher> PropertyFetcherCache = new ConcurrentDictionary<PropertyFetcherCacheKey, PropertyFetcher>();
+
+        static ObjectExtensions()
+        {
+#if NETFRAMEWORK
+            var asm = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Datadog.Trace.ClrProfiler.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
+#else
+            var asm = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("Datadog.Trace.ClrProfiler.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
+#endif
+            Module = asm.DefineDynamicModule("DynamicModule");
+        }
 
         /// <summary>
         /// Tries to call an instance method with the specified name, a single parameter, and a return value.
@@ -231,31 +245,33 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return null;
             }
 
-            var dynamicMethod = Emit<Func<object, TResult>>.NewDynamicMethod($"{containerType.FullName}.{fieldName}");
-            dynamicMethod.LoadArgument(0);
+            DynamicMethod dynamicMethod = new DynamicMethod($"{containerType.FullName}.{fieldName}", typeof(TResult), new Type[] { typeof(object) }, ObjectExtensions.Module, skipVisibility: true);
+            ILGenerator il = dynamicMethod.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
 
             if (containerType.IsValueType)
             {
-                dynamicMethod.UnboxAny(containerType);
+                il.Emit(OpCodes.Unbox_Any, containerType);
             }
             else
             {
-                dynamicMethod.CastClass(containerType);
+                il.Emit(OpCodes.Castclass, containerType);
             }
 
-            dynamicMethod.LoadField(fieldInfo);
+            il.Emit(OpCodes.Ldfld, fieldInfo);
 
             if (fieldInfo.FieldType.IsValueType && typeof(TResult) == typeof(object))
             {
-                dynamicMethod.Box(fieldInfo.FieldType);
+                il.Emit(OpCodes.Box, fieldInfo.FieldType);
             }
             else if (fieldInfo.FieldType != typeof(TResult))
             {
-                dynamicMethod.CastClass(typeof(TResult));
+                il.Emit(OpCodes.Castclass, typeof(TResult));
             }
 
-            dynamicMethod.Return();
-            return dynamicMethod.CreateDelegate();
+            il.Emit(OpCodes.Ret);
+            return (Func<object, TResult>)dynamicMethod.CreateDelegate(typeof(Func<object, TResult>));
         }
 
         private readonly struct PropertyFetcherCacheKey : IEquatable<PropertyFetcherCacheKey>

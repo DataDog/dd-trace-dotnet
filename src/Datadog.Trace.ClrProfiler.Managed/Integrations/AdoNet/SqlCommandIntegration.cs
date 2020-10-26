@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
@@ -173,34 +174,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteReaderAsyncInternal(
-                (DbCommand)command,
-                (CommandBehavior)behavior,
-                (CancellationToken)boxedCancellationToken,
-                opCode,
-                mdToken,
-                moduleVersionPtr);
-        }
-
-        private static async Task<DbDataReader> ExecuteReaderAsyncInternal(
-            DbCommand command,
-            CommandBehavior commandBehavior,
-            CancellationToken cancellationToken,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
             const string methodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
-            Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>> instrumentedMethod;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
+            var commandBehavior = (CommandBehavior)behavior;
+
+            Type sqlCommandType;
+            Type sqlDataReaderType;
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+                sqlCommandType = command.GetInstrumentedType(SqlCommandTypeName);
+                sqlDataReaderType = sqlCommandType.Assembly.GetType(SqlDataReaderTypeName);
+            }
+            catch (Exception ex)
+            {
+                // This shouldn't happen because the assembly holding the System.Data.SqlClient.SqlDataReader type should have been loaded already
+                // profiled app will not continue working as expected without this method
+                Log.Error(ex, "Error finding the System.Data.SqlClient.SqlDataReader type");
+                throw;
+            }
 
+            Func<DbCommand, CommandBehavior, CancellationToken, object> instrumentedMethod;
+
+            try
+            {
                 instrumentedMethod =
-                    MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
+                    MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(targetType)
+                       .WithConcreteType(sqlCommandType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
@@ -218,11 +219,38 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
+            return AsyncHelper.InvokeGenericTaskDelegate(
+                owningType: command.GetType(),
+                taskResultType: sqlDataReaderType,
+                nameOfIntegrationMethod: nameof(ExecuteReaderAsyncInternal),
+                integrationType: typeof(SqlCommandIntegration),
+                (DbCommand)command,
+                commandBehavior,
+                cancellationToken,
+                instrumentedMethod);
+        }
+
+        /// <summary>
+        /// Calls the underlying ExecuteReaderAsync and traces the request.
+        /// </summary>
+        /// <typeparam name="T">The type of the generic Task instantiation</typeparam>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="commandBehavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="instrumentedMethod">A delegate for the method we are instrumenting</param>
+        /// <returns>A task with the result</returns>
+        private static async Task<T> ExecuteReaderAsyncInternal<T>(
+            DbCommand command,
+            CommandBehavior commandBehavior,
+            CancellationToken cancellationToken,
+            Func<DbCommand, CommandBehavior, CancellationToken, object> instrumentedMethod)
+        {
             using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command))
             {
                 try
                 {
-                    return await instrumentedMethod(command, commandBehavior, cancellationToken).ConfigureAwait(false);
+                    var task = (Task<T>)instrumentedMethod(command, commandBehavior, cancellationToken);
+                    return await task.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

@@ -32,20 +32,17 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
     <ProjectReference Include="..\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
- 
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1'">
+    <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'netcoreapp3.1'">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
 
     <ProjectReference Include="..\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
-    <PackageReference Include="Sigil" Version="4.7.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
-    <PackageReference Include="Sigil-vNext" Version="4.8.41" />
   </ItemGroup>
 
   <Import Project="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
