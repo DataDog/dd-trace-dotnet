@@ -3,6 +3,7 @@
   <PropertyGroup>
     <!-- override to remove net452 -->
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="$(MSBuildVersion) >= 16.8.0 AND !$(TargetFrameworks.Contains('net5.0'))">$(TargetFrameworks);net5.0</TargetFrameworks>
 
     <ApiVersion Condition="'$(ApiVersion)' == ''">6.1.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'>='6.1.0'">$(DefineConstants);ELASTICSEARCH_6_1</DefineConstants>
@@ -18,7 +19,7 @@
     <PackageReference Include="NEST" Version="$(ApiVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(TargetFramework.StartsWith('netcoreapp'))">
+  <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
     <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
   </ItemGroup>
 

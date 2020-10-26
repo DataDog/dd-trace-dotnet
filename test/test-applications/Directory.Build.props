@@ -3,6 +3,7 @@
     <OutputType Condition="'$(OutputType)' == ''">Exe</OutputType>
     <TargetFrameworks Condition="'$(TargetFrameworks)' == '' and '$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(TargetFrameworks)' == ''">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="$(MSBuildVersion) >= 16.8.0 AND !$(TargetFrameworks.Contains('net5.0'))">$(TargetFrameworks);net5.0</TargetFrameworks>
     <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
     <LangVersion>latest</LangVersion>

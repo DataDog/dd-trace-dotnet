@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
      <!-- override to remove net452 -->
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="$(MSBuildVersion) >= 16.8.0 AND !$(TargetFrameworks.Contains('net5.0'))">$(TargetFrameworks);net5.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

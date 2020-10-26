@@ -44,7 +44,7 @@ services:
     - "127.0.0.1:5432:5432"
 
   mysql:
-    image: mysql/mysql-server:5.7
+    image: mysql/mysql-server:8.0
     environment:
     - MYSQL_DATABASE=world
     - MYSQL_ROOT_PASSWORD=mysqldb
@@ -318,6 +318,36 @@ services:
     - MYSQL_PORT=3306
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.1
+    depends_on:
+    - servicestackredis
+    - stackexchangeredis
+    - elasticsearch6
+    - elasticsearch5
+    - sqlserver
+    - mongo
+    - postgres
+    - mysql
+
+  IntegrationTests.Alpine.Core50:
+    build:
+      context: ./
+      dockerfile: ./build/docker/dotnet.alpine.core50.dockerfile
+    image: datadog-dotnet-alpine-core50
+    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    volumes:
+    - ./:/project
+    environment:
+    - MONGO_HOST=mongo
+    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+    - ELASTICSEARCH6_HOST=elasticsearch6:9200
+    - ELASTICSEARCH5_HOST=elasticsearch5:9200
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
+    - POSTGRES_HOST=postgres
+    - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
+    - buildConfiguration=${buildConfiguration}
+    - publishTargetFramework=net5.0
     depends_on:
     - servicestackredis
     - stackexchangeredis

@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     public static class DbCommandIntegration
     {
         private const string Major4 = "4";
+        private const string Major5 = "5";
         private const string Major2 = "2";
 
         private const string DbCommandTypeName = AdoNetConstants.TypeNames.DbCommand;
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
@@ -106,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
@@ -181,7 +182,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = DbCommandTypeName,
@@ -271,7 +272,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
@@ -342,7 +343,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = DbCommandTypeName,
@@ -429,7 +430,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
@@ -500,7 +501,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = DbCommandTypeName,

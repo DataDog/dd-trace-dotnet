@@ -93,7 +93,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static bool IsCoreClr()
         {
-            return RuntimeFrameworkDescription.Contains("core");
+            return RuntimeFrameworkDescription.Contains("core") || Environment.Version.Major >= 5;
         }
 
         public static string GetRuntimeIdentifier()
@@ -391,6 +391,11 @@ namespace Datadog.Trace.TestHelpers
         {
             if (_isCoreClr)
             {
+                if (_major >= 5)
+                {
+                    return $"net{_major}.{_minor}";
+                }
+
                 return $"netcoreapp{_major}.{_minor}";
             }
 
