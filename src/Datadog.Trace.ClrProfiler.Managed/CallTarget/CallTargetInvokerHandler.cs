@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
         internal static class EndMethodHandler<TIntegration, TInstance>
         {
-            internal static CallTargetReturn Invoke(Exception exception, CallTargetState state)
+            internal static CallTargetReturn Invoke(TInstance instance, Exception exception, CallTargetState state)
             {
                 return CallTargetReturn.GetDefault();
             }
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
         internal static class EndMethodHandler<TIntegration, TInstance, TReturn>
         {
-            internal static CallTargetReturn<TReturn> Invoke(TReturn returnValue, Exception exception, CallTargetState state)
+            internal static CallTargetReturn<TReturn> Invoke(TInstance instance, TReturn returnValue, Exception exception, CallTargetState state)
             {
                 return new CallTargetReturn<TReturn>(returnValue);
             }

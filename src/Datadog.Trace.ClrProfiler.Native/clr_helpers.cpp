@@ -208,7 +208,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   DWORD type_flags;
   TypeInfo* extendsInfo = nullptr;
   mdToken type_extends = mdTokenNil;
-  bool type_valueType;
+  bool type_valueType = false;
 
   HRESULT hr = E_FAIL;
   const auto token_type = TypeFromToken(token);
