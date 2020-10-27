@@ -95,9 +95,7 @@ namespace Datadog.Trace.Util
                 if (!_processDataPoisoned && !_initialized)
                 {
                     _initialized = true;
-                    _currentProcessName = ProcessHelpers.GetCurrentProcessName();
-                    _currentProcessMachineName = ProcessHelpers.GetCurrentProcessMachineName();
-                    _currentProcessId = ProcessHelpers.GetCurrentProcessId();
+                    ProcessHelpers.GetCurrentProcessInformation(out _currentProcessName, out _currentProcessMachineName, out _currentProcessId);
                 }
             }
             catch
