@@ -700,7 +700,9 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
         GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
     rewriterWrapper->StLocal(*returnValueIndex);
 
-    rewriterWrapper->CallMember(GetCallTargetReturnValueDefaultMemberRef(*callTargetReturnToken), false);
+    rewriterWrapper->CallMember(
+        GetCallTargetReturnValueDefaultMemberRef(*callTargetReturnToken),
+        false);
     rewriterWrapper->StLocal(*callTargetReturnIndex);
   } else {
     *firstInstruction = rewriterWrapper->CallMember(
@@ -1652,7 +1654,8 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
 
   if (beginArrayMemberRef == mdMemberRefNil) {
     unsigned callTargetStateBuffer;
-    auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+    auto callTargetStateSize =
+        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 8 + callTargetStateSize;
     auto* signature = new COR_SIGNATURE[signatureLength];
@@ -1668,7 +1671,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
 
     signature[offset++] = ELEMENT_TYPE_MVAR;
     signature[offset++] = 0x01;
-    
+
     signature[offset++] = ELEMENT_TYPE_SZARRAY;
     signature[offset++] = ELEMENT_TYPE_OBJECT;
 
@@ -1686,7 +1689,8 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
   mdMethodSpec beginArrayMethodSpec = mdMethodSpecNil;
 
   unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize = CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
+  ULONG integrationTypeSize =
+      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
   mdToken currentTypeRef = mdTokenNil;
@@ -1703,7 +1707,8 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
   }
 
   unsigned currentTypeBuffer;
-  ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+  ULONG currentTypeSize =
+      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
 
   Info("Current Type Ref: ", currentTypeRef);
   Info("Current Type Name: ", currentType->name);
@@ -1740,22 +1745,260 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
   return S_OK;
 }
 
-mdMethodSpec CallTargetTokens::GetEndVoidReturnMemberRef(
+HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, ILInstr** instruction) {
-  return mdMethodSpecNil;
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+  ModuleMetadata* module_metadata = GetMetadata();
+
+  if (endVoidMemberRef == mdMemberRefNil) {
+    unsigned callTargetReturnVoidBuffer;
+    auto callTargetReturnVoidSize = CorSigCompressToken(
+        callTargetReturnVoidTypeRef, &callTargetReturnVoidBuffer);
+
+    unsigned exTypeRefBuffer;
+    auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
+
+    unsigned callTargetStateBuffer;
+    auto callTargetStateSize =
+        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+
+    auto signatureLength =
+        8 + callTargetReturnVoidSize + exTypeRefSize + callTargetStateSize;
+    auto* signature = new COR_SIGNATURE[signatureLength];
+    unsigned offset = 0;
+
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+    signature[offset++] = 0x02;
+    signature[offset++] = 0x03;
+
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &callTargetReturnVoidBuffer,
+           callTargetReturnVoidSize);
+    offset += callTargetReturnVoidSize;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x01;
+
+    signature[offset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
+    offset += exTypeRefSize;
+
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+    offset += callTargetStateSize;
+
+    auto hr = module_metadata->metadata_emit->DefineMemberRef(
+        callTargetTypeRef, managed_profiler_calltarget_endmethod_name.data(),
+        signature, signatureLength, &endVoidMemberRef);
+    if (FAILED(hr)) {
+      Warn("Wrapper endVoidMemberRef could not be defined.");
+      return hr;
+    }
+
+    Info("EndMethod signature: ", HexStr(signature, signatureLength));
+  }
+
+  mdMethodSpec endVoidMethodSpec = mdMethodSpecNil;
+
+  unsigned integrationTypeBuffer;
+  ULONG integrationTypeSize =
+      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
+
+  bool isValueType = currentType->valueType;
+  mdToken currentTypeRef = mdTokenNil;
+  if (currentType->type_spec != mdTypeSpecNil) {
+    currentTypeRef = currentType->type_spec;
+  } else if (currentType->name.find("`1"_W) == std::string::npos) {
+    currentTypeRef = currentType->id;
+  } else {
+    currentTypeRef = objectTypeRef;
+    if (isValueType) {
+      rewriterWrapper->Box(currentType->id);
+      isValueType = false;
+    }
+  }
+
+  unsigned currentTypeBuffer;
+  ULONG currentTypeSize =
+      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+
+  auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
+  auto* signature = new COR_SIGNATURE[signatureLength];
+  unsigned offset = 0;
+  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+  signature[offset++] = 0x02;
+
+  signature[offset++] = ELEMENT_TYPE_CLASS;
+  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
+  offset += integrationTypeSize;
+
+  if (isValueType) {
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+  } else {
+    signature[offset++] = ELEMENT_TYPE_CLASS;
+  }
+  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
+  offset += currentTypeSize;
+
+  hr = module_metadata->metadata_emit->DefineMethodSpec(
+      endVoidMemberRef, signature, signatureLength, &endVoidMethodSpec);
+
+  if (FAILED(hr)) {
+    Warn("Error creating end void method method spec.");
+    return hr;
+  }
+
+  Info("EndMethod spec signature: ", HexStr(signature, signatureLength));
+
+  *instruction = rewriterWrapper->CallMember(endVoidMethodSpec, false);
+  return S_OK;
 }
 
-mdMethodSpec CallTargetTokens::GetEndReturnMemberRef(
+HRESULT CallTargetTokens::WriteEndReturnMemberRef(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, FunctionMethodArgument* returnArgument,
     ILInstr** instruction) {
-  return mdMethodSpecNil;
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+  ModuleMetadata* module_metadata = GetMetadata();
+  GetTargetReturnValueTypeRef(returnArgument);
+
+  // *** Define base MethodMemberRef for the type
+
+  mdMemberRef endMethodMemberRef = mdMemberRefNil;
+
+  unsigned callTargetReturnTypeRefBuffer;
+  auto callTargetReturnTypeRefSize = CorSigCompressToken(
+      callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
+
+  unsigned exTypeRefBuffer;
+  auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
+
+  unsigned callTargetStateBuffer;
+  auto callTargetStateSize =
+      CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+
+  auto signatureLength =
+      14 + callTargetReturnTypeRefSize + exTypeRefSize + callTargetStateSize;
+  auto* signature = new COR_SIGNATURE[signatureLength];
+  unsigned offset = 0;
+
+  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+  signature[offset++] = 0x03;
+  signature[offset++] = 0x04;
+
+  signature[offset++] = ELEMENT_TYPE_GENERICINST;
+  signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+  memcpy(&signature[offset], &callTargetReturnTypeRefBuffer,
+         callTargetReturnTypeRefSize);
+  offset += callTargetReturnTypeRefSize;
+  signature[offset++] = 0x01;
+  signature[offset++] = ELEMENT_TYPE_MVAR;
+  signature[offset++] = 0x02;
+
+  signature[offset++] = ELEMENT_TYPE_MVAR;
+  signature[offset++] = 0x01;
+
+  signature[offset++] = ELEMENT_TYPE_MVAR;
+  signature[offset++] = 0x02;
+
+  signature[offset++] = ELEMENT_TYPE_CLASS;
+  memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
+  offset += exTypeRefSize;
+
+  signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+  memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+  offset += callTargetStateSize;
+
+  hr = module_metadata->metadata_emit->DefineMemberRef(
+      callTargetTypeRef, managed_profiler_calltarget_endmethod_name.data(),
+      signature, signatureLength, &endMethodMemberRef);
+  if (FAILED(hr)) {
+    Warn("Wrapper endMethodMemberRef could not be defined.");
+    return hr;
+  }
+
+  Info("EndMethod signature: ", HexStr(signature, signatureLength));
+
+  // *** Define Method Spec
+
+  mdMethodSpec endMethodSpec = mdMethodSpecNil;
+
+  unsigned integrationTypeBuffer;
+  ULONG integrationTypeSize =
+      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
+
+  bool isValueType = currentType->valueType;
+  mdToken currentTypeRef = mdTokenNil;
+  if (currentType->type_spec != mdTypeSpecNil) {
+    currentTypeRef = currentType->type_spec;
+  } else if (currentType->name.find("`1"_W) == std::string::npos) {
+    currentTypeRef = currentType->id;
+  } else {
+    currentTypeRef = objectTypeRef;
+    if (isValueType) {
+      rewriterWrapper->Box(currentType->id);
+      isValueType = false;
+    }
+  }
+
+  unsigned currentTypeBuffer;
+  ULONG currentTypeSize =
+      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+
+  PCCOR_SIGNATURE returnSignatureBuffer;
+  auto returnSignatureLength =
+      returnArgument->GetSignature(returnSignatureBuffer);
+
+  signatureLength =
+      4 + integrationTypeSize + currentTypeSize + returnSignatureLength;
+  signature = new COR_SIGNATURE[signatureLength];
+  offset = 0;
+
+  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+  signature[offset++] = 0x03;
+
+  signature[offset++] = ELEMENT_TYPE_CLASS;
+  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
+  offset += integrationTypeSize;
+
+  if (isValueType) {
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+  } else {
+    signature[offset++] = ELEMENT_TYPE_CLASS;
+  }
+  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
+  offset += currentTypeSize;
+
+  memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
+  offset += returnSignatureLength;
+
+  hr = module_metadata->metadata_emit->DefineMethodSpec(
+      endMethodMemberRef, signature, signatureLength, &endMethodSpec);
+
+  if (FAILED(hr)) {
+    Warn("Error creating end method member spec.");
+    return hr;
+  }
+
+  Info("EndMethod spec signature: ", HexStr(signature, signatureLength));
+
+  *instruction = rewriterWrapper->CallMember(endMethodSpec, false);
+  return S_OK;
 }
 
-HRESULT CallTargetTokens::WriteLogException(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, ILInstr** instruction) {
+HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
+                                            mdTypeRef integrationTypeRef,
+                                            const TypeInfo* currentType,
+                                            ILInstr** instruction) {
   auto hr = EnsureBaseCalltargetTokens();
   if (FAILED(hr)) {
     return hr;
@@ -1794,7 +2037,8 @@ HRESULT CallTargetTokens::WriteLogException(
   mdMethodSpec logExceptionMethodSpec = mdMethodSpecNil;
 
   unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize = CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
+  ULONG integrationTypeSize =
+      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
   mdToken currentTypeRef = mdTokenNil;
@@ -1811,7 +2055,8 @@ HRESULT CallTargetTokens::WriteLogException(
   }
 
   unsigned currentTypeBuffer;
-  ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+  ULONG currentTypeSize =
+      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
 
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
   auto* signature = new COR_SIGNATURE[signatureLength];

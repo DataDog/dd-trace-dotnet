@@ -2443,18 +2443,165 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   pStateLeaveToBeginOriginalMethodInstr->m_pTarget = beginOriginalMethodInstr;
   beginMethodCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
 
+  // ***
+  // ENDING OF THE METHOD EXECUTION
+  // ***
 
+  // *** Create return instruction and insert it at the end
+  ILInstr* methodReturnInstr = rewriter.NewILInstr();
+  methodReturnInstr->m_opcode = CEE_RET;
+  rewriter.InsertAfter(rewriter.GetILList()->m_pPrev, methodReturnInstr);
+  reWriterWrapper.SetILPosition(methodReturnInstr);
+  
+  // ***
+  // EXCEPTION CATCH
+  // ***
+  ILInstr* startExceptionCatch = reWriterWrapper.StLocal(exceptionIndex);
+  reWriterWrapper.SetILPosition(methodReturnInstr);
+  reWriterWrapper.Rethrow();
+  ILInstr* methodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
-  // *** Update exception clauses
+  // ***
+  // EXCEPTION FINALLY
+  // ***
+  ILInstr* endMethodTryStartInstr;
+
+  // *** Load instance into the stack (if not static)
+  if (isStatic) {
+    if (caller->type.valueType) {
+      // Static methods in a ValueType can't be instrumented.
+      // In the future this can be supported by adding a local for the valuetype
+      // and initialize it to the default value. After the signature
+      // modification we need to emit the following IL to initialize and load
+      // into the stack.
+      //    ldloca.s [localIndex]
+      //    initobj [valueType]
+      //    ldloc.s [localIndex]
+      Warn(
+          "CallTarget_RewriterCallback: Static methods in a ValueType cannot "
+          "be instrumented. ");
+      return E_FAIL;
+    }
+    endMethodTryStartInstr = reWriterWrapper.LoadNull();
+  } else {
+    endMethodTryStartInstr = reWriterWrapper.LoadArgument(0);
+    if (caller->type.valueType) {
+      if (caller->type.type_spec != mdTypeSpecNil) {
+        reWriterWrapper.LoadObj(caller->type.type_spec);
+      }
+      if (caller->type.name.find("`1"_W) == std::string::npos) {
+        reWriterWrapper.LoadObj(caller->type.id);
+      }
+    }
+  }
+
+  // *** Load the return value is is not void
+  if (!isVoid) {
+    reWriterWrapper.LoadLocal(returnValueIndex);
+  }
+
+  reWriterWrapper.LoadLocal(exceptionIndex);
+  reWriterWrapper.LoadLocal(callTargetStateIndex);
+  
+  ILInstr* endMethodCallInstr;
+  if (isVoid) {
+    callTargetTokens->WriteEndVoidReturnMemberRef(
+        &reWriterWrapper, wrapper_type_ref, &caller->type, &endMethodCallInstr);
+  } else {
+    callTargetTokens->WriteEndReturnMemberRef(&reWriterWrapper,
+                                              wrapper_type_ref, &caller->type,
+                                              &retFuncArg, &endMethodCallInstr);
+  }
+  reWriterWrapper.StLocal(callTargetReturnIndex);
+
+  // TODO: Get the return value from ENDMETHOD and copy it to the local var
+  reWriterWrapper.NOP();
+
+  ILInstr* endMethodTryLeave = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+  // *** EndMethod call catch
+  ILInstr* endMethodCatchFirstInstr = nullptr;
+  callTargetTokens->WriteLogException(&reWriterWrapper, wrapper_type_ref,
+                                      &caller->type, &endMethodCatchFirstInstr);
+  ILInstr* endMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+  // *** EndMethod exception handling clause
+  EHClause endMethodExClause{};
+  endMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+  endMethodExClause.m_pTryBegin = endMethodTryStartInstr;
+  endMethodExClause.m_pTryEnd = endMethodCatchFirstInstr;
+  endMethodExClause.m_pHandlerBegin = endMethodCatchFirstInstr;
+  endMethodExClause.m_pHandlerEnd = endMethodCatchLeaveInstr;
+  endMethodExClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
+
+  // *** EndMethod leave to finally
+  ILInstr* endFinallyInstr = reWriterWrapper.EndFinally();
+  endMethodTryLeave->m_pTarget = endFinallyInstr;
+  endMethodCatchLeaveInstr->m_pTarget = endFinallyInstr;
+
+  // ***
+  // METHOD RETURN
+  // ***
+
+  // Load the current return value from the local var
+  if (!isVoid) {
+    reWriterWrapper.LoadLocal(returnValueIndex);
+  }
+
+  // Resolving branching to the end of the method
+  methodCatchLeaveInstr->m_pTarget = endFinallyInstr->m_pNext;
+  
+  // Changes all returns to a BOX+LEAVE.S
+  for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
+       pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
+    switch (pInstr->m_opcode) {
+      case CEE_RET: {
+        if (pInstr != methodReturnInstr) {
+          if (!isVoid) {
+            reWriterWrapper.SetILPosition(pInstr);
+            reWriterWrapper.StLocal(returnValueIndex);
+          }
+          pInstr->m_opcode = CEE_LEAVE_S;
+          pInstr->m_pTarget = endFinallyInstr->m_pNext;
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  // Exception handling clauses
+  EHClause exClause{};
+  exClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+  exClause.m_pTryBegin = firstInstruction;
+  exClause.m_pTryEnd = startExceptionCatch;
+  exClause.m_pHandlerBegin = startExceptionCatch;
+  exClause.m_pHandlerEnd = methodCatchLeaveInstr;
+  exClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
+
+  EHClause finallyClause{};
+  finallyClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FINALLY;
+  finallyClause.m_pTryBegin = firstInstruction;
+  finallyClause.m_pTryEnd = methodCatchLeaveInstr->m_pNext;
+  finallyClause.m_pHandlerBegin = methodCatchLeaveInstr->m_pNext;
+  finallyClause.m_pHandlerEnd = endFinallyInstr;
+
+  // ***
+  // Update and Add exception clauses
+  // ***
   auto ehCount = rewriter.GetEHCount();
-  auto newEHClauses = new EHClause[ehCount + 1];
+  auto newEHClauses = new EHClause[ehCount + 4];
   for (unsigned i = 0; i < ehCount; i++) {
     newEHClauses[i] = rewriter.GetEHPointer()[i];
   }
 
   // *** Add the new EH clauses
-  ehCount += 1;
-  newEHClauses[ehCount - 1] = beginMethodExClause;
+  ehCount += 4;
+  newEHClauses[ehCount - 4] = beginMethodExClause;
+  newEHClauses[ehCount - 3] = endMethodExClause;
+  newEHClauses[ehCount - 2] = exClause;
+  newEHClauses[ehCount - 1] = finallyClause;
   rewriter.SetEHClause(newEHClauses, ehCount);
   
   Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));

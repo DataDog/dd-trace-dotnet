@@ -253,7 +253,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TInstance)}>({instance}, {exception}, {state})");
+                Console.WriteLine($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TInstance)}>({instance}, {exception?.ToString() ?? "(null)"}, {state})");
             }
 #endif
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
@@ -280,7 +280,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TInstance)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception}, {state})");
+                Console.WriteLine($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TInstance)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
             }
 #endif
             if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)

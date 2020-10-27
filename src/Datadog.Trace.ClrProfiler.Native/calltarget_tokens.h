@@ -68,7 +68,6 @@ class CallTargetTokens {
   mdMemberRef beginP5MemberRef = mdMemberRefNil;
   mdMemberRef beginP6MemberRef = mdMemberRefNil;
 
-  mdMemberRef endReturnMemberRef = mdMemberRefNil;
   mdMemberRef endVoidMemberRef = mdMemberRefNil;
 
   mdMemberRef logExceptionRef = mdMemberRefNil;
@@ -99,17 +98,6 @@ class CallTargetTokens {
                          ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                          mdToken* callTargetStateToken, mdToken* exceptionToken,
                          mdToken* callTargetReturnToken);
-
-  mdMethodSpec GetEndVoidReturnMemberRef(void* rewriterWrapperPtr,
-                                         mdTypeRef integrationTypeRef,
-                                         const TypeInfo* currentType,
-                                         ILInstr** instruction);
-  mdMethodSpec GetEndReturnMemberRef(void* rewriterWrapperPtr,
-                                     mdTypeRef integrationTypeRef,
-                                     const TypeInfo* currentType,
-                                     FunctionMethodArgument* returnArgument,
-                                     ILInstr** instruction);
-
 
  public:
   CallTargetTokens(void* module_metadata_ptr) {
@@ -176,6 +164,17 @@ class CallTargetTokens {
                                              mdTypeRef integrationTypeRef,
                                              const TypeInfo* currentType,
                                              ILInstr** instruction);
+
+  HRESULT WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr,
+                                    mdTypeRef integrationTypeRef,
+                                    const TypeInfo* currentType,
+                                    ILInstr** instruction);
+
+  HRESULT WriteEndReturnMemberRef(void* rewriterWrapperPtr,
+                                mdTypeRef integrationTypeRef,
+                                const TypeInfo* currentType,
+                                FunctionMethodArgument* returnArgument,
+                                ILInstr** instruction);
 
   HRESULT WriteLogException(void* rewriterWrapperPtr,
                             mdTypeRef integrationTypeRef,
