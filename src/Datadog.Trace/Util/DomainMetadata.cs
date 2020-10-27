@@ -9,7 +9,7 @@ namespace Datadog.Trace.Util
     internal static class DomainMetadata
     {
         private const string UnknownName = "unknown";
-        private static Process _currentProcess;
+        private static bool _initialized;
         private static string _currentProcessName;
         private static string _currentProcessMachineName;
         private static int _currentProcessId;
@@ -92,9 +92,9 @@ namespace Datadog.Trace.Util
         {
             try
             {
-                if (!_processDataPoisoned && _currentProcess == null)
+                if (!_processDataPoisoned && !_initialized)
                 {
-                    _currentProcess = ProcessHelpers.GetCurrentProcess();
+                    _initialized = true;
                     _currentProcessName = ProcessHelpers.GetCurrentProcessName();
                     _currentProcessMachineName = ProcessHelpers.GetCurrentProcessMachineName();
                     _currentProcessId = ProcessHelpers.GetCurrentProcessId();

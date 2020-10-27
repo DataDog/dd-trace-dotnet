@@ -145,7 +145,7 @@ namespace Datadog.Trace.Configuration
                                             configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
                                             Path.Combine(currentDirectory, "datadog.json");
 
-                if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
+                if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&
                     File.Exists(configurationFileName))
                 {
                     jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName);
