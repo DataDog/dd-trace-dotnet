@@ -11,9 +11,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     // ReSharper disable once InconsistentNaming
     public static class IDbCommandIntegration
     {
+        private const string Major2 = "2";
         private const string Major4 = "4";
         private const string Major5 = "5";
-        private const string Major2 = "2";
 
         // ReSharper disable once InconsistentNaming
         private const string IDbCommandTypeName = AdoNetConstants.TypeNames.IDbCommand;
