@@ -166,19 +166,23 @@ class CallTargetTokens {
                                              ILInstr** instruction);
 
   HRESULT WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr,
-                                    mdTypeRef integrationTypeRef,
-                                    const TypeInfo* currentType,
-                                    ILInstr** instruction);
+                                      mdTypeRef integrationTypeRef,
+                                      const TypeInfo* currentType,
+                                      ILInstr** instruction);
 
   HRESULT WriteEndReturnMemberRef(void* rewriterWrapperPtr,
-                                mdTypeRef integrationTypeRef,
-                                const TypeInfo* currentType,
-                                FunctionMethodArgument* returnArgument,
-                                ILInstr** instruction);
+                                  mdTypeRef integrationTypeRef,
+                                  const TypeInfo* currentType,
+                                  FunctionMethodArgument* returnArgument,
+                                  ILInstr** instruction);
 
   HRESULT WriteLogException(void* rewriterWrapperPtr,
                             mdTypeRef integrationTypeRef,
                             const TypeInfo* currentType, ILInstr** instruction);
+
+  HRESULT WriteCallTargetReturnGetReturnValue(
+      void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
+      ILInstr** instruction);
 };
 
 }  // namespace trace

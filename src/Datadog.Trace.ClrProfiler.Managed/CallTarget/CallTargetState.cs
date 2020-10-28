@@ -1,4 +1,4 @@
-using Datadog.Trace.Logging;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
 {
@@ -27,6 +27,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Gets the default call target state (used by the native side to initialize the locals)
         /// </summary>
         /// <returns>Default call target state</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetState GetDefault()
         {
             return new CallTargetState(null);

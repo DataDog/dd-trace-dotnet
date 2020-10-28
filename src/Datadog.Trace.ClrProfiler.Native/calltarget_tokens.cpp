@@ -360,7 +360,6 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(
   }
 
   mdMemberRef callTargetReturnTypeGetDefault = mdMemberRefNil;
-  mdMethodSpec callTargetReturnTypeGetDefaultSpec = mdMethodSpecNil;
 
   // *** Ensure CallTargetReturn<T>.GetDefault() member ref
   ModuleMetadata* module_metadata = GetMetadata();
@@ -2087,6 +2086,52 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
   Info("LogException spec signature: ", HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+  return S_OK;
+}
+
+HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(
+    void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
+    ILInstr** instruction) {
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return mdMemberRefNil;
+  }
+  Info("CallTargetTokens::WriteCallTargetReturnGetReturnValue");
+  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+  ModuleMetadata* module_metadata = GetMetadata();
+
+  // Ensure T CallTargetReturn<T>.GetReturnValue() member ref
+  mdMemberRef callTargetReturnGetValueMemberRef = mdMemberRefNil;
+
+  auto signatureLength = 4;
+  auto* signature = new COR_SIGNATURE[signatureLength];
+  unsigned offset = 0;
+
+  signature[offset++] =
+      IMAGE_CEE_CS_CALLCONV_DEFAULT | IMAGE_CEE_CS_CALLCONV_HASTHIS;
+  signature[offset++] = 0x00;
+  signature[offset++] = ELEMENT_TYPE_VAR;
+  signature[offset++] = 0x00;
+  hr = module_metadata->metadata_emit->DefineMemberRef(
+      callTargetReturnTypeSpec,
+      managed_profiler_calltarget_returntype_getreturnvalue_name.data(),
+      signature, signatureLength, &callTargetReturnGetValueMemberRef);
+  if (FAILED(hr)) {
+    Warn("Wrapper callTargetReturnGetValueMemberRef could not be defined.");
+    return mdMemberRefNil;
+  }
+
+  Info("* callTargetReturnTypeSpec signature: ",
+       HexStr(&callTargetReturnTypeSpec, sizeof(mdTypeSpec)));
+  PCCOR_SIGNATURE pcSig;
+  ULONG pcSigSize;
+  module_metadata->metadata_import->GetTypeSpecFromToken(
+      callTargetReturnTypeSpec, &pcSig, &pcSigSize);
+  Info("* callTargetReturnTypeSpec signature: ", HexStr(pcSig, pcSigSize));
+  Info("* callTargetReturnGetValueMemberRef signature: ",
+       HexStr(signature, signatureLength));
+
+  *instruction = rewriterWrapper->CallMember(callTargetReturnGetValueMemberRef, false);
   return S_OK;
 }
 

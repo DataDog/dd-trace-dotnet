@@ -1,4 +1,4 @@
-using Datadog.Trace.Logging;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
 {
@@ -23,6 +23,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Gets the default call target return value (used by the native side to initialize the locals)
         /// </summary>
         /// <returns>Default call target return value</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetReturn<T> GetDefault()
         {
             return new CallTargetReturn<T>(default);
@@ -32,6 +37,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Gets the return value
         /// </summary>
         /// <returns>Return value</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public T GetReturnValue() => _returnValue;
     }
 
@@ -44,6 +54,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Gets the default call target return value (used by the native side to initialize the locals)
         /// </summary>
         /// <returns>Default call target return value</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetReturn GetDefault()
         {
             return default;

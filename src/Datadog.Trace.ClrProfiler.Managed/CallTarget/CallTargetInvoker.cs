@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
@@ -19,6 +20,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <typeparam name="TInstance">Instance type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <returns>Call target state</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetState BeginMethod<TIntegration, TInstance>(TInstance instance)
         {
 #if DEBUG
@@ -44,6 +50,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="instance">Instance value</param>
         /// <param name="arg1">First argument value</param>
         /// <returns>Call target state</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1>(TInstance instance, TArg1 arg1)
         {
 #if DEBUG
@@ -71,6 +82,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="arg1">First argument value</param>
         /// <param name="arg2">Second argument value</param>
         /// <returns>Call target state</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2>(TInstance instance, TArg1 arg1, TArg2 arg2)
         {
 #if DEBUG
@@ -100,6 +116,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="arg2">Second argument value</param>
         /// <param name="arg3">Third argument value</param>
         /// <returns>Call target state</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3)
         {
 #if DEBUG
@@ -131,6 +152,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="arg3">Third argument value</param>
         /// <param name="arg4">Fourth argument value</param>
         /// <returns>Call target state</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
         {
 #if DEBUG
@@ -164,6 +190,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="arg4">Fourth argument value</param>
         /// <param name="arg5">Fifth argument value</param>
         /// <returns>Call target state</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5)
         {
 #if DEBUG
@@ -199,6 +230,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="arg5">Fifth argument value</param>
         /// <param name="arg6">Sixth argument value</param>
         /// <returns>Call target state</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6)
         {
 #if DEBUG
@@ -223,6 +259,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="instance">Instance value</param>
         /// <param name="arguments">Object arguments array</param>
         /// <returns>Call target state</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetState BeginMethod<TIntegration, TInstance>(TInstance instance, object[] arguments)
         {
 #if DEBUG
@@ -248,6 +289,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="exception">Exception value</param>
         /// <param name="state">CallTarget state</param>
         /// <returns>CallTarget return structure</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetReturn EndMethod<TIntegration, TInstance>(TInstance instance, Exception exception, CallTargetState state)
         {
 #if DEBUG
@@ -275,6 +321,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="exception">Exception value</param>
         /// <param name="state">CallTarget state</param>
         /// <returns>CallTarget return structure</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CallTargetReturn<TReturn> EndMethod<TIntegration, TInstance, TReturn>(TInstance instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
 #if DEBUG
@@ -297,6 +348,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <typeparam name="TIntegration">Integration type</typeparam>
         /// <typeparam name="TInstance">Instance type</typeparam>
         /// <param name="exception">Integration exception instance</param>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static void LogException<TIntegration, TInstance>(Exception exception)
         {
 #if DEBUG
@@ -313,6 +369,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// </summary>
         /// <typeparam name="T">Type to get the default value</typeparam>
         /// <returns>Default value of T</returns>
+#if NETCOREAPP3_1 || NET5_0
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static T GetDefaultValue<T>() => default;
     }
 }

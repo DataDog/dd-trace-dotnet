@@ -2515,7 +2515,12 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   reWriterWrapper.StLocal(callTargetReturnIndex);
 
   // TODO: Get the return value from ENDMETHOD and copy it to the local var
-  reWriterWrapper.NOP();
+  if (!isVoid) {
+    ILInstr* callTargetReturnGetReturnInstr;
+    reWriterWrapper.LoadLocalAddress(callTargetReturnIndex);
+    callTargetTokens->WriteCallTargetReturnGetReturnValue(&reWriterWrapper, callTargetReturnToken, &callTargetReturnGetReturnInstr);
+    reWriterWrapper.StLocal(returnValueIndex);
+  }
 
   ILInstr* endMethodTryLeave = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
