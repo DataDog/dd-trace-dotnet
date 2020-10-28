@@ -141,6 +141,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Npgsql", "test\test-applications\integrations\Samples.Npgsql\Samples.Npgsql.csproj", "{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Shared", "test\test-applications\integrations\dependency-libs\Samples.Shared\Samples.Shared.csproj", "{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964}"
@@ -374,6 +375,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Microsoft.Data.SqlClient", "test\test-applications\integrations\Samples.Microsoft.Data.SqlClient\Samples.Microsoft.Data.SqlClient.csproj", "{CF7850CB-275A-4335-9720-8414022C289C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
 	EndProjectSection
 EndProject
 Global
