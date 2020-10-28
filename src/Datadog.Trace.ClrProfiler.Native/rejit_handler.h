@@ -51,7 +51,6 @@ class RejitHandlerModuleMethod {
   inline void* GetModule() { return this->module; }
   void AddFunctionId(FunctionID functionId);
   bool ExistFunctionId(FunctionID functionId);
-  void Dump();
 };
 
 class RejitHandlerModule {
@@ -75,7 +74,8 @@ class RejitHandlerModule {
   }
   inline void* GetHandler() { return this->handler; }
   RejitHandlerModuleMethod* GetOrAddMethod(mdMethodDef methodDef);
-  void Dump();
+  bool TryGetMethod(mdMethodDef methodDef,
+                    RejitHandlerModuleMethod** methodHandler);
 };
 
 class RejitHandler {
@@ -99,11 +99,12 @@ class RejitHandler {
   }
   RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
 
+  bool TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHandler);
+
   HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                              ICorProfilerFunctionControl* pFunctionControl,
                              ModuleMetadata* metadata);
   HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
-  void Dump();
   void _addFunctionToSet(FunctionID functionId,
                          RejitHandlerModuleMethod* method);
 };

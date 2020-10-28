@@ -206,8 +206,6 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
       Warn("Wrapper callTargetStateTypeGetDefault could not be defined.");
       return hr;
     }
-
-    Info("callTargetStateTypeGetDefault: ", HexStr(signature, signatureLength));
   }
 
   return S_OK;
@@ -295,7 +293,6 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
     return mdTypeSpecNil;
   }
 
-  Info("GetTargetReturnValueTypeRef: ", HexStr(signature, signatureLength));
   return returnValueTypeSpec;
 }
 
@@ -341,9 +338,6 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnVoidDefaultMemberRef() {
       Warn("Wrapper callTargetReturnVoidTypeGetDefault could not be defined.");
       return mdMemberRefNil;
     }
-
-    Info("callTargetReturnVoidTypeGetDefault signature: ",
-         HexStr(signature, signatureLength));
   }
 
   return callTargetReturnVoidTypeGetDefault;
@@ -356,6 +350,7 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(
     return mdMemberRefNil;
   }
   if (callTargetReturnTypeRef == mdTypeRefNil) {
+    Warn("Wrapper callTargetReturnTypeGetDefault could not be defined because callTargetReturnTypeRef is null.");
     return mdMemberRefNil;
   }
 
@@ -391,8 +386,6 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(
     Warn("Wrapper callTargetReturnTypeGetDefault could not be defined.");
     return mdMemberRefNil;
   }
-  Info("callTargetReturnTypeGetDefault signature: ",
-       HexStr(signature, signatureLength));
 
   return callTargetReturnTypeGetDefault;
 }
@@ -428,8 +421,6 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
       Warn("Wrapper getDefaultMemberRef could not be defined.");
       return hr;
     }
-
-    Info("getDefaultMemberRef signature: ", HexStr(signature, signatureLength));
   }
 
   // *** Create de MethodSpec using the FunctionMethodArgument
@@ -457,8 +448,6 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
     Warn("Error creating getDefaultMethodSpec.");
     return mdMethodSpecNil;
   }
-
-  Info("getDefaultMethodSpec signature: ", HexStr(signature, signatureLength));
 
   return getDefaultMethodSpec;
 }
@@ -507,14 +496,9 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   auto callTargetStateTypeRefSize = CorSigCompressToken(
       callTargetStateTypeRef, &callTargetStateTypeRefBuffer);
 
-  Info("CallTargetState: ",
-       HexStr(&callTargetStateTypeRefBuffer, callTargetStateTypeRefSize));
-
   // Gets the exception type buffer and size
   unsigned exTypeRefBuffer;
   auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
-
-  Info("Exception: ", HexStr(&exTypeRefBuffer, exTypeRefSize));
 
   // Gets the Return type signature
   PCCOR_SIGNATURE returnSignatureType = NULL;
@@ -544,19 +528,12 @@ HRESULT CallTargetTokens::ModifyLocalSig(
 
     callTargetReturnSizeForNewSignature = callTargetReturnSignatureSize;
 
-    Info("CallTargetReturn SIGNATURE: ",
-         HexStr(callTargetReturnSignature, callTargetReturnSignatureSize));
-    Info("ReturnValue: ", HexStr(returnSignatureType, returnSignatureTypeSize));
-
     newLocalsCount++;
   } else {
     callTargetReturn = GetTargetVoidReturnTypeRef();
     callTargetReturnSize =
         CorSigCompressToken(callTargetReturn, &callTargetReturnBuffer);
     callTargetReturnSizeForNewSignature = 1 + callTargetReturnSize;
-
-    Info("CallTargetReturn: ",
-         HexStr(&callTargetReturnBuffer, callTargetReturnSize));
   }
 
   // New signature size
@@ -564,7 +541,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
       originalSignatureSize + returnSignatureTypeSize + (1 + exTypeRefSize) +
       callTargetReturnSizeForNewSignature + (1 + callTargetStateTypeRefSize);
   ULONG newSignatureOffset = 0;
-  Info("New LocalVars Signature length: ", newSignatureSize);
+
 
   ULONG oldLocalsBuffer;
   ULONG oldLocalsLen = 0;
@@ -642,8 +619,6 @@ HRESULT CallTargetTokens::ModifyLocalSig(
     return hr;
   }
 
-  Info("LocalVars Signature: ", HexStr(newSignatureBuffer, newSignatureSize));
-
   reWriter->SetTkLocalVarSig(newLocalVarSig);
   *callTargetStateToken = callTargetStateTypeRef;
   *exceptionToken = exTypeRef;
@@ -665,10 +640,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
 
 mdTypeRef CallTargetTokens::GetObjectTypeRef() { return objectTypeRef; }
 mdTypeRef CallTargetTokens::GetExceptionTypeRef() { return exTypeRef; }
-
-mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef() {
-  return corLibAssemblyRef;
-}
+mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef() { return corLibAssemblyRef; }
 
 HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
     void* rewriterWrapperPtr, FunctionInfo* functionInfo,
@@ -692,7 +664,6 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
     return hr;
   }
 
-  Info("Init Locals");
   // Init locals
   if (*returnValueIndex != ULONG_MAX) {
     *firstInstruction = rewriterWrapper->CallMember(
@@ -712,7 +683,6 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
   rewriterWrapper->StLocal(*exceptionIndex);
   rewriterWrapper->CallMember(GetCallTargetStateDefaultMemberRef(), false);
   rewriterWrapper->StLocal(*callTargetStateIndex);
-
   return S_OK;
 }
 
@@ -753,8 +723,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
       Warn("Wrapper beginP0MemberRef could not be defined.");
       return hr;
     }
-
-    Info("BeginMethod signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec beginP0MethodSpec = mdMethodSpecNil;
@@ -781,9 +749,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
   ULONG currentTypeSize =
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
 
-  Info("Current Type Ref: ", currentTypeRef);
-  Info("Current Type Name: ", currentType->name);
-
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
   auto* signature = new COR_SIGNATURE[signatureLength];
   unsigned offset = 0;
@@ -809,8 +774,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
     Warn("Error creating begin method spec.");
     return hr;
   }
-
-  Info("BeginMethod spec signature: ", HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(beginP0MethodSpec, false);
   return S_OK;
@@ -858,8 +821,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       Warn("Wrapper beginP1MemberRef could not be defined.");
       return hr;
     }
-
-    Info("BeginMethod signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec beginP1MethodSpec = mdMethodSpecNil;
@@ -885,9 +846,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  Info("Current Type Ref: ", currentTypeRef);
-  Info("Current Type Name: ", currentType->name);
 
   PCCOR_SIGNATURE arg1SignatureBuffer;
   auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
@@ -922,8 +880,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     Warn("Error creating begin method spec.");
     return hr;
   }
-
-  Info("BeginMethod spec signature: ", HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(beginP1MethodSpec, false);
   return S_OK;
@@ -974,8 +930,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       Warn("Wrapper beginP2MemberRef could not be defined.");
       return hr;
     }
-
-    Info("BeginMethod signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec beginP2MethodSpec = mdMethodSpecNil;
@@ -1001,9 +955,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  Info("Current Type Ref: ", currentTypeRef);
-  Info("Current Type Name: ", currentType->name);
 
   PCCOR_SIGNATURE arg1SignatureBuffer;
   auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
@@ -1044,8 +995,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     Warn("Error creating begin method spec.");
     return hr;
   }
-
-  Info("BeginMethod spec signature: ", HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(beginP2MethodSpec, false);
   return S_OK;
@@ -1100,8 +1049,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       Warn("Wrapper beginP3MemberRef could not be defined.");
       return hr;
     }
-
-    Info("BeginMethod signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec beginP3MethodSpec = mdMethodSpecNil;
@@ -1127,9 +1074,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  Info("Current Type Ref: ", currentTypeRef);
-  Info("Current Type Name: ", currentType->name);
 
   PCCOR_SIGNATURE arg1SignatureBuffer;
   auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
@@ -1177,8 +1121,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     Warn("Error creating begin method spec.");
     return hr;
   }
-
-  Info("BeginMethod spec signature: ", HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(beginP3MethodSpec, false);
   return S_OK;
@@ -1236,8 +1178,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       Warn("Wrapper beginP4MemberRef could not be defined.");
       return hr;
     }
-
-    Info("BeginMethod signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec beginP4MethodSpec = mdMethodSpecNil;
@@ -1263,9 +1203,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  Info("Current Type Ref: ", currentTypeRef);
-  Info("Current Type Name: ", currentType->name);
 
   PCCOR_SIGNATURE arg1SignatureBuffer;
   auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
@@ -1319,8 +1256,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     Warn("Error creating begin method spec.");
     return hr;
   }
-
-  Info("BeginMethod spec signature: ", HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(beginP4MethodSpec, false);
   return S_OK;
@@ -1382,8 +1317,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       Warn("Wrapper beginP5MemberRef could not be defined.");
       return hr;
     }
-
-    Info("BeginMethod signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec beginP5MethodSpec = mdMethodSpecNil;
@@ -1409,9 +1342,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  Info("Current Type Ref: ", currentTypeRef);
-  Info("Current Type Name: ", currentType->name);
 
   PCCOR_SIGNATURE arg1SignatureBuffer;
   auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
@@ -1472,8 +1402,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     Warn("Error creating begin method spec.");
     return hr;
   }
-
-  Info("BeginMethod spec signature: ", HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(beginP5MethodSpec, false);
   return S_OK;
@@ -1538,8 +1466,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       Warn("Wrapper beginP6MemberRef could not be defined.");
       return hr;
     }
-
-    Info("BeginMethod signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec beginP6MethodSpec = mdMethodSpecNil;
@@ -1565,9 +1491,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  Info("Current Type Ref: ", currentTypeRef);
-  Info("Current Type Name: ", currentType->name);
 
   PCCOR_SIGNATURE arg1SignatureBuffer;
   auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
@@ -1635,8 +1558,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     return hr;
   }
 
-  Info("BeginMethod spec signature: ", HexStr(signature, signatureLength));
-
   *instruction = rewriterWrapper->CallMember(beginP6MethodSpec, false);
   return S_OK;
 }
@@ -1681,8 +1602,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
       Warn("Wrapper beginArrayMemberRef could not be defined.");
       return hr;
     }
-
-    Info("BeginMethod signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec beginArrayMethodSpec = mdMethodSpecNil;
@@ -1709,9 +1628,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
   ULONG currentTypeSize =
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
 
-  Info("Current Type Ref: ", currentTypeRef);
-  Info("Current Type Name: ", currentType->name);
-
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
   auto* signature = new COR_SIGNATURE[signatureLength];
   unsigned offset = 0;
@@ -1737,8 +1653,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
     Warn("Error creating begin method spec.");
     return hr;
   }
-
-  Info("BeginMethod spec signature: ", HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(beginArrayMethodSpec, false);
   return S_OK;
@@ -1798,8 +1712,6 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
       Warn("Wrapper endVoidMemberRef could not be defined.");
       return hr;
     }
-
-    Info("EndMethod signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec endVoidMethodSpec = mdMethodSpecNil;
@@ -1851,8 +1763,6 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
     Warn("Error creating end void method method spec.");
     return hr;
   }
-
-  Info("EndMethod spec signature: ", HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(endVoidMethodSpec, false);
   return S_OK;
@@ -1925,8 +1835,6 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(
     return hr;
   }
 
-  Info("EndMethod signature: ", HexStr(signature, signatureLength));
-
   // *** Define Method Spec
 
   mdMethodSpec endMethodSpec = mdMethodSpecNil;
@@ -1988,8 +1896,6 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(
     return hr;
   }
 
-  Info("EndMethod spec signature: ", HexStr(signature, signatureLength));
-
   *instruction = rewriterWrapper->CallMember(endMethodSpec, false);
   return S_OK;
 }
@@ -2029,8 +1935,6 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
       Warn("Wrapper logExceptionRef could not be defined.");
       return hr;
     }
-
-    Info("LogException signature: ", HexStr(signature, signatureLength));
   }
 
   mdMethodSpec logExceptionMethodSpec = mdMethodSpecNil;
@@ -2083,8 +1987,6 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
     return hr;
   }
 
-  Info("LogException spec signature: ", HexStr(signature, signatureLength));
-
   *instruction = rewriterWrapper->CallMember(logExceptionMethodSpec, false);
   return S_OK;
 }
@@ -2096,7 +1998,6 @@ HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(
   if (FAILED(hr)) {
     return mdMemberRefNil;
   }
-  Info("CallTargetTokens::WriteCallTargetReturnGetReturnValue");
   ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
   ModuleMetadata* module_metadata = GetMetadata();
 
@@ -2120,16 +2021,6 @@ HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(
     Warn("Wrapper callTargetReturnGetValueMemberRef could not be defined.");
     return mdMemberRefNil;
   }
-
-  Info("* callTargetReturnTypeSpec signature: ",
-       HexStr(&callTargetReturnTypeSpec, sizeof(mdTypeSpec)));
-  PCCOR_SIGNATURE pcSig;
-  ULONG pcSigSize;
-  module_metadata->metadata_import->GetTypeSpecFromToken(
-      callTargetReturnTypeSpec, &pcSig, &pcSigSize);
-  Info("* callTargetReturnTypeSpec signature: ", HexStr(pcSig, pcSigSize));
-  Info("* callTargetReturnGetValueMemberRef signature: ",
-       HexStr(signature, signatureLength));
 
   *instruction = rewriterWrapper->CallMember(callTargetReturnGetValueMemberRef, false);
   return S_OK;

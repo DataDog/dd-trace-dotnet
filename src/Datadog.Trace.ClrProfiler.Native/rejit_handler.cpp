@@ -14,16 +14,6 @@ bool RejitHandlerModuleMethod::ExistFunctionId(FunctionID functionId) {
   return functionsIds.find(functionId) != functionsIds.end();
 }
 
-void RejitHandlerModuleMethod::Dump() {
-  Info("   RejitHandlerModuleMethod [MethodDef = ", methodDef,
-       ", FunctionControl = ", pFunctionControl != nullptr, 
-       ", FunctionInfo = ", functionInfo != nullptr, 
-       ", MethodReplacement = ", methodReplacement != nullptr, "]");
-  for (auto functionId : functionsIds) {
-    Info("      FunctionID: ", functionId);
-  }
-}
-
 RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(mdMethodDef methodDef) {
   std::lock_guard<std::mutex> guard(methods_lock);
 
@@ -36,16 +26,16 @@ RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(mdMethodDef methodD
   methods[methodDef] = methodHandler;
   return methodHandler;
 }
-
-void RejitHandlerModule::Dump() {
+bool RejitHandlerModule::TryGetMethod(mdMethodDef methodDef,
+                                      RejitHandlerModuleMethod** methodHandler) {
   std::lock_guard<std::mutex> guard(methods_lock);
 
-  Info("RejitHandlerModule [ModuleId = ", moduleId,
-       ", Metadata = ", metadata != nullptr, "]");
-  for (std::pair<const mdMethodDef, RejitHandlerModuleMethod*> pair :
-       this->methods) {
-    pair.second->Dump();
+  if (methods.count(methodDef) > 0) {
+    *methodHandler = methods[methodDef];
+    return true;
   }
+  *methodHandler = nullptr;
+  return false;
 }
 
 RejitHandlerModuleMethod* RejitHandler::GetModuleMethodFromFunctionId(
@@ -89,6 +79,17 @@ RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId) {
   RejitHandlerModule* moduleHandler = new RejitHandlerModule(moduleId, this);
   modules[moduleId] = moduleHandler;
   return moduleHandler;
+}
+
+bool RejitHandler::TryGetModule(ModuleID moduleId,
+                              RejitHandlerModule** moduleHandler) {
+  std::lock_guard<std::mutex> guard(modules_lock);
+  if (modules.count(moduleId) > 0) {
+    *moduleHandler = modules[moduleId];
+    return true;
+  }
+  *moduleHandler = nullptr;
+  return false;
 }
 
 HRESULT RejitHandler::NotifyReJITParameters(
@@ -159,12 +160,6 @@ HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId,
   return S_OK;
 }
 
-void RejitHandler::Dump() {
-  std::lock_guard<std::mutex> guard(this->modules_lock);
-  for (std::pair<const ModuleID, RejitHandlerModule*> pair : this->modules) {
-    pair.second->Dump();
-  }
-}
 void RejitHandler::_addFunctionToSet(FunctionID functionId,
                                      RejitHandlerModuleMethod* method) {
   std::lock_guard<std::mutex> guard(methodByFunctionId_lock);

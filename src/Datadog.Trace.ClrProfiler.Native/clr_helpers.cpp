@@ -426,6 +426,19 @@ bool DisableOptimizations() {
   return false;
 }
 
+bool EnableInlining() {
+  const auto enable_inlining =
+      GetEnvironmentValue(environment::clr_enable_inlining);
+
+  if (enable_inlining == "1"_W || enable_inlining == "true"_W) {
+    return true;
+  }
+
+  // default to false: don't inline.
+  return false;
+}
+
+
 TypeInfo RetrieveTypeForSignature(
     const ComPtr<IMetaDataImport2>& metadata_import,
     const FunctionInfo& function_info, const size_t current_index,

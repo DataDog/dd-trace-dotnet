@@ -150,6 +150,7 @@ CorProfilerBase::JITFunctionPitched(FunctionID functionId) {
 HRESULT STDMETHODCALLTYPE CorProfilerBase::JITInlining(FunctionID callerId,
                                                        FunctionID calleeId,
                                                        BOOL *pfShouldInline) {
+  Debug("JITInlining: ", callerId, " ", calleeId, " ", *pfShouldInline);
   return S_OK;
 }
 

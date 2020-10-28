@@ -176,14 +176,20 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
-                     COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
+                     COR_PRF_MONITOR_MODULE_LOADS |
                      COR_PRF_MONITOR_ASSEMBLY_LOADS |
                      COR_PRF_ENABLE_REJIT |
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
+  if (!EnableInlining()) {
+    Info("Disabling JIT inlining.");
+    event_mask |= COR_PRF_DISABLE_INLINING;
+  }
+
   if (DisableOptimizations()) {
     Info("Disabling all code optimizations.");
     event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
+    event_mask |= COR_PRF_DISABLE_INLINING;
   }
 
   const WSTRING domain_neutral_instrumentation =
@@ -499,6 +505,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
         module_info.assembly.name, " AppDomain ",
         module_info.assembly.app_domain_id, " ",
         module_info.assembly.app_domain_name);
+
+  // CallTarget rejit request for the module
+  CallTarget_RequestRejitForModule(module_id, module_metadata,
+                                   filtered_integrations);
   return S_OK;
 }
 
@@ -543,6 +553,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
+  Warn("Exiting.");
   is_attached_ = false;
   return S_OK;
 }
@@ -657,15 +668,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     return S_OK;
   }
 
-  if (CallTarget_ShouldInstrumentMethod(function_id)) {
-    ModuleID modules = {module_id};
-    mdMethodDef methodsDefs = {function_token};
-    Info("Requesting ReJIT for: [functionId: ", function_id,
-         ", moduleId: ", module_id, " methodId: ", function_token, "]");
-     this->info_->RequestReJIT(1, &modules, &methodsDefs);
-    //rejit_handler->NotifyReJITParameters(module_id, function_token, nullptr, module_metadata);
-    return S_OK;
-  }
+  // Checks if the method should be instrumented with CallTarget method
+  //if (CallTarget_ShouldInstrumentMethod(function_id)) {
+  //  Info("Return S_OK because rejit.");
+  //  return S_OK;
+  //}
 
   // Perform method insertion calls
   hr = ProcessInsertionCalls(module_metadata,
@@ -691,6 +698,35 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (FAILED(hr)) {
     Warn("JITCompilationStarted: Call to ProcessReplacementCalls() failed for ", function_id, " ", module_id, " ", function_token);
     return S_OK;
+  }
+
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, 
+    FunctionID calleeId, BOOL* pfShouldInline) {
+  ModuleID calleeModuleId;
+  mdToken calleFunctionToken = mdTokenNil;
+  auto hr = this->info_->GetFunctionInfo(calleeId, NULL, &calleeModuleId,
+                                         &calleFunctionToken);
+
+  *pfShouldInline = true;
+
+  if (FAILED(hr)) {
+    Warn("Failed to get the function info of the calleId: ", calleeId);
+    return S_OK;
+  }
+
+  RejitHandlerModule* handlerModule = nullptr;
+  if (rejit_handler->TryGetModule(calleeModuleId, &handlerModule)) {
+    RejitHandlerModuleMethod* handlerMethod = nullptr;
+    if (handlerModule->TryGetMethod(calleFunctionToken, &handlerMethod)) {
+      Info("JITInlining disabled for:  moduleId: ", calleeModuleId,
+           " MethodDef: ", HexStr(&calleFunctionToken, sizeof(mdMethodDef)),
+           "]");
+      *pfShouldInline = false;
+      return S_OK;
+    } 
   }
 
   return S_OK;
@@ -2083,16 +2119,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(
 HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(
     ModuleID moduleId, mdMethodDef methodId,
     ICorProfilerFunctionControl* pFunctionControl) {
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-  
   Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId,
-       "]");
+        "]");
 
-  if (module_id_to_info_map_.count(moduleId) > 0) {
-    rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl,
-                                     module_id_to_info_map_[moduleId]);
+  ModuleMetadata* module_metadata = nullptr;
+  {
+    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+    if (module_id_to_info_map_.count(moduleId) > 0) {
+      module_metadata = module_id_to_info_map_[moduleId];
+    } else {
+      return S_OK;
+    }
   }
-  return S_OK;
+  return rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl, module_metadata);
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(
@@ -2101,10 +2140,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(
   Debug("ReJITCompilationFinished: [functionId: ", functionId,
        ", rejitId: ", rejitId, ", hrStatus: ", hrStatus,
        ", safeToBlock: ", fIsSafeToBlock, "]");
-  if (debug_logging_enabled) {
-    rejit_handler->Dump();
-  }
-
   return S_OK;
 }
 
@@ -2120,114 +2155,77 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId,
 //
 // CallTarget Methods
 //
+HRESULT CorProfiler::CallTarget_RequestRejitForModule(
+    ModuleID module_id, ModuleMetadata* module_metadata,
+    std::vector<IntegrationMethod> filtered_integrations) {
+  auto metadata_import = module_metadata->metadata_import;
 
-bool CorProfiler::CallTarget_ShouldInstrumentMethod(FunctionID functionId) {
-  std::lock_guard<std::mutex> guard(callTarget_shouldInstrumentMethod_cache_lock_);
-  if (callTarget_shouldInstrumentMethod_map_.count(functionId) > 0) {
-    return callTarget_shouldInstrumentMethod_map_[functionId];
-  }
-
-  ModuleID module_id;
-  mdToken function_token = mdTokenNil;
-
-  HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id,
-                                            &function_token);
-
-  if (FAILED(hr)) {
-    Warn(
-        "CallTarget_ShouldInstrumentMethod: Call to ICorProfilerInfo4.GetFunctionInfo() "
-        "failed for ",
-        functionId);
-    callTarget_shouldInstrumentMethod_map_[functionId] = false;
-    return false;
-  }
-
-  // Verify that we have the metadata for this module
-  ModuleMetadata* module_metadata = nullptr;
-  if (module_id_to_info_map_.count(module_id) > 0) {
-    module_metadata = module_id_to_info_map_[module_id];
-  }
-
-  if (module_metadata == nullptr) {
-    // we haven't stored a ModuleMetadata for this module,
-    // so we can't modify its IL
-    callTarget_shouldInstrumentMethod_map_[functionId] = false;
-    return false;
-  }
-  
-  // get function info
-  const auto caller =
-      GetFunctionInfo(module_metadata->metadata_import, function_token);
-  if (!caller.IsValid()) {
-    callTarget_shouldInstrumentMethod_map_[functionId] = false;
-    return false;
-  }
-
-  // Get valid method replacements for this caller method
-  auto method_replacements = module_metadata->GetMethodReplacementsForCaller(caller);
-  if (method_replacements.empty()) {
-    callTarget_shouldInstrumentMethod_map_[functionId] = false;
-    return false;
-  }
-
-  for (auto& method_replacement : method_replacements) {
-    // Exit early if the method replacement isn't actually doing a replacement
-    //if (method_replacement.wrapper_method.action != "ReplaceTargetMethod"_W) {
-    if (method_replacement.wrapper_method.action != "CallTargetModification"_W) {
+  for (IntegrationMethod integration : filtered_integrations) {
+    if (integration.replacement.wrapper_method.action !=
+        "CallTargetModification"_W) {
+      continue;
+    }
+    mdTypeDef typeDef = mdTypeDefNil;
+    auto hr = metadata_import->FindTypeDefByName(
+        integration.replacement.target_method.type_name.c_str(), NULL,
+        &typeDef);
+    if (FAILED(hr)) {
+      Warn("Can load the TypeDef for: ",
+           integration.replacement.target_method.type_name);
       continue;
     }
 
-    const auto& wrapper_method_key = method_replacement.wrapper_method.get_method_cache_key();
-    // Exit early if we previously failed to store the method ref for this
-    // wrapper_method
-    if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
-      continue;
-    }
+    auto enumMethods = Enumerator<mdMethodDef>(
+        [metadata_import, integration, typeDef](HCORENUM* ptr,
+                                                mdMethodDef arr[], ULONG max,
+                                                ULONG* cnt) -> HRESULT {
+          return metadata_import->EnumMethodsWithName(
+              ptr, typeDef,
+              integration.replacement.target_method.method_name.c_str(), arr,
+              max, cnt);
+        },
+        [metadata_import](HCORENUM ptr) -> void {
+          metadata_import->CloseEnum(ptr);
+        });
 
-    //Info("Assembly Name = ", module_metadata->assemblyName);
-    //Info("Type Name = ", caller.type.name);
-    //Info("Method Name = ", caller.name);
-    
-    if (method_replacement.target_method.assembly.name == module_metadata->assemblyName &&
-        method_replacement.target_method.type_name == caller.type.name &&
-        method_replacement.target_method.method_name == caller.name) {
+    auto enumIterator = enumMethods.begin();
+    while (enumIterator != enumMethods.end()) {
+      auto methodDef = *enumIterator;
+
+      auto moduleHandler = rejit_handler->GetOrAddModule(module_id);
+      moduleHandler->SetModuleMetadata(module_metadata);
+
+      auto methodHandler = moduleHandler->GetOrAddMethod(methodDef);
+      const auto caller =
+          GetFunctionInfo(module_metadata->metadata_import, methodDef);
+      if (!caller.IsValid()) {
+        Warn("Caller is not valid!");
+        continue;
+      }
 
       auto functionInfo = new FunctionInfo(caller);
       hr = functionInfo->method_signature.TryParse();
       if (FAILED(hr)) {
         delete functionInfo;
-        callTarget_shouldInstrumentMethod_map_[functionId] = false;
-        return false;
+        Warn("Method signature can not be parsed.");
+        continue;
       }
 
-      auto retFuncArg = functionInfo->method_signature.GetRet();
-
-      // return ref is not supported
-      unsigned elementType;
-      auto retTypeFlags = retFuncArg.GetTypeFlags(elementType);
-      if (retTypeFlags & TypeFlagByRef) {
-        callTarget_shouldInstrumentMethod_map_[functionId] = false;
-        Warn("[UNSUPPORTED RETURN REF] Module: ", module_metadata->assemblyName,
-             " Type: ", functionInfo->type.name,
-             " Method: ", functionInfo->name);
-        delete functionInfo;
-        return false;
-      }
-
-      callTarget_shouldInstrumentMethod_map_[functionId] = true;
-      auto moduleHandler = rejit_handler->GetOrAddModule(module_id);
-      moduleHandler->SetModuleMetadata(module_metadata);
-
-      auto methodHandler = moduleHandler->GetOrAddMethod(function_token);
       methodHandler->SetFunctionInfo(functionInfo);
-      methodHandler->SetMethodReplacement(new MethodReplacement(method_replacement));
+      methodHandler->SetMethodReplacement(
+          new MethodReplacement(integration.replacement));
 
-      return true;
+      ModuleID modules = {module_id};
+      mdMethodDef methodsDefs = {methodDef};
+      Info("Requesting ReJIT for:  moduleId: ", module_id,
+           " MethodDef: ", HexStr(&methodDef, sizeof(mdMethodDef)), "]");
+      this->info_->RequestReJIT(1, &modules, &methodsDefs);
+
+      enumIterator = ++enumIterator;
     }
-
   }
-  callTarget_shouldInstrumentMethod_map_[functionId] = false;
-  return false;
+
+  return S_OK;
 }
 
 HRESULT CorProfiler::CallTarget_RewriterCallback(
@@ -2263,7 +2261,6 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
        "]");
 
   // *** Create rewriter
-  Info("REJIT Starting rewriting.");
   ILRewriter rewriter(this->info_, methodHandler->GetFunctionControl(), module_id, function_token);
   bool modified = false;
   auto hr = rewriter.Import();
@@ -2292,8 +2289,6 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
       &callTargetReturnIndex, &returnValueIndex, 
       &callTargetStateToken,
       &exceptionToken, &callTargetReturnToken, &firstInstruction);
-
-  Info("Load Instance and arguments");
 
   // *** Load instance into the stack (if not static)
   if (isStatic) {
@@ -2348,16 +2343,6 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
       reWriterWrapper.EndLoadValueIntoArray();
     }
   }
-
-  Info("Caller Token Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
-  Info("Caller Token Name: ", caller->type.name);
-  Info("Caller Token Spec: ", HexStr(&caller->type.type_spec, sizeof(mdToken)));
-  Info("Caller Token Parent Id: ",
-       HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
-  Info("Caller Token Parent Name: ", caller->type.extend_from->name);
-  Info("Caller Token Parent Spec: ",
-       HexStr(&caller->type.extend_from->type_spec, sizeof(mdToken)));
-  Info("Caller Token IsValueType: ", caller->type.valueType);
 
   // *** Emit BeginMethod call
   ILInstr* beginCallInstruction;

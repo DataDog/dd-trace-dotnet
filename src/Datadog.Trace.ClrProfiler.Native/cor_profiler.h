@@ -41,8 +41,6 @@ class CorProfiler : public CorProfilerBase {
   // CallTarget Members
   //
   RejitHandler* rejit_handler;
-  std::mutex callTarget_shouldInstrumentMethod_cache_lock_;
-  std::unordered_map<FunctionID, bool> callTarget_shouldInstrumentMethod_map_;
 
   // Cor assembly properties
   AssemblyProperty corAssemblyProperty{};
@@ -94,7 +92,9 @@ class CorProfiler : public CorProfilerBase {
   //
   // CallTarget Methods
   //
-  bool CallTarget_ShouldInstrumentMethod(FunctionID functionId);
+  HRESULT CallTarget_RequestRejitForModule(
+    ModuleID module_id, ModuleMetadata* module_metadata,
+    std::vector<IntegrationMethod> filtered_integrations);
   HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
  public:
@@ -125,6 +125,10 @@ class CorProfiler : public CorProfilerBase {
   HRESULT STDMETHODCALLTYPE Shutdown() override;
 
   HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
+  
+  HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId,
+                                        FunctionID calleeId,
+                                        BOOL* pfShouldInline) override;
 
   //
   // ReJIT Methods
