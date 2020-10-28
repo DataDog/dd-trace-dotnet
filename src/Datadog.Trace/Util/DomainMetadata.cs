@@ -13,7 +13,7 @@ namespace Datadog.Trace.Util
         private static string _currentProcessName;
         private static string _currentProcessMachineName;
         private static int _currentProcessId;
-        private static bool _processDataPoisoned;
+        private static bool _processDataUnavailable;
         private static bool _domainDataPoisoned;
         private static bool? _isAppInsightsAppDomain;
 
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                return !_processDataPoisoned ? _currentProcessName : UnknownName;
+                return !_processDataUnavailable ? _currentProcessName : UnknownName;
             }
         }
 
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                return !_processDataPoisoned ? _currentProcessMachineName : UnknownName;
+                return !_processDataUnavailable ? _currentProcessMachineName : UnknownName;
             }
         }
 
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                return !_processDataPoisoned ? _currentProcessId : -1;
+                return !_processDataUnavailable ? _currentProcessId : -1;
             }
         }
 
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Util
         {
             try
             {
-                if (!_processDataPoisoned && !_initialized)
+                if (!_processDataUnavailable && !_initialized)
                 {
                     _initialized = true;
                     ProcessHelpers.GetCurrentProcessInformation(out _currentProcessName, out _currentProcessMachineName, out _currentProcessId);
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Util
             }
             catch
             {
-                _processDataPoisoned = true;
+                _processDataUnavailable = true;
             }
         }
     }
