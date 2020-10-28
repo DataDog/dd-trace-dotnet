@@ -31,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string MicrosoftSqlCommandTypeName = MicrosoftSqlClientAssemblyName + "." + SqlCommandTypeName;
         private const string MicrosoftSqlDataReaderTypeName = MicrosoftSqlClientAssemblyName + "." + SqlDataReaderTypeName;
 
+        private static readonly string[] SqlClientNamespaces = { SystemSqlClientAssemblyName, MicrosoftSqlClientAssemblyName };
+
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(SqlCommandIntegration));
 
         /// <summary>
@@ -66,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(SystemSqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName, SqlClientNamespaces);
 
                 instrumentedMethod =
                     MethodBuilder<Func<object, object>>
@@ -138,7 +140,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(SystemSqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName, SqlClientNamespaces);
 
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
@@ -322,7 +324,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(SystemSqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName, SqlClientNamespaces);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
@@ -408,7 +410,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(SystemSqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName, SqlClientNamespaces);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
@@ -476,7 +478,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(SystemSqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName, SqlClientNamespaces);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
@@ -562,7 +564,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(SystemSqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName, SqlClientNamespaces);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
