@@ -124,26 +124,10 @@ namespace Datadog.Trace.Configuration
         {
             try
             {
-                string currentDirectory = System.Environment.CurrentDirectory;
-
-                try
-                {
-                    if (TryLoadHostingEnvironmentPath(out var hostingPath))
-                    {
-                        currentDirectory = hostingPath;
-                    }
-                }
-                catch (Exception)
-                {
-                    // Unable to call into System.Web.dll
-                    // The configuration manager should not depend on a logger being bootstrapped yet
-                    // so do not do anything
-                }
-
                 // if environment variable is not set, look for default file name in the current directory
                 var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
                                             configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
-                                            Path.Combine(currentDirectory, "datadog.json");
+                                            Path.Combine(GetCurrentDirectory(), "datadog.json");
 
                 if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&
                     File.Exists(configurationFileName))
@@ -161,6 +145,27 @@ namespace Datadog.Trace.Configuration
 
             jsonConfigurationSource = default;
             return false;
+        }
+
+        private static string GetCurrentDirectory()
+        {
+            try
+            {
+                // Entering TryLoadHostingEnvironmentPath and accessing System.Web.dll
+                // will immediately throw an exception in partial trust scenarios,
+                // so surround this call by a try/catch block
+                if (TryLoadHostingEnvironmentPath(out var hostingPath))
+                {
+                    return hostingPath;
+                }
+            }
+            catch (Exception)
+            {
+                // The configuration manager should not depend on a logger being bootstrapped yet
+                // so do not do anything
+            }
+
+            return System.Environment.CurrentDirectory;
         }
 
         private static bool TryLoadHostingEnvironmentPath(out string hostingPath)
