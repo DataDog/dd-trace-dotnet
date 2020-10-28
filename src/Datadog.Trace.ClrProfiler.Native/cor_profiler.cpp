@@ -2253,7 +2253,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   mdTypeRef wrapper_type_ref = mdTypeRefNil;
   GetWrapperMethodRef(module_metadata, module_id, *method_replacement, wrapper_method_ref, wrapper_type_ref);
 
-  Info("CallTarget_RewriterCallback: ", caller->name, 
+  Info("*** CallTarget_RewriterCallback(): ", caller->name, 
        " [IsVoid=", isVoid, 
        ", IsStatic=", isStatic, 
        ", Replacement=", method_replacement->wrapper_method.type_name,
@@ -2265,11 +2265,16 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   bool modified = false;
   auto hr = rewriter.Import();
   if (FAILED(hr)) {
-    Warn("CallTarget_RewriterCallback: Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
+    Warn("*** CallTarget_RewriterCallback(): Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
     return hr;
   }
 
-  Info(GetILCodes("REJIT Original Code: ", &rewriter, *caller));
+  std::string original_code;
+  if (dump_il_rewrite_enabled) {
+    original_code = GetILCodes(
+        "*** CallTarget_RewriterCallback(): Original Code: ", &rewriter,
+        *caller);
+  }
 
   // *** Create the rewriter wrapper helper
   ILRewriterWrapper reWriterWrapper(&rewriter);
@@ -2299,7 +2304,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
       //    ldloca.s [localIndex]
       //    initobj [valueType]
       //    ldloc.s [localIndex]
-      Warn("CallTarget_RewriterCallback: Static methods in a ValueType cannot be instrumented. ");
+      Warn("*** CallTarget_RewriterCallback(): Static methods in a ValueType cannot be instrumented. ");
       return E_FAIL;
     }
     reWriterWrapper.LoadNull();
@@ -2594,18 +2599,22 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   newEHClauses[ehCount - 1] = finallyClause;
   rewriter.SetEHClause(newEHClauses, ehCount);
   
-  Info(GetILCodes("REJIT Modified Code: ", &rewriter, *caller));
+  if (dump_il_rewrite_enabled) {
+    Info(original_code);
+    Info(GetILCodes("*** CallTarget_RewriterCallback(): Modified Code: ", &rewriter, *caller));
+  }
+
   hr = rewriter.Export();
 
   if (FAILED(hr)) {
     Warn(
-        "CallTarget_RewriterCallback: Call to ILRewriter.Export() failed for "
+        "*** CallTarget_RewriterCallback(): Call to ILRewriter.Export() failed for "
         "ModuleID=",
         module_id, " ", function_token);
     return hr;
   }
 
-  Info("CallTarget_RewriterCallback: Rewriter has been finished for ", caller->name);
+  Info("*** CallTarget_RewriterCallback(): Rewriter has been finished for ", caller->name);
   return S_OK;
 }
 
