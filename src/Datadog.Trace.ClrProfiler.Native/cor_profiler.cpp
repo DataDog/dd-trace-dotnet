@@ -2217,8 +2217,8 @@ HRESULT CorProfiler::CallTarget_RequestRejitForModule(
 
       ModuleID modules = {module_id};
       mdMethodDef methodsDefs = {methodDef};
-      Info("Requesting ReJIT for:  moduleId: ", module_id,
-           " MethodDef: ", HexStr(&methodDef, sizeof(mdMethodDef)), "]");
+      Info("Requesting ReJIT [ModuleId=", module_id,
+           " MethodDef=", HexStr(&methodDef, sizeof(mdMethodDef)), "]");
       this->info_->RequestReJIT(1, &modules, &methodsDefs);
 
       enumIterator = ++enumIterator;
@@ -2253,7 +2253,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   mdTypeRef wrapper_type_ref = mdTypeRefNil;
   GetWrapperMethodRef(module_metadata, module_id, *method_replacement, wrapper_method_ref, wrapper_type_ref);
 
-  Info("CallTarget_RewriterCallback !!!: ", caller->name, 
+  Info("CallTarget_RewriterCallback: ", caller->name, 
        " [IsVoid=", isVoid, 
        ", IsStatic=", isStatic, 
        ", Replacement=", method_replacement->wrapper_method.type_name,
@@ -2605,7 +2605,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     return hr;
   }
 
-  Info("CallTarget_RewriterCallback END !!!: ", caller->name);
+  Info("CallTarget_RewriterCallback: Rewriter has been finished for ", caller->name);
   return S_OK;
 }
 
