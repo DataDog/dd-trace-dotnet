@@ -438,6 +438,17 @@ bool EnableInlining() {
   return false;
 }
 
+bool EnableNGEN() {
+  const auto enable_ngen =
+      GetEnvironmentValue(environment::clr_enable_ngen);
+
+  if (enable_ngen == "1"_W || enable_ngen == "true"_W) {
+    return true;
+  }
+
+  // default to false: don't use ngen images.
+  return false;
+}
 
 TypeInfo RetrieveTypeForSignature(
     const ComPtr<IMetaDataImport2>& metadata_import,

@@ -134,11 +134,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCompilationFinished(
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCachedFunctionSearchStarted(
     FunctionID functionId, BOOL *pbUseCachedFunction) {
+  Debug("CorProfilerBase::JITCachedFunctionSearchStarted: ", functionId, " / ",
+       *pbUseCachedFunction);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCachedFunctionSearchFinished(
     FunctionID functionId, COR_PRF_JIT_CACHE result) {
+  Debug("CorProfilerBase::JITCachedFunctionSearchFinished: ", functionId, " / ",
+       result);
   return S_OK;
 }
 

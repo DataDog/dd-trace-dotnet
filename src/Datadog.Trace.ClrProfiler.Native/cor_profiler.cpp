@@ -178,8 +178,15 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_MONITOR_MODULE_LOADS |
                      COR_PRF_MONITOR_ASSEMBLY_LOADS |
-                     COR_PRF_ENABLE_REJIT |
-                     COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+                     COR_PRF_ENABLE_REJIT;
+
+  if (EnableNGEN()) {
+    Info("NGEN images are enabled.");
+    event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
+  } else {
+    Info("NGEN images are disabled.");
+    event_mask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+  }
 
   if (!EnableInlining()) {
     Info("JIT Inlining is disabled.");
@@ -332,6 +339,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hr_status) {
+  Info("ModuleLoadFinished: ", module_id);
   if (FAILED(hr_status)) {
     // if module failed to load, skip it entirely,
     // otherwise we can crash the process if module is not valid
@@ -726,6 +734,61 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId,
 
   return S_OK;
 }
+
+
+HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(
+    FunctionID functionId, BOOL* pbUseCachedFunction) {
+  *pbUseCachedFunction = true;
+
+  ModuleID module_id;
+  mdToken function_token = mdTokenNil;
+  auto hr = this->info_->GetFunctionInfo(functionId, NULL, &module_id,
+                                         &function_token);
+  const auto module_info = GetModuleInfo(this->info_, module_id);
+  if (!module_info.IsValid()) {
+    Warn("JITCachedFunctionSearchStarted: Module info is invalid.");
+    return S_OK;
+  }
+
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+  // Verify that we have the metadata for this module
+  ModuleMetadata* module_metadata = nullptr;
+  if (module_id_to_info_map_.count(module_id) > 0) {
+    module_metadata = module_id_to_info_map_[module_id];
+  }
+
+  if (module_metadata == nullptr) {
+    // we haven't stored a ModuleMetadata for this module,
+    // so we can't modify its IL
+    Debug("JITCachedFunctionSearchStarted: Module metadata is not loaded,",
+        " usage of the NGEN image is enabled for [ModuleId=", module_id ,", Assembly=",
+         module_info.assembly.name, "]");
+    return S_OK;
+  }
+
+  *pbUseCachedFunction = false;
+  Debug("JITCachedFunctionSearchStarted: Usage of the NGEN image is disabled for [ModuleId=", module_id,
+       ", Assembly=", module_info.assembly.name, "]");
+
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchFinished(
+    FunctionID functionId, COR_PRF_JIT_CACHE result) {
+  if (debug_logging_enabled) {
+    ModuleID calleeModuleId;
+    mdToken calleFunctionToken = mdTokenNil;
+    auto hr = this->info_->GetFunctionInfo(functionId, NULL, &calleeModuleId,
+                                           &calleFunctionToken);
+    Debug(
+        "*** JITCachedFunctionSearchFinished: for:  moduleId= ", calleeModuleId,
+        " MethodDef= ", HexStr(&calleFunctionToken, sizeof(mdMethodDef)),
+        ", Result=", result, "]");
+  }
+  return S_OK;
+}
+
 
 //
 // ICorProfilerCallback6 methods
@@ -2149,7 +2212,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId,
 //
 // CallTarget Methods
 //
-HRESULT CorProfiler::CallTarget_RequestRejitForModule(
+size_t CorProfiler::CallTarget_RequestRejitForModule(
     ModuleID module_id, ModuleMetadata* module_metadata,
     std::vector<IntegrationMethod> filtered_integrations) {
   auto metadata_import = module_metadata->metadata_import;
@@ -2240,7 +2303,7 @@ HRESULT CorProfiler::CallTarget_RequestRejitForModule(
     Info("Requesting ReJIT for ", vtMethodDefs.size(), " methods.");
     this->info_->RequestReJIT((ULONG)vtMethodDefs.size(), modules, methodsDefs);
   }
-  return S_OK;
+  return vtMethodDefs.size();
 }
 
 HRESULT CorProfiler::CallTarget_RewriterCallback(

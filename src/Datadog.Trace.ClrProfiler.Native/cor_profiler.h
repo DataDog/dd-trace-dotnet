@@ -92,7 +92,7 @@ class CorProfiler : public CorProfilerBase {
   //
   // CallTarget Methods
   //
-  HRESULT CallTarget_RequestRejitForModule(
+  size_t CallTarget_RequestRejitForModule(
     ModuleID module_id, ModuleMetadata* module_metadata,
     std::vector<IntegrationMethod> filtered_integrations);
   HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
@@ -130,6 +130,11 @@ class CorProfiler : public CorProfilerBase {
                                         FunctionID calleeId,
                                         BOOL* pfShouldInline) override;
 
+  HRESULT STDMETHODCALLTYPE JITCachedFunctionSearchStarted(
+      FunctionID functionId, BOOL* pbUseCachedFunction) override;
+
+  HRESULT STDMETHODCALLTYPE JITCachedFunctionSearchFinished(
+      FunctionID functionId, COR_PRF_JIT_CACHE result) override;
   //
   // ReJIT Methods
   //
