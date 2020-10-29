@@ -182,14 +182,15 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
   if (!EnableInlining()) {
-    Info("Disabling JIT inlining.");
+    Info("JIT Inlining is disabled.");
     event_mask |= COR_PRF_DISABLE_INLINING;
+  } else {
+    Info("JIT Inlining is enabled.");
   }
 
   if (DisableOptimizations()) {
     Info("Disabling all code optimizations.");
     event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
-    event_mask |= COR_PRF_DISABLE_INLINING;
   }
 
   const WSTRING domain_neutral_instrumentation =
@@ -668,12 +669,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     return S_OK;
   }
 
-  // Checks if the method should be instrumented with CallTarget method
-  //if (CallTarget_ShouldInstrumentMethod(function_id)) {
-  //  Info("Return S_OK because rejit.");
-  //  return S_OK;
-  //}
-
   // Perform method insertion calls
   hr = ProcessInsertionCalls(module_metadata,
                              function_id,
@@ -713,7 +708,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId,
   *pfShouldInline = true;
 
   if (FAILED(hr)) {
-    Warn("Failed to get the function info of the calleId: ", calleeId);
+    Warn("*** JITInlining: Failed to get the function info of the calleId: ", calleeId);
     return S_OK;
   }
 
@@ -721,7 +716,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId,
   if (rejit_handler->TryGetModule(calleeModuleId, &handlerModule)) {
     RejitHandlerModuleMethod* handlerMethod = nullptr;
     if (handlerModule->TryGetMethod(calleFunctionToken, &handlerMethod)) {
-      Info("JITInlining disabled for:  moduleId: ", calleeModuleId,
+      Info("*** JITInlining: Inlining disabled for:  moduleId: ", calleeModuleId,
            " MethodDef: ", HexStr(&calleFunctionToken, sizeof(mdMethodDef)),
            "]");
       *pfShouldInline = false;
@@ -2160,6 +2155,9 @@ HRESULT CorProfiler::CallTarget_RequestRejitForModule(
     std::vector<IntegrationMethod> filtered_integrations) {
   auto metadata_import = module_metadata->metadata_import;
 
+  std::vector<ModuleID> vtModules = std::vector<ModuleID>();
+  std::vector<mdMethodDef> vtMethodDefs = std::vector<mdMethodDef>();
+
   for (IntegrationMethod integration : filtered_integrations) {
     if (integration.replacement.wrapper_method.action !=
         "CallTargetModification"_W) {
@@ -2170,7 +2168,7 @@ HRESULT CorProfiler::CallTarget_RequestRejitForModule(
         integration.replacement.target_method.type_name.c_str(), NULL,
         &typeDef);
     if (FAILED(hr)) {
-      Warn("Can load the TypeDef for: ",
+      Warn("Can't load the TypeDef for: ",
            integration.replacement.target_method.type_name);
       continue;
     }
@@ -2199,7 +2197,7 @@ HRESULT CorProfiler::CallTarget_RequestRejitForModule(
       const auto caller =
           GetFunctionInfo(module_metadata->metadata_import, methodDef);
       if (!caller.IsValid()) {
-        Warn("Caller is not valid!");
+        Warn("The caller for the methoddef: ", HexStr(&methodDef, sizeof(mdMethodDef)), " is not valid!");
         continue;
       }
 
@@ -2207,7 +2205,7 @@ HRESULT CorProfiler::CallTarget_RequestRejitForModule(
       hr = functionInfo->method_signature.TryParse();
       if (FAILED(hr)) {
         delete functionInfo;
-        Warn("Method signature can not be parsed.");
+        Warn("The method signature: ", functionInfo->method_signature.str(), " cannot be parsed.");
         continue;
       }
 
@@ -2215,16 +2213,34 @@ HRESULT CorProfiler::CallTarget_RequestRejitForModule(
       methodHandler->SetMethodReplacement(
           new MethodReplacement(integration.replacement));
 
-      ModuleID modules = {module_id};
-      mdMethodDef methodsDefs = {methodDef};
-      Info("Requesting ReJIT [ModuleId=", module_id,
-           " MethodDef=", HexStr(&methodDef, sizeof(mdMethodDef)), "]");
-      this->info_->RequestReJIT(1, &modules, &methodsDefs);
+      vtModules.push_back(module_id);
+      vtMethodDefs.push_back(methodDef);
+      
+      bool caller_assembly_is_domain_neutral =
+          runtime_information_.is_desktop() && corlib_module_loaded &&
+          module_metadata->app_domain_id == corlib_app_domain_id;
 
+      Info("Enqueue for ReJIT [ModuleId=", module_id,
+           ", MethodDef=", HexStr(&methodDef, sizeof(mdMethodDef)), 
+           ", AppDomainId=", module_metadata->app_domain_id,
+           ", IsDomainNeutral=", caller_assembly_is_domain_neutral,
+           ", Assembly=", module_metadata->assemblyName, 
+           ", Type=", caller.type.name, 
+           ", Method=", caller.name, 
+           ", Signature=", caller.signature.str(),
+           "]");
+      
       enumIterator = ++enumIterator;
     }
   }
 
+  if (vtMethodDefs.size() > 0) {
+    ModuleID* modules = vtModules.data();
+    mdMethodDef* methodsDefs = vtMethodDefs.data();
+
+    Info("Requesting ReJIT for ", vtMethodDefs.size(), " methods.");
+    this->info_->RequestReJIT((ULONG)vtMethodDefs.size(), modules, methodsDefs);
+  }
   return S_OK;
 }
 
@@ -2253,10 +2269,10 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   mdTypeRef wrapper_type_ref = mdTypeRefNil;
   GetWrapperMethodRef(module_metadata, module_id, *method_replacement, wrapper_method_ref, wrapper_type_ref);
 
-  Info("*** CallTarget_RewriterCallback(): ", caller->name, 
-       " [IsVoid=", isVoid, 
+  Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name, 
+       "() [IsVoid=", isVoid, 
        ", IsStatic=", isStatic, 
-       ", Replacement=", method_replacement->wrapper_method.type_name,
+       ", IntegrationType=", method_replacement->wrapper_method.type_name,
        ", Arguments=", numArgs, 
        "]");
 
@@ -2269,18 +2285,19 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     return hr;
   }
 
+  // *** Store the original il code text if the dump_il option is enabled.
   std::string original_code;
   if (dump_il_rewrite_enabled) {
     original_code = GetILCodes(
         "*** CallTarget_RewriterCallback(): Original Code: ", &rewriter,
-        *caller);
+        *caller, module_metadata);
   }
 
   // *** Create the rewriter wrapper helper
   ILRewriterWrapper reWriterWrapper(&rewriter);
   reWriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
 
-  // *** Modify the Local Var Signature of the method and initialize new local vars
+  // *** Modify the Local Var Signature of the method and initialize the new local vars
   ULONG callTargetStateIndex = ULONG_MAX;
   ULONG exceptionIndex = ULONG_MAX;
   ULONG callTargetReturnIndex = ULONG_MAX;
@@ -2294,6 +2311,10 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
       &callTargetReturnIndex, &returnValueIndex, 
       &callTargetStateToken,
       &exceptionToken, &callTargetReturnToken, &firstInstruction);
+
+  // ***
+  // BEGIN METHOD PART
+  // ***
 
   // *** Load instance into the stack (if not static)
   if (isStatic) {
@@ -2452,7 +2473,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   ILInstr* methodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
   // ***
-  // EXCEPTION FINALLY
+  // EXCEPTION FINALLY / END METHOD PART
   // ***
   ILInstr* endMethodTryStartInstr;
 
@@ -2601,7 +2622,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   
   if (dump_il_rewrite_enabled) {
     Info(original_code);
-    Info(GetILCodes("*** CallTarget_RewriterCallback(): Modified Code: ", &rewriter, *caller));
+    Info(GetILCodes("*** CallTarget_RewriterCallback(): Modified Code: ",
+                    &rewriter, *caller, module_metadata));
   }
 
   hr = rewriter.Export();
@@ -2614,7 +2636,10 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
     return hr;
   }
 
-  Info("*** CallTarget_RewriterCallback(): Rewriter has been finished for ", caller->name);
+  Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".",
+        caller->name, "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
+        ", IntegrationType=", method_replacement->wrapper_method.type_name,
+        ", Arguments=", numArgs, "]");
   return S_OK;
 }
 
