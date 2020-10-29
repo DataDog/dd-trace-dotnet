@@ -33,6 +33,7 @@ SET_SOURCE_FILES_PROPERTIES(
 )
 
 add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
+    calltarget_tokens.cpp
     class_factory.cpp
     clr_helpers.cpp
     cor_profiler_base.cpp
@@ -44,6 +45,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
     logging.cpp
     metadata_builder.cpp
     miniutf.cpp
+    rejit_handler.cpp
     sig_helpers.cpp
     string.cpp
     util.cpp
