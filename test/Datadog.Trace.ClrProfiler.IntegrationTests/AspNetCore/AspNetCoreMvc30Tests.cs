@@ -1,5 +1,5 @@
+#if NETCOREAPP3_0
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             // EnableDebugMode();
         }
 
-        [TargetFrameworkVersionsFact("netcoreapp3.0")]
+        [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task MeetsAllAspNetCoreMvcExpectations()
@@ -23,3 +23,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 }
+#endif
