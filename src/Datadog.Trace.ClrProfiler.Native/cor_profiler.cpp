@@ -2404,21 +2404,31 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   }
 
   // *** Load the method arguments to the stack
+  unsigned elementType;
   if (numArgs <= 6) {
     // Load the arguments directly (FastPath)
     for (int i = 0; i < numArgs; i++) {
       reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+      auto argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+      if (argTypeFlags & TypeFlagByRef) {
+        Warn(
+            "*** CallTarget_RewriterCallback(): Methods with ref parameters "
+            "cannot be instrumented. ");
+        return E_FAIL;
+      }
     }
   } else {
     // Load the arguments inside an object array (SlowPath)
-    unsigned elementType;
     reWriterWrapper.CreateArray(callTargetTokens->GetObjectTypeRef(), numArgs);
     for (int i = 0; i < numArgs; i++) {
       reWriterWrapper.BeginLoadValueIntoArray(i);
       reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
       auto argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
       if (argTypeFlags & TypeFlagByRef) {
-        reWriterWrapper.LoadIND(elementType);
+        Warn(
+            "*** CallTarget_RewriterCallback(): Methods with ref parameters "
+            "cannot be instrumented. ");
+        return E_FAIL;
       }
       if (argTypeFlags & TypeFlagBoxedType) {
         auto tok = methodArguments[i].GetTypeTok(
