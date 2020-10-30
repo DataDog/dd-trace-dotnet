@@ -5,9 +5,9 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class MicrosoftSqlCommandTests : TestHelper
+    public class MicrosoftDataSqlClientTests : TestHelper
     {
-        public MicrosoftSqlCommandTests(ITestOutputHelper output)
+        public MicrosoftDataSqlClientTests(ITestOutputHelper output)
             : base("Microsoft.Data.SqlClient", output)
         {
             SetServiceVersion("1.0.0");
