@@ -110,28 +110,28 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void Contains(Serilog.Events.LogEvent logEvent, string service, string version, string env, ulong traceId, ulong spanId)
         {
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.ServiceKey));
-            Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogServiceKey));
+            Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.SerilogServiceKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
 
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.VersionKey));
-            Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.VersionKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogVersionKey));
+            Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.SerilogVersionKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
 
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.EnvKey));
-            Assert.Equal(env, logEvent.Properties[CorrelationIdentifier.EnvKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogEnvKey));
+            Assert.Equal(env, logEvent.Properties[CorrelationIdentifier.SerilogEnvKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
 
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString().Trim(new[] { '\"' })));
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogTraceIdKey));
+            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SerilogTraceIdKey].ToString().Trim(new[] { '\"' })));
 
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString().Trim(new[] { '\"' })));
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogSpanIdKey));
+            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SerilogSpanIdKey].ToString().Trim(new[] { '\"' })));
         }
 
         internal static void LogEventDoesNotContainCorrelationIdentifiers(Serilog.Events.LogEvent logEvent)
         {
             // Do not assert on the version property
             // Do not assert on the service property
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogSpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogTraceIdKey));
         }
     }
 }
