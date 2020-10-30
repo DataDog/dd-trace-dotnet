@@ -87,14 +87,6 @@ namespace Datadog.Trace
             // only set DogStatsdClient if tracer metrics are enabled
             if (Settings.TracerMetricsEnabled)
             {
-                // Run this first in case the port override is ready
-                TracingProcessManager.SubscribeToDogStatsDPortOverride(
-                    port =>
-                    {
-                        Log.Debug("Attempting to override dogstatsd port with {0}", port);
-                        Statsd = CreateDogStatsdClient(Settings, DefaultServiceName, port);
-                    });
-
                 Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort);
             }
 

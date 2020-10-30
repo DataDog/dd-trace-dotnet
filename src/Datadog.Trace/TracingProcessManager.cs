@@ -13,7 +13,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {
@@ -22,7 +21,7 @@ namespace Datadog.Trace
     /// </summary>
     internal class TracingProcessManager
     {
-        internal static readonly int KeepAliveInterval = 120_000;
+        internal static readonly int KeepAliveInterval = 30_000;
         internal static readonly int ExceptionRetryInterval = 1_000;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
@@ -30,6 +29,7 @@ namespace Datadog.Trace
             Name = "datadog-trace-agent",
             ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
+            RequiresPort = true,
             RefreshPortVars = () =>
             {
                 var portString = TraceAgentMetadata.Port?.ToString(CultureInfo.InvariantCulture);
@@ -43,10 +43,10 @@ namespace Datadog.Trace
             Name = "dogstatsd",
             ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
+            RequiresPort = false,
             RefreshPortVars = () =>
             {
-                var portString = DogStatsDMetadata.Port?.ToString(CultureInfo.InvariantCulture);
-                Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, portString);
+                // no-op
             }
         };
 
@@ -112,16 +112,6 @@ namespace Datadog.Trace
             }
         }
 
-        public static void SubscribeToDogStatsDPortOverride(Action<int> subscriber)
-        {
-            DogStatsDMetadata.PortSubscribers.Add(subscriber);
-
-            if (DogStatsDMetadata.Port != null)
-            {
-                subscriber(DogStatsDMetadata.Port.Value);
-            }
-        }
-
         public static void StopProcesses()
         {
             _cancellationTokenSource?.Cancel();
@@ -174,7 +164,7 @@ namespace Datadog.Trace
                 }
 
                 Log.Debug("Initializing sub process port file watchers.");
-                foreach (var instance in Processes)
+                foreach (var instance in Processes.Where(p => p.RequiresPort))
                 {
                     instance.InitializePortFileWatcher();
                 }
@@ -422,18 +412,21 @@ namespace Datadog.Trace
 
         private static void GrabFreePortForInstance(ProcessMetadata instance)
         {
-            instance.Port = GetFreeTcpPort();
-            if (instance.Port == null)
+            if (instance.RequiresPort)
             {
-                throw new Exception($"Unable to secure a port for {instance.Name}");
-            }
+                instance.Port = GetFreeTcpPort();
+                if (instance.Port == null)
+                {
+                    throw new Exception($"Unable to secure a port for {instance.Name}");
+                }
 
-            instance.RefreshPortVars();
-            Log.Debug("Attempting to use port {0} for the {1}.", instance.Port, instance.Name);
+                instance.RefreshPortVars();
+                Log.Debug("Attempting to use port {0} for the {1}.", instance.Port, instance.Name);
 
-            if (instance.PortFilePath != null)
-            {
-                File.WriteAllText(instance.PortFilePath, instance.Port.Value.ToString(CultureInfo.InvariantCulture));
+                if (instance.PortFilePath != null)
+                {
+                    File.WriteAllText(instance.PortFilePath, instance.Port.Value.ToString(CultureInfo.InvariantCulture));
+                }
             }
         }
 
@@ -462,6 +455,8 @@ namespace Datadog.Trace
             /// Gets or sets a value indicating whether the process has ever been tried.
             /// </summary>
             public bool HasAttemptedStartup { get; set; }
+
+            public bool RequiresPort { get; set; }
 
             public string PortFilePath { get; private set; }
 
