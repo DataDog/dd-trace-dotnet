@@ -17,3 +17,7 @@ RUN cd /opt && git clone --depth 1 --branch v3.3.0 https://github.com/nlohmann/j
 # - re2
 RUN cd /opt && git clone --depth 1 --branch 2018-10-01 https://github.com/google/re2.git
 RUN cd /opt/re2 && env CXXFLAGS="-O3 -g -fPIC" make
+
+# - fmt
+RUN cd /opt && git clone --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git
+RUN cd /opt/fmt && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE . && make
