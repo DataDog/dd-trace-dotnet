@@ -1,3 +1,4 @@
+#if !NET452
 using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -62,3 +63,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
     }
 }
+#endif
