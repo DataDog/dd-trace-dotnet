@@ -7,7 +7,6 @@
 #include <iostream>
 #include <memory>
 
-#include "string.h"  // NOLINT
 #include "util.h"
 
 namespace trace {
