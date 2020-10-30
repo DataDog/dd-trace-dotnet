@@ -8,7 +8,7 @@ ARG WORKSPACE=/workspace
 ARG PUBLISH_FOLDER=/workspace/publish
 ARG TRACER_HOME=/dd-tracer-dotnet
 
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build-managed-base
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-managed-base
 # Instructions to install .NET Core runtimes from
 # https://docs.microsoft.com/en-us/dotnet/core/install/linux-package-manager-debian10
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.asc.gpg && \
@@ -75,9 +75,11 @@ RUN cd /opt && git clone --depth 1 --branch v3.3.0 https://github.com/nlohmann/j
 
 # - re2
 RUN cd /opt && git clone --depth 1 --branch 2018-10-01 https://github.com/google/re2.git
-RUN cd /opt/re2 && env CXXFLAGS="-O3 -g -fPIC" make
+RUN cd /opt/re2 && env CXXFLAGS="-O3 -g -fPIC" make 
 
-
+# - fmt
+RUN cd /opt && git clone --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git
+RUN cd /opt/fmt && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE . && make
 
 
 FROM build-managed-base as build-managed

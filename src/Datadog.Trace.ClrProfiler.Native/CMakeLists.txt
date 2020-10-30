@@ -62,7 +62,7 @@ target_include_directories("Datadog.Trace.ClrProfiler.Native.static"
 )
 target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
     /opt/re2/obj/libre2.a
-    ${CMAKE_SOURCE_DIR}/lib/fmt_x64-linux/lib/libfmt.a
+    /opt/fmt/libfmt.a
     -static-libgcc
     -static-libstdc++
 )

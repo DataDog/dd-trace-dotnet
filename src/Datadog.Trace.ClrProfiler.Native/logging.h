@@ -1,13 +1,12 @@
 #ifndef DD_CLR_PROFILER_LOGGING_H_
 #define DD_CLR_PROFILER_LOGGING_H_
+#include "util.h"
 
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 
 #include <iostream>
 #include <memory>
-
-#include "util.h"
 
 namespace trace {
 
