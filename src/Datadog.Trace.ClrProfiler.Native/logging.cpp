@@ -41,7 +41,7 @@ Logger::Logger() {
 
   static auto current_process_name = ToString(GetCurrentProcessName());
 
-  m_fileout->set_pattern("[%D %I:%M:%S.%e %p] [" + current_process_name +
+  m_fileout->set_pattern("%D %I:%M:%S.%e %p [" + current_process_name +
                          "|%P|%t] [%l] %v");
 
   m_fileout->flush_on(spdlog::level::info);
