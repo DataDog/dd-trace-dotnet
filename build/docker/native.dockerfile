@@ -40,7 +40,7 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
 # the official download link (https://cmake.org/files/v3.12/cmake-3.12.3-Linux-x86_64.sh) is slow and unreliable.
 # changing to the mirror in github (https://github.com/Kitware/CMake/releases/download/v3.12.3/cmake-3.12.3-Linux-x86_64.sh)
 RUN apt-get remove -y cmake && \
-    curl -o /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v3.12.3/cmake-3.12.3-Linux-x86_64.sh && \
+    curl -L -o /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v3.12.3/cmake-3.12.3-Linux-x86_64.sh && \
     sh /tmp/cmake.sh --prefix=/usr/local --exclude-subdir --skip-license
 
 # libraries
