@@ -178,10 +178,10 @@ namespace UpdateVendors
         {
             var drops = new List<string>()
             {
-                "StatsdClient\\DogStatsdService.cs",
-                "StatsdClient\\MetricsTimer.cs",
-                "StatsdClient\\IDogStatsD.cs",
-                "StatsdClient\\DogStatsD.cs",
+                // "StatsdClient\\DogStatsdService.cs",
+                // "StatsdClient\\MetricsTimer.cs",
+                // "StatsdClient\\IDogStatsD.cs",
+                // "StatsdClient\\DogStatsD.cs",
             };
 
             foreach (var drop in drops)
