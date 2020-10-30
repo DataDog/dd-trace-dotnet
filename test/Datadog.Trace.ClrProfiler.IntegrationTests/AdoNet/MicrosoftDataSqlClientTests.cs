@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.SqlServer-" + dbType;
+            const string expectedServiceName = "Samples.Microsoft.Data.SqlClient-" + dbType;
 
             // NOTE: opt into the additional instrumentation of calls into netstandard.dll
             SetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", "true");
