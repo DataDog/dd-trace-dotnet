@@ -108,7 +108,7 @@ namespace UpdateVendors
             var zipLocation = Path.Combine(DownloadDirectory, $"{libraryName}.zip");
             var extractLocation = Path.Combine(DownloadDirectory, $"{libraryName}");
             var vendorFinalPath = Path.Combine(_vendorProjectDirectory, libraryName);
-            var sourceUrlLocation = Path.Combine(vendorFinalPath, "_source_url.txt");
+            var sourceUrlLocation = Path.Combine(vendorFinalPath, "_last_downloaded_source_url.txt");
 
             // Ensure the url has changed, or don't bother upgrading
             var currentSource = File.ReadAllText(sourceUrlLocation);
