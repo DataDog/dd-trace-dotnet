@@ -26,7 +26,7 @@ namespace AspNetCoreWithSerilog.Controllers
 
         public IActionResult Privacy()
         {
-            _logger.LogInformation("Entered Home/Index action.");
+            _logger.LogInformation("Entered Home/Privacy action.");
             return View();
         }
 
