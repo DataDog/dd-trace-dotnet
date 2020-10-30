@@ -9,6 +9,8 @@ namespace Datadog.Trace.Vendors.StatsdClient
 {
     internal class MetricsSender
     {
+#pragma warning disable 618
+        // MANUAL CHANGE: Obsolete ignore because this is internal code
         private readonly Telemetry _optionalTelemetry;
         private readonly StatsBufferize _statsBufferize;
         private readonly Serializers _serializers;
@@ -31,6 +33,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
             _serializers = serializers;
             _truncateIfTooLong = truncateIfTooLong;
         }
+#pragma warning restore 618
 
         public void SendEvent(string title, string text, string alertType = null, string aggregationKey = null, string sourceType = null, int? dateHappened = null, string priority = null, string hostname = null, string[] tags = null, bool truncateIfTooLong = false)
         {

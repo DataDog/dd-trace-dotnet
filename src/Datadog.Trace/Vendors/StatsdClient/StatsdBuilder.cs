@@ -40,6 +40,9 @@ namespace Datadog.Trace.Vendors.StatsdClient
                 config.Advanced);
 
             var serializers = CreateSerializers(config.Prefix, globalTags, config.Advanced.MaxMetricsInAsyncQueue);
+
+#pragma warning disable 618
+            // MANUAL CHANGE: Obsolete ignore because this is internal code
             var metricsSender = new MetricsSender(
                 statsBufferize,
                 new RandomGenerator(),
@@ -47,6 +50,8 @@ namespace Datadog.Trace.Vendors.StatsdClient
                 serializers,
                 telemetry,
                 config.StatsdTruncateIfTooLong);
+#pragma warning restore 618
+
             return new StatsdData(metricsSender, statsBufferize, transport, telemetry);
         }
 
@@ -54,7 +59,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
         {
             var statsdServerName = !string.IsNullOrEmpty(config.StatsdServerName)
                             ? config.StatsdServerName
-                            : Environment.GetEnvironmentVariable(StatsdConfig.DD_AGENT_HOST_ENV_VAR);
+                            : Environment.GetEnvironmentVariable(StatsdConfig.AgentHostEnvVar);
 
             var pipeName = !string.IsNullOrEmpty(config.PipeName)
                             ? config.PipeName
@@ -65,7 +70,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
                 // Ignore pipe name in the error message as its usage is internal only.
                 throw new ArgumentNullException(
                     $"{nameof(config)}.{nameof(config.StatsdServerName)} and"
-                    + $" {StatsdConfig.DD_AGENT_HOST_ENV_VAR} environment variable not set");
+                    + $" {StatsdConfig.AgentHostEnvVar} environment variable not set");
             }
 
             return new DogStatsdEndPoint
@@ -221,7 +226,10 @@ namespace Datadog.Trace.Vendors.StatsdClient
 
         private ITransport CreateUDPTransport(DogStatsdEndPoint endPoint)
         {
+#pragma warning disable 618
+            // MANUAL CHANGE: Obsolete ignore because this is internal code
             var address = StatsdUDP.GetIpv4Address(endPoint.ServerName);
+#pragma warning restore 618
             var port = endPoint.Port;
 
             var ipEndPoint = new System.Net.IPEndPoint(address, port);
