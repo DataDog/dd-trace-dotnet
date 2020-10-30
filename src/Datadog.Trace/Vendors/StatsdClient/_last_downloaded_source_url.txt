@@ -1,1 +1,1 @@
-﻿https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip
+https://github.com/DataDog/dogstatsd-csharp-client/archive/5.1.0.zip
