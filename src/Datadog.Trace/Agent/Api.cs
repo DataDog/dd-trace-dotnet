@@ -61,6 +61,9 @@ namespace Datadog.Trace.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
             var traceIds = GetUniqueTraceIds(traces);
+            var traceCount = traceIds.Count;
+
+            Log.Debug("Sending {0} traces to the DD agent", traceCount);
 
             var batch = _statsd?.StartBatch(initialCapacity: 2) ?? default;
 
@@ -69,7 +72,7 @@ namespace Datadog.Trace.Agent
                 var request = _apiRequestFactory.Create(_tracesEndpoint);
 
                 // Set additional headers
-                request.AddHeader(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
+                request.AddHeader(AgentHttpHeaderNames.TraceCount, traceCount.ToString());
                 if (_frameworkDescription != null)
                 {
                     request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, _frameworkDescription.Name);
@@ -94,6 +97,7 @@ namespace Datadog.Trace.Agent
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
                         Log.Error(ex, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
+                        Log.Error("Failed to send {0} traces to the DD agent", traceCount);
                         return false;
                     }
 #endif
@@ -107,8 +111,10 @@ namespace Datadog.Trace.Agent
                     if (retryCount >= retryLimit)
                     {
                         // stop retrying
-                        Log.Error(exception, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
                         batch.Send();
+
+                        Log.Error(exception, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
+                        Log.Error("Failed to send {0} traces to the DD agent", traceCount);
                         return false;
                     }
 
@@ -149,6 +155,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 batch.Send();
+                Log.Debug("Sucessfully sent {0} traces to the DD agent", traceCount);
                 return true;
             }
         }
