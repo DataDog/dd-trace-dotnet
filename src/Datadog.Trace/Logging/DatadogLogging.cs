@@ -55,7 +55,7 @@ namespace Datadog.Trace.Logging
                 }
 
                 // Ends in a dash because of the date postfix
-                var managedLogPath = Path.Combine(logDirectory, $"dotnet-tracer-{DomainMetadata.ProcessName}-.log");
+                var managedLogPath = Path.Combine(logDirectory, $"dotnet-tracer-managed-{DomainMetadata.ProcessName}-.log");
 
                 var loggerConfiguration =
                     new LoggerConfiguration()
