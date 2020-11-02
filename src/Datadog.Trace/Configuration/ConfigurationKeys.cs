@@ -172,6 +172,12 @@ namespace Datadog.Trace.Configuration
         public const string TracerMetricsEnabled = "DD_TRACE_METRICS_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling or disabling runtime metrics sent to DogStatsD.
+        /// Default value is <c>false</c> (disabled).
+        /// </summary>
+        public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
+
+        /// <summary>
         /// Configuration key for setting the approximate maximum size,
         /// in bytes, for Tracer log files.
         /// Default value is 10 MB.

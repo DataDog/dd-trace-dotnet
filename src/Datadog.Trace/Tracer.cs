@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -44,6 +45,7 @@ namespace Datadog.Trace
 
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
+        private readonly RuntimeMetricsWriter _runtimeMetricsWriter;
 
         private IAgentWriter _agentWriter;
 
@@ -181,9 +183,17 @@ namespace Datadog.Trace
                 InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
             }
 
-            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1 && Settings.StartupDiagnosticLogEnabled)
+            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
             {
-                _ = WriteDiagnosticLog();
+                if (Settings.StartupDiagnosticLogEnabled)
+                {
+                    _ = WriteDiagnosticLog();
+                }
+
+                if (Settings.RuntimeMetricsEnabled)
+                {
+                    _runtimeMetricsWriter = new RuntimeMetricsWriter(Statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort), 10000);
+                }
             }
         }
 
@@ -575,7 +585,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Settings.LogsInjectionEnabled);
 
                     writer.WritePropertyName("runtime_metrics_enabled");
-                    writer.WriteValue(Settings.TracerMetricsEnabled);
+                    writer.WriteValue(Settings.RuntimeMetricsEnabled);
 
                     writer.WritePropertyName("disabled_integrations");
                     writer.WriteStartArray();
