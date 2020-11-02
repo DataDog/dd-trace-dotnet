@@ -29,9 +29,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 #if NET452
             var expectedSpanCount = 49; // 7 queries * 7 groups
 #elif NET461
-            var expectedSpanCount = 77; // 7 queries * 11 groups
+            var expectedSpanCount = 73; // 7 queries * 11 groups - ?
 #else
-            var expectedSpanCount = 81; // 7 queries * 11 groups + 4 spans from generic wrapper on .NET Core
+            var expectedSpanCount = 77; // 7 queries * 11 groups
 #endif
 
             const string dbType = "sql-server";
