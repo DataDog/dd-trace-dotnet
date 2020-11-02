@@ -2,10 +2,10 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Samples.DatabaseHelper;
 using Microsoft.Data.SqlClient;
+using Samples.DatabaseHelper;
 
-namespace Samples.MicrosoftSqlServer
+namespace Samples.Microsoft.Data.SqlClient
 {
     public class MicrosoftSqlCommandExecutor : DbCommandExecutor<SqlCommand>
     {

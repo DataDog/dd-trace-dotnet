@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Samples.DatabaseHelper;
 using Microsoft.Data.SqlClient;
+using Samples.DatabaseHelper;
 
-namespace Samples.MicrosoftSqlServer
+namespace Samples.Microsoft.Data.SqlClient
 {
     internal static class Program
     {
