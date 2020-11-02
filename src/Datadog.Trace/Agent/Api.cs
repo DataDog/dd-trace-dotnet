@@ -155,7 +155,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 batch.Send();
-                Log.Debug("Sucessfully sent {0} traces to the DD agent", traceCount);
+                Log.Debug("Successfully sent {0} traces to the DD agent", traceCount);
                 return true;
             }
         }
