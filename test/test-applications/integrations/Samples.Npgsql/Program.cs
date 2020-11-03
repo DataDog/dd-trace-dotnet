@@ -10,7 +10,7 @@ namespace Samples.Npgsql
     {
         private static async Task Main()
         {
-            var commandFactory = new DbCommandFactory($"Npgsql-Test-{Guid.NewGuid()}");
+            var commandFactory = new DbCommandFactory($"\"Npgsql-Test-{Guid.NewGuid():N}\"");
             var commandExecutor = new NpgsqlCommandExecutor();
             var cts = new CancellationTokenSource();
 
