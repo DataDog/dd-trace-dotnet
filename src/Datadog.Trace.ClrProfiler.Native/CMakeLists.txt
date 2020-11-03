@@ -5,7 +5,7 @@ project("Datadog.Trace.ClrProfiler.Native" VERSION 1.20.0)
 
 add_compile_options(-std=c++11 -fPIC -fms-extensions)
 add_compile_options(-DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
-add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
+add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wno-c++1z-extensions)
 
 SET(MANAGED_LOADER_DIRECTORY
     ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0
