@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -68,6 +68,9 @@ namespace CallTargetNativeTest
                     Console.WriteLine("Run with the profiler and use a number from 0-7 as an argument.");
                     break;
             }
+
+            Console.WriteLine("Press ENTER to exit.");
+            Console.ReadLine();
         }
 
         private static void Argument0()

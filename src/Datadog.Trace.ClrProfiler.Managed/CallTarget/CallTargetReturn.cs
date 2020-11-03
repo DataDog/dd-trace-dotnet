@@ -43,6 +43,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public T GetReturnValue() => _returnValue;
+
+        /// <summary>
+        /// ToString override
+        /// </summary>
+        /// <returns>String value</returns>
+        public override string ToString()
+        {
+            return $"{typeof(CallTargetReturn<T>).FullName}({_returnValue})";
+        }
     }
 
     /// <summary>

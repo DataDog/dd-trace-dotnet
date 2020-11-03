@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Begin Method Invoker
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <returns>Call target state</returns>
 #if NETCOREAPP3_1 || NET5_0
@@ -25,17 +25,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetState BeginMethod<TIntegration, TInstance>(TInstance instance)
+        public static CallTargetState BeginMethod<TIntegration, TTarget>(TTarget instance)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TInstance)}>({instance})");
+                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}>({instance})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance>.Invoke(instance);
+                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TTarget>.Invoke(instance);
             }
 
             return CallTargetState.GetDefault();
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Begin Method Invoker
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <typeparam name="TArg1">First argument type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <param name="arg1">First argument value</param>
@@ -55,17 +55,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1>(TInstance instance, TArg1 arg1)
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1>(TTarget instance, TArg1 arg1)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TInstance)}, {typeof(TArg1)}>({instance}, {arg1})");
+                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}>({instance}, {arg1})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1>.Invoke(instance, arg1);
+                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TTarget, TArg1>.Invoke(instance, arg1);
             }
 
             return CallTargetState.GetDefault();
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Begin Method Invoker
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <typeparam name="TArg1">First argument type</typeparam>
         /// <typeparam name="TArg2">Second argument type</typeparam>
         /// <param name="instance">Instance value</param>
@@ -87,17 +87,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2>(TInstance instance, TArg1 arg1, TArg2 arg2)
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2>(TTarget instance, TArg1 arg1, TArg2 arg2)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TInstance)}, {typeof(TArg1)}, {typeof(TArg2)}>({instance}, {arg1}, {arg2})");
+                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}>({instance}, {arg1}, {arg2})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2>.Invoke(instance, arg1, arg2);
+                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2>.Invoke(instance, arg1, arg2);
             }
 
             return CallTargetState.GetDefault();
@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Begin Method Invoker
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <typeparam name="TArg1">First argument type</typeparam>
         /// <typeparam name="TArg2">Second argument type</typeparam>
         /// <typeparam name="TArg3">Third argument type</typeparam>
@@ -121,17 +121,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3)
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TInstance)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}>({instance}, {arg1}, {arg2}, {arg3})");
+                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}>({instance}, {arg1}, {arg2}, {arg3})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2, TArg3>.Invoke(instance, arg1, arg2, arg3);
+                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3>.Invoke(instance, arg1, arg2, arg3);
             }
 
             return CallTargetState.GetDefault();
@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Begin Method Invoker
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <typeparam name="TArg1">First argument type</typeparam>
         /// <typeparam name="TArg2">Second argument type</typeparam>
         /// <typeparam name="TArg3">Third argument type</typeparam>
@@ -157,17 +157,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TInstance)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4})");
+                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4>.Invoke(instance, arg1, arg2, arg3, arg4);
+                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>.Invoke(instance, arg1, arg2, arg3, arg4);
             }
 
             return CallTargetState.GetDefault();
@@ -177,7 +177,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Begin Method Invoker
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <typeparam name="TArg1">First argument type</typeparam>
         /// <typeparam name="TArg2">Second argument type</typeparam>
         /// <typeparam name="TArg3">Third argument type</typeparam>
@@ -195,17 +195,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5)
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TInstance)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5})");
+                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5>.Invoke(instance, arg1, arg2, arg3, arg4, arg5);
+                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>.Invoke(instance, arg1, arg2, arg3, arg4, arg5);
             }
 
             return CallTargetState.GetDefault();
@@ -215,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Begin Method Invoker
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <typeparam name="TArg1">First argument type</typeparam>
         /// <typeparam name="TArg2">Second argument type</typeparam>
         /// <typeparam name="TArg3">Third argument type</typeparam>
@@ -235,17 +235,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetState BeginMethod<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TInstance instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6)
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TInstance)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}, {typeof(TArg6)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6})");
+                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}, {typeof(TArg6)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TInstance, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>.Invoke(instance, arg1, arg2, arg3, arg4, arg5, arg6);
+                return CallTargetInvokerHandler.BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>.Invoke(instance, arg1, arg2, arg3, arg4, arg5, arg6);
             }
 
             return CallTargetState.GetDefault();
@@ -255,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Begin Method Invoker Slow Path
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <param name="arguments">Object arguments array</param>
         /// <returns>Call target state</returns>
@@ -264,17 +264,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetState BeginMethod<TIntegration, TInstance>(TInstance instance, object[] arguments)
+        public static CallTargetState BeginMethod<TIntegration, TTarget>(TTarget instance, object[] arguments)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TInstance)}>({instance}, args: {arguments?.Length})");
+                Console.WriteLine($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}>({instance}, args: {arguments?.Length})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.BeginMethodSlowHandler<TIntegration, TInstance>.Invoke(instance, arguments);
+                return CallTargetInvokerHandler.BeginMethodSlowHandler<TIntegration, TTarget>.Invoke(instance, arguments);
             }
 
             return CallTargetState.GetDefault();
@@ -284,7 +284,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// End Method with Void return value invoker
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <param name="exception">Exception value</param>
         /// <param name="state">CallTarget state</param>
@@ -294,17 +294,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetReturn EndMethod<TIntegration, TInstance>(TInstance instance, Exception exception, CallTargetState state)
+        public static CallTargetReturn EndMethod<TIntegration, TTarget>(TTarget instance, Exception exception, CallTargetState state)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TInstance)}>({instance}, {exception?.ToString() ?? "(null)"}, {state})");
+                Console.WriteLine($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TTarget)}>({instance}, {exception?.ToString() ?? "(null)"}, {state})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.EndMethodHandler<TIntegration, TInstance>.Invoke(instance, exception, state);
+                return CallTargetInvokerHandler.EndMethodHandler<TIntegration, TTarget>.Invoke(instance, exception, state);
             }
 
             return CallTargetReturn.GetDefault();
@@ -314,7 +314,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// End Method with Return value invoker
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <typeparam name="TReturn">Return type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <param name="returnValue">Return value</param>
@@ -326,17 +326,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static CallTargetReturn<TReturn> EndMethod<TIntegration, TInstance, TReturn>(TInstance instance, TReturn returnValue, Exception exception, CallTargetState state)
+        public static CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TInstance)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
+                Console.WriteLine($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
             }
 #endif
-            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.IsIntegrationEnabled)
+            if (CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return CallTargetInvokerHandler.EndMethodHandler<TIntegration, TInstance, TReturn>.Invoke(instance, returnValue, exception, state);
+                return CallTargetInvokerHandler.EndMethodHandler<TIntegration, TTarget, TReturn>.Invoke(instance, returnValue, exception, state);
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
@@ -346,22 +346,22 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Log integration exception
         /// </summary>
         /// <typeparam name="TIntegration">Integration type</typeparam>
-        /// <typeparam name="TInstance">Instance type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="exception">Integration exception instance</param>
 #if NETCOREAPP3_1 || NET5_0
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static void LogException<TIntegration, TInstance>(Exception exception)
+        public static void LogException<TIntegration, TTarget>(Exception exception)
         {
 #if DEBUG
             if (IsTestMode)
             {
-                Console.WriteLine($"ProfilerOK: LogException<{typeof(TIntegration)}, {typeof(TInstance)}>({exception})");
+                Console.WriteLine($"ProfilerOK: LogException<{typeof(TIntegration)}, {typeof(TTarget)}>({exception})");
             }
 #endif
-            CallTargetInvokerHandler.IntegrationOptions<TIntegration, TInstance>.LogException(exception);
+            CallTargetInvokerHandler.IntegrationOptions<TIntegration, TTarget>.LogException(exception);
         }
 
         /// <summary>

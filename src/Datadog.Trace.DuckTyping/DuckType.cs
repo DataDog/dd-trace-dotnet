@@ -537,6 +537,7 @@ namespace Datadog.Trace.DuckTyping
             /// </summary>
             public readonly Type TargetType;
 
+            private readonly Type _proxyType;
             private readonly ExceptionDispatchInfo _exceptionInfo;
             private readonly Delegate _activator;
 
@@ -551,6 +552,7 @@ namespace Datadog.Trace.DuckTyping
             internal CreateTypeResult(Type proxyTypeDefinition, Type proxyType, Type targetType, Delegate activator, ExceptionDispatchInfo exceptionInfo)
             {
                 TargetType = targetType;
+                _proxyType = proxyType;
                 _activator = activator;
                 _exceptionInfo = exceptionInfo;
                 Success = proxyType != null && exceptionInfo == null;
@@ -562,6 +564,18 @@ namespace Datadog.Trace.DuckTyping
                         .CreateDelegate(
                         typeof(CreateProxyInstance<>).MakeGenericType(proxyTypeDefinition),
                         this);
+                }
+            }
+
+            /// <summary>
+            /// Gets the Proxy type
+            /// </summary>
+            public Type ProxyType
+            {
+                get
+                {
+                    _exceptionInfo?.Throw();
+                    return _proxyType;
                 }
             }
 

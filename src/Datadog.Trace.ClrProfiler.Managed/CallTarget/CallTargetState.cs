@@ -36,5 +36,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             return new CallTargetState(null);
         }
+
+        /// <summary>
+        /// ToString override
+        /// </summary>
+        /// <returns>String value</returns>
+        public override string ToString()
+        {
+            return $"{typeof(CallTargetState).FullName}({_state})";
+        }
     }
 }
