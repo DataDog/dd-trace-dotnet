@@ -59,8 +59,8 @@ const WSTRING disabled_integrations = "DD_DISABLED_INTEGRATIONS"_W;
 
 // Sets the path for the profiler's log file.
 // If not set, default is
-// "%ProgramData%"\Datadog .NET Tracer\logs\dotnet-profiler.log" on Windows or
-// "/var/log/datadog/dotnet/dotnet-profiler.log" on Linux.
+// "%ProgramData%"\Datadog .NET Tracer\logs\dotnet-tracer-native.log" on Windows or
+// "/var/log/datadog/dotnet/dotnet-tracer-native.log" on Linux.
 const WSTRING log_path = "DD_TRACE_LOG_PATH"_W;
 
 // Sets whether to disable all JIT optimizations.

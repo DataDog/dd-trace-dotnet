@@ -33,6 +33,6 @@ Add any other context about the problem here.
 NOTE: To contact our support team, see https://www.datadoghq.com/support/
 When contacting support, please include the information requested above.
 If possible, also include the tracer log files found (by default) in:
-Windows: %ProgramData%\Datadog .NET Tracer\logs\dotnet-profiler.log
-Linux: /var/log/datadog/dotnet/dotnet-profiler.log
+Windows: %ProgramData%\Datadog .NET Tracer\logs\
+Linux: /var/log/datadog/dotnet/
 --!>
