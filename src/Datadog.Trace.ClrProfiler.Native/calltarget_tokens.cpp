@@ -149,7 +149,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
 
     hr = module_metadata->assembly_emit->DefineAssemblyRef(
         &assemblyReference.public_key.data, public_key_size,
-        assemblyReference.name.data(), &assembly_metadata, NULL, NULL, 0,
+        assemblyReference.name.data(), &assembly_metadata, NULL, 0, 0,
         &profilerAssemblyRef);
 
     if (FAILED(hr)) {
@@ -626,7 +626,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   if (returnSignatureType != NULL) {
     *returnValueIndex = newLocalsCount - 4;
   } else {
-    *returnValueIndex = ULONG_MAX;
+    *returnValueIndex = static_cast<ULONG>(ULONG_MAX);
   }
   *exceptionIndex = newLocalsCount - 3;
   *callTargetReturnIndex = newLocalsCount - 2;
@@ -665,7 +665,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
   }
 
   // Init locals
-  if (*returnValueIndex != ULONG_MAX) {
+  if (*returnValueIndex != static_cast<ULONG>(ULONG_MAX)) {
     *firstInstruction = rewriterWrapper->CallMember(
         GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
     rewriterWrapper->StLocal(*returnValueIndex);

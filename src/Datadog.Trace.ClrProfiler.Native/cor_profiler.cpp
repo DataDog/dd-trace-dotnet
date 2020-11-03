@@ -2227,7 +2227,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(
     }
     mdTypeDef typeDef = mdTypeDefNil;
     auto hr = metadata_import->FindTypeDefByName(
-        integration.replacement.target_method.type_name.c_str(), NULL,
+        integration.replacement.target_method.type_name.c_str(), mdTokenNil,
         &typeDef);
     if (FAILED(hr)) {
       Warn("Can't load the TypeDef for: ",
@@ -2360,10 +2360,10 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(
   reWriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
 
   // *** Modify the Local Var Signature of the method and initialize the new local vars
-  ULONG callTargetStateIndex = ULONG_MAX;
-  ULONG exceptionIndex = ULONG_MAX;
-  ULONG callTargetReturnIndex = ULONG_MAX;
-  ULONG returnValueIndex = ULONG_MAX;
+  ULONG callTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
+  ULONG exceptionIndex = static_cast<ULONG>(ULONG_MAX);
+  ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
+  ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
   mdToken callTargetStateToken = mdTokenNil;
   mdToken exceptionToken = mdTokenNil;
   mdToken callTargetReturnToken = mdTokenNil;
