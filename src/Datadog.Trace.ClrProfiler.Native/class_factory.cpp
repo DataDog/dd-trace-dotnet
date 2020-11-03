@@ -47,9 +47,17 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
 
   trace::Info("Datadog CLR Profiler ", PROFILER_VERSION,
 #ifdef BIT64
-              " 64-bit"
+              " 64-bit",
 #else
-              " 32-bit"
+              " 32-bit",
+#endif
+
+              " on",
+
+#ifdef _WIN32
+              " Windows"
+#else
+              " Linux"
 #endif
   );
   trace::Debug("ClassFactory::CreateInstance");
