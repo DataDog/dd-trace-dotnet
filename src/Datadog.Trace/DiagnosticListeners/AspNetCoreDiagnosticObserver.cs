@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -22,7 +23,7 @@ namespace Datadog.Trace.DiagnosticListeners
     /// </summary>
     internal sealed class AspNetCoreDiagnosticObserver : DiagnosticObserver
     {
-        public const string IntegrationName = "AspNetCore";
+        public const int IntegrationId = (int)IntegrationIds.AspNetCore;
 
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
         private const string HttpRequestInOperationName = "aspnet_core.request";
@@ -202,7 +203,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = _tracer ?? Tracer.Instance;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -233,14 +234,14 @@ namespace Datadog.Trace.DiagnosticListeners
 
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
-            tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: true);
+            tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
         }
 
         private void OnMvcBeforeAction(object arg)
         {
             var tracer = _tracer ?? Tracer.Instance;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -271,7 +272,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = _tracer ?? Tracer.Instance;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -291,7 +292,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = _tracer ?? Tracer.Instance;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }

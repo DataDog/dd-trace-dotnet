@@ -54,6 +54,8 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
+            Integrations = GetIntegrationSettings(source, DisabledIntegrationNames);
+
             var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
                             // backwards compatibility for names used in the past
                             source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
@@ -94,8 +96,6 @@ namespace Datadog.Trace.Configuration
             MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
                                           // default value
                                           100;
-
-            Integrations = new IntegrationSettingsCollection(source);
 
             GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
                          // backwards compatibility for names used in the past
@@ -220,9 +220,9 @@ namespace Datadog.Trace.Configuration
         public double? GlobalSamplingRate { get; set; }
 
         /// <summary>
-        /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
+        /// Gets a collection of <see cref="Integrations"/> keyed by integration id.
         /// </summary>
-        public IntegrationSettingsCollection Integrations { get; }
+        public IntegrationSettings[] Integrations { get; }
 
         /// <summary>
         /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
@@ -295,31 +295,31 @@ namespace Datadog.Trace.Configuration
             return GlobalSettings.CreateDefaultConfigurationSource();
         }
 
-        internal bool IsIntegrationEnabled(string name)
+        internal bool IsIntegrationEnabled(int integrationId)
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
             {
-                bool disabled = Integrations[name].Enabled == false || DisabledIntegrationNames.Contains(name);
-                return !disabled;
+                bool? enabled = Integrations[integrationId].Enabled;
+                return enabled != false;
             }
 
             return false;
         }
 
-        internal bool IsOptInIntegrationEnabled(string name)
+        internal bool IsOptInIntegrationEnabled(int integrationId)
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
             {
-                var disabled = Integrations[name].Enabled != true || DisabledIntegrationNames.Contains(name);
-                return !disabled;
+                bool? enabled = Integrations[integrationId].Enabled;
+                return enabled == true;
             }
 
             return false;
         }
 
-        internal double? GetIntegrationAnalyticsSampleRate(string name, bool enabledWithGlobalSetting)
+        internal double? GetIntegrationAnalyticsSampleRate(int integrationId, bool enabledWithGlobalSetting)
         {
-            var integrationSettings = Integrations[name];
+            var integrationSettings = Integrations[integrationId];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }
@@ -329,6 +329,30 @@ namespace Datadog.Trace.Configuration
             var value = EnvironmentHelpers.GetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", string.Empty);
 
             return value == "1" || value == "true";
+        }
+
+        private static IntegrationSettings[] GetIntegrationSettings(IConfigurationSource source, ICollection<string> disabledIntegrations)
+        {
+            var integrations = new IntegrationSettings[IntegrationRegistry.Names.Length];
+
+            for (int i = 0; i < integrations.Length; i++)
+            {
+                var name = IntegrationRegistry.Names[i];
+
+                if (name != null)
+                {
+                    var settings = new IntegrationSettings(name, source);
+
+                    if (disabledIntegrations.Contains(name))
+                    {
+                        settings.Enabled = false;
+                    }
+
+                    integrations[i] = settings;
+                }
+            }
+
+            return integrations;
         }
     }
 }

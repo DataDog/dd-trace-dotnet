@@ -1,3 +1,4 @@
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
@@ -16,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public override string SpanKind => SpanKinds.Client;
 
-        public string InstrumentationName => MongoDbIntegration.IntegrationName;
+        public string InstrumentationName => IntegrationRegistry.Names[MongoDbIntegration.IntegrationId];
 
         public string DbName { get; set; }
 

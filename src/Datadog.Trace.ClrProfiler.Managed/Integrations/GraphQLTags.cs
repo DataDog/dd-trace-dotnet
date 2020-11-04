@@ -1,3 +1,4 @@
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
@@ -15,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public override string SpanKind => SpanKinds.Server;
 
-        public string InstrumentationName => GraphQLIntegration.IntegrationName;
+        public string InstrumentationName => IntegrationRegistry.Names[GraphQLIntegration.IntegrationId];
 
         public string Language => TracerConstants.Language;
 

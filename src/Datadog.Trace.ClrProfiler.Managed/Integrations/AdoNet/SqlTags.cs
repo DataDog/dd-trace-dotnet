@@ -1,3 +1,4 @@
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
@@ -17,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
         public string DbType { get; set; }
 
-        public string InstrumentationName => AdoNetConstants.IntegrationName;
+        public string InstrumentationName => IntegrationRegistry.Names[AdoNetConstants.IntegrationId];
 
         public string DbName { get; set; }
 

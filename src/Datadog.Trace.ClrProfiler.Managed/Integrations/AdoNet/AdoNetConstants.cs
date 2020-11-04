@@ -1,8 +1,10 @@
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 {
     internal static class AdoNetConstants
     {
-        internal const string IntegrationName = "AdoNet";
+        internal const int IntegrationId = (int)IntegrationIds.AdoNet;
 
         public static class AssemblyNames
         {

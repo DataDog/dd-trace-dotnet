@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -17,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class HttpMessageHandlerIntegration
     {
-        private const string IntegrationName = "HttpMessageHandler";
+        private const int IntegrationId = (int)IntegrationIds.HttpMessageHandler;
         private const string SystemNetHttp = "System.Net.Http";
         private const string Major4 = "4";
         private const string Major5 = "5";
@@ -247,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var httpMethod = requestValue.Method.Method;
             var requestUri = requestValue.RequestUri;
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationName, out var tags))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationId, out var tags))
             {
                 try
                 {
@@ -284,7 +285,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static bool IsSocketsHttpHandlerEnabled(Type reportedType)
         {
-            return Tracer.Instance.Settings.IsOptInIntegrationEnabled("HttpSocketsHandler") && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
+            return Tracer.Instance.Settings.IsOptInIntegrationEnabled((int)IntegrationIds.HttpSocketsHandler) && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsTracingEnabled(IRequestHeaders headers)

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -12,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class ElasticsearchNet5Integration
     {
-        private const string IntegrationName = "ElasticsearchNet5";
+        private const int IntegrationId = (int)IntegrationIds.ElasticsearchNet5;
         private const string Version5 = "5";
         private const string ElasticsearchAssembly = "Elasticsearch.Net";
         private const string RequestPipelineInterfaceTypeName = "Elasticsearch.Net.IRequestPipeline";
@@ -78,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, requestData))
             {
                 try
                 {
@@ -181,7 +182,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CancellationToken cancellationToken,
             Func<object, object, CancellationToken, object> originalMethod)
         {
-            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, requestData))
             {
                 try
                 {

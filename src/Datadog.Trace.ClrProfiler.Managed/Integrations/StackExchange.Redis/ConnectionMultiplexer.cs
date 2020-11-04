@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// </summary>
     public static class ConnectionMultiplexer
     {
+        private const int IntegrationId = RedisBatch.IntegrationId;
         private const string IntegrationName = RedisBatch.IntegrationName;
         private const string RedisAssembly = "StackExchange.Redis";
         private const string StrongNameRedisAssembly = "StackExchange.Redis.StrongName";
@@ -233,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
             var rawCommand = message.As<MessageData>().CommandAndKey ?? "COMMAND";
 
-            return RedisHelper.CreateScope(Tracer.Instance, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            return RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
         }
 
         /*

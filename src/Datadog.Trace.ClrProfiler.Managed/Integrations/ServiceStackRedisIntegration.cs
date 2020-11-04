@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -13,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class ServiceStackRedisIntegration
     {
-        private const string IntegrationName = "ServiceStackRedis";
+        private const int IntegrationId = (int)IntegrationIds.ServiceStackRedis;
         private const string Major4 = "4";
         private const string Major5 = "5";
         private const string RedisNativeClient = "ServiceStack.Redis.RedisNativeClient";
@@ -86,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             using (var scope = RedisHelper.CreateScope(
                 Tracer.Instance,
-                IntegrationName,
+                IntegrationId,
                 clientData.Host ?? string.Empty,
                 clientData.Port.ToString(CultureInfo.InvariantCulture),
                 GetRawCommand(cmdWithBinaryArgs)))

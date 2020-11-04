@@ -18,9 +18,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ElasticsearchNetCommon));
 
-        public static Scope CreateScope(Tracer tracer, string integrationName, object pipeline, object requestData)
+        public static Scope CreateScope(Tracer tracer, int integrationId, object pipeline, object requestData)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integrationName))
+            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.Method = method;
                 tags.Url = url;
 
-                tags.SetAnalyticsSampleRate(integrationName, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {
