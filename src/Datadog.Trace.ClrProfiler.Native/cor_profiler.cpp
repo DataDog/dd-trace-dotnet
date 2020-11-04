@@ -766,7 +766,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
   std::string original_code;
   if (dump_il_rewrite_enabled) {
     original_code =
-        GetILCodes("***   IL original code for caller: ", &rewriter, caller);
+        GetILCodes("***   IL original code for caller: ", &rewriter, caller, module_metadata);
   }
 
   // Perform method call replacements
@@ -1138,7 +1138,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
 
     if (dump_il_rewrite_enabled) {
       Info(original_code);
-      Info(GetILCodes("***   IL modification  for caller: ", &rewriter, caller));
+      Info(GetILCodes("***   IL modification  for caller: ", &rewriter, caller, module_metadata));
     }
   }
 
@@ -1291,7 +1291,7 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
 }
 
 std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
-                                    const FunctionInfo& caller) {
+                                    const FunctionInfo& caller, ModuleMetadata* module_metadata) {
   std::stringstream orig_sstream;
   orig_sstream << title;
   orig_sstream << ToString(caller.type.name);
@@ -1313,8 +1313,44 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
                    << cInstr->m_opcode;
     }
     if (cInstr->m_pTarget != NULL) {
-      orig_sstream << " ";
+      orig_sstream << "  ";
       orig_sstream << cInstr->m_pTarget;
+
+      if (cInstr->m_opcode == CEE_CALL || cInstr->m_opcode == CEE_CALLVIRT || cInstr->m_opcode == CEE_NEWOBJ) {
+        const auto memberInfo = GetFunctionInfo(module_metadata->metadata_import,
+                                            (mdMemberRef)cInstr->m_Arg32);
+        orig_sstream << "  | ";
+        orig_sstream << ToString(memberInfo.type.name);
+        orig_sstream << ".";
+        orig_sstream << ToString(memberInfo.name);
+        if (memberInfo.signature.NumberOfArguments() > 0) {
+          orig_sstream << "(";
+          orig_sstream << memberInfo.signature.NumberOfArguments();
+          orig_sstream << " argument{s}";
+          orig_sstream << ")";
+
+        } else {
+          orig_sstream << "()";
+        }
+      } else if (cInstr->m_opcode == CEE_CASTCLASS || cInstr->m_opcode == CEE_BOX ||
+          cInstr->m_opcode == CEE_UNBOX_ANY || cInstr->m_opcode == CEE_NEWARR || 
+          cInstr->m_opcode == CEE_INITOBJ) {
+        const auto typeInfo = GetTypeInfo(module_metadata->metadata_import,
+                                      (mdTypeRef)cInstr->m_Arg32);
+        orig_sstream << "  | ";
+        orig_sstream << ToString(typeInfo.name);
+      } else if (cInstr->m_opcode == CEE_LDSTR) {
+        LPWSTR szString = new WCHAR[1024];
+        ULONG szStringLength;
+        auto hr = module_metadata->metadata_import->GetUserString(
+            (mdString)cInstr->m_Arg32, szString, 1024, &szStringLength);
+        if (SUCCEEDED(hr)) {
+          orig_sstream << "  | ";
+          orig_sstream << "\"";
+          orig_sstream << ToString(WSTRING(szString).substr(0, szStringLength));
+          orig_sstream << "\"";
+        }
+      }
     } else if (cInstr->m_Arg64 != 0) {
       orig_sstream << " ";
       orig_sstream << cInstr->m_Arg64;
