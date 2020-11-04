@@ -15,7 +15,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     public static class NpgsqlCommandIntegration
     {
         private const string Major4 = "4";
-        private const string Major5 = "5";
 
         private const string NpgsqlAssemblyName = "Npgsql";
         private const string NpgsqlCommandTypeName = "Npgsql.NpgsqlCommand";
@@ -24,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(NpgsqlCommandIntegration));
 
         /// <summary>
-        /// Instrumentation wrapper for NpgsqlCommand />
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteReader() />
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -86,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteReader().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteReader(CommandBehavior).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
@@ -152,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteReaderAsync().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteReaderAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
@@ -256,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteReaderAsync().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
@@ -369,7 +368,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteNonQuery().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteNonQuery().
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -432,7 +431,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteNonQueryAsync().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteNonQueryAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
@@ -513,7 +512,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteScalar().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteScalar().
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -576,7 +575,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteScalarAsync().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteScalarAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
@@ -585,11 +584,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
+            TargetAssemblies = new[] { NpgsqlAssemblyName },
             TargetType = NpgsqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major5)]
+            TargetMaximumVersion = Major4)]
         public static object ExecuteScalarAsync(
             object command,
             object boxedCancellationToken,
