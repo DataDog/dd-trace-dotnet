@@ -9,6 +9,9 @@ namespace CallTargetNativeTest
 {
     class Program
     {
+        private static MemoryStream mStream = new MemoryStream();
+        private static StreamWriter sWriter = new StreamWriter(mStream);
+
         static void Main(string[] args)
         {
             if (args?.Length == 0)
@@ -780,13 +783,12 @@ namespace CallTargetNativeTest
 
         private static void RunMethod(Action action)
         {
-            using var ms = new MemoryStream();
-            using var sw = new StreamWriter(ms);
             var cOut = Console.Out;
-            Console.SetOut(sw);
+            Console.SetOut(sWriter);
             action();
-            sw.Flush();
-            var str = Encoding.UTF8.GetString(ms.GetBuffer(), 0, (int)ms.Length);
+            sWriter.Flush();
+            var str = Encoding.UTF8.GetString(mStream.GetBuffer(), 0, (int)mStream.Length);
+            mStream.SetLength(0);
             if (string.IsNullOrEmpty(str))
             {
                 throw new Exception("The profiler is not connected or is not compiled as DEBUG with the DD_CTARGET_TESTMODE=True environment variable.");

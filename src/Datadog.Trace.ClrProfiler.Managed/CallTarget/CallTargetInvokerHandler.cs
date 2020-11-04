@@ -100,12 +100,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             {
                 Type sourceParameterType = argumentsTypes[mustLoadInstance ? i - 1 : i];
                 Type targetParameterType = onMethodBeginParameters[i].ParameterType;
+                Type targetParameterTypeConstraint = null;
                 Type parameterProxyType = null;
 
                 if (targetParameterType.IsGenericParameter)
                 {
                     targetParameterType = genericArgumentsTypes[targetParameterType.GenericParameterPosition];
-                    Type targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
+                    targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
                     if (targetParameterTypeConstraint is null)
                     {
                         callGenericTypes.Add(sourceParameterType);
@@ -117,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                         callGenericTypes.Add(parameterProxyType);
                     }
                 }
-                else if (!targetParameterType.IsAssignableFrom(sourceParameterType))
+                else if (!targetParameterType.IsAssignableFrom(sourceParameterType) && (!(sourceParameterType.IsEnum && targetParameterType.IsEnum)))
                 {
                     throw new InvalidCastException($"The target parameter {targetParameterType} can't be assigned from {sourceParameterType}");
                 }
@@ -125,21 +126,22 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                 ILHelpersExtensions.WriteLoadArgument(ilWriter, i, mustLoadInstance);
                 if (parameterProxyType != null)
                 {
-                    ConstructorInfo ctor = parameterProxyType.GetConstructors()[0];
-                    if (sourceParameterType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
+                    ConstructorInfo parameterProxyTypeCtor = parameterProxyType.GetConstructors()[0];
+
+                    if (sourceParameterType.IsValueType && !parameterProxyTypeCtor.GetParameters()[0].ParameterType.IsValueType)
                     {
                         ilWriter.Emit(OpCodes.Box, sourceParameterType);
                     }
 
-                    ilWriter.Emit(OpCodes.Newobj, ctor);
+                    ilWriter.Emit(OpCodes.Newobj, parameterProxyTypeCtor);
                 }
             }
 
             // Call method
-            Log.Information("Generic Types: " + string.Join(", ", callGenericTypes.Select(t => t.FullName)));
-            Log.Information("Method: " + onMethodBeginMethodInfo);
+            // Log.Information("Generic Types: " + string.Join(", ", callGenericTypes.Select(t => t.FullName)));
+            // Log.Information("Method: " + onMethodBeginMethodInfo);
             onMethodBeginMethodInfo = onMethodBeginMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
-            Log.Information("Method: " + onMethodBeginMethodInfo);
+            // Log.Information("Method: " + onMethodBeginMethodInfo);
             ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, null);
             ilWriter.Emit(OpCodes.Ret);
 
@@ -147,22 +149,28 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             return callMethod;
         }
 
-        private static TTo ConvertType<TFrom, TTo>(TFrom value)
+        internal static DynamicMethod CreateSlowBeginMethodDelegate(Type integrationType, Type targetType)
         {
-            return default;
-            /*if (value is null || typeof(TTo) == typeof(object))
-            {
-                return (TTo)(object)value;
-            }
+            Log.Information($"Creating SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
 
-            Type valueType = value.GetType();
-            if (valueType == conversionType || conversionType.IsAssignableFrom(valueType))
-            {
-                return value;
-            }
+            Log.Information($"Created SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            return null;
+        }
 
-            // Finally we try to duck type
-            return DuckType.Create<TTo>((object)value);*/
+        internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType)
+        {
+            Log.Information($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+
+            Log.Information($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            return null;
+        }
+
+        internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
+        {
+            Log.Information($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+
+            Log.Information($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            return null;
         }
 
         internal static class IntegrationOptions<TIntegration, TTarget>
@@ -417,6 +425,22 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             private static InvokeDelegate invokeDelegate = (instance, arguments) => CallTargetState.GetDefault();
 
+            static BeginMethodSlowHandler()
+            {
+                try
+                {
+                    DynamicMethod dynMethod = CreateSlowBeginMethodDelegate(typeof(TIntegration), typeof(TTarget));
+                    if (dynMethod != null)
+                    {
+                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new CallTargetInvokerException(ex);
+                }
+            }
+
             internal delegate CallTargetState InvokeDelegate(TTarget instance, object[] arguments);
 
 #if NETCOREAPP3_1 || NET5_0
@@ -432,6 +456,22 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             private static InvokeDelegate invokeDelegate = (instance, exception, state) => CallTargetReturn.GetDefault();
 
+            static EndMethodHandler()
+            {
+                try
+                {
+                    DynamicMethod dynMethod = CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget));
+                    if (dynMethod != null)
+                    {
+                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new CallTargetInvokerException(ex);
+                }
+            }
+
             internal delegate CallTargetReturn InvokeDelegate(TTarget instance, Exception exception, CallTargetState state);
 
 #if NETCOREAPP3_1 || NET5_0
@@ -446,6 +486,22 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
         {
             private static InvokeDelegate invokeDelegate = (instance, returnValue, exception, state) => new CallTargetReturn<TReturn>(returnValue);
+
+            static EndMethodHandler()
+            {
+                try
+                {
+                    DynamicMethod dynMethod = CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TReturn));
+                    if (dynMethod != null)
+                    {
+                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new CallTargetInvokerException(ex);
+                }
+            }
 
             internal delegate CallTargetReturn<TReturn> InvokeDelegate(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
 
