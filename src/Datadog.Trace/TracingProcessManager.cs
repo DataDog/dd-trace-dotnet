@@ -22,7 +22,7 @@ namespace Datadog.Trace
     /// </summary>
     internal class TracingProcessManager
     {
-        internal static readonly int KeepAliveInterval = 120_000;
+        internal static readonly int KeepAliveInterval = 30_000;
         internal static readonly int ExceptionRetryInterval = 1_000;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
@@ -30,8 +30,10 @@ namespace Datadog.Trace
             Name = "datadog-trace-agent",
             ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
+            RequiresPort = true,
             RefreshPortVars = () =>
             {
+                // It is still possible to have multiple instances on one host, we need to be sure that NO port is bound to in order to disable this
                 var portString = TraceAgentMetadata.Port?.ToString(CultureInfo.InvariantCulture);
                 Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, portString);
                 Environment.SetEnvironmentVariable(ConfigurationKeys.TraceAgentPortKey, portString);
@@ -43,10 +45,12 @@ namespace Datadog.Trace
             Name = "dogstatsd",
             ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
+            RequiresPort = true,
             RefreshPortVars = () =>
             {
-                var portString = DogStatsDMetadata.Port?.ToString(CultureInfo.InvariantCulture);
-                Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, portString);
+                // It is still possible to have multiple instances on one host
+                // We need to be sure that NO port is bound to in order to disable this
+                Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, (GetFreeTcpPort() ?? 8125).ToString());
             }
         };
 
@@ -109,16 +113,6 @@ namespace Datadog.Trace
             if (TraceAgentMetadata.Port != null)
             {
                 subscriber(TraceAgentMetadata.Port.Value);
-            }
-        }
-
-        public static void SubscribeToDogStatsDPortOverride(Action<int> subscriber)
-        {
-            DogStatsDMetadata.PortSubscribers.Add(subscriber);
-
-            if (DogStatsDMetadata.Port != null)
-            {
-                subscriber(DogStatsDMetadata.Port.Value);
             }
         }
 
@@ -422,6 +416,11 @@ namespace Datadog.Trace
 
         private static void GrabFreePortForInstance(ProcessMetadata instance)
         {
+            if (!instance.RequiresPort)
+            {
+                return;
+            }
+
             instance.Port = GetFreeTcpPort();
             if (instance.Port == null)
             {
@@ -462,6 +461,8 @@ namespace Datadog.Trace
             /// Gets or sets a value indicating whether the process has ever been tried.
             /// </summary>
             public bool HasAttemptedStartup { get; set; }
+
+            public bool RequiresPort { get; set; }
 
             public string PortFilePath { get; private set; }
 
