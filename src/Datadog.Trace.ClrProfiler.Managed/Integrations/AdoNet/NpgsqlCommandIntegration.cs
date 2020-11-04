@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(NpgsqlCommandIntegration));
 
         /// <summary>
-        /// Instrumentation wrapper for NpgsqlCommand />
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteReader() />
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteReader().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteReader(CommandBehavior).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
@@ -151,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteReaderAsync().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteReaderAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
@@ -255,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteReaderAsync().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
@@ -368,7 +368,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteNonQuery().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteNonQuery().
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -431,7 +431,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteNonQueryAsync().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteNonQueryAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
@@ -512,7 +512,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteScalar().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteScalar().
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -575,7 +575,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteScalarAsync().
+        /// Instrumentation wrapper for NpgsqlCommand.CancellationToken().
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
