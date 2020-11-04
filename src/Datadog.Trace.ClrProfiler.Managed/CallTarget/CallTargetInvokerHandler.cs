@@ -172,9 +172,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             }
 
             Type[] genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
-            if (genericArgumentsTypes.Length < 1)
+            if (genericArgumentsTypes.Length != 1)
             {
-                throw new ArgumentException($"The method: {EndMethodName} in type: {integrationType.FullName} doesn't have the generic type for the instance type.");
+                throw new ArgumentException($"The method: {EndMethodName} in type: {integrationType.FullName} must have a single generic type for the instance type.");
             }
 
             ParameterInfo[] onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
@@ -270,8 +270,112 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                 throw new ArgumentException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
             }
 
+            Type[] genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
+            if (genericArgumentsTypes.Length < 1 || genericArgumentsTypes.Length > 2)
+            {
+                throw new ArgumentException($"The method: {EndMethodName} in type: {integrationType.FullName} must have the generic type for the instance type.");
+            }
+
+            ParameterInfo[] onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
+            if (onMethodEndParameters.Length < 3)
+            {
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has less parameters than required.");
+            }
+            else if (onMethodEndParameters.Length > 4)
+            {
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
+            }
+
+            if (onMethodEndParameters[1].ParameterType != typeof(Exception) && onMethodEndParameters[2].ParameterType != typeof(Exception))
+            {
+                throw new ArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+            }
+
+            if (onMethodEndParameters[2].ParameterType != typeof(CallTargetState) && onMethodEndParameters[3].ParameterType != typeof(CallTargetState))
+            {
+                throw new ArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+            }
+
+            List<Type> callGenericTypes = new List<Type>();
+
+            bool mustLoadInstance = onMethodEndParameters[0].ParameterType.IsGenericParameter;
+            Type instanceGenericType = genericArgumentsTypes[0];
+            Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
+            Type instanceProxyType = null;
+            if (instanceGenericConstraint != null)
+            {
+                var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+                instanceProxyType = result.ProxyType;
+                callGenericTypes.Add(instanceProxyType);
+            }
+            else
+            {
+                callGenericTypes.Add(targetType);
+            }
+
+            bool isAGenericReturnValue = onMethodEndParameters[1].ParameterType.IsGenericParameter;
+            Type returnValueGenericType = null;
+            Type returnValueGenericConstraint = null;
+            Type returnValueProxyType = null;
+            if (isAGenericReturnValue)
+            {
+                returnValueGenericType = genericArgumentsTypes[1];
+                returnValueGenericConstraint = returnValueGenericType.GetGenericParameterConstraints().FirstOrDefault();
+                if (returnValueGenericConstraint != null)
+                {
+                    var result = DuckType.GetOrCreateProxyType(returnValueGenericConstraint, returnType);
+                    returnValueProxyType = result.ProxyType;
+                    callGenericTypes.Add(returnValueProxyType);
+                }
+                else
+                {
+                    callGenericTypes.Add(returnType);
+                }
+            }
+
+            DynamicMethod callMethod = new DynamicMethod(
+                     $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}",
+                     typeof(CallTargetReturn<>).MakeGenericType(returnType),
+                     new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState) },
+                     onMethodEndMethodInfo.Module,
+                     true);
+
+            ILGenerator ilWriter = callMethod.GetILGenerator();
+
+            // Load the instance if is needed
+            if (mustLoadInstance)
+            {
+                ilWriter.Emit(OpCodes.Ldarg_0);
+
+                if (instanceGenericConstraint != null)
+                {
+                    ConstructorInfo ctor = instanceProxyType.GetConstructors()[0];
+                    if (targetType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
+                    {
+                        ilWriter.Emit(OpCodes.Box, targetType);
+                    }
+
+                    ilWriter.Emit(OpCodes.Newobj, ctor);
+                }
+            }
+
+            // Load the return value
+            ilWriter.Emit(OpCodes.Ldarg_1);
+
+            // Load the exception
+            ilWriter.Emit(OpCodes.Ldarg_2);
+
+            // Load the state
+            ilWriter.Emit(OpCodes.Ldarg_3);
+
+            // Call Method
+            onMethodEndMethodInfo = onMethodEndMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
+            ilWriter.EmitCall(OpCodes.Call, onMethodEndMethodInfo, null);
+
+            ilWriter.Emit(OpCodes.Ret);
+
             Log.Debug($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
-            return null;
+            return callMethod;
         }
 
         internal static class IntegrationOptions<TIntegration, TTarget>
