@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <Nullable>enable</Nullable>
 
     <!-- Microsoft.ServiceFabric.Services.Remoting only supports x64 -->
     <Platforms>x64</Platforms>
 
     <!-- NuGet -->
-    <Version>1.19.4-alpha1</Version>
+    <Version>1.20.0-alpha1</Version>
     <Title>Datadog APM</Title>
     <Description>Service Remoting instrumentation for Datadog APM</Description>
     <IncludeSymbols>true</IncludeSymbols>
