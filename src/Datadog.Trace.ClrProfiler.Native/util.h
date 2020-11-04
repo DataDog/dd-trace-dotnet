@@ -36,6 +36,29 @@ bool Contains(const Container &items,
               const typename Container::value_type &value) {
   return std::find(items.begin(), items.end(), value) != items.end();
 }
+
+// Singleton definition
+class UnCopyable {
+ protected:
+  UnCopyable(){};
+  ~UnCopyable(){};
+
+ private:
+  UnCopyable(const UnCopyable &) = delete;
+  UnCopyable(const UnCopyable &&) = delete;
+  UnCopyable &operator=(const UnCopyable &) = delete;
+  UnCopyable &operator=(const UnCopyable &&) = delete;
+};
+
+template <typename T>
+class Singleton : public UnCopyable {
+ public:
+  static T *Instance() {
+    static T instance_obj;
+    return &instance_obj;
+  }
+};
+
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_UTIL_H_

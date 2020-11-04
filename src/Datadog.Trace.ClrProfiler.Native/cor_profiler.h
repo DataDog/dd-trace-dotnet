@@ -105,6 +105,8 @@ class CorProfiler : public CorProfilerBase {
 
   HRESULT STDMETHODCALLTYPE Shutdown() override;
 
+  HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
+
   //
   // ICorProfilerCallback6 methods
   //

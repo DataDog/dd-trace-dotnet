@@ -509,6 +509,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   return S_OK;
 }
 
+HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded() {
+  Warn("Detaching profiler.");
+  Logger::Shutdown();
+  return S_OK;
+}
+
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     FunctionID function_id, BOOL is_safe_to_block) {
   if (!is_attached_ || !is_safe_to_block) {

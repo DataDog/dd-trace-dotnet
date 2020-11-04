@@ -3,7 +3,7 @@
 #include <cwctype>
 #include <iterator>
 #include <sstream>
-#include <string>
+#include <string> //NOLINT
 #include <vector>
 #include "miniutf.hpp"
 #include "pal.h"
