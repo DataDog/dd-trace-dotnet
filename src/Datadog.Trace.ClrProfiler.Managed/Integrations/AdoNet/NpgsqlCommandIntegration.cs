@@ -575,7 +575,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for NpgsqlCommand.CancellationToken().
+        /// Instrumentation wrapper for NpgsqlCommand.ExecuteScalarAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
