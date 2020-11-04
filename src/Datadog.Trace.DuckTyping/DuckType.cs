@@ -6,8 +6,6 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 
-[assembly: InternalsVisibleTo("Datadog.Trace.DuckTyping.Tests, PublicKey=002400000480000094000000060200000024000052534131000400000100010025b855c8bc41b1d47e777fc247392999ca6f553cdb030fac8e3bd010171ded9982540d988553935f44f7dd58cb4b17fbb92653d5c2dc5112696886665b317c6f92795bf64beab2405c501c8a30cb1b31b1541ed66e27d9823169ec2815b00ceeeecc8d5a1bf43db67d2961a3e9bea1397f043ec07491709649252f5565b756c5")]
-
 namespace Datadog.Trace.DuckTyping
 {
     /// <summary>
@@ -144,6 +142,18 @@ namespace Datadog.Trace.DuckTyping
                 ILGenerator ctorIL = ctorBuilder.GetILGenerator();
                 ctorIL.Emit(OpCodes.Ldarg_0);
                 ctorIL.Emit(OpCodes.Ldarg_1);
+                if (!UseDirectAccessTo(targetType))
+                {
+                    DynamicMethod dynCtor = new DynamicMethod(proxyTypeName + ".objConv", typeof(object), new Type[] { targetType }, typeof(DuckType).Module, true);
+                    ILGenerator dynCtorIL = dynCtor.GetILGenerator();
+                    dynCtorIL.Emit(OpCodes.Ldarg_0);
+                    dynCtorIL.Emit(OpCodes.Box, targetType);
+                    dynCtorIL.Emit(OpCodes.Ret);
+                    DynamicMethods.Add(dynCtor);
+
+                    ILHelpersExtensions.WriteMethodCalli(ctorIL, dynCtor);
+                }
+
                 ctorIL.Emit(OpCodes.Stfld, instanceField);
                 ctorIL.Emit(OpCodes.Ret);
 

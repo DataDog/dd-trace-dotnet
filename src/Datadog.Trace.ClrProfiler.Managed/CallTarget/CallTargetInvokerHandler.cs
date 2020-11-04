@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
 {
