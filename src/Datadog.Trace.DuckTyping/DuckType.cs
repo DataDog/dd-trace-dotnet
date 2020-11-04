@@ -140,7 +140,7 @@ namespace Datadog.Trace.DuckTyping
                 ConstructorBuilder ctorBuilder = proxyTypeBuilder.DefineConstructor(
                     MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
                     CallingConventions.Standard,
-                    new[] { targetType });
+                    new[] { instanceField.FieldType });
                 ILGenerator ctorIL = ctorBuilder.GetILGenerator();
                 ctorIL.Emit(OpCodes.Ldarg_0);
                 ctorIL.Emit(OpCodes.Ldarg_1);
