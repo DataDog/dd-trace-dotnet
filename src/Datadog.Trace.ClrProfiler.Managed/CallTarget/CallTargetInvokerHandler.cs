@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
         internal static DynamicMethod CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
         {
-            Log.Information($"Creating BeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug($"Creating BeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
             MethodInfo onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodBeginMethodInfo is null)
             {
@@ -145,31 +145,132 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, null);
             ilWriter.Emit(OpCodes.Ret);
 
-            Log.Information($"Created BeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug($"Created BeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
             return callMethod;
         }
 
         internal static DynamicMethod CreateSlowBeginMethodDelegate(Type integrationType, Type targetType)
         {
-            Log.Information($"Creating SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug($"Creating SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
 
-            Log.Information($"Created SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug($"Created SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
             return null;
         }
 
         internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType)
         {
-            Log.Information($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            if (onMethodEndMethodInfo is null)
+            {
+                throw new NullReferenceException($"Couldn't find the method: {EndMethodName} in type: {integrationType.FullName}");
+            }
 
-            Log.Information($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
-            return null;
+            if (onMethodEndMethodInfo.ReturnType != typeof(CallTargetReturn))
+            {
+                throw new ArgumentException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
+            }
+
+            Type[] genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
+            if (genericArgumentsTypes.Length < 1)
+            {
+                throw new ArgumentException($"The method: {EndMethodName} in type: {integrationType.FullName} doesn't have the generic type for the instance type.");
+            }
+
+            ParameterInfo[] onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
+            if (onMethodEndParameters.Length < 2)
+            {
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has less parameters than required.");
+            }
+            else if (onMethodEndParameters.Length > 3)
+            {
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
+            }
+
+            if (onMethodEndParameters[0].ParameterType != typeof(Exception) && onMethodEndParameters[1].ParameterType != typeof(Exception))
+            {
+                throw new ArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+            }
+
+            if (onMethodEndParameters[1].ParameterType != typeof(CallTargetState) && onMethodEndParameters[2].ParameterType != typeof(CallTargetState))
+            {
+                throw new ArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+            }
+
+            List<Type> callGenericTypes = new List<Type>();
+
+            bool mustLoadInstance = onMethodEndParameters[0].ParameterType.IsGenericParameter;
+            Type instanceGenericType = genericArgumentsTypes[0];
+            Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
+            Type instanceProxyType = null;
+            if (instanceGenericConstraint != null)
+            {
+                var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+                instanceProxyType = result.ProxyType;
+                callGenericTypes.Add(instanceProxyType);
+            }
+            else
+            {
+                callGenericTypes.Add(targetType);
+            }
+
+            DynamicMethod callMethod = new DynamicMethod(
+                     $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}",
+                     typeof(CallTargetReturn),
+                     new Type[] { targetType, typeof(Exception), typeof(CallTargetState) },
+                     onMethodEndMethodInfo.Module,
+                     true);
+
+            ILGenerator ilWriter = callMethod.GetILGenerator();
+
+            // Load the instance if is needed
+            if (mustLoadInstance)
+            {
+                ilWriter.Emit(OpCodes.Ldarg_0);
+
+                if (instanceGenericConstraint != null)
+                {
+                    ConstructorInfo ctor = instanceProxyType.GetConstructors()[0];
+                    if (targetType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
+                    {
+                        ilWriter.Emit(OpCodes.Box, targetType);
+                    }
+
+                    ilWriter.Emit(OpCodes.Newobj, ctor);
+                }
+            }
+
+            // Load the exception
+            ilWriter.Emit(OpCodes.Ldarg_1);
+
+            // Load the state
+            ilWriter.Emit(OpCodes.Ldarg_2);
+
+            // Call Method
+            onMethodEndMethodInfo = onMethodEndMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
+            ilWriter.EmitCall(OpCodes.Call, onMethodEndMethodInfo, null);
+
+            ilWriter.Emit(OpCodes.Ret);
+
+            Log.Debug($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            return callMethod;
         }
 
         internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
         {
-            Log.Information($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            if (onMethodEndMethodInfo is null)
+            {
+                throw new NullReferenceException($"Couldn't find the method: {EndMethodName} in type: {integrationType.FullName}");
+            }
 
-            Log.Information($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            if (onMethodEndMethodInfo.ReturnType.GetGenericTypeDefinition() != typeof(CallTargetReturn<>))
+            {
+                throw new ArgumentException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
+            }
+
+            Log.Debug($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
             return null;
         }
 

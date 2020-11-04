@@ -803,6 +803,7 @@ namespace CallTargetNativeTest
             }
             Console.SetOut(cOut);
             Console.SetCursorPosition(0, Console.CursorTop);
+            Console.WriteLine();
         }
 
         static void ShowTypeInfo(Type type)
