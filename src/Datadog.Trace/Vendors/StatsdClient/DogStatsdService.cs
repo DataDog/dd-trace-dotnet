@@ -179,7 +179,9 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <returns>A disposable object that records the execution time until Dispose is called.</returns>
         public IDisposable StartTimer(string name, double sampleRate = 1.0, string[] tags = null)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             return new MetricsTimer(this, name, sampleRate, tags);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
