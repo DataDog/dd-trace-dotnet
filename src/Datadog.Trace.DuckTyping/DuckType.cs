@@ -142,18 +142,6 @@ namespace Datadog.Trace.DuckTyping
                 ILGenerator ctorIL = ctorBuilder.GetILGenerator();
                 ctorIL.Emit(OpCodes.Ldarg_0);
                 ctorIL.Emit(OpCodes.Ldarg_1);
-                if (!UseDirectAccessTo(targetType))
-                {
-                    DynamicMethod dynCtor = new DynamicMethod(proxyTypeName + ".objConv", typeof(object), new Type[] { targetType }, typeof(DuckType).Module, true);
-                    ILGenerator dynCtorIL = dynCtor.GetILGenerator();
-                    dynCtorIL.Emit(OpCodes.Ldarg_0);
-                    dynCtorIL.Emit(OpCodes.Box, targetType);
-                    dynCtorIL.Emit(OpCodes.Ret);
-                    DynamicMethods.Add(dynCtor);
-
-                    ILHelpersExtensions.WriteMethodCalli(ctorIL, dynCtor);
-                }
-
                 ctorIL.Emit(OpCodes.Stfld, instanceField);
                 ctorIL.Emit(OpCodes.Ret);
 

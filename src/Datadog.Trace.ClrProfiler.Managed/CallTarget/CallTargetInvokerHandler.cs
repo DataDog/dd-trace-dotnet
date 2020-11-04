@@ -82,9 +82,16 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             if (mustLoadInstance)
             {
                 ilWriter.Emit(OpCodes.Ldarg_0);
+
                 if (instanceGenericConstraint != null)
                 {
-                    ilWriter.Emit(OpCodes.Newobj, instanceProxyType.GetConstructor(new Type[] { targetType }));
+                    ConstructorInfo ctor = instanceProxyType.GetConstructors()[0];
+                    if (targetType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
+                    {
+                        ilWriter.Emit(OpCodes.Box, targetType);
+                    }
+
+                    ilWriter.Emit(OpCodes.Newobj, ctor);
                 }
             }
 
@@ -118,7 +125,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                 ILHelpersExtensions.WriteLoadArgument(ilWriter, i, mustLoadInstance);
                 if (parameterProxyType != null)
                 {
-                    ilWriter.Emit(OpCodes.Newobj, parameterProxyType.GetConstructor(new Type[] { sourceParameterType }));
+                    ConstructorInfo ctor = parameterProxyType.GetConstructors()[0];
+                    if (sourceParameterType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
+                    {
+                        ilWriter.Emit(OpCodes.Box, sourceParameterType);
+                    }
+
+                    ilWriter.Emit(OpCodes.Newobj, ctor);
                 }
             }
 
