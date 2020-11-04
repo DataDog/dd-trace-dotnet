@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         private const string EndAsyncMethodName = "OnAsyncMethodEnd";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(CallTargetInvokerHandler));
+        private static readonly MethodInfo UnwrapReturnValueMethodInfo = typeof(CallTargetInvokerHandler).GetMethod(nameof(CallTargetInvokerHandler.UnwrapReturnValue), BindingFlags.NonPublic | BindingFlags.Static);
 
         internal static DynamicMethod CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
         {
@@ -332,9 +333,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     callGenericTypes.Add(returnType);
                 }
             }
+            else if (onMethodEndParameters[1].ParameterType != returnType)
+            {
+                throw new ArgumentException($"The ReturnValue type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is invalid. [{onMethodEndParameters[1].ParameterType} != {returnType}]");
+            }
 
             DynamicMethod callMethod = new DynamicMethod(
-                     $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}",
+                     $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
                      typeof(CallTargetReturn<>).MakeGenericType(returnType),
                      new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState) },
                      onMethodEndMethodInfo.Module,
@@ -361,6 +366,16 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
             // Load the return value
             ilWriter.Emit(OpCodes.Ldarg_1);
+            if (returnValueProxyType != null)
+            {
+                ConstructorInfo ctor = returnValueProxyType.GetConstructors()[0];
+                if (returnType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
+                {
+                    ilWriter.Emit(OpCodes.Box, returnType);
+                }
+
+                ilWriter.Emit(OpCodes.Newobj, ctor);
+            }
 
             // Load the exception
             ilWriter.Emit(OpCodes.Ldarg_2);
@@ -372,10 +387,24 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             onMethodEndMethodInfo = onMethodEndMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
             ilWriter.EmitCall(OpCodes.Call, onMethodEndMethodInfo, null);
 
+            // Unwrap return value proxy
+            if (returnValueProxyType != null)
+            {
+                MethodInfo unwrapReturnValue = UnwrapReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
+                ilWriter.EmitCall(OpCodes.Call, unwrapReturnValue, null);
+            }
+
             ilWriter.Emit(OpCodes.Ret);
 
             Log.Debug($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
             return callMethod;
+        }
+
+        private static CallTargetReturn<TTo> UnwrapReturnValue<TFrom, TTo>(CallTargetReturn<TFrom> returnValue)
+            where TFrom : IDuckType
+        {
+            var innerValue = returnValue.GetReturnValue();
+            return new CallTargetReturn<TTo>((TTo)innerValue.Instance);
         }
 
         internal static class IntegrationOptions<TIntegration, TTarget>
@@ -388,11 +417,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
             internal static void DisableIntegration() => _disableIntegration = true;
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static void LogException(Exception exception)
             {
                 Log.SafeLogError(exception, exception?.Message, null);
@@ -411,7 +436,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
         internal static class BeginMethodHandler<TIntegration, TTarget>
         {
-            private static InvokeDelegate invokeDelegate = instance => CallTargetState.GetDefault();
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static BeginMethodHandler()
             {
@@ -420,29 +445,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), Util.ArrayHelper.Empty<Type>());
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = instance => CallTargetState.GetDefault();
+                    }
+                }
             }
 
             internal delegate CallTargetState InvokeDelegate(TTarget instance);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetState Invoke(TTarget instance)
-                => invokeDelegate(instance);
+                => _invokeDelegate(instance);
         }
 
         internal static class BeginMethodHandler<TIntegration, TTarget, TArg1>
         {
-            private static InvokeDelegate invokeDelegate = (instance, arg1) => CallTargetState.GetDefault();
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static BeginMethodHandler()
             {
@@ -451,29 +479,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1) });
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = (instance, arg1) => CallTargetState.GetDefault();
+                    }
+                }
             }
 
             internal delegate CallTargetState InvokeDelegate(TTarget instance, TArg1 arg1);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetState Invoke(TTarget instance, TArg1 arg1)
-                => invokeDelegate(instance, arg1);
+                => _invokeDelegate(instance, arg1);
         }
 
         internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2>
         {
-            private static InvokeDelegate invokeDelegate = (instance, arg1, arg2) => CallTargetState.GetDefault();
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static BeginMethodHandler()
             {
@@ -482,29 +513,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1), typeof(TArg2) });
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = (instance, arg1, arg2) => CallTargetState.GetDefault();
+                    }
+                }
             }
 
             internal delegate CallTargetState InvokeDelegate(TTarget instance, TArg1 arg1, TArg2 arg2);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetState Invoke(TTarget instance, TArg1 arg1, TArg2 arg2)
-                => invokeDelegate(instance, arg1, arg2);
+                => _invokeDelegate(instance, arg1, arg2);
         }
 
         internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3>
         {
-            private static InvokeDelegate invokeDelegate = (instance, arg1, arg2, arg3) => CallTargetState.GetDefault();
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static BeginMethodHandler()
             {
@@ -513,29 +547,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1), typeof(TArg2), typeof(TArg3) });
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = (instance, arg1, arg2, arg3) => CallTargetState.GetDefault();
+                    }
+                }
             }
 
             internal delegate CallTargetState InvokeDelegate(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetState Invoke(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3)
-                => invokeDelegate(instance, arg1, arg2, arg3);
+                => _invokeDelegate(instance, arg1, arg2, arg3);
         }
 
         internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>
         {
-            private static InvokeDelegate invokeDelegate = (instance, arg1, arg2, arg3, arg4) => CallTargetState.GetDefault();
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static BeginMethodHandler()
             {
@@ -544,29 +581,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1), typeof(TArg2), typeof(TArg3), typeof(TArg4) });
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = (instance, arg1, arg2, arg3, arg4) => CallTargetState.GetDefault();
+                    }
+                }
             }
 
             internal delegate CallTargetState InvokeDelegate(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetState Invoke(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
-                => invokeDelegate(instance, arg1, arg2, arg3, arg4);
+                => _invokeDelegate(instance, arg1, arg2, arg3, arg4);
         }
 
         internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>
         {
-            private static InvokeDelegate invokeDelegate = (instance, arg1, arg2, arg3, arg4, arg5) => CallTargetState.GetDefault();
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static BeginMethodHandler()
             {
@@ -575,29 +615,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1), typeof(TArg2), typeof(TArg3), typeof(TArg4), typeof(TArg5) });
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = (instance, arg1, arg2, arg3, arg4, arg5) => CallTargetState.GetDefault();
+                    }
+                }
             }
 
             internal delegate CallTargetState InvokeDelegate(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetState Invoke(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5)
-                => invokeDelegate(instance, arg1, arg2, arg3, arg4, arg5);
+                => _invokeDelegate(instance, arg1, arg2, arg3, arg4, arg5);
         }
 
         internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
         {
-            private static InvokeDelegate invokeDelegate = (instance, arg1, arg2, arg3, arg4, arg5, arg6) => CallTargetState.GetDefault();
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static BeginMethodHandler()
             {
@@ -606,29 +649,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1), typeof(TArg2), typeof(TArg3), typeof(TArg4), typeof(TArg5), typeof(TArg6) });
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = (instance, arg1, arg2, arg3, arg4, arg5, arg6) => CallTargetState.GetDefault();
+                    }
+                }
             }
 
             internal delegate CallTargetState InvokeDelegate(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetState Invoke(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6)
-                => invokeDelegate(instance, arg1, arg2, arg3, arg4, arg5, arg6);
+                => _invokeDelegate(instance, arg1, arg2, arg3, arg4, arg5, arg6);
         }
 
         internal static class BeginMethodSlowHandler<TIntegration, TTarget>
         {
-            private static InvokeDelegate invokeDelegate = (instance, arguments) => CallTargetState.GetDefault();
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static BeginMethodSlowHandler()
             {
@@ -637,29 +683,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateSlowBeginMethodDelegate(typeof(TIntegration), typeof(TTarget));
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = (instance, arguments) => CallTargetState.GetDefault();
+                    }
+                }
             }
 
             internal delegate CallTargetState InvokeDelegate(TTarget instance, object[] arguments);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetState Invoke(TTarget instance, object[] arguments)
-                => invokeDelegate(instance, arguments);
+                => _invokeDelegate(instance, arguments);
         }
 
         internal static class EndMethodHandler<TIntegration, TTarget>
         {
-            private static InvokeDelegate invokeDelegate = (instance, exception, state) => CallTargetReturn.GetDefault();
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static EndMethodHandler()
             {
@@ -668,29 +717,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget));
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = (instance, exception, state) => CallTargetReturn.GetDefault();
+                    }
+                }
             }
 
             internal delegate CallTargetReturn InvokeDelegate(TTarget instance, Exception exception, CallTargetState state);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetReturn Invoke(TTarget instance, Exception exception, CallTargetState state)
-                => invokeDelegate(instance, exception, state);
+                => _invokeDelegate(instance, exception, state);
         }
 
         internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
         {
-            private static InvokeDelegate invokeDelegate = (instance, returnValue, exception, state) => new CallTargetReturn<TReturn>(returnValue);
+            private static readonly InvokeDelegate _invokeDelegate;
 
             static EndMethodHandler()
             {
@@ -699,24 +751,27 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                     DynamicMethod dynMethod = CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TReturn));
                     if (dynMethod != null)
                     {
-                        invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                        _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
                     }
                 }
                 catch (Exception ex)
                 {
                     throw new CallTargetInvokerException(ex);
                 }
+                finally
+                {
+                    if (_invokeDelegate is null)
+                    {
+                        _invokeDelegate = (instance, returnValue, exception, state) => new CallTargetReturn<TReturn>(returnValue);
+                    }
+                }
             }
 
             internal delegate CallTargetReturn<TReturn> InvokeDelegate(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
 
-#if NETCOREAPP3_1 || NET5_0
-            [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             internal static CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
-                => invokeDelegate(instance, returnValue, exception, state);
+                => _invokeDelegate(instance, returnValue, exception, state);
         }
     }
 }
