@@ -370,6 +370,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Standalone", "src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.Standalone.csproj", "{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCoreAssemblyLoadFailureOlderNuGet", "test\test-applications\regression\NetCoreAssemblyLoadFailureOlderNuGet\NetCoreAssemblyLoadFailureOlderNuGet.csproj", "{D79491F0-CA92-439B-98CE-7AF9F57EBEB0}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "calltarget", "calltarget", "{933F1D4B-1216-4BC1-956E-8C30818BAA0F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallTargetNativeTest", "test\test-applications\calltarget\CallTargetNativeTest\CallTargetNativeTest.csproj", "{0F5D85A8-3593-4DEC-BB81-37468AA591E2}"

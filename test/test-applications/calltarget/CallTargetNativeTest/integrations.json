@@ -10,7 +10,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -23,7 +23,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -36,7 +36,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -49,7 +49,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -62,7 +62,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -75,7 +75,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -88,7 +88,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -101,7 +101,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -114,7 +114,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -127,7 +127,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -140,7 +140,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -153,7 +153,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -166,7 +166,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -179,7 +179,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -192,7 +192,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -205,7 +205,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -218,7 +218,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -231,7 +231,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -244,7 +244,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -257,7 +257,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -270,7 +270,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -283,7 +283,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -296,7 +296,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -309,7 +309,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -322,7 +322,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -335,7 +335,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -348,7 +348,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -361,7 +361,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -374,7 +374,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -387,7 +387,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -400,7 +400,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -413,7 +413,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -426,7 +426,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -439,7 +439,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -452,7 +452,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -465,7 +465,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -478,7 +478,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -491,7 +491,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -504,7 +504,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -517,7 +517,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -530,7 +530,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -543,7 +543,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -556,7 +556,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -569,7 +569,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -582,7 +582,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -595,7 +595,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -608,7 +608,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -621,7 +621,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -634,7 +634,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -647,7 +647,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -660,7 +660,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -673,7 +673,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -686,7 +686,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -699,7 +699,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -712,7 +712,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -725,7 +725,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -738,7 +738,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -751,7 +751,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -764,7 +764,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -777,7 +777,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -790,7 +790,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -803,7 +803,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -816,7 +816,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -829,7 +829,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -842,7 +842,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -855,7 +855,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -868,7 +868,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -881,7 +881,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -894,7 +894,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -907,7 +907,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -920,7 +920,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -933,7 +933,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -946,7 +946,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -959,7 +959,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -972,7 +972,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -985,7 +985,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -998,7 +998,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1011,7 +1011,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1024,7 +1024,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1037,7 +1037,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1050,7 +1050,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1063,7 +1063,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1076,7 +1076,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1089,7 +1089,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1102,7 +1102,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1115,7 +1115,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1128,7 +1128,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1141,7 +1141,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1154,7 +1154,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1167,7 +1167,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1180,7 +1180,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1193,7 +1193,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1206,7 +1206,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1219,7 +1219,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1232,7 +1232,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1245,7 +1245,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1258,7 +1258,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1271,7 +1271,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1284,7 +1284,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1297,7 +1297,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1310,7 +1310,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1323,7 +1323,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1336,7 +1336,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1349,7 +1349,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1362,7 +1362,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1375,7 +1375,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1388,7 +1388,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1401,7 +1401,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1414,7 +1414,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1427,7 +1427,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1440,7 +1440,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1453,7 +1453,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
@@ -1466,7 +1466,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1479,7 +1479,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1492,7 +1492,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1505,7 +1505,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1518,7 +1518,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1531,7 +1531,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1544,7 +1544,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1557,7 +1557,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1570,7 +1570,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1583,7 +1583,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1596,7 +1596,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1609,7 +1609,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1622,7 +1622,7 @@
           "method": "VoidMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1635,7 +1635,7 @@
           "method": "ReturnValueMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1648,7 +1648,7 @@
           "method": "ReturnReferenceMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
@@ -1661,7 +1661,7 @@
           "method": "ReturnGenericMethod"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.19.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
