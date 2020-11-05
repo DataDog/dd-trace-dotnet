@@ -38,12 +38,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.NoOp
             return rValue;
         }
 
-        public static CallTargetReturn<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, Task originalTask, CallTargetState state)
+        public static CallTargetReturn<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
             where TTarget : IInstance, IDuckType
             where TReturn : IReturnValue, IDuckType
         {
             CallTargetReturn<TReturn> rValue = new CallTargetReturn<TReturn>(returnValue);
-            string msg = $"{rValue} {nameof(Noop3ArgumentsIntegration)}.OnAsyncMethodEnd<{typeof(TTarget).FullName}, {typeof(TReturn).FullName}>({instance}, {returnValue}, {exception}, {originalTask}, {state})";
+            string msg = $"{rValue} {nameof(Noop3ArgumentsIntegration)}.OnAsyncMethodEnd<{typeof(TTarget).FullName}, {typeof(TReturn).FullName}>({instance}, {returnValue}, {exception}, {state})";
             Log.Information(msg);
             Console.WriteLine(msg);
             return rValue;

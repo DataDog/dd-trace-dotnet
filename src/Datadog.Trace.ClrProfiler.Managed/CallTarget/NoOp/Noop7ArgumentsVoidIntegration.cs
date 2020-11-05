@@ -31,14 +31,5 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.NoOp
             Console.WriteLine(msg);
             return returnValue;
         }
-
-        public static CallTargetReturn OnAsyncMethodEnd<TTarget>(TTarget instance, Exception exception, Task originalTask, CallTargetState state)
-        {
-            CallTargetReturn returnValue = CallTargetReturn.GetDefault();
-            string msg = $"{returnValue} {nameof(Noop7ArgumentsVoidIntegration)}.OnAsyncMethodEnd<{typeof(TTarget).FullName}>({instance}, {exception}, {originalTask}, {state})";
-            Log.Information(msg);
-            Console.WriteLine(msg);
-            return returnValue;
-        }
     }
 }
