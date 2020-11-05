@@ -4,7 +4,7 @@ cmake_policy(SET CMP0015 NEW)
 project("Datadog.Trace.ClrProfiler.Native" VERSION 1.20.0)
 
 add_compile_options(-std=c++11 -fPIC -fms-extensions)
-add_compile_options(-DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
+add_compile_options(-DHOST_64BIT -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
 SET(MANAGED_LOADER_DIRECTORY
