@@ -54,7 +54,7 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
-            Integrations = GetIntegrationSettings(source, DisabledIntegrationNames);
+            Integrations = new IntegrationSettingsCollection(source);
 
             var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
                             // backwards compatibility for names used in the past
@@ -220,9 +220,9 @@ namespace Datadog.Trace.Configuration
         public double? GlobalSamplingRate { get; set; }
 
         /// <summary>
-        /// Gets a collection of <see cref="Integrations"/> keyed by integration id.
+        /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
         /// </summary>
-        public IntegrationSettings[] Integrations { get; }
+        public IntegrationSettingsCollection Integrations { get; }
 
         /// <summary>
         /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
@@ -293,6 +293,14 @@ namespace Datadog.Trace.Configuration
         public static CompositeConfigurationSource CreateDefaultConfigurationSource()
         {
             return GlobalSettings.CreateDefaultConfigurationSource();
+        }
+
+        /// <summary>
+        /// Populate the internal structures. Modifying the settings past this point is not supported
+        /// </summary>
+        internal void Freeze()
+        {
+            Integrations.SetDisabledIntegrations(DisabledIntegrationNames);
         }
 
         internal bool IsIntegrationEnabled(int integrationId)
