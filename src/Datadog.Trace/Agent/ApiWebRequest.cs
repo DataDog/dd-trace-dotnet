@@ -1,12 +1,14 @@
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Agent.NamedPipes;
 
 namespace Datadog.Trace.Agent
 {
     internal class ApiWebRequest : IApiRequest
     {
         private readonly HttpWebRequest _request;
+        private readonly NamedPipesApiRequest _pipeTest;
 
         public ApiWebRequest(HttpWebRequest request)
         {
@@ -18,15 +20,26 @@ namespace Datadog.Trace.Agent
 
             // don't add automatic instrumentation to requests from this HttpClient
             _request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+
+            _pipeTest = new NamedPipesApiRequest("WEEE");
+
+            // Default headers
+            _pipeTest.AddHeader(AgentHttpHeaderNames.Language, ".NET");
+            _pipeTest.AddHeader(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion);
+            // don't add automatic instrumentation to requests from this HttpClient
+            _pipeTest.AddHeader(HttpHeaderNames.TracingEnabled, "false");
         }
 
         public void AddHeader(string name, string value)
         {
             _request.Headers.Add(name, value);
+            _pipeTest.AddHeader(name, value);
         }
 
         public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
         {
+            await _pipeTest.PostAsync(traces, formatterResolver);
+
             _request.Method = "POST";
 
             _request.ContentType = "application/msgpack";
