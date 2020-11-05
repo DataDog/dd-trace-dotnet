@@ -314,6 +314,17 @@ namespace Datadog.Trace.Configuration
             return false;
         }
 
+        internal bool IsIntegrationEnabled(string integrationName)
+        {
+            if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
+            {
+                bool? enabled = Integrations[integrationName].Enabled;
+                return enabled != false;
+            }
+
+            return false;
+        }
+
         internal bool IsOptInIntegrationEnabled(int integrationId)
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
