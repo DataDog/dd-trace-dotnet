@@ -19,5 +19,6 @@ namespace Datadog.Trace.Configuration
         ElasticsearchNet, // NOTE: keep this name without the 6 to avoid breaking changes
         ServiceStackRedis,
         StackExchangeRedis,
+        ServiceRemoting,
     }
 }
