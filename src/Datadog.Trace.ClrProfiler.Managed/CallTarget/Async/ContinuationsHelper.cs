@@ -1,81 +1,102 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Async
 {
-    internal static class ContinuationsHelper
+    internal static class ContinuationsHelper<TAsyncInstance>
     {
-        public static TAsyncInstance Add<TAsyncInstance, TState>(TAsyncInstance returnValue, Exception exception, TState state, Action<Exception, TState> continuation)
+        private static readonly ContinuationGenerator _continuationGenerator;
+
+        static ContinuationsHelper()
         {
-            if (exception != null)
-            {
-                continuation(exception, state);
-                return returnValue;
-            }
-
-            if (returnValue is Task returnTask)
-            {
-                return (TAsyncInstance)(object)TaskContinuationGenerator.SetTaskContinuation(returnTask, state, continuation);
-            }
-
-#if NETCOREAPP3_1 || NET5_0
-            if (returnValue is ValueTask valueTask)
-            {
-                ValueTask valueTaskResult = ValueTaskContinuationGenerator.SetValueTaskContinuation(valueTask, state, continuation);
-                return Unsafe.As<ValueTask, TAsyncInstance>(ref valueTaskResult);
-            }
-#endif
-
-            return returnValue;
+            _continuationGenerator = new ContinuationGenerator();
         }
 
-        public static TAsyncInstance Add<TAsyncInstance, TResult, TState>(TAsyncInstance returnValue, Exception exception, TState state, Func<TResult, Exception, TState, TResult> continuation)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TAsyncInstance SetContinuation<TState>(TAsyncInstance returnValue, Exception exception, TState state, Func<object, Exception, TState, object> continuation)
         {
-            if (exception != null)
-            {
-                continuation(default, exception, state);
-                return returnValue;
-            }
-
-            if (returnValue is Task<TResult> returnTask)
-            {
-                return (TAsyncInstance)(object)TaskContinuationGenerator<TResult>.SetTaskContinuation(returnTask, state, continuation);
-            }
-
-#if NETCOREAPP3_1 || NET5_0
-            if (returnValue is ValueTask<TResult> valueTask)
-            {
-                ValueTask<TResult> valueTaskResult = ValueTaskContinuationGenerator<TResult>.SetValueTaskContinuation(valueTask, state, continuation);
-                return Unsafe.As<ValueTask<TResult>, TAsyncInstance>(ref valueTaskResult);
-            }
-#endif
-            return returnValue;
+            return _continuationGenerator.SetContinuation(returnValue, exception, state, continuation);
         }
 
-        internal static class TaskContinuationGenerator
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static TAsyncInstance ToTAsyncInstance<TFrom>(TFrom returnValue)
         {
-            public static Task SetTaskContinuation<TState>(Task previousTask, TState state, Action<Exception, TState> continuation)
+#if NETCOREAPP3_1 || NET5_0
+            return Unsafe.As<TFrom, TAsyncInstance>(ref returnValue);
+#else
+            return (TAsyncInstance)(object)returnValue;
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static TTo FromTAsyncInstance<TTo>(TAsyncInstance returnValue)
+        {
+#if NETCOREAPP3_1 || NET5_0
+            return Unsafe.As<TAsyncInstance, TTo>(ref returnValue);
+#else
+            return (TTo)(object)returnValue;
+#endif
+        }
+
+        private readonly struct TaskContinuationGeneratorState<TState>
+        {
+            private readonly TState _state;
+            private readonly Func<object, Exception, TState, object> _continuation;
+
+            public TaskContinuationGeneratorState(TState state, Func<object, Exception, TState, object> continuation)
             {
+                _state = state;
+                _continuation = continuation;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void ExecuteContinuation(Task parentTask)
+            {
+                _continuation(null, parentTask?.Exception, _state);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public TResult ExecuteContinuation<TResult>(Task<TResult> parentTask)
+            {
+                return (TResult)_continuation(parentTask.Result, parentTask.Exception, _state);
+            }
+        }
+
+        private class ContinuationGenerator
+        {
+            public virtual TAsyncInstance SetContinuation<TState>(TAsyncInstance returnValue, Exception exception, TState state, Func<object, Exception, TState, object> continuation)
+            {
+                return returnValue;
+            }
+        }
+
+        private class TaskContinuationGenerator : ContinuationGenerator
+        {
+            public override TAsyncInstance SetContinuation<TState>(TAsyncInstance returnValue, Exception exception, TState state, Func<object, Exception, TState, object> continuation)
+            {
+                if (exception != null)
+                {
+                    continuation(default, exception, state);
+                    return returnValue;
+                }
+
+                Task previousTask = FromTAsyncInstance<Task>(returnValue);
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
-                    continuation(null, state);
+                    continuation(default, null, state);
 #if NET45
                     // "If the supplied array/enumerable contains no tasks, the returned task will immediately transition to a RanToCompletion state before it's returned to the caller."
                     // https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall?redirectedfrom=MSDN&view=netframework-4.5.2#System_Threading_Tasks_Task_WhenAll_System_Threading_Tasks_Task___
-                    return Task.WhenAll();
+                    return ToTAsyncInstance(Task.WhenAll());
 #else
-                    return Task.CompletedTask;
+                    return ToTAsyncInstance(Task.CompletedTask);
 #endif
                 }
 
                 var continuationState = new TaskContinuationGeneratorState<TState>(state, continuation);
-                return previousTask.ContinueWith(
+                return ToTAsyncInstance(previousTask.ContinueWith(
                     (pTask, oState) =>
                     {
                         ((TaskContinuationGeneratorState<TState>)oState).ExecuteContinuation(pTask);
@@ -83,38 +104,29 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Async
                     continuationState,
                     CancellationToken.None,
                     TaskContinuationOptions.ExecuteSynchronously,
-                    TaskScheduler.Current);
-            }
-
-            internal readonly struct TaskContinuationGeneratorState<TState>
-            {
-                private readonly TState _state;
-                private readonly Action<Exception, TState> _continuation;
-
-                public TaskContinuationGeneratorState(TState state, Action<Exception, TState> continuation)
-                {
-                    _state = state;
-                    _continuation = continuation;
-                }
-
-                public void ExecuteContinuation(Task parentTask)
-                {
-                    _continuation(parentTask?.Exception, _state);
-                }
+                    TaskScheduler.Current));
             }
         }
 
-        internal static class TaskContinuationGenerator<TResult>
+        private class TaskContinuationGenerator<TResult> : ContinuationGenerator
         {
-            public static Task<TResult> SetTaskContinuation<TState>(Task<TResult> previousTask, TState state, Func<TResult, Exception, TState, TResult> continuation)
+            public override TAsyncInstance SetContinuation<TState>(TAsyncInstance returnValue, Exception exception, TState state, Func<object, Exception, TState, object> continuation)
             {
+                if (exception != null)
+                {
+                    continuation(default, exception, state);
+                    return returnValue;
+                }
+
+                Task<TResult> previousTask = FromTAsyncInstance<Task<TResult>>(returnValue);
+
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
-                    return Task.FromResult(continuation(previousTask.Result, null, state));
+                    return ToTAsyncInstance(Task.FromResult((TResult)continuation(previousTask.Result, default, state)));
                 }
 
                 var continuationState = new TaskContinuationGeneratorState<TState>(state, continuation);
-                return previousTask.ContinueWith(
+                return ToTAsyncInstance(previousTask.ContinueWith(
                     (pTask, oState) =>
                     {
                         return ((TaskContinuationGeneratorState<TState>)oState).ExecuteContinuation(pTask);
@@ -122,62 +134,70 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Async
                     continuationState,
                     CancellationToken.None,
                     TaskContinuationOptions.ExecuteSynchronously,
-                    TaskScheduler.Current);
-            }
-
-            internal readonly struct TaskContinuationGeneratorState<TState>
-            {
-                private readonly TState _state;
-                private readonly Func<TResult, Exception, TState, TResult> _continuation;
-
-                public TaskContinuationGeneratorState(TState state, Func<TResult, Exception, TState, TResult> continuation)
-                {
-                    _state = state;
-                    _continuation = continuation;
-                }
-
-                public TResult ExecuteContinuation(Task<TResult> parentTask)
-                {
-                    return _continuation(parentTask.Result, parentTask.Exception, _state);
-                }
+                    TaskScheduler.Current));
             }
         }
 
 #if NETCOREAPP3_1 || NET5_0
-        internal static class ValueTaskContinuationGenerator
+        private class ValueTaskContinuationGenerator : ContinuationGenerator
         {
-            public static async ValueTask SetValueTaskContinuation<TState>(ValueTask previousValueTask, TState state, Action<Exception, TState> continuation)
+            public override TAsyncInstance SetContinuation<TState>(TAsyncInstance returnValue, Exception exception, TState state, Func<object, Exception, TState, object> continuation)
             {
-                try
+                if (exception != null)
                 {
-                    await previousValueTask;
-                }
-                catch (Exception ex)
-                {
-                    continuation(ex, state);
-                    throw;
+                    continuation(default, exception, state);
+                    return returnValue;
                 }
 
-                continuation(null, state);
+                ValueTask previousValueTask = FromTAsyncInstance<ValueTask>(returnValue);
+
+                return ToTAsyncInstance(InnerSetValueTaskContinuation(previousValueTask, state, continuation));
+
+                static async ValueTask InnerSetValueTaskContinuation(ValueTask previousValueTask, TState state, Func<object, Exception, TState, object> continuation)
+                {
+                    try
+                    {
+                        await previousValueTask;
+                    }
+                    catch (Exception ex)
+                    {
+                        continuation(default, ex, state);
+                        throw;
+                    }
+
+                    continuation(default, default, state);
+                }
             }
         }
 
-        internal static class ValueTaskContinuationGenerator<TResult>
+        private class ValueTaskContinuationGenerator<TResult> : ContinuationGenerator
         {
-            public static async ValueTask<TResult> SetValueTaskContinuation<TState>(ValueTask<TResult> previousValueTask, TState state, Func<TResult, Exception, TState, TResult> continuation)
+            public override TAsyncInstance SetContinuation<TState>(TAsyncInstance returnValue, Exception exception, TState state, Func<object, Exception, TState, object> continuation)
             {
-                TResult result = default;
-                try
+                if (exception != null)
                 {
-                    result = await previousValueTask;
-                }
-                catch (Exception ex)
-                {
-                    continuation(result, ex, state);
-                    throw;
+                    continuation(default, exception, state);
+                    return returnValue;
                 }
 
-                return continuation(result, null, state);
+                ValueTask<TResult> previousValueTask = FromTAsyncInstance<ValueTask<TResult>>(returnValue);
+                return ToTAsyncInstance(InnerSetValueTaskContinuation(previousValueTask, state, continuation));
+
+                static async ValueTask<TResult> InnerSetValueTaskContinuation(ValueTask<TResult> previousValueTask, TState state, Func<object, Exception, TState, object> continuation)
+                {
+                    TResult result = default;
+                    try
+                    {
+                        result = await previousValueTask;
+                    }
+                    catch (Exception ex)
+                    {
+                        continuation(result, ex, state);
+                        throw;
+                    }
+
+                    return (TResult)continuation(result, null, state);
+                }
             }
         }
 #endif

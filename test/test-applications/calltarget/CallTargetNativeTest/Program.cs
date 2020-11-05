@@ -616,7 +616,7 @@ namespace CallTargetNativeTest
             Console.WriteLine($"{typeof(With6Arguments).FullName}.ReturnGenericMethod<string>");
             RunMethod(() => w6.ReturnGenericMethod<string, string, Tuple<int, int>, ulong>("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987));
             Console.WriteLine($"{typeof(With6Arguments).FullName}.ReturnGenericMethod<int>");
-            RunMethod(() => w6.ReturnGenericMethod<int, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987));
+            RunMethod(() => w6.ReturnGenericMethod<Task<int>, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987));
             Console.WriteLine();
             //
             var w6g1 = new With6ArgumentsGeneric<string>();
