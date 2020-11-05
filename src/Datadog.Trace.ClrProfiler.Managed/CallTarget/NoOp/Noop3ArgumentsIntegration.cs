@@ -9,18 +9,18 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.CallTarget.NoOp
 {
     /// <summary>
-    /// NoOp Integration for 6 Arguments
+    /// NoOp Integration for 3 Arguments
     /// </summary>
-    public static class Noop6ArgumentsIntegration
+    public static class Noop3ArgumentsIntegration
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(Noop6ArgumentsIntegration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(Noop3ArgumentsIntegration));
 
-        public static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6)
+        public static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3)
             where TTarget : IInstance, IDuckType
             where TArg3 : IArg, IDuckType
         {
             CallTargetState returnValue = new CallTargetState(instance.Instance);
-            string msg = $"{returnValue} {nameof(Noop6ArgumentsIntegration)}.OnMethodBegin<{typeof(TTarget).FullName}, {typeof(TArg1).FullName}, {typeof(TArg2).FullName}, {typeof(TArg3).FullName}, {typeof(TArg4).FullName}, {typeof(TArg5).FullName}, {typeof(TArg6).FullName}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6})";
+            string msg = $"{returnValue} {nameof(Noop3ArgumentsIntegration)}.OnMethodBegin<{typeof(TTarget).FullName}, {typeof(TArg1).FullName}, {typeof(TArg2).FullName}, {typeof(TArg3).FullName}>({instance}, {arg1}, {arg2}, {arg3})";
             Log.Information(msg);
             Console.WriteLine(msg);
             return returnValue;
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.NoOp
             where TReturn : IReturnValue, IDuckType
         {
             CallTargetReturn<TReturn> rValue = new CallTargetReturn<TReturn>(returnValue);
-            string msg = $"{rValue} {nameof(Noop6ArgumentsIntegration)}.OnMethodEnd<{typeof(TTarget).FullName}>({instance}, {exception}, {state})";
+            string msg = $"{rValue} {nameof(Noop3ArgumentsIntegration)}.OnMethodEnd<{typeof(TTarget).FullName}>({instance}, {exception}, {state})";
             Log.Information(msg);
             Console.WriteLine(msg);
             return rValue;
