@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(CallTargetInvokerHandler));
         private static readonly MethodInfo UnwrapReturnValueMethodInfo = typeof(CallTargetInvokerHandler).GetMethod(nameof(CallTargetInvokerHandler.UnwrapReturnValue), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo ConvertTypeMethodInfo = typeof(CallTargetInvokerHandler).GetMethod(nameof(CallTargetInvokerHandler.ConvertType), BindingFlags.NonPublic | BindingFlags.Static);
 
         internal static DynamicMethod CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
         {
@@ -153,9 +154,115 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         internal static DynamicMethod CreateSlowBeginMethodDelegate(Type integrationType, Type targetType)
         {
             Log.Debug($"Creating SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            MethodInfo onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            if (onMethodBeginMethodInfo is null)
+            {
+                throw new NullReferenceException($"Couldn't find the method: {BeginMethodName} in type: {integrationType.FullName}");
+            }
+
+            if (onMethodBeginMethodInfo.ReturnType != typeof(CallTargetState))
+            {
+                throw new ArgumentException($"The return type of the method: {BeginMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetState)}");
+            }
+
+            Type[] genericArgumentsTypes = onMethodBeginMethodInfo.GetGenericArguments();
+            if (genericArgumentsTypes.Length < 1)
+            {
+                throw new ArgumentException($"The method: {BeginMethodName} in type: {integrationType.FullName} doesn't have the generic type for the instance type.");
+            }
+
+            ParameterInfo[] onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
+
+            List<Type> callGenericTypes = new List<Type>();
+
+            bool mustLoadInstance = onMethodBeginParameters[0].ParameterType.IsGenericParameter && onMethodBeginParameters[0].ParameterType.GenericParameterPosition == 0;
+            Type instanceGenericType = genericArgumentsTypes[0];
+            Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
+            Type instanceProxyType = null;
+            if (instanceGenericConstraint != null)
+            {
+                var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
+                instanceProxyType = result.ProxyType;
+                callGenericTypes.Add(instanceProxyType);
+            }
+            else
+            {
+                callGenericTypes.Add(targetType);
+            }
+
+            DynamicMethod callMethod = new DynamicMethod(
+                     $"{onMethodBeginMethodInfo.DeclaringType.Name}.{onMethodBeginMethodInfo.Name}",
+                     typeof(CallTargetState),
+                     new Type[] { targetType, typeof(object[]) },
+                     onMethodBeginMethodInfo.Module,
+                     true);
+
+            ILGenerator ilWriter = callMethod.GetILGenerator();
+
+            // Load the instance if is needed
+            if (mustLoadInstance)
+            {
+                ilWriter.Emit(OpCodes.Ldarg_0);
+
+                if (instanceGenericConstraint != null)
+                {
+                    ConstructorInfo ctor = instanceProxyType.GetConstructors()[0];
+                    if (targetType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
+                    {
+                        ilWriter.Emit(OpCodes.Box, targetType);
+                    }
+
+                    ilWriter.Emit(OpCodes.Newobj, ctor);
+                }
+            }
+
+            // Load arguments
+            for (var i = mustLoadInstance ? 1 : 0; i < onMethodBeginParameters.Length; i++)
+            {
+                Type targetParameterType = onMethodBeginParameters[i].ParameterType;
+                Type targetParameterTypeConstraint = null;
+
+                if (targetParameterType.IsGenericParameter)
+                {
+                    targetParameterType = genericArgumentsTypes[targetParameterType.GenericParameterPosition];
+
+                    targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
+                    if (targetParameterTypeConstraint is null)
+                    {
+                        callGenericTypes.Add(typeof(object));
+                    }
+                    else
+                    {
+                        targetParameterType = targetParameterTypeConstraint;
+                        callGenericTypes.Add(targetParameterTypeConstraint);
+                    }
+                }
+
+                ilWriter.Emit(OpCodes.Ldarg_1);
+                WriteIntValue(ilWriter, i - (mustLoadInstance ? 1 : 0));
+                ilWriter.Emit(OpCodes.Ldelem_Ref);
+
+                if (targetParameterTypeConstraint != null)
+                {
+                    ilWriter.EmitCall(OpCodes.Call, ConvertTypeMethodInfo.MakeGenericMethod(targetParameterTypeConstraint), null);
+                }
+
+                if (targetParameterType.IsValueType)
+                {
+                    ilWriter.Emit(OpCodes.Unbox_Any, targetParameterType);
+                }
+            }
+
+            // Call method
+            // Log.Information("Generic Types: " + string.Join(", ", callGenericTypes.Select(t => t.FullName)));
+            // Log.Information("Method: " + onMethodBeginMethodInfo);
+            onMethodBeginMethodInfo = onMethodBeginMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
+            // Log.Information("Method: " + onMethodBeginMethodInfo);
+            ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, null);
+            ilWriter.Emit(OpCodes.Ret);
 
             Log.Debug($"Created SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
-            return null;
+            return callMethod;
         }
 
         internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType)
@@ -405,6 +512,61 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             var innerValue = returnValue.GetReturnValue();
             return new CallTargetReturn<TTo>((TTo)innerValue.Instance);
+        }
+
+        private static void WriteIntValue(ILGenerator il, int value)
+        {
+            switch (value)
+            {
+                case 0:
+                    il.Emit(OpCodes.Ldc_I4_0);
+                    break;
+                case 1:
+                    il.Emit(OpCodes.Ldc_I4_1);
+                    break;
+                case 2:
+                    il.Emit(OpCodes.Ldc_I4_2);
+                    break;
+                case 3:
+                    il.Emit(OpCodes.Ldc_I4_3);
+                    break;
+                case 4:
+                    il.Emit(OpCodes.Ldc_I4_4);
+                    break;
+                case 5:
+                    il.Emit(OpCodes.Ldc_I4_5);
+                    break;
+                case 6:
+                    il.Emit(OpCodes.Ldc_I4_6);
+                    break;
+                case 7:
+                    il.Emit(OpCodes.Ldc_I4_7);
+                    break;
+                case 8:
+                    il.Emit(OpCodes.Ldc_I4_8);
+                    break;
+                default:
+                    il.Emit(OpCodes.Ldc_I4, value);
+                    break;
+            }
+        }
+
+        private static T ConvertType<T>(object value)
+        {
+            var conversionType = typeof(T);
+            if (value is null || conversionType == typeof(object))
+            {
+                return (T)value;
+            }
+
+            Type valueType = value.GetType();
+            if (valueType == conversionType || conversionType.IsAssignableFrom(valueType))
+            {
+                return (T)value;
+            }
+
+            // Finally we try to duck type
+            return DuckType.Create<T>(value);
         }
 
         internal static class IntegrationOptions<TIntegration, TTarget>
