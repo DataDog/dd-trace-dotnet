@@ -135,6 +135,11 @@ namespace Datadog.Trace.AspNet
                 tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: true);
 
                 httpContext.Items[_httpContextScopeKey] = scope;
+
+                // Decorate the incoming HTTP Request with distributed tracing headers
+                // in case the next processor cannot access the stored Scope
+                // (e.g. WCF being hosted in IIS)
+                SpanContextPropagator.Instance.Inject(scope.Span.Context, httpRequest.Headers.Wrap());
             }
             catch (Exception ex)
             {
