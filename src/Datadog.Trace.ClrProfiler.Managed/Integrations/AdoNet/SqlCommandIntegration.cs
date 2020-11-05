@@ -216,14 +216,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                sqlCommandType = command.GetInstrumentedType(SystemSqlCommandTypeName);
-                sqlDataReaderType = sqlCommandType.Assembly.GetType(SystemSqlDataReaderTypeName);
+                sqlCommandType = command.GetInstrumentedType(SqlCommandTypeName, SqlClientNamespaces);
+                sqlDataReaderType = sqlCommandType.Assembly.GetType($"{sqlCommandType.Namespace}.{SqlDataReaderTypeName}", throwOnError: false);
             }
             catch (Exception ex)
             {
-                // This shouldn't happen because the assembly holding the System.Data.SqlClient.SqlDataReader type should have been loaded already
-                // profiled app will not continue working as expected without this method
-                Log.Error(ex, "Error finding the System.Data.SqlClient.SqlDataReader type");
+                // This shouldn't happen because the assembly holding the SqlCommand and SqlDataReader types should have been loaded already.
+                // Profiled app will not continue working as expected without this method.
+                Log.Error(ex, "Error finding the SqlCommand or SqlDataReader type");
                 throw;
             }
 
