@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
@@ -26,6 +27,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.NoOp
         {
             CallTargetReturn returnValue = CallTargetReturn.GetDefault();
             string msg = $"{returnValue} {nameof(Noop6ArgumentsVoidIntegration)}.OnMethodEnd<{typeof(TTarget).FullName}>({instance}, {exception}, {state})";
+            Log.Information(msg);
+            Console.WriteLine(msg);
+            return returnValue;
+        }
+
+        public static CallTargetReturn OnAsyncMethodEnd<TTarget>(TTarget instance, Exception exception, Task originalTask, CallTargetState state)
+        {
+            CallTargetReturn returnValue = CallTargetReturn.GetDefault();
+            string msg = $"{returnValue} {nameof(Noop6ArgumentsVoidIntegration)}.OnAsyncMethodEnd<{typeof(TTarget).FullName}>({instance}, {exception}, {originalTask}, {state})";
             Log.Information(msg);
             Console.WriteLine(msg);
             return returnValue;

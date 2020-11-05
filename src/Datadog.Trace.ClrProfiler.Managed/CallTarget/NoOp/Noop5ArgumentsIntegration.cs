@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -31,7 +32,18 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.NoOp
             where TReturn : IReturnValue, IDuckType
         {
             CallTargetReturn<TReturn> rValue = new CallTargetReturn<TReturn>(returnValue);
-            string msg = $"{rValue} {nameof(Noop5ArgumentsIntegration)}.OnMethodEnd<{typeof(TTarget).FullName}>({instance}, {exception}, {state})";
+            string msg = $"{rValue} {nameof(Noop5ArgumentsIntegration)}.OnMethodEnd<{typeof(TTarget).FullName}, {typeof(TReturn).FullName}>({instance}, {returnValue}, {exception}, {state})";
+            Log.Information(msg);
+            Console.WriteLine(msg);
+            return rValue;
+        }
+
+        public static CallTargetReturn<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, Task originalTask, CallTargetState state)
+            where TTarget : IInstance, IDuckType
+            where TReturn : IReturnValue, IDuckType
+        {
+            CallTargetReturn<TReturn> rValue = new CallTargetReturn<TReturn>(returnValue);
+            string msg = $"{rValue} {nameof(Noop5ArgumentsIntegration)}.OnAsyncMethodEnd<{typeof(TTarget).FullName}, {typeof(TReturn).FullName}>({instance}, {returnValue}, {exception}, {originalTask}, {state})";
             Log.Information(msg);
             Console.WriteLine(msg);
             return rValue;
