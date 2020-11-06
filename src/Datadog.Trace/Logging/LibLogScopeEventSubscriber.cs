@@ -75,7 +75,7 @@ namespace Datadog.Trace.Logging
 
         public void StackOnSpanOpened(object sender, SpanEventArgs spanEventArgs)
         {
-            SetCorrelationIdentifierContext(_defaultServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            SetSerilogCompatibleLogContext(_defaultServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
         }
 
         public void StackOnSpanClosed(object sender, SpanEventArgs spanEventArgs)
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Logging
         public void MapOnSpanActivated(object sender, SpanEventArgs spanEventArgs)
         {
             RemoveAllCorrelationIdentifierContexts();
-            SetCorrelationIdentifierContext(_defaultServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            SetLogContext(_defaultServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
         }
 
         public void MapOnTraceEnded(object sender, SpanEventArgs spanEventArgs)
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Logging
 
         private void SetDefaultValues()
         {
-            SetCorrelationIdentifierContext(_defaultServiceName, _version, _env, 0, 0);
+            SetLogContext(_defaultServiceName, _version, _env, 0, 0);
         }
 
         private void RemoveLastCorrelationIdentifierContext()
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        private void SetCorrelationIdentifierContext(string service, string version, string env, ulong traceId, ulong spanId)
+        private void SetLogContext(string service, string version, string env, ulong traceId, ulong spanId)
         {
             if (!_safeToAddToMdc)
             {
@@ -169,6 +169,39 @@ namespace Datadog.Trace.Logging
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
                         CorrelationIdentifier.SpanIdKey, spanId.ToString(), destructure: false));
+            }
+            catch (Exception)
+            {
+                _safeToAddToMdc = false;
+                RemoveAllCorrelationIdentifierContexts();
+            }
+        }
+
+        private void SetSerilogCompatibleLogContext(string service, string version, string env, ulong traceId, ulong spanId)
+        {
+            if (!_safeToAddToMdc)
+            {
+                return;
+            }
+
+            try
+            {
+                // TODO: Debug logs
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.SerilogServiceKey, service, destructure: false));
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.SerilogVersionKey, version, destructure: false));
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.SerilogEnvKey, env, destructure: false));
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.SerilogTraceIdKey, traceId.ToString(), destructure: false));
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.SerilogSpanIdKey, spanId.ToString(), destructure: false));
             }
             catch (Exception)
             {

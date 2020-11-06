@@ -12,21 +12,15 @@ trigger:
 variables:
   buildConfiguration: Debug
   dotnetCoreSdkVersion: 3.1.107
+  dotnetCoreSdk5Version: 5.0.100-rc.2.20479.15
   ddApiKey: $(DD_API_KEY)
   DD_DOTNET_TRACER_MSBUILD:
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
   containers:
-  - container: dd_agent_dev_windows
-    image: datadog/agent-dev:olivielpeau-ci-container-defaults-py3-win1809
-    ports:
-    - 8126:8126
-    env:
-      DD_API_KEY: $(ddApiKey)
-      DD_INSIDE_CI: true
-  - container: dd_agent_dev_linux
-    image: datadog/agent-dev:olivielpeau-ci-container-defaults-py3
+  - container: dd_agent
+    image: datadog/agent
     ports:
     - 8126:8126
     env:
@@ -40,16 +34,14 @@ jobs:
     matrix:
       windows:
         imageName: windows-2019
-        serviceName: dd_agent_dev_windows
       linux:
         imageName: ubuntu-18.04
-        serviceName: dd_agent_dev_linux
   pool:
     vmImage: $(imageName)
 
   # Enable the Datadog Agent service for this job
   services:
-    dd_agent: $[ variables['serviceName'] ]
+    dd_agent: dd_agent
 
   steps:
 
@@ -78,6 +70,12 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
 
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+
   - task: DotNetCoreCLI@2
     displayName: dotnet build
     inputs:
@@ -88,6 +86,7 @@ jobs:
         src/**/*.csproj
         test/**/*.Tests.csproj
         benchmarks/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet
 
@@ -112,7 +111,7 @@ jobs:
 
   # Enable the Datadog Agent service for this job
   services:
-    dd_agent: dd_agent_dev_windows
+    dd_agent: dd_agent
 
   steps:
 

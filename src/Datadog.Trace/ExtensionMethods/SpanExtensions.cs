@@ -57,11 +57,9 @@ namespace Datadog.Trace.ExtensionMethods
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
-            tags.SpanKind = SpanKinds.Server;
             tags.HttpMethod = method;
             tags.HttpRequestHeadersHost = host;
             tags.HttpUrl = httpUrl;
-            tags.Language = TracerConstants.Language;
 
             foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
             {
@@ -71,12 +69,19 @@ namespace Datadog.Trace.ExtensionMethods
 
         internal static void SetServerStatusCode(this Span span, int statusCode)
         {
-            span.SetTag(Tags.HttpStatusCode, HttpTags.ConvertStatusCodeToString(statusCode));
+            string statusCodeString = HttpTags.ConvertStatusCodeToString(statusCode);
+            span.SetTag(Tags.HttpStatusCode, statusCodeString);
 
             // 5xx codes are server-side errors
             if (statusCode / 100 == 5)
             {
                 span.Error = true;
+
+                // if an error message already exists (e.g. from a previous exception), don't replace it
+                if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                {
+                    span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
+                }
             }
         }
     }

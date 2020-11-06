@@ -13,6 +13,13 @@ namespace Datadog.Trace
         internal static readonly string TraceIdKey = "dd.trace_id";
         internal static readonly string SpanIdKey = "dd.span_id";
 
+        // Serilog property names require valid C# identifiers
+        internal static readonly string SerilogServiceKey = "dd_service";
+        internal static readonly string SerilogVersionKey = "dd_version";
+        internal static readonly string SerilogEnvKey = "dd_env";
+        internal static readonly string SerilogTraceIdKey = "dd_trace_id";
+        internal static readonly string SerilogSpanIdKey = "dd_span_id";
+
         /// <summary>
         /// Gets the name of the service
         /// </summary>

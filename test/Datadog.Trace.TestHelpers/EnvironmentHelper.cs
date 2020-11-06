@@ -37,12 +37,12 @@ namespace Datadog.Trace.TestHelpers
             string sampleName,
             Type anchorType,
             ITestOutputHelper output,
-            string samplesDirectory = "samples",
+            string samplesDirectory = "test/test-applications/integrations",
             bool prependSamplesToAppName = true,
             bool requiresProfiling = true)
         {
             SampleName = sampleName;
-            _samplesDirectory = samplesDirectory ?? "samples";
+            _samplesDirectory = samplesDirectory ?? "test/test-applications/integrations";
             _anchorType = anchorType;
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
@@ -93,7 +93,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static bool IsCoreClr()
         {
-            return RuntimeFrameworkDescription.Contains("core");
+            return RuntimeFrameworkDescription.Contains("core") || Environment.Version.Major >= 5;
         }
 
         public static string GetRuntimeIdentifier()
@@ -391,6 +391,11 @@ namespace Datadog.Trace.TestHelpers
         {
             if (_isCoreClr)
             {
+                if (_major >= 5)
+                {
+                    return $"net{_major}.{_minor}";
+                }
+
                 return $"netcoreapp{_major}.{_minor}";
             }
 

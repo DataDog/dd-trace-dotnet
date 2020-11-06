@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
@@ -13,8 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     /// </summary>
     public static class SqlCommandIntegration
     {
-        private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
+        private const string Major5 = "4";
 
         private const string SqlCommandTypeName = "System.Data.SqlClient.SqlCommand";
         private const string SqlDataReaderTypeName = "System.Data.SqlClient.SqlDataReader";
@@ -35,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SqlDataReaderTypeName },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         public static object ExecuteReader(
             object command,
             int opCode,
@@ -69,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand))
             {
                 try
                 {
@@ -98,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         public static object ExecuteReaderWithBehavior(
             object command,
             int behavior,
@@ -135,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand))
             {
                 try
                 {
@@ -164,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         public static object ExecuteReaderAsync(
             object command,
             int behavior,
@@ -173,34 +174,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteReaderAsyncInternal(
-                (DbCommand)command,
-                (CommandBehavior)behavior,
-                (CancellationToken)boxedCancellationToken,
-                opCode,
-                mdToken,
-                moduleVersionPtr);
-        }
-
-        private static async Task<DbDataReader> ExecuteReaderAsyncInternal(
-            DbCommand command,
-            CommandBehavior commandBehavior,
-            CancellationToken cancellationToken,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
             const string methodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
-            Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>> instrumentedMethod;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
+            var commandBehavior = (CommandBehavior)behavior;
+
+            Type sqlCommandType;
+            Type sqlDataReaderType;
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+                sqlCommandType = command.GetInstrumentedType(SqlCommandTypeName);
+                sqlDataReaderType = sqlCommandType.Assembly.GetType(SqlDataReaderTypeName);
+            }
+            catch (Exception ex)
+            {
+                // This shouldn't happen because the assembly holding the System.Data.SqlClient.SqlDataReader type should have been loaded already
+                // profiled app will not continue working as expected without this method
+                Log.Error(ex, "Error finding the System.Data.SqlClient.SqlDataReader type");
+                throw;
+            }
 
+            Func<DbCommand, CommandBehavior, CancellationToken, object> instrumentedMethod;
+
+            try
+            {
                 instrumentedMethod =
-                    MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
+                    MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                       .WithConcreteType(targetType)
+                       .WithConcreteType(sqlCommandType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
@@ -218,11 +219,38 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName))
+            return AsyncHelper.InvokeGenericTaskDelegate(
+                owningType: command.GetType(),
+                taskResultType: sqlDataReaderType,
+                nameOfIntegrationMethod: nameof(ExecuteReaderAsyncInternal),
+                integrationType: typeof(SqlCommandIntegration),
+                (DbCommand)command,
+                commandBehavior,
+                cancellationToken,
+                instrumentedMethod);
+        }
+
+        /// <summary>
+        /// Calls the underlying ExecuteReaderAsync and traces the request.
+        /// </summary>
+        /// <typeparam name="T">The type of the generic Task instantiation</typeparam>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="commandBehavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="instrumentedMethod">A delegate for the method we are instrumenting</param>
+        /// <returns>A task with the result</returns>
+        private static async Task<T> ExecuteReaderAsyncInternal<T>(
+            DbCommand command,
+            CommandBehavior commandBehavior,
+            CancellationToken cancellationToken,
+            Func<DbCommand, CommandBehavior, CancellationToken, object> instrumentedMethod)
+        {
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command))
             {
                 try
                 {
-                    return await instrumentedMethod(command, commandBehavior, cancellationToken).ConfigureAwait(false);
+                    var task = (Task<T>)instrumentedMethod(command, commandBehavior, cancellationToken);
+                    return await task.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -245,7 +273,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         public static int ExecuteNonQuery(
             object command,
             int opCode,
@@ -281,7 +309,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             var dbCommand = command as DbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand))
             {
                 try
                 {
@@ -309,7 +337,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         public static object ExecuteNonQueryAsync(
             object command,
             object boxedCancellationToken,
@@ -360,7 +388,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command))
             {
                 try
                 {
@@ -387,7 +415,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         public static object ExecuteScalar(
             object command,
             int opCode,
@@ -423,7 +451,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             var dbCommand = command as DbCommand;
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, dbCommand))
             {
                 try
                 {
@@ -451,7 +479,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         public static object ExecuteScalarAsync(
             object command,
             object boxedCancellationToken,
@@ -502,7 +530,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command, IntegrationName))
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command))
             {
                 try
                 {

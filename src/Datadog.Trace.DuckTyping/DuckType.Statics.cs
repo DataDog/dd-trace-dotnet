@@ -38,10 +38,5 @@ namespace Datadog.Trace.DuckTyping
         private static ModuleBuilder _moduleBuilder = null;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static AssemblyBuilder _assemblyBuilder = null;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static ConstructorInfo _ignoresAccessChecksToAttributeCtor = typeof(IgnoresAccessChecksToAttribute).GetConstructor(new Type[] { typeof(string) });
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static HashSet<string> _ignoresAccessChecksToAssembliesSet = new HashSet<string>();
     }
 }

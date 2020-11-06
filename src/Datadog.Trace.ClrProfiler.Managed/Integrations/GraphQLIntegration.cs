@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -15,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class GraphQLIntegration
     {
-        private const string IntegrationName = "GraphQL";
+        internal const string IntegrationName = "GraphQL";
         private const string ServiceName = "graphql";
 
         private const string Major2 = "2";
@@ -221,8 +219,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static void DecorateSpan(Span span, GraphQLTags tags)
         {
             span.Type = SpanTypes.GraphQL;
-            tags.SpanKind = SpanKinds.Server;
-            tags.Language = TracerConstants.Language;
         }
 
         private static Scope CreateScopeFromValidate(object document)
@@ -248,13 +244,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 DecorateSpan(span, tags);
                 tags.Source = source;
 
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
-
-                if (analyticsSampleRate != null)
-                {
-                    tags.AnalyticsSampleRate = analyticsSampleRate;
-                }
+                tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {
@@ -299,13 +289,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.OperationName = operationName;
                 tags.OperationType = operationType;
 
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
-
-                if (analyticsSampleRate != null)
-                {
-                    tags.AnalyticsSampleRate = analyticsSampleRate;
-                }
+                tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

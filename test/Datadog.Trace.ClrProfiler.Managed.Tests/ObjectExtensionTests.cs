@@ -1,3 +1,4 @@
+using System;
 using Datadog.Trace.ClrProfiler.Emit;
 using Xunit;
 
@@ -58,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Fact]
-        public void CallMethod_OneTypeArg_WithDifferentReturnType_ShouldNotAffectResult()
+        public void CallMethod_OneTypeArg_WithDifferentValueTypeReturnType_ShouldNotAffectResult()
         {
             var someInstance = new SomeClass();
             var expected = 42;
@@ -66,12 +67,31 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var objectResult = someInstance.CallMethod<object>("GetTheAnswerToTheUniverse");
             var actualResult = someInstance.CallMethod<int>("GetTheAnswerToTheUniverse");
 
+            // Throws
+            Assert.ThrowsAny<Exception>(() => someInstance.CallMethod<double>("GetTheAnswerToTheUniverse"));
+
             Assert.Equal(expected, (int)objectResult.GetValueOrDefault());
             Assert.Equal(expected, actualResult.GetValueOrDefault());
         }
 
         [Fact]
-        public void CallMethod_TwoTypeArgs_WithDifferentReturnType_ShouldNotAffectResult()
+        public void CallMethod_OneTypeArg_WithDifferentReferenceTypeReturnType_ShouldNotAffectResult()
+        {
+            var someInstance = new SomeClass();
+            var expected = someInstance;
+
+            var objectResult = someInstance.CallMethod<object>("ReturnThis");
+            var actualResult = someInstance.CallMethod<SomeClass>("ReturnThis");
+
+            // Throws
+            Assert.ThrowsAny<Exception>(() => someInstance.CallMethod<int>("ReturnThis"));
+
+            Assert.Equal(expected, objectResult.GetValueOrDefault());
+            Assert.Equal(expected, actualResult.GetValueOrDefault());
+        }
+
+        [Fact]
+        public void CallMethod_TwoTypeArgs_WithDifferentValueTypeReturnType_ShouldNotAffectResult()
         {
             var someInstance = new SomeClass();
             var expected = 1;
@@ -79,8 +99,30 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var objectResult = someInstance.CallMethod<int, object>("AddOne", 0);
             var actualResult = someInstance.CallMethod<int, int>("AddOne", 0);
 
+            // Throws
+            Assert.ThrowsAny<Exception>(() => someInstance.CallMethod<int, double>("AddOne", 0));
+
             Assert.Equal(expected, (int)objectResult.GetValueOrDefault());
             Assert.Equal(expected, actualResult.GetValueOrDefault());
+        }
+
+        [Fact]
+        public void CallMethod_TwoTypeArgs_WithDifferentReferenceTypeReturnType_ShouldNotAffectResult()
+        {
+            var someInstance = new SomeClass();
+            var paramInstance = new SomeClass();
+            var expected = paramInstance;
+
+            var objectResult = someInstance.CallMethod<SomeClass, object>("ReturnParam", paramInstance);
+            var actualResult = someInstance.CallMethod<SomeClass, SomeClass>("ReturnParam", paramInstance);
+            var baseClassResult = someInstance.CallMethod<SomeClass, SomeBaseClass>("ReturnParam", paramInstance);
+
+            // Throws
+            Assert.ThrowsAny<Exception>(() => someInstance.CallMethod<SomeClass, int>("ReturnParam", paramInstance));
+
+            Assert.Equal(expected, objectResult.GetValueOrDefault());
+            Assert.Equal(expected, actualResult.GetValueOrDefault());
+            Assert.Equal(expected, baseClassResult.GetValueOrDefault());
         }
 
         [Fact]
@@ -133,6 +175,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             public void Add(int arg1, int arg2)
             {
                 LastAddResult = (arg1 + arg2).ToString();
+            }
+
+            public SomeClass ReturnThis()
+            {
+                return this;
+            }
+
+            public SomeClass ReturnParam(SomeClass someClass)
+            {
+                return someClass;
             }
         }
 

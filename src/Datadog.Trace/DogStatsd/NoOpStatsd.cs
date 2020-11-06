@@ -1,63 +1,40 @@
 using System;
-using System.Collections.Concurrent;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.DogStatsd
 {
-    internal class NoOpStatsd : IStatsd
+    internal class NoOpStatsd : IBatchStatsd
     {
-        public ConcurrentBag<string> Commands { get; }
+        public Batch StartBatch(int initialCapacity = 0) => default;
 
-        public void Send<TCommandType, T>(string name, T value, double sampleRate, params string[] tags)
+        public string GetCommand<TCommandType, T>(string name, T value, double sampleRate = 1, string[] tags = null)
             where TCommandType : Statsd.Metric
         {
-            // no-op
+            return string.Empty;
         }
 
-        public void Add<TCommandType, T>(string name, T value, double sampleRate, params string[] tags)
-            where TCommandType : Statsd.Metric
+        public string GetIncrementCount(string name, int value = 1, double sampleRate = 1, string[] tags = null)
         {
-            // no-op
+            return string.Empty;
         }
 
-        public void Send(string title, string text, string alertType, string aggregationKey, string sourceType, int? dateHappened, string priority, string hostname, string[] tags, bool truncateIfTooLong = false)
+        public string GetSetGauge(string name, int value, double sampleRate = 1, string[] tags = null)
         {
-            // no-op
+            return string.Empty;
         }
 
-        public void Add(string title, string text, string alertType, string aggregationKey, string sourceType, int? dateHappened, string priority, string hostname, string[] tags, bool truncateIfTooLong = false)
+        public string GetException(Exception exception, string source, string message, string[] tags = null)
         {
-            // no-op
+            return string.Empty;
+        }
+
+        public string GetWarning(string source, string message, string[] tags = null)
+        {
+            return string.Empty;
         }
 
         public void Send(string command)
         {
-            // no-op
-        }
-
-        public void Send()
-        {
-            // no-op
-        }
-
-        public void Add(Action actionToTime, string statName, double sampleRate, params string[] tags)
-        {
-            // no-op
-        }
-
-        public void Send(Action actionToTime, string statName, double sampleRate, params string[] tags)
-        {
-            // no-op
-        }
-
-        public void Add(string name, int status, int? timestamp, string hostname, string[] tags, string serviceCheckMessage, bool truncateIfTooLong)
-        {
-            // no-op
-        }
-
-        public void Send(string name, int status, int? timestamp, string hostname, string[] tags, string serviceCheckMessage, bool truncateIfTooLong)
-        {
-            // no-op
         }
     }
 }

@@ -109,19 +109,22 @@ namespace Datadog.Trace.DuckTyping
                             AssemblyName aName = new AssemblyName("DuckTypeAssembly");
                             _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.Run);
                             _moduleBuilder = _assemblyBuilder.DefineDynamicModule("MainModule");
-                            EnsureTypeVisibility(typeof(DuckType));
                         }
                     }
                 }
 
-#if !NET45
-                // Adds both attributes to ignore the visibility checks
-                EnsureTypeVisibility(targetType);
-                EnsureTypeVisibility(proxyDefinitionType);
-#endif
+                string assembly = string.Empty;
+                if (targetType.Assembly != null)
+                {
+                    // Include target assembly name and public token.
+                    AssemblyName asmName = targetType.Assembly.GetName();
+                    assembly = asmName.Name;
+                    byte[] pbToken = asmName.GetPublicKeyToken();
+                    assembly += "__" + BitConverter.ToString(pbToken).Replace("-", string.Empty);
+                }
 
                 // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
-                string proxyTypeName = $"{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}___{targetType.FullName.Replace(".", "_").Replace("+", "__")}";
+                string proxyTypeName = $"{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}____{targetType.FullName.Replace(".", "_").Replace("+", "__")}___{assembly.Replace(".", "_").Replace("+", "__")}";
 
                 // Create Type
                 TypeBuilder proxyTypeBuilder = _moduleBuilder.DefineType(
@@ -137,7 +140,7 @@ namespace Datadog.Trace.DuckTyping
                 ConstructorBuilder ctorBuilder = proxyTypeBuilder.DefineConstructor(
                     MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
                     CallingConventions.Standard,
-                    new[] { targetType });
+                    new[] { instanceField.FieldType });
                 ILGenerator ctorIL = ctorBuilder.GetILGenerator();
                 ctorIL.Emit(OpCodes.Ldarg_0);
                 ctorIL.Emit(OpCodes.Ldarg_1);
@@ -637,13 +640,11 @@ namespace Datadog.Trace.DuckTyping
             private static CreateTypeResult GetProxySlow(Type targetType)
             {
                 Type proxyTypeDefinition = typeof(T);
-#if NET45
                 if (!proxyTypeDefinition.IsValueType && !UseDirectAccessTo(proxyTypeDefinition))
                 {
                     DuckTypeTypeIsNotPublicException.Throw(proxyTypeDefinition, nameof(proxyTypeDefinition));
                 }
 
-#endif
                 return GetOrCreateProxyType(proxyTypeDefinition, targetType);
             }
         }

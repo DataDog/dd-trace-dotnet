@@ -25,35 +25,34 @@ namespace UpdateVendors
             InitializeCleanDirectory(DownloadDirectory);
             var solutionDirectory = GetSolutionDirectory();
             _vendorProjectDirectory = Path.Combine(solutionDirectory, "src", "Datadog.Trace", "Vendors");
-            InitializeCleanDirectory(_vendorProjectDirectory);
 
             UpdateVendor(
                 libraryName: "Serilog",
-                branchDownload: "https://github.com/serilog/serilog/archive/v2.8.0.zip",
+                downloadUrl: "https://github.com/serilog/serilog/archive/v2.8.0.zip",
                 pathToSrc: new[] { "serilog-2.8.0", "src", "Serilog" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
 
             UpdateVendor(
                 libraryName: "Serilog.Sinks.File",
-                branchDownload: "https://github.com/serilog/serilog-sinks-file/archive/v4.0.0.zip",
+                downloadUrl: "https://github.com/serilog/serilog-sinks-file/archive/v4.0.0.zip",
                 pathToSrc: new[] { "serilog-sinks-file-4.0.0", "src", "Serilog.Sinks.File" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
 
             UpdateVendor(
                 libraryName: "StatsdClient",
-                branchDownload: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
+                downloadUrl: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
                 pathToSrc: new[] { "dogstatsd-csharp-client-3.3.0", "src", "StatsdClient" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
 
             UpdateVendor(
                 libraryName: "MessagePack",
-                branchDownload: "https://github.com/neuecc/MessagePack-CSharp/archive/v1.9.3.zip",
+                downloadUrl: "https://github.com/neuecc/MessagePack-CSharp/archive/v1.9.3.zip",
                 pathToSrc: new[] { "MessagePack-CSharp-1.9.3", "src", "MessagePack" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "MessagePack"));
 
             UpdateVendor(
                 libraryName: "Newtonsoft.Json",
-                branchDownload: "https://github.com/JamesNK/Newtonsoft.Json/archive/12.0.1.zip",
+                downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/12.0.1.zip",
                 pathToSrc: new[] { "Newtonsoft.Json-12.0.1", "src", "Newtonsoft.Json" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Newtonsoft.Json"));
         }
@@ -100,7 +99,7 @@ namespace UpdateVendors
 
         private static void UpdateVendor(
             string libraryName,
-            string branchDownload,
+            string downloadUrl,
             string[] pathToSrc,
             Action<string> transform = null)
         {
@@ -108,10 +107,20 @@ namespace UpdateVendors
 
             var zipLocation = Path.Combine(DownloadDirectory, $"{libraryName}.zip");
             var extractLocation = Path.Combine(DownloadDirectory, $"{libraryName}");
+            var vendorFinalPath = Path.Combine(_vendorProjectDirectory, libraryName);
+            var sourceUrlLocation = Path.Combine(vendorFinalPath, "_last_downloaded_source_url.txt");
+
+            // Ensure the url has changed, or don't bother upgrading
+            var currentSource = File.ReadAllText(sourceUrlLocation);
+            if (currentSource.Equals(downloadUrl, StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"No updates to be made for {libraryName}.");
+                return;
+            }
 
             using (var repoDownloadClient = new WebClient())
             {
-                repoDownloadClient.DownloadFile(branchDownload, zipLocation);
+                repoDownloadClient.DownloadFile(downloadUrl, zipLocation);
             }
 
             Console.WriteLine($"Downloaded {libraryName} upgrade.");
@@ -159,9 +168,9 @@ namespace UpdateVendors
 
             // Move it all to the vendors directory
             Console.WriteLine($"Copying source of {libraryName} to vendor project.");
-            var vendorFinalPath = Path.Combine(_vendorProjectDirectory, libraryName);
             SafeDeleteDirectory(vendorFinalPath);
             Directory.Move(sourceLocation, vendorFinalPath);
+            File.WriteAllText(sourceUrlLocation, downloadUrl);
             Console.WriteLine($"Finished {libraryName} upgrade.");
         }
 

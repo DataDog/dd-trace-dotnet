@@ -2,13 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 
@@ -27,7 +25,6 @@ namespace Datadog.Trace.DiagnosticListeners
         public const string IntegrationName = "AspNetCore";
 
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
-        private const string ComponentName = "aspnet_core";
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
@@ -35,13 +32,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly PropertyFetcher HttpRequestInStartHttpContextFetcher = new PropertyFetcher("HttpContext");
         private static readonly PropertyFetcher HttpRequestInStopHttpContextFetcher = new PropertyFetcher("HttpContext");
-        private static readonly PropertyFetcher UnhandledExceptionHttpContextFetcher = new PropertyFetcher("HttpContext");
         private static readonly PropertyFetcher UnhandledExceptionExceptionFetcher = new PropertyFetcher("Exception");
         private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("httpContext");
         private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("actionDescriptor");
 
         private readonly Tracer _tracer;
-        private readonly bool _isLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         public AspNetCoreDiagnosticObserver()
             : this(null)
@@ -171,17 +166,9 @@ namespace Datadog.Trace.DiagnosticListeners
             var tags = new AspNetCoreTags();
             var scope = tracer.StartActiveWithTags(HttpRequestInOperationName, propagatedContext, tags: tags);
 
-            tags.InstrumentationName = ComponentName;
-
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
-            // set analytics sample rate if enabled
-            var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-
-            if (analyticsSampleRate != null)
-            {
-                tags.AnalyticsSampleRate = analyticsSampleRate;
-            }
+            tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: true);
         }
 
         private void OnMvcBeforeAction(object arg)
@@ -224,22 +211,13 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            IScope scope = tracer.ActiveScope;
+            var scope = tracer.ActiveScope;
 
             if (scope != null)
             {
                 var httpContext = HttpRequestInStopHttpContextFetcher.Fetch<HttpContext>(arg);
 
-                var statusCode = HttpTags.ConvertStatusCodeToString(httpContext.Response.StatusCode);
-
-                scope.Span.SetTag(Tags.HttpStatusCode, statusCode);
-
-                if (httpContext.Response.StatusCode / 100 == 5)
-                {
-                    // 5xx codes are server-side errors
-                    scope.Span.Error = true;
-                }
-
+                scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
                 scope.Dispose();
             }
         }
@@ -253,12 +231,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            ISpan span = tracer.ActiveScope?.Span;
+            var span = tracer.ActiveScope?.Span;
 
             if (span != null)
             {
                 var exception = UnhandledExceptionExceptionFetcher.Fetch<Exception>(arg);
-                var httpContext = UnhandledExceptionHttpContextFetcher.Fetch<HttpContext>(arg);
 
                 span.SetException(exception);
             }

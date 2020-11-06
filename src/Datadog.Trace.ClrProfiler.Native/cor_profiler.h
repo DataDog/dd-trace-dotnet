@@ -68,7 +68,8 @@ class CorProfiler : public CorProfilerBase {
                                          const std::vector<MethodReplacement> method_replacements);
   bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
   std::string GetILCodes(std::string title, ILRewriter* rewriter,
-                         const FunctionInfo& caller);
+                         const FunctionInfo& caller,
+                         ModuleMetadata* module_metadata);
   //
   // Startup methods
   //
@@ -104,6 +105,8 @@ class CorProfiler : public CorProfilerBase {
   JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
 
   HRESULT STDMETHODCALLTYPE Shutdown() override;
+
+  HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
 
   //
   // ICorProfilerCallback6 methods
