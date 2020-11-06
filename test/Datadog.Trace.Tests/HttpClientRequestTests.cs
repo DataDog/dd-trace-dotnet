@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests
 
             request.AddHeader("Hello", "World");
 
-            await request.PostAsync(new Span[0][], new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+            await request.PostAsync(new Span[0][], new FormatterResolverWrapper(DatadogFormatterResolver.Instance));
 
             var message = handler.Message;
 
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests
             var factory = new HttpClientRequestFactory(handler);
             var request = factory.Create(new Uri("http://localhost/"));
 
-            await request.PostAsync(new Span[0][], new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+            await request.PostAsync(new Span[0][], new FormatterResolverWrapper(DatadogFormatterResolver.Instance));
 
             var message = handler.Message;
 
