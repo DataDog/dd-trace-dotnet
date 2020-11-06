@@ -16,7 +16,7 @@ projects_to_restore = [
     "Datadog.Trace", "Datadog.Trace.AspNet", "Datadog.Trace.ClrProfiler.Managed", "Datadog.Trace.ClrProfiler.Managed.Core", "Datadog.Trace.ClrProfiler.Managed.Loader"
 ]
 @task
-def build(ctx, vstudio_root=None, arch="x64", major_version='7', debug=False):
+def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
     """
     Build the custom action library for the agent
     """
@@ -51,7 +51,7 @@ def build(ctx, vstudio_root=None, arch="x64", major_version='7', debug=False):
             print("Failed to restore nuget package {proj}\n".format(proj=proj))
             pass
 
-    cmd = "msbuild {solution_dir}\\Datadog.Trace.proj /t:{target} /p:Configuration={config} /p:TracerHomeDirectory={tracer_home} /p:RunWixToolsOutOfProc=true /p:MsiOutputPath={msihome}"
+    cmd = "msbuild {solution_dir}\\Datadog.Trace.proj /t:{target} /p:Platform={arch} /p:Configuration={config} /p:TracerHomeDirectory={tracer_home} /p:RunWixToolsOutOfProc=true /p:MsiOutputPath={msihome}"
 
     run_cmd = cmd.format(
         solution_dir=solution_dir,
