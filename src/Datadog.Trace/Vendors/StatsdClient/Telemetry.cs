@@ -148,7 +148,9 @@ namespace Datadog.Trace.Vendors.StatsdClient
         {
             if (_optionalTransport != null)
             {
+#pragma warning disable 618 // obsolete warning disable
                 var message = Statsd.Metric.GetCommand<Statsd.Counting, int>(
+#pragma warning restore 618 // obsolete warning disable
                     string.Empty,
                     metricName,
                     value,
