@@ -30,7 +30,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
     solution_dir = os.getcwd()
     tracer_home = os.path.join(solution_dir, "tracer_home")
     msi_home = os.path.join(solution_dir, "msi")
-    
+
     pfxfile = None
     pfxpass = None
     remove_pfx = True
@@ -77,7 +77,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
         else:
             for f in glob.iglob("tracer_home/**/datadog*.dll", recursive=True):
                 print("Not signing: {f}\n".format(f=f))
-        
+
         run_cmd = cmd.format(
             solution_dir=solution_dir,
             target="msi",
