@@ -9,45 +9,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Async
 {
     internal static class ContinuationsHelper
     {
-        public static bool CanSetContinuations(Type returnType)
-        {
-            if (returnType.IsGenericType)
-            {
-                Type resultType = GetResultType(returnType);
-
-                Type genericReturnType = returnType.GetGenericTypeDefinition();
-                if (typeof(Task).IsAssignableFrom(returnType))
-                {
-                    // The type is a Task<>
-                    return true;
-                }
-#if NETCOREAPP3_1 || NET5_0
-                else if (genericReturnType == typeof(ValueTask<>))
-                {
-                    // The type is a ValueTask<>
-                    return true;
-                }
-#endif
-            }
-            else
-            {
-                if (returnType == typeof(Task))
-                {
-                    // The type is a Task
-                    return true;
-                }
-#if NETCOREAPP3_1 || NET5_0
-                else if (returnType == typeof(ValueTask))
-                {
-                    // The type is a ValueTask
-                    return true;
-                }
-#endif
-            }
-
-            return false;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static Type GetResultType(Type parentType)
         {
@@ -69,6 +30,35 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Async
 
             return typeof(object);
         }
+
+#if NETCOREAPP3_1 || NET5_0
+#else
+        internal static TTo Convert<TFrom, TTo>(TFrom value)
+        {
+            return Converter<TFrom, TTo>.Convert(value);
+        }
+
+        private static class Converter<TFrom, TTo>
+        {
+            private static readonly ConvertDelegate _converter;
+
+            static Converter()
+            {
+                DynamicMethod dMethod = new DynamicMethod($"Converter<{typeof(TFrom).Name},{typeof(TTo).Name}>", typeof(TTo), new[] { typeof(TFrom) }, typeof(ConvertDelegate).Module, true);
+                ILGenerator il = dMethod.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ret);
+                _converter = (ConvertDelegate)dMethod.CreateDelegate(typeof(ConvertDelegate));
+            }
+
+            private delegate TTo ConvertDelegate(TFrom value);
+
+            public static TTo Convert(TFrom value)
+            {
+                return _converter(value);
+            }
+        }
+#endif
     }
 
     internal static class ContinuationsHelper<TIntegration, TTarget, TAsyncInstance>
@@ -134,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Async
 #if NETCOREAPP3_1 || NET5_0
             return Unsafe.As<TFrom, TAsyncInstance>(ref returnValue);
 #else
-            return (TAsyncInstance)(object)returnValue;
+            return ContinuationsHelper.Convert<TFrom, TAsyncInstance>(returnValue);
 #endif
         }
 
@@ -144,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Async
 #if NETCOREAPP3_1 || NET5_0
             return Unsafe.As<TAsyncInstance, TTo>(ref returnValue);
 #else
-            return (TTo)(object)returnValue;
+            return ContinuationsHelper.Convert<TAsyncInstance, TTo>(returnValue);
 #endif
         }
 
