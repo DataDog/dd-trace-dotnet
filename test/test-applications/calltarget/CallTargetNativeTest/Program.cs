@@ -612,7 +612,7 @@ namespace CallTargetNativeTest
             Console.WriteLine($"{typeof(With6Arguments).FullName}.ReturnValueMethod");
             RunMethod(() => w6.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987));
             Console.WriteLine($"{typeof(With6Arguments).FullName}.ReturnReferenceMethod");
-            RunMethod(() => w6.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987));
+            RunMethod(() => w6.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987).Wait());
             Console.WriteLine($"{typeof(With6Arguments).FullName}.ReturnGenericMethod<string>");
             RunMethod(() => w6.ReturnGenericMethod<string, string, Tuple<int, int>, ulong>("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987));
             Console.WriteLine($"{typeof(With6Arguments).FullName}.ReturnGenericMethod<int>");
@@ -1020,7 +1020,11 @@ namespace CallTargetNativeTest
     {
         public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) { }
         public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => 42;
-        public string ReturnReferenceMethod(string arg, int arg21, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => "Hello World";
+        public async Task<string> ReturnReferenceMethod(string arg, int arg21, object arg3, Task arg4, CancellationToken arg5, ulong arg6)
+        {
+            await Task.Delay(4000);
+            return "Hello World";
+        }
         public T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6) => default;
     }
     class With6ArgumentsGeneric<T>

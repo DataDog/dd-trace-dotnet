@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.CallTarget.Async;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -512,7 +512,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
         internal static DynamicMethod CreateAsyncEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
         {
-            Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            Log.Debug($"Creating AsyncEndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
             MethodInfo onAsyncMethodEndMethodInfo = integrationType.GetMethod(EndAsyncMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onAsyncMethodEndMethodInfo is null)
             {
@@ -520,9 +520,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                 return null;
             }
 
-            if (onAsyncMethodEndMethodInfo.ReturnType.GetGenericTypeDefinition() != typeof(CallTargetReturn<>))
+            if (!onAsyncMethodEndMethodInfo.ReturnType.IsGenericParameter && onAsyncMethodEndMethodInfo.ReturnType != returnType)
             {
-                throw new ArgumentException($"The return type of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
+                throw new ArgumentException($"The return type of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is not {returnType}");
             }
 
             Type[] genericArgumentsTypes = onAsyncMethodEndMethodInfo.GetGenericArguments();
@@ -594,7 +594,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onAsyncMethodEndMethodInfo.DeclaringType.Name}.{onAsyncMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
-                     typeof(CallTargetReturn<>).MakeGenericType(returnType),
+                     returnType,
                      new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState) },
                      onAsyncMethodEndMethodInfo.Module,
                      true);
@@ -650,15 +650,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
             ilWriter.Emit(OpCodes.Ret);
 
-            Log.Debug($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            Log.Debug($"Created AsyncEndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
             return callMethod;
         }
 
-        private static CallTargetReturn<TTo> UnwrapReturnValue<TFrom, TTo>(CallTargetReturn<TFrom> returnValue)
+        private static TTo UnwrapReturnValue<TFrom, TTo>(TFrom returnValue)
             where TFrom : IDuckType
         {
-            var innerValue = returnValue.GetReturnValue();
-            return new CallTargetReturn<TTo>((TTo)innerValue.Instance);
+            return (TTo)returnValue.Instance;
         }
 
         private static void WriteIntValue(ILGenerator il, int value)
@@ -1051,8 +1050,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
 
         internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
         {
-            private static readonly InvokeDelegate _invokeDelegate;
-            private static readonly InvokeDelegate _invokeAsyncDelegate;
+            private static readonly InvokeDelegate _invokeDelegate = null;
 
             static EndMethodHandler()
             {
@@ -1068,70 +1066,23 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
                 {
                     throw new CallTargetInvokerException(ex);
                 }
-                finally
-                {
-                    if (_invokeDelegate is null)
-                    {
-                        _invokeDelegate = (instance, returnValue, exception, state) => new CallTargetReturn<TReturn>(returnValue);
-                    }
-                }
-
-                try
-                {
-                    Type returnType = typeof(TReturn);
-                    Type resultType = typeof(object);
-
-                    if (returnType.IsGenericType)
-                    {
-                        Type genericReturnType = returnType.GetGenericTypeDefinition();
-#if NETCOREAPP3_1 || NET5_0
-                        if (typeof(Task).IsAssignableFrom(returnType) || genericReturnType == typeof(ValueTask<>))
-#else
-                        if (typeof(Task).IsAssignableFrom(returnType))
-#endif
-                        {
-                            resultType = GetResultType(returnType);
-                        }
-                    }
-
-                    DynamicMethod dynMethod = CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), resultType);
-                    if (dynMethod != null)
-                    {
-                        _invokeAsyncDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw new CallTargetInvokerException(ex);
-                }
             }
 
             internal delegate CallTargetReturn<TReturn> InvokeDelegate(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
 
-            private static Type GetResultType(Type parentType)
-            {
-                Type currentType = parentType;
-                while (currentType != null)
-                {
-                    Type[] typeArguments = currentType.GenericTypeArguments ?? Type.EmptyTypes;
-                    switch (typeArguments.Length)
-                    {
-                        case 0:
-                            return typeof(object);
-                        case 1:
-                            return typeArguments[0];
-                        default:
-                            currentType = currentType.BaseType;
-                            break;
-                    }
-                }
-
-                return typeof(object);
-            }
-
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal static CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
-                => _invokeDelegate(instance, returnValue, exception, state);
+            {
+                if (_invokeDelegate != null)
+                {
+                    CallTargetReturn<TReturn> returnWrap = _invokeDelegate(instance, returnValue, exception, state);
+                    returnValue = returnWrap.GetReturnValue();
+                }
+
+                returnValue = ContinuationsHelper<TIntegration, TTarget, TReturn>.SetContinuation(instance, returnValue, exception, state);
+
+                return new CallTargetReturn<TReturn>(returnValue);
+            }
         }
     }
 }

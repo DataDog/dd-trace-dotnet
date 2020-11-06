@@ -38,15 +38,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.NoOp
             return rValue;
         }
 
-        public static CallTargetReturn<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
             where TTarget : IInstance, IDuckType
             where TReturn : IReturnValue, IDuckType
         {
-            CallTargetReturn<TReturn> rValue = new CallTargetReturn<TReturn>(returnValue);
-            string msg = $"{rValue} {nameof(Noop6ArgumentsIntegration)}.OnAsyncMethodEnd<{typeof(TTarget).FullName}, {typeof(TReturn).FullName}>({instance}, {returnValue}, {exception}, {state})";
+            string msg = $"{returnValue} {nameof(Noop6ArgumentsIntegration)}.OnAsyncMethodEnd<{typeof(TTarget).FullName}, {typeof(TReturn).FullName}>({instance}, {returnValue}, {exception}, {state})";
             Log.Information(msg);
             Console.WriteLine(msg);
-            return rValue;
+            return returnValue;
         }
 
         public interface IInstance
