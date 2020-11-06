@@ -80,7 +80,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
 
         run_cmd = cmd.format(
             solution_dir=solution_dir,
-            target="msi",
+            target="MsiOnly",
             arch=arch,
             config=configuration,
             tracer_home=tracer_home,
