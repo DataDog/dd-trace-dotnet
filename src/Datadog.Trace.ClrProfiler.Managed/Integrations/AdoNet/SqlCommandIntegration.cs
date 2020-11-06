@@ -18,7 +18,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string Major1 = "1";
         private const string Major2 = "2";
         private const string Major4 = "4";
-        private const string Major5 = "4";
 
         private const string SqlCommandTypeName = "SqlCommand";
         private const string SqlDataReaderTypeName = "SqlDataReader";
@@ -49,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SystemSqlDataReaderTypeName },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major5)]
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
@@ -119,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SystemSqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major5)]
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
@@ -192,7 +191,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SystemSqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major5)]
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
@@ -306,7 +305,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SystemSqlCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major5)]
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
@@ -376,7 +375,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SystemSqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major5)]
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
@@ -460,7 +459,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SystemSqlCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major5)]
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
@@ -530,7 +529,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetType = SystemSqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major5)]
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
