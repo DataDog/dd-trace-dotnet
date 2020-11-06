@@ -40,8 +40,8 @@ namespace UpdateVendors
 
             UpdateVendor(
                 libraryName: "StatsdClient",
-                downloadUrl: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
-                pathToSrc: new[] { "dogstatsd-csharp-client-3.3.0", "src", "StatsdClient" },
+                downloadUrl: "https://github.com/DataDog/dogstatsd-csharp-client/archive/5.1.0.zip",
+                pathToSrc: new[] { "dogstatsd-csharp-client-5.1.0", "src", "StatsdClient" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
 
             UpdateVendor(
@@ -178,10 +178,7 @@ namespace UpdateVendors
         {
             var drops = new List<string>()
             {
-                "StatsdClient\\DogStatsdService.cs",
-                "StatsdClient\\MetricsTimer.cs",
-                "StatsdClient\\IDogStatsD.cs",
-                "StatsdClient\\DogStatsD.cs",
+                // No active exclusions
             };
 
             foreach (var drop in drops)

@@ -641,8 +641,10 @@ namespace Datadog.Trace
                     constantTags.Add($"version:{settings.ServiceVersion}");
                 }
 
+#pragma warning disable CS0618 // Type or member is obsolete
                 var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
                 return new BatchStatsd(statsdUdp, prefix: string.Empty, constantTags.ToArray());
+#pragma warning restore CS0618 // Type or member is obsolete
             }
             catch (Exception ex)
             {

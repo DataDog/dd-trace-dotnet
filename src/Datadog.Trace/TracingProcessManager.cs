@@ -46,7 +46,7 @@ namespace Datadog.Trace
             RefreshPortVars = () =>
             {
                 var portString = DogStatsDMetadata.Port?.ToString(CultureInfo.InvariantCulture);
-                Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, portString);
+                Environment.SetEnvironmentVariable(StatsdConfig.DogStatsdPortEnvVar, portString);
             }
         };
 
