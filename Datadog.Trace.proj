@@ -188,9 +188,6 @@
     <PropertyGroup>
       <!-- we need to build both x64 and x86 profilers to build the x64 msi -->
       <Buildx86Profiler Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'">true</Buildx86Profiler>
-
-      <!-- disable zip by default when building msi, unless explicitly enabled -->
-      <ZipHomeDirectory Condition="'$(ZipHomeDirectory)' == ''">false</ZipHomeDirectory>
     </PropertyGroup>
   </Target>
 
@@ -205,11 +202,6 @@
   </Target>
 
   <Target Name="CreateHomeDirectory" DependsOnTargets="PublishNativeProfilerOnDisk;PublishManagedProfilerOnDisk;PublishBuildLoggerOnDisk">
-    <PropertyGroup>
-      <!-- enable zip by default to keep current behavior-->
-      <ZipHomeDirectory Condition="'$(ZipHomeDirectory)' == ''">true</ZipHomeDirectory>
-    </PropertyGroup>
-
     <Copy
       SourceFiles="$(MSBuildThisFileDirectory)integrations.json"
       DestinationFolder="$(TracerHomeDirectory)"
