@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace Datadog.Trace.Agent.NamedPipes
 
         public void AddHeader(string name, string value)
         {
-            _traceRequest.Headers.Add(name, value);
+            _traceRequest.Headers.Add(new KeyValuePair<string, string>(name, value));
         }
 
         public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)

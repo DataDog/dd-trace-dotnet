@@ -5,7 +5,7 @@ namespace Datadog.Trace.Agent.NamedPipes
 {
     internal class TraceRequest
     {
-        public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
+        public List<KeyValuePair<string, string>> Headers { get; set; } = new List<KeyValuePair<string, string>>();
 
         public Span[][] Traces { get; set; }
 
