@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Vendors.MessagePack;
@@ -35,7 +37,14 @@ namespace Datadog.Trace.Agent.MessagePack
 
                 int length = MessagePackSerializer.Serialize(ref buffer, 0, obj, resolver);
 
-                await stream.WriteAsync(buffer, 0, length).ConfigureAwait(false);
+                File.WriteAllBytes($"C:\\_INSPECTION\\named-pipe-trace-payload-{System.Guid.NewGuid()}.dat", buffer);
+                // await stream.WriteAsync(buffer, 0, length).ConfigureAwait(false);
+                await Task.Delay(50);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
             }
             finally
             {
