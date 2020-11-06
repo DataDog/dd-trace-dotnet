@@ -69,7 +69,7 @@
   <!--StatsdClient-->
   <!--The StatsdClient uses netstandard1.3, but our equivalent exclusion is net45 -->
   <PropertyGroup Condition="'$(TargetFramework)' != 'net45' ">
-    <DefineConstants>NAMED_PIPE_AVAILABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);NAMED_PIPE_AVAILABLE</DefineConstants>
   </PropertyGroup>
 
 </Project>
