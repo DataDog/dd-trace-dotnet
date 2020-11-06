@@ -56,6 +56,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
     run_cmd = cmd.format(
         solution_dir=solution_dir,
         target="CreateHomeDirectory",
+        arch=arch,
         config=configuration,
         tracer_home=tracer_home,
         msihome=msi_home
@@ -80,6 +81,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
         run_cmd = cmd.format(
             solution_dir=solution_dir,
             target="msi",
+            arch=arch,
             config=configuration,
             tracer_home=tracer_home,
             msihome=msi_home
