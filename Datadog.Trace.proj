@@ -191,7 +191,10 @@
     </PropertyGroup>
   </Target>
 
-  <Target Name="Msi" DependsOnTargets="SetMsiProperties">
+  <Target Name="Msi" DependsOnTargets="SetMsiProperties;CreateHomeDirectory;MsiOnly">
+  </Target>
+
+  <Target Name="MsiOnly" DependsOnTargets="SetMsiProperties">
     <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'" Properties="Platform=x64">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
