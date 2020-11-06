@@ -26,12 +26,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // 2 interfaces: IDbCommand and IDbCommand-netstandard).
             // Once this is fully supported, this will add another 2 complete groups for all frameworks instead
             // of 4 extra spans on net461 and netcoreapp2.0+
-#if NET452
-            var expectedSpanCount = 49; // 7 queries * 7 groups
-#elif NET461
-            var expectedSpanCount = 73; // 7 queries * 11 groups - ?
-#else
+#if NET461
             var expectedSpanCount = 77; // 7 queries * 11 groups
+#else
+            var expectedSpanCount = 81; // 7 queries * 11 groups + 4 spans from generic wrapper on .NET Core
 #endif
 
             const string dbType = "sql-server";

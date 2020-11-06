@@ -196,7 +196,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static object ExecuteReaderAsync(
