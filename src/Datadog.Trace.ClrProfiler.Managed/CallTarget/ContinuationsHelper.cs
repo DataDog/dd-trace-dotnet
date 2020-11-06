@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 #pragma warning disable SA1402 // File may only contain a single class
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Async
+namespace Datadog.Trace.ClrProfiler.CallTarget
 {
     internal static class ContinuationsHelper
     {
