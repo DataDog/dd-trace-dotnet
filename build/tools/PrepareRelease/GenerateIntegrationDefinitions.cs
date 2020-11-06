@@ -19,6 +19,62 @@ namespace PrepareRelease
             var assemblies = new List<Assembly>();
             assemblies.Add(typeof(Instrumentation).Assembly);
 
+            // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InstrumentMethod]
+            // and create objects that will generate correct JSON schema
+            var callTargetIntegrations = from assembly in assemblies
+                                         from wrapperType in assembly.GetTypes()
+                                         from wrapperMethod in wrapperType.GetRuntimeMethods()
+                                         let attributes = wrapperMethod.GetCustomAttributes<InstrumentMethodAttribute>(inherit: false)
+                                         where attributes.Any()
+                                         from attribute in attributes
+                                         let integrationName = GetIntegrationName(wrapperType)
+                                         orderby integrationName
+                                         group new
+                                         {
+                                             assembly,
+                                             wrapperType,
+                                             wrapperMethod,
+                                             attribute
+                                         }
+                                             by integrationName into g
+                                         select new
+                                         {
+                                             name = g.Key,
+                                             method_replacements = from item in g
+                                                                   let targetAssembly = item.attribute.Assembly
+                                                                   select new
+                                                                   {
+                                                                       caller = new
+                                                                       {
+                                                                           assembly = string.Empty,
+                                                                           type = string.Empty,
+                                                                           method = string.Empty
+                                                                       },
+                                                                       target = new
+                                                                       {
+                                                                           assembly = item.attribute.Assembly,
+                                                                           type = item.attribute.Type,
+                                                                           method = item.attribute.Method,
+                                                                           signature = string.Empty,
+                                                                           signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParametersTypesNames).ToArray(),
+                                                                           minimum_major = item.attribute.VersionRange.MinimumMajor,
+                                                                           minimum_minor = item.attribute.VersionRange.MinimumMinor,
+                                                                           minimum_patch = item.attribute.VersionRange.MinimumPatch,
+                                                                           maximum_major = item.attribute.VersionRange.MaximumMajor,
+                                                                           maximum_minor = item.attribute.VersionRange.MaximumMinor,
+                                                                           maximum_patch = item.attribute.VersionRange.MaximumPatch
+                                                                       },
+                                                                       wrapper = new
+                                                                       {
+                                                                           assembly = item.assembly.FullName,
+                                                                           type = item.wrapperType.FullName,
+                                                                           method = string.Empty,
+                                                                           signature = string.Empty,
+                                                                           action = MethodReplacementActionType.CallTargetModification.ToString()
+                                                                       }
+                                                                   }
+                                         };
+
             // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
             // and create objects that will generate correct JSON schema
             var integrations = from assembly in assemblies
@@ -30,12 +86,12 @@ namespace PrepareRelease
                                let integrationName = attribute.Integration ?? GetIntegrationName(wrapperType)
                                orderby integrationName
                                group new
-                                   {
-                                       assembly,
-                                       wrapperType,
-                                       wrapperMethod,
-                                       attribute
-                                   }
+                               {
+                                   assembly,
+                                   wrapperType,
+                                   wrapperMethod,
+                                   attribute
+                               }
                                    by integrationName into g
                                select new
                                {
@@ -81,7 +137,7 @@ namespace PrepareRelease
                 Formatting = Formatting.Indented
             };
 
-            var json = JsonConvert.SerializeObject(integrations, serializerSettings);
+            var json = JsonConvert.SerializeObject(callTargetIntegrations.Concat(integrations), serializerSettings);
             Console.WriteLine(json);
 
             foreach (var outputDirectory in outputDirectories)
