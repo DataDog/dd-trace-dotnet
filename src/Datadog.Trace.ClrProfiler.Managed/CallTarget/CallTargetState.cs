@@ -37,7 +37,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// ToString override
         /// </summary>
         /// <returns>String value</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override string ToString()
         {
             return $"{typeof(CallTargetState).FullName}({_state})";
