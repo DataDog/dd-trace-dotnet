@@ -10,6 +10,7 @@ using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
+#pragma warning disable CS0618 // Type or member is obsolete
 namespace Datadog.Trace.Tests
 {
     public class DogStatsDTests
@@ -165,3 +166,4 @@ namespace Datadog.Trace.Tests
         }
     }
 }
+#pragma warning restore CS0618 // Type or member is obsolete
