@@ -1,4 +1,3 @@
-using System;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,14 +30,17 @@ namespace Datadog.Trace.Agent.NamedPipes
 
         public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
         {
-            using (var namedPipe = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
-            {
-                _traceRequest.Traces = traces;
-                await CachedSerializer.Instance.SerializeAsync(namedPipe, _traceRequest, formatterResolver);
-                // await namedPipe.FlushAsync();
-                // TODO: Request response
-                return new NamedPipesResponse() { Content = "{}", StatusCode = 200, ContentLength = 2 };
-            }
+            await CachedSerializer.Instance.SerializeAsync(null, _traceRequest, formatterResolver);
+
+            // using (var namedPipe = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+            // {
+            //     _traceRequest.Traces = traces;
+            //     await CachedSerializer.Instance.SerializeAsync(namedPipe, _traceRequest, formatterResolver);
+            //     // await namedPipe.FlushAsync();
+            //     // TODO: Request response
+            // }
+
+            return new NamedPipesResponse() { Content = "{}", StatusCode = 200, ContentLength = 2 };
         }
     }
 }

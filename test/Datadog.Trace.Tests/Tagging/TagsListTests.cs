@@ -61,7 +61,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             var buffer = new byte[0];
 
-            var resolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
+            var resolver = new FormatterResolverWrapper(DatadogFormatterResolver.Instance);
             MessagePackSerializer.Serialize(ref buffer, 0, span, resolver);
 
             var deserializedSpan = MessagePack.MessagePackSerializer.Deserialize<FakeSpan>(buffer);

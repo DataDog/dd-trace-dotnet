@@ -18,7 +18,7 @@ namespace Datadog.Trace.Agent
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IBatchStatsd _statsd;
-        private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
+        private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(DatadogFormatterResolver.Instance);
         private readonly string _containerId;
         private readonly FrameworkDescription _frameworkDescription;
         private Uri _tracesEndpoint; // The Uri may be reassigned dynamically so that retry attempts may attempt updated Agent ports
