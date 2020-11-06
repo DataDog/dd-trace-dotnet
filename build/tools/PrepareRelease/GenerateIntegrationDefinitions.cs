@@ -23,8 +23,7 @@ namespace PrepareRelease
             // and create objects that will generate correct JSON schema
             var callTargetIntegrations = from assembly in assemblies
                                          from wrapperType in assembly.GetTypes()
-                                         from wrapperMethod in wrapperType.GetRuntimeMethods()
-                                         let attributes = wrapperMethod.GetCustomAttributes<InstrumentMethodAttribute>(inherit: false)
+                                         let attributes = wrapperType.GetCustomAttributes<InstrumentMethodAttribute>(inherit: false)
                                          where attributes.Any()
                                          from attribute in attributes
                                          let integrationName = GetIntegrationName(wrapperType)
@@ -33,7 +32,6 @@ namespace PrepareRelease
                                          {
                                              assembly,
                                              wrapperType,
-                                             wrapperMethod,
                                              attribute
                                          }
                                              by integrationName into g
@@ -41,7 +39,6 @@ namespace PrepareRelease
                                          {
                                              name = g.Key,
                                              method_replacements = from item in g
-                                                                   let targetAssembly = item.attribute.Assembly
                                                                    select new
                                                                    {
                                                                        caller = new

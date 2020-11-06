@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClient
         MaximumVersion = "5.*.*")]
     public class HttpClientHandlerIntegration
     {
-        private const string IntegrationName = "HttpMessageHandler";
+        private const string IntegrationName = "HttpMessageHandler-CallTarget";
 
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
