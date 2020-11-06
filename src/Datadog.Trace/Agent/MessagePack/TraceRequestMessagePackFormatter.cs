@@ -9,9 +9,7 @@ namespace Datadog.Trace.Agent.MessagePack
     {
         public int Serialize(ref byte[] bytes, int offset, TraceRequest value, IFormatterResolver formatterResolver)
         {
-            offset += value.WriteHeaders(ref bytes, offset);
-            offset += value.WriteTraces(ref bytes, offset);
-            return offset;
+            return value.SerializeTo(ref bytes, offset);
         }
 
         public TraceRequest Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
