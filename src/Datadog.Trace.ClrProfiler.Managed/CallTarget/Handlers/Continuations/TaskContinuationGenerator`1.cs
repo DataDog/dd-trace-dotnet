@@ -21,12 +21,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            if (_continuation is null)
+            if (_continuation == null)
             {
                 return returnValue;
             }
 
-            if (exception != null)
+            if (exception != null || returnValue == null)
             {
                 _continuation(instance, default, exception, state);
                 return returnValue;

@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
     internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
     {
         private static readonly InvokeDelegate _invokeDelegate = null;
-        private static readonly ContinuationGenerator<TIntegration, TTarget, TReturn> _continuationGenerator;
+        private static readonly ContinuationGenerator<TIntegration, TTarget, TReturn> _continuationGenerator = null;
 
         static EndMethodHandler()
         {
@@ -63,8 +63,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
 #endif
             }
-
-            _continuationGenerator ??= new ContinuationGenerator<TIntegration, TTarget, TReturn>();
         }
 
         internal delegate CallTargetReturn<TReturn> InvokeDelegate(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
@@ -78,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 returnValue = returnWrap.GetReturnValue();
             }
 
-            if (returnValue != null)
+            if (_continuationGenerator != null)
             {
                 returnValue = _continuationGenerator.SetContinuation(instance, returnValue, exception, state);
             }
