@@ -6,7 +6,7 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal class Options
     {
-        [Usage(ApplicationAlias = "ddtrace")]
+        [Usage(ApplicationAlias = "dd-trace")]
         public static IEnumerable<Example> Examples
         {
             get
