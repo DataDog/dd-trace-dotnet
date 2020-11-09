@@ -13,7 +13,7 @@ pip install invoke
 inv -e dotnettracer.build
 
 if not exist %PKG_OUTDIR% mkdir %PKG_OUTDIR% || exit /b 6
-xcopy /y/e/s msi\*.* %PKG_OUTDIR%
+xcopy /y/e/s output\*.* %PKG_OUTDIR%
 goto :EOF
 
 :nomntdir

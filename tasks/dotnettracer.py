@@ -26,7 +26,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
     this_dir = os.getcwd()
     solution_dir = os.getcwd()
     tracer_home = os.path.join(solution_dir, "tracer_home")
-    msi_home = os.path.join(solution_dir, "msi")
+    output_path = os.path.join(solution_dir, "output")
 
     pfxfile = None
     pfxpass = None
@@ -38,7 +38,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
 
     ctx.run("nuget restore {solution_dir}\\Datadog.Trace.Minimal.sln".format(solution_dir=solution_dir))
 
-    cmd = "msbuild {solution_dir}\\Datadog.Trace.proj /t:{target} /p:Platform={arch} /p:Configuration={config} /p:TracerHomeDirectory={tracer_home} /p:RunWixToolsOutOfProc=true /p:MsiOutputPath={msihome}"
+    cmd = "msbuild {solution_dir}\\Datadog.Trace.proj /t:{target} /p:Platform={arch} /p:Configuration={config} /p:TracerHomeDirectory={tracer_home} /p:RunWixToolsOutOfProc=true /p:MsiOutputPath={output_path}"
 
     run_cmd = cmd.format(
         solution_dir=solution_dir,
@@ -46,7 +46,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
         arch=arch,
         config=configuration,
         tracer_home=tracer_home,
-        msihome=msi_home
+        output_path=output_path
     )
     ctx.run(run_cmd)
 
@@ -72,9 +72,10 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
             arch=arch,
             config=configuration,
             tracer_home=tracer_home,
-            msihome=msi_home
+            output_path=output_path
         )
         ctx.run(run_cmd)
+
         if pfxfile and pfxpass:
             for f in glob.iglob("msi/**/*.msi", recursive=True):
                 sign_binary(ctx, f, pfxfile, pfxpass)
