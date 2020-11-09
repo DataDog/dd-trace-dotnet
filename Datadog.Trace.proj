@@ -45,7 +45,7 @@
   </Target>
 
   <Target Name="BuildCsharp">
-    <MSBuild Targets="Build" Projects="@(CsharpProject)" RemoveProperties="Platform">
+    <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -130,7 +130,7 @@
       </ManagedProfilerPublishProject>
     </ItemGroup>
 
-    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="$(BuildInParallel)" RemoveProperties="Platform">
+    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="$(BuildInParallel)" Properties="Platform=AnyCPU">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -154,7 +154,7 @@
       </BuildLoggerPublishProject>
     </ItemGroup>
 
-    <MSBuild Targets="Publish" Projects="@(BuildLoggerPublishProject)" BuildInParallel="$(BuildInParallel)" RemoveProperties="Platform">
+    <MSBuild Targets="Publish" Projects="@(BuildLoggerPublishProject)" BuildInParallel="$(BuildInParallel)" Properties="Platform=AnyCPU">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -164,7 +164,7 @@
       <ManagedLoaderProject Include="src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj"/>
     </ItemGroup>
 
-    <MSBuild Targets="Build" Projects="@(ManagedLoaderProject)" RemoveProperties="Platform">
+    <MSBuild Targets="Build" Projects="@(ManagedLoaderProject)" Properties="Platform=AnyCPU">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
