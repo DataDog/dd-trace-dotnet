@@ -40,6 +40,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
 
     cmd = "msbuild {solution_dir}\\Datadog.Trace.proj /t:{target} /p:Platform={arch} /p:Configuration={config} /p:TracerHomeDirectory={tracer_home} /p:RunWixToolsOutOfProc=true /p:MsiOutputPath={output_path}"
 
+    ## compile all binaries
     run_cmd = cmd.format(
         solution_dir=solution_dir,
         target="CreateHomeDirectory",
@@ -59,13 +60,11 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
         else:
             remove_pfx = False
 
-        if pfxfile and pfxpass:
-            for f in glob.iglob("tracer_home/**/datadog*.dll", recursive=True):
-                sign_binary(ctx, f, pfxfile, pfxpass)
-        else:
-            for f in glob.iglob("tracer_home/**/datadog*.dll", recursive=True):
-                print("Not signing: {f}\n".format(f=f))
+        ## sign all dll files
+        for f in glob.iglob("{tracer_home}/**/datadog*.dll".format(tracer_home=tracer_home), recursive=True):
+            sign_binary(ctx, f, pfxfile, pfxpass)
 
+        ## build the msi
         run_cmd = cmd.format(
             solution_dir=solution_dir,
             target="MsiOnly",
@@ -76,12 +75,9 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
         )
         ctx.run(run_cmd)
 
-        if pfxfile and pfxpass:
-            for f in glob.iglob("msi/**/*.msi", recursive=True):
+        for ext in ["msi", "nupkg"]:
+            for f in glob.iglob("{output_path}/**/*.{ext}".format(output_path=output_path, ext=ext), recursive=True):
                 sign_binary(ctx, f, pfxfile, pfxpass)
-        else:
-            for f in glob.iglob("msi/**/*.msi", recursive=True):
-                print("Not signing: {f}\n".format(f=f))
 
     except Exception as e:
         if pfxfile and remove_pfx:
@@ -107,8 +103,12 @@ def clean(ctx, arch="x64", debug=False):
 
 timestamp_server = "http://timestamp.digicert.com/"
 def sign_binary(ctx, path, certfile, certpass):
+    if pfxfile and pfxpass:
+        print("Signing {}\n".format(path))
+    else:
+        print("Not signing: {f}\n".format(f=f))
+        return
 
-    print("Signing {}\n".format(path))
     cmd = "signtool sign /f {certfile} /p {certpass} /t {timestamp_server} {file}".format(
         certfile=certfile,
         certpass=certpass,
