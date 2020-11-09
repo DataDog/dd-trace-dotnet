@@ -15,10 +15,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class WebRequestIntegration
     {
         private const string WebRequestTypeName = "System.Net.WebRequest";
-        private const int IntegrationId = (int)IntegrationIds.WebRequest;
         private const string Major4 = "4";
         private const string Major5 = "5";
 
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.WebRequest));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(WebRequestIntegration));
 
         /// <summary>

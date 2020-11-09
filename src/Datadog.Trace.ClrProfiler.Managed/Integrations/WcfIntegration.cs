@@ -16,12 +16,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class WcfIntegration
     {
-        private const int IntegrationId = (int)IntegrationIds.Wcf;
         private const string Major4 = "4";
 
         private const string ChannelHandlerTypeName = "System.ServiceModel.Dispatcher.ChannelHandler";
         private const string HttpRequestMessagePropertyTypeName = "System.ServiceModel.Channels.HttpRequestMessageProperty";
 
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.Wcf));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(WcfIntegration));
 
         /// <summary>

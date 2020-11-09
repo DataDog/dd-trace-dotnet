@@ -4,7 +4,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 {
     internal static class AdoNetConstants
     {
-        internal const int IntegrationId = (int)IntegrationIds.AdoNet;
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AdoNet));
 
         public static class AssemblyNames
         {

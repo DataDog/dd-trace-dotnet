@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -11,7 +12,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// </summary>
     public static class ConnectionMultiplexer
     {
-        private const int IntegrationId = RedisBatch.IntegrationId;
         private const string IntegrationName = RedisBatch.IntegrationName;
         private const string RedisAssembly = "StackExchange.Redis";
         private const string StrongNameRedisAssembly = "StackExchange.Redis.StrongName";
@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private const string StackExchangeRedisResultProcessor = "StackExchange.Redis.ResultProcessor`1";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ConnectionMultiplexer));
+        private static readonly IntegrationInfo IntegrationId = RedisBatch.IntegrationId;
 
         /// <summary>
         /// Execute a synchronous redis operation.

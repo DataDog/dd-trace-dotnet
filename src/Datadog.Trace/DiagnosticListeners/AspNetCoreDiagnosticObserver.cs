@@ -23,7 +23,7 @@ namespace Datadog.Trace.DiagnosticListeners
     /// </summary>
     internal sealed class AspNetCoreDiagnosticObserver : DiagnosticObserver
     {
-        public const int IntegrationId = (int)IntegrationIds.AspNetCore;
+        public static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNetCore));
 
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
         private const string HttpRequestInOperationName = "aspnet_core.request";

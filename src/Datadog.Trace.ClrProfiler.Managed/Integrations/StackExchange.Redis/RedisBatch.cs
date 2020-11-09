@@ -12,13 +12,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// </summary>
     public static class RedisBatch
     {
-        internal const int IntegrationId = (int)IntegrationIds.StackExchangeRedis;
-        internal const string IntegrationName = "StackExchangeRedis";
+        internal const string IntegrationName = nameof(IntegrationIds.StackExchangeRedis);
         private const string RedisAssembly = "StackExchange.Redis";
         private const string StrongNameRedisAssembly = "StackExchange.Redis.StrongName";
         private const string RedisBaseTypeName = "StackExchange.Redis.RedisBase";
         private const string Major1 = "1";
         private const string Major2 = "2";
+
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.StackExchangeRedis));
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RedisBatch));
 

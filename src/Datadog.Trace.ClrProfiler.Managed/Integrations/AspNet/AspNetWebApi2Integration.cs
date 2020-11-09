@@ -20,7 +20,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AspNetWebApi2Integration
     {
-        private const int IntegrationId = (int)IntegrationIds.AspNetWebApi2;
         private const string OperationName = "aspnet-webapi.request";
         private const string Major5Minor1 = "5.1";
         private const string Major5 = "5";
@@ -29,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpControllerTypeName = "System.Web.Http.Controllers.IHttpController";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
 
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNetWebApi2));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetWebApi2Integration));
 
         /// <summary>

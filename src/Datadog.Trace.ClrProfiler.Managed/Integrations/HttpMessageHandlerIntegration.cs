@@ -18,7 +18,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class HttpMessageHandlerIntegration
     {
-        private const int IntegrationId = (int)IntegrationIds.HttpMessageHandler;
         private const string SystemNetHttp = "System.Net.Http";
         private const string Major4 = "4";
         private const string Major5 = "5";
@@ -29,6 +28,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpMessageHandler = SystemNetHttp + "." + HttpMessageHandlerTypeName;
         private const string HttpClientHandler = SystemNetHttp + "." + HttpClientHandlerTypeName;
         private const string SendAsync = "SendAsync";
+
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpMessageHandler));
+        private static readonly IntegrationInfo SocketHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpSocketsHandler));
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpMessageHandlerIntegration));
         private static readonly string[] NamespaceAndNameFilters = { ClrNames.GenericTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken };
@@ -285,7 +287,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static bool IsSocketsHttpHandlerEnabled(Type reportedType)
         {
-            return Tracer.Instance.Settings.IsIntegrationEnabled((int)IntegrationIds.HttpSocketsHandler, defaultValue: false)
+            return Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: false)
                 && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
         }
 

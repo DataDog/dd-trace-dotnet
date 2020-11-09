@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -18,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ElasticsearchNetCommon));
 
-        public static Scope CreateScope(Tracer tracer, int integrationId, object pipeline, object requestData)
+        public static Scope CreateScope(Tracer tracer, IntegrationInfo integrationId, object pipeline, object requestData)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {

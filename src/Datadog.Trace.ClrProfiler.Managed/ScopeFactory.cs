@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="integrationId">The id of the integration creating this scope.</param>
         /// <param name="tags">The tags associated to the scope</param>
         /// <returns>A new pre-populated scope.</returns>
-        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, int integrationId, out HttpTags tags)
+        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags)
         {
             tags = null;
 
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 tags.HttpMethod = httpMethod?.ToUpperInvariant();
                 tags.HttpUrl = httpUrl;
-                tags.InstrumentationName = IntegrationRegistry.Names[integrationId];
+                tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }

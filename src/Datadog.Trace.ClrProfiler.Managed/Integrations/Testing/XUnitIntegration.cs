@@ -14,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     /// </summary>
     public static class XUnitIntegration
     {
-        private const int IntegrationId = (int)IntegrationIds.XUnit;
         private const string Major2 = "2";
         private const string Major2Minor2 = "2.2";
 
@@ -30,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string XUnitRunTestCollectionAsyncMethod = "RunTestCollectionAsync";
         private const string XUnitQueueTestOutputMethod = "QueueTestOutput";
 
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.XUnit));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
         private static readonly FrameworkDescription _runtimeDescription;
 

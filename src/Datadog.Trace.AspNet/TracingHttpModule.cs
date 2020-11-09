@@ -16,7 +16,7 @@ namespace Datadog.Trace.AspNet
     /// </summary>
     public class TracingHttpModule : IHttpModule
     {
-        internal const int IntegrationId = (int)IntegrationIds.AspNet;
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNet));
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 

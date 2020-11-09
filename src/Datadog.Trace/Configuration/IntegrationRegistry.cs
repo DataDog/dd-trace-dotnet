@@ -27,5 +27,25 @@ namespace Datadog.Trace.Configuration
 
             Ids = ids;
         }
+
+        internal static string GetName(IntegrationInfo integration)
+        {
+            if (integration.Name == null)
+            {
+                return Names[integration.Id];
+            }
+
+            return integration.Name;
+        }
+
+        internal static IntegrationInfo GetIntegrationInfo(string integrationName)
+        {
+            if (Ids.TryGetValue(integrationName, out var id))
+            {
+                return new IntegrationInfo(id);
+            }
+
+            return new IntegrationInfo(integrationName);
+        }
     }
 }

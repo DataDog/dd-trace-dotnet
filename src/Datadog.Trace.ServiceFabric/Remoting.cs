@@ -13,9 +13,10 @@ namespace Datadog.Trace.ServiceFabric
     /// Provides methods used start and stop tracing Service Remoting requests.
     /// </summary>
     public static class Remoting
-    {
-        private const int IntegrationId = (int)IntegrationIds.ServiceRemoting;
+    {        
         private const string SpanNamePrefix = "service-remoting";
+
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ServiceRemoting));
 
         // ILogger and DatadogLogging are internal to Datadog.Trade.dll, so we use NuGet package IgnoresAccessChecksToGenerator
         // to generate [IgnoresAccessChecksToAttribute] and generate reference assemblies where they are public

@@ -12,11 +12,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class ElasticsearchNet6Integration
     {
-        private const int IntegrationId = (int)IntegrationIds.ElasticsearchNet;
         private const string Version6 = "6";
         private const string ElasticsearchAssemblyName = "Elasticsearch.Net";
         private const string RequestPipelineInterfaceTypeName = "Elasticsearch.Net.IRequestPipeline";
 
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ElasticsearchNet));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ElasticsearchNet6Integration));
 
         /// <summary>

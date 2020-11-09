@@ -1,5 +1,6 @@
 using System;
 using Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -11,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RedisHelper));
 
-        internal static Scope CreateScope(Tracer tracer, int integrationId, string host, string port, string rawCommand)
+        internal static Scope CreateScope(Tracer tracer, IntegrationInfo integrationId, string host, string port, string rawCommand)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
             {

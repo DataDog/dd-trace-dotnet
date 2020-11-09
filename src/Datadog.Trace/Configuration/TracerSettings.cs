@@ -303,11 +303,11 @@ namespace Datadog.Trace.Configuration
             Integrations.SetDisabledIntegrations(DisabledIntegrationNames);
         }
 
-        internal bool IsIntegrationEnabled(int integrationId, bool defaultValue = true)
+        internal bool IsIntegrationEnabled(IntegrationInfo integration, bool defaultValue = true)
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
             {
-                return Integrations[integrationId].Enabled ?? defaultValue;
+                return Integrations[integration].Enabled ?? defaultValue;
             }
 
             return false;
@@ -324,9 +324,9 @@ namespace Datadog.Trace.Configuration
             return false;
         }
 
-        internal double? GetIntegrationAnalyticsSampleRate(int integrationId, bool enabledWithGlobalSetting)
+        internal double? GetIntegrationAnalyticsSampleRate(IntegrationInfo integration, bool enabledWithGlobalSetting)
         {
-            var integrationSettings = Integrations[integrationId];
+            var integrationSettings = Integrations[integration];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }

@@ -49,10 +49,15 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="integrationName">The name of the integration.</param>
         /// <returns>The integration-specific settings for the specified integration.</returns>
-        public IntegrationSettings this[string integrationName] =>
-            _settingsByName.GetOrAdd(integrationName, _valueFactory);
+        public IntegrationSettings this[string integrationName] => this[new IntegrationInfo(integrationName)];
 
-        internal IntegrationSettings this[int integrationId] => _settingsById[integrationId];
+        internal IntegrationSettings this[IntegrationInfo integration]
+        {
+            get
+            {
+                return integration.Name == null ? _settingsById[integration.Id] : _settingsByName.GetOrAdd(integration.Name, _valueFactory);
+            }
+        }
 
         internal void SetDisabledIntegrations(HashSet<string> disabledIntegrationNames)
         {

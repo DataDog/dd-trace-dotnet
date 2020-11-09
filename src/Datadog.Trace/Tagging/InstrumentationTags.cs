@@ -17,11 +17,11 @@ namespace Datadog.Trace.Tagging
 
         public double? AnalyticsSampleRate { get; set; }
 
-        public void SetAnalyticsSampleRate(int integrationId, TracerSettings settings, bool enabledWithGlobalSetting)
+        public void SetAnalyticsSampleRate(IntegrationInfo integration, TracerSettings settings, bool enabledWithGlobalSetting)
         {
             if (settings != null)
             {
-                AnalyticsSampleRate = settings.GetIntegrationAnalyticsSampleRate(integrationId, enabledWithGlobalSetting);
+                AnalyticsSampleRate = settings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
             }
         }
 
