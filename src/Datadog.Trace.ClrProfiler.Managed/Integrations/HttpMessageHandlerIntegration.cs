@@ -285,7 +285,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static bool IsSocketsHttpHandlerEnabled(Type reportedType)
         {
-            return Tracer.Instance.Settings.IsOptInIntegrationEnabled((int)IntegrationIds.HttpSocketsHandler) && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
+            return Tracer.Instance.Settings.IsIntegrationEnabled((int)IntegrationIds.HttpSocketsHandler, defaultValue: false)
+                && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsTracingEnabled(IRequestHeaders headers)

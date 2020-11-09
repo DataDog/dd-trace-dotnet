@@ -303,12 +303,11 @@ namespace Datadog.Trace.Configuration
             Integrations.SetDisabledIntegrations(DisabledIntegrationNames);
         }
 
-        internal bool IsIntegrationEnabled(int integrationId)
+        internal bool IsIntegrationEnabled(int integrationId, bool defaultValue = true)
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
             {
-                bool? enabled = Integrations[integrationId].Enabled;
-                return enabled != false;
+                return Integrations[integrationId].Enabled ?? defaultValue;
             }
 
             return false;
@@ -320,17 +319,6 @@ namespace Datadog.Trace.Configuration
             {
                 bool? enabled = Integrations[integrationName].Enabled;
                 return enabled != false;
-            }
-
-            return false;
-        }
-
-        internal bool IsOptInIntegrationEnabled(int integrationId)
-        {
-            if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
-            {
-                bool? enabled = Integrations[integrationId].Enabled;
-                return enabled == true;
             }
 
             return false;
@@ -348,30 +336,6 @@ namespace Datadog.Trace.Configuration
             var value = EnvironmentHelpers.GetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", string.Empty);
 
             return value == "1" || value == "true";
-        }
-
-        private static IntegrationSettings[] GetIntegrationSettings(IConfigurationSource source, ICollection<string> disabledIntegrations)
-        {
-            var integrations = new IntegrationSettings[IntegrationRegistry.Names.Length];
-
-            for (int i = 0; i < integrations.Length; i++)
-            {
-                var name = IntegrationRegistry.Names[i];
-
-                if (name != null)
-                {
-                    var settings = new IntegrationSettings(name, source);
-
-                    if (disabledIntegrations.Contains(name))
-                    {
-                        settings.Enabled = false;
-                    }
-
-                    integrations[i] = settings;
-                }
-            }
-
-            return integrations;
         }
     }
 }
