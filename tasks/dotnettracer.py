@@ -12,13 +12,10 @@ from invoke import task
 from invoke.exceptions import Exit, ParseError, Failure, UnexpectedExit
 from .ssm import get_signing_cert, get_pfx_pass
 
-projects_to_restore = [
-    "Datadog.Trace", "Datadog.Trace.AspNet", "Datadog.Trace.ClrProfiler.Managed", "Datadog.Trace.ClrProfiler.Managed.Core", "Datadog.Trace.ClrProfiler.Managed.Loader"
-]
 @task
 def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
     """
-    Build the custom action library for the agent
+    Build the custom action library for the .NET Tracer
     """
 
     if sys.platform != 'win32':
@@ -52,6 +49,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
         msihome=msi_home
     )
     ctx.run(run_cmd)
+
     ## pull the signing cert and password
     try:
         if sys.platform == 'win32' and os.environ.get('SIGN_WINDOWS'):
@@ -111,12 +109,12 @@ def sign_binary(ctx, path, certfile, certpass):
 
     print("Signing {}\n".format(path))
     cmd = "signtool sign /f {certfile} /p {certpass} /t {timestamp_server} {file}".format(
-        certfile=certfile, 
-        certpass=certpass, 
+        certfile=certfile,
+        certpass=certpass,
         timestamp_server=timestamp_server,
         file=path)
 
-    ## is harder to debug, but suppress stdin/stdout/stderr echo (hide = true) so we 
+    ## is harder to debug, but suppress stdin/stdout/stderr echo (hide = true) so we
     ## don't print the password
     try:
         ctx.run(cmd, hide=True)
