@@ -38,18 +38,8 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
     configuration = "Release"
     if debug:
         configuration = "Debug"
+
     ctx.run("nuget restore {solution_dir}\\Datadog.Trace.Minimal.sln".format(solution_dir=solution_dir))
-    for proj in projects_to_restore:
-        try:
-            # some projects may not exist in older commits, which is fine
-            nuget_cmd = "nuget restore {solution_dir}\\src\\{proj}\\{proj}.csproj -PackagesDirectory packages".format(
-                solution_dir = solution_dir,
-                proj=proj
-            )
-            ctx.run(nuget_cmd)
-        except:
-            print("Failed to restore nuget package {proj}\n".format(proj=proj))
-            pass
 
     cmd = "msbuild {solution_dir}\\Datadog.Trace.proj /t:{target} /p:Platform={arch} /p:Configuration={config} /p:TracerHomeDirectory={tracer_home} /p:RunWixToolsOutOfProc=true /p:MsiOutputPath={msihome}"
 
