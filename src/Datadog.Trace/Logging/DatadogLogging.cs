@@ -13,8 +13,8 @@ namespace Datadog.Trace.Logging
 {
     internal static class DatadogLogging
     {
+        internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
-        private static readonly LoggingLevelSwitch LoggingLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
         private static readonly ILogger SharedLogger = null;
 
         static DatadogLogging()

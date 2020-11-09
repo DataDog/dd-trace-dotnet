@@ -1,0 +1,69 @@
+using System;
+using System.Collections.Generic;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Events;
+using Xunit;
+
+namespace Datadog.Trace.Tests.Logging
+{
+    [Collection(nameof(Datadog.Trace.Tests.Logging))]
+    public class DatadogLoggingTests : IDisposable
+    {
+        private readonly ILogger _logger = null;
+        private readonly CollectionSink _logEventSink;
+
+        public DatadogLoggingTests()
+        {
+            GlobalSettings.Reload();
+
+            _logEventSink = new CollectionSink();
+            _logger = new LoggerConfiguration()
+                .MinimumLevel.ControlledBy(DatadogLogging.LoggingLevelSwitch)
+                .WriteTo.Sink(_logEventSink)
+                // .WriteTo.Observers(obs => obs.Subscribe(logEvent => _logEvents.Add(logEvent)))
+                .CreateLogger();
+        }
+
+        public void Dispose()
+        {
+            // On test cleanup, reload the GlobalSettings
+            GlobalSettings.Reload();
+        }
+
+        [Fact]
+        public void InformationLevel_EnabledBy_Default()
+        {
+            _logger.Information("Information level message");
+            _logger.Debug("Debug level message");
+
+            Assert.Single(_logEventSink.Events);
+        }
+
+        [Fact]
+        public void DebugLevel_EnabledBy_GlobalSettings()
+        {
+            _logger.Information("Information level message");
+            _logger.Debug("First debug level message");
+
+            // Enable Debug-level logging
+            GlobalSettings.SetDebugEnabled(true);
+
+            _logger.Debug("Second debug level message");
+
+            Assert.Equal(2, _logEventSink.Events.Count);
+        }
+
+        private class CollectionSink : ILogEventSink
+        {
+            public List<LogEvent> Events { get; } = new List<LogEvent>();
+
+            public void Emit(LogEvent le)
+            {
+                Events.Add(le);
+            }
+        }
+    }
+}
