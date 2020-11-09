@@ -80,10 +80,13 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
         ctx.run(cmd.format(output_path=output_path, configuration=configuration, proj="src\Datadog.Trace\Datadog.Trace.csproj"))
         ctx.run(cmd.format(output_path=output_path, configuration=configuration, proj="src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj"))
 
-        ## sign msi installers and nuget packages
-        for ext in ["msi", "nupkg"]:
-            for f in glob.iglob("{output_path}/**/*.{ext}".format(output_path=output_path, ext=ext), recursive=True):
-                sign_binary(ctx, f, pfxfile, pfxpass)
+        ## sign msi installers
+        for f in glob.iglob("{output_path}/**/*.msi".format(output_path=output_path), recursive=True):
+            sign_binary(ctx, f, pfxfile, pfxpass)
+
+        ## sign nuget packages
+        for f in glob.iglob("{output_path}/**/*.nupkg".format(output_path=output_path), recursive=True):
+            sign_nuget(ctx, f, pfxfile, pfxpass)
 
     except Exception as e:
         if pfxfile and remove_pfx:
@@ -139,5 +142,39 @@ def sign_binary(ctx, path, certfile, certpass):
 
     except Exit as e:
         error = "(E) Failed to sign file {file}\n".format(file=path)
+        print(error)
+        raise
+
+def sign_nuget(ctx, path, certfile, certpass):
+    if certfile and certpass:
+        print("Signing {}\n".format(path))
+    else:
+        print("Not signing: {}\n".format(path))
+        return
+
+    cmd = "nuget sign {file} -CertificatePath {certfile} -CertificatePassword {certpass} -Timestamper {timestamp_server} -NonInteractive".format(
+        file=path,
+        certfile=certfile,
+        certpass=certpass,
+        timestamp_server=timestamp_server)
+
+    ## is harder to debug, but suppress stdin/stdout/stderr echo (hide = true) so we
+    ## don't print the password
+    try:
+        ctx.run(cmd, hide=True)
+    except UnexpectedExit as e:
+        error = "(UE) Failed to sign nuget package {file}\n".format(file=path)
+        print(error)
+        e.result.command = "redacted"
+        raise UnexpectedExit(e.result, e.reason)
+
+    except Failure as e:
+        error = "(F) Failed to sign nuget package {file}\n".format(file=path)
+        print(error)
+        e.result.command = "redacted"
+        raise Failure(e.result, e.reason)
+
+    except Exit as e:
+        error = "(E) Failed to sign nuget package {file}\n".format(file=path)
         print(error)
         raise
