@@ -109,7 +109,7 @@ def clean(ctx, arch="x64", debug=False):
 
 timestamp_server = "http://timestamp.digicert.com/"
 def sign_binary(ctx, path, certfile, certpass):
-    if pfxfile and pfxpass:
+    if certfile and certpass:
         print("Signing {}\n".format(path))
     else:
         print("Not signing: {}\n".format(path))
