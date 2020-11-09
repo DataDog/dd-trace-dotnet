@@ -76,7 +76,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
         ctx.run(run_cmd)
 
         ## build the nuget packages
-        cmd = "dotnet pack --no-build --output {output_path} --configuration {configuration} {proj}"
+        cmd = "dotnet pack --no-build --output {output_path} --configuration {configuration} -p:Platform=AnyCPU {proj}"
         ctx.run(cmd.format(output_path=output_path, configuration=configuration, proj="src\Datadog.Trace\Datadog.Trace.csproj"))
         ctx.run(cmd.format(output_path=output_path, configuration=configuration, proj="src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj"))
 
