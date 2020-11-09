@@ -75,8 +75,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     OnMvcBeforeAction(arg);
                 }
-
-                if (suffix.SequenceEqual("Hosting.UnhandledException")
+                else if (suffix.SequenceEqual("Hosting.UnhandledException")
                     || suffix.SequenceEqual("Diagnostics.UnhandledException"))
                 {
                     OnHostingUnhandledException(arg);
