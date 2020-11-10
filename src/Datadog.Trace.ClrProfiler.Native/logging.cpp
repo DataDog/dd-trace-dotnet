@@ -1,6 +1,7 @@
 #include "logging.h"
 
 #include "pal.h"
+#include "spdlog/sinks/null_sink.h"
 
 namespace trace {
 
@@ -34,8 +35,14 @@ Logger::Logger() {
 
   spdlog::flush_every(std::chrono::seconds(3));
 
-  m_fileout =
-      spdlog::rotating_logger_mt("Logger", GetLogPath(), 1048576 * 5, 10);
+  try {
+    m_fileout =
+        spdlog::rotating_logger_mt("Logger", GetLogPath(), 1048576 * 5, 10);
+  }
+  catch (...) {
+    std::cerr << "Logger Handler: Error creating native log file." << std::endl;
+    m_fileout = spdlog::null_logger_mt("Logger");
+  }
 
   m_fileout->set_level(spdlog::level::debug);
 
