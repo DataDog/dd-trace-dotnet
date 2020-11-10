@@ -132,12 +132,15 @@ namespace Datadog.Trace.Logging
 
         private static string GetLogDirectory()
         {
-            var nativeLogFile = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
-            string logDirectory = null;
-
-            if (!string.IsNullOrEmpty(nativeLogFile))
+            string logDirectory = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogDirectory);
+            if (logDirectory == null)
             {
-                logDirectory = Path.GetDirectoryName(nativeLogFile);
+                var nativeLogFile = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
+
+                if (!string.IsNullOrEmpty(nativeLogFile))
+                {
+                    logDirectory = Path.GetDirectoryName(nativeLogFile);
+                }
             }
 
             // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
