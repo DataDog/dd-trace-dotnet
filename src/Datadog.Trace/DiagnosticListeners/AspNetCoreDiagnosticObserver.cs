@@ -28,6 +28,8 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
+        private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
+
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AspNetCoreDiagnosticObserver>();
 
         private static readonly PropertyFetcher HttpRequestInStartHttpContextFetcher = new PropertyFetcher("HttpContext");
@@ -50,28 +52,91 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
+#if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
         {
-            switch (eventName)
+            var lastChar = eventName[^1];
+
+            if (lastChar == 't')
             {
-                case "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start":
+                if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
+                {
                     OnHostingHttpRequestInStart(arg);
-                    break;
+                }
 
-                case "Microsoft.AspNetCore.Mvc.BeforeAction":
+                return;
+            }
+
+            if (lastChar == 'n')
+            {
+                var suffix = eventName.AsSpan().Slice(PrefixLength);
+
+                if (suffix.SequenceEqual("Mvc.BeforeAction"))
+                {
                     OnMvcBeforeAction(arg);
-                    break;
-
-                case "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop":
-                    OnHostingHttpRequestInStop(arg);
-                    break;
-
-                case "Microsoft.AspNetCore.Hosting.UnhandledException":
-                case "Microsoft.AspNetCore.Diagnostics.UnhandledException":
+                }
+                else if (suffix.SequenceEqual("Hosting.UnhandledException")
+                    || suffix.SequenceEqual("Diagnostics.UnhandledException"))
+                {
                     OnHostingUnhandledException(arg);
-                    break;
+                }
+
+                return;
+            }
+
+            if (lastChar == 'p')
+            {
+                if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
+                {
+                    OnHostingHttpRequestInStop(arg);
+                }
+
+                return;
             }
         }
+#else
+        protected override void OnNext(string eventName, object arg)
+        {
+            var lastChar = eventName[eventName.Length - 1];
+
+            if (lastChar == 't')
+            {
+                if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
+                {
+                    OnHostingHttpRequestInStart(arg);
+                }
+
+                return;
+            }
+
+            if (lastChar == 'n')
+            {
+                switch (eventName)
+                {
+                    case "Microsoft.AspNetCore.Mvc.BeforeAction":
+                        OnMvcBeforeAction(arg);
+                        break;
+
+                    case "Microsoft.AspNetCore.Hosting.UnhandledException":
+                    case "Microsoft.AspNetCore.Diagnostics.UnhandledException":
+                        OnHostingUnhandledException(arg);
+                        break;
+                }
+
+                return;
+            }
+
+            if (lastChar == 'p')
+            {
+                if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
+                {
+                    OnHostingHttpRequestInStop(arg);
+                }
+
+                return;
+            }
+        }
+#endif
 
         private static string GetUrl(HttpRequest request)
         {
