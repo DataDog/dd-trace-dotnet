@@ -50,29 +50,29 @@ namespace Datadog.Trace.Tests
 
             // for a single trace, these methods are called once with a value of "1"
             statsd.Verify(
-                s => s.Counter(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.Counter(TracerMetricNames.Queue.EnqueuedSpans, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Queue.EnqueuedSpans, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.Counter(TracerMetricNames.Queue.DequeuedTraces, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Queue.DequeuedTraces, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.Counter(TracerMetricNames.Queue.DequeuedSpans, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Queue.DequeuedSpans, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.Counter(TracerMetricNames.Api.Requests, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Api.Requests, 1, 1, null),
                 Times.Once());
 
             if (requestSuccessful)
             {
                 statsd.Verify(
-                    s => s.Counter(TracerMetricNames.Api.Responses, 1, 1, new[] { "status:200" }),
+                    s => s.Increment(TracerMetricNames.Api.Responses, 1, 1, new[] { "status:200" }),
                     Times.Once());
             }
 
