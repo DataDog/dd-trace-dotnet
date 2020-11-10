@@ -73,7 +73,7 @@ namespace Datadog.Trace
         {
         }
 
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IBatchStatsd statsd)
+        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd)
         {
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -247,7 +247,7 @@ namespace Datadog.Trace
 
         internal ISampler Sampler { get; }
 
-        internal IBatchStatsd Statsd { get; private set; }
+        internal IDogStatsd Statsd { get; private set; }
 
         /// <summary>
         /// Create a new Tracer with the given parameters
@@ -656,7 +656,7 @@ namespace Datadog.Trace
             return false;
         }
 
-        private static IBatchStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
+        private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
         {
             try
             {
@@ -681,10 +681,15 @@ namespace Datadog.Trace
                     constantTags.Add($"version:{settings.ServiceVersion}");
                 }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-                var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
-                return new BatchStatsd(statsdUdp, prefix: string.Empty, constantTags.ToArray());
-#pragma warning restore CS0618 // Type or member is obsolete
+                var statsd = new DogStatsdService();
+                statsd.Configure(new StatsdConfig
+                {
+                    StatsdServerName = settings.AgentUri.DnsSafeHost,
+                    StatsdPort = port,
+                    ConstantTags = constantTags.ToArray()
+                });
+
+                return statsd;
             }
             catch (Exception ex)
             {
@@ -742,15 +747,10 @@ namespace Datadog.Trace
 
         private void HeartbeatCallback(object state)
         {
-            if (Statsd != null)
-            {
-                // use the count of Tracer instances as the heartbeat value
-                // to estimate the number of "live" Tracers than can potentially
-                // send traces to the Agent
-
-                var command = Statsd.GetSetGauge(TracerMetricNames.Health.Heartbeat, _liveTracerCount);
-                Statsd.Send(command);
-            }
+            // use the count of Tracer instances as the heartbeat value
+            // to estimate the number of "live" Tracers than can potentially
+            // send traces to the Agent
+            Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, _liveTracerCount);
         }
     }
 }
