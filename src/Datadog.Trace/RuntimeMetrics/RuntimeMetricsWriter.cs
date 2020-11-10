@@ -129,6 +129,10 @@ namespace Datadog.Trace.RuntimeMetrics
 
             batch.Append(_statsd.GetSetGauge("runtime.dotnet.threads.count", threadCount));
 
+#if NETCOREAPP
+            batch.Append(_statsd.GetSetGauge("runtime.dotnet.threads.workers_count", ThreadPool.ThreadCount));
+#endif
+
             batch.Append(_statsd.GetSetGauge("runtime.dotnet.mem.committed", memoryUsage));
             batch.Append(_statsd.GetSetGauge("runtime.dotnet.cpu.user", userCpu));
             batch.Append(_statsd.GetSetGauge("runtime.dotnet.cpu.system", systemCpu));
