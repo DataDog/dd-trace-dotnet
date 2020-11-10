@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -13,8 +14,6 @@ namespace Datadog.Trace.Tests.Sampling
         private static readonly string Env = "my-test-env";
         private static readonly string OperationName = "test";
         private static readonly IEnumerable<KeyValuePair<string, float>> MockAgentRates = new List<KeyValuePair<string, float>>() { new KeyValuePair<string, float>($"service:{ServiceName},env:{Env}", FallbackRate) };
-
-        private static ulong _id = 1;
 
         [Fact]
         public void RateLimiter_Never_Applied_For_DefaultRule()
@@ -88,9 +87,9 @@ namespace Datadog.Trace.Tests.Sampling
                 0.05f);
         }
 
-        private static Span GetMyServiceSpan()
+        private static Span GetMyServiceSpan(ref ulong id)
         {
-            var span = new Span(new SpanContext(_id++, _id++, null, serviceName: ServiceName), DateTimeOffset.Now) { OperationName = OperationName };
+            var span = new Span(new SpanContext(id++, id++, null, serviceName: ServiceName), DateTimeOffset.Now) { OperationName = OperationName };
             span.SetTag(Tags.Env, Env);
             return span;
         }
@@ -101,11 +100,13 @@ namespace Datadog.Trace.Tests.Sampling
             float expectedAutoKeepRate,
             float acceptableVariancePercent)
         {
+            var id = SpanIdGenerator.CreateNew();
+
             var sampleSize = iterations;
             var autoKeeps = 0;
             while (sampleSize-- > 0)
             {
-                var span = GetMyServiceSpan();
+                var span = GetMyServiceSpan(ref id);
                 var priority = sampler.GetSamplingPriority(span);
                 if (priority == SamplingPriority.AutoKeep)
                 {
