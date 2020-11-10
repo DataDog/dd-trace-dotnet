@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Datadog.Trace.Util
@@ -41,6 +42,11 @@ namespace Datadog.Trace.Util
                 return absolutePath;
             }
 
+            if (absolutePath.Length == 1 && absolutePath[0] == '/')
+            {
+                return absolutePath;
+            }
+
             // Sanitized url will be at worse as long as the original
             var sb = new StringBuilder(absolutePath.Length);
 
@@ -64,9 +70,7 @@ namespace Datadog.Trace.Util
                 }
 
                 // replace path segments that look like numbers or guid
-                segment = long.TryParse(segment, out _) ||
-                    Guid.TryParseExact(segment, "N", out _) ||
-                    Guid.TryParseExact(segment, "D", out _)
+                segment = long.TryParse(segment, out _) || IsSegmentAGuid(segment)
                         ? UrlIdPlaceholder
                         : segment;
 
@@ -82,5 +86,30 @@ namespace Datadog.Trace.Util
 
             return sb.ToString();
         }
+
+#if NETCOREAPP3_1 || NET50
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static bool IsSegmentAGuid(string segment)
+        {
+            // GUID format N "d85b1407351d4694939203acc5870eb1" length: 32
+            // GUID format D "d85b1407-351d-4694-9392-03acc5870eb1" length: 36 with dashses in 8, 13, 18 and 23 indexes.
+            if (segment.Length == 32)
+            {
+                return TryParseExact(segment, "N");
+            }
+
+            if (segment.Length == 36 && segment[8] == '-' && segment[13] == '-' && segment[18] == '-' && segment[23] == '-')
+            {
+                return TryParseExact(segment, "D");
+            }
+
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool TryParseExact(string segment, string format) => Guid.TryParseExact(segment, format, out _);
     }
 }
