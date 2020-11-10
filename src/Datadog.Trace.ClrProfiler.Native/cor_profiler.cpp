@@ -91,7 +91,10 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   Info("Environment variables:");
 
   for (auto&& env_var : env_vars_to_display) {
-    Info("  ", env_var, "=", GetEnvironmentValue(env_var));
+    WSTRING env_var_value = GetEnvironmentValue(env_var);
+    if (debug_logging_enabled || !env_var_value.empty()) {
+      Info("  ", env_var, "=", env_var_value);
+    }
   }
 
   const WSTRING azure_app_services_value =

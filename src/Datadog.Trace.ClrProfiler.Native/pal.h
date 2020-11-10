@@ -21,6 +21,18 @@
 namespace trace {
 
 inline WSTRING DatadogLogFilePath() {
+  WSTRING directory = GetEnvironmentValue(environment::log_directory);
+
+  if (directory.length() > 0) {
+    return directory +
+#ifdef _WIN32
+           '\\'_W +
+#else
+           '/'_W +
+#endif
+        "dotnet-tracer-native.log"_W;
+  }
+
   WSTRING path = GetEnvironmentValue(environment::log_path);
 
   if (path.length() > 0) {
@@ -40,9 +52,9 @@ inline WSTRING DatadogLogFilePath() {
   }
 
   return ToWSTRING(program_data +
-                   R"(\Datadog .NET Tracer\logs\dotnet-profiler.log)");
+                   R"(\Datadog .NET Tracer\logs\dotnet-tracer-native.log)");
 #else
-  return "/var/log/datadog/dotnet/dotnet-profiler.log"_W;
+  return "/var/log/datadog/dotnet/dotnet-tracer-native.log"_W;
 #endif
 }
 

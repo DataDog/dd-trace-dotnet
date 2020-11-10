@@ -1,4 +1,4 @@
-using Datadog.Trace.Util;
+using System;
 
 namespace Datadog.Trace.Configuration
 {
@@ -11,7 +11,17 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public override string GetString(string key)
         {
-            return EnvironmentHelpers.GetEnvironmentVariable(key);
+            try
+            {
+                return Environment.GetEnvironmentVariable(key);
+            }
+            catch
+            {
+                // We should not add a dependency from the Configuration system to the Logger system,
+                // so do nothing
+            }
+
+            return null;
         }
     }
 }

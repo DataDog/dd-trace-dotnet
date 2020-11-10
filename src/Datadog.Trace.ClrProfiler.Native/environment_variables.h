@@ -58,10 +58,15 @@ const WSTRING service_version = "DD_VERSION"_W;
 const WSTRING disabled_integrations = "DD_DISABLED_INTEGRATIONS"_W;
 
 // Sets the path for the profiler's log file.
-// If not set, default is
-// "%ProgramData%"\Datadog .NET Tracer\logs\dotnet-profiler.log" on Windows or
-// "/var/log/datadog/dotnet/dotnet-profiler.log" on Linux.
+// Environment variable DD_TRACE_LOG_DIRECTORY takes precedence over this setting, if set.
 const WSTRING log_path = "DD_TRACE_LOG_PATH"_W;
+
+// Sets the directory for the profiler's log file.
+// If set, this setting takes precedence over environment variable DD_TRACE_LOG_PATH.
+// If not set, default is
+// "%ProgramData%"\Datadog .NET Tracer\logs\" on Windows or
+// "/var/log/datadog/dotnet/" on Linux.
+const WSTRING log_directory = "DD_TRACE_LOG_DIRECTORY"_W;
 
 // Sets whether to disable all JIT optimizations.
 // Default value is false (do not disable all optimizations).
