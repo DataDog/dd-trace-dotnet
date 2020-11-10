@@ -100,7 +100,9 @@ namespace Datadog.Trace.Tests.Sampling
             float expectedAutoKeepRate,
             float acceptableVariancePercent)
         {
-            var id = SpanIdGenerator.CreateNew();
+            var initialId = SpanIdGenerator.CreateNew();
+
+            var id = initialId;
 
             var sampleSize = iterations;
             var autoKeeps = 0;
@@ -121,7 +123,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             Assert.True(
                 autoKeepRate >= lowerLimit && autoKeepRate <= upperLimit,
-                $"Expected between {lowerLimit} and {upperLimit}, actual rate is {autoKeepRate}.");
+                $"Expected between {lowerLimit} and {upperLimit}, actual rate is {autoKeepRate}. Test ran with initial id {initialId}. Autokeeps is {autoKeeps}, iterations is {iterations}.");
         }
 
         private class NoLimits : IRateLimiter
