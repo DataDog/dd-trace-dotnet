@@ -61,11 +61,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             try
             {
-                var nativeLogFile = Environment.GetEnvironmentVariable("DD_TRACE_LOG_PATH");
+                logDirectory = Environment.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY");
 
-                if (!string.IsNullOrEmpty(nativeLogFile))
+                if (logDirectory == null)
                 {
-                    logDirectory = Path.GetDirectoryName(nativeLogFile);
+                    var nativeLogFile = Environment.GetEnvironmentVariable("DD_TRACE_LOG_PATH");
+
+                    if (!string.IsNullOrEmpty(nativeLogFile))
+                    {
+                        logDirectory = Path.GetDirectoryName(nativeLogFile);
+                    }
                 }
 
                 if (logDirectory == null)
