@@ -14,7 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class GraphQLIntegration
     {
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.GraphQL));
+        internal const string IntegrationName = nameof(IntegrationIds.GraphQL);
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         private const string ServiceName = "graphql";
 
         private const string Major2 = "2";

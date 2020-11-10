@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public override string SpanKind => SpanKinds.Client;
 
-        public string InstrumentationName => IntegrationRegistry.GetName(MongoDbIntegration.IntegrationId);
+        public string InstrumentationName => MongoDbIntegration.IntegrationName;
 
         public string DbName { get; set; }
 

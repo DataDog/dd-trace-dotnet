@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public override string SpanKind => SpanKinds.Server;
 
-        public string InstrumentationName => IntegrationRegistry.GetName(GraphQLIntegration.IntegrationId);
+        public string InstrumentationName => GraphQLIntegration.IntegrationName;
 
         public string Language => TracerConstants.Language;
 

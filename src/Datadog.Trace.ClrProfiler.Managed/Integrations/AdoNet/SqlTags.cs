@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
         public string DbType { get; set; }
 
-        public string InstrumentationName => IntegrationRegistry.GetName(AdoNetConstants.IntegrationId);
+        public string InstrumentationName => AdoNetConstants.IntegrationName;
 
         public string DbName { get; set; }
 

@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class MongoDbIntegration
     {
+        internal const string IntegrationName = nameof(IntegrationIds.MongoDb);
+
         private const string OperationName = "mongodb.query";
         private const string ServiceName = "mongodb";
 
@@ -24,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IWireProtocol = "MongoDB.Driver.Core.WireProtocol.IWireProtocol";
         private const string IWireProtocolGeneric = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1";
 
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.MongoDb));
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MongoDbIntegration));
 
