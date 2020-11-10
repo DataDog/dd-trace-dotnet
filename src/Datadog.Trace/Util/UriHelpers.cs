@@ -37,12 +37,7 @@ namespace Datadog.Trace.Util
 
         public static string CleanUriSegment(string absolutePath)
         {
-            if (string.IsNullOrWhiteSpace(absolutePath))
-            {
-                return absolutePath;
-            }
-
-            if (absolutePath.Length == 1 && absolutePath[0] == '/')
+            if (string.IsNullOrWhiteSpace(absolutePath) || (absolutePath.Length == 1 && absolutePath[0] == '/'))
             {
                 return absolutePath;
             }
@@ -70,9 +65,14 @@ namespace Datadog.Trace.Util
                 }
 
                 // replace path segments that look like numbers or guid
-                segment = long.TryParse(segment, out _) || IsSegmentAGuid(segment)
-                        ? UrlIdPlaceholder
-                        : segment;
+                // GUID format N "d85b1407351d4694939203acc5870eb1" length: 32
+                // GUID format D "d85b1407-351d-4694-9392-03acc5870eb1" length: 36 with dashses in 8, 13, 18 and 23 indexes.
+                if (long.TryParse(segment, out _) ||
+                    (segment.Length == 32 && Guid.TryParseExact(segment, "N", out _)) ||
+                    (segment.Length == 36 && segment[8] == '-' && segment[13] == '-' && segment[18] == '-' && segment[23] == '-' && Guid.TryParseExact(segment, "D", out _)))
+                {
+                    segment = UrlIdPlaceholder;
+                }
 
                 sb.Append(segment);
 
@@ -86,30 +86,5 @@ namespace Datadog.Trace.Util
 
             return sb.ToString();
         }
-
-#if NETCOREAPP3_1 || NET50
-        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-#else
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        private static bool IsSegmentAGuid(string segment)
-        {
-            // GUID format N "d85b1407351d4694939203acc5870eb1" length: 32
-            // GUID format D "d85b1407-351d-4694-9392-03acc5870eb1" length: 36 with dashses in 8, 13, 18 and 23 indexes.
-            if (segment.Length == 32)
-            {
-                return TryParseExact(segment, "N");
-            }
-
-            if (segment.Length == 36 && segment[8] == '-' && segment[13] == '-' && segment[18] == '-' && segment[23] == '-')
-            {
-                return TryParseExact(segment, "D");
-            }
-
-            return false;
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static bool TryParseExact(string segment, string format) => Guid.TryParseExact(segment, format, out _);
     }
 }
