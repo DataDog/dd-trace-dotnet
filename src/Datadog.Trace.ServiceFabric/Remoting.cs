@@ -13,7 +13,7 @@ namespace Datadog.Trace.ServiceFabric
     /// Provides methods used start and stop tracing Service Remoting requests.
     /// </summary>
     public static class Remoting
-    {        
+    {
         private const string SpanNamePrefix = "service-remoting";
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ServiceRemoting));
