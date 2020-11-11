@@ -1,4 +1,4 @@
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClient
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
 {
     /// <summary>
     /// HttpResponseMessage interface for ducktyping

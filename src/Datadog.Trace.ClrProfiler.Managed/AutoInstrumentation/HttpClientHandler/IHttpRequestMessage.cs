@@ -1,6 +1,6 @@
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClient
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
 {
     /// <summary>
     /// HttpRequestMessage interface for ducktyping

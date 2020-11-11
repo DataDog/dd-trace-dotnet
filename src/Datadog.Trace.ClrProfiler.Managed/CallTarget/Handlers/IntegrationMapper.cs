@@ -270,7 +270,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndAsyncMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodEndMethodInfo is null)
             {
-                Log.Warning($"Couldn't find the method: {EndAsyncMethodName} in type: {integrationType.FullName}");
                 return null;
             }
 
@@ -370,7 +369,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodEndMethodInfo is null)
             {
-                Log.Warning($"Couldn't find the method: {EndMethodName} in type: {integrationType.FullName}");
                 return null;
             }
 

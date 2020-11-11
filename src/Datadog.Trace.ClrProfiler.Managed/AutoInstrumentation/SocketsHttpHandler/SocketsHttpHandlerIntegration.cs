@@ -4,22 +4,22 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClient
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
 {
     /// <summary>
-    /// System.Net.Http.HttpClientHandler calltarget instrumentation
+    /// System.Net.Http.SocketsHttpHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         Assembly = "System.Net.Http",
-        Type = "System.Net.Http.HttpClientHandler",
+        Type = "System.Net.Http.SocketsHttpHandler",
         Method = "SendAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
         ParametersTypesNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
         MinimumVersion = "4.0.0",
         MaximumVersion = "5.*.*")]
-    public class HttpClientHandlerIntegration
+    public class SocketsHttpHandlerIntegration
     {
-        private const string IntegrationName = "HttpMessageHandler[CallTarget]";
+        private const string IntegrationName = "HttpMessageHandler";
 
         /// <summary>
         /// OnMethodBegin callback
@@ -94,6 +94,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClient
 
         private static bool IsTracingEnabled(IRequestHeaders headers)
         {
+            if (!Tracer.Instance.Settings.IsOptInIntegrationEnabled("HttpSocketsHandler"))
+            {
+                return false;
+            }
+
             if (headers.TryGetValues(HttpHeaderNames.TracingEnabled, out var headerValues))
             {
                 if (headerValues is string[] arrayValues)

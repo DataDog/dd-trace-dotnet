@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClient
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
 {
     /// <summary>
     /// RequestHeaders interface for ducktyping
