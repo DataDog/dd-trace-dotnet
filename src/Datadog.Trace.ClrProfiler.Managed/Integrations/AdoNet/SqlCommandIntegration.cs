@@ -43,7 +43,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, SystemSqlClientAssemblyName },
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData },
+            TargetType = SystemSqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
+            TargetSignatureTypes = new[] { SystemSqlDataReaderTypeName },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { SystemSqlClientAssemblyName },
             TargetType = SystemSqlCommandTypeName,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SystemSqlDataReaderTypeName },
@@ -141,7 +148,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, SystemSqlClientAssemblyName },
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData },
+            TargetType = SystemSqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
+            TargetSignatureTypes = new[] { SystemSqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { SystemSqlClientAssemblyName },
             TargetType = SystemSqlCommandTypeName,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SystemSqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
@@ -395,7 +409,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, SystemSqlClientAssemblyName },
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData },
+            TargetType = SystemSqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
+            TargetSignatureTypes = new[] { ClrNames.Int32 },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { SystemSqlClientAssemblyName },
             TargetType = SystemSqlCommandTypeName,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
@@ -607,7 +628,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, SystemSqlClientAssemblyName },
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData },
+            TargetType = SystemSqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
+            TargetSignatureTypes = new[] { ClrNames.Object },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { SystemSqlClientAssemblyName },
             TargetType = SystemSqlCommandTypeName,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
             TargetSignatureTypes = new[] { ClrNames.Object },
@@ -708,7 +736,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, SystemSqlClientAssemblyName },
             TargetType = SystemSqlCommandTypeName,
-            TargetMethod = AdoNetConstants.MethodNames.ExecuteReaderAsync,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalarAsync,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -740,7 +768,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
-            TargetMethod = AdoNetConstants.MethodNames.ExecuteReaderAsync,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalarAsync,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
