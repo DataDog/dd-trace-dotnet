@@ -507,7 +507,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteNonQueryAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, SystemSqlClientNamespace);
+            return ExecuteNonQueryAsyncInternal(
+                (DbCommand)command,
+                (CancellationToken)boxedCancellationToken,
+                opCode,
+                mdToken,
+                moduleVersionPtr,
+                SystemSqlClientNamespace);
         }
 
         /// <summary>
@@ -533,24 +539,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteNonQueryAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientNamespace);
-        }
-
-        private static object ExecuteNonQueryAsync(
-            object command,
-            object boxedCancellationToken,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr,
-            string sqlClientNamespace)
-        {
             return ExecuteNonQueryAsyncInternal(
                 (DbCommand)command,
                 (CancellationToken)boxedCancellationToken,
                 opCode,
                 mdToken,
                 moduleVersionPtr,
-                sqlClientNamespace);
+                MicrosoftSqlClientNamespace);
         }
 
         private static async Task<int> ExecuteNonQueryAsyncInternal(
@@ -724,7 +719,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteScalarAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, SystemSqlClientNamespace);
+            return ExecuteScalarAsyncInternal(
+                (DbCommand)command,
+                (CancellationToken)boxedCancellationToken,
+                opCode,
+                mdToken,
+                moduleVersionPtr,
+                SystemSqlClientNamespace);
         }
 
         /// <summary>
@@ -750,24 +751,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteScalarAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientNamespace);
-        }
-
-        private static object ExecuteScalarAsync(
-            object command,
-            object boxedCancellationToken,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr,
-            string sqlClientNamespace)
-        {
             return ExecuteScalarAsyncInternal(
                 (DbCommand)command,
                 (CancellationToken)boxedCancellationToken,
                 opCode,
                 mdToken,
                 moduleVersionPtr,
-                sqlClientNamespace);
+                MicrosoftSqlClientNamespace);
         }
 
         private static async Task<object> ExecuteScalarAsyncInternal(
