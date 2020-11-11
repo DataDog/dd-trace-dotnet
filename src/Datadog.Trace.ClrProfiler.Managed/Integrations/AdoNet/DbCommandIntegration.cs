@@ -13,9 +13,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     /// </summary>
     public static class DbCommandIntegration
     {
+        private const string Major2 = "2";
         private const string Major4 = "4";
         private const string Major5 = "5";
-        private const string Major2 = "2";
 
         private const string DbCommandTypeName = AdoNetConstants.TypeNames.DbCommand;
 
@@ -30,7 +30,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader },
@@ -102,7 +109,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader, AdoNetConstants.TypeNames.CommandBehavior },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReader, AdoNetConstants.TypeNames.CommandBehavior },
@@ -267,7 +281,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Int32 },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
@@ -425,7 +446,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData },
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Object },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Object },
