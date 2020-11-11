@@ -28,6 +28,18 @@ namespace Datadog.Trace.Tests
                 }
             }
 
+            using (var scope = tracer.StartActive("manual.trace"))
+            {
+                scope.Span.SetTag(Tags.SamplingPriority, expectedSamplingPriority.ToString());
+                traceId = scope.Span.TraceId;
+
+                using (var parentSpanOfDistributedTrace = tracer.StartActive("SortOrders"))
+                {
+                    parentSpanId = scope.Span.SpanId;
+                    samplingPriorityText = parentSpanOfDistributedTrace.Span.GetTag(Tags.SamplingPriority);
+                }
+            }
+
             var distributedTraceContext = new SpanContext(traceId, parentSpanId);
 
             using (var scope = tracer.StartActive("manual.trace", parent: distributedTraceContext))
