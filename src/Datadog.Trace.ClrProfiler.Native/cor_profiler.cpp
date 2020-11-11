@@ -2221,6 +2221,10 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(
   std::vector<mdMethodDef> vtMethodDefs = std::vector<mdMethodDef>();
 
   for (IntegrationMethod integration : filtered_integrations) {
+    if (integration.replacement.target_method.assembly.name !=
+        module_metadata->assemblyName) {
+      continue;
+    }
     if (integration.replacement.wrapper_method.action !=
         "CallTargetModification"_W) {
       continue;
@@ -2231,7 +2235,8 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(
         &typeDef);
     if (FAILED(hr)) {
       Warn("Can't load the TypeDef for: ",
-           integration.replacement.target_method.type_name);
+           integration.replacement.target_method.type_name,
+          ", Module: ", module_metadata->assemblyName);
       continue;
     }
 
