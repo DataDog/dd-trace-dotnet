@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: SystemSqlCommandTypeName,
+                    instrumentedType: $"{sqlClientNamespace}.{SqlCommandTypeName}",
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -215,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: SystemSqlCommandTypeName,
+                    instrumentedType: $"{sqlClientNamespace}.{SqlCommandTypeName}",
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -339,7 +339,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: SystemSqlCommandTypeName,
+                    instrumentedType: $"{sqlClientNamespace}.{SqlCommandTypeName}",
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -462,7 +462,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: SystemSqlCommandTypeName,
+                    instrumentedType: $"{sqlClientNamespace}.{SqlCommandTypeName}",
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -578,7 +578,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: SystemSqlCommandTypeName,
+                    instrumentedType: $"{sqlClientNamespace}.{SqlCommandTypeName}",
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -674,7 +674,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: SystemSqlCommandTypeName,
+                    instrumentedType: $"{sqlClientNamespace}.{SqlCommandTypeName}",
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -790,7 +790,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: SystemSqlCommandTypeName,
+                    instrumentedType: $"{sqlClientNamespace}.{SqlCommandTypeName}",
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
