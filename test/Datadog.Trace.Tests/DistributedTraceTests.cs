@@ -8,7 +8,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void ManuallyDistributedTrace_CarriesExpectedValues()
         {
-            var tracer = new Tracer();
+            var tracer = Tracer.Instance;
 
             ulong traceId;
             ulong parentSpanId;

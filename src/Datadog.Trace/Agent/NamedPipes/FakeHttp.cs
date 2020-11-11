@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
 
 namespace Datadog.Trace.Agent.NamedPipes
@@ -8,17 +9,17 @@ namespace Datadog.Trace.Agent.NamedPipes
     {
         private static readonly FormatterResolverWrapper FormatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
 
-        public static string CreatePost(TraceRequest request)
+        public static async Task<string> CreatePost(TraceRequest request)
         {
             var headers = string.Join(Environment.NewLine, request.Headers.Select(h => $"{h.Key}: {h.Value}"));
-            var bodyBytes = CachedSerializer.Instance.SerializeToByteArray(request, FormatterResolver);
-
+            var traceBytes = await CachedSerializer.Instance.SerializeToByteArray(request.Traces, FormatterResolver);
+            var stringBytes = System.Text.Encoding.Default.GetString(traceBytes);
             var message = $@"{request.Method} {request.Path} HTTP/{request.Version}
 Host: {request.Host}
 Content-Type: application/msgpack
 User-Agent: dotnet-dd-named-pipes-client/1.0
 {headers}{Environment.NewLine}{Environment.NewLine}
-{bodyBytes}";
+{stringBytes}";
 
             return message;
         }

@@ -37,18 +37,26 @@ namespace Datadog.Trace.Agent.NamedPipes
                 // for someone to read it
 
                 // Cancel this task if server response detected
-                var writeTask = Task.Run(
-                    async () =>
-                    {
-                        _logger.Verbose("HttpOS Client: Writing request request.Content.CopyToAsync");
-                        var message = FakeHttp.CreatePost(request);
-                        var messageBytes = Encoding.ASCII.GetBytes(message);
-                        await stream.WriteAsync(messageBytes, 0, messageBytes.Length, cancellationToken).ConfigureAwait(false);
-                        _logger.Verbose("HttpOS Client: stream.FlushAsync");
-                        await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
-                        _logger.Verbose("HttpOS Client: Finished writing request");
-                    },
-                    cancellationToken);
+                // var writeTask = Task.Run(
+                //     async () =>
+                //     {
+                //         _logger.Verbose("HttpOS Client: Writing request request.Content.CopyToAsync");
+                //         var message = FakeHttp.CreatePost(request);
+                //         var messageBytes = Encoding.ASCII.GetBytes(message);
+                //         await stream.WriteAsync(messageBytes, 0, messageBytes.Length, cancellationToken).ConfigureAwait(false);
+                //         _logger.Verbose("HttpOS Client: stream.FlushAsync");
+                //         await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                //         _logger.Verbose("HttpOS Client: Finished writing request");
+                //     },
+                //     cancellationToken);
+
+                _logger.Verbose("HttpOS Client: Writing request request.Content.CopyToAsync");
+                var message = await FakeHttp.CreatePost(request);
+                var messageBytes = Encoding.ASCII.GetBytes(message);
+                await stream.WriteAsync(messageBytes, 0, messageBytes.Length, cancellationToken).ConfigureAwait(false);
+                _logger.Verbose("HttpOS Client: stream.FlushAsync");
+                await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                _logger.Verbose("HttpOS Client: Finished writing request");
 
                 var response = new TraceResponse() { Request = request };
 
