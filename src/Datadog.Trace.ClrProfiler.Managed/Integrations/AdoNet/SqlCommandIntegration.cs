@@ -310,7 +310,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             try
             {
                 sqlCommandType = command.GetInstrumentedType(SqlCommandTypeName, sqlClientNamespace);
-                sqlDataReaderType = sqlCommandType.Assembly.GetType($"{sqlCommandType.Namespace}.{SqlDataReaderTypeName}", throwOnError: false);
+                sqlDataReaderType = sqlCommandType.Assembly.GetType($"{sqlClientNamespace}.{SqlDataReaderTypeName}");
             }
             catch (Exception ex)
             {
