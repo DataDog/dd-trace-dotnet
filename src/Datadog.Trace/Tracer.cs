@@ -12,6 +12,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -148,8 +149,27 @@ namespace Datadog.Trace
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            Console.CancelKeyPress += Console_CancelKeyPress;
+
+            try
+            {
+                // Registering for the AppDomain.UnhandledException event cannot be called by a security transparent method
+                // This will only happen if the Tracer is not run full-trust
+                AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
+            }
+
+            try
+            {
+                // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
+                Console.CancelKeyPress += Console_CancelKeyPress;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
+            }
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
@@ -505,7 +525,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Environment.OSVersion.ToString());
 
                     writer.WritePropertyName("version");
-                    writer.WriteValue(typeof(Tracer).Assembly.GetName().Version.ToString());
+                    writer.WriteValue(TracerConstants.AssemblyVersion);
 
                     writer.WritePropertyName("platform");
                     writer.WriteValue(frameworkDescription.ProcessArchitecture);
@@ -596,24 +616,44 @@ namespace Datadog.Trace
         {
             try
             {
-#if NETFRAMEWORK
-                // System.Web.dll is only available on .NET Framework
-                if (System.Web.Hosting.HostingEnvironment.IsHosted)
+                try
                 {
-                    // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
-                    // note that ApplicationVirtualPath includes a leading slash.
-                    return (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
+                    if (TryLoadAspNetSiteName(out var siteName))
+                    {
+                        return siteName;
+                    }
                 }
-#endif
+                catch (Exception ex)
+                {
+                    // Unable to call into System.Web.dll
+                    Log.SafeLogError(ex, "Unable to get application name through ASP.NET settings");
+                }
 
                 return Assembly.GetEntryAssembly()?.GetName().Name ??
-                       Process.GetCurrentProcess().ProcessName;
+                   ProcessHelpers.GetCurrentProcessName();
             }
             catch (Exception ex)
             {
                 Log.SafeLogError(ex, "Error creating default service name.");
                 return null;
             }
+        }
+
+        private static bool TryLoadAspNetSiteName(out string siteName)
+        {
+#if NETFRAMEWORK
+            // System.Web.dll is only available on .NET Framework
+            if (System.Web.Hosting.HostingEnvironment.IsHosted)
+            {
+                // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
+                // note that ApplicationVirtualPath includes a leading slash.
+                siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
+                return true;
+            }
+
+#endif
+            siteName = default;
+            return false;
         }
 
         private static IBatchStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
@@ -665,6 +705,7 @@ namespace Datadog.Trace
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
+            Log.Warning("Application threw an unhandled exception: {0}", e.ExceptionObject);
             RunShutdownTasks();
         }
 

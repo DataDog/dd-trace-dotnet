@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -47,7 +48,7 @@ namespace Datadog.Trace.Util
                 Logger.Warning(ex, "Error while reading environment variables");
             }
 
-            return null;
+            return new Dictionary<object, object>();
         }
     }
 }

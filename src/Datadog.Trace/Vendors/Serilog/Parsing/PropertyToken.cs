@@ -32,7 +32,10 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
     internal sealed class PropertyToken : MessageTemplateToken
     {
         readonly string _rawText;
-        readonly int? _position;
+        // Remove readonly keyword on field. This leads to code that may be evaluated as unverifiable on .NET Framework
+        // because instance method calls to Nullable<int> will require a ldflda instruction on the readonly field.
+        // See https://github.com/dotnet/roslyn/issues/22485 and https://github.com/dotnet/corert/issues/4911
+        int? _position;
 
         /// <summary>
         /// Construct a <see cref="PropertyToken"/>.

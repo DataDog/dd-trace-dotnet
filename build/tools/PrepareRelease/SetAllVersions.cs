@@ -79,6 +79,11 @@ namespace PrepareRelease
                 "src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
                 FullAssemblyNameReplace);
 
+            // Four-part AssemblyVersion update
+            SynchronizeVersion(
+                "src/Datadog.Trace/TracerConstants.cs",
+                FourPartVersionReplace);
+
             // Locked AssemblyVersion #.0.0.0 updates
             SynchronizeVersion(
                 "src/Datadog.Trace.AspNet/AssemblyInfo.cs",
@@ -124,6 +129,11 @@ namespace PrepareRelease
                 WixProjReplace);
 
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
+        }
+
+        private static string FourPartVersionReplace(string text)
+        {
+            return Regex.Replace(text, VersionPattern(fourPartVersion: true), FourPartVersionString(), RegexOptions.Singleline);
         }
 
         private static string FullVersionReplace(string text, string split)
@@ -184,6 +194,11 @@ namespace PrepareRelease
             var newFileContent = transform(fileContent);
 
             File.WriteAllText(fullPath, newFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+
+        private static string FourPartVersionString(string split = ".")
+        {
+            return $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Patch}{split}0";
         }
 
         private static string MajorVersionString(string split = ".")
