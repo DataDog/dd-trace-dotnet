@@ -23,12 +23,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string SqlDataReaderTypeName = "SqlDataReader";
 
         private const string SystemSqlClientAssemblyName = "System.Data.SqlClient";
-        private const string SystemSqlCommandTypeName = SystemSqlClientAssemblyName + "." + SqlCommandTypeName;
-        private const string SystemSqlDataReaderTypeName = SystemSqlClientAssemblyName + "." + SqlDataReaderTypeName;
+        private const string SystemSqlClientNamespace = SystemSqlClientAssemblyName;
+        private const string SystemSqlCommandTypeName = SystemSqlClientNamespace + "." + SqlCommandTypeName;
+        private const string SystemSqlDataReaderTypeName = SystemSqlClientNamespace + "." + SqlDataReaderTypeName;
 
         private const string MicrosoftSqlClientAssemblyName = "Microsoft.Data.SqlClient";
-        private const string MicrosoftSqlCommandTypeName = MicrosoftSqlClientAssemblyName + "." + SqlCommandTypeName;
-        private const string MicrosoftSqlDataReaderTypeName = MicrosoftSqlClientAssemblyName + "." + SqlDataReaderTypeName;
+        private const string MicrosoftSqlClientNamespace = MicrosoftSqlClientAssemblyName;
+        private const string MicrosoftSqlCommandTypeName = MicrosoftSqlClientNamespace + "." + SqlCommandTypeName;
+        private const string MicrosoftSqlDataReaderTypeName = MicrosoftSqlClientNamespace + "." + SqlDataReaderTypeName;
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(SqlCommandIntegration));
 
@@ -53,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteReader(command, opCode, mdToken, moduleVersionPtr, SystemSqlClientAssemblyName, SystemSqlDataReaderTypeName);
+            return ExecuteReader(command, opCode, mdToken, moduleVersionPtr, SystemSqlClientNamespace, SystemSqlDataReaderTypeName);
         }
 
         /// <summary>
@@ -77,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteReader(command, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientAssemblyName, MicrosoftSqlDataReaderTypeName);
+            return ExecuteReader(command, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientNamespace, MicrosoftSqlDataReaderTypeName);
         }
 
         private static object ExecuteReader(
@@ -152,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteReaderWithBehavior(command, behavior, opCode, mdToken, moduleVersionPtr, SystemSqlClientAssemblyName, SystemSqlDataReaderTypeName);
+            return ExecuteReaderWithBehavior(command, behavior, opCode, mdToken, moduleVersionPtr, SystemSqlClientNamespace, SystemSqlDataReaderTypeName);
         }
 
         /// <summary>
@@ -178,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteReaderWithBehavior(command, behavior, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientAssemblyName, MicrosoftSqlDataReaderTypeName);
+            return ExecuteReaderWithBehavior(command, behavior, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientNamespace, MicrosoftSqlDataReaderTypeName);
         }
 
         private static object ExecuteReaderWithBehavior(
@@ -258,7 +260,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteReaderAsync(command, behavior, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, SystemSqlDataReaderTypeName);
+            return ExecuteReaderAsync(command, behavior, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, SystemSqlClientNamespace);
         }
 
         /// <summary>
@@ -286,7 +288,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteReaderAsync(command, behavior, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, MicrosoftSqlDataReaderTypeName);
+            return ExecuteReaderAsync(command, behavior, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientNamespace);
         }
 
         private static object ExecuteReaderAsync(
@@ -429,7 +431,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteNonQuery(command, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientAssemblyName);
+            return ExecuteNonQuery(command, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientNamespace);
         }
 
         private static int ExecuteNonQuery(
@@ -505,7 +507,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteNonQueryAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, SystemSqlClientAssemblyName);
+            return ExecuteNonQueryAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, SystemSqlClientNamespace);
         }
 
         /// <summary>
@@ -531,7 +533,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteNonQueryAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientAssemblyName);
+            return ExecuteNonQueryAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientNamespace);
         }
 
         private static object ExecuteNonQueryAsync(
@@ -622,7 +624,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteScalar(command, opCode, mdToken, moduleVersionPtr, SystemSqlClientAssemblyName);
+            return ExecuteScalar(command, opCode, mdToken, moduleVersionPtr, SystemSqlClientNamespace);
         }
 
         /// <summary>
@@ -646,7 +648,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteScalar(command, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientAssemblyName);
+            return ExecuteScalar(command, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientNamespace);
         }
 
         private static object ExecuteScalar(
@@ -722,7 +724,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteScalarAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, SystemSqlClientAssemblyName);
+            return ExecuteScalarAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, SystemSqlClientNamespace);
         }
 
         /// <summary>
@@ -748,7 +750,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteScalarAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientAssemblyName);
+            return ExecuteScalarAsync(command, boxedCancellationToken, opCode, mdToken, moduleVersionPtr, MicrosoftSqlClientNamespace);
         }
 
         private static object ExecuteScalarAsync(
