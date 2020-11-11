@@ -132,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for System.Data.SqlCommand..ExecuteReader(CommandBehavior).
+        /// Instrumentation wrapper for System.Data.SqlCommand.ExecuteReader(CommandBehavior).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
@@ -158,7 +158,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteReader().
+        /// Instrumentation wrapper for Microsoft.Data.SqlCommand.ExecuteReader().
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
@@ -485,7 +485,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for System.Data.SqlCommand.ExecuteNonQueryAsync().
+        /// Instrumentation wrapper for System.Data.SqlCommand.ExecuteNonQueryAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
@@ -511,7 +511,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for Microsoft.Data.SqlCommand.ExecuteNonQueryAsync().
+        /// Instrumentation wrapper for Microsoft.Data.SqlCommand.ExecuteNonQueryAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
@@ -702,7 +702,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for System.Data.SqlCommand.ExecuteScalarAsync().
+        /// Instrumentation wrapper for System.Data.SqlCommand.ExecuteScalarAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
@@ -728,7 +728,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for Microsoft.Data.SqlCommand.ExecuteScalarAsync().
+        /// Instrumentation wrapper for Microsoft.Data.SqlCommand.ExecuteScalarAsync(CancellationToken).
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
