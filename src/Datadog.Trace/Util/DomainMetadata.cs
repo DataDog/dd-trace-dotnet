@@ -9,8 +9,11 @@ namespace Datadog.Trace.Util
     internal static class DomainMetadata
     {
         private const string UnknownName = "unknown";
-        private static Process _currentProcess;
-        private static bool _processDataPoisoned;
+        private static bool _initialized;
+        private static string _currentProcessName;
+        private static string _currentProcessMachineName;
+        private static int _currentProcessId;
+        private static bool _processDataUnavailable;
         private static bool _domainDataPoisoned;
         private static bool? _isAppInsightsAppDomain;
 
@@ -23,15 +26,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                try
-                {
-                    return !_processDataPoisoned ? _currentProcess.ProcessName : UnknownName;
-                }
-                catch
-                {
-                    _processDataPoisoned = true;
-                    return UnknownName;
-                }
+                return !_processDataUnavailable ? _currentProcessName : UnknownName;
             }
         }
 
@@ -39,15 +34,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                try
-                {
-                    return !_processDataPoisoned ? _currentProcess.MachineName : UnknownName;
-                }
-                catch
-                {
-                    _processDataPoisoned = true;
-                    return UnknownName;
-                }
+                return !_processDataUnavailable ? _currentProcessMachineName : UnknownName;
             }
         }
 
@@ -55,15 +42,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                try
-                {
-                    return !_processDataPoisoned ? _currentProcess.Id : -1;
-                }
-                catch
-                {
-                    _processDataPoisoned = true;
-                    return -1;
-                }
+                return !_processDataUnavailable ? _currentProcessId : -1;
             }
         }
 
@@ -113,14 +92,15 @@ namespace Datadog.Trace.Util
         {
             try
             {
-                if (!_processDataPoisoned && _currentProcess == null)
+                if (!_processDataUnavailable && !_initialized)
                 {
-                    _currentProcess = Process.GetCurrentProcess();
+                    _initialized = true;
+                    ProcessHelpers.GetCurrentProcessInformation(out _currentProcessName, out _currentProcessMachineName, out _currentProcessId);
                 }
             }
             catch
             {
-                _processDataPoisoned = true;
+                _processDataUnavailable = true;
             }
         }
     }

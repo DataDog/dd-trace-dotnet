@@ -61,15 +61,28 @@ namespace Datadog.Trace.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
             var traceIds = GetUniqueTraceIds(traces);
+            var traceCount = traceIds.Count;
+
+            Log.Debug("Sending {0} traces to the DD agent", traceCount);
 
             var batch = _statsd?.StartBatch(initialCapacity: 2) ?? default;
 
             while (true)
             {
-                var request = _apiRequestFactory.Create(_tracesEndpoint);
+                IApiRequest request;
+
+                try
+                {
+                    request = _apiRequestFactory.Create(_tracesEndpoint);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"An error occurred while generating http request to send traces to the agent at {_tracesEndpoint}");
+                    return false;
+                }
 
                 // Set additional headers
-                request.AddHeader(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
+                request.AddHeader(AgentHttpHeaderNames.TraceCount, traceCount.ToString());
                 if (_frameworkDescription != null)
                 {
                     request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, _frameworkDescription.Name);
@@ -94,6 +107,7 @@ namespace Datadog.Trace.Agent
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
                         Log.Error(ex, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
+                        Log.Error("Failed to send {0} traces to the DD agent", traceCount);
                         return false;
                     }
 #endif
@@ -107,8 +121,10 @@ namespace Datadog.Trace.Agent
                     if (retryCount >= retryLimit)
                     {
                         // stop retrying
-                        Log.Error(exception, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
                         batch.Send();
+
+                        Log.Error(exception, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
+                        Log.Error("Failed to send {0} traces to the DD agent", traceCount);
                         return false;
                     }
 
@@ -129,7 +145,7 @@ namespace Datadog.Trace.Agent
 
                     if (isSocketException)
                     {
-                        Log.Error(exception, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
+                        Log.Debug(exception, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
                         TracingProcessManager.TryForceTraceAgentRefresh();
                     }
 
@@ -149,6 +165,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 batch.Send();
+                Log.Debug("Successfully sent {0} traces to the DD agent", traceCount);
                 return true;
             }
         }

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Sandbox.ManualTracing": {
+      "commandName": "Project",
+      "environmentVariables": {
+      },
+      "nativeDebugging": false
+    }
+  }
+}

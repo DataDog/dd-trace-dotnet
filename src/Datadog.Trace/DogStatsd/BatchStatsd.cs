@@ -6,6 +6,7 @@ namespace Datadog.Trace.DogStatsd
 {
     internal class BatchStatsd : IBatchStatsd
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         private readonly IStatsdUDP _udp;
         private readonly string _prefix;
         private readonly string[] _constantTags;
@@ -72,4 +73,6 @@ namespace Datadog.Trace.DogStatsd
             _udp.Send(command);
         }
     }
+#pragma warning restore CS0618 // Type or member is obsolete
+
 }

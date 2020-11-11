@@ -383,6 +383,11 @@ namespace Datadog.Trace.DuckTyping
                         // If we detect duck chaining we create a new proxy instance with the output of the original target method
                         if (NeedsDuckChaining(localType, proxyArgumentType))
                         {
+                            if (localType.IsValueType)
+                            {
+                                il.Emit(OpCodes.Box, localType);
+                            }
+
                             // We call DuckType.CreateCache<>.Create()
                             MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
                                 .MakeGenericType(proxyArgumentType).GetMethod("Create");
@@ -406,6 +411,11 @@ namespace Datadog.Trace.DuckTyping
                     // Check if the type can be converted or if we need to enable duck chaining
                     if (NeedsDuckChaining(targetMethod.ReturnType, proxyMethodDefinition.ReturnType))
                     {
+                        if (UseDirectAccessTo(targetMethod.ReturnType) && targetMethod.ReturnType.IsValueType)
+                        {
+                            il.Emit(OpCodes.Box, targetMethod.ReturnType);
+                        }
+
                         // We call DuckType.CreateCache<>.Create()
                         MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
                             .MakeGenericType(proxyMethodDefinition.ReturnType).GetMethod("Create");

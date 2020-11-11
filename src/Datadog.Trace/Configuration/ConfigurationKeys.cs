@@ -56,7 +56,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for the Agent host where the Tracer can send traces.
-        /// Overriden by <see cref="AgentUri"/> if present.
+        /// Overridden by <see cref="AgentUri"/> if present.
         /// Default value is "localhost".
         /// </summary>
         /// <seealso cref="TracerSettings.AgentUri"/>
@@ -179,11 +179,19 @@ namespace Datadog.Trace.Configuration
         public const string MaxLogFileSize = "DD_MAX_LOGFILE_SIZE";
 
         /// <summary>
-        /// Configuration key for setting the path to the profiler log file.
-        /// Default value is "%ProgramData%"\Datadog .NET Tracer\logs\dotnet-profiler.log" on Windows
-        /// or "/var/log/datadog/dotnet/dotnet-profiler.log" on Linux.
+        /// Configuration key for setting the path to the .NET Tracer native log file.
+        /// This also determines the output folder of the .NET Tracer managed log files.
+        /// Overridden by <see cref="LogDirectory"/> if present.
         /// </summary>
         public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
+
+        /// <summary>
+        /// Configuration key for setting the directory of the .NET Tracer logs.
+        /// Overrides the value in <see cref="ProfilerLogPath"/> if present.
+        /// Default value is "%ProgramData%"\Datadog .NET Tracer\logs\" on Windows
+        /// or "/var/log/datadog/dotnet/" on Linux.
+        /// </summary>
+        public const string LogDirectory = "DD_TRACE_LOG_DIRECTORY";
 
         /// <summary>
         /// Configuration key for when a standalone instance of the Trace Agent needs to be started.

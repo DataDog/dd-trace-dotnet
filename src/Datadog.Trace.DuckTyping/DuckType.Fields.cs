@@ -76,6 +76,11 @@ namespace Datadog.Trace.DuckTyping
             // Check if the type can be converted or if we need to enable duck chaining
             if (NeedsDuckChaining(targetField.FieldType, proxyMemberReturnType))
             {
+                if (UseDirectAccessTo(targetField.FieldType) && targetField.FieldType.IsValueType)
+                {
+                    il.Emit(OpCodes.Box, targetField.FieldType);
+                }
+
                 // We call DuckType.CreateCache<>.Create()
                 MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
                     .MakeGenericType(proxyMemberReturnType).GetMethod("Create");

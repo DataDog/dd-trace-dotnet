@@ -8,7 +8,9 @@ namespace Datadog.Trace.DogStatsd
         Batch StartBatch(int initialCapacity = 0);
 
         string GetCommand<TCommandType, T>(string name, T value, double sampleRate = 1.0, string[] tags = null)
+#pragma warning disable 618 // obsolete warning disable
             where TCommandType : Statsd.Metric;
+#pragma warning restore 618 // obsolete warning disable
 
         string GetIncrementCount(string name, int value = 1, double sampleRate = 1, string[] tags = null);
 

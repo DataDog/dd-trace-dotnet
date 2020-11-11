@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -111,29 +112,76 @@ namespace Datadog.Trace.Configuration
 #endif
             };
 
-            string currentDirectory = System.Environment.CurrentDirectory;
+            if (TryLoadJsonConfigurationFile(configurationSource, out var jsonConfigurationSource))
+            {
+                configurationSource.Add(jsonConfigurationSource);
+            }
 
+            return configurationSource;
+        }
+
+        private static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, out IConfigurationSource jsonConfigurationSource)
+        {
+            try
+            {
+                // if environment variable is not set, look for default file name in the current directory
+                var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
+                                            configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
+                                            Path.Combine(GetCurrentDirectory(), "datadog.json");
+
+                if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&
+                    File.Exists(configurationFileName))
+                {
+                    jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName);
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                // Unable to load the JSON file from disk
+                // The configuration manager should not depend on a logger being bootstrapped yet
+                // so do not do anything
+            }
+
+            jsonConfigurationSource = default;
+            return false;
+        }
+
+        private static string GetCurrentDirectory()
+        {
+            try
+            {
+                // Entering TryLoadHostingEnvironmentPath and accessing System.Web.dll
+                // will immediately throw an exception in partial trust scenarios,
+                // so surround this call by a try/catch block
+                if (TryLoadHostingEnvironmentPath(out var hostingPath))
+                {
+                    return hostingPath;
+                }
+            }
+            catch (Exception)
+            {
+                // The configuration manager should not depend on a logger being bootstrapped yet
+                // so do not do anything
+            }
+
+            return System.Environment.CurrentDirectory;
+        }
+
+        private static bool TryLoadHostingEnvironmentPath(out string hostingPath)
+        {
 #if NETFRAMEWORK
             // on .NET Framework only, use application's root folder
             // as default path when looking for datadog.json
             if (System.Web.Hosting.HostingEnvironment.IsHosted)
             {
-                currentDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~");
+                hostingPath = System.Web.Hosting.HostingEnvironment.MapPath("~");
+                return true;
             }
+
 #endif
-
-            // if environment variable is not set, look for default file name in the current directory
-            var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
-                                        configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
-                                        Path.Combine(currentDirectory, "datadog.json");
-
-            if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
-                File.Exists(configurationFileName))
-            {
-                configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
-            }
-
-            return configurationSource;
+            hostingPath = default;
+            return false;
         }
     }
 }

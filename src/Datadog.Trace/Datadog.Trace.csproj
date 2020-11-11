@@ -66,4 +66,10 @@
     <DefineConstants>$(DefineConstants);OS_MUTEX</DefineConstants>
   </PropertyGroup>
 
+  <!--StatsdClient-->
+  <!--The StatsdClient uses netstandard1.3 to exclude, but builds against net45 -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);NAMED_PIPE_AVAILABLE</DefineConstants>
+  </PropertyGroup>
+
 </Project>
