@@ -1,9 +1,8 @@
 using System;
 using System.Linq;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.Agent.NamedPipes;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.NamedPipes
 {
     internal static class FakeHttp
     {

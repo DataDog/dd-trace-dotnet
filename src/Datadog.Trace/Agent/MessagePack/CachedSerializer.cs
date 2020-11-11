@@ -46,7 +46,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
         }
 
-        public async Task<byte[]> SerializeToByteArray<T>(T obj, IFormatterResolver resolver)
+        public Task<byte[]> SerializeToByteArray<T>(T obj, IFormatterResolver resolver)
         {
             byte[] buffer = null;
             bool usingCachedBuffer = true;
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
                 int length = MessagePackSerializer.Serialize(ref buffer, 0, obj, resolver);
 
-                return buffer;
+                return Task.FromResult(buffer);
             }
             finally
             {

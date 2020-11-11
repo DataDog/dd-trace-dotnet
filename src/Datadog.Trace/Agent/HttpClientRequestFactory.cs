@@ -24,6 +24,11 @@ namespace Datadog.Trace.Agent
         {
             return new HttpClientRequest(_client, endpoint);
         }
+
+        public void Cancel()
+        {
+            // no-op
+        }
     }
 }
 #endif

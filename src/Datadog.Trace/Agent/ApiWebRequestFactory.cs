@@ -9,5 +9,10 @@ namespace Datadog.Trace.Agent
         {
             return new ApiWebRequest(WebRequest.CreateHttp(endpoint));
         }
+
+        public void Cancel()
+        {
+            // no-op
+        }
     }
 }

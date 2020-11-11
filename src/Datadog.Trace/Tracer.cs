@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.NamedPipes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
@@ -99,27 +99,33 @@ namespace Datadog.Trace
                 Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort);
             }
 
-            // Run this first in case the port override is ready
-            TracingProcessManager.SubscribeToTraceAgentPortOverride(
-                port =>
-                {
-                    Log.Debug("Attempting to override trace agent port with {0}", port);
-                    var builder = new UriBuilder(Settings.AgentUri) { Port = port };
-                    var baseEndpoint = builder.Uri;
+            IApiRequestFactory apiRequestFactory = null;
 
-                    if (_agentWriter == null)
-                    {
-                        IApi overridingApiClient = new Api(baseEndpoint, apiRequestFactory: null, Statsd);
-                        _agentWriter = _agentWriter ?? new AgentWriter(overridingApiClient, Statsd);
-                    }
-                    else
-                    {
-                        _agentWriter.SetApiBaseEndpoint(baseEndpoint);
-                    }
-                });
+            if (Settings.ApmWindowsPipeName != null)
+            {
+                apiRequestFactory = new NamedPipeRequestFactory(Settings.ApmWindowsPipeName);
+            }
+
+            // // Run this first in case the port override is ready
+            // TracingProcessManager.SubscribeToTraceAgentPortOverride(
+            //     port =>
+            //     {
+            //         Log.Debug("Attempting to override trace agent port with {0}", port);
+            //         var builder = new UriBuilder(Settings.AgentUri) { Port = port };
+            //         var baseEndpoint = builder.Uri;
+            //         if (_agentWriter == null)
+            //         {
+            //             IApi overridingApiClient = new Api(baseEndpoint, apiRequestFactory: null, Statsd);
+            //             _agentWriter = _agentWriter ?? new AgentWriter(overridingApiClient, Statsd);
+            //         }
+            //         else
+            //         {
+            //             _agentWriter.SetApiBaseEndpoint(baseEndpoint);
+            //         }
+            //     });
 
             // fall back to default implementations of each dependency if not provided
-            _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri, apiRequestFactory: null, Statsd), Statsd);
+            _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri, apiRequestFactory: apiRequestFactory, Statsd), Statsd);
 
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
