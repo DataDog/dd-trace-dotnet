@@ -45,5 +45,34 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
         }
+
+        public async Task<byte[]> SerializeToByteArray<T>(T obj, IFormatterResolver resolver)
+        {
+            byte[] buffer = null;
+            bool usingCachedBuffer = true;
+
+            try
+            {
+                // Sanity check, in case the serializer is incorrectly used concurrently
+                buffer = Interlocked.Exchange(ref _buffer, null);
+
+                if (buffer == null)
+                {
+                    usingCachedBuffer = false;
+                    buffer = new byte[InitialBufferSize];
+                }
+
+                int length = MessagePackSerializer.Serialize(ref buffer, 0, obj, resolver);
+
+                return buffer;
+            }
+            finally
+            {
+                if (usingCachedBuffer)
+                {
+                    _buffer = buffer;
+                }
+            }
+        }
     }
 }

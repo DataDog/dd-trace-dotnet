@@ -70,6 +70,20 @@ namespace Datadog.Trace.Configuration
         public const string AgentPort = "DD_TRACE_AGENT_PORT";
 
         /// <summary>
+        /// Configuration key for windows named pipe where the Tracer can send traces.
+        /// Default value is null.
+        /// </summary>
+        /// <seealso cref="TracerSettings.ApmWindowsPipeName"/>
+        public const string ApmWindowsPipeName = "DD_APM_WINDOWS_PIPE_NAME";
+
+        /// <summary>
+        /// Configuration key for windows named pipe where the Tracer can send stats.
+        /// Default value is null.
+        /// </summary>
+        /// <seealso cref="TracerSettings.StatsWindowsPipeName"/>
+        public const string StatsWindowsPipeName = "DD_DOGSTATSD_WINDOWS_PIPE_NAME";
+
+        /// <summary>
         /// Sibling setting for <see cref="AgentPort"/>.
         /// Used to force a specific port binding for the Trace Agent.
         /// Default value is 8126.

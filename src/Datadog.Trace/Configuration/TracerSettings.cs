@@ -73,6 +73,8 @@ namespace Datadog.Trace.Configuration
 
             AgentUri = new Uri(agentUri);
 
+            ApmWindowsPipeName = source?.GetString(ConfigurationKeys.ApmWindowsPipeName);
+
             if (string.Equals(AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
             {
                 // Replace localhost with 127.0.0.1 to avoid DNS resolution.
@@ -179,6 +181,20 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentHost"/>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; set; }
+
+        /// <summary>
+        /// Gets or sets the windows pipe name where the Tracer can connect to the Agent.
+        /// Default is null.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ApmWindowsPipeName"/>
+        public string ApmWindowsPipeName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the windows pipe name where the Tracer can send stats.
+        /// Default is null.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsWindowsPipeName"/>
+        public string StatsWindowsPipeName { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether default Analytics are enabled.
