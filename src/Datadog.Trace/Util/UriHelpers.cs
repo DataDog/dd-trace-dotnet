@@ -68,8 +68,8 @@ namespace Datadog.Trace.Util
                 // GUID format N "d85b1407351d4694939203acc5870eb1" length: 32
                 // GUID format D "d85b1407-351d-4694-9392-03acc5870eb1" length: 36 with dashes in indices 8, 13, 18 and 23.
                 if (long.TryParse(segment, out _) ||
-                    (segment.Length == 32 && Guid.TryParseExact(segment, "N", out _)) ||
-                    (segment.Length == 36 && segment[8] == '-' && segment[13] == '-' && segment[18] == '-' && segment[23] == '-' && Guid.TryParseExact(segment, "D", out _)))
+                    (segment.Length == 32 && IsAGuid(segment, "N")) ||
+                    (segment.Length == 36 && IsAGuid(segment, "D")))
                 {
                     segment = UrlIdPlaceholder;
                 }
@@ -86,5 +86,8 @@ namespace Datadog.Trace.Util
 
             return sb.ToString();
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool IsAGuid(string segment, string format) => Guid.TryParseExact(segment, format, out _);
     }
 }
