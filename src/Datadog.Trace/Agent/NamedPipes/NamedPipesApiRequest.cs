@@ -17,6 +17,7 @@ namespace Datadog.Trace.Agent
 
         public NamedPipesApiRequest(string pipeName, int timeoutMs, CancellationToken cancellationToken)
         {
+            // _pipeName = $"\\pipe\\{pipeName}";
             _pipeName = pipeName;
             _timeoutMs = timeoutMs;
             _cancellationToken = cancellationToken;
@@ -32,6 +33,12 @@ namespace Datadog.Trace.Agent
 
         public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
         {
+            AddHeader(AgentHttpHeaderNames.Language, ".NET");
+            AddHeader(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion);
+            AddHeader(HttpHeaderNames.TracingEnabled, "false");
+            // AddHeader("Transfer-Encoding", "chunked"); // THIS IS DISABLED
+            AddHeader("Content-Type", "application/msgpack");
+
             _request.Traces = traces;
             var response = await _handler.SendAsync(_request, _cancellationToken);
             return response;

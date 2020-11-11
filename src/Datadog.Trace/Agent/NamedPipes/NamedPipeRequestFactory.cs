@@ -5,7 +5,7 @@ namespace Datadog.Trace.Agent.NamedPipes
 {
     internal class NamedPipeRequestFactory : IApiRequestFactory
     {
-        private static readonly int TimeoutMs = 2500;
+        private static readonly int TimeoutMs = 10_000;
         private readonly string _pipeName;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
