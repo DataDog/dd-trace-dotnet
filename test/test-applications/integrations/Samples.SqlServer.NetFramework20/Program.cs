@@ -11,7 +11,7 @@ namespace Samples.SqlServer.NetFramework20
     {
         private static async Task Main()
         {
-            var commandFactory = new DbCommandFactory();
+            var commandFactory = new DbCommandFactory($"[System-Data-SqlClient-NetFx2.0-Test-{Guid.NewGuid():N}]");
             var cts = new CancellationTokenSource();
 
             var sqlCommandExecutor = new SqlCommandExecutor20Adapter(new SqlCommandExecutor20());
