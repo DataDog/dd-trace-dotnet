@@ -1450,9 +1450,71 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
   orig_sstream << " => (max_stack: ";
   orig_sstream << rewriter->GetMaxStackValue();
   orig_sstream << ")" << std::endl;
+
+  const auto ehCount = rewriter->GetEHCount();
+  const auto ehPtr = rewriter->GetEHPointer();
+  unsigned int indent = 0;
+
   for (ILInstr* cInstr = rewriter->GetILList()->m_pNext;
        cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext) {
     
+    if (ehCount > 0) {
+      for (unsigned int i = 0; i < ehCount; i++) {
+        const auto currentEH = ehPtr[i];
+        if (currentEH.m_Flags == COR_ILEXCEPTION_CLAUSE_FINALLY) {
+          if (currentEH.m_pTryBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << std::setw(indent * 2) << " ";
+            }
+            orig_sstream << ".try {" << std::endl;
+            indent++;
+          }
+          if (currentEH.m_pTryEnd == cInstr) {
+            indent--;
+            if (indent > 0) {
+              orig_sstream << std::setw(indent * 2) << " ";
+            }
+            orig_sstream << "}" << std::endl;
+          }
+          if (currentEH.m_pHandlerBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << std::setw(indent * 2) << " ";
+            }
+            orig_sstream << ".finally {" << std::endl;
+            indent++;
+          }
+        }
+      }
+      for (unsigned int i = 0; i < ehCount; i++) {
+        const auto currentEH = ehPtr[i];
+        if (currentEH.m_Flags == COR_ILEXCEPTION_CLAUSE_NONE) {
+          if (currentEH.m_pTryBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << std::setw(indent * 2) << " ";
+            }
+            orig_sstream << ".try {" << std::endl;
+            indent++;
+          }
+          if (currentEH.m_pTryEnd == cInstr) {
+            indent--;
+            if (indent > 0) {
+              orig_sstream << std::setw(indent * 2) << " ";
+            }
+            orig_sstream << "}" << std::endl;
+          }
+          if (currentEH.m_pHandlerBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << std::setw(indent * 2) << " ";
+            }
+            orig_sstream << ".catch {" << std::endl;
+            indent++;
+          }
+        }
+      }
+    }
+    if (indent > 0) {
+      orig_sstream << std::setw(indent * 2) << " ";
+    }
     orig_sstream << cInstr;
     orig_sstream << ": ";
     if (cInstr->m_opcode < opcodes_names.size()) {
@@ -1505,6 +1567,19 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
       orig_sstream << cInstr->m_Arg64;
     }
     orig_sstream << std::endl;
+
+    if (ehCount > 0) {
+      for (unsigned int i = 0; i < ehCount; i++) {
+        const auto currentEH = ehPtr[i];
+        if (currentEH.m_pHandlerEnd == cInstr) {
+          indent--;
+          if (indent > 0) {
+            orig_sstream << std::setw(indent * 2) << " ";
+          }
+          orig_sstream << "}" << std::endl;
+        }
+      }
+    }
   }
   return orig_sstream.str();
 }

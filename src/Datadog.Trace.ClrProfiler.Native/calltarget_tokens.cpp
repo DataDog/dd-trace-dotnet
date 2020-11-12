@@ -681,8 +681,10 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
   }
   rewriterWrapper->LoadNull();
   rewriterWrapper->StLocal(*exceptionIndex);
-  rewriterWrapper->CallMember(GetCallTargetStateDefaultMemberRef(), false);
-  rewriterWrapper->StLocal(*callTargetStateIndex);
+  // We don't need to initialize calltarget state because is going to be initialized right after this method call.
+  // So we can save 2 instructions.
+  /*rewriterWrapper->CallMember(GetCallTargetStateDefaultMemberRef(), false);
+  rewriterWrapper->StLocal(*callTargetStateIndex);*/
   return S_OK;
 }
 
