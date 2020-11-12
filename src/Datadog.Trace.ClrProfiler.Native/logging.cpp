@@ -1,11 +1,28 @@
 #include "logging.h"
 
 #include "pal.h"
+#include "spdlog/sinks/null_sink.h"
+
+#ifndef _WIN32
+typedef struct stat Stat;
+#endif
 
 namespace trace {
 
 bool debug_logging_enabled = false;
 bool dump_il_rewrite_enabled = false;
+
+#ifndef _WIN32
+// for linux we need a function to get the path from a filepath
+std::string getPathName(const std::string& s) {
+  char sep = '/';
+  size_t i = s.rfind(sep, s.length());
+  if (i != std::string::npos) {
+    return s.substr(0, i);
+  }
+  return "";
+}
+#endif
 
 std::string Logger::GetLogPath() {
   const auto path = ToString(DatadogLogFilePath());
@@ -22,6 +39,13 @@ std::string Logger::GetLogPath() {
       std::filesystem::create_directories(parent_path);
     }
   }
+#else
+  // on linux we use the basic C approach
+  const auto log_path = getPathName(path);
+  Stat st;
+  if (log_path != "" && stat(log_path.c_str(), &st) != 0) {
+    mkdir(log_path.c_str(), 0777);
+  }
 #endif
 
   return path;
@@ -34,8 +58,14 @@ Logger::Logger() {
 
   spdlog::flush_every(std::chrono::seconds(3));
 
-  m_fileout =
-      spdlog::rotating_logger_mt("Logger", GetLogPath(), 1048576 * 5, 10);
+  try {
+    m_fileout =
+        spdlog::rotating_logger_mt("Logger", GetLogPath(), 1048576 * 5, 10);
+  }
+  catch (...) {
+    std::cerr << "Logger Handler: Error creating native log file." << std::endl;
+    m_fileout = spdlog::null_logger_mt("Logger");
+  }
 
   m_fileout->set_level(spdlog::level::debug);
 
