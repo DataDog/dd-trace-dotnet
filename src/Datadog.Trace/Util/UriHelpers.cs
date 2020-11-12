@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Datadog.Trace.Util
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Util
 
         public static string CleanUriSegment(string absolutePath)
         {
-            if (string.IsNullOrWhiteSpace(absolutePath))
+            if (string.IsNullOrWhiteSpace(absolutePath) || (absolutePath.Length == 1 && absolutePath[0] == '/'))
             {
                 return absolutePath;
             }
@@ -64,11 +65,14 @@ namespace Datadog.Trace.Util
                 }
 
                 // replace path segments that look like numbers or guid
-                segment = long.TryParse(segment, out _) ||
-                    Guid.TryParseExact(segment, "N", out _) ||
-                    Guid.TryParseExact(segment, "D", out _)
-                        ? UrlIdPlaceholder
-                        : segment;
+                // GUID format N "d85b1407351d4694939203acc5870eb1" length: 32
+                // GUID format D "d85b1407-351d-4694-9392-03acc5870eb1" length: 36 with dashes in indices 8, 13, 18 and 23.
+                if (long.TryParse(segment, out _) ||
+                    (segment.Length == 32 && IsAGuid(segment, "N")) ||
+                    (segment.Length == 36 && IsAGuid(segment, "D")))
+                {
+                    segment = UrlIdPlaceholder;
+                }
 
                 sb.Append(segment);
 
@@ -82,5 +86,8 @@ namespace Datadog.Trace.Util
 
             return sb.ToString();
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool IsAGuid(string segment, string format) => Guid.TryParseExact(segment, format, out _);
     }
 }
