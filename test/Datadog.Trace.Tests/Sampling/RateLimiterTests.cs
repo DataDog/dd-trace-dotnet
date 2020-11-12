@@ -139,7 +139,9 @@ namespace Datadog.Trace.Tests.Sampling
 
             var limiter = new RateLimiter(maxTracesPerInterval: intervalLimit);
 
-            var traceContext = new TraceContext(Tracer.Instance);
+            var tracerInstance = new Tracer();
+
+            var traceContext = new TraceContext(tracerInstance);
 
             var barrier = new Barrier(parallelism + 1);
 
