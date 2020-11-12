@@ -10,24 +10,23 @@ namespace Datadog.Trace.Agent
 {
     internal class AgentWriter : IAgentWriter
     {
-        private const int TraceBufferSize = 1000;
-
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
 
-        private readonly AgentWriterBuffer<Span[]> _tracesBuffer = new AgentWriterBuffer<Span[]>(TraceBufferSize);
+        private readonly AgentWriterBuffer<Span[]> _tracesBuffer;
         private readonly IDogStatsd _statsd;
         private readonly Task _flushTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
         private IApi _api;
 
-        public AgentWriter(IApi api, IDogStatsd statsd)
-            : this(api, statsd, automaticFlush: true)
+        public AgentWriter(IApi api, IDogStatsd statsd, int queueSize = 1000)
+            : this(api, statsd, automaticFlush: true, queueSize: queueSize)
         {
         }
 
-        internal AgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush)
+        internal AgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush, int queueSize)
         {
+            _tracesBuffer = new AgentWriterBuffer<Span[]>(queueSize);
             _api = api;
             _statsd = statsd;
 
@@ -90,9 +89,12 @@ namespace Datadog.Trace.Agent
             {
                 var spanCount = traces.Sum(t => t.Length);
 
-                _statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, traces.Length);
-                _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, spanCount);
-                _statsd.Gauge(TracerMetricNames.Queue.MaxTraces, TraceBufferSize);
+                var batch = _statsd.StartBatch(initialCapacity: 3);
+
+                batch.Append(_statsd.GetIncrementCount(TracerMetricNames.Queue.DequeuedTraces, traces.Length));
+                batch.Append(_statsd.GetIncrementCount(TracerMetricNames.Queue.DequeuedSpans, spanCount));
+                batch.Append(_statsd.GetSetGauge(TracerMetricNames.Queue.MaxTraces, TraceBufferSize));
+                batch.Send();
             }
 
             if (traces.Length > 0)

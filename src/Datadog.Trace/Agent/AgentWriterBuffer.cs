@@ -14,6 +14,8 @@ namespace Datadog.Trace.Agent
             _items = new T[maxSize];
         }
 
+        internal int MaxSize => _items.Length;
+
         public bool Push(T item)
         {
             lock (_items)

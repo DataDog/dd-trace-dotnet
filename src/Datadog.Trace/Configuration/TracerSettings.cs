@@ -133,6 +133,9 @@ namespace Datadog.Trace.Configuration
             StartupDiagnosticLogEnabled = source?.GetBool(ConfigurationKeys.StartupDiagnosticLogEnabled) ??
                                           // default value
                                           true;
+
+            QueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
+                        ?? 1000;
         }
 
         /// <summary>
@@ -273,6 +276,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating the size of the trace buffer
+        /// </summary>
+        internal int QueueSize { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
