@@ -3,10 +3,26 @@
 #include "pal.h"
 #include "spdlog/sinks/null_sink.h"
 
+#ifndef _WIN32
+typedef struct stat Stat;
+#endif
+
 namespace trace {
 
 bool debug_logging_enabled = false;
 bool dump_il_rewrite_enabled = false;
+
+#ifndef _WIN32
+// for linux we need a function to get the path from a filepath
+std::string getPathName(const std::string& s) {
+  char sep = '/';
+  size_t i = s.rfind(sep, s.length());
+  if (i != std::string::npos) {
+    return s.substr(0, i);
+  }
+  return "";
+}
+#endif
 
 std::string Logger::GetLogPath() {
   const auto path = ToString(DatadogLogFilePath());
@@ -22,6 +38,13 @@ std::string Logger::GetLogPath() {
     if (!std::filesystem::exists(parent_path)) {
       std::filesystem::create_directories(parent_path);
     }
+  }
+#else
+  // on linux we use the basic C approach
+  const auto log_path = getPathName(path);
+  Stat st;
+  if (stat(log_path.c_str(), &st) != 0) {
+    mkdir(log_path.c_str(), 0777);
   }
 #endif
 
