@@ -43,7 +43,7 @@ std::string Logger::GetLogPath() {
   // on linux we use the basic C approach
   const auto log_path = getPathName(path);
   Stat st;
-  if (stat(log_path.c_str(), &st) != 0) {
+  if (log_path != "" && stat(log_path.c_str(), &st) != 0) {
     mkdir(log_path.c_str(), 0777);
   }
 #endif
