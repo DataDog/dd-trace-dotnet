@@ -88,13 +88,10 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  // Initialize ReJIT handler
-  rejit_handler = new RejitHandler(
-      this->info_, 
-      [this](RejitHandlerModule* mod,
-                          RejitHandlerModuleMethod* method) {
-        return this->CallTarget_RewriterCallback(mod, method);
-      });
+  // Initialize ReJIT handler and define the Rewriter Callback
+  rejit_handler = new RejitHandler(this->info_, [this](RejitHandlerModule* mod, RejitHandlerModuleMethod* method) {
+      return this->CallTarget_RewriterCallback(mod, method);
+  });
 
   Info("Environment variables:");
 
@@ -515,9 +512,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
         module_info.assembly.app_domain_id, " ",
         module_info.assembly.app_domain_name);
 
-  // CallTarget rejit request for the module
-  CallTarget_RequestRejitForModule(module_id, module_metadata,
-                                   filtered_integrations);
+  // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+  CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
+
   return S_OK;
 }
 
@@ -1446,7 +1443,7 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
   orig_sstream << title;
   orig_sstream << ToString(caller.type.name);
   orig_sstream << ".";
-  orig_sstream << ToString(caller.name.c_str());
+  orig_sstream << ToString(caller.name);
   orig_sstream << " => (max_stack: ";
   orig_sstream << rewriter->GetMaxStackValue();
   orig_sstream << ")" << std::endl;
@@ -2206,23 +2203,20 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
 }
 
 
-// 
-// ReJIT Methods
-// 
+// ***
+// * ReJIT Methods
+// ***
 
-HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(
-    FunctionID functionId, ReJITID rejitId, BOOL fIsSafeToBlock) {
-  Debug("ReJITCompilationStarted: [functionId: ", functionId,
-       ", rejitId: ", rejitId, ", safeToBlock: ", fIsSafeToBlock, "]");
+HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId, BOOL fIsSafeToBlock) {
+  Debug("ReJITCompilationStarted: [functionId: ", functionId, ", rejitId: ", rejitId, ", safeToBlock: ", fIsSafeToBlock, "]");
+  // we notify the reJIT handler of this event
   return rejit_handler->NotifyReJITCompilationStarted(functionId, rejitId);
 }
 
-HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(
-    ModuleID moduleId, mdMethodDef methodId,
-    ICorProfilerFunctionControl* pFunctionControl) {
-  Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId,
-        "]");
+HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdMethodDef methodId, ICorProfilerFunctionControl* pFunctionControl) {
+  Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId, "]");
 
+  // we get the module_metadata from the moduleId. 
   ModuleMetadata* module_metadata = nullptr;
   {
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
@@ -2232,66 +2226,66 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(
       return S_OK;
     }
   }
+
+  // we notify the reJIT handler of this event and pass the module_metadata.
   return rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl, module_metadata);
 }
 
-HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(
-    FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
-    BOOL fIsSafeToBlock) {
-  Debug("ReJITCompilationFinished: [functionId: ", functionId,
-       ", rejitId: ", rejitId, ", hrStatus: ", hrStatus,
-       ", safeToBlock: ", fIsSafeToBlock, "]");
+HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus, BOOL fIsSafeToBlock) {
+  Debug("ReJITCompilationFinished: [functionId: ", functionId, ", rejitId: ", rejitId, ", hrStatus: ", hrStatus, ", safeToBlock: ", fIsSafeToBlock, "]");
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId,
-                                                      mdMethodDef methodId,
-                                                      FunctionID functionId,
-                                                      HRESULT hrStatus) {
-  Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId,
-       ", methodId: ", methodId, ", hrStatus: ", hrStatus, "]");
+HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus) {
+  Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId, ", hrStatus: ", hrStatus, "]");
   return S_OK;
 }
 
-//
-// CallTarget Methods
-//
-size_t CorProfiler::CallTarget_RequestRejitForModule(
-    ModuleID module_id, ModuleMetadata* module_metadata,
-    std::vector<IntegrationMethod> filtered_integrations) {
+// ***
+// * CallTarget Methods
+// ***
+
+/// <summary>
+/// CallTarget modification action name
+/// </summary>
+const auto callTargetModificationAction = "CallTargetModification"_W;
+
+/// <summary>
+/// Search for methods to instrument in a module and request a ReJIT to them for a CallTarget instrumentation
+/// </summary>
+/// <param name="module_id">Module id</param>
+/// <param name="module_metadata">Module metadata for the module</param>
+/// <param name="filtered_integrations">Filtered vector of integrations to be applied</param>
+/// <returns>Number of ReJIT requests made</returns>
+size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata, std::vector<IntegrationMethod> filtered_integrations) {
   auto metadata_import = module_metadata->metadata_import;
-
-  std::vector<ModuleID> vtModules = std::vector<ModuleID>();
-  std::vector<mdMethodDef> vtMethodDefs = std::vector<mdMethodDef>();
+  std::vector<ModuleID> vtModules;
+  std::vector<mdMethodDef> vtMethodDefs;
 
   for (IntegrationMethod integration : filtered_integrations) {
-    if (integration.replacement.target_method.assembly.name !=
-        module_metadata->assemblyName) {
-      continue;
-    }
-    if (integration.replacement.wrapper_method.action !=
-        "CallTargetModification"_W) {
-      continue;
-    }
-    mdTypeDef typeDef = mdTypeDefNil;
-    auto hr = metadata_import->FindTypeDefByName(
-        integration.replacement.target_method.type_name.c_str(), mdTokenNil,
-        &typeDef);
-    if (FAILED(hr)) {
-      Warn("Can't load the TypeDef for: ",
-           integration.replacement.target_method.type_name,
-          ", Module: ", module_metadata->assemblyName);
+
+    // If the integration is not for the current assembly we skip.
+    if (integration.replacement.target_method.assembly.name != module_metadata->assemblyName) {
       continue;
     }
 
+    // If the integration mode is not CallTarget we skip.
+    if (integration.replacement.wrapper_method.action != callTargetModificationAction) {
+      continue;
+    }
+
+    // We are in the right module, so we try to load the mdTypeDef from the integration target type name.
+    mdTypeDef typeDef = mdTypeDefNil;
+    auto hr = metadata_import->FindTypeDefByName(integration.replacement.target_method.type_name.c_str(), mdTokenNil, &typeDef);
+    if (FAILED(hr)) {
+      Warn("Can't load the TypeDef for: ", integration.replacement.target_method.type_name, ", Module: ", module_metadata->assemblyName);
+      continue;
+    }
+
+    // Now we enumerate all methods with the same target method name. (All overloads of the method)
     auto enumMethods = Enumerator<mdMethodDef>(
-        [metadata_import, integration, typeDef](HCORENUM* ptr,
-                                                mdMethodDef arr[], ULONG max,
-                                                ULONG* cnt) -> HRESULT {
-          return metadata_import->EnumMethodsWithName(
-              ptr, typeDef,
-              integration.replacement.target_method.method_name.c_str(), arr,
-              max, cnt);
+        [metadata_import, integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
+          return metadata_import->EnumMethodsWithName(ptr, typeDef, integration.replacement.target_method.method_name.c_str(), arr, max, cnt);
         },
         [metadata_import](HCORENUM ptr) -> void {
           metadata_import->CloseEnum(ptr);
@@ -2301,35 +2295,61 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(
     while (enumIterator != enumMethods.end()) {
       auto methodDef = *enumIterator;
 
-      auto moduleHandler = rejit_handler->GetOrAddModule(module_id);
-      moduleHandler->SetModuleMetadata(module_metadata);
-
-      auto methodHandler = moduleHandler->GetOrAddMethod(methodDef);
-      const auto caller =
-          GetFunctionInfo(module_metadata->metadata_import, methodDef);
+      // Extract the function info from the mdMethodDef
+      const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
       if (!caller.IsValid()) {
         Warn("The caller for the methoddef: ", HexStr(&methodDef, sizeof(mdMethodDef)), " is not valid!");
         continue;
       }
 
+      // We create a new function info into the heap from the caller functionInfo in the stack, to be used later in the ReJIT process
       auto functionInfo = new FunctionInfo(caller);
       hr = functionInfo->method_signature.TryParse();
       if (FAILED(hr)) {
-        delete functionInfo;
         Warn("The method signature: ", functionInfo->method_signature.str(), " cannot be parsed.");
+        delete functionInfo;
         continue;
       }
 
-      methodHandler->SetFunctionInfo(functionInfo);
-      methodHandler->SetMethodReplacement(
-          new MethodReplacement(integration.replacement));
+      // Compare if the current mdMethodDef contains the same number of arguments as the instrumentation target
+      const auto numOfArgs = functionInfo->method_signature.NumberOfArguments();
+      if (numOfArgs != integration.replacement.target_method.signature_types.size() - 1) {
+        Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name, " doesn't have the right number of arguments.");
+        delete functionInfo;
+        continue;
+      }
 
+      // Compare each mdMethodDef argument type to the instrumentation target
+      bool argumentsMismatch = false;
+      const auto methodArguments = functionInfo->method_signature.GetMethodArguments();
+      Debug("Comparing signature for method: ", integration.replacement.target_method.type_name, ".", integration.replacement.target_method.method_name);
+      for (unsigned int i = 0; i < numOfArgs; i++) {
+        const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadata_import);
+        const auto integrationArgumentTypeName = integration.replacement.target_method.signature_types[i + 1];
+        Debug("  -> ", argumentTypeName, " = ", integrationArgumentTypeName);
+        if (argumentTypeName != integrationArgumentTypeName) {
+          argumentsMismatch = true;
+          break;
+        }
+      }
+      if (argumentsMismatch) {
+        Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name, " doesn't have the right type of arguments.");
+        delete functionInfo;
+        continue;
+      }
+
+      // As we are in the right method, we gather all information we need and stored it in to the ReJIT handler.
+      auto moduleHandler = rejit_handler->GetOrAddModule(module_id);
+      moduleHandler->SetModuleMetadata(module_metadata);
+      auto methodHandler = moduleHandler->GetOrAddMethod(methodDef);
+      methodHandler->SetFunctionInfo(functionInfo);
+      methodHandler->SetMethodReplacement(new MethodReplacement(integration.replacement));
+
+      // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
       vtModules.push_back(module_id);
       vtMethodDefs.push_back(methodDef);
       
-      bool caller_assembly_is_domain_neutral =
-          runtime_information_.is_desktop() && corlib_module_loaded &&
-          module_metadata->app_domain_id == corlib_app_domain_id;
+      bool caller_assembly_is_domain_neutral = runtime_information_.is_desktop() && corlib_module_loaded && module_metadata->app_domain_id == corlib_app_domain_id;
 
       Info("Enqueue for ReJIT [ModuleId=", module_id,
            ", MethodDef=", HexStr(&methodDef, sizeof(mdMethodDef)), 
@@ -2345,20 +2365,23 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(
     }
   }
 
+  // Request the ReJIT for all integrations found in the module.
   if (vtMethodDefs.size() > 0) {
-    ModuleID* modules = vtModules.data();
-    mdMethodDef* methodsDefs = vtMethodDefs.data();
-
     Info("Requesting ReJIT for ", vtMethodDefs.size(), " methods.");
-    this->info_->RequestReJIT((ULONG)vtMethodDefs.size(), modules, methodsDefs);
+    this->info_->RequestReJIT((ULONG)vtMethodDefs.size(), vtModules.data(), vtMethodDefs.data());
   }
+
+  // We return the number of ReJIT requests
   return vtMethodDefs.size();
 }
 
-HRESULT CorProfiler::CallTarget_RewriterCallback(
-    RejitHandlerModule* moduleHandler,
-    RejitHandlerModuleMethod* methodHandler) {
-
+/// <summary>
+/// Rewrite the target method body with the calltarget implementation. (This is function is triggered by the ReJIT handler)
+/// </summary>
+/// <param name="moduleHandler">Module ReJIT handler representation</param>
+/// <param name="methodHandler">Method ReJIT handler representation</param>
+/// <returns>Result of the rewriting</returns>
+HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) {
   ModuleID module_id = moduleHandler->GetModuleId();
   ModuleMetadata* module_metadata = moduleHandler->GetModuleMetadata();
   FunctionInfo* caller = methodHandler->GetFunctionInfo();

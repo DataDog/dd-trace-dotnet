@@ -21,8 +21,7 @@ RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(mdMethodDef methodD
     return methods[methodDef];
   }
 
-  RejitHandlerModuleMethod* methodHandler =
-      new RejitHandlerModuleMethod(methodDef, this);
+  RejitHandlerModuleMethod* methodHandler = new RejitHandlerModuleMethod(methodDef, this);
   methods[methodDef] = methodHandler;
   return methodHandler;
 }
@@ -152,11 +151,7 @@ HRESULT RejitHandler::NotifyReJITParameters(
   return rewriteCallback(moduleHandler, methodHandler);
 }
 
-HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId,
-                                                 ReJITID rejitId) {
-  RejitHandlerModuleMethod* methodHandler = GetModuleMethodFromFunctionId(functionId);
-  RejitHandlerModule* moduleHandler =
-      (RejitHandlerModule*)methodHandler->GetModule();
+HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId) {
   return S_OK;
 }
 

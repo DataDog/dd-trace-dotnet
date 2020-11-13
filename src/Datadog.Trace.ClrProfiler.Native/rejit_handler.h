@@ -14,6 +14,9 @@
 
 namespace trace {
 
+/// <summary>
+/// Rejit handler representation of a method
+/// </summary>
 class RejitHandlerModuleMethod {
  private:
   mdMethodDef methodDef;
@@ -53,6 +56,9 @@ class RejitHandlerModuleMethod {
   bool ExistFunctionId(FunctionID functionId);
 };
 
+/// <summary>
+/// Rejit handler representation of a module
+/// </summary>
 class RejitHandlerModule {
  private:
   ModuleID moduleId;
@@ -78,6 +84,10 @@ class RejitHandlerModule {
                     RejitHandlerModuleMethod** methodHandler);
 };
 
+/// <summary>
+/// Class to control the ReJIT mechanism and to make sure all the required 
+/// information is present before calling a method rewrite
+/// </summary>
 class RejitHandler {
  private:
   std::mutex modules_lock;

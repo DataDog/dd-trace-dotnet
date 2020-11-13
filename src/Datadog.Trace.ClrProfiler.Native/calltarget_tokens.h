@@ -15,6 +15,10 @@
 
 namespace trace {
 
+/// <summary>
+/// Class to control all the token references of the module where the calltarget will be called.
+/// Also provides useful helpers for the rewriting process
+/// </summary>
 class CallTargetTokens {
  private:
   void* module_metadata_ptr = nullptr;
