@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Sampling
 {
@@ -14,6 +15,13 @@ namespace Datadog.Trace.Tests.Sampling
         private static readonly string Env = "my-test-env";
         private static readonly string OperationName = "test";
         private static readonly IEnumerable<KeyValuePair<string, float>> MockAgentRates = new List<KeyValuePair<string, float>>() { new KeyValuePair<string, float>($"service:{ServiceName},env:{Env}", FallbackRate) };
+
+        private readonly ITestOutputHelper _output;
+
+        public RuleBasedSamplerTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
 
         [Fact]
         public void RateLimiter_Never_Applied_For_DefaultRule()
@@ -100,9 +108,9 @@ namespace Datadog.Trace.Tests.Sampling
             float expectedAutoKeepRate,
             float acceptableVariancePercent)
         {
-            var initialId = SpanIdGenerator.CreateNew();
+            var initialId = 8121434747841080868;
 
-            var id = initialId;
+            var id = (ulong)initialId;
 
             var sampleSize = iterations;
             var autoKeeps = 0;
@@ -121,9 +129,11 @@ namespace Datadog.Trace.Tests.Sampling
             var lowerLimit = expectedAutoKeepRate * (1 - acceptableVariancePercent);
             var upperLimit = expectedAutoKeepRate * (1 + acceptableVariancePercent);
 
+            _output.WriteLine($"{autoKeeps} / {iterations} = {autoKeepRate}");
+
             Assert.True(
                 autoKeepRate >= lowerLimit && autoKeepRate <= upperLimit,
-                $"Expected between {lowerLimit} and {upperLimit}, actual rate is {autoKeepRate}. Test ran with initial id {initialId}. Autokeeps is {autoKeeps}, iterations is {iterations}.");
+                $"Expected between {lowerLimit} and {upperLimit}, actual rate is {autoKeepRate}. Test ran with initial id {initialId}, ended with id {id}. Autokeeps is {autoKeeps}, iterations is {iterations}.");
         }
 
         private class NoLimits : IRateLimiter
