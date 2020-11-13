@@ -129,12 +129,6 @@ class CorProfiler : public CorProfilerBase {
   HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId,
                                         FunctionID calleeId,
                                         BOOL* pfShouldInline) override;
-
-  HRESULT STDMETHODCALLTYPE JITCachedFunctionSearchStarted(
-      FunctionID functionId, BOOL* pbUseCachedFunction) override;
-
-  HRESULT STDMETHODCALLTYPE JITCachedFunctionSearchFinished(
-      FunctionID functionId, COR_PRF_JIT_CACHE result) override;
   //
   // ReJIT Methods
   //

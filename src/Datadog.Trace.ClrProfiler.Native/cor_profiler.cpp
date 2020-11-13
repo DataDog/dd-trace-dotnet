@@ -724,61 +724,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId,
   return S_OK;
 }
 
-
-HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(
-    FunctionID functionId, BOOL* pbUseCachedFunction) {
-  *pbUseCachedFunction = true;
-
-  ModuleID module_id;
-  mdToken function_token = mdTokenNil;
-  auto hr = this->info_->GetFunctionInfo(functionId, NULL, &module_id,
-                                         &function_token);
-  const auto module_info = GetModuleInfo(this->info_, module_id);
-  if (!module_info.IsValid()) {
-    Warn("JITCachedFunctionSearchStarted: Module info is invalid.");
-    return S_OK;
-  }
-
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-
-  // Verify that we have the metadata for this module
-  ModuleMetadata* module_metadata = nullptr;
-  if (module_id_to_info_map_.count(module_id) > 0) {
-    module_metadata = module_id_to_info_map_[module_id];
-  }
-
-  if (module_metadata == nullptr) {
-    // we haven't stored a ModuleMetadata for this module,
-    // so we can't modify its IL
-    Debug("JITCachedFunctionSearchStarted: Module metadata is not loaded,",
-        " usage of the NGEN image is enabled for [ModuleId=", module_id ,", Assembly=",
-         module_info.assembly.name, "]");
-    return S_OK;
-  }
-
-  *pbUseCachedFunction = false;
-  Debug("JITCachedFunctionSearchStarted: Usage of the NGEN image is disabled for [ModuleId=", module_id,
-       ", Assembly=", module_info.assembly.name, "]");
-
-  return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchFinished(
-    FunctionID functionId, COR_PRF_JIT_CACHE result) {
-  if (debug_logging_enabled) {
-    ModuleID calleeModuleId;
-    mdToken calleFunctionToken = mdTokenNil;
-    auto hr = this->info_->GetFunctionInfo(functionId, NULL, &calleeModuleId,
-                                           &calleFunctionToken);
-    Debug(
-        "*** JITCachedFunctionSearchFinished: for:  moduleId= ", calleeModuleId,
-        " MethodDef= ", HexStr(&calleFunctionToken, sizeof(mdMethodDef)),
-        ", Result=", result, "]");
-  }
-  return S_OK;
-}
-
-
 //
 // ICorProfilerCallback6 methods
 //
