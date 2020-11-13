@@ -17,14 +17,9 @@ namespace Datadog.Trace.Agent
         private readonly Task _flushTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
-        private IApi _api;
+        private readonly IApi _api;
 
-        public AgentWriter(IApi api, IDogStatsd statsd, int queueSize = 1000)
-            : this(api, statsd, automaticFlush: true, queueSize: queueSize)
-        {
-        }
-
-        internal AgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush, int queueSize)
+        public AgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush = true, int queueSize = 1000)
         {
             _tracesBuffer = new AgentWriterBuffer<Span[]>(queueSize);
             _api = api;

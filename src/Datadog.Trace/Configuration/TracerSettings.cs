@@ -134,7 +134,7 @@ namespace Datadog.Trace.Configuration
                                           // default value
                                           true;
 
-            QueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
+            TraceQueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
                         ?? 1000;
         }
 
@@ -280,7 +280,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating the size of the trace buffer
         /// </summary>
-        internal int QueueSize { get; }
+        internal int TraceQueueSize { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
