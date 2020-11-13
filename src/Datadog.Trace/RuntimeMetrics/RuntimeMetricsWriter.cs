@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Threading;
-using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
 {
@@ -14,7 +14,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly int _delay;
 
-        private readonly IBatchStatsd _statsd;
+        private readonly IDogStatsd _statsd;
         private readonly Timer _timer;
         private readonly Process _currentProcess;
 
@@ -29,7 +29,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private long _contentionCount;
 
-        public RuntimeMetricsWriter(IBatchStatsd statsd, int delay)
+        public RuntimeMetricsWriter(IDogStatsd statsd, int delay)
         {
             _delay = delay;
             _statsd = statsd;
@@ -63,38 +63,30 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             var name = e.Exception.GetType().Name;
 
-            _statsd.Send(_statsd.GetIncrementCount("runtime.dotnet.exceptions.count", 1, tags: new[] { $"exception_type:{name}" }));
+            _statsd.Increment("runtime.dotnet.exceptions.count", 1, tags: new[] { $"exception_type:{name}" });
         }
 
         private void GcPauseTime(TimeSpan timespan)
         {
-            _statsd.Send(_statsd.GetSetTiming("runtime.dotnet.gc.pause_time", timespan.TotalMilliseconds));
+            _statsd.Timer("runtime.dotnet.gc.pause_time", timespan.TotalMilliseconds);
         }
 
         private void GcHeapHistory(HeapHistory heapHistory)
         {
-            var batch = _statsd.StartBatch();
-
             if (heapHistory.MemoryLoad != null)
             {
-                batch.Append(_statsd.GetSetGauge("runtime.dotnet.gc.memory_load", heapHistory.MemoryLoad.Value));
+                _statsd.Gauge("runtime.dotnet.gc.memory_load", heapHistory.MemoryLoad.Value);
             }
 
-            batch.Append(_statsd.GetIncrementCount(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags));
-
-            batch.Send();
+            _statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);
         }
 
         private void GcHeapStats(HeapStats stats)
         {
-            var batch = _statsd.StartBatch();
-
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.gc.size.gen0", stats.Gen0Size));
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.gc.size.gen1", stats.Gen1Size));
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.gc.size.gen2", stats.Gen2Size));
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.gc.size.loh", stats.LohSize));
-
-            batch.Send();
+            _statsd.Gauge("runtime.dotnet.gc.size.gen0", stats.Gen0Size);
+            _statsd.Gauge("runtime.dotnet.gc.size.gen1", stats.Gen1Size);
+            _statsd.Gauge("runtime.dotnet.gc.size.gen2", stats.Gen2Size);
+            _statsd.Gauge("runtime.dotnet.gc.size.loh", stats.LohSize);
         }
 
         private void Contention(double durationInNanoseconds)
@@ -120,24 +112,20 @@ namespace Datadog.Trace.RuntimeMetrics
             var threadCount = _currentProcess.Threads.Count;
             var memoryUsage = _currentProcess.PrivateMemorySize64;
 
-            var batch = _statsd.StartBatch();
-
             // Can't use a Timing because Dogstatsd doesn't support local aggregation
             // It means that the aggregations in the UI would be wrong
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.threads.contention_time", _contentionTime.Clear()));
-            batch.Append(_statsd.GetIncrementCount("runtime.dotnet.threads.contention_count", Interlocked.Exchange(ref _contentionCount, 0)));
+            _statsd.Gauge("runtime.dotnet.threads.contention_time", _contentionTime.Clear());
+            _statsd.Counter("runtime.dotnet.threads.contention_count", Interlocked.Exchange(ref _contentionCount, 0));
 
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.threads.count", threadCount));
+            _statsd.Gauge("runtime.dotnet.threads.count", threadCount);
 
 #if NETCOREAPP
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.threads.workers_count", ThreadPool.ThreadCount));
+            _statsd.Gauge("runtime.dotnet.threads.workers_count", ThreadPool.ThreadCount);
 #endif
 
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.mem.committed", memoryUsage));
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.cpu.user", userCpu));
-            batch.Append(_statsd.GetSetGauge("runtime.dotnet.cpu.system", systemCpu));
-
-            batch.Send();
+            _statsd.Gauge("runtime.dotnet.mem.committed", memoryUsage);
+            _statsd.Gauge("runtime.dotnet.cpu.user", userCpu);
+            _statsd.Gauge("runtime.dotnet.cpu.system", systemCpu);
         }
     }
 }
