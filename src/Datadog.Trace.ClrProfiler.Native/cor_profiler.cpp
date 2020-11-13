@@ -177,14 +177,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      COR_PRF_MONITOR_ASSEMBLY_LOADS |
                      COR_PRF_ENABLE_REJIT;
 
-  if (EnableNGEN()) {
-    Info("NGEN images are enabled.");
-    event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
-  } else {
-    Info("NGEN images are disabled.");
-    event_mask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
-  }
-
   if (!EnableInlining()) {
     Info("JIT Inlining is disabled.");
     event_mask |= COR_PRF_DISABLE_INLINING;
