@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -78,11 +79,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     Log.Warning($"{nameof(AspNetWebApi2Integration)}.{nameof(ExecuteAsync)}: Unable to find System.Net.Http.HttpResponseMessage Type from method arguments. Using fallback logic to find the Type needed for return type.");
                     var statsd = Tracer.Instance.Statsd;
-                    if (statsd != null)
-                    {
-                        var command = statsd.GetWarning(source: $"{nameof(AspNetWebApi2Integration)}.{nameof(ExecuteAsync)}", message: "Unable to find System.Net.Http.HttpResponseMessage Type from method arguments. Using fallback logic to find the Type needed for return type.", null);
-                        statsd.Send(command);
-                    }
+                    statsd?.Warning(source: $"{nameof(AspNetWebApi2Integration)}.{nameof(ExecuteAsync)}", message: "Unable to find System.Net.Http.HttpResponseMessage Type from method arguments. Using fallback logic to find the Type needed for return type.", null);
 
                     var systemNetHttpAssemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.GetName().Name.Equals("System.Net.Http", StringComparison.OrdinalIgnoreCase));
                     var firstSystemNetHttpAssembly = systemNetHttpAssemblies.First();

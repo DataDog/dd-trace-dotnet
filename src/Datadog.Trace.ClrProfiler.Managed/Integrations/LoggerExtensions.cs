@@ -1,5 +1,6 @@
 using System;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.DogStatsd;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -38,8 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             if (statsd != null)
             {
                 string[] tags = { $"instrumented-method:{instrumentedMethod}" };
-                var command = statsd.GetException(exception, source: instrumentedType, message: "Error retrieving instrumented method", tags);
-                statsd.Send(command);
+                statsd.Exception(exception, source: instrumentedType, message: "Error retrieving instrumented method", tags);
             }
         }
     }

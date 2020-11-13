@@ -10,7 +10,6 @@ using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-#pragma warning disable CS0618 // Type or member is obsolete
 namespace Datadog.Trace.Tests
 {
     public class DogStatsDTests
@@ -23,25 +22,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void Send_batched_commands()
-        {
-            var statsdUdp = new Mock<IStatsdUDP>();
-            var statsd = BuildMockStatsd(statsdUdp.Object);
-
-            var batch = statsd.Object.StartBatch();
-
-            batch.Append("1");
-            batch.Append("2");
-
-            batch.Send();
-
-            statsdUdp.Verify(s => s.Send("1\n2"), Times.Once());
-        }
-
-        [Fact]
         public void Do_not_send_metrics_when_disabled()
         {
-            var statsd = BuildMockStatsd();
+            var statsd = new Mock<IDogStatsd>();
             var spans = SendSpan(tracerMetricsEnabled: false, statsd.Object);
 
             Assert.True(spans.Count == 1, "Expected one span");
@@ -53,14 +36,13 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Send_metrics_when_enabled()
         {
-            var statsdUdp = new Mock<IStatsdUDP>();
-            var statsd = BuildMockStatsd(statsdUdp.Object);
+            var statsd = new Mock<IDogStatsd>();
 
             // Setup mock to set a bool when receiving a successful response from the agent, so we know to verify success or error.
             var requestSuccessful = false;
             var requestEncounteredErrors = false;
-            statsd.Setup(s => s.GetCommand<Statsd.Counting, int>(TracerMetricNames.Api.Responses, 1, 1, It.IsAny<string[]>())).Callback(() => requestSuccessful = true);
-            statsd.Setup(s => s.GetCommand<Statsd.Counting, int>(TracerMetricNames.Api.Errors, 1, 1, It.IsAny<string[]>())).Callback(() => requestEncounteredErrors = true);
+            statsd.Setup(s => s.Counter(TracerMetricNames.Api.Responses, 1, 1, It.IsAny<string[]>())).Callback(() => requestSuccessful = true);
+            statsd.Setup(s => s.Counter(TracerMetricNames.Api.Errors, 1, 1, It.IsAny<string[]>())).Callback(() => requestEncounteredErrors = true);
 
             var spans = SendSpan(tracerMetricsEnabled: true, statsd.Object);
 
@@ -68,36 +50,36 @@ namespace Datadog.Trace.Tests
 
             // for a single trace, these methods are called once with a value of "1"
             statsd.Verify(
-                s => s.GetCommand<Statsd.Counting, int>(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.GetCommand<Statsd.Counting, int>(TracerMetricNames.Queue.EnqueuedSpans, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Queue.EnqueuedSpans, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.GetCommand<Statsd.Counting, int>(TracerMetricNames.Queue.DequeuedTraces, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Queue.DequeuedTraces, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.GetCommand<Statsd.Counting, int>(TracerMetricNames.Queue.DequeuedSpans, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Queue.DequeuedSpans, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.GetCommand<Statsd.Counting, int>(TracerMetricNames.Api.Requests, 1, 1, null),
+                s => s.Increment(TracerMetricNames.Api.Requests, 1, 1, null),
                 Times.Once());
 
             if (requestSuccessful)
             {
                 statsd.Verify(
-                    s => s.GetCommand<Statsd.Counting, int>(TracerMetricNames.Api.Responses, 1, 1, new[] { "status:200" }),
+                    s => s.Increment(TracerMetricNames.Api.Responses, 1, 1, new[] { "status:200" }),
                     Times.Once());
             }
 
             if (requestEncounteredErrors)
             {
                 statsd.Verify(
-                    s => s.GetCommand<Statsd.Counting, int>(TracerMetricNames.Api.Errors, 1, 1, null),
+                    s => s.Counter(TracerMetricNames.Api.Errors, 1, 1, null),
                     Times.AtLeastOnce());
             }
 
@@ -114,21 +96,16 @@ namespace Datadog.Trace.Tests
 
             // these method can be called multiple times with a "1000" value (the max buffer size, constant)
             statsd.Verify(
-                s => s.GetCommand<Statsd.Gauge, int>(TracerMetricNames.Queue.MaxTraces, 1000, 1, null),
-                Times.AtLeastOnce());
-
-            // these method can be called multiple times (send buffered commands)
-            statsdUdp.Verify(
-                s => s.Send(It.IsAny<string>()),
+                s => s.Gauge(TracerMetricNames.Queue.MaxTraces, 1000, 1, null),
                 Times.AtLeastOnce());
 
             // these method can be called multiple times (send heartbeat)
             statsd.Verify(
-                s => s.GetCommand<Statsd.Gauge, int>(TracerMetricNames.Health.Heartbeat, It.IsAny<int>(), 1, null),
+                s => s.Gauge(TracerMetricNames.Health.Heartbeat, It.IsAny<int>(), 1, null),
                 Times.AtLeastOnce());
         }
 
-        private static IImmutableList<MockTracerAgent.Span> SendSpan(bool tracerMetricsEnabled, IBatchStatsd statsd)
+        private static IImmutableList<MockTracerAgent.Span> SendSpan(bool tracerMetricsEnabled, IDogStatsd statsd)
         {
             IImmutableList<MockTracerAgent.Span> spans;
             var agentPort = TcpPortProvider.GetOpenPort();
@@ -155,15 +132,5 @@ namespace Datadog.Trace.Tests
 
             return spans;
         }
-
-        private static Mock<BatchStatsd> BuildMockStatsd(IStatsdUDP statsdUdp = null)
-        {
-            var statsd = new Mock<BatchStatsd>(statsdUdp ?? Mock.Of<IStatsdUDP>(), string.Empty, null);
-
-            // statsd.Setup(s => s.StartBatch()).Returns(() => new Batch(statsd.Object));
-
-            return statsd;
-        }
     }
 }
-#pragma warning restore CS0618 // Type or member is obsolete
