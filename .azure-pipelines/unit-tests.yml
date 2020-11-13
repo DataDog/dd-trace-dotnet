@@ -12,7 +12,7 @@ trigger:
 variables:
   buildConfiguration: Debug
   dotnetCoreSdkVersion: 3.1.107
-  dotnetCoreSdk5Version: 5.0.100-rc.2.20479.15
+  dotnetCoreSdk5Version: 5.0.100
   ddApiKey: $(DD_API_KEY)
   DD_DOTNET_TRACER_MSBUILD:
 

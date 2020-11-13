@@ -23,7 +23,7 @@ variables:
   buildConfiguration: Debug
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
   dotnetCoreSdkVersion: 3.1.107
-  dotnetCoreSdk5Version: 5.0.100-rc.2.20479.15
+  dotnetCoreSdk5Version: 5.0.100
 
 jobs:
 
