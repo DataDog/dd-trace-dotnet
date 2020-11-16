@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Agent.NamedPipes
@@ -21,11 +21,11 @@ namespace Datadog.Trace.Agent.NamedPipes
 
         public async Task<TraceResponse> SendAsync(TraceRequest request, CancellationToken cancellationToken)
         {
-            Stream stream = null;
+            Stream namedPipeClientStream = null;
             try
             {
                 _logger.Verbose("Pipe Client: Trying to connect..");
-                stream = await _dial.DialAsync(request, cancellationToken).ConfigureAwait(false);
+                namedPipeClientStream = await _dial.DialAsync(request, cancellationToken).ConfigureAwait(false);
 
                 _logger.Verbose("Pipe Client: Connected.");
                 // request.Properties.Add(UnderlyingStreamProperty, stream);
@@ -51,28 +51,24 @@ namespace Datadog.Trace.Agent.NamedPipes
                 //     cancellationToken);
 
                 _logger.Verbose("Pipe Client: Writing request");
+                var messageEndBytes = new byte[] { 0x0d, 0x0a, 0x30, 0x0d, 0x0a, 0x0d, 0x0a };
 
-                // var id = Guid.NewGuid();
-                // using (var fs = File.Create($"C:\\_INSPECTION\\FakeHttp\\payload-{id}.txt"))
-                // {
-                //     // byte[] info = new UTF8Encoding(true).GetBytes(value);
-                //     // fs.Write(info, 0, info.Length);
-                //     await FakeHttp.WriteHeaders(request, fs);
-                //     await FakeHttp.WriteBody(request, fs);
-                //     await FakeHttp.WriteEndOfMessage(fs);
-                // }
-                // await FakeHttp.WriteHeaders(request, stream);
-                // await FakeHttp.WriteBody(request, stream);
-                // await FakeHttp.WriteEndOfMessage(stream);
+                var headerBytes = FakeHttp.SerializeHeaders(request);
+                // var message = await FakeHttp.CreatePost(request);
 
-                var message = await FakeHttp.CreatePost(request);
-
-                using (var writer = new StreamWriter(stream))
+                var id = Guid.NewGuid();
+                using (var fs = File.Create($"C:\\_INSPECTION\\FakeHttp\\payload-{id}.txt"))
                 {
-                    writer.Write(message);
-                    _logger.Verbose("Pipe Client: stream.FlushAsync");
-                    await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                    fs.Write(headerBytes, 0, headerBytes.Length);
+                    await CachedSerializer.Instance.SerializeAsync(fs, request.Traces, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+                    fs.Write(messageEndBytes, 0, messageEndBytes.Length);
+                    await fs.FlushAsync(cancellationToken).ConfigureAwait(false);
                 }
+
+                namedPipeClientStream.Write(headerBytes, 0, headerBytes.Length);
+                await CachedSerializer.Instance.SerializeAsync(namedPipeClientStream, request.Traces, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+                namedPipeClientStream.Write(messageEndBytes, 0, messageEndBytes.Length);
+                await namedPipeClientStream.FlushAsync(cancellationToken).ConfigureAwait(false);
 
                 _logger.Verbose("Pipe Client: Finished writing request");
 
@@ -108,7 +104,7 @@ namespace Datadog.Trace.Agent.NamedPipes
                 // }
 
                 // convert stream to string
-                var reader = new StreamReader(stream);
+                var reader = new StreamReader(namedPipeClientStream);
                 var wholeResponseMessage = reader.ReadToEnd();
 
                 FakeHttp.ReadResponse(response, wholeResponseMessage);
@@ -124,13 +120,13 @@ namespace Datadog.Trace.Agent.NamedPipes
             catch (TimeoutException)
             {
                 _logger.Warning("Pipe Client: connection timed out.");
-                stream?.Dispose();
+                namedPipeClientStream?.Dispose();
                 throw;
             }
             catch (Exception e)
             {
                 _logger.Error("Pipe Client: Exception:" + e.Message);
-                stream?.Dispose();
+                namedPipeClientStream?.Dispose();
                 // throw;
                 var response = new TraceResponse();
                 FakeHttp.ReadResponse(response, null);
