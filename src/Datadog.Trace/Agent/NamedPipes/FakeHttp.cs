@@ -29,8 +29,7 @@ Host: {request.Host}
 
             var httpEncoder = Encoding.GetEncoding("ISO-8859-1");
             httpEncoder = Encoding.ASCII;
-            httpEncoder = Encoding.Unicode;
-
+            // httpEncoder = Encoding.Unicode;
 
             // These may or may not be relevant bytes
             // var messageBeginBytes = new byte[]
@@ -40,7 +39,7 @@ Host: {request.Host}
             //     0x3f, 0x60, 0x91, 0x80, 0x50, 0x18, 0x27, 0xf5, 0x70, 0xc1, 0x00, 0x00
             // };
 
-            var headersOnlyBytes = StringEncoding.UTF8.GetBytes(headersOnly); // httpEncoder.GetBytes(headersOnly);
+            var headersOnlyBytes = httpEncoder.GetBytes(headersOnly);
 
             return headersOnlyBytes;
         }

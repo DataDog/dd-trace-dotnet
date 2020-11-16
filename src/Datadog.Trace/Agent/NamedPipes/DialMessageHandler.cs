@@ -61,13 +61,13 @@ namespace Datadog.Trace.Agent.NamedPipes
                 {
                     fs.Write(headerBytes, 0, headerBytes.Length);
                     await CachedSerializer.Instance.SerializeAsync(fs, request.Traces, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
-                    fs.Write(messageEndBytes, 0, messageEndBytes.Length);
+                    // fs.Write(messageEndBytes, 0, messageEndBytes.Length);
                     await fs.FlushAsync(cancellationToken).ConfigureAwait(false);
                 }
 
                 namedPipeClientStream.Write(headerBytes, 0, headerBytes.Length);
                 await CachedSerializer.Instance.SerializeAsync(namedPipeClientStream, request.Traces, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
-                namedPipeClientStream.Write(messageEndBytes, 0, messageEndBytes.Length);
+                // namedPipeClientStream.Write(messageEndBytes, 0, messageEndBytes.Length);
                 await namedPipeClientStream.FlushAsync(cancellationToken).ConfigureAwait(false);
 
                 _logger.Verbose("Pipe Client: Finished writing request");
