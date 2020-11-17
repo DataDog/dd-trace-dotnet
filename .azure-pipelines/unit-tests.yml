@@ -98,6 +98,12 @@ jobs:
       projects: test/**/*.Tests.csproj
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet
+      DD_TRACER_MEMDUMP_PATH: $(System.DefaultWorkingDirectory)/test/dumps
+
+  - publish: $(System.DefaultWorkingDirectory)/test/dumps
+    condition: always()
+    displayName: Uploading artifacts
+    artifact: linux-tracer-home
 
 - job: native_windows
   strategy:

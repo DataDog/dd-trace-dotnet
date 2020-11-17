@@ -50,6 +50,8 @@ namespace Datadog.Trace
         static Tracer()
         {
             TracingProcessManager.Initialize();
+
+            AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
         }
 
         /// <summary>
@@ -695,6 +697,24 @@ namespace Datadog.Trace
             {
                 Log.SafeLogError(ex, $"Unable to instantiate {nameof(Statsd)} client.");
                 return new NoOpStatsd();
+            }
+        }
+
+        private static void CurrentDomain_FirstChanceException(object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+        {
+            if (e.Exception is BadImageFormatException)
+            {
+                MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(BadImageFormatException));
+            }
+
+            if (e.Exception is TypeLoadException)
+            {
+                MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(TypeLoadException));
+            }
+
+            if (e.Exception is MissingMethodException)
+            {
+                MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(MissingMethodException));
             }
         }
 
