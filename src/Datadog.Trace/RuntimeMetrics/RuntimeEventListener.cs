@@ -1,10 +1,12 @@
 #if NETCOREAPP
 using System;
 using System.Diagnostics.Tracing;
+using System.Threading;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
 {
-    internal class RuntimeEventListener : EventListener
+    internal class RuntimeEventListener : EventListener, IRuntimeMetricsListener
     {
         private const string EventSourceName = "Microsoft-Windows-DotNETRuntime";
 
@@ -14,15 +16,31 @@ namespace Datadog.Trace.RuntimeMetrics
         private const int EventContentionStop = 91;
         private const int EventGcGlobalHeapHistory = 205;
 
+        private static readonly string[] GcCountMetricNames = { MetricsPaths.Gen0CollectionsCount, MetricsPaths.Gen1CollectionsCount, MetricsPaths.Gen2CollectionsCount };
+        private static readonly string[] CompactingGcTags = { "compacting_gc:true" };
+        private static readonly string[] NotCompactingGcTags = { "compacting_gc:false" };
+
+        private readonly IDogStatsd _statsd;
+
+        private readonly Timing _contentionTime = new Timing();
+        private long _contentionCount;
+
         private DateTime? _gcStart;
 
-        internal event Action<HeapStats> GcHeapStats;
+        public RuntimeEventListener(IDogStatsd statsd)
+        {
+            _statsd = statsd;
+        }
 
-        internal event Action<HeapHistory> GcHeapHistory;
+        public void Refresh()
+        {
+            // Can't use a Timing because Dogstatsd doesn't support local aggregation
+            // It means that the aggregations in the UI would be wrong
+            _statsd.Gauge("runtime.dotnet.threads.contention_time", _contentionTime.Clear());
+            _statsd.Counter("runtime.dotnet.threads.contention_count", Interlocked.Exchange(ref _contentionCount, 0));
 
-        internal event Action<TimeSpan> GcPauseTime;
-
-        internal event Action<double> Contention;
+            _statsd.Gauge("runtime.dotnet.threads.workers_count", ThreadPool.ThreadCount);
+        }
 
         protected override void OnEventSourceCreated(EventSource eventSource)
         {
@@ -46,20 +64,35 @@ namespace Datadog.Trace.RuntimeMetrics
 
                 if (start != null)
                 {
-                    GcPauseTime?.Invoke(eventData.TimeStamp - start.Value);
+                    _statsd.Timer(MetricsPaths.GcPauseTime, (eventData.TimeStamp - start.Value).TotalMilliseconds);
                 }
             }
             else if (eventData.EventId == EventGcHeapStats)
             {
-                GcHeapStats?.Invoke(HeapStats.FromPayload(eventData.Payload));
+                var stats = HeapStats.FromPayload(eventData.Payload);
+
+                _statsd.Gauge(MetricsPaths.Gen0HeapSize, stats.Gen0Size);
+                _statsd.Gauge(MetricsPaths.Gen1HeapSize, stats.Gen1Size);
+                _statsd.Gauge(MetricsPaths.Gen2HeapSize, stats.Gen2Size);
+                _statsd.Gauge(MetricsPaths.LohSize, stats.LohSize);
             }
             else if (eventData.EventId == EventContentionStop)
             {
-                Contention?.Invoke((double)eventData.Payload[2]);
+                var durationInNanoseconds = (double)eventData.Payload[2];
+
+                _contentionTime.Time(durationInNanoseconds / 1_000_000);
+                Interlocked.Increment(ref _contentionCount);
             }
             else if (eventData.EventId == EventGcGlobalHeapHistory)
             {
-                GcHeapHistory?.Invoke(HeapHistory.FromPayload(eventData.Payload));
+                var heapHistory = HeapHistory.FromPayload(eventData.Payload);
+
+                if (heapHistory.MemoryLoad != null)
+                {
+                    _statsd.Gauge(MetricsPaths.GcMemoryLoad, heapHistory.MemoryLoad.Value);
+                }
+
+                _statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);
             }
         }
     }

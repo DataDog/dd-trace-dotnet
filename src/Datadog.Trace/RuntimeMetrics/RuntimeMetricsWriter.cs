@@ -10,26 +10,18 @@ namespace Datadog.Trace.RuntimeMetrics
     internal class RuntimeMetricsWriter : IDisposable
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RuntimeMetricsWriter>();
-        private static readonly string[] GcCountMetricNames = { "runtime.dotnet.gc.count.gen0", "runtime.dotnet.gc.count.gen1", "runtime.dotnet.gc.count.gen2" };
-        private static readonly string[] CompactingGcTags = { "compacting_gc:true" };
-        private static readonly string[] NotCompactingGcTags = { "compacting_gc:false" };
 
         private readonly int _delay;
 
         private readonly IDogStatsd _statsd;
         private readonly Timer _timer;
 
-#if NETCOREAPP
-        private readonly RuntimeEventListener _listener;
-#endif
+        private readonly IRuntimeMetricsListener _listener;
 
-        private readonly Timing _contentionTime = new Timing();
         private readonly bool _enableProcessMetrics;
 
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
-
-        private long _contentionCount;
 
         public RuntimeMetricsWriter(IDogStatsd statsd, int delay)
         {
@@ -60,21 +52,31 @@ namespace Datadog.Trace.RuntimeMetrics
                 Log.Warning(ex, "Unable to get current process information");
                 _enableProcessMetrics = false;
             }
-#if NETCOREAPP
-            _listener = new RuntimeEventListener();
-            _listener.GcHeapStats += GcHeapStats;
-            _listener.GcPauseTime += GcPauseTime;
-            _listener.GcHeapHistory += GcHeapHistory;
-            _listener.Contention += Contention;
-#endif
+
+            try
+            {
+                _listener = InitializeListener(statsd);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to initialize runtime listener, some runtime metrics will be missing");
+            }
         }
 
         public void Dispose()
         {
             _timer.Dispose();
+            _listener?.Dispose();
+        }
 
+        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd)
+        {
 #if NETCOREAPP
-            _listener.Dispose();
+            return new RuntimeEventListener(statsd);
+#elif NETFRAMEWORK
+            return new PerformanceCountersListener(statsd);
+#else
+            return null;
 #endif
         }
 
@@ -85,39 +87,12 @@ namespace Datadog.Trace.RuntimeMetrics
             _statsd.Increment("runtime.dotnet.exceptions.count", 1, tags: new[] { $"exception_type:{name}" });
         }
 
-        private void GcPauseTime(TimeSpan timespan)
-        {
-            _statsd.Timer("runtime.dotnet.gc.pause_time", timespan.TotalMilliseconds);
-        }
-
-        private void GcHeapHistory(HeapHistory heapHistory)
-        {
-            if (heapHistory.MemoryLoad != null)
-            {
-                _statsd.Gauge("runtime.dotnet.gc.memory_load", heapHistory.MemoryLoad.Value);
-            }
-
-            _statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);
-        }
-
-        private void GcHeapStats(HeapStats stats)
-        {
-            _statsd.Gauge("runtime.dotnet.gc.size.gen0", stats.Gen0Size);
-            _statsd.Gauge("runtime.dotnet.gc.size.gen1", stats.Gen1Size);
-            _statsd.Gauge("runtime.dotnet.gc.size.gen2", stats.Gen2Size);
-            _statsd.Gauge("runtime.dotnet.gc.size.loh", stats.LohSize);
-        }
-
-        private void Contention(double durationInNanoseconds)
-        {
-            _contentionTime.Time(durationInNanoseconds / 1_000_000);
-            Interlocked.Increment(ref _contentionCount);
-        }
-
         private void PushEvents()
         {
             try
             {
+                _listener?.Refresh();
+
                 if (_enableProcessMetrics)
                 {
                     ProcessHelpers.GetCurrentProcessRuntimeMetrics(out var newUserCpu, out var newSystemCpu, out var threadCount, out var memoryUsage);
@@ -129,21 +104,12 @@ namespace Datadog.Trace.RuntimeMetrics
                     _previousUserCpu = newUserCpu;
                     _previousSystemCpu = newSystemCpu;
 
-                    _statsd.Gauge("runtime.dotnet.threads.count", threadCount);
+                    _statsd.Gauge(MetricsPaths.ThreadsCount, threadCount);
 
-                    _statsd.Gauge("runtime.dotnet.mem.committed", memoryUsage);
-                    _statsd.Gauge("runtime.dotnet.cpu.user", userCpu);
-                    _statsd.Gauge("runtime.dotnet.cpu.system", systemCpu);
+                    _statsd.Gauge(MetricsPaths.CommittedMemory, memoryUsage);
+                    _statsd.Gauge(MetricsPaths.CpuUserTime, userCpu);
+                    _statsd.Gauge(MetricsPaths.CpuSystemTime, systemCpu);
                 }
-
-                // Can't use a Timing because Dogstatsd doesn't support local aggregation
-                // It means that the aggregations in the UI would be wrong
-                _statsd.Gauge("runtime.dotnet.threads.contention_time", _contentionTime.Clear());
-                _statsd.Counter("runtime.dotnet.threads.contention_count", Interlocked.Exchange(ref _contentionCount, 0));
-
-#if NETCOREAPP
-            _statsd.Gauge("runtime.dotnet.threads.workers_count", ThreadPool.ThreadCount);
-#endif
             }
             catch (Exception ex)
             {
