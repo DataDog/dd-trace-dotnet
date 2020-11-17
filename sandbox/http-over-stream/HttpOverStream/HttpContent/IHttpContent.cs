@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace HttpOverStream
@@ -7,8 +7,8 @@ namespace HttpOverStream
     {
         long? Length { get; }
 
-        void WriteTo(Stream stream);
+        void CopyTo(Stream destination);
 
-        Task WriteToAsync(Stream stream);
+        Task CopyToAsync(Stream destination);
     }
 }

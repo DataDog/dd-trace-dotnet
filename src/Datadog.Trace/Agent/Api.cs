@@ -144,11 +144,10 @@ namespace Datadog.Trace.Agent
 
         private static IApiRequestFactory CreateRequestFactory()
         {
-#if NETCOREAPP
-            return new HttpClientRequestFactory();
-#else
-            return new ApiWebRequestFactory();
-#endif
+            // return new HttpStreamRequestFactory(new TcpStreamFactory("localhost", 8126));
+            return new HttpStreamRequestFactory(new NamedPipeClientStreamFactory());
+            // return new HttpClientRequestFactory();
+            // return new ApiWebRequestFactory();
         }
 
         private async Task<bool> SendTracesAsync(Span[][] traces, IApiRequest request, bool finalTry)
@@ -177,6 +176,12 @@ namespace Datadog.Trace.Agent
 
                     // count every response, grouped by status code
                     _statsd?.Increment(TracerMetricNames.Api.Responses, tags: tags);
+                }
+
+                if (response == null)
+                {
+                    // TODO: GET RID OF ME
+                    return true;
                 }
 
                 // Attempt a retry if the status code is not SUCCESS

@@ -7,18 +7,19 @@ namespace HttpOverStream
     public class HttpClient
     {
         private const string CrLf = "\r\n";
+        private const int bufferSize = 10240;
 
         public HttpResponse Send(HttpRequest request, Stream requestStream, Stream responseStream)
         {
             // TODO: support async and cancellation
             SendRequest(request, requestStream);
-            return requestStream.CanRead ? ReadResponse(responseStream) : null;
+            return ReadResponse(responseStream);
         }
 
         private static void SendRequest(HttpRequest request, Stream requestStream)
         {
             // optimization opportunity: cache the ascii-encoded bytes of commonly-used headers
-            using (var writer = new StreamWriter(requestStream, Encoding.ASCII, bufferSize: 2048, leaveOpen: true))
+            using (var writer = new StreamWriter(requestStream, Encoding.ASCII, bufferSize, leaveOpen: true))
             {
                 writer.Write($"{request.Verb} {request.Path} HTTP/1.1{CrLf}");
 
@@ -36,34 +37,28 @@ namespace HttpOverStream
                 writer.Write(CrLf);
             }
 
-            request.Content.WriteTo(requestStream);
+            request.Content.CopyTo(requestStream);
             requestStream.Flush();
         }
 
         private static HttpResponse ReadResponse(Stream responseStream)
         {
-            /*
-            const string filname = "C:\\temp\\response.http";
-            File.Delete(filname);
-
-            using (var file = File.OpenWrite(filname))
-            {
-                stream.CopyTo(file);
-                file.Flush();
-                Console.WriteLine($"Wrote to file {filname}");
-                return null;
-            }
-            */
-
             var headers = new HttpHeaders();
             int statusCode = 0;
             string responseMessage = null;
 
-            using (var reader = new StreamReader(responseStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, bufferSize: 2048, leaveOpen: true))
-            {
-                string line = reader.ReadLine();
+            // hack: buffer the entire response so we can seek
+            var memoryStream = new MemoryStream();
+            responseStream.CopyTo(memoryStream);
+            memoryStream.Position = 0;
+            int streamPosition = 0;
 
+            using (var reader = new StreamReader(memoryStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, bufferSize, leaveOpen: true))
+            {
                 // HTTP/1.1 200 OK
+                string line = reader.ReadLine();
+                streamPosition += reader.CurrentEncoding.GetByteCount(line) + CrLf.Length;
+
                 string statusCodeString = line.Substring(9, 3);
                 statusCode = int.Parse(statusCodeString);
                 responseMessage = line.Substring(13);
@@ -72,6 +67,7 @@ namespace HttpOverStream
                 while (true)
                 {
                     line = reader.ReadLine();
+                    streamPosition += reader.CurrentEncoding.GetByteCount(line) + CrLf.Length;
 
                     if (line == "")
                     {
@@ -86,7 +82,8 @@ namespace HttpOverStream
                 }
             }
 
-            return new HttpResponse(statusCode, responseMessage, headers, new StreamContent(responseStream));
+            int? length = int.TryParse(headers.GetValue("Content-Length"), out int headerValue) ? headerValue : (int?)null;
+            return new HttpResponse(statusCode, responseMessage, headers, new StreamContent(responseStream, length));
         }
     }
 }
