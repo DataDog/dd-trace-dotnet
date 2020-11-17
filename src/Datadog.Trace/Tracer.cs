@@ -716,6 +716,16 @@ namespace Datadog.Trace
             {
                 MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(MissingMethodException));
             }
+
+            if (e.Exception is MissingFieldException)
+            {
+                MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(MissingFieldException));
+            }
+
+            if (e.Exception is MissingMemberException && !e.Exception.Message.Contains("TestHelpers"))
+            {
+                MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(MissingMemberException));
+            }
         }
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
