@@ -35,13 +35,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             if (previousTask.Status == TaskStatus.RanToCompletion)
             {
                 _continuation(instance, default, null, state);
-#if NET45
-                    // "If the supplied array/enumerable contains no tasks, the returned task will immediately transition to a RanToCompletion state before it's returned to the caller."
-                    // https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall?redirectedfrom=MSDN&view=netframework-4.5.2#System_Threading_Tasks_Task_WhenAll_System_Threading_Tasks_Task___
-                    return ToTReturn(Task.WhenAll());
-#else
-                return ToTReturn(Task.CompletedTask);
-#endif
+                return returnValue;
             }
 
             var continuationState = new ContinuationGeneratorState<TTarget>(instance, state);
