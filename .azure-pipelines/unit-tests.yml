@@ -103,7 +103,7 @@ jobs:
   - publish: $(System.DefaultWorkingDirectory)/test/dumps
     condition: always()
     displayName: Uploading artifacts
-    artifact: linux-tracer-home
+    artifact: memory-dumps-$(imageName)
 
 - job: native_windows
   strategy:
