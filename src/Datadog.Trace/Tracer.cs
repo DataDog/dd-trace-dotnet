@@ -712,7 +712,7 @@ namespace Datadog.Trace
                 MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(TypeLoadException));
             }
 
-            if (e.Exception is MissingMethodException)
+            if (e.Exception is MissingMethodException && !e.Exception.Message.Contains("TestHelpers"))
             {
                 MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(MissingMethodException));
             }
