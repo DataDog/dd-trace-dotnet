@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.Transports
 {
     internal class ApiWebRequestFactory : IApiRequestFactory
     {

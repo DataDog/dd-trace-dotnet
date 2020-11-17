@@ -1,18 +1,18 @@
-﻿using System.IO;
+using HttpOverStream;
 
-namespace HttpOverStream
+namespace Datadog.Trace.HttpOverStreams
 {
-    public class HttpResponse : HttpMessage
+    internal class HttpResponse : HttpMessage
     {
-        public int StatusCode { get; }
-
-        public string ResponseMessage { get; }
-
         public HttpResponse(int statusCode, string responseMessage, HttpHeaders headers, IHttpContent content)
             : base(headers, content)
         {
             StatusCode = statusCode;
             ResponseMessage = responseMessage;
         }
+
+        public int StatusCode { get; }
+
+        public string ResponseMessage { get; }
     }
 }

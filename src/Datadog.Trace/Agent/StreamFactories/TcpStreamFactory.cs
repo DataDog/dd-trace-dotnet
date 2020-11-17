@@ -3,12 +3,12 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.StreamFactories
 {
     internal class TcpStreamFactory : IStreamFactory
     {
-        private string _host;
-        private int _port;
+        private readonly string _host;
+        private readonly int _port;
 
         public TcpStreamFactory(string host, int port)
         {
@@ -26,9 +26,9 @@ namespace Datadog.Trace.Agent
         private static NetworkStream ConnectSocket(string host, int port)
         {
             var ipAddress = Dns.GetHostAddresses(host).FirstOrDefault(t => t.AddressFamily == AddressFamily.InterNetwork);
-            IPEndPoint endpoint = new IPEndPoint(ipAddress, port);
+            var endpoint = new IPEndPoint(ipAddress, port);
 
-            Socket socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            var socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             socket.Connect(endpoint);
 
             return new NetworkStream(socket, FileAccess.ReadWrite, ownsSocket: true);

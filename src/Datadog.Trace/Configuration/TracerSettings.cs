@@ -90,6 +90,12 @@ namespace Datadog.Trace.Configuration
 
             AgentUri = new Uri(agentUri);
 
+            TracesWindowsPipeName = source?.GetString(ConfigurationKeys.TracesWindowsPipeName);
+
+            TracesWindowsPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesWindowsPipeTimeoutMs) ?? 0;
+
+            TraceTransport = source?.GetString(ConfigurationKeys.TraceTransport);
+
             if (string.Equals(AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
             {
                 // Replace localhost with 127.0.0.1 to avoid DNS resolution.
@@ -216,6 +222,34 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentHost"/>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; set; }
+
+        /// <summary>
+        /// Gets or sets the key used to determine the transport for sending traces.
+        /// Default is null.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TraceTransport"/>
+        public string TraceTransport { get; set; }
+
+        /// <summary>
+        /// Gets or sets the windows pipe name where the Tracer can connect to the Agent.
+        /// Default is null.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TracesWindowsPipeName"/>
+        public string TracesWindowsPipeName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in milliseconds for the windows named pipe requests.
+        /// Default is 0.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TracesWindowsPipeTimeoutMs"/>
+        public int TracesWindowsPipeTimeoutMs { get; set; }
+
+        /// <summary>
+        /// Gets or sets the windows pipe name where the Tracer can send stats.
+        /// Default is null.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsWindowsPipeName"/>
+        public string StatsWindowsPipeName { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether default Analytics are enabled.

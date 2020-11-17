@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace HttpOverStream
 {
-    public interface IHttpContent
+    internal interface IHttpContent
     {
         long? Length { get; }
 

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpStreamRequestFactory : IApiRequestFactory
     {

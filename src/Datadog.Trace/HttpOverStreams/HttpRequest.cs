@@ -1,13 +1,9 @@
-﻿namespace HttpOverStream
+using HttpOverStream;
+
+namespace Datadog.Trace.HttpOverStreams
 {
-    public class HttpRequest : HttpMessage
+    internal class HttpRequest : HttpMessage
     {
-        public string Verb { get; }
-
-        public string Host { get; }
-
-        public string Path { get; }
-
         public HttpRequest(string verb, string host, string path, HttpHeaders headers, IHttpContent content)
             : base(headers, content)
         {
@@ -15,5 +11,11 @@
             Host = host;
             Path = path;
         }
+
+        public string Verb { get; }
+
+        public string Host { get; }
+
+        public string Path { get; }
     }
 }

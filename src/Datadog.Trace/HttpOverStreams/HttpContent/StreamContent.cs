@@ -1,22 +1,23 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using HttpOverStream;
 
-namespace HttpOverStream
+namespace Datadog.Trace.HttpOverStreams.HttpContent
 {
-    public class StreamContent : IHttpContent
+    internal class StreamContent : IHttpContent
     {
-        private const int _bufferSize = 10240;
-
-        public Stream Stream { get; }
-
-        public long? Length { get; }
+        private const int BufferSize = 10240;
 
         public StreamContent(Stream stream, long? length)
         {
             Stream = stream;
             Length = length;
         }
+
+        public Stream Stream { get; }
+
+        public long? Length { get; }
 
         public void CopyTo(Stream destination)
         {
@@ -32,7 +33,7 @@ namespace HttpOverStream
 
         public void CopyTo(Stream destination, int count)
         {
-            byte[] bytes = new byte[Math.Min(count, _bufferSize)];
+            var bytes = new byte[Math.Min(count, BufferSize)];
             int bytesLeft = count;
 
             while (bytesLeft > 0)
@@ -57,7 +58,7 @@ namespace HttpOverStream
 
         public async Task CopyToAsync(Stream destination, int count)
         {
-            byte[] bytes = new byte[_bufferSize];
+            var bytes = new byte[BufferSize];
             int bytesLeft = count;
 
             while (bytesLeft > 0)

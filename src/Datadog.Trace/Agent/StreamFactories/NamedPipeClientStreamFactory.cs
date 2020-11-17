@@ -1,9 +1,8 @@
-using System;
 using System.IO;
 using System.IO.Pipes;
 using System.Security.Principal;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.StreamFactories
 {
     internal class NamedPipeClientStreamFactory : IStreamFactory
     {
@@ -11,16 +10,6 @@ namespace Datadog.Trace.Agent
         private readonly string _serverName;
         private readonly PipeOptions _pipeOptions;
         private readonly int _timeoutMs;
-
-        public NamedPipeClientStreamFactory()
-            : this("special-trace-pipe-colin-123", ".", PipeOptions.Asynchronous, 0)
-        {
-        }
-
-        public NamedPipeClientStreamFactory(string pipeName)
-            : this(pipeName, ".", PipeOptions.Asynchronous, 0)
-        {
-        }
 
         public NamedPipeClientStreamFactory(string pipeName, int timeoutMs)
             : this(pipeName, ".", PipeOptions.Asynchronous, timeoutMs)

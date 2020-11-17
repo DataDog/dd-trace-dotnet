@@ -1,10 +1,10 @@
+using System.Threading.Tasks;
+using Datadog.Trace.Agent.MessagePack;
 #if NETCOREAPP
 using System;
 using System.Net.Http;
-using System.Threading.Tasks;
-using Datadog.Trace.Agent.MessagePack;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpClientRequest : IApiRequest
     {

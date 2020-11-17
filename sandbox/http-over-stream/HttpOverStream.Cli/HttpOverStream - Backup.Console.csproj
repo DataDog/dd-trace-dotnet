@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
-  </PropertyGroup>
-
-</Project>

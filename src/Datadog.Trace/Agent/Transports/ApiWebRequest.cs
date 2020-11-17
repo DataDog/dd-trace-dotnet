@@ -2,7 +2,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.Transports
 {
     internal class ApiWebRequest : IApiRequest
     {
@@ -11,13 +11,7 @@ namespace Datadog.Trace.Agent
         public ApiWebRequest(HttpWebRequest request)
         {
             _request = request;
-
-            // Default headers
-            _request.Headers.Add(AgentHttpHeaderNames.Language, ".NET");
-            _request.Headers.Add(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion);
-
-            // don't add automatic instrumentation to requests from this HttpClient
-            _request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+            TraceRequestDecorator.AddHeaders(this);
         }
 
         public void AddHeader(string name, string value)

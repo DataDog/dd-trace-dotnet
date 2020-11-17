@@ -2,7 +2,7 @@
 using System;
 using System.Net.Http;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpClientRequestFactory : IApiRequestFactory
     {

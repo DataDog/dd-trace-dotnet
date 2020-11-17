@@ -1,20 +1,21 @@
-﻿using System.Text;
+using System.Text;
+using HttpOverStream;
 
-namespace HttpOverStream
+namespace Datadog.Trace.HttpOverStreams
 {
-    public abstract class HttpMessage
+    internal abstract class HttpMessage
     {
-        private readonly static UTF8Encoding utf8Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-
-        public HttpHeaders Headers { get; }
-
-        public IHttpContent Content { get; }
+        private static readonly UTF8Encoding Utf8Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
         public HttpMessage(HttpHeaders headers, IHttpContent content)
         {
             Headers = headers;
             Content = content;
         }
+
+        public HttpHeaders Headers { get; }
+
+        public IHttpContent Content { get; }
 
         public int? ContentLength => int.TryParse(Headers.GetValue("Content-Length"), out int length) ? length : (int?)null;
 
@@ -39,7 +40,7 @@ namespace HttpOverStream
                     switch (parts[1].Trim())
                     {
                         case "utf-8":
-                            return utf8Encoding;
+                            return Utf8Encoding;
                         case "us-ascii":
                             return Encoding.ASCII;
                     }

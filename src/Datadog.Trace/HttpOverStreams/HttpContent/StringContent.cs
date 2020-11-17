@@ -1,18 +1,13 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using HttpOverStream;
 
-namespace HttpOverStream
+namespace Datadog.Trace.HttpOverStreams.HttpContent
 {
-    public class StringContent : IHttpContent
+    internal class StringContent : IHttpContent
     {
-        private const int bufferSize = 10240;
-
-        public string Value { get; }
-
-        public Encoding Encoding { get; }
-
-        public long? Length { get; }
+        private const int BufferSize = 10240;
 
         public StringContent(string value, Encoding encoding)
         {
@@ -21,9 +16,15 @@ namespace HttpOverStream
             Length = Encoding.GetByteCount(Value);
         }
 
+        public string Value { get; }
+
+        public Encoding Encoding { get; }
+
+        public long? Length { get; }
+
         public void CopyTo(Stream destination)
         {
-            using (var writer = new StreamWriter(destination, Encoding, bufferSize, leaveOpen: true))
+            using (var writer = new StreamWriter(destination, Encoding, BufferSize, leaveOpen: true))
             {
                 writer.Write(Value);
             }
@@ -31,7 +32,7 @@ namespace HttpOverStream
 
         public async Task CopyToAsync(Stream destination)
         {
-            using (var writer = new StreamWriter(destination, Encoding, bufferSize, leaveOpen: true))
+            using (var writer = new StreamWriter(destination, Encoding, BufferSize, leaveOpen: true))
             {
                 await writer.WriteAsync(Value).ConfigureAwait(false);
             }

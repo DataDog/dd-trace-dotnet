@@ -1,19 +1,13 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {
@@ -30,12 +24,6 @@ namespace Datadog.Trace
             Name = "datadog-trace-agent",
             ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
-            RefreshPortVars = () =>
-            {
-                var portString = TraceAgentMetadata.Port?.ToString(CultureInfo.InvariantCulture);
-                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, portString);
-                Environment.SetEnvironmentVariable(ConfigurationKeys.TraceAgentPortKey, portString);
-            }
         };
 
         internal static readonly ProcessMetadata DogStatsDMetadata = new ProcessMetadata
@@ -43,11 +31,6 @@ namespace Datadog.Trace
             Name = "dogstatsd",
             ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
-            RefreshPortVars = () =>
-            {
-                var portString = DogStatsDMetadata.Port?.ToString(CultureInfo.InvariantCulture);
-                Environment.SetEnvironmentVariable(StatsdConfig.DogStatsdPortEnvVar, portString);
-            }
         };
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
@@ -57,91 +40,7 @@ namespace Datadog.Trace
         };
 
         private static readonly ILogger Log = DatadogLogging.For<TracingProcessManager>();
-
         private static CancellationTokenSource _cancellationTokenSource;
-        private static bool _isProcessManager;
-
-        public static void TryForceTraceAgentRefresh()
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(TraceAgentMetadata.DirectoryPath))
-                {
-                    Log.Debug("This is not a context where we manage agent processes.");
-                    return;
-                }
-
-                InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
-
-                if (!_isProcessManager)
-                {
-                    Log.Debug("This process is not responsible for managing agent processes.");
-                    return;
-                }
-
-                if (Processes.All(p => p.HasAttemptedStartup))
-                {
-                    Log.Warning("Attempting to force a child process refresh.");
-
-                    Log.Debug("Stopping child processes.");
-                    StopProcesses();
-
-                    _cancellationTokenSource = new CancellationTokenSource();
-
-                    Log.Debug("Starting child processes.");
-                    StartProcesses();
-                }
-                else
-                {
-                    Log.Warning("This process has not had a chance to initialize agent processes.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.SafeLogError(ex, "Error when forcing a trace agent process refresh.");
-            }
-        }
-
-        public static void SubscribeToTraceAgentPortOverride(Action<int> subscriber)
-        {
-            TraceAgentMetadata.PortSubscribers.Add(subscriber);
-
-            if (TraceAgentMetadata.Port != null)
-            {
-                subscriber(TraceAgentMetadata.Port.Value);
-            }
-        }
-
-        public static void SubscribeToDogStatsDPortOverride(Action<int> subscriber)
-        {
-            DogStatsDMetadata.PortSubscribers.Add(subscriber);
-
-            if (DogStatsDMetadata.Port != null)
-            {
-                subscriber(DogStatsDMetadata.Port.Value);
-            }
-        }
-
-        public static void StopProcesses()
-        {
-            _cancellationTokenSource?.Cancel();
-
-            if (_isProcessManager)
-            {
-                foreach (var metadata in Processes)
-                {
-                    try
-                    {
-                        SafelyKillProcess(metadata);
-                        metadata.Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.SafeLogError(ex, "Error when cancelling process {0}.", metadata.Name);
-                    }
-                }
-            }
-        }
 
         public static void Initialize()
         {
@@ -164,98 +63,14 @@ namespace Datadog.Trace
                     return;
                 }
 
-                InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
                 _cancellationTokenSource = new CancellationTokenSource();
 
-                if (_isProcessManager)
-                {
-                    Log.Debug("Starting child processes from process {0}, AppDomain {1}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
-                    StartProcesses();
-                }
-
-                Log.Debug("Initializing sub process port file watchers.");
-                foreach (var instance in Processes)
-                {
-                    instance.InitializePortFileWatcher();
-                }
+                Log.Debug("Starting child processes from process {0}, AppDomain {1}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
+                StartProcesses();
             }
             catch (Exception ex)
             {
                 Log.SafeLogError(ex, "Error when attempting to initialize process manager.");
-            }
-        }
-
-        private static void InitializePortManagerClaimFiles(string traceAgentDirectory)
-        {
-            var portManagerDirectory = Path.Combine(traceAgentDirectory, "port-manager");
-
-            if (!Directory.Exists(portManagerDirectory))
-            {
-                Directory.CreateDirectory(portManagerDirectory);
-            }
-
-            var fileClaim =
-                Path.Combine(
-                    portManagerDirectory,
-                    string.Format(CultureInfo.InvariantCulture, "{0}_{1}", DomainMetadata.ProcessId, DomainMetadata.AppDomainId));
-
-            var portManagerFiles = Directory.GetFiles(portManagerDirectory);
-            if (portManagerFiles.Length > 0)
-            {
-                int? GetProcessIdFromFileName(string fullPath)
-                {
-                    var fileName = Path.GetFileNameWithoutExtension(fullPath);
-                    if (int.TryParse(fileName?.Split('_')[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var pid))
-                    {
-                        return pid;
-                    }
-
-                    return null;
-                }
-
-                foreach (var portManagerFileName in portManagerFiles)
-                {
-                    try
-                    {
-                        var claimPid = GetProcessIdFromFileName(portManagerFileName);
-                        var isActive = false;
-
-                        try
-                        {
-                            if (claimPid != null)
-                            {
-                                using (Process.GetProcessById(claimPid.Value))
-                                {
-                                    isActive = true;
-                                }
-                            }
-                        }
-                        catch (ArgumentException)
-                        {
-                            // It is expected for Process.GetProcessById to throw an ArgumentException
-                            // if there is no process matching the identifier argument.
-                            // This is fine, do not bubble up the exception any further.
-                        }
-                        finally
-                        {
-                            if (!isActive)
-                            {
-                                File.Delete(portManagerFileName);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.SafeLogError(ex, "Error when cleaning port claims.");
-                    }
-                }
-            }
-
-            var remainingFiles = Directory.GetFiles(portManagerDirectory);
-            if (remainingFiles.Length == 0)
-            {
-                File.WriteAllText(fileClaim, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture));
-                _isProcessManager = true;
             }
         }
 
@@ -278,24 +93,9 @@ namespace Datadog.Trace
             }
         }
 
-        private static void SafelyKillProcess(ProcessMetadata metadata)
-        {
-            try
-            {
-                if (_isProcessManager)
-                {
-                    metadata.SafelyForceKill();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to verify halt of the {0} process.", metadata.Name);
-            }
-        }
-
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata)
         {
-            const int circuitBreakerMax = 3;
+            const int circuitBreakerMax = 5;
             var path = metadata.ProcessPath;
             Log.Debug("Starting keep alive for {0}.", path);
 
@@ -333,7 +133,6 @@ namespace Datadog.Trace
                                 }
 
                                 Log.Debug("Starting {0}.", path);
-                                GrabFreePortForInstance(metadata);
                                 metadata.Process = Process.Start(startInfo);
 
                                 await Task.Delay(150, _cancellationTokenSource.Token);
@@ -347,7 +146,6 @@ namespace Datadog.Trace
                                 {
                                     Log.Debug("Successfully started {0}.", path);
                                     sequentialFailures = 0;
-                                    metadata.AlertSubscribers();
                                     Log.Debug("Finished calling port subscribers for {0}.", metadata.Name);
                                 }
                             }
@@ -388,59 +186,9 @@ namespace Datadog.Trace
                 _cancellationTokenSource.Token);
         }
 
-        private static string ReadSingleLineNoLock(string file)
-        {
-            using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                using (var sr = new StreamReader(fs))
-                {
-                    return sr.ReadLine();
-                }
-            }
-        }
-
-        private static int? GetFreeTcpPort()
-        {
-            TcpListener tcpListener = null;
-            try
-            {
-                tcpListener = new TcpListener(IPAddress.Loopback, 0);
-                tcpListener.Start();
-                var port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
-                return port;
-            }
-            catch (Exception ex)
-            {
-                Log.SafeLogError(ex, "Error trying to get a free port.");
-                return null;
-            }
-            finally
-            {
-                tcpListener?.Stop();
-            }
-        }
-
-        private static void GrabFreePortForInstance(ProcessMetadata instance)
-        {
-            instance.Port = GetFreeTcpPort();
-            if (instance.Port == null)
-            {
-                throw new Exception($"Unable to secure a port for {instance.Name}");
-            }
-
-            instance.RefreshPortVars();
-            Log.Debug("Attempting to use port {0} for the {1}.", instance.Port, instance.Name);
-
-            if (instance.PortFilePath != null)
-            {
-                File.WriteAllText(instance.PortFilePath, instance.Port.Value.ToString(CultureInfo.InvariantCulture));
-            }
-        }
-
-        internal class ProcessMetadata : IDisposable
+        internal class ProcessMetadata
         {
             private string _processPath;
-            private FileSystemWatcher _portFileWatcher;
 
             public string Name { get; set; }
 
@@ -463,8 +211,6 @@ namespace Datadog.Trace
             /// </summary>
             public bool HasAttemptedStartup { get; set; }
 
-            public string PortFilePath { get; private set; }
-
             public string ProcessPath
             {
                 get => _processPath;
@@ -472,117 +218,12 @@ namespace Datadog.Trace
                 {
                     _processPath = value;
                     DirectoryPath = Path.GetDirectoryName(_processPath);
-                    PortFilePath = !string.IsNullOrWhiteSpace(_processPath) ? $"{_processPath}.port" : null;
                 }
             }
 
             public string DirectoryPath { get; private set; }
 
             public string ProcessArguments { get; set; }
-
-            public Action RefreshPortVars { get; set; }
-
-            public int? Port { get; set; }
-
-            public ConcurrentBag<Action<int>> PortSubscribers { get; } = new ConcurrentBag<Action<int>>();
-
-            public void AlertSubscribers()
-            {
-                if (Port != null)
-                {
-                    foreach (var portSubscriber in PortSubscribers)
-                    {
-                        portSubscriber(Port.Value);
-                    }
-                }
-            }
-
-            public void Dispose()
-            {
-                try
-                {
-                    _portFileWatcher?.Dispose();
-                    Process?.Dispose();
-                    KeepAliveTask?.Dispose();
-
-                    if (_isProcessManager)
-                    {
-                        // Do our best to give new instances a fresh slate
-                        File.Delete(PortFilePath);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.SafeLogError(ex, "Error when disposing of process manager resources.");
-                }
-            }
-
-            public void InitializePortFileWatcher()
-            {
-                if (File.Exists(PortFilePath))
-                {
-                    Log.Debug("Port file already exists.");
-                    ReadPortAndAlertSubscribers();
-                }
-
-                _portFileWatcher = new FileSystemWatcher
-                {
-                    NotifyFilter = NotifyFilters.LastAccess
-                                 | NotifyFilters.LastWrite
-                                 | NotifyFilters.FileName
-                                 | NotifyFilters.CreationTime
-                                 | NotifyFilters.Size,
-                    Path = Path.GetDirectoryName(PortFilePath),
-                    Filter = Path.GetFileName(PortFilePath)
-                };
-
-                _portFileWatcher.Created += OnPortFileChanged;
-                _portFileWatcher.Changed += OnPortFileChanged;
-                _portFileWatcher.Deleted += OnPortFileDeleted;
-                _portFileWatcher.EnableRaisingEvents = true;
-            }
-
-            public void ForcePortFileRead()
-            {
-                if (KeepAliveTask == null)
-                {
-                    // There is nothing to accomplish, ports are not dynamic
-                    return;
-                }
-
-                ReadPortAndAlertSubscribers();
-            }
-
-            public void SafelyForceKill()
-            {
-                try
-                {
-                    var fileName = Path.GetFileNameWithoutExtension(ProcessPath);
-                    var processesByName = Process.GetProcessesByName(fileName);
-                    foreach (var process in processesByName)
-                    {
-                        try
-                        {
-                            process.Kill();
-                        }
-                        finally
-                        {
-                            process.Dispose();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    try
-                    {
-                        Log.Error(ex, "Error when force killing process {0}.", ProcessPath);
-                    }
-                    catch
-                    {
-                        // ignore, to be safe
-                    }
-                }
-            }
 
             public bool ProgramIsRunning()
             {
@@ -619,55 +260,6 @@ namespace Datadog.Trace
                     }
 
                     return false;
-                }
-            }
-
-            private void OnPortFileChanged(object source, FileSystemEventArgs e)
-            {
-                Log.Debug("Port file has changed.");
-                ReadPortAndAlertSubscribers();
-            }
-
-            private void OnPortFileDeleted(object source, FileSystemEventArgs e)
-            {
-                // For if some process or user decides to delete the port file, we have some evidence of what happened
-                Log.Error("The port file ({0}) has been deleted.", e.FullPath);
-            }
-
-            private void ReadPortAndAlertSubscribers()
-            {
-                var retries = 3;
-
-                while (retries-- > 0)
-                {
-                    try
-                    {
-                        var portFile = PortFilePath;
-                        var portText = ReadSingleLineNoLock(portFile);
-                        if (int.TryParse(portText, NumberStyles.Any, CultureInfo.InvariantCulture, out var portValue))
-                        {
-                            if (Port == portValue)
-                            {
-                                // nothing to do, let's not cause churn
-                                return;
-                            }
-
-                            Port = portValue;
-                            Log.Debug("Retrieved port {0} from {1}.", portValue, PortFilePath);
-                            RefreshPortVars();
-                        }
-                        else
-                        {
-                            Log.Error("The port file ({0}) is malformed: {1}", PortFilePath, portText);
-                        }
-
-                        AlertSubscribers();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error when alerting subscribers for {0}", Name);
-                        Thread.Sleep(20); // Wait just a tiny bit just to let the file come unlocked
-                    }
                 }
             }
         }

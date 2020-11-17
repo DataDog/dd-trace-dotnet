@@ -1,9 +1,8 @@
-using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpStreamResponse : IApiResponse
     {

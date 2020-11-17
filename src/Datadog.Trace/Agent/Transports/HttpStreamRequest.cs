@@ -2,13 +2,15 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.HttpOverStreams.HttpContent;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpStreamRequest : IApiRequest
     {
         private readonly Uri _uri;
-        private readonly HttpOverStream.HttpHeaders _headers = new HttpOverStream.HttpHeaders();
+        private readonly HttpHeaders _headers = new HttpHeaders();
         private readonly Stream _requestStream;
         private readonly Stream _responseStream;
 
@@ -17,9 +19,7 @@ namespace Datadog.Trace.Agent
             _uri = uri;
             _requestStream = requestStream;
             _responseStream = responseStream;
-
-            _headers.Add(AgentHttpHeaderNames.Language, ".NET");
-            _headers.Add(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion);
+            TraceRequestDecorator.AddHeaders(this);
         }
 
         public void AddHeader(string name, string value)
@@ -29,35 +29,19 @@ namespace Datadog.Trace.Agent
 
         public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
         {
-            try
-            {
-                // buffer the entire contents for now
-                var requestContentStream = new MemoryStream();
-                await CachedSerializer.Instance.SerializeAsync(requestContentStream, traces, formatterResolver)
-                    .ConfigureAwait(false);
-                requestContentStream.Position = 0;
+            // buffer the entire contents for now
+            var requestContentStream = new MemoryStream();
+            await CachedSerializer.Instance.SerializeAsync(requestContentStream, traces, formatterResolver).ConfigureAwait(false);
+            requestContentStream.Position = 0;
 
-                /*
-                // save messagepack to file
-                if (traces.Length > 0)
-                {
-                    using (var file = File.Create("C:\\temp\\traces.msgpack"))
-                    {
-                        requestContentStream.CopyTo(file);
-                        file.Flush();
-                        requestContentStream.Position = 0;
-                    }
-                }
-                */
+            _headers.Add("Content-Type", "application/msgpack");
 
-                _headers.Add("Content-Type", "application/msgpack");
+            var content = new StreamContent(requestContentStream, requestContentStream.Length);
+            var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
 
-                var content = new HttpOverStream.StreamContent(requestContentStream, requestContentStream.Length);
-                var request = new HttpOverStream.HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
-
-                // send request, get response
-                var client = new HttpOverStream.HttpClient();
-                var response = client.Send(request, _requestStream, _responseStream);
+            // send request, get response
+            var client = new DatadogHttpClient();
+            var response = client.Send(request, _requestStream, _responseStream);
 
                 // buffer the entire contents for now
                // var responseContentStream = new MemoryStream();

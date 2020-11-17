@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Reflection;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Xunit;
 
 namespace Datadog.Trace.Tests
