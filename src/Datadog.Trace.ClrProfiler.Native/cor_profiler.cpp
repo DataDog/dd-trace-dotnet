@@ -2236,6 +2236,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
       const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
       if (!caller.IsValid()) {
         Warn("The caller for the methoddef: ", HexStr(&methodDef, sizeof(mdMethodDef)), " is not valid!");
+        enumIterator = ++enumIterator;
         continue;
       }
 
@@ -2245,6 +2246,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
       if (FAILED(hr)) {
         Warn("The method signature: ", functionInfo->method_signature.str(), " cannot be parsed.");
         delete functionInfo;
+        enumIterator = ++enumIterator;
         continue;
       }
 
@@ -2253,6 +2255,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
       if (numOfArgs != integration.replacement.target_method.signature_types.size() - 1) {
         Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name, " doesn't have the right number of arguments.");
         delete functionInfo;
+        enumIterator = ++enumIterator;
         continue;
       }
 
@@ -2272,6 +2275,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
       if (argumentsMismatch) {
         Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name, " doesn't have the right type of arguments.");
         delete functionInfo;
+        enumIterator = ++enumIterator;
         continue;
       }
 
