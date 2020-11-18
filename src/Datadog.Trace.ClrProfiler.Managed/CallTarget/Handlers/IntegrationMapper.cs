@@ -86,13 +86,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
                 if (instanceGenericConstraint != null)
                 {
-                    ConstructorInfo ctor = instanceProxyType.GetConstructors()[0];
-                    if (targetType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
-                    {
-                        ilWriter.Emit(OpCodes.Box, targetType);
-                    }
-
-                    ilWriter.Emit(OpCodes.Newobj, ctor);
+                    WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
             }
 
@@ -127,14 +121,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ILHelpersExtensions.WriteLoadArgument(ilWriter, i, mustLoadInstance);
                 if (parameterProxyType != null)
                 {
-                    ConstructorInfo parameterProxyTypeCtor = parameterProxyType.GetConstructors()[0];
-
-                    if (sourceParameterType.IsValueType && !parameterProxyTypeCtor.GetParameters()[0].ParameterType.IsValueType)
-                    {
-                        ilWriter.Emit(OpCodes.Box, sourceParameterType);
-                    }
-
-                    ilWriter.Emit(OpCodes.Newobj, parameterProxyTypeCtor);
+                    WriteCreateNewProxyInstance(ilWriter, parameterProxyType, sourceParameterType);
                 }
             }
 
@@ -205,13 +192,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
                 if (instanceGenericConstraint != null)
                 {
-                    ConstructorInfo ctor = instanceProxyType.GetConstructors()[0];
-                    if (targetType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
-                    {
-                        ilWriter.Emit(OpCodes.Box, targetType);
-                    }
-
-                    ilWriter.Emit(OpCodes.Newobj, ctor);
+                    WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
             }
 
@@ -337,13 +318,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
                 if (instanceGenericConstraint != null)
                 {
-                    ConstructorInfo ctor = instanceProxyType.GetConstructors()[0];
-                    if (targetType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
-                    {
-                        ilWriter.Emit(OpCodes.Box, targetType);
-                    }
-
-                    ilWriter.Emit(OpCodes.Newobj, ctor);
+                    WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
             }
 
@@ -460,13 +435,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
                 if (instanceGenericConstraint != null)
                 {
-                    ConstructorInfo ctor = instanceProxyType.GetConstructors()[0];
-                    if (targetType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
-                    {
-                        ilWriter.Emit(OpCodes.Box, targetType);
-                    }
-
-                    ilWriter.Emit(OpCodes.Newobj, ctor);
+                    WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
             }
 
@@ -474,13 +443,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ilWriter.Emit(OpCodes.Ldarg_1);
             if (returnValueProxyType != null)
             {
-                ConstructorInfo ctor = returnValueProxyType.GetConstructors()[0];
-                if (returnType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
-                {
-                    ilWriter.Emit(OpCodes.Box, returnType);
-                }
-
-                ilWriter.Emit(OpCodes.Newobj, ctor);
+                WriteCreateNewProxyInstance(ilWriter, returnValueProxyType, returnType);
             }
 
             // Load the exception
@@ -604,13 +567,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
                 if (instanceGenericConstraint != null)
                 {
-                    ConstructorInfo ctor = instanceProxyType.GetConstructors()[0];
-                    if (targetType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
-                    {
-                        ilWriter.Emit(OpCodes.Box, targetType);
-                    }
-
-                    ilWriter.Emit(OpCodes.Newobj, ctor);
+                    WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
             }
 
@@ -618,13 +575,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ilWriter.Emit(OpCodes.Ldarg_1);
             if (returnValueProxyType != null)
             {
-                ConstructorInfo ctor = returnValueProxyType.GetConstructors()[0];
-                if (returnType.IsValueType && !ctor.GetParameters()[0].ParameterType.IsValueType)
-                {
-                    ilWriter.Emit(OpCodes.Box, returnType);
-                }
-
-                ilWriter.Emit(OpCodes.Newobj, ctor);
+                WriteCreateNewProxyInstance(ilWriter, returnValueProxyType, returnType);
             }
 
             // Load the exception
@@ -648,6 +599,18 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             Log.Debug($"Created AsyncEndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
             return callMethod;
+        }
+
+        private static void WriteCreateNewProxyInstance(ILGenerator ilWriter, Type proxyType, Type targetType)
+        {
+            ConstructorInfo proxyTypeCtor = proxyType.GetConstructors()[0];
+
+            if (targetType.IsValueType && !proxyTypeCtor.GetParameters()[0].ParameterType.IsValueType)
+            {
+                ilWriter.Emit(OpCodes.Box, targetType);
+            }
+
+            ilWriter.Emit(OpCodes.Newobj, proxyTypeCtor);
         }
 
         private static TTo UnwrapReturnValue<TFrom, TTo>(TFrom returnValue)
