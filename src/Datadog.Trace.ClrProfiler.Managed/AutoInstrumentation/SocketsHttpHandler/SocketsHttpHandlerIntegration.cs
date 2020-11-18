@@ -16,7 +16,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
         ParametersTypesNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
         MinimumVersion = "4.0.0",
-        MaximumVersion = "5.*.*")]
+        MaximumVersion = "5.*.*",
+        IntegrationName = IntegrationName)]
     public class SocketsHttpHandlerIntegration
     {
         private const string IntegrationName = "HttpMessageHandler";

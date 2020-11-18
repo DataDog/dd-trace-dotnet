@@ -26,7 +26,7 @@ namespace PrepareRelease
                                          let attributes = wrapperType.GetCustomAttributes<InstrumentMethodAttribute>(inherit: false)
                                          where attributes.Any()
                                          from attribute in attributes
-                                         let integrationName = GetIntegrationName(wrapperType)
+                                         let integrationName = attribute.IntegrationName
                                          orderby integrationName
                                          group new
                                          {
@@ -34,7 +34,7 @@ namespace PrepareRelease
                                              wrapperType,
                                              attribute
                                          }
-                                             by integrationName into g
+                                         by integrationName into g
                                          select new
                                          {
                                              name = g.Key,
@@ -43,16 +43,16 @@ namespace PrepareRelease
                                                                    {
                                                                        caller = new
                                                                        {
-                                                                           assembly = string.Empty,
-                                                                           type = string.Empty,
-                                                                           method = string.Empty
+                                                                           assembly = (string)null,
+                                                                           type = (string)null,
+                                                                           method = (string)null
                                                                        },
                                                                        target = new
                                                                        {
                                                                            assembly = item.attribute.Assembly,
                                                                            type = item.attribute.Type,
                                                                            method = item.attribute.Method,
-                                                                           signature = string.Empty,
+                                                                           signature = (string)null,
                                                                            signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParametersTypesNames).ToArray(),
                                                                            minimum_major = item.attribute.VersionRange.MinimumMajor,
                                                                            minimum_minor = item.attribute.VersionRange.MinimumMinor,
@@ -65,8 +65,8 @@ namespace PrepareRelease
                                                                        {
                                                                            assembly = item.assembly.FullName,
                                                                            type = item.wrapperType.FullName,
-                                                                           method = string.Empty,
-                                                                           signature = string.Empty,
+                                                                           method = (string)null,
+                                                                           signature = (string)null,
                                                                            action = MethodReplacementActionType.CallTargetModification.ToString()
                                                                        }
                                                                    }
