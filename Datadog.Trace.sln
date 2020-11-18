@@ -141,6 +141,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Npgsql", "test\test-applications\integrations\Samples.Npgsql\Samples.Npgsql.csproj", "{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Shared", "test\test-applications\integrations\dependency-libs\Samples.Shared\Samples.Shared.csproj", "{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964}"
@@ -374,8 +375,17 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox.ManualTracing", "test\test-applications\regression\Sandbox.ManualTracing\Sandbox.ManualTracing.csproj", "{6DF72F24-D842-4F1E-948C-ED89093325D6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer.NetFramework20", "test\test-applications\integrations\Samples.SqlServer.NetFramework20\Samples.SqlServer.NetFramework20.csproj", "{8276E670-FC3F-4EDE-9D51-6DAD90336C32}"
+	ProjectSection(ProjectDependencies) = postProject
+		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper.NetFramework20", "test\test-applications\integrations\dependency-libs\Samples.DatabaseHelper.NetFramework20\Samples.DatabaseHelper.NetFramework20.csproj", "{EC3C54CE-A3CD-434A-9E3C-DB6C5F5248EA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Microsoft.Data.SqlClient", "test\test-applications\integrations\Samples.Microsoft.Data.SqlClient\Samples.Microsoft.Data.SqlClient.csproj", "{AA88952E-9393-4A4B-85B5-CC7F03629CE1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -1387,6 +1397,16 @@ Global
 		{EC3C54CE-A3CD-434A-9E3C-DB6C5F5248EA}.Release|x64.Build.0 = Release|Any CPU
 		{EC3C54CE-A3CD-434A-9E3C-DB6C5F5248EA}.Release|x86.ActiveCfg = Release|Any CPU
 		{EC3C54CE-A3CD-434A-9E3C-DB6C5F5248EA}.Release|x86.Build.0 = Release|Any CPU
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Debug|x64.ActiveCfg = Debug|x64
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Debug|x64.Build.0 = Debug|x64
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Debug|x86.ActiveCfg = Debug|x86
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Debug|x86.Build.0 = Debug|x86
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Release|Any CPU.ActiveCfg = Release|x86
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Release|x64.ActiveCfg = Release|x64
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Release|x64.Build.0 = Release|x64
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Release|x86.ActiveCfg = Release|x86
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1495,6 +1515,7 @@ Global
 		{6DF72F24-D842-4F1E-948C-ED89093325D6} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{8276E670-FC3F-4EDE-9D51-6DAD90336C32} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{EC3C54CE-A3CD-434A-9E3C-DB6C5F5248EA} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
+		{AA88952E-9393-4A4B-85B5-CC7F03629CE1} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
