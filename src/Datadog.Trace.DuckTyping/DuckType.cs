@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -23,6 +24,37 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
+        static DuckType()
+        {
+            AppDomain.CurrentDomain.FirstChanceException += (o, e) =>
+            {
+                if (e.Exception is BadImageFormatException)
+                {
+                    MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(BadImageFormatException));
+                }
+
+                if (e.Exception is TypeLoadException)
+                {
+                    MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(TypeLoadException));
+                }
+
+                if (e.Exception is MissingMethodException && !e.Exception.Message.Contains("TestHelpers"))
+                {
+                    MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(MissingMethodException));
+                }
+
+                if (e.Exception is MissingFieldException)
+                {
+                    MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(MissingFieldException));
+                }
+
+                if (e.Exception is MissingMemberException && !e.Exception.Message.Contains("TestHelpers"))
+                {
+                    MiniDump.WriteDump(Process.GetCurrentProcess(), nameof(MissingMemberException));
+                }
+            };
+        }
+
         /// <summary>
         /// Create duck type proxy using a base type
         /// </summary>
@@ -81,7 +113,7 @@ namespace Datadog.Trace.DuckTyping
                     // If the proxy type definition is an interface we create an struct proxy
                     // If the proxy type definition is an struct then we use that struct to copy the values from the target type
                     parentType = typeof(ValueType);
-                    typeAttributes = TypeAttributes.Public | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.SequentialLayout | TypeAttributes.Sealed | TypeAttributes.Serializable;
+                    typeAttributes = TypeAttributes.Public | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed | TypeAttributes.Serializable;
                     if (proxyDefinitionType.IsInterface)
                     {
                         interfaceTypes = new[] { proxyDefinitionType, typeof(IDuckType) };
@@ -120,11 +152,12 @@ namespace Datadog.Trace.DuckTyping
                     AssemblyName asmName = targetType.Assembly.GetName();
                     assembly = asmName.Name;
                     byte[] pbToken = asmName.GetPublicKeyToken();
-                    assembly += "__" + BitConverter.ToString(pbToken).Replace("-", string.Empty);
+                    assembly += "_" + BitConverter.ToString(pbToken).Replace("-", string.Empty);
+                    assembly = assembly.Replace(".", "_").Replace("+", "__");
                 }
 
                 // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
-                string proxyTypeName = $"{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}____{targetType.FullName.Replace(".", "_").Replace("+", "__")}___{assembly.Replace(".", "_").Replace("+", "__")}";
+                string proxyTypeName = $"{assembly}.{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}____{targetType.FullName.Replace(".", "_").Replace("+", "__")}";
 
                 // Create Type
                 TypeBuilder proxyTypeBuilder = _moduleBuilder.DefineType(
