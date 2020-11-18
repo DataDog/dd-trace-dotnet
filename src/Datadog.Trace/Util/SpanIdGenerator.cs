@@ -2,7 +2,7 @@ using System;
 
 namespace Datadog.Trace.Util
 {
-    internal class SpanIdGenerator
+    internal static class SpanIdGenerator
     {
 #if NETFRAMEWORK
         private static readonly Random GlobalSeedGenerator = new Random();
