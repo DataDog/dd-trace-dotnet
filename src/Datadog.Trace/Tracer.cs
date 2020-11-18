@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -43,9 +42,10 @@ namespace Datadog.Trace
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new object();
 
+        private static RuntimeMetricsWriter _runtimeMetricsWriter;
+
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
-        private readonly RuntimeMetricsWriter _runtimeMetricsWriter;
 
         private IAgentWriter _agentWriter;
 

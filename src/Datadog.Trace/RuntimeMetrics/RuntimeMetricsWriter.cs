@@ -1,13 +1,15 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
 {
     internal class RuntimeMetricsWriter : IDisposable
     {
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RuntimeMetricsWriter>();
         private static readonly string[] GcCountMetricNames = { "runtime.dotnet.gc.count.gen0", "runtime.dotnet.gc.count.gen1", "runtime.dotnet.gc.count.gen2" };
         private static readonly string[] CompactingGcTags = { "compacting_gc:true" };
         private static readonly string[] NotCompactingGcTags = { "compacting_gc:false" };
@@ -16,13 +18,13 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly IDogStatsd _statsd;
         private readonly Timer _timer;
-        private readonly Process _currentProcess;
 
 #if NETCOREAPP
         private readonly RuntimeEventListener _listener;
 #endif
 
         private readonly Timing _contentionTime = new Timing();
+        private readonly bool _enableProcessMetrics;
 
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
@@ -34,12 +36,30 @@ namespace Datadog.Trace.RuntimeMetrics
             _delay = delay;
             _statsd = statsd;
             _timer = new Timer(_ => PushEvents(), null, delay, delay);
-            _currentProcess = Process.GetCurrentProcess();
-            AppDomain.CurrentDomain.FirstChanceException += FirstChanceException;
 
-            _previousUserCpu = _currentProcess.UserProcessorTime;
-            _previousSystemCpu = _currentProcess.PrivilegedProcessorTime;
+            try
+            {
+                AppDomain.CurrentDomain.FirstChanceException += FirstChanceException;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "First chance exceptions won't be monitored");
+            }
 
+            try
+            {
+                ProcessHelpers.GetCurrentProcessRuntimeMetrics(out var userCpu, out var systemCpu, out _, out _);
+
+                _previousUserCpu = userCpu;
+                _previousSystemCpu = systemCpu;
+
+                _enableProcessMetrics = true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to get current process information");
+                _enableProcessMetrics = false;
+            }
 #if NETCOREAPP
             _listener = new RuntimeEventListener();
             _listener.GcHeapStats += GcHeapStats;
@@ -52,7 +72,6 @@ namespace Datadog.Trace.RuntimeMetrics
         public void Dispose()
         {
             _timer.Dispose();
-            _currentProcess.Dispose();
 
 #if NETCOREAPP
             _listener.Dispose();
@@ -97,35 +116,39 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private void PushEvents()
         {
-            _currentProcess.Refresh();
+            try
+            {
+                if (_enableProcessMetrics)
+                {
+                    ProcessHelpers.GetCurrentProcessRuntimeMetrics(out var newUserCpu, out var newSystemCpu, out var threadCount, out var memoryUsage);
 
-            var newUserCpu = _currentProcess.UserProcessorTime;
-            var newSystemCpu = _currentProcess.PrivilegedProcessorTime;
+                    // Get the CPU time per second
+                    var userCpu = (newUserCpu - _previousUserCpu).TotalMilliseconds / (_delay / 1000.0);
+                    var systemCpu = (newSystemCpu - _previousSystemCpu).TotalMilliseconds / (_delay / 1000.0);
 
-            // Get the CPU time per second
-            var userCpu = (newUserCpu - _previousUserCpu).TotalMilliseconds / (_delay / 1000.0);
-            var systemCpu = (newSystemCpu - _previousSystemCpu).TotalMilliseconds / (_delay / 1000.0);
+                    _previousUserCpu = newUserCpu;
+                    _previousSystemCpu = newSystemCpu;
 
-            _previousUserCpu = newUserCpu;
-            _previousSystemCpu = newSystemCpu;
+                    _statsd.Gauge("runtime.dotnet.threads.count", threadCount);
 
-            var threadCount = _currentProcess.Threads.Count;
-            var memoryUsage = _currentProcess.PrivateMemorySize64;
+                    _statsd.Gauge("runtime.dotnet.mem.committed", memoryUsage);
+                    _statsd.Gauge("runtime.dotnet.cpu.user", userCpu);
+                    _statsd.Gauge("runtime.dotnet.cpu.system", systemCpu);
+                }
 
-            // Can't use a Timing because Dogstatsd doesn't support local aggregation
-            // It means that the aggregations in the UI would be wrong
-            _statsd.Gauge("runtime.dotnet.threads.contention_time", _contentionTime.Clear());
-            _statsd.Counter("runtime.dotnet.threads.contention_count", Interlocked.Exchange(ref _contentionCount, 0));
-
-            _statsd.Gauge("runtime.dotnet.threads.count", threadCount);
+                // Can't use a Timing because Dogstatsd doesn't support local aggregation
+                // It means that the aggregations in the UI would be wrong
+                _statsd.Gauge("runtime.dotnet.threads.contention_time", _contentionTime.Clear());
+                _statsd.Counter("runtime.dotnet.threads.contention_count", Interlocked.Exchange(ref _contentionCount, 0));
 
 #if NETCOREAPP
             _statsd.Gauge("runtime.dotnet.threads.workers_count", ThreadPool.ThreadCount);
 #endif
-
-            _statsd.Gauge("runtime.dotnet.mem.committed", memoryUsage);
-            _statsd.Gauge("runtime.dotnet.cpu.user", userCpu);
-            _statsd.Gauge("runtime.dotnet.cpu.system", systemCpu);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error while updating runtime metrics");
+            }
         }
     }
 }
