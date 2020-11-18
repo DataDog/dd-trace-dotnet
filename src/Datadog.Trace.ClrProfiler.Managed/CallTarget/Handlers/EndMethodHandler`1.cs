@@ -28,23 +28,19 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 throw new CallTargetInvokerException(ex);
             }
 
-            Type resultType = typeof(void);
-
             if (returnType.IsGenericType)
             {
-                resultType = ContinuationsHelper.GetResultType(returnType);
-
                 Type genericReturnType = returnType.GetGenericTypeDefinition();
                 if (typeof(Task).IsAssignableFrom(returnType))
                 {
                     // The type is a Task<>
-                    _continuationGenerator = (ContinuationGenerator<TIntegration, TTarget, TReturn>)Activator.CreateInstance(typeof(TaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, resultType));
+                    _continuationGenerator = (ContinuationGenerator<TIntegration, TTarget, TReturn>)Activator.CreateInstance(typeof(TaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
                 }
 #if NETCOREAPP3_1 || NET5_0
                 else if (genericReturnType == typeof(ValueTask<>))
                 {
                     // The type is a ValueTask<>
-                    _continuationGenerator = (ContinuationGenerator<TIntegration, TTarget, TReturn>)Activator.CreateInstance(typeof(ValueTaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, resultType));
+                    _continuationGenerator = (ContinuationGenerator<TIntegration, TTarget, TReturn>)Activator.CreateInstance(typeof(ValueTaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
                 }
 #endif
             }
