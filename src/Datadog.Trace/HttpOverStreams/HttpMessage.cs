@@ -1,10 +1,12 @@
+using System;
 using System.Text;
-using HttpOverStream;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.HttpOverStreams
 {
     internal abstract class HttpMessage
     {
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<HttpMessage>();
         private static readonly UTF8Encoding Utf8Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
         public HttpMessage(HttpHeaders headers, IHttpContent content)
@@ -28,6 +30,12 @@ namespace Datadog.Trace.HttpOverStreams
                 return null;
             }
 
+            if (string.Equals("application/json", ContentType, StringComparison.InvariantCultureIgnoreCase))
+            {
+                // Default
+                return Utf8Encoding;
+            }
+
             // text/plain; charset=utf-8
             string[] pairs = ContentType?.Split(';');
 
@@ -47,7 +55,8 @@ namespace Datadog.Trace.HttpOverStreams
                 }
             }
 
-            return null;
+            Log.Warning("Assuming default UTF-8, Could not find an encoding for: {0}", ContentType);
+            return Utf8Encoding;
         }
     }
 }

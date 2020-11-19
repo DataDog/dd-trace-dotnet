@@ -16,7 +16,7 @@ namespace Datadog.Trace
     /// </summary>
     internal class TracingProcessManager
     {
-        internal static readonly int KeepAliveInterval = 120_000;
+        internal static readonly int KeepAliveInterval = 10_000;
         internal static readonly int ExceptionRetryInterval = 1_000;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
@@ -135,7 +135,7 @@ namespace Datadog.Trace
                                 Log.Debug("Starting {0}.", path);
                                 metadata.Process = Process.Start(startInfo);
 
-                                await Task.Delay(150, _cancellationTokenSource.Token);
+                                await Task.Delay(150, _cancellationTokenSource.Token).ConfigureAwait(false);
 
                                 if (metadata.Process == null || metadata.Process.HasExited)
                                 {
@@ -146,7 +146,6 @@ namespace Datadog.Trace
                                 {
                                     Log.Debug("Successfully started {0}.", path);
                                     sequentialFailures = 0;
-                                    Log.Debug("Finished calling port subscribers for {0}.", metadata.Name);
                                 }
                             }
                             catch (Exception ex)
@@ -162,11 +161,11 @@ namespace Datadog.Trace
                                 if (metadata.IsFaulted)
                                 {
                                     // Quicker retry in these cases
-                                    await Task.Delay(ExceptionRetryInterval, _cancellationTokenSource.Token);
+                                    await Task.Delay(ExceptionRetryInterval, _cancellationTokenSource.Token).ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    await Task.Delay(KeepAliveInterval, _cancellationTokenSource.Token);
+                                    await Task.Delay(KeepAliveInterval, _cancellationTokenSource.Token).ConfigureAwait(false);
                                 }
                             }
 
@@ -238,7 +237,7 @@ namespace Datadog.Trace
                     var fileName = Path.GetFileNameWithoutExtension(ProcessPath);
                     var processesByName = Process.GetProcessesByName(fileName);
 
-                    if (processesByName?.Length > 0)
+                    if (processesByName.Length > 0)
                     {
                         // We enforce a unique enough naming within contexts where we would use child processes
                         return true;

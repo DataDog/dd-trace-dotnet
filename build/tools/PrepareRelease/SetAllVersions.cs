@@ -78,7 +78,13 @@ namespace PrepareRelease
             // Four-part AssemblyVersion update
             SynchronizeVersion(
                 "src/Datadog.Trace/TracerConstants.cs",
-                FourPartVersionReplace);
+                text =>
+                {
+                    text = Regex.Replace(text, @"int Major = \d+", $"int Major = {TracerVersion.Major}", RegexOptions.Singleline);
+                    text = Regex.Replace(text, @"int Minor = \d+", $"int Minor = {TracerVersion.Minor}", RegexOptions.Singleline);
+                    text = Regex.Replace(text, @"int Patch = \d+", $"int Patch = {TracerVersion.Patch}", RegexOptions.Singleline);
+                    return FourPartVersionReplace(text);
+                });
 
             // Locked AssemblyVersion #.0.0.0 updates
             SynchronizeVersion(

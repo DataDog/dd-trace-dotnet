@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using HttpOverStream;
 
 namespace Datadog.Trace.HttpOverStreams.HttpContent
 {
@@ -18,18 +17,6 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
         public Stream Stream { get; }
 
         public long? Length { get; }
-
-        public void CopyTo(Stream destination)
-        {
-            if (Length != null)
-            {
-                CopyTo(destination, (int)Length);
-            }
-            else
-            {
-                Stream.CopyTo(destination);
-            }
-        }
 
         public void CopyTo(Stream destination, int count)
         {

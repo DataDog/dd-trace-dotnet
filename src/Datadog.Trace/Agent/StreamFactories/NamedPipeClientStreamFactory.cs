@@ -1,6 +1,5 @@
 using System.IO;
 using System.IO.Pipes;
-using System.Security.Principal;
 
 namespace Datadog.Trace.Agent.StreamFactories
 {
@@ -16,7 +15,7 @@ namespace Datadog.Trace.Agent.StreamFactories
         {
         }
 
-        public NamedPipeClientStreamFactory(string pipeName, string serverName, PipeOptions pipeOptions, int timeoutMs, TokenImpersonationLevel impersonationLevel = TokenImpersonationLevel.Identification)
+        public NamedPipeClientStreamFactory(string pipeName, string serverName, PipeOptions pipeOptions, int timeoutMs)
         {
             _pipeName = pipeName;
             _serverName = serverName;
@@ -24,12 +23,16 @@ namespace Datadog.Trace.Agent.StreamFactories
             _timeoutMs = timeoutMs;
         }
 
-        public void GetStreams(out Stream requestStream, out Stream responseStream)
+        public string Info()
+        {
+            return $@"\\{_serverName}\pipe\{_pipeName}";
+        }
+
+        public Stream GetBidirectionalStream()
         {
             var pipeStream = new NamedPipeClientStream(_serverName, _pipeName, PipeDirection.InOut, _pipeOptions);
             pipeStream.Connect(_timeoutMs);
-            requestStream = pipeStream;
-            responseStream = pipeStream;
+            return pipeStream;
         }
     }
 }

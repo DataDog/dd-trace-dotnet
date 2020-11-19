@@ -20,6 +20,11 @@ namespace Datadog.Trace.Agent.Transports
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 
+        public string Info(Uri endpoint)
+        {
+            return endpoint.ToString();
+        }
+
         public IApiRequest Create(Uri endpoint)
         {
             return new HttpClientRequest(_client, endpoint);

@@ -1,7 +1,6 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using HttpOverStream;
 
 namespace Datadog.Trace.HttpOverStreams.HttpContent
 {
@@ -21,14 +20,6 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
         public Encoding Encoding { get; }
 
         public long? Length { get; }
-
-        public void CopyTo(Stream destination)
-        {
-            using (var writer = new StreamWriter(destination, Encoding, BufferSize, leaveOpen: true))
-            {
-                writer.Write(Value);
-            }
-        }
 
         public async Task CopyToAsync(Stream destination)
         {

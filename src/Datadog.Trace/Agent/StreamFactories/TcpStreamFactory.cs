@@ -16,21 +16,22 @@ namespace Datadog.Trace.Agent.StreamFactories
             _port = port;
         }
 
-        public void GetStreams(out Stream requestStream, out Stream responseStream)
+        public string Info()
         {
-            var stream = ConnectSocket(_host, _port);
-            requestStream = stream;
-            responseStream = stream;
+            return nameof(TcpStreamFactory);
+        }
+
+        public Stream GetBidirectionalStream()
+        {
+            return ConnectSocket(_host, _port);
         }
 
         private static NetworkStream ConnectSocket(string host, int port)
         {
             var ipAddress = Dns.GetHostAddresses(host).FirstOrDefault(t => t.AddressFamily == AddressFamily.InterNetwork);
             var endpoint = new IPEndPoint(ipAddress, port);
-
             var socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             socket.Connect(endpoint);
-
             return new NetworkStream(socket, FileAccess.ReadWrite, ownsSocket: true);
         }
     }

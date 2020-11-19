@@ -1,13 +1,11 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
 {
     internal interface IApiRequestFactory
     {
+        string Info(Uri endpoint);
+
         IApiRequest Create(Uri endpoint);
     }
 }

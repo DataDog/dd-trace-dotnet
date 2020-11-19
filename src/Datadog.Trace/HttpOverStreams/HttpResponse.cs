@@ -1,5 +1,3 @@
-using HttpOverStream;
-
 namespace Datadog.Trace.HttpOverStreams
 {
     internal class HttpResponse : HttpMessage
