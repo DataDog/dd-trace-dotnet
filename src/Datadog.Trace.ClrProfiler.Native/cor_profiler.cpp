@@ -328,7 +328,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hr_status) {
-  Info("ModuleLoadFinished: ", module_id);
   if (FAILED(hr_status)) {
     // if module failed to load, skip it entirely,
     // otherwise we can crash the process if module is not valid
@@ -713,9 +712,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId,
   if (rejit_handler->TryGetModule(calleeModuleId, &handlerModule)) {
     RejitHandlerModuleMethod* handlerMethod = nullptr;
     if (handlerModule->TryGetMethod(calleFunctionToken, &handlerMethod)) {
-      Info("*** JITInlining: Inlining disabled for:  moduleId: ", calleeModuleId,
-           " MethodDef: ", HexStr(&calleFunctionToken, sizeof(mdMethodDef)),
-           "]");
+      Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
+           ", MethodDef=", HexStr(&calleFunctionToken, sizeof(mdMethodDef)), "]");
       *pfShouldInline = false;
       return S_OK;
     } 
@@ -2267,7 +2265,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
         const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadata_import);
         const auto integrationArgumentTypeName = integration.replacement.target_method.signature_types[i + 1];
         Debug("  -> ", argumentTypeName, " = ", integrationArgumentTypeName);
-        if (argumentTypeName != integrationArgumentTypeName) {
+        if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != "_"_W) {
           argumentsMismatch = true;
           break;
         }
@@ -2318,6 +2316,50 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
 
 /// <summary>
 /// Rewrite the target method body with the calltarget implementation. (This is function is triggered by the ReJIT handler)
+/// Resulting code structure:
+/// 
+/// - Add locals for TReturn (if non-void method), CallTargetState, CallTargetReturn/CallTargetReturn<TReturn>, Exception
+/// - Initialize locals
+///
+/// try
+/// {
+///   try
+///   {
+///     try
+///     {
+///       - Invoke BeginMethod with object instance (or null if static method) and original method arguments
+///       - Store result into CallTargetState local
+///     }
+///     catch
+///     {
+///       - Invoke LogException(Exception)
+///     }
+///
+///     - Execute original method instructions
+///       * All RET instructions are replaced with a LEAVE_S. If non-void method, the value on the stack is first stored in the TReturn local.
+///   }
+///   catch (Exception)
+///   {
+///     - Store exception into Exception local
+///     - throw
+///   }
+/// }
+/// finally
+/// {
+///   try
+///   {
+///     - Invoke EndMethod with object instance (or null if static method), TReturn local (if non-void method), CallTargetState local, and Exception local
+///     - Store result into CallTargetReturn/CallTargetReturn<TReturn> local
+///     - If non-void method, store CallTargetReturn<TReturn>.GetReturnValue() into TReturn local
+///   }
+///   catch
+///   {
+///     - Invoke LogException(Exception)
+///   }
+/// }
+///
+/// - If non-void method, load TReturn local
+/// - RET
 /// </summary>
 /// <param name="moduleHandler">Module ReJIT handler representation</param>
 /// <param name="methodHandler">Method ReJIT handler representation</param>
@@ -2447,7 +2489,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         auto tok = methodArguments[i].GetTypeTok(
             metaEmit, callTargetTokens->GetCorLibAssemblyRef());
         if (tok == mdTokenNil) {
-          return S_OK;
+          return E_FAIL;
         }
         reWriterWrapper.Box(tok);
       }
@@ -2610,7 +2652,6 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
   }
   reWriterWrapper.StLocal(callTargetReturnIndex);
 
-  // TODO: Get the return value from ENDMETHOD and copy it to the local var
   if (!isVoid) {
     ILInstr* callTargetReturnGetReturnInstr;
     reWriterWrapper.LoadLocalAddress(callTargetReturnIndex);
@@ -2652,7 +2693,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
   // Resolving branching to the end of the method
   methodCatchLeaveInstr->m_pTarget = endFinallyInstr->m_pNext;
   
-  // Changes all returns to a BOX+LEAVE.S
+  // Changes all returns to a LEAVE.S
   for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
        pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
     switch (pInstr->m_opcode) {

@@ -1364,7 +1364,7 @@ bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd,
     FNPTR MethodDefSig
     FNPTR MethodRefSig
     ARRAY Type ArrayShape
-    CustomMod*
+    SZARRAY CustomMod+ Type (but we do support SZARRAY Type)
  */
 bool ParseType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd) {
   /*

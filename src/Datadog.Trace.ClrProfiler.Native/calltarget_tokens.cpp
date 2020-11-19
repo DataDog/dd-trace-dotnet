@@ -400,7 +400,7 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
   mdMethodSpec getDefaultMethodSpec = mdMethodSpecNil;
   ModuleMetadata* module_metadata = GetMetadata();
 
-  // *** Ensure we have the CallTargetInvoker.GetDefault<> memberRef
+  // *** Ensure we have the CallTargetInvoker.GetDefaultValue<> memberRef
   if (getDefaultMemberRef == mdMemberRefNil) {
     auto signatureLength = 5;
     auto* signature = new COR_SIGNATURE[signatureLength];
