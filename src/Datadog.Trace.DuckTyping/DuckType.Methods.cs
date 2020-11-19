@@ -42,6 +42,9 @@ namespace Datadog.Trace.DuckTyping
             {
                 foreach (MethodInfo method in baseType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
+                    // Avoid proxying object methods like ToString(), GetHashCode()
+                    // or the Finalize() that creates problems by keeping alive the object to another collection.
+                    // You can still proxy those methods if they are defined in an interface.
                     if (method.DeclaringType == typeof(object))
                     {
                         continue;

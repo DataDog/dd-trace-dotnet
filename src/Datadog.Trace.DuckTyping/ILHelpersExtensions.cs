@@ -13,7 +13,6 @@ namespace Datadog.Trace.DuckTyping
     {
         private static Func<DynamicMethod, RuntimeMethodHandle> _dynamicGetMethodDescriptor;
         private static List<RuntimeMethodHandle> _handles = new List<RuntimeMethodHandle>();
-        private static MethodInfo _getFunctionPointerFromMethodIndex = typeof(DuckType).GetMethod(nameof(DuckType.GetFunctionPointerFromMethodHandlerIndex), BindingFlags.Public | BindingFlags.Static);
 
         static ILHelpersExtensions()
         {
@@ -241,37 +240,24 @@ namespace Datadog.Trace.DuckTyping
                 // Dynamic methods doesn't expose the internal function pointer
                 // so we have to get it using a delegate from reflection.
                 handle = _dynamicGetMethodDescriptor(dynMethod);
-                int index = -1;
                 lock (_handles)
                 {
                     _handles.Add(handle);
-                    index = _handles.Count - 1;
                 }
-
-                il.Emit(OpCodes.Ldc_I4, index);
-                il.EmitCall(OpCodes.Call, _getFunctionPointerFromMethodIndex, null);
             }
             else
             {
                 handle = method.MethodHandle;
-                il.Emit(OpCodes.Ldc_I8, (long)handle.GetFunctionPointer());
-                il.Emit(OpCodes.Conv_I);
             }
 
+            il.Emit(OpCodes.Ldc_I8, (long)handle.GetFunctionPointer());
+            il.Emit(OpCodes.Conv_I);
             il.EmitCalli(
                 OpCodes.Calli,
                 method.CallingConvention,
                 method.ReturnType,
                 methodParameters ?? method.GetParameters().Select(p => p.ParameterType).ToArray(),
                 null);
-        }
-
-        internal static RuntimeMethodHandle GetHandleFromIndex(int index)
-        {
-            lock (_handles)
-            {
-                return _handles[index];
-            }
         }
     }
 }

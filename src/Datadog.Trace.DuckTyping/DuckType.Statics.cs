@@ -38,15 +38,5 @@ namespace Datadog.Trace.DuckTyping
         private static ModuleBuilder _moduleBuilder = null;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static AssemblyBuilder _assemblyBuilder = null;
-
-        /// <summary>
-        /// Gets the function pointer from a method handler index
-        /// </summary>
-        /// <param name="index">Index of the method handler</param>
-        /// <returns>Function pointer</returns>
-        public static IntPtr GetFunctionPointerFromMethodHandlerIndex(int index)
-        {
-            return ILHelpersExtensions.GetHandleFromIndex(index).GetFunctionPointer();
-        }
     }
 }
