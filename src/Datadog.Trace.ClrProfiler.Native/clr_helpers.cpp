@@ -1492,9 +1492,7 @@ bool ParseParam(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd) {
 
   if (*pbCur == ELEMENT_TYPE_BYREF) pbCur++;
 
-  if (!ParseType(pbCur, pbEnd)) return false;
-
-  return true;
+  return ParseType(pbCur, pbEnd);
 }
 
 // RetType ::= CustomMod* ( VOID | TYPEDBYREF | [BYREF] Type )
