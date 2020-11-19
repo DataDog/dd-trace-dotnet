@@ -46,7 +46,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // We create the dynamic method
                 Type[] dynParameters = targetField.IsStatic ? Type.EmptyTypes : new[] { typeof(object) };
-                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, typeof(DuckType).Module, true);
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, _moduleBuilder, true);
 
                 // We store the dynamic method in a bag to avoid getting collected by the GC.
                 DynamicMethods.Add(dynMethod);
@@ -94,6 +94,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             il.Emit(OpCodes.Ret);
+            _methodBuilderGetToken.Invoke(proxyMethod, null);
             return proxyMethod;
         }
 
@@ -156,7 +157,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create dynamic method
                 Type[] dynParameters = targetField.IsStatic ? new[] { dynValueType } : new[] { typeof(object), dynValueType };
-                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, typeof(DuckType).Module, true);
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, _moduleBuilder, true);
                 DynamicMethods.Add(dynMethod);
 
                 // Write the dynamic method body
@@ -187,6 +188,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             il.Emit(OpCodes.Ret);
+            _methodBuilderGetToken.Invoke(method, null);
             return method;
         }
     }

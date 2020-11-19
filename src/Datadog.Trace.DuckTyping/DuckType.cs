@@ -70,108 +70,107 @@ namespace Datadog.Trace.DuckTyping
 
         private static CreateTypeResult CreateProxyType(Type proxyDefinitionType, Type targetType)
         {
-            try
+            lock (_locker)
             {
-                // Define parent type, interface types
-                Type parentType;
-                TypeAttributes typeAttributes;
-                Type[] interfaceTypes;
-                if (proxyDefinitionType.IsInterface || proxyDefinitionType.IsValueType)
+                try
                 {
-                    // If the proxy type definition is an interface we create an struct proxy
-                    // If the proxy type definition is an struct then we use that struct to copy the values from the target type
-                    parentType = typeof(ValueType);
-                    typeAttributes = TypeAttributes.Public | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.SequentialLayout | TypeAttributes.Sealed | TypeAttributes.Serializable;
-                    if (proxyDefinitionType.IsInterface)
+                    // Define parent type, interface types
+                    Type parentType;
+                    TypeAttributes typeAttributes;
+                    Type[] interfaceTypes;
+                    if (proxyDefinitionType.IsInterface || proxyDefinitionType.IsValueType)
                     {
-                        interfaceTypes = new[] { proxyDefinitionType, typeof(IDuckType) };
+                        // If the proxy type definition is an interface we create an struct proxy
+                        // If the proxy type definition is an struct then we use that struct to copy the values from the target type
+                        parentType = typeof(ValueType);
+                        typeAttributes = TypeAttributes.Public | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.SequentialLayout | TypeAttributes.Sealed | TypeAttributes.Serializable;
+                        if (proxyDefinitionType.IsInterface)
+                        {
+                            interfaceTypes = new[] { proxyDefinitionType, typeof(IDuckType) };
+                        }
+                        else
+                        {
+                            interfaceTypes = new[] { typeof(IDuckType) };
+                        }
                     }
                     else
                     {
+                        // If the proxy type definition is a class then we create a class proxy
+                        parentType = proxyDefinitionType;
+                        typeAttributes = TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed;
                         interfaceTypes = new[] { typeof(IDuckType) };
                     }
-                }
-                else
-                {
-                    // If the proxy type definition is a class then we create a class proxy
-                    parentType = proxyDefinitionType;
-                    typeAttributes = TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed;
-                    interfaceTypes = new[] { typeof(IDuckType) };
-                }
 
-                // Ensures the module builder
-                if (_moduleBuilder is null)
-                {
-                    lock (_locker)
+                    // Ensures the module builder
+                    if (_moduleBuilder is null)
                     {
-                        if (_moduleBuilder is null)
-                        {
-                            AssemblyName aName = new AssemblyName("DuckTypeAssembly");
-                            _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.Run);
-                            _moduleBuilder = _assemblyBuilder.DefineDynamicModule("MainModule");
-                        }
+                        var id = Guid.NewGuid().ToString("N");
+                        AssemblyName aName = new AssemblyName("DuckTypeAssembly._" + id);
+                        _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.Run);
+                        _moduleBuilder = _assemblyBuilder.DefineDynamicModule("MainModule");
+                    }
+
+                    string assembly = string.Empty;
+                    if (targetType.Assembly != null)
+                    {
+                        // Include target assembly name and public token.
+                        AssemblyName asmName = targetType.Assembly.GetName();
+                        assembly = asmName.Name;
+                        byte[] pbToken = asmName.GetPublicKeyToken();
+                        assembly += "__" + BitConverter.ToString(pbToken).Replace("-", string.Empty);
+                        assembly = assembly.Replace(".", "_").Replace("+", "__");
+                    }
+
+                    // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
+                    string proxyTypeName = $"{assembly}.{targetType.FullName.Replace(".", "_").Replace("+", "__")}.{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}";
+
+                    // Create Type
+                    TypeBuilder proxyTypeBuilder = _moduleBuilder.DefineType(
+                        proxyTypeName,
+                        typeAttributes,
+                        parentType,
+                        interfaceTypes);
+
+                    // Create IDuckType and IDuckTypeSetter implementations
+                    FieldInfo instanceField = CreateIDuckTypeImplementation(proxyTypeBuilder, targetType);
+
+                    // Define .ctor to store the instance field
+                    ConstructorBuilder ctorBuilder = proxyTypeBuilder.DefineConstructor(
+                        MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
+                        CallingConventions.Standard,
+                        new[] { instanceField.FieldType });
+                    ILGenerator ctorIL = ctorBuilder.GetILGenerator();
+                    ctorIL.Emit(OpCodes.Ldarg_0);
+                    ctorIL.Emit(OpCodes.Ldarg_1);
+                    ctorIL.Emit(OpCodes.Stfld, instanceField);
+                    ctorIL.Emit(OpCodes.Ret);
+
+                    if (proxyDefinitionType.IsValueType)
+                    {
+                        // Create Fields and Properties from the struct information
+                        CreatePropertiesFromStruct(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
+
+                        // Create Type
+                        Type proxyType = proxyTypeBuilder.CreateTypeInfo().AsType();
+                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, CreateStructCopyMethod(proxyDefinitionType, proxyType, targetType), null);
+                    }
+                    else
+                    {
+                        // Create Fields and Properties
+                        CreateProperties(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
+
+                        // Create Methods
+                        CreateMethods(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
+
+                        // Create Type
+                        Type proxyType = proxyTypeBuilder.CreateTypeInfo().AsType();
+                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(proxyDefinitionType, proxyType, targetType), null);
                     }
                 }
-
-                string assembly = string.Empty;
-                if (targetType.Assembly != null)
+                catch (Exception ex)
                 {
-                    // Include target assembly name and public token.
-                    AssemblyName asmName = targetType.Assembly.GetName();
-                    assembly = asmName.Name;
-                    byte[] pbToken = asmName.GetPublicKeyToken();
-                    assembly += "__" + BitConverter.ToString(pbToken).Replace("-", string.Empty);
+                    return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex));
                 }
-
-                // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
-                string proxyTypeName = $"{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}____{targetType.FullName.Replace(".", "_").Replace("+", "__")}___{assembly.Replace(".", "_").Replace("+", "__")}";
-
-                // Create Type
-                TypeBuilder proxyTypeBuilder = _moduleBuilder.DefineType(
-                    proxyTypeName,
-                    typeAttributes,
-                    parentType,
-                    interfaceTypes);
-
-                // Create IDuckType and IDuckTypeSetter implementations
-                FieldInfo instanceField = CreateIDuckTypeImplementation(proxyTypeBuilder, targetType);
-
-                // Define .ctor to store the instance field
-                ConstructorBuilder ctorBuilder = proxyTypeBuilder.DefineConstructor(
-                    MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
-                    CallingConventions.Standard,
-                    new[] { instanceField.FieldType });
-                ILGenerator ctorIL = ctorBuilder.GetILGenerator();
-                ctorIL.Emit(OpCodes.Ldarg_0);
-                ctorIL.Emit(OpCodes.Ldarg_1);
-                ctorIL.Emit(OpCodes.Stfld, instanceField);
-                ctorIL.Emit(OpCodes.Ret);
-
-                if (proxyDefinitionType.IsValueType)
-                {
-                    // Create Fields and Properties from the struct information
-                    CreatePropertiesFromStruct(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
-
-                    // Create Type
-                    Type proxyType = proxyTypeBuilder.CreateTypeInfo().AsType();
-                    return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, CreateStructCopyMethod(proxyDefinitionType, proxyType, targetType), null);
-                }
-                else
-                {
-                    // Create Fields and Properties
-                    CreateProperties(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
-
-                    // Create Methods
-                    CreateMethods(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
-
-                    // Create Type
-                    Type proxyType = proxyTypeBuilder.CreateTypeInfo().AsType();
-                    return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(proxyDefinitionType, proxyType, targetType), null);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex));
             }
         }
 
