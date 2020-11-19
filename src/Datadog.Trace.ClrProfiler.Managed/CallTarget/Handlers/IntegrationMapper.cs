@@ -226,8 +226,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 {
                     ilWriter.EmitCall(OpCodes.Call, ConvertTypeMethodInfo.MakeGenericMethod(targetParameterTypeConstraint), null);
                 }
-
-                if (targetParameterType.IsValueType)
+                else if (targetParameterType.IsValueType)
                 {
                     ilWriter.Emit(OpCodes.Unbox_Any, targetParameterType);
                 }
@@ -248,7 +247,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType)
         {
             Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
-            MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndAsyncMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodEndMethodInfo is null)
             {
                 return null;
@@ -256,33 +255,33 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             if (onMethodEndMethodInfo.ReturnType != typeof(CallTargetReturn))
             {
-                throw new ArgumentException($"The return type of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
+                throw new ArgumentException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
             }
 
             Type[] genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
             if (genericArgumentsTypes.Length != 1)
             {
-                throw new ArgumentException($"The method: {EndAsyncMethodName} in type: {integrationType.FullName} must have a single generic type for the instance type.");
+                throw new ArgumentException($"The method: {EndMethodName} in type: {integrationType.FullName} must have a single generic type for the instance type.");
             }
 
             ParameterInfo[] onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
             if (onMethodEndParameters.Length < 2)
             {
-                throw new ArgumentException($"The method: {EndAsyncMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has less parameters than required.");
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has less parameters than required.");
             }
             else if (onMethodEndParameters.Length > 3)
             {
-                throw new ArgumentException($"The method: {EndAsyncMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
             }
 
-            if (onMethodEndParameters[0].ParameterType != typeof(Exception) && onMethodEndParameters[1].ParameterType != typeof(Exception))
+            if (onMethodEndParameters[onMethodEndParameters.Length - 2].ParameterType != typeof(Exception))
             {
-                throw new ArgumentException($"The Exception type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
+                throw new ArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
 
-            if (onMethodEndParameters[1].ParameterType != typeof(CallTargetState) && onMethodEndParameters[2].ParameterType != typeof(CallTargetState))
+            if (onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType != typeof(CallTargetState))
             {
-                throw new ArgumentException($"The CallTargetState type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
+                throw new ArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
 
             List<Type> callGenericTypes = new List<Type>();
@@ -368,12 +367,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
             }
 
-            if (onMethodEndParameters[1].ParameterType != typeof(Exception) && onMethodEndParameters[2].ParameterType != typeof(Exception))
+            if (onMethodEndParameters[onMethodEndParameters.Length - 2].ParameterType != typeof(Exception))
             {
                 throw new ArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
 
-            if (onMethodEndParameters[2].ParameterType != typeof(CallTargetState) && onMethodEndParameters[3].ParameterType != typeof(CallTargetState))
+            if (onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType != typeof(CallTargetState))
             {
                 throw new ArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
@@ -500,12 +499,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 throw new ArgumentException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
             }
 
-            if (onAsyncMethodEndParameters[1].ParameterType != typeof(Exception) && onAsyncMethodEndParameters[2].ParameterType != typeof(Exception))
+            if (onAsyncMethodEndParameters[onAsyncMethodEndParameters.Length - 2].ParameterType != typeof(Exception))
             {
                 throw new ArgumentException($"The Exception type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
             }
 
-            if (onAsyncMethodEndParameters[2].ParameterType != typeof(CallTargetState) && onAsyncMethodEndParameters[3].ParameterType != typeof(CallTargetState))
+            if (onAsyncMethodEndParameters[onAsyncMethodEndParameters.Length - 1].ParameterType != typeof(CallTargetState))
             {
                 throw new ArgumentException($"The CallTargetState type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
             }
