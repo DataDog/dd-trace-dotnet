@@ -1078,7 +1078,7 @@ int FunctionMethodArgument::GetTypeFlags(unsigned& elementType) const {
 mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const {
   mdToken token = mdTokenNil;
   PCCOR_SIGNATURE pbCur = &pbBase[offset];
-  const PCCOR_SIGNATURE pTemp = pbCur;
+  const PCCOR_SIGNATURE pStart = pbCur;
 
   if (*pbCur == ELEMENT_TYPE_BYREF) {
     pbCur++;
@@ -1146,7 +1146,7 @@ mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAsse
     case ELEMENT_TYPE_MVAR:
     case ELEMENT_TYPE_VAR:
       pEmit->GetTokenFromTypeSpec(
-          pbCur, length - static_cast<ULONG>(pbCur - pTemp), &token);
+          pbCur, length - static_cast<ULONG>(pbCur - pStart), &token);
       break;
     default:
       break;
