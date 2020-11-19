@@ -94,6 +94,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             il.Emit(OpCodes.Ret);
+            _methodBuilderGetToken.Invoke(proxyMethod, null);
             return proxyMethod;
         }
 
@@ -187,6 +188,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             il.Emit(OpCodes.Ret);
+            _methodBuilderGetToken.Invoke(method, null);
             return method;
         }
     }

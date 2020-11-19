@@ -62,7 +62,11 @@ namespace Datadog.Trace
                 }
 
                 var dumpFileName = $"{proc.ProcessName}-{proc.Id}-{name}-{++_dumpIndex}.dmp";
-                dumpFileName = Path.Combine(outputFolder, dumpFileName);
+
+                if (!string.IsNullOrWhiteSpace(outputFolder))
+                {
+                    dumpFileName = Path.Combine(outputFolder, dumpFileName);
+                }
 
                 Console.WriteLine(dumpFileName);
 

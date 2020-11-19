@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -42,6 +43,11 @@ namespace Datadog.Trace.DuckTyping
             {
                 foreach (MethodInfo method in baseType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
+                    if (method.DeclaringType == typeof(object))
+                    {
+                        continue;
+                    }
+
                     if (method.IsSpecialName || method.IsFinal || method.IsPrivate)
                     {
                         continue;
@@ -175,7 +181,7 @@ namespace Datadog.Trace.DuckTyping
                             // and then try to set the output parameter of the proxy method by converting the value (a base class or a duck typing)
                             if (proxyParamType != targetParamType)
                             {
-                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamType);
+                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamType.GetElementType());
 
                                 // We need to store the output parameter data to set the proxy parameter value after we call the target method
                                 if (outputAndRefParameters is null)
@@ -210,7 +216,7 @@ namespace Datadog.Trace.DuckTyping
                                     targetParamTypeElementType = typeof(object);
                                 }
 
-                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamType);
+                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamTypeElementType);
 
                                 // We need to store the ref parameter data to set the proxy parameter value after we call the target method
                                 if (outputAndRefParameters is null)
@@ -430,6 +436,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 il.Emit(OpCodes.Ret);
+                _methodBuilderGetToken.Invoke(proxyMethod, null);
             }
         }
 

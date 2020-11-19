@@ -33,10 +33,22 @@ namespace Datadog.Trace.DuckTyping
         private static readonly ConcurrentBag<DynamicMethod> DynamicMethods = new ConcurrentBag<DynamicMethod>();
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly PropertyInfo DuckTypeInstancePropertyInfo = typeof(IDuckType).GetProperty(nameof(IDuckType.Instance));
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly MethodInfo _methodBuilderGetToken = typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static ModuleBuilder _moduleBuilder = null;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static AssemblyBuilder _assemblyBuilder = null;
+
+        /// <summary>
+        /// Gets the function pointer from a method handler index
+        /// </summary>
+        /// <param name="index">Index of the method handler</param>
+        /// <returns>Function pointer</returns>
+        public static IntPtr GetFunctionPointerFromMethodHandlerIndex(int index)
+        {
+            return ILHelpersExtensions.GetHandleFromIndex(index).GetFunctionPointer();
+        }
     }
 }
