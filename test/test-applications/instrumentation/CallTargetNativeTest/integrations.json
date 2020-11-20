@@ -7,7 +7,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0Arguments",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -20,7 +23,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0Arguments",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -33,7 +39,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0Arguments",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -46,7 +55,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0Arguments",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -59,7 +71,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsGeneric`1",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -72,7 +87,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsGeneric`1",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -85,7 +103,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsGeneric`1",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -98,7 +119,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsGeneric`1",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -111,7 +135,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsStruct",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -124,7 +151,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsStruct",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -137,7 +167,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsStruct",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -150,7 +183,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsStruct",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -163,7 +199,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsStatic",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -176,7 +215,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsStatic",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -189,7 +231,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsStatic",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -202,7 +247,10 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsStatic",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -215,7 +263,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1Arguments",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -228,7 +280,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1Arguments",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -241,7 +297,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1Arguments",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -254,7 +314,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1Arguments",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -267,7 +331,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsGeneric`1",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -280,7 +348,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsGeneric`1",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -293,7 +365,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsGeneric`1",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -306,7 +382,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsGeneric`1",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -319,7 +399,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsStruct",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -332,7 +416,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsStruct",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -345,7 +433,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsStruct",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -358,7 +450,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsStruct",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -371,7 +467,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsStatic",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -384,7 +484,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsStatic",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -397,7 +501,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsStatic",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -410,7 +518,11 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With1ArgumentsStatic",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -423,7 +535,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2Arguments",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -436,7 +553,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2Arguments",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -449,7 +571,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2Arguments",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -462,7 +589,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2Arguments",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -475,7 +607,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsGeneric`1",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -488,7 +625,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsGeneric`1",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -501,7 +643,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsGeneric`1",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -514,7 +661,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsGeneric`1",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -527,7 +679,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsStruct",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -540,7 +697,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsStruct",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -553,7 +715,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsStruct",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -566,7 +733,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsStruct",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -579,7 +751,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsStatic",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -592,7 +769,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsStatic",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -605,7 +787,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsStatic",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -618,7 +805,12 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With2ArgumentsStatic",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -631,7 +823,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3Arguments",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -644,7 +842,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3Arguments",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -657,7 +861,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3Arguments",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -670,7 +880,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3Arguments",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -683,7 +899,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsGeneric`1",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -696,7 +918,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsGeneric`1",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -709,7 +937,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsGeneric`1",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -722,7 +956,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsGeneric`1",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -735,7 +975,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsStruct",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -748,7 +994,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsStruct",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -761,7 +1013,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsStruct",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -774,7 +1032,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsStruct",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -787,7 +1051,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsStatic",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -800,7 +1070,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsStatic",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -813,7 +1089,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsStatic",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -826,7 +1108,13 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With3ArgumentsStatic",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -839,7 +1127,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4Arguments",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -852,7 +1147,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4Arguments",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -865,7 +1167,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4Arguments",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -878,7 +1187,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4Arguments",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -891,7 +1207,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsGeneric`1",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -904,7 +1227,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsGeneric`1",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -917,7 +1247,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsGeneric`1",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -930,7 +1267,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsGeneric`1",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -943,7 +1287,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsStruct",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -956,7 +1307,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsStruct",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -969,7 +1327,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsStruct",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -982,7 +1347,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsStruct",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -995,7 +1367,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsStatic",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1008,7 +1387,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsStatic",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1021,7 +1407,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsStatic",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1034,7 +1427,14 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With4ArgumentsStatic",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1047,7 +1447,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5Arguments",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1060,7 +1468,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5Arguments",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1073,7 +1489,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5Arguments",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1086,7 +1510,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5Arguments",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1099,7 +1531,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsGeneric`1",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1112,7 +1552,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsGeneric`1",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1125,7 +1573,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsGeneric`1",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1138,7 +1594,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsGeneric`1",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1151,7 +1615,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsStruct",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1164,7 +1636,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsStruct",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1177,7 +1657,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsStruct",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1190,7 +1678,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsStruct",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1203,7 +1699,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsStatic",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1216,7 +1720,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsStatic",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1229,7 +1741,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsStatic",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1242,7 +1762,15 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With5ArgumentsStatic",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1255,7 +1783,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6Arguments",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1268,7 +1805,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6Arguments",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1281,7 +1827,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6Arguments",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1294,7 +1849,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6Arguments",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1307,7 +1871,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsGeneric`1",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1320,7 +1893,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsGeneric`1",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1333,7 +1915,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsGeneric`1",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1346,7 +1937,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsGeneric`1",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1359,7 +1959,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsStruct",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1372,7 +1981,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsStruct",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1385,7 +2003,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsStruct",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1398,7 +2025,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsStruct",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1411,7 +2047,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsStatic",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1424,7 +2069,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsStatic",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1437,7 +2091,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsStatic",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1450,7 +2113,16 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With6ArgumentsStatic",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1463,7 +2135,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7Arguments",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1476,7 +2158,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7Arguments",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1489,7 +2181,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7Arguments",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1502,7 +2204,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7Arguments",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1515,7 +2227,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsGeneric`1",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1528,7 +2250,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsGeneric`1",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1541,7 +2273,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsGeneric`1",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1554,7 +2296,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsGeneric`1",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1567,7 +2319,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsStruct",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1580,7 +2342,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsStruct",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1593,7 +2365,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsStruct",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1606,7 +2388,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsStruct",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1619,7 +2411,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsStatic",
-          "method": "VoidMethod"
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1632,7 +2434,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsStatic",
-          "method": "ReturnValueMethod"
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1645,7 +2457,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsStatic",
-          "method": "ReturnReferenceMethod"
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -1658,7 +2480,17 @@
         "target": {
           "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With7ArgumentsStatic",
-          "method": "ReturnGenericMethod"
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
