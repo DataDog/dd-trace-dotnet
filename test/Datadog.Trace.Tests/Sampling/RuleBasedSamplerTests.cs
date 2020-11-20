@@ -87,9 +87,8 @@ namespace Datadog.Trace.Tests.Sampling
                 0.05f);
         }
 
-        private static Span GetMyServiceSpan()
+        private static Span GetMyServiceSpan(ulong traceId)
         {
-            var traceId = SpanIdGenerator.ThreadInstance.CreateNew();
             var span = new Span(new SpanContext(traceId, spanId: 1, null, serviceName: ServiceName), DateTimeOffset.Now) { OperationName = OperationName };
             span.SetTag(Tags.Env, Env);
             return span;
@@ -103,9 +102,13 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var sampleSize = iterations;
             var autoKeeps = 0;
+            int seed = new Random().Next();
+            var idGenerator = new SpanIdGenerator(seed);
+
             while (sampleSize-- > 0)
             {
-                var span = GetMyServiceSpan();
+                var traceId = idGenerator.CreateNew();
+                var span = GetMyServiceSpan(traceId);
                 var priority = sampler.GetSamplingPriority(span);
                 if (priority == SamplingPriority.AutoKeep)
                 {
@@ -120,7 +123,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             Assert.True(
                 autoKeepRate >= lowerLimit && autoKeepRate <= upperLimit,
-                $"Expected between {lowerLimit} and {upperLimit}, actual rate is {autoKeepRate}.");
+                $"Expected between {lowerLimit} and {upperLimit}, actual rate is {autoKeepRate}. Random generator seeded with {seed}.");
         }
 
         private class NoLimits : IRateLimiter
