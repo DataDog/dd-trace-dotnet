@@ -86,7 +86,7 @@ namespace Datadog.Trace.Util
             int previousIndex = 0;
             int index = 0;
 
-            while (index != -1)
+            do
             {
                 index = absolutePath.IndexOf('/', previousIndex);
 
@@ -121,6 +121,7 @@ namespace Datadog.Trace.Util
 
                 previousIndex = index + 1;
             }
+            while (index != -1);
 
             return StringBuilderCache.GetStringAndRelease(sb);
 #endif
