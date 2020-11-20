@@ -27,7 +27,7 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                SpanIdGenerator generator = _threadInstance;
+                SpanIdGenerator idGenerator = _threadInstance;
 
                 if (_threadInstance == null)
                 {
@@ -45,15 +45,15 @@ namespace Datadog.Trace.Util
                         seed = GlobalSeedGenerator.Next();
                     }
 
-                    generator = new SpanIdGenerator(seed);
+                    idGenerator = new SpanIdGenerator(seed);
 #else
-                    generator = new SpanIdGenerator();
+                    idGenerator = new SpanIdGenerator();
 #endif
 
-                    _threadInstance = generator;
+                    _threadInstance = idGenerator;
                 }
 
-                return generator;
+                return idGenerator;
             }
         }
 
