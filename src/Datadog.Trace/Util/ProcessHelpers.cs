@@ -1,11 +1,14 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Datadog.Trace.Util
 {
     internal static class ProcessHelpers
     {
+        private static Process _currentProcess;
+
         /// <summary>
         /// Wrapper around <see cref="Process.GetCurrentProcess"/> and <see cref="Process.ProcessName"/>
         ///
@@ -64,12 +67,32 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetCurrentProcessRuntimeMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
         {
-            using (var currentProcess = Process.GetCurrentProcess())
+            var process = Volatile.Read(ref _currentProcess);
+
+            if (process == null)
             {
-                userProcessorTime = currentProcess.UserProcessorTime;
-                systemCpuTime = currentProcess.PrivilegedProcessorTime;
-                threadCount = currentProcess.Threads.Count;
-                privateMemorySize = currentProcess.PrivateMemorySize64;
+                process = Process.GetCurrentProcess();
+
+                var oldProcess = Interlocked.CompareExchange(ref _currentProcess, process, null);
+
+                if (oldProcess != null)
+                {
+                    // This thread lost the race
+                    process.Dispose();
+                    process = oldProcess;
+                }
+            }
+
+            lock (process)
+            {
+                // Bad things will happen if a thread read process information while another refreshes it
+                // so we make sure to refresh from inside of the lock
+                process.Refresh();
+
+                userProcessorTime = process.UserProcessorTime;
+                systemCpuTime = process.PrivilegedProcessorTime;
+                threadCount = process.Threads.Count;
+                privateMemorySize = process.PrivateMemorySize64;
             }
         }
     }
