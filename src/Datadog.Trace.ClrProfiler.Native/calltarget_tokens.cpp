@@ -452,6 +452,17 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
   return getDefaultMethodSpec;
 }
 
+mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType) {
+  if (currentType->type_spec != mdTypeSpecNil) {
+    return currentType->type_spec;
+  } else if (!currentType->isGeneric) {
+    return currentType->id;
+  } else {
+    isValueType = false;
+    return objectTypeRef;
+  }
+}
+
 HRESULT CallTargetTokens::ModifyLocalSig(
     ILRewriter* reWriter, FunctionMethodArgument* methodReturnValue,
     ULONG* callTargetStateIndex, ULONG* exceptionIndex,
@@ -734,18 +745,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -832,18 +832,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -941,18 +930,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -1060,18 +1038,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -1189,18 +1156,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -1328,18 +1284,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -1477,18 +1422,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -1613,18 +1547,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -1723,18 +1646,7 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -1846,18 +1758,7 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =
@@ -1946,18 +1847,7 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
       CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
 
   bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = mdTokenNil;
-  if (currentType->type_spec != mdTypeSpecNil) {
-    currentTypeRef = currentType->type_spec;
-  } else if (currentType->name.find("`1"_W) == std::string::npos) {
-    currentTypeRef = currentType->id;
-  } else {
-    currentTypeRef = objectTypeRef;
-    if (isValueType) {
-      rewriterWrapper->Box(currentType->id);
-      isValueType = false;
-    }
-  }
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
 
   unsigned currentTypeBuffer;
   ULONG currentTypeSize =

@@ -95,6 +95,7 @@ class CallTargetTokens {
       mdTypeSpec callTargetReturnTypeSpec);
   mdMethodSpec GetCallTargetDefaultValueMethodSpec(
       FunctionMethodArgument* methodArgument);
+  mdToken GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType);
 
   HRESULT ModifyLocalSig(ILRewriter* reWriter,
                          FunctionMethodArgument* methodReturnValue,

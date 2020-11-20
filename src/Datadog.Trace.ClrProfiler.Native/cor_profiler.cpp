@@ -2452,8 +2452,18 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
       if (caller->type.type_spec != mdTypeSpecNil) {
         reWriterWrapper.LoadObj(caller->type.type_spec);
       } 
-      if (caller->type.name.find("`1"_W) == std::string::npos) {
+      else if (!caller->type.isGeneric) {
         reWriterWrapper.LoadObj(caller->type.id);
+      } else {
+        // Generic struct instrumentation is not supported
+        // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns 
+        // The parent token as mdTypeDef and not as a mdTypeSpec
+        // that's because the method definition is stored in the mdTypeDef
+        // The problem is that we don't have the exact Spec of that generic
+        // We can't emit LoadObj or Box because that would result in an invalid IL.
+        // This problem doesn't occur on a class type because we can always relay in the
+        // object type.
+        return E_FAIL;
       }
     }
   }
@@ -2626,9 +2636,18 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     if (caller->type.valueType) {
       if (caller->type.type_spec != mdTypeSpecNil) {
         reWriterWrapper.LoadObj(caller->type.type_spec);
-      }
-      if (caller->type.name.find("`1"_W) == std::string::npos) {
+      } else if (!caller->type.isGeneric) {
         reWriterWrapper.LoadObj(caller->type.id);
+      } else {
+        // Generic struct instrumentation is not supported
+        // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns 
+        // The parent token as mdTypeDef and not as a mdTypeSpec
+        // that's because the method definition is stored in the mdTypeDef
+        // The problem is that we don't have the exact Spec of that generic
+        // We can't emit LoadObj or Box because that would result in an invalid IL.
+        // This problem doesn't occur on a class type because we can always relay in the
+        // object type.
+        return E_FAIL;
       }
     }
   }

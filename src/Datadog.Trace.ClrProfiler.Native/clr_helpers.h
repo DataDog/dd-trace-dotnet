@@ -296,6 +296,7 @@ struct TypeInfo {
   const ULONG32 token_type;
   const TypeInfo* extend_from;
   const bool valueType;
+  const bool isGeneric;
 
   TypeInfo()
       : id(0),
@@ -303,15 +304,17 @@ struct TypeInfo {
         type_spec(0),
         token_type(0),
         extend_from(nullptr),
-        valueType(false) {}
+        valueType(false),
+        isGeneric(false) {}
   TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type,
-           const TypeInfo* extend_from, bool valueType) 
+           const TypeInfo* extend_from, bool valueType, bool isGeneric) 
       : id(id),
         name(name),
         type_spec(type_spec),
         token_type(token_type),
         extend_from(extend_from),
-        valueType(valueType) {}
+        valueType(valueType),
+        isGeneric(isGeneric) {}
 
   bool IsValid() const { return id != 0; }
 };
