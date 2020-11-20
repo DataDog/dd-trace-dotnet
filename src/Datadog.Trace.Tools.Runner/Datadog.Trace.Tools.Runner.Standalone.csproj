@@ -13,10 +13,13 @@
     <OutputPath>bin\$(Configuration)\Console\build</OutputPath>
     <PublishDir>bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
     <PublishTrimmed>true</PublishTrimmed>
-    <PublishSingleFile>true</PublishSingleFile>
     <AssemblyName>dd-trace</AssemblyName>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
+    <PublishSingleFile>true</PublishSingleFile>
+  </PropertyGroup>
+  
   <ItemGroup>
     <None Include="..\..\build\docker\linux-build.dockerfile" Link="linux-build.dockerfile" />
     <None Include="Datadog.Trace.Tools.Runner.proj" />
