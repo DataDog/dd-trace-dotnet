@@ -55,7 +55,7 @@ namespace Datadog.Trace
         internal SpanContext(ISpanContext parent, ITraceContext traceContext, string serviceName)
             : this(parent?.TraceId, serviceName)
         {
-            SpanId = SpanIdGenerator.CreateNew();
+            SpanId = SpanIdGenerator.ThreadInstance.CreateNew();
             Parent = parent;
             TraceContext = traceContext;
             if (parent is SpanContext spanContext)
@@ -68,7 +68,7 @@ namespace Datadog.Trace
         {
             TraceId = traceId > 0
                           ? traceId.Value
-                          : SpanIdGenerator.CreateNew();
+                          : SpanIdGenerator.ThreadInstance.CreateNew();
 
             ServiceName = serviceName;
         }
