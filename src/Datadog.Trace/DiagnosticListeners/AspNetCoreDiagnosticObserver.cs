@@ -34,11 +34,11 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AspNetCoreDiagnosticObserver>();
         private readonly Tracer _tracer;
 
-        private string hostingHttpRequestInStartEventKey;
-        private string mvcBeforeActionEventKey;
-        private string hostingUnhandledExceptionEventKey;
-        private string diagnosticsUnhandledExceptionEventKey;
-        private string hostingHttpRequestInStopEventKey;
+        private string _hostingHttpRequestInStartEventKey;
+        private string _mvcBeforeActionEventKey;
+        private string _hostingUnhandledExceptionEventKey;
+        private string _diagnosticsUnhandledExceptionEventKey;
+        private string _hostingHttpRequestInStopEventKey;
 
         public AspNetCoreDiagnosticObserver()
             : this(null)
