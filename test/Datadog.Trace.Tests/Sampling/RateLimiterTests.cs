@@ -137,7 +137,6 @@ namespace Datadog.Trace.Tests.Sampling
 
             var result = new RateLimitResult();
             var limiter = new RateLimiter(maxTracesPerInterval: intervalLimit);
-            var traceContext = new TraceContext(Tracer.Instance);
             var barrier = new Barrier(parallelism + 1);
             var numberPerThread = test.NumberPerBurst / parallelism;
             var workers = new Task[parallelism];
@@ -158,8 +157,10 @@ namespace Datadog.Trace.Tests.Sampling
 
                             for (int j = 0; j < numberPerThread; j++)
                             {
-                                var spanContext = new SpanContext(null, traceContext, "Weeeee");
-                                var span = new Span(spanContext, null);
+                                // trace id and span id are not used in rate-limiting,
+                                // pass a specific start time since there is no TraceContext
+                                var spanContext = new SpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
+                                var span = new Span(spanContext, DateTimeOffset.UtcNow);
 
                                 if (limiter.Allowed(span))
                                 {
