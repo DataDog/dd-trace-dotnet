@@ -29,7 +29,7 @@ namespace Datadog.Trace.Util
             {
                 SpanIdGenerator idGenerator = _threadInstance;
 
-                if (_threadInstance == null)
+                if (idGenerator == null)
                 {
 #if NETFRAMEWORK
                     // On .NET Framework, the clock is used to seed the new random instances.
