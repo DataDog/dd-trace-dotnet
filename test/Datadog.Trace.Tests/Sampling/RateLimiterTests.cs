@@ -136,15 +136,10 @@ namespace Datadog.Trace.Tests.Sampling
             }
 
             var result = new RateLimitResult();
-
             var limiter = new RateLimiter(maxTracesPerInterval: intervalLimit);
-
             var traceContext = new TraceContext(Tracer.Instance);
-
             var barrier = new Barrier(parallelism + 1);
-
             var numberPerThread = test.NumberPerBurst / parallelism;
-
             var workers = new Task[parallelism];
 
             for (int i = 0; i < workers.Length; i++)
