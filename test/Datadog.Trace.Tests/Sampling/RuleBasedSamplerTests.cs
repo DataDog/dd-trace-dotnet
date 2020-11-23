@@ -9,10 +9,11 @@ namespace Datadog.Trace.Tests.Sampling
     [Collection(nameof(Datadog.Trace.Tests.Sampling))]
     public class RuleBasedSamplerTests
     {
-        private static readonly float FallbackRate = 0.25f;
-        private static readonly string ServiceName = "my-service-name";
-        private static readonly string Env = "my-test-env";
-        private static readonly string OperationName = "test";
+        private const float FallbackRate = 0.25f;
+        private const string ServiceName = "my-service-name";
+        private const string Env = "my-test-env";
+        private const string OperationName = "test";
+
         private static readonly IEnumerable<KeyValuePair<string, float>> MockAgentRates = new List<KeyValuePair<string, float>>() { new KeyValuePair<string, float>($"service:{ServiceName},env:{Env}", FallbackRate) };
 
         [Fact]
