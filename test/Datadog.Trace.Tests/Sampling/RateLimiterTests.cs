@@ -157,9 +157,10 @@ namespace Datadog.Trace.Tests.Sampling
 
                             for (int j = 0; j < numberPerThread; j++)
                             {
-                                // trace id and span id are not used in rate-limiting,
-                                // pass a specific start time since there is no TraceContext
+                                // trace id and span id are not used in rate-limiting
                                 var spanContext = new SpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
+
+                                // pass a specific start time since there is no TraceContext
                                 var span = new Span(spanContext, DateTimeOffset.UtcNow);
 
                                 Interlocked.Increment(ref totalAttempted);
