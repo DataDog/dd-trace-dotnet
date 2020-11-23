@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Sampling;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
