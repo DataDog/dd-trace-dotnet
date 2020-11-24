@@ -13,12 +13,12 @@ namespace Datadog.Core.Tools
         /// <summary>
         /// The minor portion of the current version.
         /// </summary>
-        public const int Minor = 20;
+        public const int Minor = 21;
 
         /// <summary>
         /// The patch portion of the current version.
         /// </summary>
-        public const int Patch = 2;
+        public const int Patch = 0;
 
         /// <summary>
         /// Whether the current release is a pre-release
