@@ -1,34 +1,22 @@
 using System;
-using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using Samples.DatabaseHelper;
-using Samples.DatabaseHelper.NetFramework20;
 
-namespace Samples.SqlServer.NetFramework20
+namespace Samples.Microsoft.Data.SqlClient
 {
     internal static class Program
     {
         private static async Task Main()
         {
-            var commandFactory = new DbCommandFactory($"[System-Data-SqlClient-NetFx2.0-Test-{Guid.NewGuid():N}]");
+            var commandFactory = new DbCommandFactory($"[Microsoft-Data-SqlClient-Test-{Guid.NewGuid():N}]");
+            var commandExecutor = new MicrosoftSqlCommandExecutor();
             var cts = new CancellationTokenSource();
-
-            var sqlCommandExecutor = new SqlCommandExecutor20Adapter(new SqlCommandExecutor20());
-            var dbCommandClassExecutor = new DbCommandClassExecutor20Adapter(new DbCommandClassExecutor20());
-            var dbCommandInterfaceExecutor = new DbCommandInterfaceExecutor20Adapter(new DbCommandInterfaceExecutor20());
-            var dbCommandInterfaceGenericExecutor = new DbCommandInterfaceGenericExecutor20Adapter<SqlCommand>(new DbCommandInterfaceGenericExecutor20<SqlCommand>());
 
             using (var connection = OpenConnection())
             {
-                await RelationalDatabaseTestHarness.RunAllAsync(
-                    connection,
-                    commandFactory,
-                    cts.Token,
-                    sqlCommandExecutor,
-                    dbCommandClassExecutor,
-                    dbCommandInterfaceExecutor,
-                    dbCommandInterfaceGenericExecutor);
+                await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
             }
 
             // allow time to flush

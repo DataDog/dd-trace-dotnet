@@ -11,7 +11,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             // .NET Core
             public const string SystemDataCommon = "System.Data.Common";
-            public const string SystemDataSqlClient = "System.Data.SqlClient";
 
             // .NET Standard
             public const string NetStandard = "netstandard";

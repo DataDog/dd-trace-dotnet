@@ -10,7 +10,7 @@ namespace Samples.MySql
     {
         private static async Task Main()
         {
-            var commandFactory = new DbCommandFactory();
+            var commandFactory = new DbCommandFactory($@"`MySql-Test-{Guid.NewGuid():N}`");
             var commandExecutor = new MySqlCommandExecutor();
             var cts = new CancellationTokenSource();
 

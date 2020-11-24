@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -11,6 +12,7 @@ namespace Datadog.Trace.DuckTyping
     internal static class ILHelpersExtensions
     {
         private static Func<DynamicMethod, RuntimeMethodHandle> _dynamicGetMethodDescriptor;
+        private static List<RuntimeMethodHandle> _handles = new List<RuntimeMethodHandle>();
 
         static ILHelpersExtensions()
         {
@@ -231,19 +233,24 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="methodParameters">Method parameters (to avoid the allocations of calculating it)</param>
         internal static void WriteMethodCalli(this ILGenerator il, MethodInfo method, Type[] methodParameters = null)
         {
-            IntPtr fnPointer = IntPtr.Zero;
+            RuntimeMethodHandle handle;
+
             if (method is DynamicMethod dynMethod)
             {
                 // Dynamic methods doesn't expose the internal function pointer
                 // so we have to get it using a delegate from reflection.
-                fnPointer = _dynamicGetMethodDescriptor(dynMethod).GetFunctionPointer();
+                handle = _dynamicGetMethodDescriptor(dynMethod);
+                lock (_handles)
+                {
+                    _handles.Add(handle);
+                }
             }
             else
             {
-                fnPointer = method.MethodHandle.GetFunctionPointer();
+                handle = method.MethodHandle;
             }
 
-            il.Emit(OpCodes.Ldc_I8, (long)fnPointer);
+            il.Emit(OpCodes.Ldc_I8, (long)handle.GetFunctionPointer());
             il.Emit(OpCodes.Conv_I);
             il.EmitCalli(
                 OpCodes.Calli,

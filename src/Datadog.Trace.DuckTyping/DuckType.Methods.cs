@@ -42,6 +42,14 @@ namespace Datadog.Trace.DuckTyping
             {
                 foreach (MethodInfo method in baseType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
+                    // Avoid proxying object methods like ToString(), GetHashCode()
+                    // or the Finalize() that creates problems by keeping alive the object to another collection.
+                    // You can still proxy those methods if they are defined in an interface.
+                    if (method.DeclaringType == typeof(object))
+                    {
+                        continue;
+                    }
+
                     if (method.IsSpecialName || method.IsFinal || method.IsPrivate)
                     {
                         continue;
@@ -175,7 +183,7 @@ namespace Datadog.Trace.DuckTyping
                             // and then try to set the output parameter of the proxy method by converting the value (a base class or a duck typing)
                             if (proxyParamType != targetParamType)
                             {
-                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamType);
+                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamType.GetElementType());
 
                                 // We need to store the output parameter data to set the proxy parameter value after we call the target method
                                 if (outputAndRefParameters is null)
@@ -210,7 +218,7 @@ namespace Datadog.Trace.DuckTyping
                                     targetParamTypeElementType = typeof(object);
                                 }
 
-                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamType);
+                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamTypeElementType);
 
                                 // We need to store the ref parameter data to set the proxy parameter value after we call the target method
                                 if (outputAndRefParameters is null)
@@ -328,7 +336,7 @@ namespace Datadog.Trace.DuckTyping
                     Type[] originalTargetParameters = targetMethod.GetParameters().Select(p => p.ParameterType).ToArray();
                     Type[] targetParameters = targetMethod.IsStatic ? originalTargetParameters : (new[] { typeof(object) }).Concat(originalTargetParameters).ToArray();
                     Type[] dynParameters = targetMethod.IsStatic ? targetMethodParametersTypes : (new[] { typeof(object) }).Concat(targetMethodParametersTypes).ToArray();
-                    DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, typeof(DuckType).Module, true);
+                    DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, _moduleBuilder, true);
 
                     // We store the dynamic method in a bag to avoid getting collected by the GC.
                     DynamicMethods.Add(dynMethod);
@@ -430,6 +438,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 il.Emit(OpCodes.Ret);
+                _methodBuilderGetToken.Invoke(proxyMethod, null);
             }
         }
 

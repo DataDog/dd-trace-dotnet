@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -13,8 +14,6 @@ namespace Datadog.Trace.Tests.Sampling
         private static readonly string Env = "my-test-env";
         private static readonly string OperationName = "test";
         private static readonly IEnumerable<KeyValuePair<string, float>> MockAgentRates = new List<KeyValuePair<string, float>>() { new KeyValuePair<string, float>($"service:{ServiceName},env:{Env}", FallbackRate) };
-
-        private static ulong _id = 1;
 
         [Fact]
         public void RateLimiter_Never_Applied_For_DefaultRule()
@@ -90,7 +89,8 @@ namespace Datadog.Trace.Tests.Sampling
 
         private static Span GetMyServiceSpan()
         {
-            var span = new Span(new SpanContext(_id++, _id++, null, serviceName: ServiceName), DateTimeOffset.Now) { OperationName = OperationName };
+            var traceId = SpanIdGenerator.CreateNew();
+            var span = new Span(new SpanContext(traceId, spanId: 1, null, serviceName: ServiceName), DateTimeOffset.Now) { OperationName = OperationName };
             span.SetTag(Tags.Env, Env);
             return span;
         }

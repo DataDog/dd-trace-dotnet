@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
-        public static IEnumerable<object[]> SqlClient =>
+        public static IEnumerable<object[]> SystemDataSqlClient =>
 
             new List<object[]>
             {
@@ -174,6 +174,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.7.0" },
                 new object[] { "4.8.0" },
                 new object[] { "4.8.1" },
+#endif
+            };
+
+        public static IEnumerable<object[]> MicrosoftDataSqlClient =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "1.0.19239.1" },
+                new object[] { "1.0.19249.1" },
+                new object[] { "1.0.19269.1" },
+                new object[] { "1.1.0" },
+                new object[] { "1.1.1" },
+                new object[] { "1.1.2" },
+                new object[] { "1.1.3" },
+                new object[] { "2.0.0" },
+                new object[] { "2.0.1" },
 #endif
             };
 

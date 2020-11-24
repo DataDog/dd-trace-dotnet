@@ -10,7 +10,7 @@ namespace Samples.SqlServer
     {
         private static async Task Main()
         {
-            var commandFactory = new DbCommandFactory();
+            var commandFactory = new DbCommandFactory($"[System-Data-SqlClient-Test-{Guid.NewGuid():N}]");
             var commandExecutor = new SqlCommandExecutor();
             var cts = new CancellationTokenSource();
 

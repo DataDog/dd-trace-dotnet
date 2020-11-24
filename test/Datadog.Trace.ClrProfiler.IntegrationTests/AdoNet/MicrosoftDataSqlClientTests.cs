@@ -1,3 +1,4 @@
+#if !NET452
 using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -5,16 +6,16 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class SqlCommandTests : TestHelper
+    public class MicrosoftDataSqlClientTests : TestHelper
     {
-        public SqlCommandTests(ITestOutputHelper output)
-            : base("SqlServer", output)
+        public MicrosoftDataSqlClientTests(ITestOutputHelper output)
+            : base("Microsoft.Data.SqlClient", output)
         {
             SetServiceVersion("1.0.0");
         }
 
         [Theory]
-        [MemberData(nameof(PackageVersions.SqlClient), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(PackageVersions.MicrosoftDataSqlClient), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public void SubmitsTracesWithNetStandard(string packageVersion)
@@ -25,9 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // 2 interfaces: IDbCommand and IDbCommand-netstandard).
             // Once this is fully supported, this will add another 2 complete groups for all frameworks instead
             // of 4 extra spans on net461 and netcoreapp2.0+
-#if NET452
-            var expectedSpanCount = 49; // 7 queries * 7 groups
-#elif NET461
+#if NET461
             var expectedSpanCount = 77; // 7 queries * 11 groups
 #else
             var expectedSpanCount = 81; // 7 queries * 11 groups + 4 spans from generic wrapper on .NET Core
@@ -35,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.SqlServer-" + dbType;
+            const string expectedServiceName = "Samples.Microsoft.Data.SqlClient-" + dbType;
 
             // NOTE: opt into the additional instrumentation of calls into netstandard.dll
             SetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", "true");
@@ -62,3 +61,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
     }
 }
+#endif

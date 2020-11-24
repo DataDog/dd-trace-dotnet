@@ -29,11 +29,18 @@
     "MaxVersionExclusive": "5.0.0"
   },
   {
-    "IntegrationName": "SqlClient",
+    "IntegrationName": "SystemDataSqlClient",
     "SampleProjectName": "Samples.SqlServer",
     "NugetPackageSearchName": "System.Data.SqlClient",
     "MinVersion": "4.1.0",
     "MaxVersionExclusive": "5.0.0"
+  },
+  {
+    "IntegrationName": "MicrosoftDataSqlClient",
+    "SampleProjectName": "Samples.Microsoft.Data.SqlClient",
+    "NugetPackageSearchName": "Microsoft.Data.SqlClient",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "3.0.0"
   },
   {
     "IntegrationName": "StackExchangeRedis",

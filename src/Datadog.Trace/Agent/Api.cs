@@ -7,6 +7,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
@@ -17,14 +18,14 @@ namespace Datadog.Trace.Agent
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Api>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly IBatchStatsd _statsd;
+        private readonly IDogStatsd _statsd;
         private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
         private readonly string _containerId;
         private readonly FrameworkDescription _frameworkDescription;
         private Uri _tracesEndpoint; // The Uri may be reassigned dynamically so that retry attempts may attempt updated Agent ports
         private string _cachedResponse;
 
-        public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IBatchStatsd statsd)
+        public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IDogStatsd statsd)
         {
             Log.Debug("Creating new Api");
 
@@ -60,12 +61,8 @@ namespace Datadog.Trace.Agent
             var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
-            var traceIds = GetUniqueTraceIds(traces);
-            var traceCount = traceIds.Count;
 
-            Log.Debug("Sending {0} traces to the DD agent", traceCount);
-
-            var batch = _statsd?.StartBatch(initialCapacity: 2) ?? default;
+            Log.Debug("Sending {0} traces to the DD agent", traces.Length);
 
             while (true)
             {
@@ -82,7 +79,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 // Set additional headers
-                request.AddHeader(AgentHttpHeaderNames.TraceCount, traceCount.ToString());
+                request.AddHeader(AgentHttpHeaderNames.TraceCount, traces.Length.ToString());
                 if (_frameworkDescription != null)
                 {
                     request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, _frameworkDescription.Name);
@@ -99,7 +96,7 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    success = await SendTracesAsync(traces, request, batch).ConfigureAwait(false);
+                    success = await SendTracesAsync(traces, request).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -107,7 +104,7 @@ namespace Datadog.Trace.Agent
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
                         Log.Error(ex, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
-                        Log.Error("Failed to send {0} traces to the DD agent", traceCount);
+                        Log.Error("Failed to send {0} traces to the DD agent", traces.Length);
                         return false;
                     }
 #endif
@@ -121,10 +118,8 @@ namespace Datadog.Trace.Agent
                     if (retryCount >= retryLimit)
                     {
                         // stop retrying
-                        batch.Send();
-
                         Log.Error(exception, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
-                        Log.Error("Failed to send {0} traces to the DD agent", traceCount);
+                        Log.Error("Failed to send {0} traces to the DD agent", traces.Length);
                         return false;
                     }
 
@@ -164,8 +159,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                batch.Send();
-                Log.Debug("Successfully sent {0} traces to the DD agent", traceCount);
+                Log.Debug("Successfully sent {0} traces to the DD agent", traces.Length);
                 return true;
             }
         }
@@ -179,22 +173,7 @@ namespace Datadog.Trace.Agent
 #endif
         }
 
-        private static HashSet<ulong> GetUniqueTraceIds(Span[][] traces)
-        {
-            var uniqueTraceIds = new HashSet<ulong>();
-
-            foreach (var trace in traces)
-            {
-                foreach (var span in trace)
-                {
-                    uniqueTraceIds.Add(span.TraceId);
-                }
-            }
-
-            return uniqueTraceIds;
-        }
-
-        private async Task<bool> SendTracesAsync(Span[][] traces, IApiRequest request, Batch batch)
+        private async Task<bool> SendTracesAsync(Span[][] traces, IApiRequest request)
         {
             IApiResponse response = null;
 
@@ -202,14 +181,14 @@ namespace Datadog.Trace.Agent
             {
                 try
                 {
-                    batch.Append(_statsd?.GetIncrementCount(TracerMetricNames.Api.Requests));
+                    _statsd?.Increment(TracerMetricNames.Api.Requests);
                     response = await request.PostAsync(traces, _formatterResolver).ConfigureAwait(false);
                 }
                 catch
                 {
                     // count only network/infrastructure errors, not valid responses with error status codes
                     // (which are handled below)
-                    batch.Append(_statsd?.GetIncrementCount(TracerMetricNames.Api.Errors));
+                    _statsd?.Increment(TracerMetricNames.Api.Errors);
                     throw;
                 }
 
@@ -219,7 +198,7 @@ namespace Datadog.Trace.Agent
                     string[] tags = { $"status:{response.StatusCode}" };
 
                     // count every response, grouped by status code
-                    batch.Append(_statsd?.GetIncrementCount(TracerMetricNames.Api.Responses, tags: tags));
+                    _statsd?.Increment(TracerMetricNames.Api.Responses, tags: tags);
                 }
 
                 // Attempt a retry if the status code is not SUCCESS
