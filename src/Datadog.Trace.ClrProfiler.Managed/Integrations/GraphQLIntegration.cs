@@ -219,6 +219,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static void DecorateSpan(Span span, GraphQLTags tags)
         {
             span.Type = SpanTypes.GraphQL;
+            span.SetMetric(Tags.Measured, 1);
         }
 
         private static Scope CreateScopeFromValidate(object document)

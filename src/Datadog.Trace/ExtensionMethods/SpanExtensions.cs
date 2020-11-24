@@ -56,6 +56,7 @@ namespace Datadog.Trace.ExtensionMethods
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
+            span.SetMetric(Tags.Measured, 1);
 
             tags.HttpMethod = method;
             tags.HttpRequestHeadersHost = host;
