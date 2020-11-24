@@ -359,6 +359,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="proxyType">ProxyType builder</param>
         internal static void WriteDynamicMethodCall(this LazyILGenerator il, DynamicMethod dynamicMethod, TypeBuilder proxyType)
         {
+            // We create a custom delegate inside the module builder
             CreateDelegateTypeFor(proxyType, dynamicMethod, out Type delegateType, out MethodInfo invokeMethod);
             int index;
             lock (_dynamicMethods)
@@ -367,13 +368,16 @@ namespace Datadog.Trace.DuckTyping
                 index = _dynamicMethods.Count - 1;
             }
 
+            // We fill the DelegateCache<> for that custom type with the delegate instance
+            MethodInfo fillDelegateMethodInfo = typeof(DuckType.DelegateCache<>).MakeGenericType(delegateType).GetMethod("FillDelegate", BindingFlags.NonPublic | BindingFlags.Static);
+            fillDelegateMethodInfo.Invoke(null, new object[] { index });
+
+            // We get the delegate instance and load it in to the stack before the parameters (at the begining of the IL body)
             il.SetOffset(0);
-            il.WriteInt(index);
-            MethodInfo getDelegateMethodInfo = typeof(DuckType.DelegateCache<>).MakeGenericType(delegateType).GetMethod("GetDelegate");
-            getDelegateMethodInfo.Invoke(null, new object[] { index });
-            il.EmitCall(OpCodes.Call, getDelegateMethodInfo, null);
+            il.EmitCall(OpCodes.Call, typeof(DuckType.DelegateCache<>).MakeGenericType(delegateType).GetMethod("GetDelegate"), null);
             il.ResetOffset();
 
+            // We emit the call to the delegate invoke method.
             il.EmitCall(OpCodes.Callvirt, invokeMethod, null);
         }
     }

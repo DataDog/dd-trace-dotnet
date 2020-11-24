@@ -38,7 +38,7 @@ namespace Datadog.Trace.DuckTyping
         private static AssemblyBuilder _assemblyBuilder = null;
 
         /// <summary>
-        /// Delegate caches
+        /// DynamicMethods delegates cache
         /// </summary>
         /// <typeparam name="TProxyDelegate">Proxy delegate type</typeparam>
         public static class DelegateCache<TProxyDelegate>
@@ -47,21 +47,22 @@ namespace Datadog.Trace.DuckTyping
             private static TProxyDelegate @delegate;
 
             /// <summary>
-            /// Get delegate from a DynamicMethod index
+            /// Get cached delegate from the DynamicMethod
+            /// </summary>
+            /// <returns>TProxyDelegate instance</returns>
+            public static TProxyDelegate GetDelegate()
+            {
+                return @delegate;
+            }
+
+            /// <summary>
+            /// Create delegate from a DynamicMethod index
             /// </summary>
             /// <param name="index">Dynamic method index</param>
-            /// <returns>TProxyDelegate instance</returns>
-            public static TProxyDelegate GetDelegate(int index)
+            internal static void FillDelegate(int index)
             {
-                TProxyDelegate cachedDelegate = @delegate;
-                if (cachedDelegate is null)
-                {
-                    cachedDelegate = (TProxyDelegate)ILHelpersExtensions.GetDynamicMethodForIndex(index)
-                        .CreateDelegate(typeof(TProxyDelegate));
-                    @delegate = cachedDelegate;
-                }
-
-                return cachedDelegate;
+                @delegate = (TProxyDelegate)ILHelpersExtensions.GetDynamicMethodForIndex(index)
+                    .CreateDelegate(typeof(TProxyDelegate));
             }
         }
     }
