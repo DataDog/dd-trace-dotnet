@@ -17,9 +17,9 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <OutputName>datadog-dotnet-apm-1.20.1-prerelease-$(Platform)</OutputName>
+    <OutputName>datadog-dotnet-apm-1.21.0-$(Platform)</OutputName>
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\tracer-home</TracerHomeDirectory>
-    <DefineConstants>InstallerVersion=1.20.1;TracerHomeDirectory=$(TracerHomeDirectory)</DefineConstants>
+    <DefineConstants>InstallerVersion=1.21.0;TracerHomeDirectory=$(TracerHomeDirectory)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>
