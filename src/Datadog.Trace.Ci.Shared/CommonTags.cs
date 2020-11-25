@@ -13,12 +13,17 @@ namespace Datadog.Trace.Ci
         /// <summary>
         /// GIT Commit hash
         /// </summary>
-        public const string GitCommit = "git.commit_sha";
+        public const string GitCommit = "git.commit.sha";
 
         /// <summary>
         /// GIT Branch name
         /// </summary>
         public const string GitBranch = "git.branch";
+
+        /// <summary>
+        /// GIT Tag name
+        /// </summary>
+        public const string GitTag = "git.tag";
 
         /// <summary>
         /// Build Source root
@@ -36,6 +41,11 @@ namespace Datadog.Trace.Ci
         public const string CIPipelineId = "ci.pipeline.id";
 
         /// <summary>
+        /// CI Pipeline name
+        /// </summary>
+        public const string CIPipelineName = "ci.pipeline.name";
+
+        /// <summary>
         /// CI Pipeline number
         /// </summary>
         public const string CIPipelineNumber = "ci.pipeline.number";
@@ -49,6 +59,11 @@ namespace Datadog.Trace.Ci
         /// CI Job url
         /// </summary>
         public const string CIJobUrl = "ci.job.url";
+
+        /// <summary>
+        /// CI Job url
+        /// </summary>
+        public const string CIWorkspacePath = "ci.workspace_path";
 
         /// <summary>
         /// Runtime name
