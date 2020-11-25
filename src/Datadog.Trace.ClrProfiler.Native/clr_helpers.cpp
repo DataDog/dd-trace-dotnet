@@ -4,6 +4,7 @@
 
 #include <set>
 #include <stack>
+#include "dd_profiler_constants.h"
 #include "environment_variables.h"
 #include "logging.h"
 #include "macros.h"
@@ -309,12 +310,20 @@ std::vector<Integration> FilterIntegrationsByName(
 }
 
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations) {
+    const std::vector<Integration>& integrations, 
+    bool is_calltarget_enabled) {
   std::vector<IntegrationMethod> flattened;
 
   for (auto& i : integrations) {
     for (auto& mr : i.method_replacements) {
-      flattened.emplace_back(i.integration_name, mr);
+      const auto isCallTargetIntegration =
+          mr.wrapper_method.action == calltarget_modification_action;
+
+      if (is_calltarget_enabled && isCallTargetIntegration) {
+        flattened.emplace_back(i.integration_name, mr);
+      } else if (!is_calltarget_enabled && !isCallTargetIntegration) {
+        flattened.emplace_back(i.integration_name, mr);
+      }
     }
   }
 
@@ -443,6 +452,18 @@ bool EnableInlining() {
   }
 
   // default to false: don't inline.
+  return false;
+}
+
+bool IsCallTargetEnabled() {
+  const auto calltarget_enabled =
+      GetEnvironmentValue(environment::calltarget_enabled);
+
+  if (calltarget_enabled == "1"_W || calltarget_enabled == "true"_W) {
+    return true;
+  }
+
+  // default to false: calltarget integrations are removed from the integrations.json
   return false;
 }
 

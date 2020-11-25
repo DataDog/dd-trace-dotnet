@@ -444,7 +444,7 @@ std::vector<Integration> FilterIntegrationsByName(
 
 // FlattenIntegrations flattens integrations to per method structures
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations);
+    const std::vector<Integration>& integrations, bool is_calltarget_enabled);
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
@@ -470,6 +470,7 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
 
 bool DisableOptimizations();
 bool EnableInlining();
+bool IsCallTargetEnabled();
 
 bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,

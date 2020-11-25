@@ -11,6 +11,7 @@ namespace trace {
   inline WSTRING env_vars_to_display[]{
     environment::tracing_enabled,
     environment::debug_enabled,
+    environment::calltarget_enabled,
     environment::profiler_home_path,
     environment::integrations_path,
     environment::include_process_names,
@@ -66,6 +67,8 @@ namespace trace {
       "ISymWrapper"_W};
 
   inline WSTRING managed_profiler_full_assembly_version = "Datadog.Trace.ClrProfiler.Managed, Version=1.21.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W;
+
+  inline WSTRING calltarget_modification_action = "CallTargetModification"_W;
 
 }  // namespace trace
 

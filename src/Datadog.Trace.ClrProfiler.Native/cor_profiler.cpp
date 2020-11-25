@@ -139,6 +139,9 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  const auto is_calltarget_enabled = IsCallTargetEnabled();
+  Info("CallTarget integrations are: ", is_calltarget_enabled ? "ENABLED" : "DISABLED");
+
   // load all available integrations from JSON files
   const std::vector<Integration> all_integrations =
       LoadIntegrationsFromEnvironment();
@@ -151,13 +154,16 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const std::vector<Integration> integrations =
       FilterIntegrationsByName(all_integrations, disabled_integration_names);
 
-  // check if there are any enabled integrations left
-  if (integrations.empty()) {
+  integration_methods_ =
+      FlattenIntegrations(integrations, is_calltarget_enabled);
+
+    // check if there are any enabled integrations left
+  if (integration_methods_.empty()) {
     Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: no enabled integrations found.");
     return E_FAIL;
+  } else {
+    Debug("Number of Integrations loaded: ", integration_methods_.size());
   }
-
-  integration_methods_ = FlattenIntegrations(integrations);
 
   const WSTRING netstandard_enabled =
       GetEnvironmentValue(environment::netstandard_enabled);
@@ -504,7 +510,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
         module_info.assembly.app_domain_name);
 
   // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-  CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
+  if (IsCallTargetEnabled()) {
+    CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
+  }
 
   return S_OK;
 }
@@ -2181,11 +2189,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
 // ***
 
 /// <summary>
-/// CallTarget modification action name
-/// </summary>
-const auto callTargetModificationAction = "CallTargetModification"_W;
-
-/// <summary>
 /// Search for methods to instrument in a module and request a ReJIT to them for a CallTarget instrumentation
 /// </summary>
 /// <param name="module_id">Module id</param>
@@ -2205,7 +2208,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     }
 
     // If the integration mode is not CallTarget we skip.
-    if (integration.replacement.wrapper_method.action != callTargetModificationAction) {
+    if (integration.replacement.wrapper_method.action != calltarget_modification_action) {
       continue;
     }
 
