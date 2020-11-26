@@ -1566,7 +1566,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   pALNewInstr->m_opcode = CEE_LDC_I4_0;
   rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
 
-  // call System.AppDomain System.AppDomain.CurrentDomain property
+  // call int Interlocked.CompareExchange(ref int, int, int) method
   pALNewInstr = rewriter_already_loaded.NewILInstr();
   pALNewInstr->m_opcode = CEE_CALL;
   pALNewInstr->m_Arg32 = interlocked_compare_member_ref;
