@@ -99,8 +99,8 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
         {},
         {}}}};
   Integration i3 = {L"integration-3", {{{}, {}, {}}}};
-  auto all = FlattenIntegrations({i1, i2, i3});
-  auto expected = FlattenIntegrations({i1, i3});
+  auto all = FlattenIntegrations({i1, i2, i3}, false);
+  auto expected = FlattenIntegrations({i1, i3}, false);
   ModuleID manifest_module_id{};
   AppDomainID app_domain_id{};
   trace::AssemblyInfo assembly_info = { 1, L"Assembly.One", manifest_module_id,  app_domain_id, L"AppDomain1"};
@@ -128,8 +128,8 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
   Integration i3 = {
       L"integration-3",
       {{{}, {L"System.Runtime", L"", L"", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_}, {}}}};
-  auto all = FlattenIntegrations({i1, i2, i3});
-  auto expected = FlattenIntegrations({i1, i3});
+  auto all = FlattenIntegrations({i1, i2, i3}, false);
+  auto expected = FlattenIntegrations({i1, i3}, false);
   auto actual = FilterIntegrationsByTarget(all, assembly_import_);
   EXPECT_EQ(actual, expected);
 }
@@ -160,8 +160,8 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTargetAssembly) {
   Integration mixed_integration = {L"integration-1", {included_method, excluded_method}};
   Integration included_integration = {L"integration-2", {included_method}};
   Integration excluded_integration = {L"integration-3", {excluded_method}};
-  auto all = FlattenIntegrations({mixed_integration, included_integration, excluded_integration});
-  auto expected = FlattenIntegrations({{L"integration-1", {included_method}}, included_integration});
+  auto all = FlattenIntegrations({mixed_integration, included_integration, excluded_integration}, false);
+  auto expected = FlattenIntegrations({{L"integration-1", {included_method}}, included_integration}, false);
   auto actual = FilterIntegrationsByTargetAssemblyName(all, {L"Samples.Excluded"});
   EXPECT_EQ(actual, expected);
 }
@@ -186,7 +186,7 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
                               empty_sig_type_};
 
   Integration i1 = {L"integration-1", {{{}, included, {}}, {{}, excluded, {}}}};
-  auto all = FlattenIntegrations({i1});
+  auto all = FlattenIntegrations({i1}, false);
   auto filtered = FilterIntegrationsByTarget(all, assembly_import_);
   bool foundExclusion = false;
   for (auto& item : filtered) {
