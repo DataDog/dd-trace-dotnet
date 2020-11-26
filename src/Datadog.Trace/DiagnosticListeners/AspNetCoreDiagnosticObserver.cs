@@ -59,13 +59,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 't')
             {
-                if (ReferenceEquals(eventName, hostingHttpRequestInStartEventKey))
+                if (ReferenceEquals(eventName, _hostingHttpRequestInStartEventKey))
                 {
                     OnHostingHttpRequestInStart(arg);
                 }
                 else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
                 {
-                    hostingHttpRequestInStartEventKey = eventName;
+                    _hostingHttpRequestInStartEventKey = eventName;
                     OnHostingHttpRequestInStart(arg);
                 }
 
@@ -74,13 +74,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 'n')
             {
-                if (ReferenceEquals(eventName, mvcBeforeActionEventKey))
+                if (ReferenceEquals(eventName, _mvcBeforeActionEventKey))
                 {
                     OnMvcBeforeAction(arg);
                     return;
                 }
-                else if (ReferenceEquals(eventName, hostingUnhandledExceptionEventKey) ||
-                    ReferenceEquals(eventName, diagnosticsUnhandledExceptionEventKey))
+                else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
+                    ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
                 {
                     OnHostingUnhandledException(arg);
                     return;
@@ -90,17 +90,17 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (suffix.SequenceEqual("Mvc.BeforeAction"))
                 {
-                    mvcBeforeActionEventKey = eventName;
+                    _mvcBeforeActionEventKey = eventName;
                     OnMvcBeforeAction(arg);
                 }
                 else if (suffix.SequenceEqual("Hosting.UnhandledException"))
                 {
-                    hostingUnhandledExceptionEventKey = eventName;
+                    _hostingUnhandledExceptionEventKey = eventName;
                     OnHostingUnhandledException(arg);
                 }
                 else if (suffix.SequenceEqual("Diagnostics.UnhandledException"))
                 {
-                    diagnosticsUnhandledExceptionEventKey = eventName;
+                    _diagnosticsUnhandledExceptionEventKey = eventName;
                     OnHostingUnhandledException(arg);
                 }
 
@@ -109,13 +109,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 'p')
             {
-                if (ReferenceEquals(eventName, hostingHttpRequestInStopEventKey))
+                if (ReferenceEquals(eventName, _hostingHttpRequestInStopEventKey))
                 {
                     OnHostingHttpRequestInStop(arg);
                 }
                 else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
                 {
-                    hostingHttpRequestInStopEventKey = eventName;
+                    _hostingHttpRequestInStopEventKey = eventName;
                     OnHostingHttpRequestInStop(arg);
                 }
 
@@ -129,13 +129,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 't')
             {
-                if (ReferenceEquals(eventName, hostingHttpRequestInStartEventKey))
+                if (ReferenceEquals(eventName, _hostingHttpRequestInStartEventKey))
                 {
                     OnHostingHttpRequestInStart(arg);
                 }
                 else if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
                 {
-                    hostingHttpRequestInStartEventKey = eventName;
+                    _hostingHttpRequestInStartEventKey = eventName;
                     OnHostingHttpRequestInStart(arg);
                 }
 
@@ -144,13 +144,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 'n')
             {
-                if (ReferenceEquals(eventName, mvcBeforeActionEventKey))
+                if (ReferenceEquals(eventName, _mvcBeforeActionEventKey))
                 {
                     OnMvcBeforeAction(arg);
                     return;
                 }
-                else if (ReferenceEquals(eventName, hostingUnhandledExceptionEventKey) ||
-                    ReferenceEquals(eventName, diagnosticsUnhandledExceptionEventKey))
+                else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
+                    ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
                 {
                     OnHostingUnhandledException(arg);
                     return;
@@ -159,16 +159,16 @@ namespace Datadog.Trace.DiagnosticListeners
                 switch (eventName)
                 {
                     case "Microsoft.AspNetCore.Mvc.BeforeAction":
-                        mvcBeforeActionEventKey = eventName;
+                        _mvcBeforeActionEventKey = eventName;
                         OnMvcBeforeAction(arg);
                         break;
 
                     case "Microsoft.AspNetCore.Hosting.UnhandledException":
-                        hostingUnhandledExceptionEventKey = eventName;
+                        _hostingUnhandledExceptionEventKey = eventName;
                         OnHostingUnhandledException(arg);
                         break;
                     case "Microsoft.AspNetCore.Diagnostics.UnhandledException":
-                        diagnosticsUnhandledExceptionEventKey = eventName;
+                        _diagnosticsUnhandledExceptionEventKey = eventName;
                         OnHostingUnhandledException(arg);
                         break;
                 }
@@ -178,13 +178,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 'p')
             {
-                if (ReferenceEquals(eventName, hostingHttpRequestInStopEventKey))
+                if (ReferenceEquals(eventName, _hostingHttpRequestInStopEventKey))
                 {
                     OnHostingHttpRequestInStop(arg);
                 }
                 else if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
                 {
-                    hostingHttpRequestInStopEventKey = eventName;
+                    _hostingHttpRequestInStopEventKey = eventName;
                     OnHostingHttpRequestInStop(arg);
                 }
 
