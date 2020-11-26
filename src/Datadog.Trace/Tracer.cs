@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -10,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -41,6 +41,8 @@ namespace Datadog.Trace
         private static Tracer _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new object();
+
+        private static RuntimeMetricsWriter _runtimeMetricsWriter;
 
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
@@ -181,9 +183,17 @@ namespace Datadog.Trace
                 InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
             }
 
-            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1 && Settings.StartupDiagnosticLogEnabled)
+            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
             {
-                _ = WriteDiagnosticLog();
+                if (Settings.StartupDiagnosticLogEnabled)
+                {
+                    _ = WriteDiagnosticLog();
+                }
+
+                if (Settings.RuntimeMetricsEnabled)
+                {
+                    _runtimeMetricsWriter = new RuntimeMetricsWriter(Statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort), 10000);
+                }
             }
         }
 
@@ -575,7 +585,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Settings.LogsInjectionEnabled);
 
                     writer.WritePropertyName("runtime_metrics_enabled");
-                    writer.WriteValue(Settings.TracerMetricsEnabled);
+                    writer.WriteValue(Settings.RuntimeMetricsEnabled);
 
                     writer.WritePropertyName("disabled_integrations");
                     writer.WriteStartArray();
