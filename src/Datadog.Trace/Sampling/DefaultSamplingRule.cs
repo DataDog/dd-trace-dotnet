@@ -8,7 +8,7 @@ namespace Datadog.Trace.Sampling
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<DefaultSamplingRule>();
 
-        private static Dictionary<SampleRateKey, float> _sampleRates = new Dictionary<SampleRateKey, float>();
+        private Dictionary<SampleRateKey, float> _sampleRates = new Dictionary<SampleRateKey, float>();
 
         public string RuleName => "default-rule";
 
