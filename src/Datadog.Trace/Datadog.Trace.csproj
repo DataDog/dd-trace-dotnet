@@ -24,6 +24,10 @@
     <PackageReference Include="LibLog" Version="5.0.6" PrivateAssets="All" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj" />
+  </ItemGroup>
+
   <!-- Below this point is reserved for vendor items -->
   <!--Newtonsoft.Json-->
   <!-- Modifications: Original condition was only for net45, but we include net461 here so that net45 and net461 generate the same Newtonsoft.Json -->
