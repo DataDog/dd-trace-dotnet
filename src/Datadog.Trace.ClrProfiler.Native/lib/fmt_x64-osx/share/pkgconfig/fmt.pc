@@ -1,0 +1,11 @@
+prefix=/Users/danielredondo/vcpkg/packages/fmt_x64-osx
+exec_prefix=/Users/danielredondo/vcpkg/packages/fmt_x64-osx
+libdir=/Users/danielredondo/vcpkg/packages/fmt_x64-osx/lib
+includedir=/Users/danielredondo/vcpkg/packages/fmt_x64-osx/include
+
+Name: fmt
+Description: A modern formatting library
+Version: 5.3.0
+Libs: -L${libdir} -lfmt
+Cflags: -I${includedir}
+
