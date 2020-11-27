@@ -66,6 +66,8 @@ inline WSTRING GetCurrentProcessName() {
   const DWORD len = GetModuleFileName(nullptr, buffer, length);
   const WSTRING current_process_path(buffer);
   return std::filesystem::path(current_process_path).filename();
+#elif OSX
+  return "unknown"_W;
 #else
   std::fstream comm("/proc/self/comm");
   std::string name;

@@ -8,7 +8,6 @@
 namespace trace {
 
 typedef std::basic_string<WCHAR> WSTRING;
-typedef std::basic_stringstream<WCHAR> WSTRINGSTREAM;
 
 std::string ToString(const std::string& str);
 std::string ToString(const char* str);

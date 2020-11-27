@@ -15,7 +15,7 @@ bool debug_logging_enabled = false;
 bool dump_il_rewrite_enabled = false;
 
 #ifndef _WIN32
-// for linux we need a function to get the path from a filepath
+// for linux and osx we need a function to get the path from a filepath
 std::string getPathName(const std::string& s) {
   char sep = '/';
   size_t i = s.rfind(sep, s.length());
@@ -42,7 +42,7 @@ std::string Logger::GetLogPath() {
     }
   }
 #else
-  // on linux we use the basic C approach
+  // on linux and osx we use the basic C approach
   const auto log_path = getPathName(path);
   Stat st;
   if (log_path != "" && stat(log_path.c_str(), &st) != 0) {

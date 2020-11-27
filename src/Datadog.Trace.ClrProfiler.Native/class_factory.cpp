@@ -56,6 +56,8 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
 
 #ifdef _WIN32
               " Windows"
+#elif OSX
+              " macOS"
 #else
               " Linux"
 #endif
