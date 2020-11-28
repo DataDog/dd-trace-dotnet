@@ -85,7 +85,7 @@ else()
 
     add_compile_options(-std=c++11 -fPIC -fms-extensions)
     add_compile_options(-DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE -DLINUX)
-    add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wno-pragma-pack)
+    add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wno-pragmas)
 
     add_custom_command(
         OUTPUT Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
