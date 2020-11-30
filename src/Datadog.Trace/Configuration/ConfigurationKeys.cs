@@ -105,6 +105,11 @@ namespace Datadog.Trace.Configuration
         public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
 
         /// <summary>
+        /// Configuration key for setting the size of the trace buffer
+        /// </summary>
+        public const string QueueSize = "DD_TRACE_QUEUE_SIZE";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the automatic injection
         /// of correlation identifiers into the logging context.
         /// </summary>

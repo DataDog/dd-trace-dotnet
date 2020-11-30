@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -32,14 +33,13 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AspNetCoreDiagnosticObserver>();
-
-        private static readonly PropertyFetcher HttpRequestInStartHttpContextFetcher = new PropertyFetcher("HttpContext");
-        private static readonly PropertyFetcher HttpRequestInStopHttpContextFetcher = new PropertyFetcher("HttpContext");
-        private static readonly PropertyFetcher UnhandledExceptionExceptionFetcher = new PropertyFetcher("Exception");
-        private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("httpContext");
-        private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("actionDescriptor");
-
         private readonly Tracer _tracer;
+
+        private string _hostingHttpRequestInStartEventKey;
+        private string _mvcBeforeActionEventKey;
+        private string _hostingUnhandledExceptionEventKey;
+        private string _diagnosticsUnhandledExceptionEventKey;
+        private string _hostingHttpRequestInStopEventKey;
 
         public AspNetCoreDiagnosticObserver()
             : this(null)
@@ -60,8 +60,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 't')
             {
-                if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
+                if (ReferenceEquals(eventName, _hostingHttpRequestInStartEventKey))
                 {
+                    OnHostingHttpRequestInStart(arg);
+                }
+                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
+                {
+                    _hostingHttpRequestInStartEventKey = eventName;
                     OnHostingHttpRequestInStart(arg);
                 }
 
@@ -70,15 +75,33 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 'n')
             {
+                if (ReferenceEquals(eventName, _mvcBeforeActionEventKey))
+                {
+                    OnMvcBeforeAction(arg);
+                    return;
+                }
+                else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
+                    ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
+                {
+                    OnHostingUnhandledException(arg);
+                    return;
+                }
+
                 var suffix = eventName.AsSpan().Slice(PrefixLength);
 
                 if (suffix.SequenceEqual("Mvc.BeforeAction"))
                 {
+                    _mvcBeforeActionEventKey = eventName;
                     OnMvcBeforeAction(arg);
                 }
-                else if (suffix.SequenceEqual("Hosting.UnhandledException")
-                    || suffix.SequenceEqual("Diagnostics.UnhandledException"))
+                else if (suffix.SequenceEqual("Hosting.UnhandledException"))
                 {
+                    _hostingUnhandledExceptionEventKey = eventName;
+                    OnHostingUnhandledException(arg);
+                }
+                else if (suffix.SequenceEqual("Diagnostics.UnhandledException"))
+                {
+                    _diagnosticsUnhandledExceptionEventKey = eventName;
                     OnHostingUnhandledException(arg);
                 }
 
@@ -87,8 +110,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 'p')
             {
-                if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
+                if (ReferenceEquals(eventName, _hostingHttpRequestInStopEventKey))
                 {
+                    OnHostingHttpRequestInStop(arg);
+                }
+                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
+                {
+                    _hostingHttpRequestInStopEventKey = eventName;
                     OnHostingHttpRequestInStop(arg);
                 }
 
@@ -102,8 +130,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 't')
             {
-                if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
+                if (ReferenceEquals(eventName, _hostingHttpRequestInStartEventKey))
                 {
+                    OnHostingHttpRequestInStart(arg);
+                }
+                else if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
+                {
+                    _hostingHttpRequestInStartEventKey = eventName;
                     OnHostingHttpRequestInStart(arg);
                 }
 
@@ -112,14 +145,31 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 'n')
             {
+                if (ReferenceEquals(eventName, _mvcBeforeActionEventKey))
+                {
+                    OnMvcBeforeAction(arg);
+                    return;
+                }
+                else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
+                    ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
+                {
+                    OnHostingUnhandledException(arg);
+                    return;
+                }
+
                 switch (eventName)
                 {
                     case "Microsoft.AspNetCore.Mvc.BeforeAction":
+                        _mvcBeforeActionEventKey = eventName;
                         OnMvcBeforeAction(arg);
                         break;
 
                     case "Microsoft.AspNetCore.Hosting.UnhandledException":
+                        _hostingUnhandledExceptionEventKey = eventName;
+                        OnHostingUnhandledException(arg);
+                        break;
                     case "Microsoft.AspNetCore.Diagnostics.UnhandledException":
+                        _diagnosticsUnhandledExceptionEventKey = eventName;
                         OnHostingUnhandledException(arg);
                         break;
                 }
@@ -129,8 +179,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (lastChar == 'p')
             {
-                if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
+                if (ReferenceEquals(eventName, _hostingHttpRequestInStopEventKey))
                 {
+                    OnHostingHttpRequestInStop(arg);
+                }
+                else if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
+                {
+                    _hostingHttpRequestInStopEventKey = eventName;
                     OnHostingHttpRequestInStop(arg);
                 }
 
@@ -208,8 +263,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var httpContext = HttpRequestInStartHttpContextFetcher.Fetch<HttpContext>(arg);
-            HttpRequest request = httpContext.Request;
+            HttpRequest request = arg.As<HttpRequestInStartStruct>().HttpContext.Request;
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             string url = GetUrl(request);
@@ -246,16 +300,15 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var httpContext = BeforeActionHttpContextFetcher.Fetch<HttpContext>(arg);
-
             Span span = tracer.ActiveScope?.Span;
 
             if (span != null)
             {
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
-                var actionDescriptor = BeforeActionActionDescriptorFetcher.Fetch<ActionDescriptor>(arg);
-                HttpRequest request = httpContext.Request;
+                BeforeActionStruct typedArg = arg.As<BeforeActionStruct>();
+                ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
+                HttpRequest request = typedArg.HttpContext.Request;
 
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
                 string controllerName = actionDescriptor.RouteValues["controller"];
@@ -281,7 +334,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                var httpContext = HttpRequestInStopHttpContextFetcher.Fetch<HttpContext>(arg);
+                HttpContext httpContext = arg.As<HttpRequestInStopStruct>().HttpContext;
 
                 scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
                 scope.Dispose();
@@ -301,10 +354,34 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null)
             {
-                var exception = UnhandledExceptionExceptionFetcher.Fetch<Exception>(arg);
-
-                span.SetException(exception);
+                span.SetException(arg.As<UnhandledExceptionStruct>().Exception);
             }
+        }
+
+        [DuckCopy]
+        public struct HttpRequestInStartStruct
+        {
+            public HttpContext HttpContext;
+        }
+
+        [DuckCopy]
+        public struct HttpRequestInStopStruct
+        {
+            public HttpContext HttpContext;
+        }
+
+        [DuckCopy]
+        public struct UnhandledExceptionStruct
+        {
+            public Exception Exception;
+        }
+
+        [DuckCopy]
+        public struct BeforeActionStruct
+        {
+            public HttpContext HttpContext;
+
+            public ActionDescriptor ActionDescriptor;
         }
 
         private readonly struct HeadersCollectionAdapter : IHeadersCollection

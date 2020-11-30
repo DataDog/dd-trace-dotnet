@@ -82,15 +82,21 @@ namespace Datadog.Trace.Ci
 
         public static string Branch { get; private set; }
 
+        public static string Tag { get; private set; }
+
         public static string SourceRoot { get; private set; }
 
         public static string PipelineId { get; private set; }
+
+        public static string PipelineName { get; private set; }
 
         public static string PipelineNumber { get; private set; }
 
         public static string PipelineUrl { get; private set; }
 
         public static string JobUrl { get; private set; }
+
+        public static string WorkspacePath { get; private set; }
 
         public static void DecorateSpan(Span span)
         {
@@ -101,13 +107,16 @@ namespace Datadog.Trace.Ci
 
             span.SetTag(CommonTags.CIProvider, Provider);
             span.SetTag(CommonTags.CIPipelineId, PipelineId);
+            span.SetTag(CommonTags.CIPipelineName, PipelineName);
             span.SetTag(CommonTags.CIPipelineNumber, PipelineNumber);
             span.SetTag(CommonTags.CIPipelineUrl, PipelineUrl);
             span.SetTag(CommonTags.CIJobUrl, JobUrl);
+            span.SetTag(CommonTags.CIWorkspacePath, WorkspacePath);
 
             span.SetTag(CommonTags.GitRepository, Repository);
             span.SetTag(CommonTags.GitCommit, Commit);
             span.SetTag(CommonTags.GitBranch, Branch);
+            span.SetTag(CommonTags.GitTag, Tag);
 
             span.SetTag(CommonTags.BuildSourceRoot, SourceRoot);
         }
@@ -202,6 +211,7 @@ namespace Datadog.Trace.Ci
             Provider = "azurepipelines";
             SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCESDIRECTORY");
             PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID");
+            PipelineName = EnvironmentHelpers.GetEnvironmentVariable("BUILD_DEFINITIONNAME");
             PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDNUMBER");
             PipelineUrl = string.Format("{0}{1}/_build/results?buildId={2}&_a=summary", EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"), EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMPROJECT"), EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID"));
             Repository = EnvironmentHelpers.GetEnvironmentVariable("BUILD_REPOSITORY_URI");
