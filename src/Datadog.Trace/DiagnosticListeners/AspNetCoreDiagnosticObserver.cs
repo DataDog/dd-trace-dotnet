@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -310,9 +311,15 @@ namespace Datadog.Trace.DiagnosticListeners
                 HttpRequest request = typedArg.HttpContext.Request;
 
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-                string controllerName = actionDescriptor.RouteValues["controller"];
-                string actionName = actionDescriptor.RouteValues["action"];
-                string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template ?? $"{controllerName}/{actionName}";
+                string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template;
+                if (routeTemplate is null)
+                {
+                    string controllerName = actionDescriptor.RouteValues["controller"];
+                    string actionName = actionDescriptor.RouteValues["action"];
+
+                    routeTemplate = $"{controllerName}/{actionName}";
+                }
+
                 string resourceName = $"{httpMethod} {routeTemplate}";
 
                 // override the parent's resource name with the MVC route template
@@ -360,26 +367,31 @@ namespace Datadog.Trace.DiagnosticListeners
         [DuckCopy]
         public struct HttpRequestInStartStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
         }
 
         [DuckCopy]
         public struct HttpRequestInStopStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
         }
 
         [DuckCopy]
         public struct UnhandledExceptionStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public Exception Exception;
         }
 
         [DuckCopy]
         public struct BeforeActionStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
 
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public ActionDescriptor ActionDescriptor;
         }
 

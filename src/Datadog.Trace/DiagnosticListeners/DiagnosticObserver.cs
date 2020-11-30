@@ -48,6 +48,10 @@ namespace Datadog.Trace.DiagnosticListeners
             catch (Exception ex)
             {
                 Log.Error(ex, "Event Exception: {0}", value.Key);
+#if DEBUG
+                // In debug mode we allow exceptions to be catch in the test suite
+                throw;
+#endif
             }
         }
 

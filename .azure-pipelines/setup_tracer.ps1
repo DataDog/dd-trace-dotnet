@@ -46,6 +46,9 @@ else
     echo "Extracting linux.tar.gz"
     tar -xvzf linux.tar.gz -C ./release
     Remove-Item linux.tar.gz
+    # Ensure the profiler can write the native log profiler
+    sudo mkdir -p /var/log/datadog/dotnet
+    sudo chmod -R 777 /var/log/datadog/dotnet
     
     if ([string]::IsNullOrEmpty($dd_tracer_workingfolder)) {
         $dd_tracer_home = "$(pwd)/release"

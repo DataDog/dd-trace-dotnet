@@ -453,7 +453,7 @@ namespace Datadog.Trace.DuckTyping
             if (proxyMethodDuckAttribute.ParameterTypeNames != null)
             {
                 Type[] parameterTypes = proxyMethodDuckAttribute.ParameterTypeNames.Select(pName => Type.GetType(pName, true)).ToArray();
-                targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, DefaultFlags, null, parameterTypes, null);
+                targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
                 if (targetMethod is null)
                 {
                     DuckTypeTargetMethodNotFoundException.Throw(proxyMethod);
@@ -465,7 +465,7 @@ namespace Datadog.Trace.DuckTyping
             // If the duck attribute doesn't specify the parameters to use, we do the best effor to find a target method without any ambiguity.
 
             // First we try with the current proxy parameter types
-            targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, DefaultFlags, null, proxyMethodParametersTypes, null);
+            targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
             if (targetMethod != null)
             {
                 return targetMethod;
@@ -475,7 +475,7 @@ namespace Datadog.Trace.DuckTyping
             // Also this can happen if the proxy parameters type uses a base object (ex: System.Object) instead the type.
             // In this case we try to find a method that we can match, in case of ambiguity (> 1 method found) we throw an exception.
 
-            MethodInfo[] allTargetMethods = targetType.GetMethods(DefaultFlags);
+            MethodInfo[] allTargetMethods = targetType.GetMethods(DuckAttribute.DefaultFlags);
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
                 // We omit target methods with different names.

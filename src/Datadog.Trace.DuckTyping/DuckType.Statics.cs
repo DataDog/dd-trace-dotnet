@@ -21,8 +21,6 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         public static readonly MethodInfo EnumToObjectMethodInfo = typeof(Enum).GetMethod(nameof(Enum.ToObject), new[] { typeof(Type), typeof(object) });
 
-        private const BindingFlags DefaultFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly object _locker = new object();
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
