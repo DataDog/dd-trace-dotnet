@@ -41,10 +41,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
         void IObserver<KeyValuePair<string, object>>.OnNext(KeyValuePair<string, object> value)
         {
-#if DEBUG
-            // In debug mode we allow exceptions to be catch in the test suite
-            OnNext(value.Key, value.Value);
-#else
             try
             {
                 OnNext(value.Key, value.Value);
@@ -52,8 +48,11 @@ namespace Datadog.Trace.DiagnosticListeners
             catch (Exception ex)
             {
                 Log.Error(ex, "Event Exception: {0}", value.Key);
-            }
+#if DEBUG
+                // In debug mode we allow exceptions to be catch in the test suite
+                throw;
 #endif
+            }
         }
 
         protected virtual bool IsEventEnabled(string eventName)

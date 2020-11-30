@@ -34,10 +34,17 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             var testServer = new TestServer(builder);
             var client = testServer.CreateClient();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };
+            string retValue = null;
 
-            Datadog.Trace.ClrProfiler.Instrumentation.Initialize();
+            using (var diagnosticManager = new DiagnosticManager(observers))
+            {
+                diagnosticManager.Start();
+                DiagnosticManager.Instance = diagnosticManager;
+                retValue = await client.GetStringAsync("/Home");
+                DiagnosticManager.Instance = null;
+            }
 
-            string retValue = await client.GetStringAsync("/Home");
             return retValue;
         }
 
