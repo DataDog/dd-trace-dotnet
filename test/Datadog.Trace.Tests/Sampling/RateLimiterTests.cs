@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -135,17 +134,12 @@ namespace Datadog.Trace.Tests.Sampling
                 parallelism = 10;
             }
 
-            var result = new RateLimitResult();
-
             var limiter = new RateLimiter(maxTracesPerInterval: intervalLimit);
-
-            var traceContext = new TraceContext(Tracer.Instance);
-
             var barrier = new Barrier(parallelism + 1);
-
             var numberPerThread = test.NumberPerBurst / parallelism;
-
             var workers = new Task[parallelism];
+            int totalAttempted = 0;
+            int totalAllowed = 0;
 
             for (int i = 0; i < workers.Length; i++)
             {
@@ -163,16 +157,17 @@ namespace Datadog.Trace.Tests.Sampling
 
                             for (int j = 0; j < numberPerThread; j++)
                             {
-                                var spanContext = new SpanContext(null, traceContext, "Weeeee");
-                                var span = new Span(spanContext, null);
+                                // trace id and span id are not used in rate-limiting
+                                var spanContext = new SpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
+
+                                // pass a specific start time since there is no TraceContext
+                                var span = new Span(spanContext, DateTimeOffset.UtcNow);
+
+                                Interlocked.Increment(ref totalAttempted);
 
                                 if (limiter.Allowed(span))
                                 {
-                                    result.Allowed.Add(span.SpanId);
-                                }
-                                else
-                                {
-                                    result.Denied.Add(span.SpanId);
+                                    Interlocked.Increment(ref totalAllowed);
                                 }
                             }
 
@@ -198,9 +193,14 @@ namespace Datadog.Trace.Tests.Sampling
             // Wait for workers to finish
             Task.WaitAll(workers);
 
-            result.TimeElapsed = sw.Elapsed;
-            result.RateLimiter = limiter;
-            result.ReportedRate = limiter.GetEffectiveRate();
+            var result = new RateLimitResult
+            {
+                TimeElapsed = sw.Elapsed,
+                RateLimiter = limiter,
+                ReportedRate = limiter.GetEffectiveRate(),
+                TotalAttempted = totalAttempted,
+                TotalAllowed = totalAllowed
+            };
 
             return result;
         }
@@ -220,15 +220,11 @@ namespace Datadog.Trace.Tests.Sampling
 
             public TimeSpan TimeElapsed { get; set; }
 
-            public ConcurrentBag<ulong> Allowed { get; } = new ConcurrentBag<ulong>();
-
-            public ConcurrentBag<ulong> Denied { get; } = new ConcurrentBag<ulong>();
-
             public float ReportedRate { get; set; }
 
-            public int TotalAttempted => Allowed.Count + Denied.Count;
+            public int TotalAttempted { get; set; }
 
-            public int TotalAllowed => Allowed.Count;
+            public int TotalAllowed { get; set; }
         }
     }
 }
