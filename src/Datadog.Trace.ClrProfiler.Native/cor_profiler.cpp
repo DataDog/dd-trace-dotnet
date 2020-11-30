@@ -1468,7 +1468,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   }
 
   /////////////////////////////////////////////
-  // Define a new static field _isAssemblyLoaded on the new type type that has a int value.
+  // Define a new static int field _isAssemblyLoaded on the new type.
   BYTE field_signature[] = {
       IMAGE_CEE_CS_CALLCONV_FIELD,
       ELEMENT_TYPE_I4
