@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>1.20.1-prerelease</Version>
+    <Version>1.21.0</Version>
     <Title>Datadog APM</Title>
     <Description>Manual instrumentation library for Datadog APM</Description>
   </PropertyGroup>
@@ -22,6 +22,10 @@
 
   <ItemGroup>
     <PackageReference Include="LibLog" Version="5.0.6" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->
