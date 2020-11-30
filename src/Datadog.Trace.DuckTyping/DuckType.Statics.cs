@@ -26,8 +26,6 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>> DuckTypeCache = new ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>>();
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly ConcurrentBag<DynamicMethod> DynamicMethods = new ConcurrentBag<DynamicMethod>();
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly PropertyInfo DuckTypeInstancePropertyInfo = typeof(IDuckType).GetProperty(nameof(IDuckType.Instance));
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo _methodBuilderGetToken = typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -36,5 +34,34 @@ namespace Datadog.Trace.DuckTyping
         private static ModuleBuilder _moduleBuilder = null;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static AssemblyBuilder _assemblyBuilder = null;
+
+        /// <summary>
+        /// DynamicMethods delegates cache
+        /// </summary>
+        /// <typeparam name="TProxyDelegate">Proxy delegate type</typeparam>
+        public static class DelegateCache<TProxyDelegate>
+            where TProxyDelegate : Delegate
+        {
+            private static TProxyDelegate _delegate;
+
+            /// <summary>
+            /// Get cached delegate from the DynamicMethod
+            /// </summary>
+            /// <returns>TProxyDelegate instance</returns>
+            public static TProxyDelegate GetDelegate()
+            {
+                return _delegate;
+            }
+
+            /// <summary>
+            /// Create delegate from a DynamicMethod index
+            /// </summary>
+            /// <param name="index">Dynamic method index</param>
+            internal static void FillDelegate(int index)
+            {
+                _delegate = (TProxyDelegate)ILHelpersExtensions.GetDynamicMethodForIndex(index)
+                    .CreateDelegate(typeof(TProxyDelegate));
+            }
+        }
     }
 }

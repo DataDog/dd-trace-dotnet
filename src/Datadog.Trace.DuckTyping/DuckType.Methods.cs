@@ -131,7 +131,7 @@ namespace Datadog.Trace.DuckTyping
                     proxyMethodParametersBuilders[j] = pmImpParameter;
                 }
 
-                ILGenerator il = proxyMethod.GetILGenerator();
+                LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
                 Type returnType = targetMethod.ReturnType;
                 List<OutputAndRefParameterData> outputAndRefParameters = null;
 
@@ -329,7 +329,7 @@ namespace Datadog.Trace.DuckTyping
                     // If the instance is not public we need to create a Dynamic method to overpass the visibility checks
                     // we can't access non public types so we have to cast to object type (in the instance object and the return type).
 
-                    string dynMethodName = $"_callMethod+{targetMethod.DeclaringType.Name}.{targetMethod.Name}";
+                    string dynMethodName = $"_callMethod_{targetMethod.DeclaringType.Name}_{targetMethod.Name}";
                     returnType = UseDirectAccessTo(targetMethod.ReturnType) && !targetMethod.ReturnType.IsGenericParameter ? targetMethod.ReturnType : typeof(object);
 
                     // We create the dynamic method
@@ -338,11 +338,8 @@ namespace Datadog.Trace.DuckTyping
                     Type[] dynParameters = targetMethod.IsStatic ? targetMethodParametersTypes : (new[] { typeof(object) }).Concat(targetMethodParametersTypes).ToArray();
                     DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, _moduleBuilder, true);
 
-                    // We store the dynamic method in a bag to avoid getting collected by the GC.
-                    DynamicMethods.Add(dynMethod);
-
                     // Emit the dynamic method body
-                    ILGenerator dynIL = dynMethod.GetILGenerator();
+                    LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
 
                     if (!targetMethod.IsStatic)
                     {
@@ -369,9 +366,10 @@ namespace Datadog.Trace.DuckTyping
 
                     dynIL.WriteSafeTypeConversion(targetMethod.ReturnType, returnType);
                     dynIL.Emit(OpCodes.Ret);
+                    dynIL.Flush();
 
                     // Emit the call to the dynamic method
-                    il.WriteMethodCalli(dynMethod, dynParameters);
+                    il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
                 }
 
                 // We check if we have output or ref parameters to set in the proxy method
@@ -438,6 +436,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 il.Emit(OpCodes.Ret);
+                il.Flush();
                 _methodBuilderGetToken.Invoke(proxyMethod, null);
             }
         }
@@ -577,7 +576,7 @@ namespace Datadog.Trace.DuckTyping
             return targetMethod;
         }
 
-        private static void WriteSafeTypeConversion(this ILGenerator il, Type actualType, Type expectedType)
+        private static void WriteSafeTypeConversion(this LazyILGenerator il, Type actualType, Type expectedType)
         {
             // If both types are generics, we expect that the generic parameter are the same type (passthrough)
             if (actualType.IsGenericParameter && expectedType.IsGenericParameter)
