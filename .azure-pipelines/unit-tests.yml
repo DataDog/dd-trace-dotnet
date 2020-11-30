@@ -81,7 +81,7 @@ jobs:
     inputs:
       command: build
       configuration: $(buildConfiguration)
-      arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      #arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
