@@ -1467,6 +1467,135 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
     return hr;
   }
 
+  /////////////////////////////////////////////
+  // Define a new static int field _isAssemblyLoaded on the new type.
+  BYTE field_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_FIELD,
+      ELEMENT_TYPE_I4
+  };
+  mdFieldDef isAssemblyLoadedFieldToken;
+  hr = metadata_emit->DefineField(new_type_def, 
+                          "_isAssemblyLoaded"_W.c_str(),
+                          fdStatic | fdPrivate, 
+                          field_signature, 
+                          sizeof(field_signature),
+                          0,
+                          nullptr,
+                          0,
+                          &isAssemblyLoadedFieldToken);
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: DefineField _isAssemblyLoaded failed");
+    return hr;
+  }
+
+  // Define a new static method IsAlreadyLoaded on the new type that has a bool return type and takes no arguments;
+  BYTE already_loaded_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,
+      0,
+      ELEMENT_TYPE_BOOLEAN,
+      ELEMENT_TYPE_OBJECT
+  };
+  mdMethodDef alreadyLoadedMethodToken;
+  hr = metadata_emit->DefineMethod(
+      new_type_def, "IsAlreadyLoaded"_W.c_str(), mdStatic | mdPrivate,
+      already_loaded_signature, sizeof(already_loaded_signature), 0, 0,
+      &alreadyLoadedMethodToken);
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: DefineMethod IsAlreadyLoaded failed");
+    return hr;
+  }
+
+  // Get a TypeRef for System.Threading.Interlocked
+  mdTypeRef interlocked_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.Threading.Interlocked"_W.c_str(), &interlocked_type_ref);
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: DefineTypeRefByName interlocked_type_ref failed");
+    return hr;
+  }
+
+  // Create method signature for System.Threading.Interlocked::CompareExchange(int32&, int32, int32)
+  COR_SIGNATURE interlocked_compare_exchange_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,
+      3,
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_BYREF,
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_I4
+  };
+
+  mdMemberRef interlocked_compare_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      interlocked_type_ref, "CompareExchange"_W.c_str(),
+      interlocked_compare_exchange_signature,
+      sizeof(interlocked_compare_exchange_signature),
+      &interlocked_compare_member_ref);
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: DefineMemberRef CompareExchange failed");
+    return hr;
+  }
+
+  /////////////////////////////////////////////
+  // Add IL instructions into the IsAlreadyLoaded method
+  //
+  //  static int _isAssemblyLoaded = 0;
+  //  
+  //  public static bool IsAlreadyLoaded() {
+  //      return Interlocked.CompareExchange(ref _isAssemblyLoaded, 1, 0) == 1;
+  //  }
+  //
+  ILRewriter rewriter_already_loaded(this->info_, nullptr, module_id, alreadyLoadedMethodToken);
+  rewriter_already_loaded.InitializeTiny();
+
+  ILInstr* pALFirstInstr = rewriter_already_loaded.GetILList()->m_pNext;
+  ILInstr* pALNewInstr = NULL;
+
+  // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
+  pALNewInstr = rewriter_already_loaded.NewILInstr();
+  pALNewInstr->m_opcode = CEE_LDSFLDA;
+  pALNewInstr->m_Arg32 = isAssemblyLoadedFieldToken;
+  rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+  
+  // ldc.i4.1 : Load the constant 1 (int) to the stack
+  pALNewInstr = rewriter_already_loaded.NewILInstr();
+  pALNewInstr->m_opcode = CEE_LDC_I4_1;
+  rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+  // ldc.i4.0 : Load the constant 0 (int) to the stack
+  pALNewInstr = rewriter_already_loaded.NewILInstr();
+  pALNewInstr->m_opcode = CEE_LDC_I4_0;
+  rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+  // call int Interlocked.CompareExchange(ref int, int, int) method
+  pALNewInstr = rewriter_already_loaded.NewILInstr();
+  pALNewInstr->m_opcode = CEE_CALL;
+  pALNewInstr->m_Arg32 = interlocked_compare_member_ref;
+  rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+  // ldc.i4.1 : Load the constant 1 (int) to the stack
+  pALNewInstr = rewriter_already_loaded.NewILInstr();
+  pALNewInstr->m_opcode = CEE_LDC_I4_1;
+  rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+  // ceq : Compare equality from two values from the stack
+  pALNewInstr = rewriter_already_loaded.NewILInstr();
+  pALNewInstr->m_opcode = CEE_CEQ;
+  rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+  // ret : Return the value of the comparison
+  pALNewInstr = rewriter_already_loaded.NewILInstr();
+  pALNewInstr->m_opcode = CEE_RET;
+  rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+  
+  hr = rewriter_already_loaded.Export();
+  if (FAILED(hr)) {
+    Warn(
+        "GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for "
+        "ModuleID=",
+        module_id);
+    return hr;
+  }
+
   // Define a method on the managed side that will PInvoke into the profiler method:
   // C++: void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize)
   // C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
@@ -1776,8 +1905,28 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
   rewriter_void.InitializeTiny();
   rewriter_void.SetTkLocalVarSig(locals_signature_token);
+
   ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
   ILInstr* pNewInstr = NULL;
+
+  // Step 0) Check if the assembly was already loaded
+
+  // call bool IsAlreadyLoaded()
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_CALL;
+  pNewInstr->m_Arg32 = alreadyLoadedMethodToken;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // check if the return of the method call is true or false
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_BRFALSE_S;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+  ILInstr* pBranchFalseInstr = pNewInstr;
+  
+  // return if IsAlreadyLoaded is true
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_RET;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
   // Step 1) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
 
@@ -1786,6 +1935,9 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   pNewInstr->m_opcode = CEE_LDLOCA_S;
   pNewInstr->m_Arg32 = 0;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // Set the false branch target
+  pBranchFalseInstr->m_pTarget = pNewInstr;
 
   // ldloca.s 1 : Load the address of the "assemblySize" variable (locals index 1)
   pNewInstr = rewriter_void.NewILInstr();
