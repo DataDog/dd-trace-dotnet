@@ -42,6 +42,11 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 diagnosticManager.Start();
                 DiagnosticManager.Instance = diagnosticManager;
                 retValue = await client.GetStringAsync("/Home");
+                try
+                {
+                    await client.GetStringAsync("/Home/error");
+                }
+                catch { }
                 DiagnosticManager.Instance = null;
             }
 
@@ -144,6 +149,11 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             await Task.Yield();
             return "Hello world";
+        }
+
+        public void Error()
+        {
+            throw new Exception();
         }
     }
 }

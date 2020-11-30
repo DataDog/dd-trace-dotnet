@@ -273,7 +273,7 @@ namespace Datadog.Trace.DuckTyping
                         PropertyInfo targetProperty = null;
                         try
                         {
-                            targetProperty = targetType.GetProperty(duckAttribute.Name, DefaultFlags);
+                            targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
                         }
                         catch
                         {
@@ -320,7 +320,7 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo targetField = targetType.GetField(duckAttribute.Name, DefaultFlags);
+                        FieldInfo targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
                             break;
@@ -389,7 +389,7 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
-                        PropertyInfo targetProperty = targetType.GetProperty(duckAttribute.Name, DefaultFlags);
+                        PropertyInfo targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetProperty is null)
                         {
                             break;
@@ -406,7 +406,7 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo targetField = targetType.GetField(duckAttribute.Name, DefaultFlags);
+                        FieldInfo targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
                             break;

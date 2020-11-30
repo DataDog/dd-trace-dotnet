@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -366,28 +367,31 @@ namespace Datadog.Trace.DiagnosticListeners
         [DuckCopy]
         public struct HttpRequestInStartStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
         }
 
         [DuckCopy]
         public struct HttpRequestInStopStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
         }
 
         [DuckCopy]
         public struct UnhandledExceptionStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public Exception Exception;
         }
 
         [DuckCopy]
         public struct BeforeActionStruct
         {
-            [Duck(Name = "httpContext")]
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
 
-            [Duck(Name = "actionDescriptor")]
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public ActionDescriptor ActionDescriptor;
         }
 
