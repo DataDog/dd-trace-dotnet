@@ -310,9 +310,15 @@ namespace Datadog.Trace.DiagnosticListeners
                 HttpRequest request = typedArg.HttpContext.Request;
 
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-                string controllerName = actionDescriptor.RouteValues["controller"];
-                string actionName = actionDescriptor.RouteValues["action"];
-                string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template ?? $"{controllerName}/{actionName}";
+                string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template;
+                if (routeTemplate is null)
+                {
+                    string controllerName = actionDescriptor.RouteValues["controller"];
+                    string actionName = actionDescriptor.RouteValues["action"];
+
+                    routeTemplate = $"{controllerName}/{actionName}";
+                }
+
                 string resourceName = $"{httpMethod} {routeTemplate}";
 
                 // override the parent's resource name with the MVC route template
@@ -378,8 +384,10 @@ namespace Datadog.Trace.DiagnosticListeners
         [DuckCopy]
         public struct BeforeActionStruct
         {
+            [Duck(Name = "httpContext")]
             public HttpContext HttpContext;
 
+            [Duck(Name = "actionDescriptor")]
             public ActionDescriptor ActionDescriptor;
         }
 
