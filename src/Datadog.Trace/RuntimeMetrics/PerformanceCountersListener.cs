@@ -164,7 +164,7 @@ namespace Datadog.Trace.RuntimeMetrics
             {
                 int instancePid;
 
-                using (var counter = new PerformanceCounter(".NET CLR Memory", "Process ID", name, true))
+                using (var counter = new PerformanceCounter(MemoryCategoryName, "Process ID", name, true))
                 {
                     instancePid = (int)counter.NextValue();
                 }
