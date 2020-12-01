@@ -20,7 +20,7 @@ namespace Datadog.Trace.DuckTyping
                 proxyMemberReturnType,
                 Type.EmptyTypes);
 
-            ILGenerator il = proxyMethod.GetILGenerator();
+            LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
             Type returnType = targetField.FieldType;
 
             // Load the instance
@@ -40,19 +40,15 @@ namespace Datadog.Trace.DuckTyping
             {
                 // If the instance or the field are non public we need to create a Dynamic method to overpass the visibility checks
                 // we can't access non public types so we have to cast to object type (in the instance object and the return type if is needed).
-
-                string dynMethodName = $"_getNonPublicField+{targetField.DeclaringType.Name}.{targetField.Name}";
+                string dynMethodName = $"_getNonPublicField_{targetField.DeclaringType.Name}_{targetField.Name}";
                 returnType = UseDirectAccessTo(targetField.FieldType) ? targetField.FieldType : typeof(object);
 
                 // We create the dynamic method
                 Type[] dynParameters = targetField.IsStatic ? Type.EmptyTypes : new[] { typeof(object) };
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, _moduleBuilder, true);
 
-                // We store the dynamic method in a bag to avoid getting collected by the GC.
-                DynamicMethods.Add(dynMethod);
-
                 // Emit the dynamic method body
-                ILGenerator dynIL = dynMethod.GetILGenerator();
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
 
                 if (!targetField.IsStatic)
                 {
@@ -68,9 +64,10 @@ namespace Datadog.Trace.DuckTyping
                 dynIL.Emit(targetField.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, targetField);
                 dynIL.WriteTypeConversion(targetField.FieldType, returnType);
                 dynIL.Emit(OpCodes.Ret);
+                dynIL.Flush();
 
                 // Emit the call to the dynamic method
-                il.WriteMethodCalli(dynMethod, dynParameters);
+                il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
             }
 
             // Check if the type can be converted or if we need to enable duck chaining
@@ -94,6 +91,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             il.Emit(OpCodes.Ret);
+            il.Flush();
             _methodBuilderGetToken.Invoke(proxyMethod, null);
             return proxyMethod;
         }
@@ -109,7 +107,7 @@ namespace Datadog.Trace.DuckTyping
                 typeof(void),
                 new[] { proxyMemberReturnType });
 
-            ILGenerator il = method.GetILGenerator();
+            LazyILGenerator il = new LazyILGenerator(method.GetILGenerator());
             Type currentValueType = proxyMemberReturnType;
 
             // Load instance
@@ -149,7 +147,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 // If the instance or the field are non public we need to create a Dynamic method to overpass the visibility checks
 
-                string dynMethodName = $"_setField+{targetField.DeclaringType.Name}.{targetField.Name}";
+                string dynMethodName = $"_setField_{targetField.DeclaringType.Name}_{targetField.Name}";
 
                 // Convert the field type for the dynamic method
                 Type dynValueType = UseDirectAccessTo(targetField.FieldType) ? targetField.FieldType : typeof(object);
@@ -158,10 +156,9 @@ namespace Datadog.Trace.DuckTyping
                 // Create dynamic method
                 Type[] dynParameters = targetField.IsStatic ? new[] { dynValueType } : new[] { typeof(object), dynValueType };
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, _moduleBuilder, true);
-                DynamicMethods.Add(dynMethod);
 
                 // Write the dynamic method body
-                ILGenerator dynIL = dynMethod.GetILGenerator();
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
                 dynIL.Emit(OpCodes.Ldarg_0);
 
                 if (targetField.IsStatic)
@@ -182,12 +179,14 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 dynIL.Emit(OpCodes.Ret);
+                dynIL.Flush();
 
                 // Emit the call to the dynamic method
-                il.WriteMethodCalli(dynMethod, dynParameters);
+                il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
             }
 
             il.Emit(OpCodes.Ret);
+            il.Flush();
             _methodBuilderGetToken.Invoke(method, null);
             return method;
         }

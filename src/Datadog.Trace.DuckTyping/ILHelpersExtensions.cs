@@ -11,23 +11,52 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal static class ILHelpersExtensions
     {
-        private static Func<DynamicMethod, RuntimeMethodHandle> _dynamicGetMethodDescriptor;
-        private static List<RuntimeMethodHandle> _handles = new List<RuntimeMethodHandle>();
+        private static List<DynamicMethod> _dynamicMethods = new List<DynamicMethod>();
 
-        static ILHelpersExtensions()
+        internal static DynamicMethod GetDynamicMethodForIndex(int index)
         {
-            _dynamicGetMethodDescriptor = (Func<DynamicMethod, RuntimeMethodHandle>)typeof(DynamicMethod)
-                .GetMethod("GetMethodDescriptor", BindingFlags.NonPublic | BindingFlags.Instance)
-                .CreateDelegate(typeof(Func<DynamicMethod, RuntimeMethodHandle>));
+            lock (_dynamicMethods)
+            {
+                return _dynamicMethods[index];
+            }
+        }
+
+        internal static void CreateDelegateTypeFor(TypeBuilder proxyType, DynamicMethod dynamicMethod, out Type delType, out MethodInfo invokeMethod)
+        {
+            ModuleBuilder modBuilder = (ModuleBuilder)proxyType.Module;
+            TypeBuilder delegateType = modBuilder.DefineType($"{dynamicMethod.Name}Delegate_" + Guid.NewGuid().ToString("N"), TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.AnsiClass | TypeAttributes.AutoClass, typeof(MulticastDelegate));
+
+            // Delegate .ctor
+            ConstructorBuilder constructorBuilder = delegateType.DefineConstructor(MethodAttributes.RTSpecialName | MethodAttributes.HideBySig | MethodAttributes.Public, CallingConventions.Standard, new Type[] { typeof(object), typeof(IntPtr) });
+            constructorBuilder.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
+
+            // Define the Invoke method for the delegate
+            ParameterInfo[] parameters = dynamicMethod.GetParameters();
+            Type[] paramTypes = new Type[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                paramTypes[i] = parameters[i].ParameterType;
+            }
+
+            MethodBuilder methodBuilder = delegateType.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Virtual, dynamicMethod.ReturnType, paramTypes);
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                methodBuilder.DefineParameter(i + 1, parameters[i].Attributes, parameters[i].Name);
+            }
+
+            methodBuilder.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
+
+            delType = delegateType.CreateTypeInfo().AsType();
+            invokeMethod = delType.GetMethod("Invoke");
         }
 
         /// <summary>
         /// Load instance argument
         /// </summary>
-        /// <param name="il">ILGenerator</param>
+        /// <param name="il">LazyILGenerator instance</param>
         /// <param name="actualType">Actual type</param>
         /// <param name="expectedType">Expected type</param>
-        internal static void LoadInstanceArgument(this ILGenerator il, Type actualType, Type expectedType)
+        internal static void LoadInstanceArgument(this LazyILGenerator il, Type actualType, Type expectedType)
         {
             il.Emit(OpCodes.Ldarg_0);
             if (actualType == expectedType)
@@ -51,10 +80,10 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Write load arguments
         /// </summary>
-        /// <param name="il">IlGenerator</param>
+        /// <param name="il">LazyILGenerator instance</param>
         /// <param name="index">Argument index</param>
         /// <param name="isStatic">Define if we need to take into account the instance argument</param>
-        internal static void WriteLoadArgument(this ILGenerator il, int index, bool isStatic)
+        internal static void WriteLoadArgument(this LazyILGenerator il, int index, bool isStatic)
         {
             if (!isStatic)
             {
@@ -84,7 +113,34 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Write load local
         /// </summary>
-        /// <param name="il">IlGenerator</param>
+        /// <param name="il">LazyILGenerator instance</param>
+        /// <param name="index">Local index</param>
+        internal static void WriteLoadLocal(this LazyILGenerator il, int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    il.Emit(OpCodes.Ldloc_0);
+                    break;
+                case 1:
+                    il.Emit(OpCodes.Ldloc_1);
+                    break;
+                case 2:
+                    il.Emit(OpCodes.Ldloc_2);
+                    break;
+                case 3:
+                    il.Emit(OpCodes.Ldloc_3);
+                    break;
+                default:
+                    il.Emit(OpCodes.Ldloc_S, index);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Write load local
+        /// </summary>
+        /// <param name="il">ILGenerator instance</param>
         /// <param name="index">Local index</param>
         internal static void WriteLoadLocal(this ILGenerator il, int index)
         {
@@ -111,9 +167,9 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Write store local
         /// </summary>
-        /// <param name="il">IlGenerator</param>
+        /// <param name="il">LazyILGenerator instance</param>
         /// <param name="index">Local index</param>
-        internal static void WriteStoreLocal(this ILGenerator il, int index)
+        internal static void WriteStoreLocal(this LazyILGenerator il, int index)
         {
             switch (index)
             {
@@ -136,12 +192,65 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Write constant int value
+        /// </summary>
+        /// <param name="il">LazyILGenerator instance</param>
+        /// <param name="value">int value</param>
+        internal static void WriteInt(this LazyILGenerator il, int value)
+        {
+            if (value >= -1 && value <= 8)
+            {
+                switch (value)
+                {
+                    case -1:
+                        il.Emit(OpCodes.Ldc_I4_M1);
+                        break;
+                    case 0:
+                        il.Emit(OpCodes.Ldc_I4_0);
+                        break;
+                    case 1:
+                        il.Emit(OpCodes.Ldc_I4_1);
+                        break;
+                    case 2:
+                        il.Emit(OpCodes.Ldc_I4_2);
+                        break;
+                    case 3:
+                        il.Emit(OpCodes.Ldc_I4_3);
+                        break;
+                    case 4:
+                        il.Emit(OpCodes.Ldc_I4_4);
+                        break;
+                    case 5:
+                        il.Emit(OpCodes.Ldc_I4_5);
+                        break;
+                    case 6:
+                        il.Emit(OpCodes.Ldc_I4_6);
+                        break;
+                    case 7:
+                        il.Emit(OpCodes.Ldc_I4_7);
+                        break;
+                    default:
+                        il.Emit(OpCodes.Ldc_I4_8);
+                        break;
+                }
+            }
+            else if (value >= -128 && value <= 127)
+            {
+                il.Emit(OpCodes.Ldc_I4_S, value);
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldc_I4, value);
+            }
+        }
+
+        /// <summary>
         /// Convert a current type to an expected type
         /// </summary>
-        /// <param name="il">ILGenerator</param>
+        /// <param name="il">LazyILGenerator instance</param>
         /// <param name="actualType">Actual type</param>
         /// <param name="expectedType">Expected type</param>
-        internal static void WriteTypeConversion(this ILGenerator il, Type actualType, Type expectedType)
+        internal static void WriteTypeConversion(this LazyILGenerator il, Type actualType, Type expectedType)
         {
             var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
             var expectedUnderlyingType = expectedType.IsEnum ? Enum.GetUnderlyingType(expectedType) : expectedType;
@@ -228,36 +337,48 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Write a Call to a method using Calli
         /// </summary>
-        /// <param name="il">ILGenerator</param>
+        /// <param name="il">LazyILGenerator instance</param>
         /// <param name="method">Method to get called</param>
-        /// <param name="methodParameters">Method parameters (to avoid the allocations of calculating it)</param>
-        internal static void WriteMethodCalli(this ILGenerator il, MethodInfo method, Type[] methodParameters = null)
+        internal static void WriteMethodCalli(this LazyILGenerator il, MethodInfo method)
         {
-            RuntimeMethodHandle handle;
-
-            if (method is DynamicMethod dynMethod)
-            {
-                // Dynamic methods doesn't expose the internal function pointer
-                // so we have to get it using a delegate from reflection.
-                handle = _dynamicGetMethodDescriptor(dynMethod);
-                lock (_handles)
-                {
-                    _handles.Add(handle);
-                }
-            }
-            else
-            {
-                handle = method.MethodHandle;
-            }
-
-            il.Emit(OpCodes.Ldc_I8, (long)handle.GetFunctionPointer());
+            il.Emit(OpCodes.Ldc_I8, (long)method.MethodHandle.GetFunctionPointer());
             il.Emit(OpCodes.Conv_I);
             il.EmitCalli(
                 OpCodes.Calli,
                 method.CallingConvention,
                 method.ReturnType,
-                methodParameters ?? method.GetParameters().Select(p => p.ParameterType).ToArray(),
+                method.GetParameters().Select(p => p.ParameterType).ToArray(),
                 null);
+        }
+
+        /// <summary>
+        /// Write a DynamicMethod call by creating and injecting a custom delegate in the proxyType
+        /// </summary>
+        /// <param name="il">LazyILGenerator instance</param>
+        /// <param name="dynamicMethod">Dynamic method to get called</param>
+        /// <param name="proxyType">ProxyType builder</param>
+        internal static void WriteDynamicMethodCall(this LazyILGenerator il, DynamicMethod dynamicMethod, TypeBuilder proxyType)
+        {
+            // We create a custom delegate inside the module builder
+            CreateDelegateTypeFor(proxyType, dynamicMethod, out Type delegateType, out MethodInfo invokeMethod);
+            int index;
+            lock (_dynamicMethods)
+            {
+                _dynamicMethods.Add(dynamicMethod);
+                index = _dynamicMethods.Count - 1;
+            }
+
+            // We fill the DelegateCache<> for that custom type with the delegate instance
+            MethodInfo fillDelegateMethodInfo = typeof(DuckType.DelegateCache<>).MakeGenericType(delegateType).GetMethod("FillDelegate", BindingFlags.NonPublic | BindingFlags.Static);
+            fillDelegateMethodInfo.Invoke(null, new object[] { index });
+
+            // We get the delegate instance and load it in to the stack before the parameters (at the begining of the IL body)
+            il.SetOffset(0);
+            il.EmitCall(OpCodes.Call, typeof(DuckType.DelegateCache<>).MakeGenericType(delegateType).GetMethod("GetDelegate"), null);
+            il.ResetOffset();
+
+            // We emit the call to the delegate invoke method.
+            il.EmitCall(OpCodes.Callvirt, invokeMethod, null);
         }
     }
 }
