@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -25,6 +26,11 @@ namespace Datadog.Trace.DuckTyping
     public class DuckAttribute : Attribute
     {
         /// <summary>
+        /// Default BindingFlags
+        /// </summary>
+        public const BindingFlags DefaultFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
+
+        /// <summary>
         /// Gets or sets the underlying type member name
         /// </summary>
         public string Name { get; set; }
@@ -33,6 +39,11 @@ namespace Datadog.Trace.DuckTyping
         /// Gets or sets duck kind
         /// </summary>
         public DuckKind Kind { get; set; } = DuckKind.Property;
+
+        /// <summary>
+        /// Gets or sets the binding flags
+        /// </summary>
+        public BindingFlags BindingFlags { get; set; } = DefaultFlags;
 
         /// <summary>
         /// Gets or sets the generic parameter type names definition for a generic method call (required when calling generic methods and instance type is non public)

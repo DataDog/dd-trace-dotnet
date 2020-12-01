@@ -221,12 +221,12 @@ In order to support all accessor modifiers for: instance types, parameters and r
 | Public                       | Property           | Private, Protected, Internal | Direct using function pointers (Calli opcode) |
 | Public                       | Method             | Public                       | Direct                                        |
 | Public                       | Method             | Private, Protected, Internal | Direct using function pointers (Calli opcode) |
-| Private, Protected, Internal | Field              | Public                       | through DynamicMethod                         |
-| Private, Protected, Internal | Field              | Private, Protected, Internal | through DynamicMethod                         |
-| Private, Protected, Internal | Property           | Public                       | through DynamicMethod                         |
-| Private, Protected, Internal | Property           | Private, Protected, Internal | through DynamicMethod                         |
-| Private, Protected, Internal | Method             | Public                       | through DynamicMethod                         |
-| Private, Protected, Internal | Method             | Private, Protected, Internal | through DynamicMethod                         |
+| Private, Protected, Internal | Field              | Public                       | through DynamicMethod delegate                |
+| Private, Protected, Internal | Field              | Private, Protected, Internal | through DynamicMethod delegate                |
+| Private, Protected, Internal | Property           | Public                       | through DynamicMethod delegate                |
+| Private, Protected, Internal | Property           | Private, Protected, Internal | through DynamicMethod delegate                |
+| Private, Protected, Internal | Method             | Public                       | through DynamicMethod delegate                |
+| Private, Protected, Internal | Method             | Private, Protected, Internal | through DynamicMethod delegate                |
 
 ## Generics methods
 

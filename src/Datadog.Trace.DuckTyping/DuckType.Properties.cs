@@ -43,7 +43,7 @@ namespace Datadog.Trace.DuckTyping
                 proxyMemberReturnType,
                 proxyParameterTypes);
 
-            ILGenerator il = proxyMethod.GetILGenerator();
+            LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
             MethodInfo targetMethod = targetProperty.GetMethod;
             Type returnType = targetProperty.PropertyType;
 
@@ -105,7 +105,7 @@ namespace Datadog.Trace.DuckTyping
                 // If the instance is not public we need to create a Dynamic method to overpass the visibility checks
                 // we can't access non public types so we have to cast to object type (in the instance object and the return type).
 
-                string dynMethodName = $"_getNonPublicProperty+{targetProperty.DeclaringType.Name}.{targetProperty.Name}";
+                string dynMethodName = $"_getNonPublicProperty_{targetProperty.DeclaringType.Name}_{targetProperty.Name}";
                 returnType = UseDirectAccessTo(targetProperty.PropertyType) ? targetProperty.PropertyType : typeof(object);
 
                 // We create the dynamic method
@@ -113,11 +113,8 @@ namespace Datadog.Trace.DuckTyping
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, _moduleBuilder, true);
 
-                // We store the dynamic method in a bag to avoid getting collected by the GC.
-                DynamicMethods.Add(dynMethod);
-
                 // Emit the dynamic method body
-                ILGenerator dynIL = dynMethod.GetILGenerator();
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
 
                 if (!targetMethod.IsStatic)
                 {
@@ -133,9 +130,10 @@ namespace Datadog.Trace.DuckTyping
                 dynIL.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
                 dynIL.WriteTypeConversion(targetProperty.PropertyType, returnType);
                 dynIL.Emit(OpCodes.Ret);
+                dynIL.Flush();
 
                 // Emit the call to the dynamic method
-                il.WriteMethodCalli(dynMethod, dynParameters);
+                il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
             }
 
             // Handle the return value
@@ -160,6 +158,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             il.Emit(OpCodes.Ret);
+            il.Flush();
             _methodBuilderGetToken.Invoke(proxyMethod, null);
             return proxyMethod;
         }
@@ -195,7 +194,7 @@ namespace Datadog.Trace.DuckTyping
                 typeof(void),
                 proxyParameterTypes);
 
-            ILGenerator il = proxyMethod.GetILGenerator();
+            LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
             MethodInfo targetMethod = targetProperty.SetMethod;
 
             // Load the instance if needed
@@ -263,11 +262,8 @@ namespace Datadog.Trace.DuckTyping
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, _moduleBuilder, true);
 
-                // We store the dynamic method in a bag to avoid getting collected by the GC.
-                DynamicMethods.Add(dynMethod);
-
                 // Emit the dynamic method body
-                ILGenerator dynIL = dynMethod.GetILGenerator();
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
 
                 if (!targetMethod.IsStatic)
                 {
@@ -282,12 +278,14 @@ namespace Datadog.Trace.DuckTyping
 
                 dynIL.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
                 dynIL.Emit(OpCodes.Ret);
+                dynIL.Flush();
 
-                // Emit the call to the dynamic method
-                il.WriteMethodCalli(dynMethod, dynParameters);
+                // Create and load delegate for the DynamicMethod
+                il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
             }
 
             il.Emit(OpCodes.Ret);
+            il.Flush();
             _methodBuilderGetToken.Invoke(proxyMethod, null);
             return proxyMethod;
         }

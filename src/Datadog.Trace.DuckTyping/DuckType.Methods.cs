@@ -131,7 +131,7 @@ namespace Datadog.Trace.DuckTyping
                     proxyMethodParametersBuilders[j] = pmImpParameter;
                 }
 
-                ILGenerator il = proxyMethod.GetILGenerator();
+                LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
                 Type returnType = targetMethod.ReturnType;
                 List<OutputAndRefParameterData> outputAndRefParameters = null;
 
@@ -329,7 +329,7 @@ namespace Datadog.Trace.DuckTyping
                     // If the instance is not public we need to create a Dynamic method to overpass the visibility checks
                     // we can't access non public types so we have to cast to object type (in the instance object and the return type).
 
-                    string dynMethodName = $"_callMethod+{targetMethod.DeclaringType.Name}.{targetMethod.Name}";
+                    string dynMethodName = $"_callMethod_{targetMethod.DeclaringType.Name}_{targetMethod.Name}";
                     returnType = UseDirectAccessTo(targetMethod.ReturnType) && !targetMethod.ReturnType.IsGenericParameter ? targetMethod.ReturnType : typeof(object);
 
                     // We create the dynamic method
@@ -338,11 +338,8 @@ namespace Datadog.Trace.DuckTyping
                     Type[] dynParameters = targetMethod.IsStatic ? targetMethodParametersTypes : (new[] { typeof(object) }).Concat(targetMethodParametersTypes).ToArray();
                     DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, _moduleBuilder, true);
 
-                    // We store the dynamic method in a bag to avoid getting collected by the GC.
-                    DynamicMethods.Add(dynMethod);
-
                     // Emit the dynamic method body
-                    ILGenerator dynIL = dynMethod.GetILGenerator();
+                    LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
 
                     if (!targetMethod.IsStatic)
                     {
@@ -369,9 +366,10 @@ namespace Datadog.Trace.DuckTyping
 
                     dynIL.WriteSafeTypeConversion(targetMethod.ReturnType, returnType);
                     dynIL.Emit(OpCodes.Ret);
+                    dynIL.Flush();
 
                     // Emit the call to the dynamic method
-                    il.WriteMethodCalli(dynMethod, dynParameters);
+                    il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
                 }
 
                 // We check if we have output or ref parameters to set in the proxy method
@@ -438,6 +436,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 il.Emit(OpCodes.Ret);
+                il.Flush();
                 _methodBuilderGetToken.Invoke(proxyMethod, null);
             }
         }
@@ -453,7 +452,7 @@ namespace Datadog.Trace.DuckTyping
             if (proxyMethodDuckAttribute.ParameterTypeNames != null)
             {
                 Type[] parameterTypes = proxyMethodDuckAttribute.ParameterTypeNames.Select(pName => Type.GetType(pName, true)).ToArray();
-                targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, DefaultFlags, null, parameterTypes, null);
+                targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
                 if (targetMethod is null)
                 {
                     DuckTypeTargetMethodNotFoundException.Throw(proxyMethod);
@@ -465,7 +464,7 @@ namespace Datadog.Trace.DuckTyping
             // If the duck attribute doesn't specify the parameters to use, we do the best effor to find a target method without any ambiguity.
 
             // First we try with the current proxy parameter types
-            targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, DefaultFlags, null, proxyMethodParametersTypes, null);
+            targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
             if (targetMethod != null)
             {
                 return targetMethod;
@@ -475,7 +474,7 @@ namespace Datadog.Trace.DuckTyping
             // Also this can happen if the proxy parameters type uses a base object (ex: System.Object) instead the type.
             // In this case we try to find a method that we can match, in case of ambiguity (> 1 method found) we throw an exception.
 
-            MethodInfo[] allTargetMethods = targetType.GetMethods(DefaultFlags);
+            MethodInfo[] allTargetMethods = targetType.GetMethods(DuckAttribute.DefaultFlags);
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
                 // We omit target methods with different names.
@@ -577,7 +576,7 @@ namespace Datadog.Trace.DuckTyping
             return targetMethod;
         }
 
-        private static void WriteSafeTypeConversion(this ILGenerator il, Type actualType, Type expectedType)
+        private static void WriteSafeTypeConversion(this LazyILGenerator il, Type actualType, Type expectedType)
         {
             // If both types are generics, we expect that the generic parameter are the same type (passthrough)
             if (actualType.IsGenericParameter && expectedType.IsGenericParameter)
