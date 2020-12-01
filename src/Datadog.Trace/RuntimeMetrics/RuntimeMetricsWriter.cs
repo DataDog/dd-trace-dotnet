@@ -24,6 +24,11 @@ namespace Datadog.Trace.RuntimeMetrics
         private TimeSpan _previousSystemCpu;
 
         public RuntimeMetricsWriter(IDogStatsd statsd, int delay)
+            : this(statsd, delay, InitializeListener)
+        {
+        }
+
+        internal RuntimeMetricsWriter(IDogStatsd statsd, int delay, Func<IDogStatsd, IRuntimeMetricsListener> initializeListener)
         {
             _delay = delay;
             _statsd = statsd;
@@ -55,7 +60,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                _listener = InitializeListener(statsd);
+                _listener = initializeListener(statsd);
             }
             catch (Exception ex)
             {
@@ -85,7 +90,7 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             var name = e.Exception.GetType().Name;
 
-            _statsd.Increment("runtime.dotnet.exceptions.count", 1, tags: new[] { $"exception_type:{name}" });
+            _statsd.Increment(MetricsPaths.ExceptionsCount, 1, tags: new[] { $"exception_type:{name}" });
         }
 
         private void PushEvents()
