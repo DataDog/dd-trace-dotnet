@@ -88,11 +88,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  // Initialize ReJIT handler and define the Rewriter Callback
-  rejit_handler = new RejitHandler(this->info_, [this](RejitHandlerModule* mod, RejitHandlerModuleMethod* method) {
-      return this->CallTarget_RewriterCallback(mod, method);
-  });
-
   Info("Environment variables:");
 
   for (auto&& env_var : env_vars_to_display) {
@@ -140,7 +135,15 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   const auto is_calltarget_enabled = IsCallTargetEnabled();
-  Info("CallTarget integrations are: ", is_calltarget_enabled ? "ENABLED" : "DISABLED");
+
+  // Initialize ReJIT handler and define the Rewriter Callback
+  if (is_calltarget_enabled) {
+      rejit_handler = new RejitHandler(this->info_, [this](RejitHandlerModule* mod, RejitHandlerModuleMethod* method) {
+          return this->CallTarget_RewriterCallback(mod, method);
+      });
+  } else {
+      rejit_handler = NULL;
+  }
 
   // load all available integrations from JSON files
   const std::vector<Integration> all_integrations =
@@ -181,8 +184,15 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_MONITOR_MODULE_LOADS |
                      COR_PRF_MONITOR_ASSEMBLY_LOADS |
-                     COR_PRF_ENABLE_REJIT;
+                     COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
+  if (is_calltarget_enabled) {
+    Info("CallTarget instrumentation is enabled.");
+    event_mask |= COR_PRF_ENABLE_REJIT;
+  } else {
+    Info("CallTarget instrumentation is disabled.");
+  }
+  
   if (!EnableInlining()) {
     Info("JIT Inlining is disabled.");
     event_mask |= COR_PRF_DISABLE_INLINING;
