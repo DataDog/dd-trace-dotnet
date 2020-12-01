@@ -65,6 +65,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         public void Dispose()
         {
+            AppDomain.CurrentDomain.FirstChanceException -= FirstChanceException;
             _timer.Dispose();
             _listener?.Dispose();
         }
