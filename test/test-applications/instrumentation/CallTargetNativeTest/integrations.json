@@ -13,8 +13,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -29,8 +29,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -45,8 +45,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -61,8 +61,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -77,8 +77,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -93,8 +93,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -109,8 +109,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -125,8 +125,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -141,8 +141,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -157,8 +157,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -173,8 +173,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -189,8 +189,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -205,8 +205,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -221,8 +221,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -237,8 +237,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -253,8 +253,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop0ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -270,8 +270,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -287,8 +287,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -304,8 +304,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -321,8 +321,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -338,8 +338,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -355,8 +355,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -372,8 +372,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -389,8 +389,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -406,8 +406,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -423,8 +423,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -440,8 +440,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -457,8 +457,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -474,8 +474,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -491,8 +491,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -508,8 +508,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -525,8 +525,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop1ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop1ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -543,8 +543,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -561,8 +561,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -579,8 +579,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -597,8 +597,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -615,8 +615,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -633,8 +633,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -651,8 +651,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -669,8 +669,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -687,8 +687,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -705,8 +705,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -723,8 +723,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -741,8 +741,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -759,8 +759,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -777,8 +777,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -795,8 +795,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -813,8 +813,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop2ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop2ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -832,8 +832,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -851,8 +851,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -870,8 +870,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -889,8 +889,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -908,8 +908,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -927,8 +927,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -946,8 +946,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -965,8 +965,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -984,8 +984,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1003,8 +1003,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1022,8 +1022,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1041,8 +1041,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1060,8 +1060,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1079,8 +1079,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1098,8 +1098,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1117,8 +1117,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop3ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop3ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1137,8 +1137,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1157,8 +1157,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1177,8 +1177,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1197,8 +1197,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1217,8 +1217,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1237,8 +1237,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1257,8 +1257,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1277,8 +1277,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1297,8 +1297,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1317,8 +1317,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1337,8 +1337,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1357,8 +1357,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1377,8 +1377,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1397,8 +1397,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1417,8 +1417,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1437,8 +1437,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop4ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop4ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1458,8 +1458,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1479,8 +1479,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1500,8 +1500,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1521,8 +1521,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1542,8 +1542,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1563,8 +1563,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1584,8 +1584,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1605,8 +1605,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1626,8 +1626,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1647,8 +1647,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1668,8 +1668,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1689,8 +1689,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1710,8 +1710,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1731,8 +1731,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1752,8 +1752,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1773,8 +1773,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop5ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop5ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1795,8 +1795,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1817,8 +1817,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1839,8 +1839,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1861,8 +1861,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1883,8 +1883,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1905,8 +1905,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1927,8 +1927,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1949,8 +1949,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1971,8 +1971,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1993,8 +1993,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2015,8 +2015,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2037,8 +2037,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2059,8 +2059,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2081,8 +2081,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2103,8 +2103,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2125,8 +2125,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop6ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop6ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2148,8 +2148,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2171,8 +2171,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2194,8 +2194,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2217,8 +2217,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2240,8 +2240,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2263,8 +2263,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2286,8 +2286,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2309,8 +2309,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2332,8 +2332,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2355,8 +2355,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2378,8 +2378,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2401,8 +2401,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2424,8 +2424,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsVoidIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsVoidIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2447,8 +2447,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2470,8 +2470,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -2493,8 +2493,8 @@
           ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.20.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.CallTarget.NoOp.Noop7ArgumentsIntegration",
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
       }
