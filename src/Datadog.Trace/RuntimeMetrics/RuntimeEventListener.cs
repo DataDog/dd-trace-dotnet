@@ -36,10 +36,10 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             // Can't use a Timing because Dogstatsd doesn't support local aggregation
             // It means that the aggregations in the UI would be wrong
-            _statsd.Gauge("runtime.dotnet.threads.contention_time", _contentionTime.Clear());
-            _statsd.Counter("runtime.dotnet.threads.contention_count", Interlocked.Exchange(ref _contentionCount, 0));
+            _statsd.Gauge(MetricsPaths.ContentionTime, _contentionTime.Clear());
+            _statsd.Counter(MetricsPaths.ContentionCount, Interlocked.Exchange(ref _contentionCount, 0));
 
-            _statsd.Gauge("runtime.dotnet.threads.workers_count", ThreadPool.ThreadCount);
+            _statsd.Gauge(MetricsPaths.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
         }
 
         protected override void OnEventSourceCreated(EventSource eventSource)
