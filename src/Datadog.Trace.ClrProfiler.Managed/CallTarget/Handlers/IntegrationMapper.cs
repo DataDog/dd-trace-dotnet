@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     throw new InvalidCastException($"The target parameter {targetParameterType} can't be assigned from {sourceParameterType}");
                 }
 
-                ILHelpersExtensions.WriteLoadArgument(ilWriter, i, mustLoadInstance);
+                WriteLoadArgument(ilWriter, i, mustLoadInstance);
                 if (parameterProxyType != null)
                 {
                     WriteCreateNewProxyInstance(ilWriter, parameterProxyType, sourceParameterType);
@@ -651,6 +651,33 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     break;
                 default:
                     il.Emit(OpCodes.Ldc_I4, value);
+                    break;
+            }
+        }
+
+        private static void WriteLoadArgument(ILGenerator il, int index, bool isStatic)
+        {
+            if (!isStatic)
+            {
+                index += 1;
+            }
+
+            switch (index)
+            {
+                case 0:
+                    il.Emit(OpCodes.Ldarg_0);
+                    break;
+                case 1:
+                    il.Emit(OpCodes.Ldarg_1);
+                    break;
+                case 2:
+                    il.Emit(OpCodes.Ldarg_2);
+                    break;
+                case 3:
+                    il.Emit(OpCodes.Ldarg_3);
+                    break;
+                default:
+                    il.Emit(OpCodes.Ldarg_S, index);
                     break;
             }
         }
