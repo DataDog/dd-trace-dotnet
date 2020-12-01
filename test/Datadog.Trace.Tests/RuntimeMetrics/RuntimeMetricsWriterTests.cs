@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
                 }
 
                 statsd.Verify(
-                    s => s.Increment(MetricsPaths.ExceptionsCount, 1, It.IsAny<double>(), It.Is<string[]>(tags => tags.Single() == "exception_type:CustomException")),
+                    s => s.Increment(MetricsPaths.ExceptionsCount, 1, It.IsAny<double>(), new[] { "exception_type:CustomException" }),
                     Times.Once);
             }
         }
