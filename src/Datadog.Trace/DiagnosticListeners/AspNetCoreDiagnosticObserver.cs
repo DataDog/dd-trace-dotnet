@@ -289,6 +289,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
+            tags.Measured = 1;
             tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
         }
 

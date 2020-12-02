@@ -246,6 +246,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 DecorateSpan(span, tags);
                 tags.Source = source;
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
@@ -291,6 +292,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.OperationName = operationName;
                 tags.OperationType = operationType;
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)

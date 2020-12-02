@@ -54,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.Method = method;
                 tags.Url = url;
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)

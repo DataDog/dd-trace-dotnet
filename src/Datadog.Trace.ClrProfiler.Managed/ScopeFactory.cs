@@ -68,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler
                 tags.HttpUrl = httpUrl;
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
@@ -124,6 +125,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 span.AddTagsFromDbCommand(command);
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(AdoNetConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
