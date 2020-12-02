@@ -43,7 +43,7 @@ if (OSX)
             ./lib/coreclr/src/pal/prebuilt/inc
             ./lib/coreclr/src/pal/inc
             ./lib/coreclr/src/inc
-            ./lib/spdlog_x64-osx/include
+            ./lib/spdlog_x64-linux/include
             /opt/fmt/include
             $<BUILD_INTERFACE:/opt/re2>
             $<BUILD_INTERFACE:/opt/json/include>
