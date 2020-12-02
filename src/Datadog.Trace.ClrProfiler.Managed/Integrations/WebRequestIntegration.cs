@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -14,10 +15,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class WebRequestIntegration
     {
         private const string WebRequestTypeName = "System.Net.WebRequest";
-        private const string IntegrationName = "WebRequest";
         private const string Major4 = "4";
         private const string Major5 = "5";
 
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.WebRequest));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(WebRequestIntegration));
 
         /// <summary>
@@ -81,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return callGetResponse(webRequest);
             }
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationName, out var tags))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags))
             {
                 try
                 {
@@ -166,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return await originalMethod(webRequest).ConfigureAwait(false);
             }
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, webRequest.Method, webRequest.RequestUri, IntegrationName, out var tags))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, webRequest.Method, webRequest.RequestUri, IntegrationId, out var tags))
             {
                 try
                 {

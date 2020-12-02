@@ -1,7 +1,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -12,9 +12,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RedisHelper));
 
-        internal static Scope CreateScope(Tracer tracer, string integrationName, string host, string port, string rawCommand)
+        internal static Scope CreateScope(Tracer tracer, IntegrationInfo integrationId, string host, string port, string rawCommand)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationName))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.Host = host;
                 tags.Port = port;
 
-                tags.SetAnalyticsSampleRate(integrationName, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

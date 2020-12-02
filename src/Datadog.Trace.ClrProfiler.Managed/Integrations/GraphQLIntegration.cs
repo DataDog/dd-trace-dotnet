@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -13,7 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class GraphQLIntegration
     {
-        internal const string IntegrationName = "GraphQL";
+        internal const string IntegrationName = nameof(IntegrationIds.GraphQL);
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         private const string ServiceName = "graphql";
 
         private const string Major2 = "2";
@@ -223,7 +225,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScopeFromValidate(object document)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -244,7 +246,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 DecorateSpan(span, tags);
                 tags.Source = source;
 
-                tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {
@@ -256,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScopeFromExecuteAsync(object executionContext)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -289,7 +291,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.OperationName = operationName;
                 tags.OperationType = operationType;
 
-                tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

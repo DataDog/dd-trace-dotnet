@@ -14,8 +14,9 @@ namespace Datadog.Trace.ServiceFabric
     /// </summary>
     public static class Remoting
     {
-        private const string IntegrationName = "ServiceRemoting";
         private const string SpanNamePrefix = "service-remoting";
+
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ServiceRemoting));
 
         // ILogger and DatadogLogging are internal to Datadog.Trade.dll, so we use NuGet package IgnoresAccessChecksToGenerator
         // to generate [IgnoresAccessChecksToAttribute] and generate reference assemblies where they are public
@@ -386,7 +387,7 @@ namespace Datadog.Trace.ServiceFabric
 
         private static double? GetAnalyticsSampleRate(Tracer tracer, bool enabledWithGlobalSetting)
         {
-            IntegrationSettings integrationSettings = tracer.Settings.Integrations[IntegrationName];
+            IntegrationSettings integrationSettings = tracer.Settings.Integrations[IntegrationId];
             bool analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && tracer.Settings.AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }

@@ -25,7 +25,7 @@ namespace Datadog.Trace.AspNet
                 scopeManager: new AspNetScopeManager(),
                 statsd: null);
 
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(TracingHttpModule.IntegrationName))
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(TracingHttpModule.IntegrationId))
             {
                 // only register http module if integration is enabled
                 HttpApplication.RegisterModule(typeof(TracingHttpModule));

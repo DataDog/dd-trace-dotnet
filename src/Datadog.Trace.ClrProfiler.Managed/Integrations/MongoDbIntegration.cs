@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -13,7 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class MongoDbIntegration
     {
-        internal const string IntegrationName = "MongoDb";
+        internal const string IntegrationName = nameof(IntegrationIds.MongoDb);
+
         private const string OperationName = "mongodb.query";
         private const string ServiceName = "mongodb";
 
@@ -23,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string MongoDbClientAssembly = "MongoDB.Driver.Core";
         private const string IWireProtocol = "MongoDB.Driver.Core.WireProtocol.IWireProtocol";
         private const string IWireProtocolGeneric = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1";
+
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MongoDbIntegration));
 
@@ -372,7 +376,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(object wireProtocol, object connection)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -474,7 +478,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.Host = host;
                 tags.Port = port;
 
-                tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

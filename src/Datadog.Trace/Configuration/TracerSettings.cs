@@ -54,6 +54,8 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
+            Integrations = new IntegrationSettingsCollection(source);
+
             var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
                             // backwards compatibility for names used in the past
                             source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
@@ -94,8 +96,6 @@ namespace Datadog.Trace.Configuration
             MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
                                           // default value
                                           100;
-
-            Integrations = new IntegrationSettingsCollection(source);
 
             GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
                          // backwards compatibility for names used in the past
@@ -303,31 +303,38 @@ namespace Datadog.Trace.Configuration
             return GlobalSettings.CreateDefaultConfigurationSource();
         }
 
-        internal bool IsIntegrationEnabled(string name)
+        /// <summary>
+        /// Populate the internal structures. Modifying the settings past this point is not supported
+        /// </summary>
+        internal void Freeze()
+        {
+            Integrations.SetDisabledIntegrations(DisabledIntegrationNames);
+        }
+
+        internal bool IsIntegrationEnabled(IntegrationInfo integration, bool defaultValue = true)
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
             {
-                bool disabled = Integrations[name].Enabled == false || DisabledIntegrationNames.Contains(name);
-                return !disabled;
+                return Integrations[integration].Enabled ?? defaultValue;
             }
 
             return false;
         }
 
-        internal bool IsOptInIntegrationEnabled(string name)
+        internal bool IsIntegrationEnabled(string integrationName)
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
             {
-                var disabled = Integrations[name].Enabled != true || DisabledIntegrationNames.Contains(name);
-                return !disabled;
+                bool? enabled = Integrations[integrationName].Enabled;
+                return enabled != false;
             }
 
             return false;
         }
 
-        internal double? GetIntegrationAnalyticsSampleRate(string name, bool enabledWithGlobalSetting)
+        internal double? GetIntegrationAnalyticsSampleRate(IntegrationInfo integration, bool enabledWithGlobalSetting)
         {
-            var integrationSettings = Integrations[name];
+            var integrationSettings = Integrations[integration];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }
