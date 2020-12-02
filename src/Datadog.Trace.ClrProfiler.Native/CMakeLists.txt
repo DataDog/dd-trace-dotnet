@@ -44,7 +44,7 @@ if (OSX)
             ./lib/coreclr/src/pal/inc
             ./lib/coreclr/src/inc
             ./lib/spdlog_x64-osx/include
-            ./lib/fmt_x64-osx/include
+            /opt/fmt/include
             $<BUILD_INTERFACE:/opt/re2>
             $<BUILD_INTERFACE:/opt/json/include>
     )
