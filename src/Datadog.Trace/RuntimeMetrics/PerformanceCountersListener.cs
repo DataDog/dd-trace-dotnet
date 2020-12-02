@@ -63,12 +63,12 @@ namespace Datadog.Trace.RuntimeMetrics
                 _instanceName = GetSimpleInstanceName();
             }
 
-            TryUpdateGauge(MetricsPaths.Gen0HeapSize, _gen0Size);
-            TryUpdateGauge(MetricsPaths.Gen1HeapSize, _gen1Size);
-            TryUpdateGauge(MetricsPaths.Gen2HeapSize, _gen2Size);
-            TryUpdateGauge(MetricsPaths.LohSize, _lohSize);
+            TryUpdateGauge(MetricsNames.Gen0HeapSize, _gen0Size);
+            TryUpdateGauge(MetricsNames.Gen1HeapSize, _gen1Size);
+            TryUpdateGauge(MetricsNames.Gen2HeapSize, _gen2Size);
+            TryUpdateGauge(MetricsNames.LohSize, _lohSize);
 
-            TryUpdateCounter(MetricsPaths.ContentionCount, _contentionCount, ref _lastContentionCount);
+            TryUpdateCounter(MetricsNames.ContentionCount, _contentionCount, ref _lastContentionCount);
 
             var gen0 = GC.CollectionCount(0);
             var gen1 = GC.CollectionCount(1);
@@ -76,17 +76,17 @@ namespace Datadog.Trace.RuntimeMetrics
 
             if (_previousGen0Count != null)
             {
-                _statsd.Increment(MetricsPaths.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
+                _statsd.Increment(MetricsNames.Gen0CollectionsCount, gen0 - _previousGen0Count.Value);
             }
 
             if (_previousGen1Count != null)
             {
-                _statsd.Increment(MetricsPaths.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
+                _statsd.Increment(MetricsNames.Gen1CollectionsCount, gen1 - _previousGen1Count.Value);
             }
 
             if (_previousGen2Count != null)
             {
-                _statsd.Increment(MetricsPaths.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
+                _statsd.Increment(MetricsNames.Gen2CollectionsCount, gen2 - _previousGen2Count.Value);
             }
 
             _previousGen0Count = gen0;

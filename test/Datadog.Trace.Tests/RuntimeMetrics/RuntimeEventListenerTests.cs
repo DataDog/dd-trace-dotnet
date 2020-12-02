@@ -24,9 +24,9 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
             listener.Refresh();
 
-            statsd.Verify(s => s.Gauge(MetricsPaths.ContentionTime, It.IsAny<double>(), 1, null), Times.Once);
-            statsd.Verify(s => s.Counter(MetricsPaths.ContentionCount, It.IsAny<long>(), 1, null), Times.Once);
-            statsd.Verify(s => s.Gauge(MetricsPaths.ThreadPoolWorkersCount, It.IsAny<int>(), 1, null), Times.Once);
+            statsd.Verify(s => s.Gauge(MetricsNames.ContentionTime, It.IsAny<double>(), 1, null), Times.Once);
+            statsd.Verify(s => s.Counter(MetricsNames.ContentionCount, It.IsAny<long>(), 1, null), Times.Once);
+            statsd.Verify(s => s.Gauge(MetricsNames.ThreadPoolWorkersCount, It.IsAny<int>(), 1, null), Times.Once);
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var mutex = new ManualResetEventSlim();
 
             // GcPauseTime is pushed on the GcRestartEnd event, which should be the last event for any GC
-            statsd.Setup(s => s.Timer(MetricsPaths.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null))
+            statsd.Setup(s => s.Timer(MetricsNames.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null))
                 .Callback(() => mutex.Set());
 
             using var listener = new RuntimeEventListener(statsd.Object);
@@ -51,13 +51,13 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             // GC events are pushed asynchronously, wait for the last one to be processed
             mutex.Wait();
 
-            statsd.Verify(s => s.Gauge(MetricsPaths.Gen0HeapSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Gauge(MetricsPaths.Gen1HeapSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Gauge(MetricsPaths.Gen2HeapSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Gauge(MetricsPaths.LohSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Timer(MetricsPaths.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Gauge(MetricsPaths.GcMemoryLoad, It.IsAny<uint>(), It.IsAny<double>(), null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Increment(MetricsPaths.Gen2CollectionsCount, 1, It.IsAny<double>(), compactingGcTags), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.Gen0HeapSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.Gen1HeapSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.Gen2HeapSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.LohSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Timer(MetricsNames.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.GcMemoryLoad, It.IsAny<uint>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Increment(MetricsNames.Gen2CollectionsCount, 1, It.IsAny<double>(), compactingGcTags), Times.AtLeastOnce);
         }
     }
 }

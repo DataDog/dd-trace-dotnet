@@ -90,7 +90,7 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             var name = e.Exception.GetType().Name;
 
-            _statsd.Increment(MetricsPaths.ExceptionsCount, 1, tags: new[] { $"exception_type:{name}" });
+            _statsd.Increment(MetricsNames.ExceptionsCount, 1, tags: new[] { $"exception_type:{name}" });
         }
 
         private void PushEvents()
@@ -110,11 +110,11 @@ namespace Datadog.Trace.RuntimeMetrics
                     _previousUserCpu = newUserCpu;
                     _previousSystemCpu = newSystemCpu;
 
-                    _statsd.Gauge(MetricsPaths.ThreadsCount, threadCount);
+                    _statsd.Gauge(MetricsNames.ThreadsCount, threadCount);
 
-                    _statsd.Gauge(MetricsPaths.CommittedMemory, memoryUsage);
-                    _statsd.Gauge(MetricsPaths.CpuUserTime, userCpu);
-                    _statsd.Gauge(MetricsPaths.CpuSystemTime, systemCpu);
+                    _statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
+                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu);
+                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu);
                 }
             }
             catch (Exception ex)

@@ -16,7 +16,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private const int EventContentionStop = 91;
         private const int EventGcGlobalHeapHistory = 205;
 
-        private static readonly string[] GcCountMetricNames = { MetricsPaths.Gen0CollectionsCount, MetricsPaths.Gen1CollectionsCount, MetricsPaths.Gen2CollectionsCount };
+        private static readonly string[] GcCountMetricNames = { MetricsNames.Gen0CollectionsCount, MetricsNames.Gen1CollectionsCount, MetricsNames.Gen2CollectionsCount };
         private static readonly string[] CompactingGcTags = { "compacting_gc:true" };
         private static readonly string[] NotCompactingGcTags = { "compacting_gc:false" };
 
@@ -36,10 +36,10 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             // Can't use a Timing because Dogstatsd doesn't support local aggregation
             // It means that the aggregations in the UI would be wrong
-            _statsd.Gauge(MetricsPaths.ContentionTime, _contentionTime.Clear());
-            _statsd.Counter(MetricsPaths.ContentionCount, Interlocked.Exchange(ref _contentionCount, 0));
+            _statsd.Gauge(MetricsNames.ContentionTime, _contentionTime.Clear());
+            _statsd.Counter(MetricsNames.ContentionCount, Interlocked.Exchange(ref _contentionCount, 0));
 
-            _statsd.Gauge(MetricsPaths.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
+            _statsd.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
         }
 
         protected override void OnEventSourceCreated(EventSource eventSource)
@@ -64,17 +64,17 @@ namespace Datadog.Trace.RuntimeMetrics
 
                 if (start != null)
                 {
-                    _statsd.Timer(MetricsPaths.GcPauseTime, (eventData.TimeStamp - start.Value).TotalMilliseconds);
+                    _statsd.Timer(MetricsNames.GcPauseTime, (eventData.TimeStamp - start.Value).TotalMilliseconds);
                 }
             }
             else if (eventData.EventId == EventGcHeapStats)
             {
                 var stats = HeapStats.FromPayload(eventData.Payload);
 
-                _statsd.Gauge(MetricsPaths.Gen0HeapSize, stats.Gen0Size);
-                _statsd.Gauge(MetricsPaths.Gen1HeapSize, stats.Gen1Size);
-                _statsd.Gauge(MetricsPaths.Gen2HeapSize, stats.Gen2Size);
-                _statsd.Gauge(MetricsPaths.LohSize, stats.LohSize);
+                _statsd.Gauge(MetricsNames.Gen0HeapSize, stats.Gen0Size);
+                _statsd.Gauge(MetricsNames.Gen1HeapSize, stats.Gen1Size);
+                _statsd.Gauge(MetricsNames.Gen2HeapSize, stats.Gen2Size);
+                _statsd.Gauge(MetricsNames.LohSize, stats.LohSize);
             }
             else if (eventData.EventId == EventContentionStop)
             {
@@ -89,7 +89,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                 if (heapHistory.MemoryLoad != null)
                 {
-                    _statsd.Gauge(MetricsPaths.GcMemoryLoad, heapHistory.MemoryLoad.Value);
+                    _statsd.Gauge(MetricsNames.GcMemoryLoad, heapHistory.MemoryLoad.Value);
                 }
 
                 _statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);

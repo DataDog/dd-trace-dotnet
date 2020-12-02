@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Datadog.Trace.RuntimeMetrics
 {
-    internal static class MetricsPaths
+    internal static class MetricsNames
     {
         public const string ExceptionsCount = "runtime.dotnet.exceptions.count";
 
