@@ -74,7 +74,7 @@ namespace Datadog.Trace.Logging
                     loggerConfiguration.Enrich.WithProperty("MachineName", DomainMetadata.MachineName);
                     loggerConfiguration.Enrich.WithProperty("Process", $"[{DomainMetadata.ProcessId} {DomainMetadata.ProcessName}]");
                     loggerConfiguration.Enrich.WithProperty("AppDomain", $"[{DomainMetadata.AppDomainId} {DomainMetadata.AppDomainName}]");
-                    loggerConfiguration.Enrich.WithProperty("TracerVersion", TracerConstants.AssemblyVersion);
+                    loggerConfiguration.Enrich.WithProperty("TracerVersion", TracerConstants.Version);
                 }
                 catch
                 {

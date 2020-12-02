@@ -72,7 +72,7 @@ namespace Datadog.Trace.HttpOverStreams
             return string.Join(", ", _headers.Select(h => $"{h.Name}: {h.Value}"));
         }
 
-        public struct HttpHeader
+        public readonly struct HttpHeader
         {
             public readonly string Name;
 

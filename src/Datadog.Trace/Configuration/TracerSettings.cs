@@ -92,7 +92,7 @@ namespace Datadog.Trace.Configuration
 
             TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
 
-            TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs) ?? 0;
+            TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs) ?? 100;
 
             TracesTransport = source?.GetString(ConfigurationKeys.TracesTransport);
 
@@ -225,28 +225,28 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets or sets the key used to determine the transport for sending traces.
-        /// Default is null.
+        /// Default is <c>null</c>, which will use the default path decided in <see cref="Agent.Api"/>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesTransport"/>
         public string TracesTransport { get; set; }
 
         /// <summary>
         /// Gets or sets the windows pipe name where the Tracer can connect to the Agent.
-        /// Default is null.
+        /// Default is <c>null</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesPipeName"/>
         public string TracesPipeName { get; set; }
 
         /// <summary>
         /// Gets or sets the timeout in milliseconds for the windows named pipe requests.
-        /// Default is 0.
+        /// Default is <c>100</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesPipeTimeoutMs"/>
         public int TracesPipeTimeoutMs { get; set; }
 
         /// <summary>
         /// Gets or sets the windows pipe name where the Tracer can send stats.
-        /// Default is null.
+        /// Default is <c>null</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.MetricsPipeName"/>
         public string MetricsPipeName { get; set; }

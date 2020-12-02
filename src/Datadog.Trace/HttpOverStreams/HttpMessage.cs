@@ -30,7 +30,7 @@ namespace Datadog.Trace.HttpOverStreams
                 return null;
             }
 
-            if (string.Equals("application/json", ContentType, StringComparison.InvariantCultureIgnoreCase))
+            if (string.Equals("application/json", ContentType, StringComparison.OrdinalIgnoreCase))
             {
                 // Default
                 return Utf8Encoding;

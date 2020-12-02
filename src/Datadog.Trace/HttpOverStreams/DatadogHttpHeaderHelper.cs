@@ -14,9 +14,13 @@ namespace Datadog.Trace.HttpOverStreams
             await writer.WriteAsync($"{request.Verb} {request.Path} HTTP/1.1{CrLf}").ConfigureAwait(false);
             await writer.WriteAsync($"Host: {request.Host}{CrLf}").ConfigureAwait(false);
             await writer.WriteAsync($"Accept-Encoding: identity{CrLf}").ConfigureAwait(false);
-            await writer.WriteAsync($"User-Agent: dd-trace-dotnet/{TracerConstants.Major}.{TracerConstants.Minor}{CrLf}").ConfigureAwait(false);
             // await writer.WriteAsync($"Connection: close{CrLf}").ConfigureAwait(false);
             await writer.WriteAsync($"Content-Length: {request.Content.Length ?? 0}{CrLf}").ConfigureAwait(false);
+
+            await writer.WriteAsync($"{AgentHttpHeaderNames.Language}: .NET{CrLf}").ConfigureAwait(false);
+            await writer.WriteAsync($"{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.Version}{CrLf}").ConfigureAwait(false);
+            // don't add automatic instrumentation to requests from datadog code
+            await writer.WriteAsync($"{HttpHeaderNames.TracingEnabled}: false{CrLf}").ConfigureAwait(false);
         }
 
         public static async Task WriteHeader(StreamWriter writer, HttpHeaders.HttpHeader header)

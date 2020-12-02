@@ -11,7 +11,13 @@ namespace Datadog.Trace.Agent.Transports
         public ApiWebRequest(HttpWebRequest request)
         {
             _request = request;
-            TraceRequestDecorator.AddHeaders(this);
+
+            // Default headers
+            _request.Headers.Add(AgentHttpHeaderNames.Language, ".NET");
+            _request.Headers.Add(AgentHttpHeaderNames.TracerVersion, TracerConstants.Version);
+
+            // don't add automatic instrumentation to requests from this HttpClient
+            _request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 
         public void AddHeader(string name, string value)

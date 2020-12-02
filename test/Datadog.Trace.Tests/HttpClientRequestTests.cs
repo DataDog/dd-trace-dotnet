@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests
 
             Assert.NotNull(message);
             Assert.Equal(".NET", message.Headers.GetValues(AgentHttpHeaderNames.Language).First());
-            Assert.Equal(TracerConstants.AssemblyVersion, message.Headers.GetValues(AgentHttpHeaderNames.TracerVersion).First());
+            Assert.Equal(TracerConstants.Version, message.Headers.GetValues(AgentHttpHeaderNames.TracerVersion).First());
             Assert.Equal("false", message.Headers.GetValues(HttpHeaderNames.TracingEnabled).First());
             Assert.Equal("World", message.Headers.GetValues("Hello").First());
         }

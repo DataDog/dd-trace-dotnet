@@ -53,6 +53,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
+                    Log.Error(ex.ToString()); // TODO: The error isn't showing up in the other logs
                     Log.Error(ex, "An error occurred while generating http request to send traces to the agent at {0}", _apiRequestFactory.Info(_tracesEndpoint));
                     return false;
                 }
@@ -77,6 +78,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
+                    exception = ex;
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
@@ -84,7 +86,6 @@ namespace Datadog.Trace.Agent
                         return false;
                     }
 #endif
-                    exception = ex;
                 }
 
                 // Error handling block

@@ -19,7 +19,6 @@ namespace Datadog.Trace.Agent.Transports
             _uri = uri;
             _client = client;
             _streamFactory = streamFactory;
-            TraceRequestDecorator.AddHeaders(this);
         }
 
         public void AddHeader(string name, string value)
@@ -31,7 +30,8 @@ namespace Datadog.Trace.Agent.Transports
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
-                // buffer the entire contents for now
+                // buffer the entire contents for now so we can determine its size in bytes and avoid chunking.
+                // TODO: support chunked transfer encoding to avoid buffering the entire contents
                 var requestContentStream = new MemoryStream();
                 await CachedSerializer.Instance.SerializeAsync(requestContentStream, traces, formatterResolver).ConfigureAwait(false);
                 requestContentStream.Position = 0;

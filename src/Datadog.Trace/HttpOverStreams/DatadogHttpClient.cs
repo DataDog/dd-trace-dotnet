@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,8 +18,9 @@ namespace Datadog.Trace.HttpOverStreams
             return ReadResponse(responseStream);
         }
 
-        private static async Task SendRequest(HttpRequest request, Stream requestStream)
+        private async Task SendRequest(HttpRequest request, Stream requestStream)
         {
+            // TODO: Determine if it's always ASCII
             using (var writer = new StreamWriter(requestStream, Encoding.ASCII, BufferSize, leaveOpen: true))
             {
                 await DatadogHttpHeaderHelper.WriteLeadingHeaders(request, writer).ConfigureAwait(false);
@@ -36,7 +38,7 @@ namespace Datadog.Trace.HttpOverStreams
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
 
-        private static async Task<HttpResponse> ReadResponse(Stream responseStream)
+        private async Task<HttpResponse> ReadResponse(Stream responseStream)
         {
             var headers = new HttpHeaders();
             int statusCode = 0;
@@ -51,15 +53,20 @@ namespace Datadog.Trace.HttpOverStreams
             using (var reader = new StreamReader(memoryStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, BufferSize, leaveOpen: true))
             {
                 // HTTP/1.1 200 OK
+                // HTTP/1.1 XXX MESSAGE
                 string line = reader.ReadLine();
                 streamPosition += reader.CurrentEncoding.GetByteCount(line) + DatadogHttpHeaderHelper.CrLfLength;
 
-                if (!int.TryParse(line.Substring(9, 3), out statusCode))
+                const int statusCodeStart = 9;
+                const int statusCodeLength = 3;
+                const int startOfMessage = 13;
+
+                if (!int.TryParse(line.Substring(statusCodeStart, statusCodeLength), out statusCode))
                 {
                     throw new DatadogHttpRequestException("Invalid response, can't parse status code. Line was:" + line);
                 }
 
-                responseMessage = line.Substring(13);
+                responseMessage = line.Substring(startOfMessage);
 
                 // read headers
                 while (true)
@@ -74,6 +81,13 @@ namespace Datadog.Trace.HttpOverStreams
                     }
 
                     var headerParts = line.Split(':');
+
+                    if (headerParts.Length != 2)
+                    {
+                        Logger.Warning("Malformed header: {0}", line);
+                        continue;
+                    }
+
                     var name = headerParts[0].Trim();
                     var value = headerParts[1].Trim();
                     headers.Add(name, value);
