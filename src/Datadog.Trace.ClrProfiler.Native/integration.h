@@ -62,9 +62,9 @@ struct Version {
   }
 
   inline WSTRING str() const {
-    WSTRINGSTREAM ss;
-    ss << major << "."_W << minor << "."_W << build << "."_W << revision;
-    return ss.str();
+    std::stringstream ss;
+    ss << major << "." << minor << "." << build << "." << revision;
+    return ToWSTRING(ss.str());
   }
 
   inline bool operator<(const Version& other) const {
@@ -113,10 +113,9 @@ struct AssemblyReference {
   }
 
   inline WSTRING str() const {
-    WSTRINGSTREAM ss;
-    ss << name << ", Version="_W << version.str() << ", Culture="_W << locale
-       << ", PublicKeyToken="_W << public_key.str();
-    return ss.str();
+    const auto ss = name + ", Version="_W + version.str() + ", Culture="_W + locale
+       + ", PublicKeyToken="_W + public_key.str();
+    return ss;
   }
 };
 
@@ -181,11 +180,11 @@ struct MethodSignature {
   }
 
   WSTRING str() const {
-    WSTRINGSTREAM ss;
+    std::stringstream ss;
     for (auto& b : data) {
-      ss << std::hex << std::setfill('0'_W) << std::setw(2) << static_cast<int>(b);
+      ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(b);
     }
-    return ss.str();
+    return ToWSTRING(ss.str());
   }
 
   BOOL IsInstanceMethod() const {
