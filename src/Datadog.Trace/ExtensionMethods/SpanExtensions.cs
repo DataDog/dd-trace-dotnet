@@ -61,6 +61,8 @@ namespace Datadog.Trace.ExtensionMethods
             tags.HttpRequestHeadersHost = host;
             tags.HttpUrl = httpUrl;
 
+            tags.Measured = 1;
+
             foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
             {
                 span.SetTag(kvp.Key, kvp.Value);
