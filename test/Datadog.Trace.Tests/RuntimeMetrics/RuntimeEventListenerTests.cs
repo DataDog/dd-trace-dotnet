@@ -45,6 +45,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             using var listener = new RuntimeEventListener(statsd.Object);
 
             statsd.ResetCalls();
+            mutex.Reset(); // In case a GC was triggered when creating the listener
 
             GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
 
