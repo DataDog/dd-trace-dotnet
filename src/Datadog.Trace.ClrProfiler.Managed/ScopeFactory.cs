@@ -62,12 +62,12 @@ namespace Datadog.Trace.ClrProfiler
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
-                span.SetMetric(Tags.Measured, 1);
 
                 tags.HttpMethod = httpMethod?.ToUpperInvariant();
                 tags.HttpUrl = httpUrl;
                 tags.InstrumentationName = integrationName;
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(integrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
@@ -124,6 +124,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 span.AddTagsFromDbCommand(command);
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(AdoNetConstants.IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)

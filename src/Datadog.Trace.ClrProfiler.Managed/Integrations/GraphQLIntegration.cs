@@ -219,7 +219,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static void DecorateSpan(Span span, GraphQLTags tags)
         {
             span.Type = SpanTypes.GraphQL;
-            span.SetMetric(Tags.Measured, 1);
         }
 
         private static Scope CreateScopeFromValidate(object document)
@@ -245,6 +244,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 DecorateSpan(span, tags);
                 tags.Source = source;
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
@@ -290,6 +290,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.OperationName = operationName;
                 tags.OperationType = operationType;
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)

@@ -474,6 +474,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.Host = host;
                 tags.Port = port;
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)

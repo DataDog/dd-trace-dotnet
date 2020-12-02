@@ -56,11 +56,12 @@ namespace Datadog.Trace.ExtensionMethods
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
-            span.SetMetric(Tags.Measured, 1);
 
             tags.HttpMethod = method;
             tags.HttpRequestHeadersHost = host;
             tags.HttpUrl = httpUrl;
+
+            tags.Measured = 1;
 
             foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
             {

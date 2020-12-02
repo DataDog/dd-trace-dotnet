@@ -132,6 +132,7 @@ namespace Datadog.Trace.AspNet
                 scope = tracer.StartActiveWithTags(_requestOperationName, propagatedContext, tags: tags);
                 scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: true);
 
                 httpContext.Items[_httpContextScopeKey] = scope;

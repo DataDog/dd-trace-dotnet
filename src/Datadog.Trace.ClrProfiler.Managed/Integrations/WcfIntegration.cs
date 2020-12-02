@@ -162,6 +162,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     tags,
                     tagsFromHeaders);
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: true);
             }
             catch (Exception ex)

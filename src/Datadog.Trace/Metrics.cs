@@ -4,6 +4,8 @@ namespace Datadog.Trace
     {
         public const string SamplingPriority = "_sampling_priority_v1";
 
+        public const string Measured = "_dd.measured";
+
         /// <summary>
         /// To be set when the agent determines the sampling rate for a trace
         /// Read: Agent Priority Sample Rate

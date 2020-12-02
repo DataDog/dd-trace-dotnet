@@ -236,6 +236,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scope = tracer.StartActiveWithTags(OperationName, propagatedContext, tags: tags);
                 UpdateSpan(controllerContext, scope.Span, tags, tagsFromHeaders);
 
+                tags.Measured = 1;
                 tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: true);
             }
             catch (Exception ex)
