@@ -201,6 +201,23 @@ namespace Datadog.Trace
                     }
 
                     break;
+                case Trace.Tags.Measured:
+                    if (value?.ToBoolean() == true || string.IsNullOrEmpty(value))
+                    {
+                        // Set metric to true by passing the value of 1
+                        SetMetric(Trace.Tags.Measured, 1);
+                    }
+                    else if (value?.ToBoolean() == false)
+                    {
+                        // Set metric to false by passing the value of 0
+                        SetMetric(Trace.Tags.Measured, 0);
+                    }
+                    else
+                    {
+                        Log.Warning("Value {0} has incorrect format for tag {1}", value, Trace.Tags.Measured);
+                    }
+
+                    break;
                 default:
                     Tags.SetTag(key, value);
                     break;
