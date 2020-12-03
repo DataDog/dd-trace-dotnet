@@ -109,6 +109,8 @@ namespace Datadog.Trace.RuntimeMetrics
                     _previousUserCpu = newUserCpu;
                     _previousSystemCpu = newSystemCpu;
 
+                    // Note: the behavior of Environment.ProcessorCount has changed a lot accross version: https://github.com/dotnet/runtime/issues/622
+                    // What we want is the number of cores attributed to the container, which is the behavior in 3.1.2+ (and, I believe, in 2.x)
                     var maximumCpu = Environment.ProcessorCount * _delay;
                     var totalCpu = userCpu + systemCpu;
 
