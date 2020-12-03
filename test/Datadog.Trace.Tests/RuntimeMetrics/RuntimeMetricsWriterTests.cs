@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -40,20 +39,54 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         {
             var statsd = new Mock<IDogStatsd>();
 
-            using (new RuntimeMetricsWriter(statsd.Object, Timeout.Infinite, _ => Mock.Of<IRuntimeMetricsListener>()))
+            using (var writer = new RuntimeMetricsWriter(statsd.Object, Timeout.Infinite, _ => Mock.Of<IRuntimeMetricsListener>()))
             {
-                try
+                for (int i = 0; i < 10; i++)
                 {
-                    throw new CustomException();
-                }
-                catch
-                {
-                    // ignored
+                    try
+                    {
+                        throw new CustomException1();
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    if (i % 2 == 0)
+                    {
+                        try
+                        {
+                            throw new CustomException2();
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
+                    }
                 }
 
                 statsd.Verify(
-                    s => s.Increment(MetricsNames.ExceptionsCount, 1, It.IsAny<double>(), new[] { "exception_type:CustomException" }),
+                    s => s.Increment(MetricsNames.ExceptionsCount, It.IsAny<int>(), It.IsAny<double>(), It.IsAny<string[]>()),
+                    Times.Never);
+
+                writer.PushEvents();
+
+                statsd.Verify(
+                    s => s.Increment(MetricsNames.ExceptionsCount, 10, It.IsAny<double>(), new[] { "exception_type:CustomException1" }),
                     Times.Once);
+
+                statsd.Verify(
+                    s => s.Increment(MetricsNames.ExceptionsCount, 5, It.IsAny<double>(), new[] { "exception_type:CustomException2" }),
+                    Times.Once);
+
+                statsd.ResetCalls();
+
+                // Make sure stats are reset when pushed
+                writer.PushEvents();
+
+                statsd.Verify(
+                    s => s.Increment(MetricsNames.ExceptionsCount, It.IsAny<int>(), It.IsAny<double>(), It.IsAny<string[]>()),
+                    Times.Never);
             }
         }
 
@@ -63,27 +96,29 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var statsd = new Mock<IDogStatsd>();
             var runtimeListener = new Mock<IRuntimeMetricsListener>();
 
-            new RuntimeMetricsWriter(statsd.Object, Timeout.Infinite, _ => runtimeListener.Object).Dispose();
+            var writer = new RuntimeMetricsWriter(statsd.Object, Timeout.Infinite, _ => runtimeListener.Object);
+            writer.Dispose();
 
             runtimeListener.Verify(l => l.Dispose(), Times.Once);
 
-            statsd.ResetCalls();
-
+            // Make sure that the writer unsubscribed from the global exception handler
             try
             {
-                throw new CustomException();
+                throw new CustomException1();
             }
             catch
             {
                 // ignored
             }
 
-            statsd.Verify(
-                s => s.Increment(MetricsNames.ExceptionsCount, It.IsAny<int>(), It.IsAny<double>(), It.IsAny<string[]>()),
-                Times.Never);
+            Assert.True(writer.ExceptionCounts.IsEmpty);
         }
 
-        private class CustomException : Exception
+        private class CustomException1 : Exception
+        {
+        }
+
+        private class CustomException2 : Exception
         {
         }
     }
