@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -17,7 +18,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class HttpMessageHandlerIntegration
     {
-        private const string IntegrationName = "HttpMessageHandler";
         private const string SystemNetHttp = "System.Net.Http";
         private const string Major4 = "4";
         private const string Major5 = "5";
@@ -28,6 +28,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpMessageHandler = SystemNetHttp + "." + HttpMessageHandlerTypeName;
         private const string HttpClientHandler = SystemNetHttp + "." + HttpClientHandlerTypeName;
         private const string SendAsync = "SendAsync";
+
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpMessageHandler));
+        private static readonly IntegrationInfo SocketHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpSocketsHandler));
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpMessageHandlerIntegration));
         private static readonly string[] NamespaceAndNameFilters = { ClrNames.GenericTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken };
@@ -247,7 +250,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var httpMethod = requestValue.Method.Method;
             var requestUri = requestValue.RequestUri;
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationName, out var tags))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationId, out var tags))
             {
                 try
                 {
@@ -284,7 +287,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static bool IsSocketsHttpHandlerEnabled(Type reportedType)
         {
-            return Tracer.Instance.Settings.IsOptInIntegrationEnabled("HttpSocketsHandler") && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
+            return Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: false)
+                && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsTracingEnabled(IRequestHeaders headers)

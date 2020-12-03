@@ -81,6 +81,7 @@ namespace Datadog.Trace
             Interlocked.Increment(ref _liveTracerCount);
 
             Settings = settings ?? TracerSettings.FromDefaultSources();
+            Settings.Freeze();
 
             // if not configured, try to determine an appropriate service name
             DefaultServiceName = Settings.ServiceName ??

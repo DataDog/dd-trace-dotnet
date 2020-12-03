@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -13,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     /// </summary>
     public static class XUnitIntegration
     {
-        private const string IntegrationName = "XUnit";
         private const string Major2 = "2";
         private const string Major2Minor2 = "2.2";
 
@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string XUnitRunTestCollectionAsyncMethod = "RunTestCollectionAsync";
         private const string XUnitQueueTestOutputMethod = "QueueTestOutput";
 
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.XUnit));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
         private static readonly FrameworkDescription _runtimeDescription;
 
@@ -329,7 +330,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         private static Scope CreateScope(object testSdk)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;

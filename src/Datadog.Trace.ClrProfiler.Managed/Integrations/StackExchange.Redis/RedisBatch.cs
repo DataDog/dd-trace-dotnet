@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -11,12 +12,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// </summary>
     public static class RedisBatch
     {
-        internal const string IntegrationName = "StackExchangeRedis";
+        internal const string IntegrationName = nameof(IntegrationIds.StackExchangeRedis);
         private const string RedisAssembly = "StackExchange.Redis";
         private const string StrongNameRedisAssembly = "StackExchange.Redis.StrongName";
         private const string RedisBaseTypeName = "StackExchange.Redis.RedisBase";
         private const string Major1 = "1";
         private const string Major2 = "2";
+
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.StackExchangeRedis));
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RedisBatch));
 
@@ -150,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
             var rawCommand = message.As<MessageData>().CommandAndKey ?? "COMMAND";
 
-            return RedisHelper.CreateScope(Tracer.Instance, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            return RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
         }
 
         /*

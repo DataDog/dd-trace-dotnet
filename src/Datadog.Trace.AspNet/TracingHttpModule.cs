@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -15,10 +16,7 @@ namespace Datadog.Trace.AspNet
     /// </summary>
     public class TracingHttpModule : IHttpModule
     {
-        /// <summary>
-        /// Name of the Integration
-        /// </summary>
-        public const string IntegrationName = "AspNet";
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNet));
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
@@ -90,7 +88,7 @@ namespace Datadog.Trace.AspNet
             {
                 var tracer = Tracer.Instance;
 
-                if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+                if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;
@@ -132,7 +130,7 @@ namespace Datadog.Trace.AspNet
                 scope = tracer.StartActiveWithTags(_requestOperationName, propagatedContext, tags: tags);
                 scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
-                tags.SetAnalyticsSampleRate(IntegrationName, tracer.Settings, enabledWithGlobalSetting: true);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
                 httpContext.Items[_httpContextScopeKey] = scope;
 
@@ -153,7 +151,7 @@ namespace Datadog.Trace.AspNet
         {
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;

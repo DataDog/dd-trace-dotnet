@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -11,12 +12,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class ElasticsearchNet6Integration
     {
-        // NOTE: keep this name without the 6 to avoid breaking changes
-        private const string IntegrationName = "ElasticsearchNet";
         private const string Version6 = "6";
         private const string ElasticsearchAssemblyName = "Elasticsearch.Net";
         private const string RequestPipelineInterfaceTypeName = "Elasticsearch.Net.IRequestPipeline";
 
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ElasticsearchNet));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ElasticsearchNet6Integration));
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, requestData))
             {
                 try
                 {
@@ -170,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, requestData))
             {
                 try
                 {

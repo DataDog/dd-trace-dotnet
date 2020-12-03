@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
@@ -21,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
     public class WinHttpHandlerIntegration
     {
         private const string IntegrationName = "HttpMessageHandler";
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpMessageHandler));
+        private static readonly IntegrationInfo WinHttpHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.WinHttpHandler));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -39,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
 
             if (IsTracingEnabled(requestMessage.Headers))
             {
-                scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationName, out tags);
+                scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationId, out tags);
                 if (scope != null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;
@@ -95,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
 
         private static bool IsTracingEnabled(IRequestHeaders headers)
         {
-            if (!Tracer.Instance.Settings.IsOptInIntegrationEnabled("WinHttpHandler"))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(WinHttpHandlerIntegrationId, defaultValue: false))
             {
                 return false;
             }

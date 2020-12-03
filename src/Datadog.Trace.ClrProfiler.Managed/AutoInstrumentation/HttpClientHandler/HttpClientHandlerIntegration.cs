@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
@@ -21,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
     public class HttpClientHandlerIntegration
     {
         private const string IntegrationName = "HttpMessageHandler";
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpMessageHandler));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -39,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
 
             if (IsTracingEnabled(requestMessage.Headers))
             {
-                scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationName, out tags);
+                scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationId, out tags);
                 if (scope != null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;

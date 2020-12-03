@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
@@ -21,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
     public class SocketsHttpHandlerIntegration
     {
         private const string IntegrationName = "HttpMessageHandler";
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpMessageHandler));
+        private static readonly IntegrationInfo SocketHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpSocketsHandler));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -39,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
 
             if (IsTracingEnabled(requestMessage.Headers))
             {
-                scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationName, out tags);
+                scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationId, out tags);
                 if (scope != null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;
@@ -95,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
 
         private static bool IsTracingEnabled(IRequestHeaders headers)
         {
-            if (!Tracer.Instance.Settings.IsOptInIntegrationEnabled("HttpSocketsHandler"))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: false))
             {
                 return false;
             }
