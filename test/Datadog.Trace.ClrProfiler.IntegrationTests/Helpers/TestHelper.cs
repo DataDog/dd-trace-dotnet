@@ -228,6 +228,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_VERSION", serviceVersion);
         }
 
+        protected void SetCallTargetSettings(bool enableCallTarget, bool enableMethodInlining)
+        {
+            if (enableCallTarget)
+            {
+                SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", "true");
+            }
+
+            if (enableMethodInlining)
+            {
+                SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "true");
+            }
+        }
+
         protected async Task AssertWebServerSpan(
             string path,
             MockTracerAgent agent,
