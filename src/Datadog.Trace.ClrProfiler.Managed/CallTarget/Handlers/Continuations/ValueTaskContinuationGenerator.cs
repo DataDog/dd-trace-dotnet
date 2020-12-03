@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
 #if NETCOREAPP3_1 || NET5_0
-    internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TIntegration, TTarget, TReturn>
+    internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TTarget, TReturn>
     {
         private static readonly Func<TTarget, object, Exception, CallTargetState, object> _continuation;
 

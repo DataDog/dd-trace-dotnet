@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
-    internal class ContinuationGenerator<TIntegration, TTarget, TReturn>
+    internal class ContinuationGenerator<TTarget, TReturn>
     {
         public virtual TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {

@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
     internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
     {
         private static readonly InvokeDelegate _invokeDelegate = null;
-        private static readonly ContinuationGenerator<TIntegration, TTarget, TReturn> _continuationGenerator = null;
+        private static readonly ContinuationGenerator<TTarget, TReturn> _continuationGenerator = null;
 
         static EndMethodHandler()
         {
@@ -34,13 +34,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 if (typeof(Task).IsAssignableFrom(returnType))
                 {
                     // The type is a Task<>
-                    _continuationGenerator = (ContinuationGenerator<TIntegration, TTarget, TReturn>)Activator.CreateInstance(typeof(TaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
+                    _continuationGenerator = (ContinuationGenerator<TTarget, TReturn>)Activator.CreateInstance(typeof(TaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
                 }
 #if NETCOREAPP3_1 || NET5_0
                 else if (genericReturnType == typeof(ValueTask<>))
                 {
                     // The type is a ValueTask<>
-                    _continuationGenerator = (ContinuationGenerator<TIntegration, TTarget, TReturn>)Activator.CreateInstance(typeof(ValueTaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
+                    _continuationGenerator = (ContinuationGenerator<TTarget, TReturn>)Activator.CreateInstance(typeof(ValueTaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
                 }
 #endif
             }

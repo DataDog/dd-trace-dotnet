@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
     public class HttpMessageHandlerTests : TestHelper
     {
         public HttpMessageHandlerTests(ITestOutputHelper output)

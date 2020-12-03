@@ -230,15 +230,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected void SetCallTargetSettings(bool enableCallTarget, bool enableMethodInlining)
         {
-            if (enableCallTarget)
-            {
-                SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", "true");
-            }
-
-            if (enableMethodInlining)
-            {
-                SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "true");
-            }
+            SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", enableCallTarget ? "true" : "false");
+            SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", enableMethodInlining ? "true" : "false");
         }
 
         protected async Task AssertWebServerSpan(
