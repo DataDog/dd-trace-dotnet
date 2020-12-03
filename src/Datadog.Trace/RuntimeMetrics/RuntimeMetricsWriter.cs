@@ -115,6 +115,8 @@ namespace Datadog.Trace.RuntimeMetrics
                         _statsd.Increment(MetricsNames.ExceptionsCount, element.Value, tags: new[] { $"exception_type:{element.Key}" });
                     }
 
+                    // There's a race condition where we could clear items that haven't been pushed
+                    // Having an exact exception count is probably not worth the overhead required to fix it
                     _exceptionCounts.Clear();
                 }
             }
