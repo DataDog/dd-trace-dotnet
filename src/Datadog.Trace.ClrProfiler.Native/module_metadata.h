@@ -18,7 +18,7 @@ class ModuleMetadata {
   std::unordered_map<WSTRING, mdMemberRef> wrapper_refs{};
   std::unordered_map<WSTRING, mdTypeRef> wrapper_parent_type{};
   std::unordered_set<WSTRING> failed_wrapper_keys{};
-  CallTargetTokens* calltargetTokens;
+  CallTargetTokens* calltargetTokens = nullptr;
 
  public:
   const ComPtr<IMetaDataImport2> metadata_import{};
