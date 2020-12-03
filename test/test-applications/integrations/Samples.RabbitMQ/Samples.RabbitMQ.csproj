@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">6.0.0</ApiVersion>
+    <DefineConstants Condition="$(ApiVersion) >= 6.0.0">$(DefineConstants);RABBITMQ_6_0</DefineConstants>
+
+    <!-- override to remove net452 -->
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <!-- <TargetFrameworks Condition="'$(OS)' == 'Windows_NT' AND $(ApiVersion) &lt; 6.0.0">$(TargetFrameworks);net452</TargetFrameworks> -->
+    <TargetFrameworks Condition="$(MSBuildVersion) >= 16.8.0 AND !$(TargetFrameworks.Contains('net5.0'))">$(TargetFrameworks);net5.0</TargetFrameworks>
+    <DefineConstants Condition="$(ApiVersion) >= 6.0.0">$(DefineConstants);RABBITMQ_6_0</DefineConstants>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+  <!-- Package versions < 5.x.x do not support netstandard2.0 and have package resolution issues unless directly referencing these packages -->
+  <ItemGroup Condition="$(ApiVersion) &lt; 5.0.0">
+    <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
+    <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>

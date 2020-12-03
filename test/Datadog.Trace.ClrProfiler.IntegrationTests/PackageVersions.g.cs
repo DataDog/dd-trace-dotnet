@@ -33,6 +33,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> Npgsql => IsComprehensive ? PackageVersionsComprehensive.Npgsql : PackageVersionsLatestMinors.Npgsql;
 
+        public static IEnumerable<object[]> RabbitMQ => IsComprehensive ? PackageVersionsComprehensive.RabbitMQ : PackageVersionsLatestMinors.RabbitMQ;
+
         public static IEnumerable<object[]> SystemDataSqlClient => IsComprehensive ? PackageVersionsComprehensive.SystemDataSqlClient : PackageVersionsLatestMinors.SystemDataSqlClient;
 
         public static IEnumerable<object[]> MicrosoftDataSqlClient => IsComprehensive ? PackageVersionsComprehensive.MicrosoftDataSqlClient : PackageVersionsLatestMinors.MicrosoftDataSqlClient;
