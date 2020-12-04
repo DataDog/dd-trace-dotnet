@@ -66,15 +66,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
+            if (_continuationGenerator != null)
+            {
+                returnValue = _continuationGenerator.SetContinuation(instance, returnValue, exception, state);
+            }
+
             if (_invokeDelegate != null)
             {
                 CallTargetReturn<TReturn> returnWrap = _invokeDelegate(instance, returnValue, exception, state);
                 returnValue = returnWrap.GetReturnValue();
-            }
-
-            if (_continuationGenerator != null)
-            {
-                returnValue = _continuationGenerator.SetContinuation(instance, returnValue, exception, state);
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
