@@ -57,6 +57,15 @@ namespace Datadog.Trace.RuntimeMetrics
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
         {
+            if (_statsd == null)
+            {
+                // I know it sounds crazy at first, but because OnEventSourceCreated is called from the base constructor,
+                // and EnableEvents is called from OnEventSourceCreated, it's entirely possible that OnEventWritten
+                // gets called before the child constructor is called.
+                // In that case, just bail out.
+                return;
+            }
+
             try
             {
                 if (eventData.EventId == EventGcSuspendBegin)
