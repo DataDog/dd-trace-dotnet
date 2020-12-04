@@ -1,69 +1,99 @@
 #if NETCOREAPP
+
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
     /// <summary>
-    /// A class that attempts to load the Datadog.Trace.ClrProfiler.Managed .NET assembly.
+    /// See main description in <c>Startup.cs</c>
     /// </summary>
     public partial class Startup
     {
-        internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
-
-        private static string ResolveManagedProfilerDirectory()
-        {
-            string tracerFrameworkDirectory = "netstandard2.0";
-
-            var version = Environment.Version;
-
-            // Old versions of .net core have a major version of 4
-            if ((version.Major == 3 && version.Minor >= 1) || version.Major >= 5)
+        // This is the list of all assemblies that are known to be OK for running Side-by-Side,
+        // when different versions are referenced in the process.
+        // List their simple name here. The maped value should always be True.
+        // (It is used by the implementation to see if a load has already been attempted.)
+        private readonly Dictionary<string, bool> _assembliesToLoadSxS = new Dictionary<string, bool>()
             {
-                tracerFrameworkDirectory = "netcoreapp3.1";
+                ["Datadog.Trace"] = true,
+                // ["Add.Your.Assembly.Here"] = true
+            };
+
+        private bool ShouldLoadAssemblyIntoCustomContext(AssemblyName assemblyName, out string assemblyPath)
+        {
+            assemblyPath = null;
+
+            if (assemblyName == null)
+            {
+                return false;
             }
 
-            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-            return Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
+            lock (_assembliesToLoadSxS)
+            {
+                if (_assembliesToLoadSxS.TryGetValue(assemblyName.Name, out bool shouldTryLoad))
+                {
+                    if (shouldTryLoad)
+                    {
+                        // We we should load SxS, but we have not tried yet. If the assmably even there?
+
+                        if (TryFindAssemblyInProfilerDirectory(assemblyName, out assemblyPath))
+                        {
+                            // This method is called from AssemblyResolveEventHandler and whenever it returns true, we attempt the SxS load.
+                            // Set the flag to not try again
+                            _assembliesToLoadSxS[assemblyName.Name] = false;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
-        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
+        private Assembly AssemblyResolveEventHandler(object sender, ResolveEventArgs args)
         {
-            var assemblyName = new AssemblyName(args.Name);
+            bool loadIntoCustomContext = false;
+            string assemblyPath = null;
 
-            // On .NET Framework, having a non-US locale can cause mscorlib
-            // to enter the AssemblyResolve event when searching for resources
-            // in its satellite assemblies. This seems to have been fixed in
-            // .NET Core in the 2.0 servicing branch, so we should not see this
-            // occur, but guard against it anyways. If we do see it, exit early
-            // so we don't cause infinite recursion.
-            if (string.Equals(assemblyName.Name, "System.Private.CoreLib.resources", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase))
+            // Is this an assembly we should try loading from the profiler directory?
+            AssemblyName assemblyName = ParseAssemblyName(args?.Name);
+            if (ShouldLoadAssemblyFromProfilerDirectory(assemblyName) && TryFindAssemblyInProfilerDirectory(assemblyName, out assemblyPath))
             {
-                return null;
+                // Yes, then try loading it:
+                try
+                {
+                    StartupLogger.Debug($"Assembly.LoadFrom(\"{assemblyPath}\")");
+                    Assembly loadedAssembly = Assembly.LoadFrom(assemblyPath);
+
+                    // If we loaded the assembly, then all is good. Return:
+                    if (loadedAssembly != null)
+                    {
+                        return loadedAssembly;
+                    }
+                }
+                catch
+                {
+                    // There was an error. Before giving it, see if we should try loading the assembly side by side.
+                    // If so, we will attemt it below. Otherwise - error out.
+                    loadIntoCustomContext = ShouldLoadAssemblyIntoCustomContext(assemblyName, out assemblyPath);
+                    if (!loadIntoCustomContext)
+                    {
+                        throw;
+                    }
+                }
             }
 
-            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
+            // We may or may not have just tried loading the assembly.
+            // Regardless, it may be an assembly that should be loaded Side-by-Side.
+            // If so, and we have not loaded it above, we will need to load it into a custom context;
+            loadIntoCustomContext = loadIntoCustomContext || ShouldLoadAssemblyIntoCustomContext(assemblyName, out assemblyPath);
 
-            // Only load the main profiler into the default Assembly Load Context.
-            // If Datadog.Trace or other libraries are provided by the NuGet package their loads are handled in the following two ways.
-            // 1) The AssemblyVersion is greater than or equal to the version used by Datadog.Trace.ClrProfiler.Managed, the assembly
-            //    will load successfully and will not invoke this resolve event.
-            // 2) The AssemblyVersion is lower than the version used by Datadog.Trace.ClrProfiler.Managed, the assembly will fail to load
-            //    and invoke this resolve event. It must be loaded in a separate AssemblyLoadContext since the application will only
-            //    load the originally referenced version
-            if (assemblyName.Name.StartsWith("Datadog.Trace.ClrProfiler.Managed", StringComparison.OrdinalIgnoreCase)
-                && assemblyName.FullName.IndexOf("PublicKeyToken=def86d061d0d2eeb", StringComparison.OrdinalIgnoreCase) >= 0
-                && File.Exists(path))
+            if (loadIntoCustomContext)
             {
-                StartupLogger.Debug("Loading {0} with Assembly.LoadFrom", path);
-                return Assembly.LoadFrom(path);
-            }
-            else if (File.Exists(path))
-            {
-                StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
-                return DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
+                StartupLogger.Debug($"ManagedProfilerAssemblyLoadContext.SingeltonInstance.LoadFromAssemblyPath({assemblyPath})");
+                return ManagedProfilerAssemblyLoadContext.SingeltonInstance.LoadFromAssemblyPath(assemblyPath);
             }
 
             return null;
