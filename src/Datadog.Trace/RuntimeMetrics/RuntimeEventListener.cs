@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics.Tracing;
 using System.Threading;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
@@ -15,6 +16,8 @@ namespace Datadog.Trace.RuntimeMetrics
         private const int EventGcHeapStats = 4;
         private const int EventContentionStop = 91;
         private const int EventGcGlobalHeapHistory = 205;
+
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RuntimeEventListener>();
 
         private static readonly string[] GcCountMetricNames = { MetricsNames.Gen0CollectionsCount, MetricsNames.Gen1CollectionsCount, MetricsNames.Gen2CollectionsCount };
         private static readonly string[] CompactingGcTags = { "compacting_gc:true" };
@@ -54,45 +57,64 @@ namespace Datadog.Trace.RuntimeMetrics
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
         {
-            if (eventData.EventId == EventGcSuspendBegin)
+            if (_statsd == null)
             {
-                _gcStart = eventData.TimeStamp;
+                // I know it sounds crazy at first, but because OnEventSourceCreated is called from the base constructor,
+                // and EnableEvents is called from OnEventSourceCreated, it's entirely possible that OnEventWritten
+                // gets called before the child constructor is called.
+                // In that case, just bail out.
+                return;
             }
-            else if (eventData.EventId == EventGcRestartEnd)
-            {
-                var start = _gcStart;
 
-                if (start != null)
+            try
+            {
+                if (eventData.EventId == EventGcSuspendBegin)
                 {
-                    _statsd.Timer(MetricsNames.GcPauseTime, (eventData.TimeStamp - start.Value).TotalMilliseconds);
+                    _gcStart = eventData.TimeStamp;
+                }
+                else if (eventData.EventId == EventGcRestartEnd)
+                {
+                    var start = _gcStart;
+
+                    if (start != null)
+                    {
+                        _statsd.Timer(MetricsNames.GcPauseTime, (eventData.TimeStamp - start.Value).TotalMilliseconds);
+                    }
+                }
+                else
+                {
+                    if (eventData.EventId == EventGcHeapStats)
+                    {
+                        var stats = HeapStats.FromPayload(eventData.Payload);
+
+                        _statsd.Gauge(MetricsNames.Gen0HeapSize, stats.Gen0Size);
+                        _statsd.Gauge(MetricsNames.Gen1HeapSize, stats.Gen1Size);
+                        _statsd.Gauge(MetricsNames.Gen2HeapSize, stats.Gen2Size);
+                        _statsd.Gauge(MetricsNames.LohSize, stats.LohSize);
+                    }
+                    else if (eventData.EventId == EventContentionStop)
+                    {
+                        var durationInNanoseconds = (double)eventData.Payload[2];
+
+                        _contentionTime.Time(durationInNanoseconds / 1_000_000);
+                        Interlocked.Increment(ref _contentionCount);
+                    }
+                    else if (eventData.EventId == EventGcGlobalHeapHistory)
+                    {
+                        var heapHistory = HeapHistory.FromPayload(eventData.Payload);
+
+                        if (heapHistory.MemoryLoad != null)
+                        {
+                            _statsd.Gauge(MetricsNames.GcMemoryLoad, heapHistory.MemoryLoad.Value);
+                        }
+
+                        _statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);
+                    }
                 }
             }
-            else if (eventData.EventId == EventGcHeapStats)
+            catch (Exception ex)
             {
-                var stats = HeapStats.FromPayload(eventData.Payload);
-
-                _statsd.Gauge(MetricsNames.Gen0HeapSize, stats.Gen0Size);
-                _statsd.Gauge(MetricsNames.Gen1HeapSize, stats.Gen1Size);
-                _statsd.Gauge(MetricsNames.Gen2HeapSize, stats.Gen2Size);
-                _statsd.Gauge(MetricsNames.LohSize, stats.LohSize);
-            }
-            else if (eventData.EventId == EventContentionStop)
-            {
-                var durationInNanoseconds = (double)eventData.Payload[2];
-
-                _contentionTime.Time(durationInNanoseconds / 1_000_000);
-                Interlocked.Increment(ref _contentionCount);
-            }
-            else if (eventData.EventId == EventGcGlobalHeapHistory)
-            {
-                var heapHistory = HeapHistory.FromPayload(eventData.Payload);
-
-                if (heapHistory.MemoryLoad != null)
-                {
-                    _statsd.Gauge(MetricsNames.GcMemoryLoad, heapHistory.MemoryLoad.Value);
-                }
-
-                _statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);
+                Log.Warning(ex, "Error while processing event {0} {1}", eventData.EventId, eventData.EventName);
             }
         }
     }

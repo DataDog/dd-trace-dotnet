@@ -94,18 +94,26 @@ namespace Datadog.Trace.RuntimeMetrics
                 {
                     ProcessHelpers.GetCurrentProcessRuntimeMetrics(out var newUserCpu, out var newSystemCpu, out var threadCount, out var memoryUsage);
 
-                    // Get the CPU time per second
-                    var userCpu = (newUserCpu - _previousUserCpu).TotalMilliseconds / (_delay / 1000.0);
-                    var systemCpu = (newSystemCpu - _previousSystemCpu).TotalMilliseconds / (_delay / 1000.0);
+                    var userCpu = newUserCpu - _previousUserCpu;
+                    var systemCpu = newSystemCpu - _previousSystemCpu;
 
                     _previousUserCpu = newUserCpu;
                     _previousSystemCpu = newSystemCpu;
 
+                    // Note: the behavior of Environment.ProcessorCount has changed a lot accross version: https://github.com/dotnet/runtime/issues/622
+                    // What we want is the number of cores attributed to the container, which is the behavior in 3.1.2+ (and, I believe, in 2.x)
+                    var maximumCpu = Environment.ProcessorCount * _delay;
+                    var totalCpu = userCpu + systemCpu;
+
                     _statsd.Gauge(MetricsNames.ThreadsCount, threadCount);
 
                     _statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
-                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu);
-                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu);
+
+                    // Get CPU time in milliseconds per second
+                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / (_delay / 1000.0));
+                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu.TotalMilliseconds / (_delay / 1000.0));
+
+                    _statsd.Gauge(MetricsNames.CpuPercentage, Math.Round(totalCpu.TotalMilliseconds * 100 / maximumCpu, 1, MidpointRounding.AwayFromZero));
                 }
 
                 if (!_exceptionCounts.IsEmpty)

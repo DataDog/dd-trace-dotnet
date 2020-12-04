@@ -27,5 +27,6 @@ namespace Datadog.Trace.RuntimeMetrics
 
         public const string CpuUserTime = "runtime.dotnet.cpu.user";
         public const string CpuSystemTime = "runtime.dotnet.cpu.system";
+        public const string CpuPercentage = "runtime.dotnet.cpu.percent";
     }
 }
