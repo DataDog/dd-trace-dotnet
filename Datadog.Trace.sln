@@ -389,7 +389,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Microsoft.Data.SqlC
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.NoMultiLoader", "test\test-applications\integrations\Samples.NoMultiLoader\Samples.NoMultiLoader.csproj", "{472B69A0-956F-42C0-9CB8-30107821C43B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.NoMultiLoader.Deps", "test\test-applications\integrations\dependency-libs\Samples.NoMultiLoader.Deps\Samples.NoMultiLoader.Deps.csproj", "{2A161C2D-DAA5-4F97-BA2B-783CF363C05B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.NoMultiLoader.Deps", "test\test-applications\integrations\dependency-libs\Samples.NoMultiLoader.Deps\Samples.NoMultiLoader.Deps.csproj", "{2A161C2D-DAA5-4F97-BA2B-783CF363C05B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Owin.WebApi", "test\test-applications\integrations\Samples.Owin.WebApi\Samples.Owin.WebApi.csproj", "{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -1433,6 +1435,16 @@ Global
 		{2A161C2D-DAA5-4F97-BA2B-783CF363C05B}.Release|x64.Build.0 = Release|Any CPU
 		{2A161C2D-DAA5-4F97-BA2B-783CF363C05B}.Release|x86.ActiveCfg = Release|Any CPU
 		{2A161C2D-DAA5-4F97-BA2B-783CF363C05B}.Release|x86.Build.0 = Release|Any CPU
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Debug|x64.ActiveCfg = Debug|x64
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Debug|x64.Build.0 = Debug|x64
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Debug|x86.ActiveCfg = Debug|x86
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Debug|x86.Build.0 = Debug|x86
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Release|Any CPU.ActiveCfg = Release|x86
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Release|x64.ActiveCfg = Release|x64
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Release|x64.Build.0 = Release|x64
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Release|x86.ActiveCfg = Release|x86
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1544,6 +1556,7 @@ Global
 		{AA88952E-9393-4A4B-85B5-CC7F03629CE1} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{472B69A0-956F-42C0-9CB8-30107821C43B} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{2A161C2D-DAA5-4F97-BA2B-783CF363C05B} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
+		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
