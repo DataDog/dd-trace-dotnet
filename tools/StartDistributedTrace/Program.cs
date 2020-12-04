@@ -10,13 +10,23 @@ namespace StartDistributedTrace
     {
         public static async Task Main(string[] args)
         {
+            string url = null;
             if (args.Length == 0)
+            {
+                Console.Write("Please enter a URL to issue a GET request to: ");
+                url = Console.ReadLine();
+            }
+            else
+            {
+                url = args[0];
+            }
+
+            if (string.IsNullOrEmpty(url))
             {
                 Console.WriteLine($"Usage: {nameof(StartDistributedTrace)} <url>");
                 return;
             }
 
-            string url = args[0];
             Console.WriteLine($"[HttpClient] sending request to {url}");
 
             using (var scope = Tracer.Instance.StartActive("http.request"))
