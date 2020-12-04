@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
             if (integrationState.Scope != null)
             {
                 // Before returning the control flow we need to restore the parent Scope setted by ScopeFactory.CreateOutboundHttpScope
-                // This doesn't affect to OnAsyncMethodEnd async continuation, and ExecutionContext is captured
+                // This doesn't affect to OnAsyncMethodEnd async continuation, an ExecutionContext is captured
                 // by the inner await.
                 IScopeManager scopeManager = ((IDatadogTracer)Tracer.Instance).ScopeManager;
                 if (scopeManager.Active == integrationState.Scope)
