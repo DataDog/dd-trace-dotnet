@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -19,6 +20,8 @@ namespace Datadog.Trace.RuntimeMetrics
         private readonly IRuntimeMetricsListener _listener;
 
         private readonly bool _enableProcessMetrics;
+
+        private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
 
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
@@ -68,32 +71,20 @@ namespace Datadog.Trace.RuntimeMetrics
             }
         }
 
+        /// <summary>
+        /// Gets the internal exception counts, to be used for tests
+        /// </summary>
+        internal ConcurrentDictionary<string, int> ExceptionCounts => _exceptionCounts;
+
         public void Dispose()
         {
             AppDomain.CurrentDomain.FirstChanceException -= FirstChanceException;
             _timer.Dispose();
             _listener?.Dispose();
+            _exceptionCounts.Clear();
         }
 
-        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd)
-        {
-#if NETCOREAPP
-            return new RuntimeEventListener(statsd);
-#elif NETFRAMEWORK
-            return new PerformanceCountersListener(statsd);
-#else
-            return null;
-#endif
-        }
-
-        private void FirstChanceException(object sender, FirstChanceExceptionEventArgs e)
-        {
-            var name = e.Exception.GetType().Name;
-
-            _statsd.Increment(MetricsNames.ExceptionsCount, 1, tags: new[] { $"exception_type:{name}" });
-        }
-
-        private void PushEvents()
+        internal void PushEvents()
         {
             try
             {
@@ -116,11 +107,41 @@ namespace Datadog.Trace.RuntimeMetrics
                     _statsd.Gauge(MetricsNames.CpuUserTime, userCpu);
                     _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu);
                 }
+
+                if (!_exceptionCounts.IsEmpty)
+                {
+                    foreach (var element in _exceptionCounts)
+                    {
+                        _statsd.Increment(MetricsNames.ExceptionsCount, element.Value, tags: new[] { $"exception_type:{element.Key}" });
+                    }
+
+                    // There's a race condition where we could clear items that haven't been pushed
+                    // Having an exact exception count is probably not worth the overhead required to fix it
+                    _exceptionCounts.Clear();
+                }
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error while updating runtime metrics");
             }
+        }
+
+        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd)
+        {
+#if NETCOREAPP
+            return new RuntimeEventListener(statsd);
+#elif NETFRAMEWORK
+            return new PerformanceCountersListener(statsd);
+#else
+            return null;
+#endif
+        }
+
+        private void FirstChanceException(object sender, FirstChanceExceptionEventArgs e)
+        {
+            var name = e.Exception.GetType().Name;
+
+            _exceptionCounts.AddOrUpdate(name, 1, (_, count) => count + 1);
         }
     }
 }
