@@ -202,15 +202,24 @@ namespace Datadog.Trace
 
                     break;
                 case Trace.Tags.Measured:
-                    if (value?.ToBoolean() == true || string.IsNullOrEmpty(value))
+                    if (string.IsNullOrEmpty(value))
                     {
-                        // Set metric to true by passing the value of 1
-                        SetMetric(Trace.Tags.Measured, 1);
+                        // Remove metric if value is null
+                        SetMetric(Trace.Tags.Measured, null);
+                        return this;
                     }
-                    else if (value?.ToBoolean() == false)
+
+                    bool? measured = value.ToBoolean();
+
+                    if (measured == true)
                     {
-                        // Set metric to false by passing the value of 0
-                        SetMetric(Trace.Tags.Measured, 0);
+                        // Set metric to true by passing the value of 1.0
+                        SetMetric(Trace.Tags.Measured, 1.0);
+                    }
+                    else if (measured == false)
+                    {
+                        // Set metric to false by passing the value of 0.0
+                        SetMetric(Trace.Tags.Measured, 0.0);
                     }
                     else
                     {
