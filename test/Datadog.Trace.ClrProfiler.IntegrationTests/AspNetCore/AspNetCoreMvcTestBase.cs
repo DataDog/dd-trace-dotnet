@@ -14,16 +14,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public abstract class AspNetCoreMvcTestBase : TestHelper
     {
-        protected const string TopLevelOperationName = "aspnet_core.request";
-
         protected const string HeaderName1 = "datadog-header-name";
         protected const string HeaderName1Upper = "DATADOG-HEADER-NAME";
         protected const string HeaderValue1 = "asp-net-core";
         protected const string HeaderTagName1 = "datadog-header-tag";
 
-        protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output, string serviceVersion)
+        protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output, string topLevelOperationName, string serviceVersion)
             : base(sampleAppName, output)
         {
+            TopLevelOperationName = topLevelOperationName;
             ServiceVersion = serviceVersion;
             HttpClient = new HttpClient();
             HttpClient.DefaultRequestHeaders.Add(HeaderName1, HeaderValue1);
@@ -31,13 +30,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             SetServiceVersion(ServiceVersion);
 
-            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "/not-found", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}", serviceVersion: ServiceVersion);
+            CreateTopLevelExpectation(topLevelOperationName: topLevelOperationName, url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index", serviceVersion: ServiceVersion);
+            CreateTopLevelExpectation(topLevelOperationName: topLevelOperationName, url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}", serviceVersion: ServiceVersion);
+            CreateTopLevelExpectation(topLevelOperationName: topLevelOperationName, url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}", serviceVersion: ServiceVersion);
+            CreateTopLevelExpectation(topLevelOperationName: topLevelOperationName, url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "/not-found", serviceVersion: ServiceVersion);
+            CreateTopLevelExpectation(topLevelOperationName: topLevelOperationName, url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}", serviceVersion: ServiceVersion);
 
             CreateTopLevelExpectation(
+                topLevelOperationName: topLevelOperationName,
                 url: "/status-code/500",
                 httpMethod: "GET",
                 httpStatus: "500",
@@ -68,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                                  });
 
             CreateTopLevelExpectation(
+                topLevelOperationName: topLevelOperationName,
                 url: "/bad-request",
                 httpMethod: "GET",
                 httpStatus: "500",
@@ -103,6 +104,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected HttpClient HttpClient { get; }
 
         protected List<AspNetCoreMvcSpanExpectation> Expectations { get; set; } = new List<AspNetCoreMvcSpanExpectation>();
+
+        protected string TopLevelOperationName { get; }
 
         public async Task RunTraceTestOnSelfHosted(string packageVersion)
         {
@@ -195,6 +198,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
 
         protected void CreateTopLevelExpectation(
+            string topLevelOperationName,
             string url,
             string httpMethod,
             string httpStatus,
@@ -207,7 +211,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var expectation = new AspNetCoreMvcSpanExpectation(
                                   EnvironmentHelper.FullSampleName,
                                   serviceVersion,
-                                  TopLevelOperationName,
+                                  topLevelOperationName,
                                   resourceName,
                                   httpStatus,
                                   httpMethod)
