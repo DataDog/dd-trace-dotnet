@@ -9,4 +9,8 @@
     <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Owin\Datadog.Trace.Owin.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,5 @@
 using System.Web.Http;
+using Datadog.Trace.Owin;
 using Owin;
 
 // [assembly: OwinStartup(typeof(Startup))]
@@ -8,8 +9,10 @@ namespace Samples.Owin.WebApi
     {
         public static void Configuration(IAppBuilder appBuilder)
         {
-            // the .NET Tracer should automatically inject the Trance/Span
-            // appBuilder.Use<RequestLoggingOwinMiddleware>();
+            // Insert .NET Tracer before any other middleware so the Datadog trace
+            // will wrap the rest of the OWIN pipeline
+            appBuilder.UseDatadogTracingOwinMiddleware();
+            // appBuilder.Use<SomeOtherMiddleware>();
 
             var config = new HttpConfiguration();
 
