@@ -376,9 +376,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(object wireProtocol, object connection)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            Tracer tracer = Tracer.Instance;
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
+            if (!tracer.Settings.IsServiceEnabled(serviceName))
+            {
+                // service disabled, don't create a scope, skip this trace
                 return null;
             }
 
@@ -459,9 +467,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 Log.Warning(ex, "Unable to access IWireProtocol.Command properties.");
             }
-
-            Tracer tracer = Tracer.Instance;
-            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
             Scope scope = null;
 

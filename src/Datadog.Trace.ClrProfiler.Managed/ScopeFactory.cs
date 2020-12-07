@@ -38,6 +38,13 @@ namespace Datadog.Trace.ClrProfiler
                 return null;
             }
 
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
+            if (!tracer.Settings.IsServiceEnabled(serviceName))
+            {
+                // service disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             Scope scope = null;
 
             try
@@ -58,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler
                 string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
                 tags = new HttpTags();
-                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
+                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
@@ -88,18 +95,24 @@ namespace Datadog.Trace.ClrProfiler
                 return null;
             }
 
+            string dbType = GetDbType(command.GetType().Name);
+            if (dbType == null)
+            {
+                // don't create a scope, skip this trace
+                return null;
+            }
+
+            string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
+            if (!tracer.Settings.IsServiceEnabled(serviceName))
+            {
+                // service disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             Scope scope = null;
 
             try
             {
-                string dbType = GetDbType(command.GetType().Name);
-
-                if (dbType == null)
-                {
-                    // don't create a scope, skip this trace
-                    return null;
-                }
-
                 Span parent = tracer.ActiveScope?.Span;
 
                 if (parent != null &&
@@ -113,7 +126,6 @@ namespace Datadog.Trace.ClrProfiler
                     return null;
                 }
 
-                string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
                 string operationName = $"{dbType}.query";
 
                 var tags = new SqlTags();

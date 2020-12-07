@@ -14,13 +14,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         internal static Scope CreateScope(Tracer tracer, IntegrationInfo integrationId, string host, string port, string rawCommand)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
             }
 
             string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
+            if (!tracer.Settings.IsServiceEnabled(serviceName))
+            {
+                // service disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             Scope scope = null;
 
             try

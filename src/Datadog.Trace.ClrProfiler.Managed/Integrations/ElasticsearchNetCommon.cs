@@ -27,6 +27,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return null;
             }
 
+            var serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
+            if (!tracer.Settings.IsServiceEnabled(serviceName))
+            {
+                // service disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             string requestName = pipeline.GetProperty("RequestParameters")
                                          .GetValueOrDefault()
                                         ?.GetType()
@@ -38,8 +45,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             string method = requestData.GetProperty("Method").GetValueOrDefault()?.ToString();
             var url = requestData.GetProperty("Uri").GetValueOrDefault()?.ToString();
-
-            var serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
             Scope scope = null;
 

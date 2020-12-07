@@ -54,6 +54,11 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
+            var excludedServiceNames = source?.GetString(ConfigurationKeys.ExcludeServices)
+                                             ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                       Enumerable.Empty<string>();
+            ExcludedServiceNames = new HashSet<string>(excludedServiceNames, StringComparer.OrdinalIgnoreCase);
+
             Integrations = new IntegrationSettingsCollection(source);
 
             var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
@@ -176,6 +181,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
         public HashSet<string> DisabledIntegrationNames { get; set; }
+
+        /// <summary>
+        /// Gets or sets the names of excluded service names.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ExcludeServices"/>
+        public HashSet<string> ExcludedServiceNames { get; set; }
 
         /// <summary>
         /// Gets or sets the Uri where the Tracer can connect to the Agent.
@@ -330,6 +341,11 @@ namespace Datadog.Trace.Configuration
             }
 
             return false;
+        }
+
+        internal bool IsServiceEnabled(string serviceName)
+        {
+            return TraceEnabled && !ExcludedServiceNames.Contains(serviceName);
         }
 
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationInfo integration, bool enabledWithGlobalSetting)

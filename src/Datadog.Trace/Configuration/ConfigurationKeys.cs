@@ -55,6 +55,14 @@ namespace Datadog.Trace.Configuration
         public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
 
         /// <summary>
+        /// Configuration key for a list of services to disable.
+        /// Default is empty (all service names are enabled).
+        /// Supports multiple values separated with semi-colons.
+        /// </summary>
+        /// <seealso cref="TracerSettings.ExcludedServiceNames"/>
+        public const string ExcludeServices = "DD_TRACE_EXCLUDE_SERVICES";
+
+        /// <summary>
         /// Configuration key for the Agent host where the Tracer can send traces.
         /// Overridden by <see cref="AgentUri"/> if present.
         /// Default value is "localhost".
