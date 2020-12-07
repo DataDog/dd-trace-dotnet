@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -86,6 +87,37 @@ namespace Datadog.Trace.Tests.Sampling
                 10_000, // Higher number for lower variance
                 FallbackRate,
                 0.05f);
+        }
+
+        [Fact]
+        public void Zero_rate_filters_everything()
+        {
+            var oldGenerator = SpanIdGenerator.ThreadInstance;
+
+            // Create an id generator that will always return 0
+            // This is needed because when creating a SpanContext with an id of 0,
+            // the value is considered as "no value" and the id generator is called
+            var mockGenerator = new Mock<SpanIdGenerator>();
+            mockGenerator.Setup(g => g.CreateNew()).Returns(0);
+
+            SpanIdGenerator.ThreadInstance = mockGenerator.Object;
+
+            try
+            {
+                var sampler = new RuleBasedSampler(new RateLimiter(null));
+
+                sampler.RegisterRule(new CustomSamplingRule(0.0f, "Allow_nothing", ".*", ".*"));
+
+                var span = new Span(new SpanContext(0, 0, serviceName: ServiceName), DateTimeOffset.Now) { OperationName = OperationName };
+
+                var priority = sampler.GetSamplingPriority(span);
+
+                Assert.Equal(SamplingPriority.AutoReject, priority);
+            }
+            finally
+            {
+                SpanIdGenerator.ThreadInstance = oldGenerator;
+            }
         }
 
         private static Span GetMyServiceSpan(ulong traceId)

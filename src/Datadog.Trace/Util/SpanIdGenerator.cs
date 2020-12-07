@@ -55,9 +55,14 @@ namespace Datadog.Trace.Util
 
                 return idGenerator;
             }
+
+            internal set
+            {
+                _threadInstance = value;
+            }
         }
 
-        public ulong CreateNew()
+        public virtual ulong CreateNew()
         {
             long high = _random.Next(int.MinValue, int.MaxValue);
             long low = _random.Next(int.MinValue, int.MaxValue);
