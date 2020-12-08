@@ -45,12 +45,16 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             using var listener = new RuntimeEventListener(statsd.Object);
 
             statsd.ResetCalls();
-            mutex.Reset(); // In case a GC was triggered when creating the listener
 
-            GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+            for (int i = 0; i < 3; i++)
+            {
+                mutex.Reset(); // In case a GC was triggered when creating the listener
 
-            // GC events are pushed asynchronously, wait for the last one to be processed
-            mutex.Wait();
+                GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+
+                // GC events are pushed asynchronously, wait for the last one to be processed
+                mutex.Wait();
+            }
 
             statsd.Verify(s => s.Gauge(MetricsNames.Gen0HeapSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
             statsd.Verify(s => s.Gauge(MetricsNames.Gen1HeapSize, It.IsAny<ulong>(), It.IsAny<double>(), null), Times.AtLeastOnce);
