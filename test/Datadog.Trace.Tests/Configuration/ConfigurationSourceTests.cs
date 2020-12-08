@@ -49,6 +49,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.Environment), null };
             yield return new object[] { CreateFunc(s => s.ServiceName), null };
             yield return new object[] { CreateFunc(s => s.DisabledIntegrationNames.Count), 0 };
+            yield return new object[] { CreateFunc(s => s.ExcludedServiceNames.Count), 0 };
             yield return new object[] { CreateFunc(s => s.LogsInjectionEnabled), false };
             yield return new object[] { CreateFunc(s => s.GlobalTags.Count), 0 };
             yield return new object[] { CreateFunc(s => s.AnalyticsEnabled), false };
@@ -74,6 +75,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { "DD_SERVICE_NAME", "web-service", CreateFunc(s => s.ServiceName), "web-service" };
 
             yield return new object[] { ConfigurationKeys.DisabledIntegrations, "integration1;integration2", CreateFunc(s => s.DisabledIntegrationNames.Count), 2 };
+            yield return new object[] { ConfigurationKeys.ExcludeServices, "service-http-client;service-mysql", CreateFunc(s => s.DisabledIntegrationNames.Count), 2 };
 
             yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
             yield return new object[] { ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2 };
