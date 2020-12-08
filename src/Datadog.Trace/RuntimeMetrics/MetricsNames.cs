@@ -28,5 +28,14 @@ namespace Datadog.Trace.RuntimeMetrics
         public const string CpuUserTime = "runtime.dotnet.cpu.user";
         public const string CpuSystemTime = "runtime.dotnet.cpu.system";
         public const string CpuPercentage = "runtime.dotnet.cpu.percent";
+
+        public const string CurrentRequests = "runtime.dotnet.aspnetcore.requests.current";
+        public const string FailedRequests = "runtime.dotnet.aspnetcore.requests.failed";
+        public const string TotalRequests = "runtime.dotnet.aspnetcore.requests.total";
+        public const string RequestQueueLength = "runtime.dotnet.aspnetcore.requests.queue_length";
+
+        public const string CurrentConnections = "runtime.dotnet.aspnetcore.connections.current";
+        public const string ConnectionQueueLength = "runtime.dotnet.aspnetcore.connections.queue_length";
+        public const string TotalConnections = "runtime.dotnet.aspnetcore.connections.total";
     }
 }

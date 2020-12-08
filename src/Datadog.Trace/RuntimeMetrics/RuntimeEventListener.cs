@@ -1,5 +1,7 @@
 #if NETCOREAPP
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.Tracing;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -9,7 +11,9 @@ namespace Datadog.Trace.RuntimeMetrics
 {
     internal class RuntimeEventListener : EventListener, IRuntimeMetricsListener
     {
-        private const string EventSourceName = "Microsoft-Windows-DotNETRuntime";
+        private const string RuntimeEventSourceName = "Microsoft-Windows-DotNETRuntime";
+        private const string AspNetCoreHostingEventSourceName = "Microsoft.AspNetCore.Hosting";
+        private const string AspNetCoreKestrelEventSourceName = "Microsoft-AspNetCore-Server-Kestrel";
 
         private const int EventGcSuspendBegin = 9;
         private const int EventGcRestartEnd = 3;
@@ -23,16 +27,38 @@ namespace Datadog.Trace.RuntimeMetrics
         private static readonly string[] CompactingGcTags = { "compacting_gc:true" };
         private static readonly string[] NotCompactingGcTags = { "compacting_gc:false" };
 
+        private static readonly IReadOnlyDictionary<string, string> MetricsMapping;
+
         private readonly IDogStatsd _statsd;
 
         private readonly Timing _contentionTime = new Timing();
+
+        private readonly string _delayInSeconds;
+
         private long _contentionCount;
 
         private DateTime? _gcStart;
 
-        public RuntimeEventListener(IDogStatsd statsd)
+        static RuntimeEventListener()
+        {
+            MetricsMapping = new Dictionary<string, string>
+            {
+                ["current-requests"] = MetricsNames.CurrentRequests,
+                ["failed-requests"] = MetricsNames.FailedRequests,
+                ["total-requests"] = MetricsNames.TotalRequests,
+                ["request-queue-length"] = MetricsNames.RequestQueueLength,
+                ["current-connections"] = MetricsNames.CurrentConnections,
+                ["connection-queue-length"] = MetricsNames.ConnectionQueueLength,
+                ["total-connections"] = MetricsNames.TotalConnections
+            };
+        }
+
+        public RuntimeEventListener(IDogStatsd statsd, int delay)
         {
             _statsd = statsd;
+            _delayInSeconds = (delay / 1000).ToString();
+
+            EventSourceCreated += (_, e) => EnableEventSource(e.EventSource);
         }
 
         public void Refresh()
@@ -43,16 +69,6 @@ namespace Datadog.Trace.RuntimeMetrics
             _statsd.Counter(MetricsNames.ContentionCount, Interlocked.Exchange(ref _contentionCount, 0));
 
             _statsd.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
-        }
-
-        protected override void OnEventSourceCreated(EventSource eventSource)
-        {
-            if (eventSource.Name == EventSourceName)
-            {
-                var keywords = Keywords.GC | Keywords.Contention;
-
-                EnableEvents(eventSource, EventLevel.Informational, (EventKeywords)keywords);
-            }
         }
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
@@ -68,7 +84,11 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                if (eventData.EventId == EventGcSuspendBegin)
+                if (eventData.EventName == "EventCounters")
+                {
+                    ExtractCounters(eventData.Payload);
+                }
+                else if (eventData.EventId == EventGcSuspendBegin)
                 {
                     _gcStart = eventData.TimeStamp;
                 }
@@ -115,6 +135,54 @@ namespace Datadog.Trace.RuntimeMetrics
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error while processing event {0} {1}", eventData.EventId, eventData.EventName);
+            }
+        }
+
+        private void EnableEventSource(EventSource eventSource)
+        {
+            if (eventSource.Name == RuntimeEventSourceName)
+            {
+                var keywords = Keywords.GC | Keywords.Contention;
+
+                EnableEvents(eventSource, EventLevel.Informational, (EventKeywords)keywords);
+            }
+            else if (eventSource.Name == AspNetCoreHostingEventSourceName || eventSource.Name == AspNetCoreKestrelEventSourceName)
+            {
+                var settings = new Dictionary<string, string>
+                {
+                    ["EventCounterIntervalSec"] = _delayInSeconds
+                };
+
+                EnableEvents(eventSource, EventLevel.Critical, EventKeywords.All, settings);
+            }
+        }
+
+        private void ExtractCounters(ReadOnlyCollection<object> payload)
+        {
+            for (int i = 0; i < payload.Count; ++i)
+            {
+                if (!(payload[i] is IDictionary<string, object> eventPayload))
+                {
+                    continue;
+                }
+
+                if (!eventPayload.TryGetValue("Name", out object name)
+                    || !MetricsMapping.TryGetValue(name.ToString(), out var statName))
+                {
+                    continue;
+                }
+
+                if (eventPayload.TryGetValue("Mean", out object rawValue)
+                    || eventPayload.TryGetValue("Increment", out rawValue))
+                {
+                    var value = (double)rawValue;
+
+                    _statsd.Gauge(statName, value);
+                }
+                else
+                {
+                    Log.Debug<object>("EventCounter {0} has no Mean or Increment field", name);
+                }
             }
         }
     }

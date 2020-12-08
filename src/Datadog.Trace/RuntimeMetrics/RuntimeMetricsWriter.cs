@@ -31,7 +31,7 @@ namespace Datadog.Trace.RuntimeMetrics
         {
         }
 
-        internal RuntimeMetricsWriter(IDogStatsd statsd, int delay, Func<IDogStatsd, IRuntimeMetricsListener> initializeListener)
+        internal RuntimeMetricsWriter(IDogStatsd statsd, int delay, Func<IDogStatsd, int, IRuntimeMetricsListener> initializeListener)
         {
             _delay = delay;
             _statsd = statsd;
@@ -63,7 +63,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                _listener = initializeListener(statsd);
+                _listener = initializeListener(statsd, delay);
             }
             catch (Exception ex)
             {
@@ -134,10 +134,10 @@ namespace Datadog.Trace.RuntimeMetrics
             }
         }
 
-        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd)
+        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, int delay)
         {
 #if NETCOREAPP
-            return new RuntimeEventListener(statsd);
+            return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
             return new PerformanceCountersListener(statsd);
 #else
