@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = CreateScope(wireProtocol, connection))
+            using (var scope = CreateScope(Tracer.Instance, wireProtocol, connection))
             {
                 try
                 {
@@ -154,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = CreateScope(wireProtocol, connection))
+            using (var scope = CreateScope(Tracer.Instance, wireProtocol, connection))
             {
                 try
                 {
@@ -331,7 +331,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CancellationToken cancellationToken,
             Func<object, object, CancellationToken, object> originalMethod)
         {
-            using (var scope = CreateScope(wireProtocol, connection))
+            using (var scope = CreateScope(Tracer.Instance, wireProtocol, connection))
             {
                 try
                 {
@@ -358,7 +358,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CancellationToken cancellationToken,
             Func<object, object, CancellationToken, object> originalMethod)
         {
-            using (var scope = CreateScope(wireProtocol, connection))
+            using (var scope = CreateScope(Tracer.Instance, wireProtocol, connection))
             {
                 try
                 {
@@ -374,9 +374,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScope(object wireProtocol, object connection)
+        internal static Scope CreateScope(Tracer tracer, object wireProtocol, object connection)
         {
-            Tracer tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
