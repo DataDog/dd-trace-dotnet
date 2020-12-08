@@ -211,6 +211,11 @@ namespace Datadog.Trace
         /// </summary>
         public const string Origin = "_dd.origin";
 
+        /// <summary>
+        /// Configures the measured metric for a span.
+        /// </summary>
+        public const string Measured = "_dd.measured";
+
         internal const string ElasticsearchAction = "elasticsearch.action";
 
         internal const string ElasticsearchMethod = "elasticsearch.method";
