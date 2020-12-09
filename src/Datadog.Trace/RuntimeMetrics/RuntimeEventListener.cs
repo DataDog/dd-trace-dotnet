@@ -43,20 +43,20 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             MetricsMapping = new Dictionary<string, string>
             {
-                ["current-requests"] = MetricsNames.CurrentRequests,
-                ["failed-requests"] = MetricsNames.FailedRequests,
-                ["total-requests"] = MetricsNames.TotalRequests,
-                ["request-queue-length"] = MetricsNames.RequestQueueLength,
-                ["current-connections"] = MetricsNames.CurrentConnections,
-                ["connection-queue-length"] = MetricsNames.ConnectionQueueLength,
-                ["total-connections"] = MetricsNames.TotalConnections
+                ["current-requests"] = MetricsNames.AspNetCoreCurrentRequests,
+                ["failed-requests"] = MetricsNames.AspNetCoreFailedRequests,
+                ["total-requests"] = MetricsNames.AspNetCoreTotalRequests,
+                ["request-queue-length"] = MetricsNames.AspNetCoreRequestQueueLength,
+                ["current-connections"] = MetricsNames.AspNetCoreCurrentConnections,
+                ["connection-queue-length"] = MetricsNames.AspNetCoreConnectionQueueLength,
+                ["total-connections"] = MetricsNames.AspNetCoreTotalConnections
             };
         }
 
-        public RuntimeEventListener(IDogStatsd statsd, int delay)
+        public RuntimeEventListener(IDogStatsd statsd, TimeSpan delay)
         {
             _statsd = statsd;
-            _delayInSeconds = (delay / 1000).ToString();
+            _delayInSeconds = ((int)delay.TotalSeconds).ToString();
 
             EventSourceCreated += (_, e) => EnableEventSource(e.EventSource);
         }

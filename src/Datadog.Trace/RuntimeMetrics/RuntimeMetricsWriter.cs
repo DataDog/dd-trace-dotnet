@@ -12,7 +12,7 @@ namespace Datadog.Trace.RuntimeMetrics
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RuntimeMetricsWriter>();
 
-        private readonly int _delay;
+        private readonly TimeSpan _delay;
 
         private readonly IDogStatsd _statsd;
         private readonly Timer _timer;
@@ -26,12 +26,12 @@ namespace Datadog.Trace.RuntimeMetrics
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
 
-        public RuntimeMetricsWriter(IDogStatsd statsd, int delay)
+        public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay)
             : this(statsd, delay, InitializeListener)
         {
         }
 
-        internal RuntimeMetricsWriter(IDogStatsd statsd, int delay, Func<IDogStatsd, int, IRuntimeMetricsListener> initializeListener)
+        internal RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, Func<IDogStatsd, TimeSpan, IRuntimeMetricsListener> initializeListener)
         {
             _delay = delay;
             _statsd = statsd;
@@ -102,7 +102,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                     // Note: the behavior of Environment.ProcessorCount has changed a lot accross version: https://github.com/dotnet/runtime/issues/622
                     // What we want is the number of cores attributed to the container, which is the behavior in 3.1.2+ (and, I believe, in 2.x)
-                    var maximumCpu = Environment.ProcessorCount * _delay;
+                    var maximumCpu = Environment.ProcessorCount * _delay.TotalMilliseconds;
                     var totalCpu = userCpu + systemCpu;
 
                     _statsd.Gauge(MetricsNames.ThreadsCount, threadCount);
@@ -110,8 +110,8 @@ namespace Datadog.Trace.RuntimeMetrics
                     _statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
 
                     // Get CPU time in milliseconds per second
-                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / (_delay / 1000.0));
-                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu.TotalMilliseconds / (_delay / 1000.0));
+                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / _delay.TotalSeconds);
+                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu.TotalMilliseconds / _delay.TotalSeconds);
 
                     _statsd.Gauge(MetricsNames.CpuPercentage, Math.Round(totalCpu.TotalMilliseconds * 100 / maximumCpu, 1, MidpointRounding.AwayFromZero));
                 }
@@ -134,7 +134,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
         }
 
-        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, int delay)
+        private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan delay)
         {
 #if NETCOREAPP
             return new RuntimeEventListener(statsd, delay);

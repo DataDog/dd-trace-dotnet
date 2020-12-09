@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         {
             var statsd = new Mock<IDogStatsd>();
 
-            using var listener = new RuntimeEventListener(statsd.Object, 10000);
+            using var listener = new RuntimeEventListener(statsd.Object, TimeSpan.FromSeconds(10));
 
             listener.Refresh();
 
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.Setup(s => s.Timer(MetricsNames.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null))
                 .Callback(() => mutex.Set());
 
-            using var listener = new RuntimeEventListener(statsd.Object, 10000);
+            using var listener = new RuntimeEventListener(statsd.Object, TimeSpan.FromSeconds(10));
 
             statsd.ResetCalls();
 
@@ -90,17 +90,17 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             };
 
             var statsd = new Mock<IDogStatsd>();
-            using var listener = new RuntimeEventListener(statsd.Object, 1000);
+            using var listener = new RuntimeEventListener(statsd.Object, TimeSpan.FromSeconds(1));
 
             // Wait for the counters to be refreshed
             mutex.Wait();
 
-            statsd.Verify(s => s.Gauge(MetricsNames.CurrentRequests, 1.0, 1, null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Gauge(MetricsNames.FailedRequests, 2.0, 1, null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Gauge(MetricsNames.TotalRequests, 4.0, 1, null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Gauge(MetricsNames.RequestQueueLength, 8.0, 1, null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Gauge(MetricsNames.ConnectionQueueLength, 16.0, 1, null), Times.AtLeastOnce);
-            statsd.Verify(s => s.Gauge(MetricsNames.TotalConnections, 32.0, 1, null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreCurrentRequests, 1.0, 1, null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreFailedRequests, 2.0, 1, null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreTotalRequests, 4.0, 1, null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreRequestQueueLength, 8.0, 1, null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreConnectionQueueLength, 16.0, 1, null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreTotalConnections, 32.0, 1, null), Times.AtLeastOnce);
 
             foreach (var counter in counters)
             {

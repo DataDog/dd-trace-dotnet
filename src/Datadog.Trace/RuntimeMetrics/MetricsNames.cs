@@ -29,13 +29,13 @@ namespace Datadog.Trace.RuntimeMetrics
         public const string CpuSystemTime = "runtime.dotnet.cpu.system";
         public const string CpuPercentage = "runtime.dotnet.cpu.percent";
 
-        public const string CurrentRequests = "runtime.dotnet.aspnetcore.requests.current";
-        public const string FailedRequests = "runtime.dotnet.aspnetcore.requests.failed";
-        public const string TotalRequests = "runtime.dotnet.aspnetcore.requests.total";
-        public const string RequestQueueLength = "runtime.dotnet.aspnetcore.requests.queue_length";
+        public const string AspNetCoreCurrentRequests = "runtime.dotnet.aspnetcore.requests.current";
+        public const string AspNetCoreFailedRequests = "runtime.dotnet.aspnetcore.requests.failed";
+        public const string AspNetCoreTotalRequests = "runtime.dotnet.aspnetcore.requests.total";
+        public const string AspNetCoreRequestQueueLength = "runtime.dotnet.aspnetcore.requests.queue_length";
 
-        public const string CurrentConnections = "runtime.dotnet.aspnetcore.connections.current";
-        public const string ConnectionQueueLength = "runtime.dotnet.aspnetcore.connections.queue_length";
-        public const string TotalConnections = "runtime.dotnet.aspnetcore.connections.total";
+        public const string AspNetCoreCurrentConnections = "runtime.dotnet.aspnetcore.connections.current";
+        public const string AspNetCoreConnectionQueueLength = "runtime.dotnet.aspnetcore.connections.queue_length";
+        public const string AspNetCoreTotalConnections = "runtime.dotnet.aspnetcore.connections.total";
     }
 }
