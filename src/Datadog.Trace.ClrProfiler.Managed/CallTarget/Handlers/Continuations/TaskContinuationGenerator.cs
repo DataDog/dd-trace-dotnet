@@ -8,6 +8,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TTarget, TReturn>
     {
         private static readonly Func<TTarget, object, Exception, CallTargetState, object> _continuation;
+        private static readonly Action<Task, object> _continuationAction;
 
         static TaskContinuationGenerator()
         {
@@ -16,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             {
                 _continuation = (Func<TTarget, object, Exception, CallTargetState, object>)continuationMethod.CreateDelegate(typeof(Func<TTarget, object, Exception, CallTargetState, object>));
             }
+
+            _continuationAction = new Action<Task, object>(ContinuationAction);
         }
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
@@ -40,15 +43,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             var continuationState = new ContinuationGeneratorState<TTarget>(instance, state);
             return ToTReturn(previousTask.ContinueWith(
-                (pTask, oState) =>
-                {
-                    var contState = (ContinuationGeneratorState<TTarget>)oState;
-                    _continuation(contState.Target, null, pTask?.Exception, contState.State);
-                },
+                _continuationAction,
                 continuationState,
                 CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Current));
+        }
+
+        private static void ContinuationAction(Task previousTask, object state)
+        {
+            ContinuationGeneratorState<TTarget> contState = (ContinuationGeneratorState<TTarget>)state;
+            _continuation(contState.Target, null, previousTask?.Exception, contState.State);
         }
     }
 }

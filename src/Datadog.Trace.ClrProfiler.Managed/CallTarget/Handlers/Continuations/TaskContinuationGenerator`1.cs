@@ -9,6 +9,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn>
     {
         private static readonly Func<TTarget, TResult, Exception, CallTargetState, TResult> _continuation;
+        private static readonly Func<Task<TResult>, object, TResult> _continuationAction;
 
         static TaskContinuationGenerator()
         {
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             {
                 _continuation = (Func<TTarget, TResult, Exception, CallTargetState, TResult>)continuationMethod.CreateDelegate(typeof(Func<TTarget, TResult, Exception, CallTargetState, TResult>));
             }
+
+            _continuationAction = new Func<Task<TResult>, object, TResult>(ContinuationAction);
         }
 
         public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
@@ -41,19 +44,22 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             var continuationState = new ContinuationGeneratorState<TTarget>(instance, state);
             return ToTReturn(previousTask.ContinueWith(
-                (pTask, oState) =>
-                {
-                    var contState = (ContinuationGeneratorState<TTarget>)oState;
-                    if (pTask.Exception is null)
-                    {
-                        return _continuation(contState.Target, pTask.Result, null, contState.State);
-                    }
-                    return _continuation(contState.Target, default, pTask.Exception, contState.State);
-                },
+                _continuationAction,
                 continuationState,
                 CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Current));
+        }
+
+        private static TResult ContinuationAction(Task<TResult> previousTask, object state)
+        {
+            ContinuationGeneratorState<TTarget> contState = (ContinuationGeneratorState<TTarget>)state;
+            if (previousTask.Exception is null)
+            {
+                return _continuation(contState.Target, previousTask.Result, null, contState.State);
+            }
+
+            return _continuation(contState.Target, default, previousTask.Exception, contState.State);
         }
     }
 }
