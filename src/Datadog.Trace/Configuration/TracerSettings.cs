@@ -54,6 +54,12 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
+            var adonetExcludedTypes = source?.GetString(ConfigurationKeys.AdoNetExcludeTypes)
+                                                 ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                           Enumerable.Empty<string>();
+
+            AdoNetExcludedTypes = new HashSet<string>(adonetExcludedTypes, StringComparer.OrdinalIgnoreCase);
+
             Integrations = new IntegrationSettingsCollection(source);
 
             var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
@@ -176,6 +182,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
         public HashSet<string> DisabledIntegrationNames { get; set; }
+
+        /// <summary>
+        /// Gets or sets the AdoNet types to exclude from automatic instrumentation.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AdoNetExcludeTypes"/>
+        public HashSet<string> AdoNetExcludedTypes { get; set; }
 
         /// <summary>
         /// Gets or sets the Uri where the Tracer can connect to the Agent.
