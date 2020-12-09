@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -83,6 +84,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
                 Assert.Equal("false", tracingEnabled);
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void ServiceDisabled_DoesNotSubmitsTraces()
+        {
+            const string expectedOperationName = "http.request";
+            const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
+
+            SetEnvironmentVariable(ConfigurationKeys.ExcludeServices, expectedServiceName);
+
+            int agentPort = TcpPortProvider.GetOpenPort();
+            int httpPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"Port={httpPort}"))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
+
+                var spans = agent.WaitForSpans(1, 2000, operationName: expectedOperationName);
+                Assert.Equal(0, spans.Count);
+
+                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+
+                Assert.Null(traceId);
+                Assert.Null(parentSpanId);
             }
         }
     }
