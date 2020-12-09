@@ -16,6 +16,8 @@
 #include "pal.h"
 #include "il_rewriter.h"
 
+#include "loader.h"
+
 namespace trace {
 
 class CorProfiler : public CorProfilerBase {
@@ -35,6 +37,11 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
   bool is_desktop_iis = false;
+
+  //
+  // Loader
+  //
+  Loader* loader_ = nullptr;
 
   //
   // OpCodes helper
@@ -83,9 +90,6 @@ class CorProfiler : public CorProfilerBase {
   CorProfiler() = default;
 
   bool IsAttached() const;
-
-  void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize,
-                                 BYTE** pSymbolsArray, int* symbolsSize) const;
 
   //
   // ICorProfilerCallback methods

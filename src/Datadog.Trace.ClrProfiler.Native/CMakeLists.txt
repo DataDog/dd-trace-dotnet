@@ -58,6 +58,7 @@ if (OSX)
         il_rewriter.cpp
         integration_loader.cpp
         integration.cpp
+        loader.cpp
         logging.cpp
         metadata_builder.cpp
         miniutf.cpp
@@ -117,6 +118,7 @@ else()
         il_rewriter.cpp
         integration_loader.cpp
         integration.cpp
+        loader.cpp
         logging.cpp
         metadata_builder.cpp
         miniutf.cpp

@@ -20,11 +20,6 @@
 #include "resource.h"
 #include "util.h"
 
-#ifdef OSX
-#include <mach-o/getsect.h>
-#include <mach-o/dyld.h>
-#endif
-
 namespace trace {
 
 CorProfiler* profiler = nullptr;
@@ -223,6 +218,9 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       process_name == "iisexpress.exe"_W) {
     is_desktop_iis = runtime_information_.is_desktop();
   }
+
+  // Create the loader class
+  loader_ = new Loader(this->info_);
 
   // writing opcodes vector for the IL dumper
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, flow) \
@@ -2129,67 +2127,5 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   }
 
   return S_OK;
-}
-
-#ifdef LINUX
-extern uint8_t dll_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_start");
-extern uint8_t dll_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_end");
-
-extern uint8_t pdb_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_start");
-extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
-#endif
-
-void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
-#ifdef _WIN32
-  HINSTANCE hInstance = DllHandle;
-  LPCWSTR dllLpName;
-  LPCWSTR symbolsLpName;
-
-  if (runtime_information_.is_desktop()) {
-    dllLpName = MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_DLL);
-    symbolsLpName = MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_SYMBOLS);
-  } else {
-    dllLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_DLL);
-    symbolsLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_SYMBOLS);
-  }
-
-  HRSRC hResAssemblyInfo = FindResource(hInstance, dllLpName, L"ASSEMBLY");
-  HGLOBAL hResAssembly = LoadResource(hInstance, hResAssemblyInfo);
-  *assemblySize = SizeofResource(hInstance, hResAssemblyInfo);
-  *pAssemblyArray = (LPBYTE)LockResource(hResAssembly);
-
-  HRSRC hResSymbolsInfo = FindResource(hInstance, symbolsLpName, L"SYMBOLS");
-  HGLOBAL hResSymbols = LoadResource(hInstance, hResSymbolsInfo);
-  *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
-  *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
-#elif LINUX
-  *assemblySize = dll_end - dll_start;
-  *pAssemblyArray = (BYTE*)dll_start;
-
-  *symbolsSize = pdb_end - pdb_start;
-  *pSymbolsArray = (BYTE*)pdb_start;
-#else
-    const auto imgCount = _dyld_image_count();
-
-    for(auto i = 0; i < imgCount; i++) {
-        const auto name = std::string(_dyld_get_image_name(i));
-
-        if (name.rfind("Datadog.Trace.ClrProfiler.Native.dylib") != std::string::npos) {
-            const auto header = (const struct mach_header_64 *) _dyld_get_image_header(i);
-
-            unsigned long dllSize;
-            const auto dllData = getsectiondata(header, "binary", "dll", &dllSize);
-            *assemblySize = dllSize;
-            *pAssemblyArray = (BYTE*)dllData;
-
-            unsigned long pdbSize;
-            const auto pdbData = getsectiondata(header, "binary", "pdb", &pdbSize);
-            *symbolsSize = pdbSize;
-            *pSymbolsArray = (BYTE*)pdbData;
-            break;
-        }
-    }
-#endif
-  return;
 }
 }  // namespace trace
