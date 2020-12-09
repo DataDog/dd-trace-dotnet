@@ -55,7 +55,10 @@ std::string Logger::GetLogPath() {
 
 Logger::Logger() {
   spdlog::set_error_handler([](const std::string& msg) {
-    std::cerr << "Logger Handler: " << msg << std::endl;
+    // By writing into the stderr was changing the behavior in a CI scenario.
+    // There's not a good way to report errors when trying to create the log file.
+    // But we never should be changing the normal behavior of an app.
+    // std::cerr << "Logger Handler: " << msg << std::endl;
   });
 
   spdlog::flush_every(std::chrono::seconds(3));
