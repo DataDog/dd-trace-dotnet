@@ -129,9 +129,9 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var parallelism = test.NumberPerBurst;
 
-            if (parallelism > 10)
+            if (parallelism > Environment.ProcessorCount)
             {
-                parallelism = 10;
+                parallelism = Environment.ProcessorCount;
             }
 
             var limiter = new RateLimiter(maxTracesPerInterval: intervalLimit);
