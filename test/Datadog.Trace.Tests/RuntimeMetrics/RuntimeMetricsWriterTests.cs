@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
+    [CollectionDefinition(nameof(RuntimeMetricsWriterTests), DisableParallelization = true)]
     public class RuntimeMetricsWriterTests
     {
         [Fact]
