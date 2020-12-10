@@ -32,6 +32,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.RabbitMQ));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RabbitMQIntegration));
+        private static readonly string[] DeliveryModeStrings = { null, "1", "2" };
+
+        private static Action<IDictionary<string, object>, string, string> headersSetter = ((carrier, key, value) =>
+        {
+            carrier.Add(key, Encoding.UTF8.GetBytes(value));
+        });
 
         private static Func<IDictionary<string, object>, string, IEnumerable<string>> headersGetter = ((carrier, key) =>
         {
@@ -221,6 +227,108 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
 
                     return result;
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it
+        /// </summary>
+        /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="exchange">Name of the exchange.</param>
+        /// <param name="routingKey">The routing key.</param>
+        /// <param name="mandatory">The mandatory routing flag.</param>
+        /// <param name="basicProperties">The message properties.</param>
+        /// <param name="body">The message body.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            TargetAssembly = RabbitMQAssembly,
+            TargetType = RabbitMQImplModelBase,
+            TargetMethod = "_Private_BasicPublish",
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Ignore, ClrNames.Ignore },
+            TargetMinimumVersion = Major3Minor6Patch9,
+            TargetMaximumVersion = Major5)]
+        public static void BasicPublish(
+            object model,
+            string exchange,
+            string routingKey,
+            bool mandatory,
+            object basicProperties,
+            byte[] body,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (model == null) { throw new ArgumentNullException(nameof(model)); }
+
+            const string methodName = "_Private_BasicPublish";
+            const string command = "basic.publish";
+            Action<object, string, string, bool, object, byte[]> instrumentedMethod;
+            var modelType = model.GetType();
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Action<object, string, string, bool, object, byte[]>>
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(modelType)
+                       .WithParameters(exchange, routingKey, mandatory, basicProperties, body)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Ignore, ClrNames.Ignore)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RabbitMQImplModelBase,
+                    methodName: methodName,
+                    instanceType: modelType.AssemblyQualifiedName);
+                throw;
+            }
+
+            RabbitMQTags tags = null;
+            using (var scope = CreateScope(Tracer.Instance, out tags, command, exchange: exchange, routingKey: routingKey))
+            {
+                tags?.SetSpanKind(SpanKinds.Producer);
+
+                if (scope != null)
+                {
+                    string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
+                    string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
+                    scope.Span.ResourceName = $"{command} {exchangeDisplayName} -> {routingKeyDisplayName}";
+
+                    tags.MessageSize = body.Length.ToString();
+
+                    var basicPropertiesValue = basicProperties.As<IBasicProperties>();
+
+                    // if (basicPropertiesValue.Instance != null && basicPropertiesValue.IsDeliveryModePresent())
+                    if (basicPropertiesValue.IsDeliveryModePresent())
+                    {
+                        tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];
+                    }
+
+                    // add distributed tracing headers to the message
+                    if (basicPropertiesValue.Headers == null)
+                    {
+                        basicPropertiesValue.Headers = new Dictionary<string, object>();
+                    }
+
+                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicPropertiesValue.Headers, headersSetter);
+                }
+
+                try
+                {
+                    instrumentedMethod(model, exchange, routingKey, mandatory, basicProperties, body);
                 }
                 catch (Exception ex)
                 {
@@ -510,9 +618,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1600 // Elements must be documented
-        /// <summary>
-        /// BasicProperties interface for ducktyping
-        /// </summary>
         public interface IBasicProperties
         {
             /// <summary>

@@ -1580,6 +1580,35 @@
         "target": {
           "assembly": "RabbitMQ.Client",
           "type": "RabbitMQ.Client.Impl.ModelBase",
+          "method": "_Private_BasicPublish",
+          "signature_types": [
+            "System.Void",
+            "System.String",
+            "System.String",
+            "System.Boolean",
+            "_",
+            "_"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 9,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
+          "method": "BasicPublish",
+          "signature": "00 09 01 1C 0E 0E 02 1C 1D 05 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "RabbitMQ.Client",
+          "type": "RabbitMQ.Client.Impl.ModelBase",
           "method": "_Private_ExchangeDeclare",
           "signature_types": [
             "System.Void",
