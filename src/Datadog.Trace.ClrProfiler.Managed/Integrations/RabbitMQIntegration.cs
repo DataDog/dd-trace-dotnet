@@ -22,15 +22,129 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string ServiceName = "rabbitmq";
 
         private const string Major3Minor6Patch9 = "3.6.9";
+        private const string Major5 = "5";
         private const string Major6 = "6";
         private const string RabbitMQAssembly = "RabbitMQ.Client";
         private const string RabbitMQImplModelBase = "RabbitMQ.Client.Impl.ModelBase";
+        private const string RabbitMQDefaultBasicConsumer = "RabbitMQ.Client.DefaultBasicConsumer";
         private const string IBasicPropertiesTypeName = "RabbitMQ.Client.IBasicProperties";
         private const string IDictionaryArgumentsTypeName = "System.Collections.Generic.IDictionary`2[System.String,System.Object]";
 
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.RabbitMQ));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RabbitMQIntegration));
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MongoDbIntegration));
+        private static Func<IDictionary<string, object>, string, IEnumerable<string>> headersGetter = ((carrier, key) =>
+        {
+            if (carrier.TryGetValue(key, out object value) && value is byte[] bytes)
+            {
+                return new[] { Encoding.UTF8.GetString(bytes) };
+            }
+            else
+            {
+                return Enumerable.Empty<string>();
+            }
+        });
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it
+        /// </summary>
+        /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="consumerTag">The original consumerTag argument</param>
+        /// <param name="deliveryTag">The original deliveryTag argument</param>
+        /// <param name="redelivered">The original redelivered argument</param>
+        /// <param name="exchange">Name of the exchange.</param>
+        /// <param name="routingKey">The routing key.</param>
+        /// <param name="basicProperties">The message properties.</param>
+        /// <param name="body">The message body.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            TargetAssembly = RabbitMQAssembly,
+            TargetType = RabbitMQDefaultBasicConsumer,
+            TargetMethod = "HandleBasicDeliver",
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, ClrNames.Ignore, ClrNames.Ignore },
+            TargetMinimumVersion = Major3Minor6Patch9,
+            TargetMaximumVersion = Major5)]
+        public static void BasicDeliver(
+            object model,
+            string consumerTag,
+            ulong deliveryTag,
+            bool redelivered,
+            string exchange,
+            string routingKey,
+            object basicProperties,
+            byte[] body,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (model == null) { throw new ArgumentNullException(nameof(model)); }
+
+            const string methodName = "HandleBasicDeliver";
+            const string command = "basic.deliver";
+            Action<object, string, ulong, bool, string, string, object, byte[]> instrumentedMethod;
+            var modelType = model.GetType();
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Action<object, string, ulong, bool, string, string, object, byte[]>>
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(modelType)
+                       .WithParameters(consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, ClrNames.Ignore, ClrNames.Ignore)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RabbitMQDefaultBasicConsumer,
+                    methodName: methodName,
+                    instanceType: modelType.AssemblyQualifiedName);
+                throw;
+            }
+
+            SpanContext propagatedContext = null;
+            var basicPropertiesValue = basicProperties.As<IBasicProperties>();
+
+            // try to extract propagated context values from headers
+            if (basicPropertiesValue.Headers != null)
+            {
+                try
+                {
+                    propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesValue.Headers, headersGetter);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting propagated headers.");
+                }
+            }
+
+            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, exchange: exchange, routingKey: routingKey))
+            {
+                tags?.SetSpanKind(SpanKinds.Consumer);
+
+                if (tags != null)
+                {
+                    tags.MessageSize = body.Length.ToString();
+                }
+
+                try
+                {
+                    instrumentedMethod(model, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it
@@ -366,7 +480,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Span parent = tracer.ActiveScope?.Span;
 
                 tags = new RabbitMQTags();
-                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{IntegrationName}");
+                scope = tracer.StartActiveWithTags(OperationName, parent: parentContext, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{IntegrationName}");
                 var span = scope.Span;
 
                 span.Type = SpanTypes.MessageClient;
@@ -396,6 +510,29 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1600 // Elements must be documented
+        /// <summary>
+        /// BasicProperties interface for ducktyping
+        /// </summary>
+        public interface IBasicProperties
+        {
+            /// <summary>
+            /// Gets or sets the headers of the message
+            /// </summary>
+            /// <returns>Message headers</returns>
+            IDictionary<string, object> Headers { get; set; }
+
+            /// <summary>
+            /// Gets the delivery mode of the message
+            /// </summary>
+            byte DeliveryMode { get; }
+
+            /// <summary>
+            /// Returns true if the DeliveryMode property is present
+            /// </summary>
+            /// <returns>true if the DeliveryMode property is present</returns>
+            bool IsDeliveryModePresent();
+        }
+
         public interface IBasicGetResult
         {
             /// <summary>
