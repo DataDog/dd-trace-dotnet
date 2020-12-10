@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {
-                        tags.HttpStatusCode = HttpTags.ConvertStatusCodeToString((int)webResponse.StatusCode);
+                        scope.Span.SetClientStatusCode((int)webResponse.StatusCode);
                     }
 
                     return response;
@@ -182,7 +182,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {
-                        tags.HttpStatusCode = HttpTags.ConvertStatusCodeToString((int)webResponse.StatusCode);
+                        scope.Span.SetClientStatusCode((int)webResponse.StatusCode);
                     }
 
                     return response;

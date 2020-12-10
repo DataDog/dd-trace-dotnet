@@ -7,6 +7,7 @@ using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -272,7 +273,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (scope != null)
                     {
-                        tags.HttpStatusCode = HttpTags.ConvertStatusCodeToString(statusCode);
+                        scope.Span.SetClientStatusCode(statusCode);
                     }
 
                     return response;

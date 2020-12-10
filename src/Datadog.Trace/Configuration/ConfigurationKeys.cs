@@ -245,6 +245,18 @@ namespace Datadog.Trace.Configuration
         public const string ApiKey = "DD_API_KEY";
 
         /// <summary>
+        /// Configuration key for the application's servers http statuses to set spans as errors by.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HttpServerErrorStatuses"/>
+        public const string HttpServerErrors = "DD_HTTP_SERVER_ERROR_STATUSES";
+
+        /// <summary>
+        /// Configuration key for the application's client http statuses to set spans as errors by.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HttpClientErrorStatuses"/>
+        public const string HttpClientErrors = "DD_HTTP_CLIENT_ERROR_STATUSES";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations
