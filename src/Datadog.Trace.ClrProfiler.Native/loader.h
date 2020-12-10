@@ -2,7 +2,9 @@
 #define DD_CLR_PROFILER_LOADER_H_
 
 #include <mutex>
-#include "module_metadata.h"
+#include <unordered_set>
+
+#include "clr_helpers.h"
 
 namespace trace {
 
@@ -19,8 +21,8 @@ class Loader {
 
   HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
 
-  void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize,
-                                  BYTE** pSymbolsArray, int* symbolsSize, AppDomainID appDomainId) const;
+  bool GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize,
+                                  BYTE** pSymbolsArray, int* symbolsSize, AppDomainID appDomainId);
 };
 
 extern Loader* loader;  // global reference to loader

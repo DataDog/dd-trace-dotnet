@@ -193,7 +193,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   COR_SIGNATURE get_assembly_bytes_signature[] = {
       IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
       5,                              // Number of parameters
-      ELEMENT_TYPE_VOID,              // Return type
+      ELEMENT_TYPE_BOOLEAN,           // Return type
       ELEMENT_TYPE_BYREF,             // List of parameter types
       ELEMENT_TYPE_I,
       ELEMENT_TYPE_BYREF,
@@ -562,6 +562,17 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   pNewInstr->m_Arg32 = pinvoke_method_def;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
+  // check if the return of the method call is true or false
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_BRTRUE_S;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+  ILInstr* pBranchTrueInstr = pNewInstr;
+
+  // ret instruction if the Call returns a false boolean
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_RET;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
   // Step 2) Call void Marshal.Copy(IntPtr source, byte[] destination, int
   // startIndex, int length) to populate the managed assembly bytes
 
@@ -569,6 +580,9 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_1;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // Set the true branch target
+  pBranchTrueInstr->m_pTarget = pNewInstr;
 
   // newarr System.Byte : Create a new Byte[] to hold a managed copy of the
   // assembly data
@@ -612,7 +626,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   pNewInstr->m_opcode = CEE_CALL;
   pNewInstr->m_Arg32 = marshal_copy_member_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+  
   // Step 3) Call void Marshal.Copy(IntPtr source, byte[] destination, int
   // startIndex, int length) to populate the symbols bytes
 
@@ -763,9 +777,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
     return hr;
   }
 
-  // loaders_loaded_.insert(app_domain_id);
-
-  Info("Loader::InjectLoaderToModuleInitializer [ModuleID=", module_id,
+  Debug("Loader::InjectLoaderToModuleInitializer [ModuleID=", module_id,
        ", AssemblyID=", assembly_id, 
        ", AssemblyName=", WSTRING(assembly_name), 
        ", AppDomainID=", app_domain_id,
@@ -774,11 +786,24 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   return S_OK;
 }
 
-void Loader::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray,
+bool Loader::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray,
                                         int* assemblySize, BYTE** pSymbolsArray,
                                         int* symbolsSize,
-                                        AppDomainID appDomainId) const {
-  Info("Loader::GetAssemblyAndSymbolsBytes for AppDomainID=", appDomainId);
+                                        AppDomainID appDomainId) {
+  //
+  // global lock
+  //
+  std::lock_guard<std::mutex> guard(loaders_loaded_mutex_);
+  
+   //
+  // check if the loader has been already loaded for this AppDomain
+  //
+  if (loaders_loaded_.find(appDomainId) != loaders_loaded_.end()) {
+    Warn("Loader::GetAssemblyAndSymbolsBytes the loader was already loaded for AppDomainID=", appDomainId);
+    return false;
+  }
+
+  Debug("Loader::GetAssemblyAndSymbolsBytes Loading loader data for AppDomainID=", appDomainId);
 
 #ifdef _WIN32
   HINSTANCE hInstance = DllHandle;
@@ -832,7 +857,7 @@ void Loader::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray,
     }
   }
 #endif
-  return;
+  return true;
 }
 
 }
