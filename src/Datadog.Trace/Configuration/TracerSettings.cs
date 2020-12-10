@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
 {
@@ -133,6 +134,16 @@ namespace Datadog.Trace.Configuration
             StartupDiagnosticLogEnabled = source?.GetBool(ConfigurationKeys.StartupDiagnosticLogEnabled) ??
                                           // default value
                                           true;
+
+            var httpServerErrorsStatuses = source?.GetString(ConfigurationKeys.HttpServerErrors) ??
+                                           // Default value
+                                           "500-599";
+            HttpServerErrorStatuses = MapStatusToList(httpServerErrorsStatuses);
+
+            var httpClientErrorStatuses = source?.GetString(ConfigurationKeys.HttpClientErrors) ??
+                                        // Default value
+                                        "400-499";
+            HttpClientErrorStatuses = MapStatusToList(httpClientErrorStatuses);
 
             TraceQueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
                         ?? 1000;
@@ -278,6 +289,17 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
+        /// Gets or sets the HTTP status code that should be marked as errors for server integrations.        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpServerErrors"/>
+        public IDictionary<int, bool> HttpServerErrorStatuses { get; set; }
+
+        /// <summary>
+        /// Gets or sets the HTTP status code that should be marked as errors for client integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpClientErrors"/>
+        public IDictionary<int, bool> HttpClientErrorStatuses { get; set; }
+
+        /// <summary>
         /// Gets a value indicating the size of the trace buffer
         /// </summary>
         internal int TraceQueueSize { get; }
@@ -344,6 +366,47 @@ namespace Datadog.Trace.Configuration
             var value = EnvironmentHelpers.GetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", string.Empty);
 
             return value == "1" || value == "true";
+        }
+
+        internal IDictionary<int, bool> MapStatusToList(string httpStatusErrors)
+        {
+            string[] configurationsArray = string.Concat(httpStatusErrors.Where(c => !char.IsWhiteSpace(c))).Split(',');
+
+            IDictionary<int, bool> httpStatusesDictionary = new Dictionary<int, bool>();
+
+            foreach (string statusConfiguration in configurationsArray)
+            {
+                int parsedStatus;
+
+                if (int.TryParse(statusConfiguration, out parsedStatus))
+                {
+                    httpStatusesDictionary[parsedStatus] = true;
+                }
+                else if (statusConfiguration.Split('-').Length > 1)
+                {
+                    var statusRange = statusConfiguration.Split('-').Select(int.Parse).ToArray();
+                    parsedStatus = statusRange[0];
+
+                    if (statusRange[1] < statusRange[0])
+                    {
+                        parsedStatus = statusRange[1];
+                        statusRange[1] = statusRange[0];
+                        statusRange[0] = parsedStatus;
+                    }
+
+                    while (parsedStatus < statusRange[1] + 1)
+                    {
+                        httpStatusesDictionary[parsedStatus] = true;
+                        parsedStatus++;
+                    }
+                }
+                else
+                {
+                    Log.Warning("Wrong format '{0}' for DD_HTTP_SERVER/CLIENT_ERROR_STATUSES configuration.", statusConfiguration);
+                }
+            }
+
+            return httpStatusesDictionary;
         }
     }
 }

@@ -72,8 +72,26 @@ namespace Datadog.Trace.ExtensionMethods
             string statusCodeString = HttpTags.ConvertStatusCodeToString(statusCode);
             span.SetTag(Tags.HttpStatusCode, statusCodeString);
 
-            // 5xx codes are server-side errors
-            if (statusCode / 100 == 5)
+            // Check the customers SERVER http statuses that should be marked as errors
+            if (Tracer.Instance.Settings.HttpServerErrorStatuses.TryGetValue(statusCode, out _))
+            {
+                span.Error = true;
+
+                // if an error message already exists (e.g. from a previous exception), don't replace it
+                if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                {
+                    span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
+                }
+            }
+        }
+
+        internal static void SetClientStatusCode(this Span span, int statusCode)
+        {
+            string statusCodeString = HttpTags.ConvertStatusCodeToString(statusCode);
+            span.SetTag(Tags.HttpStatusCode, statusCodeString);
+
+            // Check the customers CLIENT http statuses that should be marked as errors
+            if (Tracer.Instance.Settings.HttpClientErrorStatuses.TryGetValue(statusCode, out _))
             {
                 span.Error = true;
 
