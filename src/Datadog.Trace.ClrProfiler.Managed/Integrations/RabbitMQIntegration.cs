@@ -36,6 +36,79 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="queue">Name of the queue.</param>
+        /// <param name="exchange">The original exchange argument.</param>
+        /// <param name="routingKey">The original routingKey argument.</param>
+        /// <param name="arguments">The original arguments setting</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            TargetAssembly = RabbitMQAssembly,
+            TargetType = RabbitMQImplModelBase,
+            TargetMethod = "QueueBind",
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.String, ClrNames.Ignore },
+            TargetMinimumVersion = Major3Minor6Patch9,
+            TargetMaximumVersion = Major6)]
+        public static void QueueBind(
+            object model,
+            string queue,
+            string exchange,
+            string routingKey,
+            object arguments,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (model == null) { throw new ArgumentNullException(nameof(model)); }
+
+            const string methodName = "QueueBind";
+            const string command = "queue.bind";
+            Action<object, string, string, string, object> instrumentedMethod;
+            var modelType = model.GetType();
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Action<object, string, string, string, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(modelType)
+                       .WithParameters(queue, exchange, routingKey, arguments)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.String, ClrNames.Ignore)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RabbitMQImplModelBase,
+                    methodName: methodName,
+                    instanceType: modelType.AssemblyQualifiedName);
+                throw;
+            }
+
+            RabbitMQTags tags = null;
+            using (var scope = CreateScope(Tracer.Instance, out tags, command, queue: queue, exchange: exchange, routingKey: routingKey))
+            {
+                try
+                {
+                    instrumentedMethod(model, queue, exchange, routingKey, arguments);
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it
+        /// </summary>
+        /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="queue">Name of the queue.</param>
         /// <param name="passive">The original passive setting</param>
         /// <param name="durable">The original duable setting</param>
         /// <param name="exclusive">The original exclusive settings</param>
