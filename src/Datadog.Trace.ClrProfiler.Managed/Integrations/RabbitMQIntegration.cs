@@ -35,6 +35,87 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Wrap the original method by adding instrumentation code around it
         /// </summary>
         /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="exchange">Name of the exchange.</param>
+        /// <param name="type">Type of the exchange.</param>
+        /// <param name="passive">The original passive setting</param>
+        /// <param name="durable">The original durable setting</param>
+        /// <param name="autoDelete">The original autoDelete setting</param>
+        /// <param name="internal">The original internal setting</param>
+        /// <param name="nowait">The original nowait setting</param>
+        /// <param name="arguments">The original arguments setting</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            TargetAssembly = RabbitMQAssembly,
+            TargetType = RabbitMQImplModelBase,
+            TargetMethod = "_Private_ExchangeDeclare",
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Ignore },
+            TargetMinimumVersion = Major3Minor6Patch9,
+            TargetMaximumVersion = Major6)]
+        public static void ExchangeDeclare(
+            object model,
+            string exchange,
+            string type,
+            bool passive,
+            bool durable,
+            bool autoDelete,
+            bool @internal,
+            bool nowait,
+            object arguments,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (model == null) { throw new ArgumentNullException(nameof(model)); }
+
+            const string methodName = "_Private_ExchangeDeclare";
+            const string command = "exchange.declare";
+            Action<object, string, string, bool, bool, bool, bool, bool, object> instrumentedMethod;
+            var modelType = model.GetType();
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Action<object, string, string, bool, bool, bool, bool, bool, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(modelType)
+                       .WithParameters(exchange, type, passive, durable, autoDelete, @internal, nowait, arguments)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Ignore)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RabbitMQImplModelBase,
+                    methodName: methodName,
+                    instanceType: modelType.AssemblyQualifiedName);
+                throw;
+            }
+
+            RabbitMQTags tags = null;
+            using (var scope = CreateScope(Tracer.Instance, out tags, command, exchange: exchange))
+            {
+                try
+                {
+                    instrumentedMethod(model, exchange, type, passive, durable, autoDelete, @internal, nowait, arguments);
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it
+        /// </summary>
+        /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="queue">Name of the queue.</param>
         /// <param name="exchange">The original exchange argument.</param>
         /// <param name="routingKey">The original routingKey argument.</param>
