@@ -357,6 +357,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
+  // Inject loader to the module initializer
+  loader->InjectLoaderToModuleInitializer(module_id);
+
   // In IIS, the startup hook will be inserted into a method in System.Web (which is domain-neutral)
   // but the Datadog.Trace.ClrProfiler.Managed.Loader assembly that the startup hook loads from a
   // byte array will be loaded into a non-shared AppDomain.

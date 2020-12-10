@@ -29,6 +29,137 @@ Loader::Loader(ICorProfilerInfo4* info) {
   loader = this;
 }
 
+HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
+  //
+  // global lock
+  //
+  std::lock_guard<std::mutex> guard(loaders_loaded_mutex_);
+
+  //
+  // retrieve AssemblyID from ModuleID
+  //
+  AssemblyID assembly_id = NULL;
+  auto hr = this->info_->GetModuleInfo2(module_id, NULL, NULL, NULL, NULL, &assembly_id, NULL);
+  if (FAILED(hr)) {
+    Warn("Loader::InjectLoaderToModuleInitializer: ",
+         "failed fetching AssemblyID for ModuleID=", module_id);
+    return hr;
+  }
+
+  //
+  // retrieve AppDomainID from AssemblyID
+  //
+  AppDomainID app_domain_id = NULL;
+  WCHAR assembly_name[100];
+  DWORD assembly_name_len = 0;
+  hr = this->info_->GetAssemblyInfo(assembly_id, 100, &assembly_name_len,
+                                    assembly_name, &app_domain_id, NULL);
+  if (FAILED(hr)) {
+    Warn("Loader::InjectLoaderToModuleInitializer: ",
+         "failed fetching AppDomainID for AssemblyID=", assembly_id);
+    return hr;
+  }
+
+  //
+  // check if the module is not the loader itself
+  //
+  if (WSTRING(assembly_name) == "Datadog.Trace.ClrProfiler.Managed.Loader"_W) {
+    Warn("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
+    loaders_loaded_.insert(app_domain_id);
+    return E_FAIL;
+  }
+
+  //
+  // check if the loader has been already loaded for this AppDomain
+  //
+  if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
+    return E_FAIL;
+  }
+
+  //
+  // the loader is not loaded yet for this AppDomain
+  // so we will rewrite the <Module>..ctor to load the loader.
+  //
+
+  //
+  // Retrieve the metadata interfaces for the ModuleID
+  //
+  ComPtr<IUnknown> metadata_interfaces;
+  hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+  if (FAILED(hr)) {
+    Warn("Loader::InjectLoaderToModuleInitializer: ",
+         "failed fetching metadata interfaces for ModuleID=", module_id);
+    return hr;
+  }
+
+  //
+  // Extract both IMetaDataImport2 and IMetaDataEmit2 interfaces
+  //
+  const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+  const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+
+  //
+  // Get the mdTypeDef of <Module> type
+  //
+  mdTypeDef module_type_def = mdTypeDefNil;
+  hr = metadata_import->FindTypeDefByName(L"<Module>", mdTokenNil, &module_type_def);
+  if (FAILED(hr)) {
+    Warn("Loader::InjectLoaderToModuleInitializer: ",
+         "failed fetching <Module> typedef for ModuleID=", module_id);
+    return hr;
+  }
+
+  //
+  // Check if the <Module> type has already a ..ctor, if not we create an empty one.
+  //
+  BYTE cctor_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
+      0,                              // Number of parameters
+      ELEMENT_TYPE_VOID,              // Return type
+      ELEMENT_TYPE_OBJECT             // List of parameter types
+  };
+
+  mdMethodDef cctor_method_def = mdMethodDefNil;
+  hr = metadata_import->FindMethod(module_type_def, L".cctor", cctor_signature,
+                                   sizeof(cctor_signature), &cctor_method_def);
+  if (FAILED(hr)) {
+    Debug("Loader::InjectLoaderToModuleInitializer: ",
+         "failed fetching <Module>..ctor methoddef for ModuleID=", module_id, ". Creating new .cctor");
+
+    // Define a new ..ctor for the <Module> type
+    hr = metadata_emit->DefineMethod(module_type_def, L".cctor",
+        mdPublic | mdStatic | mdRTSpecialName | mdSpecialName, cctor_signature,
+        sizeof(cctor_signature), 0, 0, &cctor_method_def);
+
+    if (FAILED(hr)) {
+      Warn("Error creating .cctor for <Module> ModuleID=", module_id);
+      return hr;
+    }
+
+    // Create a simple method body with only the `ret` opcode instruction.
+    ILRewriter rewriter(this->info_, nullptr, module_id, cctor_method_def);
+    rewriter.InitializeTiny();
+    ILInstr* pFirstInstr = rewriter.GetILList()->m_pNext;
+    ILInstr* pNewInstr = NULL;
+
+    pNewInstr = rewriter.NewILInstr();
+    pNewInstr->m_opcode = CEE_RET;
+    rewriter.InsertBefore(pFirstInstr, pNewInstr);
+
+    hr = rewriter.Export();
+    if (FAILED(hr)) {
+      Warn("ILRewriter.Export failed creating .cctor for <Module> ModuleID=", module_id);
+      return hr;
+    }
+  }
+
+  Info("Loader::InjectLoaderToModuleInitializer [ModuleID=", module_id,
+       ", AssemblyID=", assembly_id, ", AppDomainID=", app_domain_id,
+       ", ModuleTypeDef=", module_type_def,
+       ", ModuleCCTORDef=", cctor_method_def, "]");
+  return S_OK;
+}
+
 void Loader::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
   Info("Loader::GetAssemblyAndSymbolsBytes");
 
