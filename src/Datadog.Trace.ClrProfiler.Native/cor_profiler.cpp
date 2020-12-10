@@ -345,6 +345,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
           module_info.assembly.app_domain_name);
   }
 
+  // Inject loader to the module initializer
+  loader->InjectLoaderToModuleInitializer(module_id);
+
   AppDomainID app_domain_id = module_info.assembly.app_domain_id;
 
   // Identify the AppDomain ID of mscorlib which will be the Shared Domain
@@ -357,9 +360,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  // Inject loader to the module initializer
-  loader->InjectLoaderToModuleInitializer(module_id);
-
   // In IIS, the startup hook will be inserted into a method in System.Web (which is domain-neutral)
   // but the Datadog.Trace.ClrProfiler.Managed.Loader assembly that the startup hook loads from a
   // byte array will be loaded into a non-shared AppDomain.
@@ -367,7 +367,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (module_info.assembly.name == "Datadog.Trace.ClrProfiler.Managed.Loader"_W) {
     Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ",
           app_domain_id, " ", module_info.assembly.app_domain_name);
-    first_jit_compilation_app_domains.insert(app_domain_id);
     return S_OK;
   }
 
@@ -568,56 +567,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     Debug("JITCompilationStarted: function_id=", function_id,
           " token=", function_token, " name=", caller.type.name, ".",
           caller.name, "()");
-  }
-
-  // IIS: Ensure that the startup hook is inserted into System.Web.Compilation.BuildManager.InvokePreStartInitMethods.
-  // This will be the first call-site considered for the startup hook injection,
-  // which correctly loads Datadog.Trace.ClrProfiler.Managed.Loader into the application's
-  // own AppDomain because at this point in the code path, the ApplicationImpersonationContext
-  // has been started.
-  //
-  // Note: This check must only run on desktop because it is possible (and the default) to host
-  // ASP.NET Core in-process, so a new .NET Core runtime is instantiated and run in the same w3wp.exe process
-  auto valid_startup_hook_callsite = true;
-  if (is_desktop_iis) {
-      valid_startup_hook_callsite =
-            module_metadata->assemblyName == "System.Web"_W &&
-            caller.type.name == "System.Web.Compilation.BuildManager"_W &&
-            caller.name == "InvokePreStartInitMethods"_W;
-  } else if (module_metadata->assemblyName == "System"_W ||
-             module_metadata->assemblyName == "System.Net.Http"_W) {
-    valid_startup_hook_callsite = false;
-  }
-
-  // The first time a method is JIT compiled in an AppDomain, insert our startup
-  // hook which, at a minimum, must add an AssemblyResolve event so we can find
-  // Datadog.Trace.ClrProfiler.Managed.dll and its dependencies on-disk since it
-  // is no longer provided in a NuGet package
-  if (valid_startup_hook_callsite &&
-      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
-      first_jit_compilation_app_domains.end()) {
-    bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded && module_metadata->app_domain_id == corlib_app_domain_id;
-    Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
-          " token=", function_token, " name=", caller.type.name, ".",
-          caller.name, "(), assembly_name=", module_metadata->assemblyName,
-          " app_domain_id=", module_metadata->app_domain_id,
-          " domain_neutral=", domain_neutral_assembly);
-
-    first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
-
-    hr = loader->RunILStartupHook(module_metadata->metadata_emit, module_id, function_token);
-
-    if (FAILED(hr)) {
-      Warn("JITCompilationStarted: Call to RunILStartupHook() failed for ", module_id, " ", function_token);
-      return S_OK;
-    }
-  }
-
-  // we don't actually need to instrument anything in
-  // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
-  // hook is called for AspNetCore applications
-  if (module_metadata->assemblyName == "Microsoft.AspNetCore.Hosting"_W) {
-    return S_OK;
   }
 
   // Get valid method replacements for this caller method
