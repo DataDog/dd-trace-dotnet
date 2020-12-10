@@ -42,7 +42,7 @@ namespace Datadog.Trace
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new object();
 
-        private static RuntimeMetricsWriter _runtimeMetricsWriter;
+        // private static RuntimeMetricsWriter _runtimeMetricsWriter;
 
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
@@ -191,10 +191,11 @@ namespace Datadog.Trace
                     _ = WriteDiagnosticLog();
                 }
 
-                if (Settings.RuntimeMetricsEnabled)
-                {
-                    _runtimeMetricsWriter = new RuntimeMetricsWriter(Statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort), 10000);
-                }
+                // TODO: To re-enable when the backend is ready
+                // if (Settings.RuntimeMetricsEnabled)
+                // {
+                //     _runtimeMetricsWriter = new RuntimeMetricsWriter(Statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort), 10000);
+                // }
             }
         }
 
