@@ -38,8 +38,8 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   //
   // retrieve AssemblyID from ModuleID
   //
-  AssemblyID assembly_id = NULL;
-  HRESULT hr = this->info_->GetModuleInfo2(module_id, NULL, NULL, NULL, NULL, &assembly_id, NULL);
+  AssemblyID assembly_id = 0;
+  HRESULT hr = this->info_->GetModuleInfo2(module_id, NULL, 0, NULL, NULL, &assembly_id, NULL);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: ",
          "failed fetching AssemblyID for ModuleID=", module_id);
@@ -49,7 +49,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   //
   // retrieve AppDomainID from AssemblyID
   //
-  AppDomainID app_domain_id = NULL;
+  AppDomainID app_domain_id = 0;
   WCHAR assembly_name[100];
   DWORD assembly_name_len = 0;
   hr = this->info_->GetAssemblyInfo(assembly_id, 100, &assembly_name_len,
