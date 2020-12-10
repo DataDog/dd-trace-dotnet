@@ -38,6 +38,21 @@ namespace Datadog.Trace
         public const string GraphQL = "graphql";
 
         /// <summary>
+        /// The span type for a message client integration.
+        /// </summary>
+        public const string MessageClient = "queue";
+
+        /// <summary>
+        /// The span type for a message consumer integration.
+        /// </summary>
+        public const string MessageConsumer = "queue";
+
+        /// <summary>
+        /// The span type for a message producer integration.
+        /// </summary>
+        public const string MessageProducer = "queue";
+
+        /// <summary>
         /// The span type for a custom integration.
         /// </summary>
         public const string Custom = "custom";

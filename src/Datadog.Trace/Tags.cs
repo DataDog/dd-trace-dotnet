@@ -150,6 +150,31 @@ namespace Datadog.Trace
         public const string GraphQLSource = "graphql.source";
 
         /// <summary>
+        /// The AMQP method.
+        /// </summary>
+        public const string AmqpCommand = "amqp.command";
+
+        /// <summary>
+        /// The name of the AMQP exchange the message was originally published to.
+        /// </summary>
+        public const string AmqpExchange = "amqp.exchange";
+
+        /// <summary>
+        /// The routing key for the AMQP message.
+        /// </summary>
+        public const string AmqpRoutingKey = "amqp.routing_key";
+
+        /// <summary>
+        /// The name of the queue for the AMQP message.
+        /// </summary>
+        public const string AmqpQueue = "amqp.queue";
+
+        /// <summary>
+        /// The delivery mode of the AMQP message.
+        /// </summary>
+        public const string AmqpDeliveryMode = "amqp.delivery_mode";
+
+        /// <summary>
         /// The sampling priority for the entire trace.
         /// </summary>
         public const string SamplingPriority = "sampling.priority";
