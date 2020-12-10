@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -30,6 +31,90 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.RabbitMQ));
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MongoDbIntegration));
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it
+        /// </summary>
+        /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="queue">The queue name of the message</param>
+        /// <param name="autoAck">The original autoAck argument</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The original return value.</returns>
+        [InterceptMethod(
+            TargetAssembly = RabbitMQAssembly,
+            TargetType = RabbitMQImplModelBase,
+            TargetMethod = "BasicGet",
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.String, ClrNames.Bool },
+            TargetMinimumVersion = Major3Minor6Patch9,
+            TargetMaximumVersion = Major6)]
+        public static object BasicGet(
+            object model,
+            string queue,
+            bool autoAck,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (model == null) { throw new ArgumentNullException(nameof(model)); }
+
+            const string methodName = "BasicGet";
+            const string command = "basic.get";
+            Func<object, string, bool, object> instrumentedMethod;
+            var modelType = model.GetType();
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<object, string, bool, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(modelType)
+                       .WithParameters(queue, autoAck)
+                       .WithNamespaceAndNameFilters(ClrNames.Ignore, ClrNames.String, ClrNames.Bool)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RabbitMQImplModelBase,
+                    methodName: methodName,
+                    instanceType: modelType.AssemblyQualifiedName);
+                throw;
+            }
+
+            RabbitMQTags tags = null;
+            using (var scope = CreateScope(Tracer.Instance, out tags, command, queue: queue))
+            {
+                tags?.SetSpanKind(SpanKinds.Consumer);
+                if (scope != null)
+                {
+                    string queueDisplayName = string.IsNullOrEmpty(queue) || !queue.StartsWith("amq.gen-") ? queue : "<generated>";
+                    scope.Span.ResourceName = $"{command} {queueDisplayName}";
+                }
+
+                try
+                {
+                    object result = instrumentedMethod(model, queue, autoAck);
+                    if (result != null)
+                    {
+                        var basicGetResult = result.As<IBasicGetResult>();
+                        tags.MessageSize = basicGetResult.Body.Length.ToString();
+                    }
+
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it
@@ -303,6 +388,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
+        }
+
+        /********************
+         * Duck Typing Types
+         */
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable SA1201 // Elements must appear in the correct order
+#pragma warning disable SA1600 // Elements must be documented
+        public interface IBasicGetResult
+        {
+            /// <summary>
+            /// Gets the message body of the result
+            /// </summary>
+            IBody Body { get; }
+        }
+
+        public interface IBody
+        {
+            /// <summary>
+            /// Gets the length of the message body
+            /// </summary>
+            int Length { get; }
         }
     }
 }
