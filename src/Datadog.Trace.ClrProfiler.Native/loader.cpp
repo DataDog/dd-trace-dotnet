@@ -115,7 +115,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   // Get the mdTypeDef of <Module> type
   //
   mdTypeDef module_type_def = mdTypeDefNil;
-  hr = metadata_import->FindTypeDefByName((LPCWSTR)"<Module>", mdTokenNil, &module_type_def);
+  hr = metadata_import->FindTypeDefByName("<Module>"_W.c_str(), mdTokenNil, &module_type_def);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: ",
          "failed fetching <Module> typedef for ModuleID=", module_id);
@@ -133,7 +133,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   };
 
   mdMethodDef cctor_method_def = mdMethodDefNil;
-  hr = metadata_import->FindMethod(module_type_def, (LPCWSTR)".cctor", cctor_signature,
+  hr = metadata_import->FindMethod(module_type_def, ".cctor"_W.c_str(), cctor_signature,
                                    sizeof(cctor_signature), &cctor_method_def);
   if (FAILED(hr)) {
     Debug("Loader::InjectLoaderToModuleInitializer: ",
@@ -142,7 +142,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
     //
     // Define a new ..ctor for the <Module> type
     //
-    hr = metadata_emit->DefineMethod(module_type_def, (LPCWSTR)".cctor",
+    hr = metadata_emit->DefineMethod(module_type_def, ".cctor"_W.c_str(),
         mdPublic | mdStatic | mdRTSpecialName | mdSpecialName, cctor_signature,
         sizeof(cctor_signature), 0, 0, &cctor_method_def);
 
@@ -204,7 +204,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
       ELEMENT_TYPE_I4,
       ELEMENT_TYPE_U8,
   };
-  hr = metadata_emit->DefineMethod(module_type_def, (LPCWSTR)"GetAssemblyAndSymbolsBytes",
+  hr = metadata_emit->DefineMethod(module_type_def, "GetAssemblyAndSymbolsBytes"_W.c_str(),
       mdStatic | mdPinvokeImpl | mdHideBySig, get_assembly_bytes_signature, 
       sizeof(get_assembly_bytes_signature), 0, 0, &pinvoke_method_def);
   if (FAILED(hr)) {
@@ -250,7 +250,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
     return hr;
   }
 
-  hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def, 0, (LPCWSTR)"GetAssemblyAndSymbolsBytes", profiler_ref);
+  hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def, 0, "GetAssemblyAndSymbolsBytes"_W.c_str(), profiler_ref);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: DefinePinvokeMap for GetAssemblyAndSymbolsBytes failed");
     return hr;
@@ -262,7 +262,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   mdAssemblyRef mscorlib_ref = mdAssemblyRefNil;
   ASSEMBLYMETADATA metadata{ 4, 0, 0, 0};
   BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
-  hr = assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), (LPCWSTR)"mscorlib", &metadata, NULL, 0, 0, &mscorlib_ref);
+  hr = assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), "mscorlib"_W.c_str(), &metadata, NULL, 0, 0, &mscorlib_ref);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: Error creating assembly reference to mscorlib.");
     return hr;
@@ -272,7 +272,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   // get a TypeRef for System.Byte
   //
   mdTypeRef byte_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, (LPCWSTR)"System.Byte", &byte_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.Byte"_W.c_str(), &byte_type_ref);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: DefineTypeRefByName failed");
     return hr;
@@ -282,7 +282,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   // get a TypeRef for System.Runtime.InteropServices.Marshal
   //
   mdTypeRef marshal_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, (LPCWSTR)"System.Runtime.InteropServices.Marshal", &marshal_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.Runtime.InteropServices.Marshal"_W.c_str(), &marshal_type_ref);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: DefineTypeRefByName failed");
     return hr;
@@ -301,7 +301,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
       ELEMENT_TYPE_U1,
       ELEMENT_TYPE_I4,
       ELEMENT_TYPE_I4};
-  hr = metadata_emit->DefineMemberRef(marshal_type_ref, (LPCWSTR)"Copy", marshal_copy_signature,
+  hr = metadata_emit->DefineMemberRef(marshal_type_ref, "Copy"_W.c_str(), marshal_copy_signature,
       sizeof(marshal_copy_signature), &marshal_copy_member_ref);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
@@ -312,7 +312,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   // get a TypeRef for System.Reflection.Assembly
   //
   mdTypeRef system_reflection_assembly_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, (LPCWSTR)"System.Reflection.Assembly",
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.Reflection.Assembly"_W.c_str(),
       &system_reflection_assembly_type_ref);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: DefineTypeRefByName failed");
@@ -323,7 +323,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   // get a TypeRef for System.Object
   //
   mdTypeRef system_object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, (LPCWSTR)"System.Object", &system_object_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.Object"_W.c_str(), &system_object_type_ref);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: DefineTypeRefByName failed");
     return hr;
@@ -333,7 +333,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   // get a TypeRef for System.AppDomain
   //
   mdTypeRef system_appdomain_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, (LPCWSTR)"System.AppDomain", &system_appdomain_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.AppDomain"_W.c_str(), &system_appdomain_type_ref);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: DefineTypeRefByName failed");
     return hr;
@@ -361,7 +361,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   offset += system_appdomain_type_ref_compressed_token_length;
 
   mdMemberRef appdomain_get_current_domain_member_ref;
-  hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, (LPCWSTR)"get_CurrentDomain",
+  hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, "get_CurrentDomain"_W.c_str(),
       appdomain_get_current_domain_signature, offset,
       &appdomain_get_current_domain_member_ref);
   delete[] appdomain_get_current_domain_signature;
@@ -396,7 +396,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
 
   mdMemberRef appdomain_load_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, (LPCWSTR)"Load", appdomain_load_signature,
+      system_appdomain_type_ref, "Load"_W.c_str(), appdomain_load_signature,
       offset, &appdomain_load_member_ref);
   delete[] appdomain_load_signature;
 
@@ -417,7 +417,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
 
   mdMemberRef assembly_create_instance_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_reflection_assembly_type_ref, (LPCWSTR)"CreateInstance",
+      system_reflection_assembly_type_ref, "CreateInstance"_W.c_str(),
       assembly_create_instance_signature,
       sizeof(assembly_create_instance_signature),
       &assembly_create_instance_member_ref);
@@ -469,7 +469,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
 
   mdMethodDef startup_method_def;
   hr = metadata_emit->DefineMethod(
-      module_type_def, (LPCWSTR)"__DDVoidMethodCall__", mdStatic,
+      module_type_def, "__DDVoidMethodCall__"_W.c_str(), mdStatic,
       initialize_signature, sizeof(initialize_signature), 0, 0, &startup_method_def);
   if (FAILED(hr)) {
     Warn("Loader::InjectLoaderToModuleInitializer: DefineMethod failed");
