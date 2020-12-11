@@ -156,6 +156,108 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Wrap the original method by adding instrumentation code around it
         /// </summary>
         /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="consumerTag">The original consumerTag argument</param>
+        /// <param name="deliveryTag">The original deliveryTag argument</param>
+        /// <param name="redelivered">The original redelivered argument</param>
+        /// <param name="exchange">Name of the exchange.</param>
+        /// <param name="routingKey">The routing key.</param>
+        /// <param name="basicProperties">The message properties.</param>
+        /// <param name="body">The message body.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            TargetAssembly = RabbitMQAssembly,
+            TargetType = RabbitMQDefaultBasicConsumer,
+            TargetMethod = "HandleBasicDeliver",
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, ClrNames.Ignore, ClrNames.Ignore },
+            TargetMinimumVersion = Major6,
+            TargetMaximumVersion = Major6)]
+        public static void BasicDeliverV6(
+            object model,
+            string consumerTag,
+            ulong deliveryTag,
+            bool redelivered,
+            string exchange,
+            string routingKey,
+            object basicProperties,
+            object body,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (model == null) { throw new ArgumentNullException(nameof(model)); }
+
+            const string methodName = "HandleBasicDeliver";
+            const string command = "basic.deliver";
+            Action<object, string, ulong, bool, string, string, object, object> instrumentedMethod;
+            var modelType = model.GetType();
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Action<object, string, ulong, bool, string, string, object, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(modelType)
+                       .WithParameters(consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, ClrNames.Ignore, ClrNames.Ignore)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RabbitMQDefaultBasicConsumer,
+                    methodName: methodName,
+                    instanceType: modelType.AssemblyQualifiedName);
+                throw;
+            }
+
+            SpanContext propagatedContext = null;
+            var basicPropertiesValue = basicProperties.As<IBasicProperties>();
+
+            // try to extract propagated context values from headers
+            if (basicPropertiesValue.Headers != null)
+            {
+                try
+                {
+                    propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesValue.Headers, headersGetter);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting propagated headers.");
+                }
+            }
+
+            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, exchange: exchange, routingKey: routingKey))
+            {
+                tags?.SetSpanKind(SpanKinds.Consumer);
+
+                if (tags != null)
+                {
+                    var bodyValue = body.As<IBody>();
+                    tags.MessageSize = bodyValue.Length.ToString();
+                }
+
+                try
+                {
+                    instrumentedMethod(model, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it
+        /// </summary>
+        /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="queue">The queue name of the message</param>
         /// <param name="autoAck">The original autoAck argument</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -348,6 +450,109 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     scope.Span.ResourceName = $"{command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
                     tags.MessageSize = body.Length.ToString();
+
+                    var basicPropertiesValue = basicProperties.As<IBasicProperties>();
+
+                    // if (basicPropertiesValue.Instance != null && basicPropertiesValue.IsDeliveryModePresent())
+                    if (basicPropertiesValue.IsDeliveryModePresent())
+                    {
+                        tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];
+                    }
+
+                    // add distributed tracing headers to the message
+                    if (basicPropertiesValue.Headers == null)
+                    {
+                        basicPropertiesValue.Headers = new Dictionary<string, object>();
+                    }
+
+                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicPropertiesValue.Headers, headersSetter);
+                }
+
+                try
+                {
+                    instrumentedMethod(model, exchange, routingKey, mandatory, basicProperties, body);
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it
+        /// </summary>
+        /// <param name="model">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="exchange">Name of the exchange.</param>
+        /// <param name="routingKey">The routing key.</param>
+        /// <param name="mandatory">The mandatory routing flag.</param>
+        /// <param name="basicProperties">The message properties.</param>
+        /// <param name="body">The message body.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            TargetAssembly = RabbitMQAssembly,
+            TargetType = RabbitMQImplModelBase,
+            TargetMethod = "_Private_BasicPublish",
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Ignore, ClrNames.Ignore },
+            TargetMinimumVersion = Major6,
+            TargetMaximumVersion = Major6)]
+        public static void BasicPublishV6(
+            object model,
+            string exchange,
+            string routingKey,
+            bool mandatory,
+            object basicProperties,
+            object body,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (model == null) { throw new ArgumentNullException(nameof(model)); }
+
+            const string methodName = "_Private_BasicPublish";
+            const string command = "basic.publish";
+            Action<object, string, string, bool, object, object> instrumentedMethod;
+            var modelType = model.GetType();
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Action<object, string, string, bool, object, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(modelType)
+                       .WithParameters(exchange, routingKey, mandatory, basicProperties, body)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Ignore, ClrNames.Ignore)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RabbitMQImplModelBase,
+                    methodName: methodName,
+                    instanceType: modelType.AssemblyQualifiedName);
+                throw;
+            }
+
+            RabbitMQTags tags = null;
+            using (var scope = CreateScope(Tracer.Instance, out tags, command, exchange: exchange, routingKey: routingKey))
+            {
+                tags?.SetSpanKind(SpanKinds.Producer);
+
+                if (scope != null)
+                {
+                    string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
+                    string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
+                    scope.Span.ResourceName = $"{command} {exchangeDisplayName} -> {routingKeyDisplayName}";
+
+                    var bodyValue = body.As<IBody>();
+                    tags.MessageSize = bodyValue.Length.ToString();
 
                     var basicPropertiesValue = basicProperties.As<IBasicProperties>();
 
