@@ -207,9 +207,52 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
+            object result = null;
+            Exception exception = null;
             RabbitMQTags tags = null;
-            using (var scope = CreateScope(Tracer.Instance, out tags, command, queue: queue))
+            DateTimeOffset startTime = DateTimeOffset.UtcNow; // Save the "start time" for the deferred Span creation
+
+            try
             {
+                // Defer the creation of the Span until the original method returns
+                // because the incoming message may have distributed tracing headers
+                result = instrumentedMethod(model, queue, autoAck);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                throw;
+            }
+            finally
+            {
+                IBasicGetResult basicGetResult = null;
+                SpanContext propagatedContext = null;
+
+                if (result != null)
+                {
+                    basicGetResult = result.As<IBasicGetResult>();
+                }
+
+                if (basicGetResult != null)
+                {
+                    var basicPropertiesHeaders = basicGetResult.BasicProperties?.Headers;
+
+                    // try to extract propagated context values from headers
+                    if (basicPropertiesHeaders != null)
+                    {
+                        try
+                        {
+                            propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesHeaders, headersGetter);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error extracting propagated headers.");
+                        }
+                    }
+                }
+
+                Scope scope = CreateScope(Tracer.Instance, out tags, command, parentContext: propagatedContext, queue: queue, startTime: startTime);
+
                 tags?.SetSpanKind(SpanKinds.Consumer);
                 if (scope != null)
                 {
@@ -217,23 +260,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     scope.Span.ResourceName = $"{command} {queueDisplayName}";
                 }
 
-                try
+                if (basicGetResult != null)
                 {
-                    object result = instrumentedMethod(model, queue, autoAck);
-                    if (result != null)
-                    {
-                        var basicGetResult = result.As<IBasicGetResult>();
-                        tags.MessageSize = basicGetResult.Body.Length.ToString();
-                    }
+                    tags.MessageSize = basicGetResult.Body.Length.ToString();
+                }
 
-                    return result;
-                }
-                catch (Exception ex)
+                if (exception != null)
                 {
-                    scope?.Span.SetException(ex);
-                    throw;
+                    scope?.Span.SetException(exception);
                 }
+
+                scope?.Dispose();
             }
+
+            return result;
         }
 
         /// <summary>
@@ -571,7 +611,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        internal static Scope CreateScope(Tracer tracer, out RabbitMQTags tags, string command, ISpanContext parentContext = null, string queue = null, string exchange = null, string routingKey = null)
+        internal static Scope CreateScope(Tracer tracer, out RabbitMQTags tags, string command, ISpanContext parentContext = null, DateTimeOffset? startTime = null, string queue = null, string exchange = null, string routingKey = null)
         {
             tags = null;
 
@@ -588,7 +628,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Span parent = tracer.ActiveScope?.Span;
 
                 tags = new RabbitMQTags();
-                scope = tracer.StartActiveWithTags(OperationName, parent: parentContext, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{IntegrationName}");
+                scope = tracer.StartActiveWithTags(OperationName, parent: parentContext, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{IntegrationName}", startTime: startTime);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.MessageClient;
@@ -618,6 +658,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1600 // Elements must be documented
+        public interface IBasicGetResult
+        {
+            /// <summary>
+            /// Gets the message body of the result
+            /// </summary>
+            IBody Body { get; }
+
+            /// <summary>
+            /// Gets the message properties
+            /// </summary>
+            IBasicProperties BasicProperties { get; }
+        }
+
         public interface IBasicProperties
         {
             /// <summary>
@@ -636,14 +689,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             /// </summary>
             /// <returns>true if the DeliveryMode property is present</returns>
             bool IsDeliveryModePresent();
-        }
-
-        public interface IBasicGetResult
-        {
-            /// <summary>
-            /// Gets the message body of the result
-            /// </summary>
-            IBody Body { get; }
         }
 
         public interface IBody
