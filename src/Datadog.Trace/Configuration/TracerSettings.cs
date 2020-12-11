@@ -151,12 +151,12 @@ namespace Datadog.Trace.Configuration
             var httpServerErrorCodes = source?.GetString(ConfigurationKeys.HttpServerErrorCodes) ??
                                            // Default value
                                            "500-599";
-            HttpServerErrorCodes = MapStatusToList(httpServerErrorCodes);
+            HttpServerErrorCodes = ParseHttpCodesToDictionary(httpServerErrorCodes);
 
             var httpClientErrorCodes = source?.GetString(ConfigurationKeys.HttpClientErrorCodes) ??
                                         // Default value
                                         "400-499";
-            HttpClientErrorCodes = MapStatusToList(httpClientErrorCodes);
+            HttpClientErrorCodes = ParseHttpCodesToDictionary(httpClientErrorCodes);
 
             TraceQueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
                         ?? 1000;
@@ -388,7 +388,7 @@ namespace Datadog.Trace.Configuration
             return value == "1" || value == "true";
         }
 
-        internal IDictionary<int, bool> MapStatusToList(string httpStatusErrorCodes)
+        internal IDictionary<int, bool> ParseHttpCodesToDictionary(string httpStatusErrorCodes)
         {
             string[] configurationsArray = string.Concat(httpStatusErrorCodes.Where(c => !char.IsWhiteSpace(c))).Split(',');
 
