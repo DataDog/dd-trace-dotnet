@@ -1,8 +1,8 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -11,7 +11,6 @@ namespace Datadog.Trace.Tests.Sampling
     public class RateLimiterTests
     {
         private const int DefaultLimitPerSecond = 100;
-        private static readonly ThreadLocal<Random> Random = new ThreadLocal<Random>(() => new Random());
 
         [Fact]
         public void One_Is_Allowed()
@@ -73,9 +72,8 @@ namespace Datadog.Trace.Tests.Sampling
 
             var result = RunTest(intervalLimit, test);
 
-            var totalMilliseconds = result.TimeElapsed.TotalMilliseconds;
-
-            var expectedLimit = totalMilliseconds * actualIntervalLimit / 1_000;
+            var theoreticalTime = numberOfBursts * millisecondsBetweenBursts;
+            var expectedLimit = theoreticalTime * actualIntervalLimit / 1_000;
 
             var acceptableUpperVariance = (actualIntervalLimit * 1.0);
             var acceptableLowerVariance = (actualIntervalLimit * 1.15); // Allow for increased tolerance on lower limit since the rolling window does not get dequeued as quickly as it can queued
@@ -84,7 +82,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             Assert.True(
                 result.TotalAllowed >= lowerLimit && result.TotalAllowed <= upperLimit,
-                $"Expected between {lowerLimit} and {upperLimit}, received {result.TotalAllowed} out of {result.TotalAttempted} within {totalMilliseconds} milliseconds.");
+                $"Expected between {lowerLimit} and {upperLimit}, received {result.TotalAllowed} out of {result.TotalAttempted} within {theoreticalTime} milliseconds.");
 
             // Rate should match for the last two intervals, which is a total of two seconds
             var numberOfBurstsWithinTwoIntervals = 2_000 / millisecondsBetweenBursts;
@@ -134,8 +132,10 @@ namespace Datadog.Trace.Tests.Sampling
                 parallelism = Environment.ProcessorCount;
             }
 
+            var clock = new SimpleClock();
+
             var limiter = new RateLimiter(maxTracesPerInterval: intervalLimit);
-            var barrier = new Barrier(parallelism + 1);
+            var barrier = new Barrier(parallelism + 1, _ => clock.UtcNow += test.TimeBetweenBursts);
             var numberPerThread = test.NumberPerBurst / parallelism;
             var workers = new Task[parallelism];
             int totalAttempted = 0;
@@ -146,14 +146,12 @@ namespace Datadog.Trace.Tests.Sampling
                 workers[i] = Task.Factory.StartNew(
                     () =>
                     {
-                        var stopwatch = new Stopwatch();
+                        using var lease = Clock.SetForCurrentThread(clock);
 
                         for (var i = 0; i < test.NumberOfBursts; i++)
                         {
                             // Wait for every worker to be ready for next burst
                             barrier.SignalAndWait();
-
-                            stopwatch.Restart();
 
                             for (int j = 0; j < numberPerThread; j++)
                             {
@@ -170,13 +168,6 @@ namespace Datadog.Trace.Tests.Sampling
                                     Interlocked.Increment(ref totalAllowed);
                                 }
                             }
-
-                            var remainingTime = (test.TimeBetweenBursts - stopwatch.Elapsed).TotalMilliseconds;
-
-                            if (remainingTime > 0)
-                            {
-                                Thread.Sleep((int)remainingTime);
-                            }
                         }
                     },
                     TaskCreationOptions.LongRunning);
@@ -184,8 +175,6 @@ namespace Datadog.Trace.Tests.Sampling
 
             // Wait for all workers to be ready
             barrier.SignalAndWait();
-
-            var sw = Stopwatch.StartNew();
 
             // We do not need to synchronize with workers anymore
             barrier.RemoveParticipant();
@@ -195,7 +184,6 @@ namespace Datadog.Trace.Tests.Sampling
 
             var result = new RateLimitResult
             {
-                TimeElapsed = sw.Elapsed,
                 RateLimiter = limiter,
                 ReportedRate = limiter.GetEffectiveRate(),
                 TotalAttempted = totalAttempted,
@@ -217,8 +205,6 @@ namespace Datadog.Trace.Tests.Sampling
         private class RateLimitResult
         {
             public RateLimiter RateLimiter { get; set; }
-
-            public TimeSpan TimeElapsed { get; set; }
 
             public float ReportedRate { get; set; }
 
