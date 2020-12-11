@@ -17,4 +17,8 @@
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net452'">
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="2.0.1" />
+  </ItemGroup>
 </Project>

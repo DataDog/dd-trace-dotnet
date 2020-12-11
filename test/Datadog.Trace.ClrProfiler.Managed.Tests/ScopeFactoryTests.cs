@@ -21,9 +21,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         public static IEnumerable<object[]> GetDbCommandScopeData()
         {
-            yield return new object[] { (Func<Tracer, Scope>)SqlCommandCreateScope, typeof(SqlCommand).FullName };
+            yield return new object[] { (Func<Tracer, Scope>)SystemDataSqlClientSqlCommandCreateScope, typeof(System.Data.SqlClient.SqlCommand).FullName };
             yield return new object[] { (Func<Tracer, Scope>)PostgresCreateScope, typeof(NpgsqlCommand).FullName };
             yield return new object[] { (Func<Tracer, Scope>)CustomCreateScope, typeof(CustomDbCommand).FullName };
+#if !NET452
+            yield return new object[] { (Func<Tracer, Scope>)MicrosoftDataSqlClientSqlCommandCreateScope, typeof(Microsoft.Data.SqlClient.SqlCommand).FullName };
+#endif
         }
 
         [Theory]
@@ -152,11 +155,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Null(scope);
         }
 
-        private static Scope SqlCommandCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new SqlCommand());
+        private static Scope SystemDataSqlClientSqlCommandCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new System.Data.SqlClient.SqlCommand());
 
         private static Scope PostgresCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new NpgsqlCommand());
 
         private static Scope CustomCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new CustomDbCommand());
+
+#if !NET452
+        private static Scope MicrosoftDataSqlClientSqlCommandCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new Microsoft.Data.SqlClient.SqlCommand());
+#endif
 
         private class CustomDbCommand : DbCommand
         {
