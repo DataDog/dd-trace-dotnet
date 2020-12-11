@@ -143,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Set up tracer
             var collection = new NameValueCollection
             {
-                { ConfigurationKeys.AdoNetExcludeTypes, typeName }
+                { ConfigurationKeys.AdoNetExcludedTypes, typeName }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);

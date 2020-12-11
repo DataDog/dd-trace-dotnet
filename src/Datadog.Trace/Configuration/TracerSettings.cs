@@ -54,7 +54,7 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
-            var adonetExcludedTypes = source?.GetString(ConfigurationKeys.AdoNetExcludeTypes)
+            var adonetExcludedTypes = source?.GetString(ConfigurationKeys.AdoNetExcludedTypes)
                                                  ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                            Enumerable.Empty<string>();
 
@@ -186,7 +186,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the AdoNet types to exclude from automatic instrumentation.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.AdoNetExcludeTypes"/>
+        /// <seealso cref="ConfigurationKeys.AdoNetExcludedTypes"/>
         public HashSet<string> AdoNetExcludedTypes { get; set; }
 
         /// <summary>
