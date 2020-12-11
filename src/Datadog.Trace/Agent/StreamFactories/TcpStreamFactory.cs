@@ -5,6 +5,9 @@ using System.Net.Sockets;
 
 namespace Datadog.Trace.Agent.StreamFactories
 {
+    /// <summary>
+    /// Experimental TCP based stream factory for exploring replacing System.Net.Http
+    /// </summary>
     internal class TcpStreamFactory : IStreamFactory
     {
         private readonly string _host;

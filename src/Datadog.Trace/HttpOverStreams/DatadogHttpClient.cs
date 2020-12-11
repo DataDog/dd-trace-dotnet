@@ -12,10 +12,10 @@ namespace Datadog.Trace.HttpOverStreams
         private const int BufferSize = 10240;
         private static readonly Vendors.Serilog.ILogger Logger = DatadogLogging.For<DatadogHttpClient>();
 
-        public Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
+        public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
         {
-            Task.Run(() => SendRequest(request, requestStream));
-            return ReadResponse(responseStream);
+            await SendRequest(request, requestStream).ConfigureAwait(false);
+            return await ReadResponse(responseStream).ConfigureAwait(false);
         }
 
         private async Task SendRequest(HttpRequest request, Stream requestStream)
@@ -69,6 +69,7 @@ namespace Datadog.Trace.HttpOverStreams
 
                 responseMessage = line.Substring(startOfMessage);
 
+                // TODO: Get these from a StringBuilderCache
                 var keyBuilder = new StringBuilder();
                 var valueBuilder = new StringBuilder();
 
@@ -104,7 +105,7 @@ namespace Datadog.Trace.HttpOverStreams
                         var valueChar = Convert.ToChar(reader.Read());
                         streamPosition++;
 
-                        if (valueChar.Equals('\r'))
+                        if (valueChar.Equals(DatadogHttpHeaderHelper.CarriageReturn))
                         {
                             break;
                         }

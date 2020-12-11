@@ -17,7 +17,6 @@ namespace Datadog.Trace.HttpOverStreams
             await writer.WriteAsync($"{request.Verb} {request.Path} HTTP/1.1{CrLf}").ConfigureAwait(false);
             await writer.WriteAsync($"Host: {request.Host}{CrLf}").ConfigureAwait(false);
             await writer.WriteAsync($"Accept-Encoding: identity{CrLf}").ConfigureAwait(false);
-            // await writer.WriteAsync($"Connection: close{CrLf}").ConfigureAwait(false);
             await writer.WriteAsync($"Content-Length: {request.Content.Length ?? 0}{CrLf}").ConfigureAwait(false);
 
             await writer.WriteAsync($"{AgentHttpHeaderNames.Language}: .NET{CrLf}").ConfigureAwait(false);
