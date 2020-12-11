@@ -67,13 +67,13 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetServerStatusCode(this Span span, int statusCode)
+        internal static void SetHttpServerStatusCode(this Span span, int statusCode)
         {
             string statusCodeString = HttpTags.ConvertStatusCodeToString(statusCode);
             span.SetTag(Tags.HttpStatusCode, statusCodeString);
 
             // Check the customers SERVER http statuses that should be marked as errors
-            if (Tracer.Instance.Settings.HttpServerErrorStatuses.TryGetValue(statusCode, out _))
+            if (Tracer.Instance.Settings.HttpServerErrorCodes.TryGetValue(statusCode, out _))
             {
                 span.Error = true;
 
@@ -85,13 +85,13 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetClientStatusCode(this Span span, int statusCode)
+        internal static void SetHttpClientStatusCode(this Span span, int statusCode)
         {
             string statusCodeString = HttpTags.ConvertStatusCodeToString(statusCode);
             span.SetTag(Tags.HttpStatusCode, statusCodeString);
 
             // Check the customers CLIENT http statuses that should be marked as errors
-            if (Tracer.Instance.Settings.HttpClientErrorStatuses.TryGetValue(statusCode, out _))
+            if (Tracer.Instance.Settings.HttpClientErrorCodes.TryGetValue(statusCode, out _))
             {
                 span.Error = true;
 

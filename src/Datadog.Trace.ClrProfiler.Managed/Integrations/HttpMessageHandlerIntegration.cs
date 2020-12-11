@@ -273,7 +273,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (scope != null)
                     {
-                        scope.Span.SetClientStatusCode(statusCode);
+                        scope.Span.SetHttpClientStatusCode(statusCode);
                     }
 
                     return response;

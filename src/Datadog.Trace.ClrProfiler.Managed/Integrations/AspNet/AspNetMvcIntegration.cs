@@ -324,7 +324,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (scope != null)
                 {
-                    scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
+                    scope.Span.SetHttpServerStatusCode(httpContext.Response.StatusCode);
                     scope.Dispose();
                 }
 
@@ -355,7 +355,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
-            scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
+            scope.Span.SetHttpServerStatusCode(httpContext.Response.StatusCode);
             scope.Span.Finish(finishTime);
             scope.Dispose();
         }
