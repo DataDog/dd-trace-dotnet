@@ -206,7 +206,8 @@ namespace Datadog.Trace.Agent
                     {
                         try
                         {
-                            Log.Error("Failed to submit traces with status code {0} and message: {1}", response.StatusCode, await response.ReadAsStringAsync().ConfigureAwait(false));
+                            string responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                            Log.Error("Failed to submit traces with status code {0} and message: {1}", response.StatusCode, responseContent);
                         }
                         catch (Exception ex)
                         {
