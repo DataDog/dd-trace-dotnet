@@ -804,6 +804,7 @@ bool Loader::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray,
   }
 
   Debug("Loader::GetAssemblyAndSymbolsBytes Loading loader data for AppDomainID=", appDomainId);
+  loaders_loaded_.insert(appDomainId);
 
 #ifdef _WIN32
   HINSTANCE hInstance = DllHandle;
