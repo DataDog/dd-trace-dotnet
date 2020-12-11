@@ -57,6 +57,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("RunOnWindows", "True")]
         public void SpansDisabledByAdoNetExcludedTypes()
         {
+            var totalSpanCount = 21;
+
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 
@@ -69,8 +71,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(1, 2000, operationName: expectedOperationName);
-                Assert.Equal(0, spans.Count);
+                var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+                Assert.NotEmpty(spans);
+                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
             }
         }
     }
