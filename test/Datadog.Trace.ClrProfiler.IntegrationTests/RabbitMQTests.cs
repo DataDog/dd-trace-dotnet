@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
-            var expectedSpanCount = 17;
+            var expectedSpanCount = 24;
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
 
-                var spans = agent.WaitForSpans(expectedSpanCount);
+                var spans = agent.WaitForSpans(expectedSpanCount); // Do not filter on operation name because they will vary depending on instrumented method
                 Assert.True(spans.Count >= expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
                 foreach (var span in spans)
