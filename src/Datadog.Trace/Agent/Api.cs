@@ -93,18 +93,18 @@ namespace Datadog.Trace.Agent
 
                 bool success = false;
                 Exception exception = null;
+                bool isFinalTry = retryCount >= retryLimit;
 
                 try
                 {
-                    success = await SendTracesAsync(traces, request).ConfigureAwait(false);
+                    success = await SendTracesAsync(traces, request, isFinalTry).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
-                        Log.Error(ex, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
-                        Log.Error("Failed to send {0} traces to the DD agent", traces.Length);
+                        Log.Error(ex, "An error occurred while sending {0} traces to the agent at {1}", traces.Length, _tracesEndpoint);
                         return false;
                     }
 #endif
@@ -114,12 +114,10 @@ namespace Datadog.Trace.Agent
                 // Error handling block
                 if (!success)
                 {
-                    // Exit if we've hit our retry limit
-                    if (retryCount >= retryLimit)
+                    if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error(exception, "An error occurred while sending traces to the agent at {0}", _tracesEndpoint);
-                        Log.Error("Failed to send {0} traces to the DD agent", traces.Length);
+                        Log.Error(exception, "An error occurred while sending {0} traces to the agent at {1}", traces.Length, _tracesEndpoint);
                         return false;
                     }
 
@@ -173,7 +171,7 @@ namespace Datadog.Trace.Agent
 #endif
         }
 
-        private async Task<bool> SendTracesAsync(Span[][] traces, IApiRequest request)
+        private async Task<bool> SendTracesAsync(Span[][] traces, IApiRequest request, bool finalTry)
         {
             IApiResponse response = null;
 
@@ -204,6 +202,19 @@ namespace Datadog.Trace.Agent
                 // Attempt a retry if the status code is not SUCCESS
                 if (response.StatusCode < 200 || response.StatusCode >= 300)
                 {
+                    if (finalTry)
+                    {
+                        try
+                        {
+                            string responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                            Log.Error("Failed to submit traces with status code {0} and message: {1}", response.StatusCode, responseContent);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Unable to read response for failed request with status code {0}", response.StatusCode);
+                        }
+                    }
+
                     return false;
                 }
 
