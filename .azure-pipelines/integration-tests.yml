@@ -47,7 +47,7 @@ jobs:
     inputs:
       command: build
       projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-      arguments: --configuration $(buildConfiguration)
+      arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
@@ -136,7 +136,7 @@ jobs:
     inputs:
       command: build
       projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-      arguments: --configuration $(buildConfiguration)
+      arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
@@ -313,7 +313,7 @@ jobs:
         !test/test-applications/regression/**/ExpenseItDemo*.csproj
         !test/test-applications/regression/**/EntityFramework6x*.csproj
         !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build samples
@@ -322,7 +322,7 @@ jobs:
       projects: |
         test/test-applications/integrations/**/*.csproj
         !test/test-applications/integrations/dependency-libs/**/*.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -428,7 +428,7 @@ jobs:
         !test/test-applications/regression/**/ExpenseItDemo*.csproj
         !test/test-applications/regression/**/EntityFramework6x*.csproj
         !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build samples
@@ -437,7 +437,7 @@ jobs:
       projects: |
         test/test-applications/integrations/**/*.csproj
         !test/test-applications/integrations/dependency-libs/**/*.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138
 
   - task: NuGetCommand@2
     displayName: nuget restore IIS samples
