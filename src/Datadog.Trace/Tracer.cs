@@ -512,7 +512,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Environment.OSVersion.ToString());
 
                     writer.WritePropertyName("version");
-                    writer.WriteValue(TracerConstants.Version);
+                    writer.WriteValue(TracerConstants.AssemblyVersion);
 
                     writer.WritePropertyName("platform");
                     writer.WriteValue(FrameworkDescription.Instance.ProcessArchitecture);

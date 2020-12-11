@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "LargePayload": {
+      "commandName": "Project",
+      "environmentVariables": {
+         //"DD_TRACE_TRANSPORT": "DEFAULT",
+        "DD_TRACE_TRANSPORT": "DATADOG-NAMED-PIPES",
+        // These variables are to override environmental settings to be sure that the payload is always approximately the same size
+        "DD_ENV": "payload-test",
+        "DD_SERVICE": "LargePayload",
+        "DD_TAGS": "",
+        "DD_HOST": "PayloadHost" 
+      },
+      "nativeDebugging": false
+    }
+  }
+}

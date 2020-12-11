@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -5,7 +6,9 @@ namespace Datadog.Trace.HttpOverStreams
 {
     internal class DatadogHttpHeaderHelper
     {
-        public const string CrLf = "\r\n";
+        public const char CarriageReturn = '\r';
+        public const char LineFeed = '\n';
+        public static readonly string CrLf = Environment.NewLine;
         public static readonly int CrLfLength = CrLf.Length;
 
         public static async Task WriteLeadingHeaders(HttpRequest request, StreamWriter writer)
@@ -18,7 +21,7 @@ namespace Datadog.Trace.HttpOverStreams
             await writer.WriteAsync($"Content-Length: {request.Content.Length ?? 0}{CrLf}").ConfigureAwait(false);
 
             await writer.WriteAsync($"{AgentHttpHeaderNames.Language}: .NET{CrLf}").ConfigureAwait(false);
-            await writer.WriteAsync($"{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.Version}{CrLf}").ConfigureAwait(false);
+            await writer.WriteAsync($"{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.AssemblyVersion}{CrLf}").ConfigureAwait(false);
             // don't add automatic instrumentation to requests from datadog code
             await writer.WriteAsync($"{HttpHeaderNames.TracingEnabled}: false{CrLf}").ConfigureAwait(false);
         }
@@ -32,6 +35,15 @@ namespace Datadog.Trace.HttpOverStreams
         {
             await writer.WriteAsync($"Content-Type: application/msgpack{CrLf}").ConfigureAwait(false);
             await writer.WriteAsync(CrLf).ConfigureAwait(false);
+        }
+
+        public static void SkipFeed(StreamReader reader)
+        {
+            if (CrLfLength > 1)
+            {
+                // Skip the newline indicator
+                reader.Read();
+            }
         }
     }
 }

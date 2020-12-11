@@ -38,7 +38,7 @@ namespace Datadog.Trace.HttpOverStreams
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
 
-        private async Task<HttpResponse> ReadResponse(Stream responseStream)
+        private Task<HttpResponse> ReadResponse(Stream responseStream)
         {
             var headers = new HttpHeaders();
             int statusCode = 0;
@@ -52,6 +52,7 @@ namespace Datadog.Trace.HttpOverStreams
 
             using (var reader = new StreamReader(memoryStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, BufferSize, leaveOpen: true))
             {
+                // https://tools.ietf.org/html/rfc2616#section-4.2
                 // HTTP/1.1 200 OK
                 // HTTP/1.1 XXX MESSAGE
                 string line = reader.ReadLine();
@@ -68,29 +69,60 @@ namespace Datadog.Trace.HttpOverStreams
 
                 responseMessage = line.Substring(startOfMessage);
 
+                var keyBuilder = new StringBuilder();
+                var valueBuilder = new StringBuilder();
+
                 // read headers
                 while (true)
                 {
-                    line = await reader.ReadLineAsync().ConfigureAwait(false);
-                    streamPosition += reader.CurrentEncoding.GetByteCount(line) + DatadogHttpHeaderHelper.CrLfLength;
+                    var headerChar = Convert.ToChar(reader.Read());
+                    streamPosition++;
 
-                    if (line == string.Empty)
+                    if (headerChar.Equals(DatadogHttpHeaderHelper.CarriageReturn))
                     {
                         // end of headers
+                        DatadogHttpHeaderHelper.SkipFeed(reader);
+                        streamPosition++;
                         break;
                     }
 
-                    var headerParts = line.Split(':');
-
-                    if (headerParts.Length != 2)
+                    do
                     {
-                        Logger.Warning("Malformed header: {0}", line);
-                        continue;
-                    }
+                        if (headerChar.Equals(':'))
+                        {
+                            break;
+                        }
 
-                    var name = headerParts[0].Trim();
-                    var value = headerParts[1].Trim();
+                        keyBuilder.Append(headerChar);
+                        headerChar = Convert.ToChar(reader.Read());
+                        streamPosition++;
+                    }
+                    while (true);
+
+                    do
+                    {
+                        var valueChar = Convert.ToChar(reader.Read());
+                        streamPosition++;
+
+                        if (valueChar.Equals('\r'))
+                        {
+                            break;
+                        }
+
+                        valueBuilder.Append(valueChar);
+                    }
+                    while (true);
+
+                    DatadogHttpHeaderHelper.SkipFeed(reader);
+                    streamPosition++;
+
+                    var name = keyBuilder.ToString().Trim();
+                    var value = valueBuilder.ToString().Trim();
+
                     headers.Add(name, value);
+
+                    keyBuilder.Clear();
+                    valueBuilder.Clear();
                 }
             }
 
@@ -107,7 +139,7 @@ namespace Datadog.Trace.HttpOverStreams
                 throw new DatadogHttpRequestException("Content length from http headers does not match content's actual length.");
             }
 
-            return new HttpResponse(statusCode, responseMessage, headers, new StreamContent(memoryStream, length));
+            return Task.FromResult(new HttpResponse(statusCode, responseMessage, headers, new StreamContent(memoryStream, length)));
         }
     }
 }

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "LargePayload": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_TRACE_TRANSPORT": "DEFAULT"
+        //"DD_TRACE_TRANSPORT": "DATADOG-NAMED-PIPES"
+      },
+      "nativeDebugging": false
+    }
+  }
+}
