@@ -117,7 +117,7 @@ namespace Datadog.Trace.Agent
                     if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error(exception, "An error occurred while sending {0} traces to the agent at {0}", traces.Length, _tracesEndpoint);
+                        Log.Error(exception, "An error occurred while sending {0} traces to the agent at {1}", traces.Length, _tracesEndpoint);
                         return false;
                     }
 
