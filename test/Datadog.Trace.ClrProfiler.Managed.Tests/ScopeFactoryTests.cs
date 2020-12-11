@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using Moq;
+using MySql.Data.MySqlClient;
 using Npgsql;
 using Xunit;
 
@@ -21,11 +22,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         public static IEnumerable<object[]> GetDbCommandScopeData()
         {
-            yield return new object[] { (Func<Tracer, Scope>)SystemDataSqlClientSqlCommandCreateScope, typeof(System.Data.SqlClient.SqlCommand).FullName };
-            yield return new object[] { (Func<Tracer, Scope>)PostgresCreateScope, typeof(NpgsqlCommand).FullName };
-            yield return new object[] { (Func<Tracer, Scope>)CustomCreateScope, typeof(CustomDbCommand).FullName };
+            yield return new object[] { new System.Data.SqlClient.SqlCommand() };
+            yield return new object[] { new MySqlCommand() };
+            yield return new object[] { new NpgsqlCommand() };
 #if !NET452
-            yield return new object[] { (Func<Tracer, Scope>)MicrosoftDataSqlClientSqlCommandCreateScope, typeof(Microsoft.Data.SqlClient.SqlCommand).FullName };
+            yield return new object[] { new Microsoft.Data.SqlClient.SqlCommand() };
 #endif
         }
 
@@ -138,21 +139,27 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommandScopeData))]
-        public void CreateDbCommandScope_ReturnsNullForExcludedAdoNetTypes(Func<Tracer, Scope> createScopeFunc, string typeName)
+        public void CreateDbCommandScope_ReturnsNullForExcludedAdoNetTypes(IDbCommand command)
         {
             // Set up tracer
             var collection = new NameValueCollection
             {
-                { ConfigurationKeys.AdoNetExcludedTypes, typeName }
+                { ConfigurationKeys.AdoNetExcludedTypes, command.GetType().FullName }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
             var tracer = new Tracer(tracerSettings);
 
             // Create scope
-            var scope = createScopeFunc(tracer);
+            using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, new CustomDbCommand()))
+            {
+                using (var innerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
+                {
+                    Assert.Null(innerScope);
+                }
 
-            Assert.Null(scope);
+                Assert.NotNull(outerScope);
+            }
         }
 
         private static Scope SystemDataSqlClientSqlCommandCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new System.Data.SqlClient.SqlCommand());
