@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -147,15 +148,15 @@ namespace Datadog.Trace.Configuration
                                           // default value
                                           true;
 
-            var httpServerErrorsStatuses = source?.GetString(ConfigurationKeys.HttpServerErrors) ??
+            var httpServerErrorCodes = source?.GetString(ConfigurationKeys.HttpServerErrorCodes) ??
                                            // Default value
                                            "500-599";
-            HttpServerErrorStatuses = MapStatusToList(httpServerErrorsStatuses);
+            HttpServerErrorCodes = MapStatusToList(httpServerErrorCodes);
 
-            var httpClientErrorStatuses = source?.GetString(ConfigurationKeys.HttpClientErrors) ??
+            var httpClientErrorCodes = source?.GetString(ConfigurationKeys.HttpClientErrorCodes) ??
                                         // Default value
                                         "400-499";
-            HttpClientErrorStatuses = MapStatusToList(httpClientErrorStatuses);
+            HttpClientErrorCodes = MapStatusToList(httpClientErrorCodes);
 
             TraceQueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
                         ?? 1000;
@@ -307,15 +308,16 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets the HTTP status code that should be marked as errors for server integrations.        /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpServerErrors"/>
-        public IDictionary<int, bool> HttpServerErrorStatuses { get; set; }
+        /// Gets or sets the HTTP status code that should be marked as errors for server integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpServerErrorCodes"/>
+        public IDictionary<int, bool> HttpServerErrorCodes { get; set; }
 
         /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for client integrations.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpClientErrors"/>
-        public IDictionary<int, bool> HttpClientErrorStatuses { get; set; }
+        /// <seealso cref="ConfigurationKeys.HttpClientErrorCodes"/>
+        public IDictionary<int, bool> HttpClientErrorCodes { get; set; }
 
         /// <summary>
         /// Gets a value indicating the size of the trace buffer
@@ -386,21 +388,25 @@ namespace Datadog.Trace.Configuration
             return value == "1" || value == "true";
         }
 
-        internal IDictionary<int, bool> MapStatusToList(string httpStatusErrors)
+        internal IDictionary<int, bool> MapStatusToList(string httpStatusErrorCodes)
         {
-            string[] configurationsArray = string.Concat(httpStatusErrors.Where(c => !char.IsWhiteSpace(c))).Split(',');
+            string[] configurationsArray = string.Concat(httpStatusErrorCodes.Where(c => !char.IsWhiteSpace(c))).Split(',');
 
-            IDictionary<int, bool> httpStatusesDictionary = new Dictionary<int, bool>();
+            IDictionary<int, bool> httpErrorCodesDictionary = new Dictionary<int, bool>();
 
             foreach (string statusConfiguration in configurationsArray)
             {
                 int parsedStatus;
 
-                if (int.TryParse(statusConfiguration, out parsedStatus))
+                if (!Regex.IsMatch(statusConfiguration, @"^\d{3}-\d{3}$|^\d{3}$"))
                 {
-                    httpStatusesDictionary[parsedStatus] = true;
+                    Log.Warning("Wrong format '{0}' for DD_HTTP_SERVER/CLIENT_ERROR_STATUSES configuration.", statusConfiguration);
                 }
-                else if (statusConfiguration.Split('-').Length > 1)
+                else if (int.TryParse(statusConfiguration, out parsedStatus))
+                {
+                    httpErrorCodesDictionary[parsedStatus] = true;
+                }
+                else
                 {
                     var statusRange = statusConfiguration.Split('-').Select(int.Parse).ToArray();
                     parsedStatus = statusRange[0];
@@ -414,17 +420,13 @@ namespace Datadog.Trace.Configuration
 
                     while (parsedStatus < statusRange[1] + 1)
                     {
-                        httpStatusesDictionary[parsedStatus] = true;
+                        httpErrorCodesDictionary[parsedStatus] = true;
                         parsedStatus++;
                     }
                 }
-                else
-                {
-                    Log.Warning("Wrong format '{0}' for DD_HTTP_SERVER/CLIENT_ERROR_STATUSES configuration.", statusConfiguration);
-                }
             }
 
-            return httpStatusesDictionary;
+            return httpErrorCodesDictionary;
         }
     }
 }

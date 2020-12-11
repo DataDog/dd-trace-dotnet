@@ -162,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     UpdateSpan(controllerContext, scope.Span, tags, Enumerable.Empty<KeyValuePair<string, string>>());
 
                     var statusCode = responseMessage.GetProperty("StatusCode");
-                    scope.Span.SetServerStatusCode((int)statusCode.Value);
+                    scope.Span.SetHttpServerStatusCode((int)statusCode.Value);
                     scope.Dispose();
                 }
 
@@ -320,7 +320,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(System.Web.HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
-            scope.Span.SetServerStatusCode(httpContext.Response.StatusCode);
+            scope.Span.SetHttpServerStatusCode(httpContext.Response.StatusCode);
             scope.Span.Finish(finishTime);
             scope.Dispose();
         }
