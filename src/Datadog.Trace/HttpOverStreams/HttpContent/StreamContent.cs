@@ -18,19 +18,6 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
 
         public long? Length { get; }
 
-        public void CopyTo(Stream destination, int count)
-        {
-            var bytes = new byte[Math.Min(count, BufferSize)];
-            int bytesLeft = count;
-
-            while (bytesLeft > 0)
-            {
-                int bytesRead = Stream.Read(bytes, 0, bytes.Length);
-                destination.Write(bytes, 0, bytesRead);
-                bytesLeft -= bytesRead;
-            }
-        }
-
         public async Task CopyToAsync(Stream destination)
         {
             if (Length != null)
