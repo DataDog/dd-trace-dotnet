@@ -81,6 +81,38 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         }
 
         [Fact]
+        public void OperatingSystem_Set()
+        {
+            var vars = GetMockVariables(null, null, null, null);
+            var metadata = new AzureAppServices(vars);
+            Assert.Equal(expected: "windows", actual: metadata.OperatingSystem);
+        }
+
+        [Fact]
+        public void InstanceId_Set()
+        {
+            var vars = GetMockVariables(null, null, null, null);
+            var metadata = new AzureAppServices(vars);
+            Assert.Equal(expected: "instance_id", actual: metadata.InstanceId);
+        }
+
+        [Fact]
+        public void InstanceName_Set()
+        {
+            var vars = GetMockVariables(null, null, null, null);
+            var metadata = new AzureAppServices(vars);
+            Assert.Equal(expected: "instance_name", actual: metadata.InstanceName);
+        }
+
+        [Fact]
+        public void Runtime_Set()
+        {
+            var vars = GetMockVariables(null, null, null, null);
+            var metadata = new AzureAppServices(vars);
+            Assert.True(metadata.Runtime?.Length > 0);
+        }
+
+        [Fact]
         public void IsRelevant_False_WhenVariableDoesNotExist()
         {
             var vars = GetMockVariables(null, null, null, null);
@@ -170,10 +202,20 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             string functionsRuntime = null)
         {
             var vars = Environment.GetEnvironmentVariables();
+
+            if (vars.Contains(AzureAppServices.InstanceNameKey))
+            {
+                // This is the COMPUTERNAME key which we'll remove for consistent testing
+                vars.Remove(AzureAppServices.InstanceNameKey);
+            }
+
             vars.Add(AzureAppServices.AzureAppServicesContextKey, "1");
             vars.Add(AzureAppServices.WebsiteOwnerNameKey, $"{subscriptionId}+{planResourceGroup}-EastUSwebspace");
             vars.Add(AzureAppServices.ResourceGroupKey, siteResourceGroup);
             vars.Add(AzureAppServices.SiteNameKey, deploymentId);
+            vars.Add(AzureAppServices.OperatingSystemKey, "windows");
+            vars.Add(AzureAppServices.InstanceIdKey, "instance_id");
+            vars.Add(AzureAppServices.InstanceNameKey, "instance_name");
 
             if (functionsVersion != null)
             {

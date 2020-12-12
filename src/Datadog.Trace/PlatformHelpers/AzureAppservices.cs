@@ -17,23 +17,23 @@ namespace Datadog.Trace.PlatformHelpers
         /// Configuration key which is used as a flag to tell us whether we are running in the context of Azure App Services.
         /// This is set within the applicationHost.xdt file of the Azure Site Extension.
         /// </summary>
-        internal static readonly string AzureAppServicesContextKey = "DD_AZURE_APP_SERVICES";
+        internal const string AzureAppServicesContextKey = "DD_AZURE_APP_SERVICES";
 
         /// <summary>
         /// Example: 8c500027-5f00-400e-8f00-60000000000f+apm-dotnet-EastUSwebspace
         /// Format: {subscriptionId}+{planResourceGroup}-{hostedInRegion}
         /// </summary>
-        internal static readonly string WebsiteOwnerNameKey = "WEBSITE_OWNER_NAME";
+        internal const string WebsiteOwnerNameKey = "WEBSITE_OWNER_NAME";
 
         /// <summary>
         /// This is the name of the resource group the site instance is assigned to.
         /// </summary>
-        internal static readonly string ResourceGroupKey = "WEBSITE_RESOURCE_GROUP";
+        internal const string ResourceGroupKey = "WEBSITE_RESOURCE_GROUP";
 
         /// <summary>
         /// This is the unique name of the website instance within azure app services.
         /// </summary>
-        internal static readonly string SiteNameKey = "WEBSITE_DEPLOYMENT_ID";
+        internal const string SiteNameKey = "WEBSITE_DEPLOYMENT_ID";
 
         /// <summary>
         /// The version of the Functions runtime to use in this function app.
@@ -43,7 +43,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// Default is "~2". A value of ~1 pins your app to version 1.x of the runtime.
         /// Reference: https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version
         /// </summary>
-        internal static readonly string FunctionsExtensionVersionKey = "FUNCTIONS_EXTENSION_VERSION";
+        internal const string FunctionsExtensionVersionKey = "FUNCTIONS_EXTENSION_VERSION";
 
         /// <summary>
         /// This variable is only present in Azure Functions.
@@ -51,7 +51,22 @@ namespace Datadog.Trace.PlatformHelpers
         /// In this context, we will only ever see dotnet.
         /// Reference: https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version
         /// </summary>
-        internal static readonly string FunctionsWorkerRuntimeKey = "FUNCTIONS_WORKER_RUNTIME";
+        internal const string FunctionsWorkerRuntimeKey = "FUNCTIONS_WORKER_RUNTIME";
+
+        /// <summary>
+        /// The instance name in azure where the traced application is running.
+        /// </summary>
+        internal const string InstanceNameKey = "COMPUTERNAME";
+
+        /// <summary>
+        /// The instance id in azure where the traced application is running.
+        /// </summary>
+        internal const string InstanceIdKey = "WEBSITE_INSTANCE_ID";
+
+        /// <summary>
+        /// The operating system in azure where the traced application is running.
+        /// </summary>
+        internal const string OperatingSystemKey = "WEBSITE_OS";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AzureAppServices));
 
@@ -70,6 +85,10 @@ namespace Datadog.Trace.PlatformHelpers
                 ResourceGroup = GetVariableIfExists(ResourceGroupKey, environmentVariables);
                 SiteName = GetVariableIfExists(SiteNameKey, environmentVariables);
                 ResourceId = CompileResourceId();
+
+                InstanceId = GetVariableIfExists(InstanceIdKey, environmentVariables);
+                InstanceName = GetVariableIfExists(InstanceNameKey, environmentVariables);
+                OperatingSystem = GetVariableIfExists(OperatingSystemKey, environmentVariables);
 
                 // Functions
                 FunctionsWorkerRuntime =
@@ -93,6 +112,16 @@ namespace Datadog.Trace.PlatformHelpers
                         SiteKind = "app";
                         SiteType = "app";
                         break;
+                }
+
+                try
+                {
+                    var frameworkDescription = FrameworkDescription.Create();
+                    Runtime = frameworkDescription.Name;
+                }
+                catch (Exception ex)
+                {
+                    Log.SafeLogError(ex, "Unable to determine runtime for Azure.");
                 }
             }
         }
@@ -118,6 +147,14 @@ namespace Datadog.Trace.PlatformHelpers
         public string FunctionsExtensionVersion { get; }
 
         public string FunctionsWorkerRuntime { get; }
+
+        public string InstanceName { get; }
+
+        public string InstanceId { get; }
+
+        public string OperatingSystem { get; }
+
+        public string Runtime { get; }
 
         private string CompileResourceId()
         {

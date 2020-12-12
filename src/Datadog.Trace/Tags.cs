@@ -202,6 +202,26 @@ namespace Datadog.Trace
         public const string AzureAppServicesSiteName = "aas.site.name";
 
         /// <summary>
+        /// The instance name in azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesInstanceName = "aas.environment.instance_name";
+
+        /// <summary>
+        /// The instance id in azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesInstanceId = "aas.environment.instance_id";
+
+        /// <summary>
+        /// The operating system in azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesOperatingSystem = "aas.environment.os";
+
+        /// <summary>
+        /// The runtime in azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesRuntime = "aas.environment.runtime";
+
+        /// <summary>
         /// The kind of application instance running in azure.
         /// Possible values: app, api, mobileapp, app_linux, app_linux_container, functionapp, functionapp_linux, functionapp_linux_container
         /// </summary>
