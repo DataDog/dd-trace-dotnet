@@ -197,9 +197,21 @@ namespace Datadog.Trace
         public const string AzureAppServicesResourceGroup = "aas.resource.group";
 
         /// <summary>
-        /// The site name of the site instance in azure app services where the traced application is running.
+        /// The site name of the site instance in azure where the traced application is running.
         /// </summary>
         public const string AzureAppServicesSiteName = "aas.site.name";
+
+        /// <summary>
+        /// The kind of application instance running in azure.
+        /// Possible values: app, api, mobileapp, app_linux, app_linux_container, functionapp, functionapp_linux, functionapp_linux_container
+        /// </summary>
+        public const string AzureAppServicesSiteKind = "aas.site.kind";
+
+        /// <summary>
+        /// The type of application instance running in azure.
+        /// Possible values: app, function
+        /// </summary>
+        public const string AzureAppServicesSiteType = "aas.site.type";
 
         /// <summary>
         /// The subscription id of the site instance in azure app services where the traced application is running.
