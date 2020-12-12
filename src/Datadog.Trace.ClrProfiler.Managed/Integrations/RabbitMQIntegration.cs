@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Action<IDictionary<string, object>, string, string> headersSetter = ((carrier, key, value) =>
         {
-            carrier.Add(key, Encoding.UTF8.GetBytes(value));
+            carrier[key] = Encoding.UTF8.GetBytes(value);
         });
 
         private static Func<IDictionary<string, object>, string, IEnumerable<string>> headersGetter = ((carrier, key) =>
