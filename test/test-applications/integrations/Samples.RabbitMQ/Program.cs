@@ -55,8 +55,6 @@ namespace Samples.RabbitMQ
                     channel.QueueBind(queueName, exchangeName, routingKey);
 
                     // Send message to the exchange
-                    var properties = channel.CreateBasicProperties();
-                    properties.Persistent = true;
                     string message = "PublishAndGet - Message";
                     var body = Encoding.UTF8.GetBytes(message);
 

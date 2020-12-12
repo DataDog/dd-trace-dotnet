@@ -26,6 +26,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var expectedSpanCount = 24;
 
+            int basicPublishCount = 0;
+            int basicGetCount = 0;
+            int basicDeliverCount = 0;
+            int exchangeDeclareCount = 0;
+            int queueDeclareCount = 0;
+            int queueBindCount = 0;
+
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
             using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
@@ -51,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         {
                             if (string.Equals(command, "basic.publish", StringComparison.OrdinalIgnoreCase))
                             {
+                                basicPublishCount++;
                                 Assert.Equal(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
                                 Assert.NotNull(span.Tags[Tags.AmqpExchange]);
                                 Assert.NotNull(span.Tags[Tags.AmqpRoutingKey]);
@@ -71,6 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             }
                             else if (string.Equals(command, "basic.get", StringComparison.OrdinalIgnoreCase))
                             {
+                                basicGetCount++;
                                 Assert.NotNull(span.ParentId);
                                 Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
                                 Assert.NotNull(span.Tags[Tags.AmqpQueue]);
@@ -88,6 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             }
                             else if (string.Equals(command, "basic.deliver", StringComparison.OrdinalIgnoreCase))
                             {
+                                basicDeliverCount++;
                                 Assert.NotNull(span.ParentId);
                                 Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
                                 // Assert.NotNull(span.Tags[Tags.AmqpQueue]); // Java does this but we're having difficulty doing this. Push to v2?
@@ -117,14 +127,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                             if (string.Equals(command, "exchange.declare", StringComparison.OrdinalIgnoreCase))
                             {
+                                exchangeDeclareCount++;
                                 Assert.NotNull(span.Tags[Tags.AmqpExchange]);
                             }
                             else if (string.Equals(command, "queue.declare", StringComparison.OrdinalIgnoreCase))
                             {
+                                queueDeclareCount++;
                                 Assert.NotNull(span.Tags[Tags.AmqpQueue]);
                             }
                             else if (string.Equals(command, "queue.bind", StringComparison.OrdinalIgnoreCase))
                             {
+                                queueBindCount++;
                                 Assert.NotNull(span.Tags[Tags.AmqpExchange]);
                                 Assert.NotNull(span.Tags[Tags.AmqpQueue]);
                                 Assert.NotNull(span.Tags[Tags.AmqpRoutingKey]);
@@ -143,6 +156,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
             }
+
+            Assert.Equal(5, basicPublishCount);
+            Assert.Equal(2, basicGetCount);
+            Assert.Equal(3, basicDeliverCount);
+
+            Assert.Equal(1, exchangeDeclareCount);
+            Assert.Equal(1, queueBindCount);
+            Assert.Equal(4, queueDeclareCount);
         }
     }
 }
