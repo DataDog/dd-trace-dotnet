@@ -38,11 +38,7 @@ namespace Datadog.Trace.PlatformHelpers
         internal const string SiteNameKey = "WEBSITE_SITE_NAME";
 
         /// <summary>
-        /// The version of the Functions runtime to use in this function app.
-        /// A tilde with major version means use the latest version of that major version (for example, "~2").
-        /// When new versions for the same major version are available, they are automatically installed in the function app.
-        /// To pin the app to a specific version, use the full version number (for example, "2.0.12345").
-        /// Default is "~2". A value of ~1 pins your app to version 1.x of the runtime.
+        /// The version of the functions runtime to use in this function app.
         /// Reference: https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version
         /// </summary>
         internal const string FunctionsExtensionVersionKey = "FUNCTIONS_EXTENSION_VERSION";
