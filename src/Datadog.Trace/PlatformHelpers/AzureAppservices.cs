@@ -11,6 +11,7 @@ namespace Datadog.Trace.PlatformHelpers
     /// References:
     /// https://docs.microsoft.com/en-us/azure/app-service/environment/intro
     /// https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings
+    /// https://github.com/projectkudu/kudu/wiki/Azure-runtime-environment
     /// </summary>
     internal class AzureAppServices
     {
@@ -34,7 +35,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// <summary>
         /// This is the unique name of the website instance within azure app services.
         /// </summary>
-        internal const string SiteNameKey = "WEBSITE_DEPLOYMENT_ID";
+        internal const string SiteNameKey = "WEBSITE_SITE_NAME";
 
         /// <summary>
         /// The version of the Functions runtime to use in this function app.
