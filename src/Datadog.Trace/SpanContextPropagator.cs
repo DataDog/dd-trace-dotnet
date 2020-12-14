@@ -10,6 +10,8 @@ namespace Datadog.Trace
     internal class SpanContextPropagator
     {
         private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
+        private const int MinimumSamplingPriority = (int)SamplingPriority.UserReject;
+        private const int MaximumSamplingPriority = (int)SamplingPriority.UserKeep;
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<SpanContextPropagator>();
@@ -183,7 +185,7 @@ namespace Datadog.Trace
 
             if (hasValue)
             {
-                Log.Information("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
+                Log.Warning("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
             }
 
             return 0;
@@ -207,7 +209,7 @@ namespace Datadog.Trace
 
             if (hasValue)
             {
-                Log.Information("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
+                Log.Warning("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
             }
 
             return 0;
@@ -224,12 +226,9 @@ namespace Datadog.Trace
             {
                 if (int.TryParse(headerValue, out var result))
                 {
-                    foreach (var validValue in SamplingPriorities)
+                    if (MinimumSamplingPriority <= result && result <= MaximumSamplingPriority)
                     {
-                        if (validValue == result)
-                        {
-                            return (SamplingPriority)result;
-                        }
+                        return (SamplingPriority)result;
                     }
                 }
 
@@ -238,7 +237,7 @@ namespace Datadog.Trace
 
             if (hasValue)
             {
-                Log.Information(
+                Log.Warning(
                     "Could not parse {0} headers: {1}",
                     headerName,
                     string.Join(",", headerValues));
@@ -257,12 +256,9 @@ namespace Datadog.Trace
             {
                 if (int.TryParse(headerValue, out var result))
                 {
-                    foreach (var validValue in SamplingPriorities)
+                    if (MinimumSamplingPriority <= result && result <= MaximumSamplingPriority)
                     {
-                        if (validValue == result)
-                        {
-                            return (SamplingPriority)result;
-                        }
+                        return (SamplingPriority)result;
                     }
                 }
 
@@ -271,7 +267,7 @@ namespace Datadog.Trace
 
             if (hasValue)
             {
-                Log.Information(
+                Log.Warning(
                     "Could not parse {0} headers: {1}",
                     headerName,
                     string.Join(",", headerValues));

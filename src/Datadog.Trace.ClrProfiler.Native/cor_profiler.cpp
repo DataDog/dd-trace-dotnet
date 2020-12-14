@@ -1063,7 +1063,8 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       //      3b) If the type token represents System.Threading.CancellationToken, emit a 'box <type_token>' IL instruction before calling our wrapper method
       //   4) Check for System.ReadOnlyMemory<T>
       //      4a) If the type begins with `ELEMENT_TYPE_GENERICINST` and if the next byte is `ELEMENT_TYPE_VALUETYPE`, uncompress the compressed type token that follows
-      // TODO FINISH      4b) If the type token represents System.Threading.CancellationToken, emit a 'box <type_token>' IL instruction before calling our wrapper method
+      //      4b) If the type token represents System.ReadOnlyMemory<T>, emit a 'box <type_token>' IL instruction before calling our wrapper method. The type token
+      //          will be a TypeSpec representing the specific generic instantiation of System.ReadOnlyMemory<T>
       auto original_method_def = target.id;
       size_t argument_count = target.signature.NumberOfArguments();
       size_t return_type_index = target.signature.IndexOfReturnType();
@@ -1101,7 +1102,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
           mdToken valuetype_type_token = CorSigUncompressToken(pSigCurrent);
 
           // Currently, we only expect to see
-          // `System.Threading.CancellationToken` as a valuetype in this
+          // `System.ReadOnlyMemory<T>` as a valuetype in this
           // position If we expand this to a general case, we would always
           // perform the boxing regardless of type
           if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name == "System.ReadOnlyMemory`1"_W
