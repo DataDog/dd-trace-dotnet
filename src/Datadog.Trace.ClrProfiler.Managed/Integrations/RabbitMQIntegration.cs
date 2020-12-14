@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string Major5 = "5";
         private const string Major6 = "6";
         private const string RabbitMQAssembly = "RabbitMQ.Client";
+        private const string RabbitMQIModel = "RabbitMQ.Client.IModel";
         private const string RabbitMQImplModelBase = "RabbitMQ.Client.Impl.ModelBase";
         private const string RabbitMQDefaultBasicConsumer = "RabbitMQ.Client.DefaultBasicConsumer";
         private const string IBasicPropertiesTypeName = "RabbitMQ.Client.IBasicProperties";
@@ -266,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The original return value.</returns>
         [InterceptMethod(
             TargetAssembly = RabbitMQAssembly,
-            TargetType = RabbitMQImplModelBase,
+            TargetType = RabbitMQIModel,
             TargetMethod = "BasicGet",
             TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.String, ClrNames.Bool },
             TargetMinimumVersion = Major3Minor6Patch9,

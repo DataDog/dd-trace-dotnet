@@ -1584,7 +1584,7 @@
         "caller": {},
         "target": {
           "assembly": "RabbitMQ.Client",
-          "type": "RabbitMQ.Client.Impl.ModelBase",
+          "type": "RabbitMQ.Client.IModel",
           "method": "BasicGet",
           "signature_types": [
             "_",
