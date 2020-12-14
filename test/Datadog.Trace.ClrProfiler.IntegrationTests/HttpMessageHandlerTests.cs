@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("HttpMessageHandler", output)
         {
             SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
+            SetEnvironmentVariable("DD_HTTP_CLIENT_ERROR_STATUSES", "400-499, 502,-343,11-53, 500-500-200");
             SetServiceVersion("1.0.0");
         }
 
@@ -22,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 35 : 31;
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 36 : 32;
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
 
@@ -47,6 +48,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(SpanTypes.Http, span.Type);
                     Assert.Equal("HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
+
+                    if (span.Tags[Tags.HttpStatusCode] == "502")
+                    {
+                        Assert.Equal(1, span.Error);
+                    }
                 }
 
                 var firstSpan = spans.First();
