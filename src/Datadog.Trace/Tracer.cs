@@ -518,8 +518,6 @@ namespace Datadog.Trace
 
             try
             {
-                var frameworkDescription = FrameworkDescription.Create();
-
                 var stringWriter = new StringWriter();
 
                 using (var writer = new JsonTextWriter(stringWriter))
@@ -530,7 +528,7 @@ namespace Datadog.Trace
                     writer.WriteValue(DateTime.Now);
 
                     writer.WritePropertyName("os_name");
-                    writer.WriteValue(frameworkDescription.OSPlatform);
+                    writer.WriteValue(FrameworkDescription.Instance.OSPlatform);
 
                     writer.WritePropertyName("os_version");
                     writer.WriteValue(Environment.OSVersion.ToString());
@@ -539,13 +537,13 @@ namespace Datadog.Trace
                     writer.WriteValue(TracerConstants.AssemblyVersion);
 
                     writer.WritePropertyName("platform");
-                    writer.WriteValue(frameworkDescription.ProcessArchitecture);
+                    writer.WriteValue(FrameworkDescription.Instance.ProcessArchitecture);
 
                     writer.WritePropertyName("lang");
-                    writer.WriteValue(frameworkDescription.Name);
+                    writer.WriteValue(FrameworkDescription.Instance.Name);
 
                     writer.WritePropertyName("lang_version");
-                    writer.WriteValue(frameworkDescription.ProductVersion);
+                    writer.WriteValue(FrameworkDescription.Instance.ProductVersion);
 
                     writer.WritePropertyName("env");
                     writer.WriteValue(Settings.Environment);
@@ -671,13 +669,11 @@ namespace Datadog.Trace
         {
             try
             {
-                var frameworkDescription = FrameworkDescription.Create();
-
                 var constantTags = new List<string>
                                    {
                                        "lang:.NET",
-                                       $"lang_interpreter:{frameworkDescription.Name}",
-                                       $"lang_version:{frameworkDescription.ProductVersion}",
+                                       $"lang_interpreter:{FrameworkDescription.Instance.Name}",
+                                       $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
                                        $"tracer_version:{TracerConstants.AssemblyVersion}",
                                        $"service:{serviceName}"
                                    };

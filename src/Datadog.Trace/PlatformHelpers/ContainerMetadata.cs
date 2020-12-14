@@ -60,7 +60,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             try
             {
-                var isLinux = string.Equals(FrameworkDescription.Create().OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
+                var isLinux = string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
 
                 if (isLinux &&
                     File.Exists(ControlGroupsFilePath))

@@ -8,15 +8,36 @@ namespace Datadog.Trace
 {
     internal partial class FrameworkDescription
     {
-        public static FrameworkDescription Create()
+        private static FrameworkDescription _instance = null;
+
+        public static FrameworkDescription Instance
         {
-            // .NET Framework
+            get { return _instance ?? (_instance = Create()); }
+        }
+
+        private static FrameworkDescription Create()
+        {
+            var osArchitecture = "unknown";
+            var processArchitecture = "unknown";
+            var frameworkDescription = "unknown";
+
+            try
+            {
+                osArchitecture = Environment.Is64BitOperatingSystem ? "x64" : "x86";
+                processArchitecture = Environment.Is64BitProcess ? "x64" : "x86";
+                frameworkDescription = GetNetFrameworkVersion();
+            }
+            catch (Exception ex)
+            {
+                Log.SafeLogError(ex, "Error getting framework description.");
+            }
+
             return new FrameworkDescription(
-                ".NET Framework",
-                GetNetFrameworkVersion() ?? "unknown",
-                "Windows",
-                Environment.Is64BitOperatingSystem ? "x64" : "x86",
-                Environment.Is64BitProcess ? "x64" : "x86");
+                name: ".NET Framework",
+                productVersion: frameworkDescription,
+                osPlatform: "Windows",
+                osArchitecture: osArchitecture,
+                processArchitecture: processArchitecture);
         }
 
         private static string GetNetFrameworkVersion()

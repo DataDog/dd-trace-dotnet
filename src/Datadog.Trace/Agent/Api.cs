@@ -21,7 +21,6 @@ namespace Datadog.Trace.Agent
         private readonly IDogStatsd _statsd;
         private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
         private readonly string _containerId;
-        private readonly FrameworkDescription _frameworkDescription;
         private Uri _tracesEndpoint; // The Uri may be reassigned dynamically so that retry attempts may attempt updated Agent ports
         private string _cachedResponse;
 
@@ -35,19 +34,7 @@ namespace Datadog.Trace.Agent
             _apiRequestFactory = apiRequestFactory ?? CreateRequestFactory();
 
             // report runtime details
-            try
-            {
-                _frameworkDescription = FrameworkDescription.Create();
-
-                if (_frameworkDescription != null)
-                {
-                    Log.Information(_frameworkDescription.ToString());
-                }
-            }
-            catch (Exception e)
-            {
-                Log.SafeLogError(e, "Error getting framework description");
-            }
+            Log.Information(FrameworkDescription.Instance.ToString());
         }
 
         public void SetBaseEndpoint(Uri baseEndpoint)
@@ -80,11 +67,8 @@ namespace Datadog.Trace.Agent
 
                 // Set additional headers
                 request.AddHeader(AgentHttpHeaderNames.TraceCount, traces.Length.ToString());
-                if (_frameworkDescription != null)
-                {
-                    request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, _frameworkDescription.Name);
-                    request.AddHeader(AgentHttpHeaderNames.LanguageVersion, _frameworkDescription.ProductVersion);
-                }
+                request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, FrameworkDescription.Instance.Name);
+                request.AddHeader(AgentHttpHeaderNames.LanguageVersion, FrameworkDescription.Instance.ProductVersion);
 
                 if (_containerId != null)
                 {
