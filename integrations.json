@@ -1701,12 +1701,13 @@
         "target": {
           "assembly": "RabbitMQ.Client",
           "type": "RabbitMQ.Client.Impl.ModelBase",
-          "method": "QueueBind",
+          "method": "_Private_QueueBind",
           "signature_types": [
             "System.Void",
             "System.String",
             "System.String",
             "System.String",
+            "System.Boolean",
             "_"
           ],
           "minimum_major": 3,
@@ -1720,7 +1721,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
           "method": "QueueBind",
-          "signature": "00 08 01 1C 0E 0E 0E 1C 08 08 0A",
+          "signature": "00 09 01 1C 0E 0E 0E 02 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
       },

@@ -671,6 +671,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="queue">Name of the queue.</param>
         /// <param name="exchange">The original exchange argument.</param>
         /// <param name="routingKey">The original routingKey argument.</param>
+        /// <param name="nowait">The original nowait argument.</param>
         /// <param name="arguments">The original arguments setting</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
@@ -678,8 +679,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = RabbitMQAssembly,
             TargetType = RabbitMQImplModelBase,
-            TargetMethod = "QueueBind",
-            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.String, ClrNames.Ignore },
+            TargetMethod = "_Private_QueueBind",
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Ignore },
             TargetMinimumVersion = Major3Minor6Patch9,
             TargetMaximumVersion = Major6)]
         public static void QueueBind(
@@ -687,6 +688,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string queue,
             string exchange,
             string routingKey,
+            bool nowait,
             object arguments,
             int opCode,
             int mdToken,
@@ -694,19 +696,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             if (model == null) { throw new ArgumentNullException(nameof(model)); }
 
-            const string methodName = "QueueBind";
+            const string methodName = "_Private_QueueBind";
             const string command = "queue.bind";
-            Action<object, string, string, string, object> instrumentedMethod;
+            Action<object, string, string, string, bool, object> instrumentedMethod;
             var modelType = model.GetType();
 
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Action<object, string, string, string, object>>
+                    MethodBuilder<Action<object, string, string, string, bool, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(modelType)
-                       .WithParameters(queue, exchange, routingKey, arguments)
-                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.String, ClrNames.Ignore)
+                       .WithParameters(queue, exchange, routingKey, nowait, arguments)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.String, ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Ignore)
                        .Build();
             }
             catch (Exception ex)
@@ -727,7 +729,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    instrumentedMethod(model, queue, exchange, routingKey, arguments);
+                    instrumentedMethod(model, queue, exchange, routingKey, nowait, arguments);
                 }
                 catch (Exception ex)
                 {
