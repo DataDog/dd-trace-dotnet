@@ -8,15 +8,8 @@ namespace Datadog.Trace
 {
     internal partial class FrameworkDescription
     {
-        private static FrameworkDescription _instance;
-
         public static FrameworkDescription Create()
         {
-            if (_instance != null)
-            {
-                return _instance;
-            }
-
             string frameworkName = null;
             string osPlatform = null;
 
@@ -46,14 +39,12 @@ namespace Datadog.Trace
                 osPlatform = "MacOS";
             }
 
-            _instance = new FrameworkDescription(
+            return new FrameworkDescription(
                 frameworkName ?? "unknown",
                 GetNetCoreOrNetFrameworkVersion() ?? "unknown",
                 osPlatform ?? "unknown",
                 RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(),
                 RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant());
-
-            return _instance;
         }
 
         private static string GetNetCoreOrNetFrameworkVersion()
