@@ -95,14 +95,15 @@ WSTRING HexStr(const void *dataPtr, int len) {
   return s;
 }
 
-std::vector<BYTE> HexToBytes(const std::string &hex) {
-  std::vector<BYTE> bytes;
-  for (unsigned int i = 0; i < hex.length(); i += 2) {
-    std::string byteString = hex.substr(i, 2);
-    auto byte = BYTE(strtol(byteString.c_str(), NULL, 16));
-    bytes.push_back(byte);
+WSTRING TokenStr(const mdToken *token) {
+  const unsigned char *data = (unsigned char *)token;
+  int len = sizeof(mdToken);
+  WSTRING s(len * 2, ' ');
+  for (int i = 0; i < len; i++) {
+    s[(2 * (len - i)) - 2] = HexMap[(data[i] & 0xF0) >> 4];
+    s[(2 * (len - i)) - 1] = HexMap[data[i] & 0x0F];
   }
-  return bytes;
+  return s;
 }
 
 }  // namespace trace

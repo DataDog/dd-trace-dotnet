@@ -736,7 +736,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId,
     RejitHandlerModuleMethod* handlerMethod = nullptr;
     if (handlerModule->TryGetMethod(calleFunctionToken, &handlerMethod)) {
       Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
-           ", MethodDef=", HexStr(&calleFunctionToken, sizeof(mdMethodDef)), "]");
+           ", MethodDef=", TokenStr(&calleFunctionToken), "]");
       *pfShouldInline = false;
       return S_OK;
     } 
@@ -2424,7 +2424,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
       // Extract the function info from the mdMethodDef
       const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
       if (!caller.IsValid()) {
-        Warn("The caller for the methoddef: ", HexStr(&methodDef, sizeof(mdMethodDef)), " is not valid!");
+        Warn("The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
         enumIterator = ++enumIterator;
         continue;
       }
@@ -2482,7 +2482,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
       bool caller_assembly_is_domain_neutral = runtime_information_.is_desktop() && corlib_module_loaded && module_metadata->app_domain_id == corlib_app_domain_id;
 
       Info("Enqueue for ReJIT [ModuleId=", module_id,
-           ", MethodDef=", HexStr(&methodDef, sizeof(mdMethodDef)), 
+           ", MethodDef=", TokenStr(&methodDef), 
            ", AppDomainId=", module_metadata->app_domain_id,
            ", IsDomainNeutral=", caller_assembly_is_domain_neutral,
            ", Assembly=", module_metadata->assemblyName, 

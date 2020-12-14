@@ -34,8 +34,8 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name);
 // Convert Hex to string
 WSTRING HexStr(const void *data, int len);
 
-// Convert string to hex bytes
-std::vector<BYTE> HexToBytes(const std::string &hex);
+// Convert Token to string
+WSTRING TokenStr(const mdToken *token);
 
 template <class Container>
 bool Contains(const Container &items,
