@@ -81,7 +81,7 @@ jobs:
     inputs:
       command: build
       configuration: $(buildConfiguration)
-      arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      arguments: /nowarn:netsdk1138 -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
@@ -122,6 +122,7 @@ jobs:
     inputs:
       command: build
       configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
         sample-libs/**/Samples.ExampleLibrary*.csproj
@@ -172,6 +173,7 @@ jobs:
     inputs:
       command: build
       configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
   
@@ -214,6 +216,7 @@ jobs:
     inputs:
       command: build
       configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
   
@@ -270,6 +273,7 @@ jobs:
     inputs:
       command: build
       configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj

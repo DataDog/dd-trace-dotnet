@@ -1486,7 +1486,7 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
             (mdString)cInstr->m_Arg32, szString, 1024, &szStringLength);
         if (SUCCEEDED(hr)) {
           orig_sstream << "  | \"";
-          orig_sstream << ToString(WSTRING(szString).substr(0, szStringLength));
+          orig_sstream << ToString(WSTRING(szString, szStringLength));
           orig_sstream << "\"";
         }
       }
