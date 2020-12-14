@@ -23,6 +23,22 @@ extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_p
 
 Loader* loader = nullptr;
 
+// We exclude here the direct references of the loader to avoid a cyclic reference problem.
+// Also well-known assemblies we want to avoid.
+WSTRING assemblies_exclusion_list_[] = {
+    "mscorlib"_W,
+    "System.Private.CoreLib"_W,
+    "System"_W,
+    "System.Core"_W,
+    "System.Configuration"_W,
+    "System.Data"_W,
+    "System.EnterpriseServices"_W,
+    "System.Security"_W,
+    "System.Transactions"_W,
+    "System.Web"_W,
+    "System.Web.ApplicationServices"_W,
+};
+
 Loader::Loader(ICorProfilerInfo4* info) {
   info_ = info;
   runtime_information_ = GetRuntimeInformation(info);
@@ -67,16 +83,6 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   //
   if (assembly_name_string == "Datadog.Trace.ClrProfiler.Managed.Loader"_W) {
     Debug("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
-    loaders_loaded_.insert(app_domain_id);
-    return E_FAIL;
-  }
-
-  //
-  // check if is COR lib and skip it because we define new typeref to mscorlib in our target module.
-  //
-  if (assembly_name_string == "mscorlib"_W ||
-      assembly_name_string == "System.Private.CoreLib"_W) {
-    Debug("Loader::InjectLoaderToModuleInitializer: Skipping COR lib.");
     return E_FAIL;
   }
 
@@ -86,6 +92,18 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
   if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
     return E_FAIL;
   }
+
+  //
+  // skip libraries from the exclusion list.
+  //
+  for (const auto asm_name : assemblies_exclusion_list_) {
+    if (assembly_name_string == asm_name) {
+        Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string);
+        return E_FAIL;
+    }
+  }
+
+  Debug("Loader::InjectLoaderToModuleInitializer: Analyzing ", assembly_name_string);
 
   //
   // the loader is not loaded yet for this AppDomain
@@ -779,7 +797,7 @@ HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
 
   Debug("Loader::InjectLoaderToModuleInitializer [ModuleID=", module_id,
        ", AssemblyID=", assembly_id, 
-       ", AssemblyName=", WSTRING(assembly_name), 
+       ", AssemblyName=", assembly_name_string, 
        ", AppDomainID=", app_domain_id,
        ", ModuleTypeDef=", module_type_def,
        ", ModuleCCTORDef=", cctor_method_def, "]");
