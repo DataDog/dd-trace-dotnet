@@ -7,7 +7,7 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.PlatformHelpers
 {
     /// <summary>
-    /// Helper class for gathering metadata about the execution content in Azure App Services.
+    /// Helper class for gathering metadata about the execution context in Azure App Services.
     /// References:
     /// https://docs.microsoft.com/en-us/azure/app-service/environment/intro
     /// https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings
