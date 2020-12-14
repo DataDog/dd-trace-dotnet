@@ -33,7 +33,7 @@ namespace Datadog.Trace.PlatformHelpers
         internal const string ResourceGroupKey = "WEBSITE_RESOURCE_GROUP";
 
         /// <summary>
-        /// This is the unique name of the website instance within azure app services.
+        /// This is the unique name of the website instance within Azure App Services.
         /// </summary>
         internal const string SiteNameKey = "WEBSITE_SITE_NAME";
 
@@ -52,17 +52,17 @@ namespace Datadog.Trace.PlatformHelpers
         internal const string FunctionsWorkerRuntimeKey = "FUNCTIONS_WORKER_RUNTIME";
 
         /// <summary>
-        /// The instance name in azure where the traced application is running.
+        /// The instance name in Azure where the traced application is running.
         /// </summary>
         internal const string InstanceNameKey = "COMPUTERNAME";
 
         /// <summary>
-        /// The instance id in azure where the traced application is running.
+        /// The instance ID in Azure where the traced application is running.
         /// </summary>
         internal const string InstanceIdKey = "WEBSITE_INSTANCE_ID";
 
         /// <summary>
-        /// The operating system in azure where the traced application is running.
+        /// The operating system in Azure where the traced application is running.
         /// </summary>
         internal const string OperatingSystemKey = "WEBSITE_OS";
 
@@ -186,7 +186,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Could not successfully setup the resource id for azure app services.");
+                Log.SafeLogError(ex, "Could not successfully setup the resource ID for Azure App Services.");
             }
 
             return resourceId;
@@ -208,7 +208,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Could not successfully retrieve the subscription id for azure app services.");
+                Log.SafeLogError(ex, "Could not successfully retrieve the subscription ID for Azure App Services.");
             }
 
             return null;
@@ -219,14 +219,14 @@ namespace Datadog.Trace.PlatformHelpers
             IDictionary environmentVariables,
             Action<string> optionalExistsAction = null)
         {
-            if (environmentVariables.Contains(key))
+            var value = environmentVariables.GetValueOrDefault<string>(key);
+
+            if (value != null)
             {
-                var value = environmentVariables[key]?.ToString();
                 optionalExistsAction?.Invoke(value);
-                return value;
             }
 
-            return null;
+            return value;
         }
     }
 }
