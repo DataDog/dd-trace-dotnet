@@ -110,6 +110,10 @@ namespace Samples.HttpMessageHandler
                     byte[] responseBytes = Utf8.GetBytes(ResponseContent);
                     context.Response.ContentEncoding = Utf8;
                     context.Response.ContentLength64 = responseBytes.Length;
+                    if (context.Request.RawUrl == "/Samples.HttpMessageHandler/HttpErrorCode")
+                    {
+                        context.Response.StatusCode = 502;
+                    }
                     context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
 
                     // we must close the response

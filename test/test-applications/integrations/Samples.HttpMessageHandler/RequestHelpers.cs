@@ -157,6 +157,12 @@ namespace Samples.HttpMessageHandler
                         await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead, CancellationToken.None);
                         Console.WriteLine("Received response for client.PostAsync(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
                     }
+
+                    using (Tracer.Instance.StartActive("ErrorSpanBelow"))
+                    {
+                        await client.GetAsync($"{url}HttpErrorCode");
+                        Console.WriteLine("Received response for client.GetAsync Error Span");
+                    }
                 }
             }
             
