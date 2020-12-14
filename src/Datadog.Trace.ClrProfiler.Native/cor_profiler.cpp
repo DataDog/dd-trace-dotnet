@@ -1395,6 +1395,20 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
              managed_profiler_loaded_app_domains.end();
 }
 
+const std::string indent_values[] = {
+    "",
+    std::string(2 * 1, ' '),
+    std::string(2 * 2, ' '),
+    std::string(2 * 3, ' '),
+    std::string(2 * 4, ' '),
+    std::string(2 * 5, ' '),
+    std::string(2 * 6, ' '),
+    std::string(2 * 7, ' '),
+    std::string(2 * 8, ' '),
+    std::string(2 * 9, ' '),
+    std::string(2 * 10, ' '),
+};
+
 std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
                                     const FunctionInfo& caller, ModuleMetadata* module_metadata) {
   std::stringstream orig_sstream;
@@ -1408,7 +1422,23 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
 
   const auto ehCount = rewriter->GetEHCount();
   const auto ehPtr = rewriter->GetEHPointer();
+  int indent = 1;
 
+  PCCOR_SIGNATURE originalSignature = NULL;
+  ULONG originalSignatureSize = 0;
+  mdToken localVarSig = rewriter->GetTkLocalVarSig();
+
+  if (localVarSig != mdTokenNil) {
+    auto hr = module_metadata->metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
+    if (SUCCEEDED(hr)) {
+      orig_sstream << std::endl
+                   << ". Local Var Signature: "
+                   << ToString(HexStr(originalSignature, originalSignatureSize)) 
+                   << std::endl;
+    }
+  }
+
+  orig_sstream << std::endl;
   for (ILInstr* cInstr = rewriter->GetILList()->m_pNext;
        cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext) {
     
@@ -1417,13 +1447,25 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
         const auto currentEH = ehPtr[i];
         if (currentEH.m_Flags == COR_ILEXCEPTION_CLAUSE_FINALLY) {
           if (currentEH.m_pTryBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
             orig_sstream << ".try {" << std::endl;
+            indent++;
           }
           if (currentEH.m_pTryEnd == cInstr) {
+            indent--;
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
             orig_sstream << "}" << std::endl;
           }
           if (currentEH.m_pHandlerBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
             orig_sstream <<  ".finally {" << std::endl;
+            indent++;
           }
         }
       }
@@ -1431,18 +1473,33 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
         const auto currentEH = ehPtr[i];
         if (currentEH.m_Flags == COR_ILEXCEPTION_CLAUSE_NONE) {
           if (currentEH.m_pTryBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
             orig_sstream << ".try {" << std::endl;
+            indent++;
           }
           if (currentEH.m_pTryEnd == cInstr) {
+            indent--;
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
             orig_sstream << "}" << std::endl;
           }
           if (currentEH.m_pHandlerBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
             orig_sstream << ".catch {" << std::endl;
+            indent++;
           }
         }
       }
     }
 
+    if (indent > 0) {
+      orig_sstream << indent_values[indent];
+    }
     orig_sstream << cInstr;
     orig_sstream << ": ";
     if (cInstr->m_opcode < opcodes_names.size()) {
@@ -1500,6 +1557,10 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
       for (unsigned int i = 0; i < ehCount; i++) {
         const auto currentEH = ehPtr[i];
         if (currentEH.m_pHandlerEnd == cInstr) {
+          indent--;
+          if (indent > 0) {
+            orig_sstream << indent_values[indent];
+          }
           orig_sstream << "}" << std::endl;
         }
       }
