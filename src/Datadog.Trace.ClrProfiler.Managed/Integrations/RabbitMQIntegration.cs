@@ -839,7 +839,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scope = tracer.StartActiveWithTags(OperationName, parent: parentContext, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{IntegrationName}", startTime: startTime);
                 var span = scope.Span;
 
-                span.Type = SpanTypes.MessageClient;
+                span.Type = SpanTypes.Queue;
                 span.ResourceName = command;
                 tags.Command = command;
 
