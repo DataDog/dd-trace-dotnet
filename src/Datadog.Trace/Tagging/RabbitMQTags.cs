@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tagging
                 new Property<RabbitMQTags, string>(Trace.Tags.AmqpExchange, t => t.Exchange, (t, v) => t.Exchange = v),
                 new Property<RabbitMQTags, string>(Trace.Tags.AmqpQueue, t => t.Queue, (t, v) => t.Queue = v),
                 new Property<RabbitMQTags, string>(Trace.Tags.AmqpRoutingKey, t => t.RoutingKey, (t, v) => t.RoutingKey = v),
-                new Property<RabbitMQTags, string>("message.size", t => t.MessageSize, (t, v) => t.MessageSize = v));
+                new Property<RabbitMQTags, string>(Trace.Tags.MessageSize, t => t.MessageSize, (t, v) => t.MessageSize = v));
 
         private string _spanKind = SpanKinds.Client;
 

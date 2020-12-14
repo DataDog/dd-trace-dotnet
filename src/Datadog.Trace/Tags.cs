@@ -175,6 +175,11 @@ namespace Datadog.Trace
         public const string AmqpDeliveryMode = "amqp.delivery_mode";
 
         /// <summary>
+        /// The size of the message.
+        /// </summary>
+        public const string MessageSize = "message.size";
+
+        /// <summary>
         /// The sampling priority for the entire trace.
         /// </summary>
         public const string SamplingPriority = "sampling.priority";
