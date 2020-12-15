@@ -234,13 +234,13 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for the application's server http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpServerErrorCodes"/>
-        public const string HttpServerErrorCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
+        public const string HttpServerErrorStatuses = "DD_HTTP_SERVER_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key for the application's client http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpClientErrorCodes"/>
-        public const string HttpClientErrorCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
+        public const string HttpClientErrorStatuses = "DD_HTTP_CLIENT_ERROR_STATUSES";
 
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.

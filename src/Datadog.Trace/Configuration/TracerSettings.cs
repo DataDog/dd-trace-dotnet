@@ -136,12 +136,12 @@ namespace Datadog.Trace.Configuration
                                           // default value
                                           true;
 
-            var httpServerErrorCodes = source?.GetString(ConfigurationKeys.HttpServerErrorCodes) ??
+            var httpServerErrorCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatuses) ??
                                            // Default value
                                            "500-599";
             HttpServerErrorCodes = ParseHttpCodesToDictionary(httpServerErrorCodes);
 
-            var httpClientErrorCodes = source?.GetString(ConfigurationKeys.HttpClientErrorCodes) ??
+            var httpClientErrorCodes = source?.GetString(ConfigurationKeys.HttpClientErrorStatuses) ??
                                         // Default value
                                         "400-499";
             HttpClientErrorCodes = ParseHttpCodesToDictionary(httpClientErrorCodes);
@@ -292,13 +292,13 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for server integrations.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpServerErrorCodes"/>
+        /// <seealso cref="ConfigurationKeys.HttpServerErrorStatuses"/>
         public IDictionary<int, bool> HttpServerErrorCodes { get; set; }
 
         /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for client integrations.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpClientErrorCodes"/>
+        /// <seealso cref="ConfigurationKeys.HttpClientErrorStatuses"/>
         public IDictionary<int, bool> HttpClientErrorCodes { get; set; }
 
         /// <summary>
@@ -372,9 +372,10 @@ namespace Datadog.Trace.Configuration
 
         internal IDictionary<int, bool> ParseHttpCodesToDictionary(string httpStatusErrorCodes)
         {
-            string[] configurationsArray = string.Concat(httpStatusErrorCodes.Where(c => !char.IsWhiteSpace(c))).Split(',');
-
             IDictionary<int, bool> httpErrorCodesDictionary = new Dictionary<int, bool>();
+
+            string[] configurationsArray = httpStatusErrorCodes.Split();
+            configurationsArray = string.Join(string.Empty, configurationsArray).Split(',');
 
             foreach (string statusConfiguration in configurationsArray)
             {
@@ -390,17 +391,19 @@ namespace Datadog.Trace.Configuration
                 }
                 else
                 {
-                    var statusRange = statusConfiguration.Split('-').Select(int.Parse).ToArray();
-                    parsedStatus = statusRange[0];
+                    var stringStatusCodeRange = statusConfiguration.Split('-');
+                    int[] intStatusCodeRange = { int.Parse(stringStatusCodeRange[0]), int.Parse(stringStatusCodeRange[1]) };
 
-                    if (statusRange[1] < statusRange[0])
+                    parsedStatus = intStatusCodeRange[0];
+
+                    if (intStatusCodeRange[1] < intStatusCodeRange[0])
                     {
-                        parsedStatus = statusRange[1];
-                        statusRange[1] = statusRange[0];
-                        statusRange[0] = parsedStatus;
+                        parsedStatus = intStatusCodeRange[1];
+                        intStatusCodeRange[1] = intStatusCodeRange[0];
+                        intStatusCodeRange[0] = parsedStatus;
                     }
 
-                    while (parsedStatus < statusRange[1] + 1)
+                    while (parsedStatus <= intStatusCodeRange[1])
                     {
                         httpErrorCodesDictionary[parsedStatus] = true;
                         parsedStatus++;
