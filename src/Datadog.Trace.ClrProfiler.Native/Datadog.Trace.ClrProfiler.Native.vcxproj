@@ -28,7 +28,7 @@
     <LIB_PATH>lib\</LIB_PATH>
     <LIB_PLATFORM Condition="'$(Platform)'=='x64'">x64</LIB_PLATFORM>
     <LIB_PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</LIB_PLATFORM>
-    <LIB_INCLUDES>$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\include;$(LIB_PATH)spdlog_$(LIB_PLATFORM)-windows-static\include</LIB_INCLUDES>
+    <LIB_INCLUDES>$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\include;$(LIB_PATH)spdlog\include</LIB_INCLUDES>
     <LIB_BINARIES Condition="'$(Configuration)'=='Release'">$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\lib\fmt.lib</LIB_BINARIES>
     <LIB_BINARIES Condition="'$(Configuration)'=='Debug'">$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\debug\lib\fmtd.lib</LIB_BINARIES>
   </PropertyGroup>

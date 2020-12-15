@@ -91,7 +91,7 @@ if (OSX)
             ./lib/coreclr/src/pal/prebuilt/inc
             ./lib/coreclr/src/pal/inc
             ./lib/coreclr/src/inc
-            ./lib/spdlog_x64-linux/include
+            ./lib/spdlog/include
             ${OUTPUT_DEPS_DIR}/fmt/include
             ${OUTPUT_DEPS_DIR}/re2
             ${OUTPUT_DEPS_DIR}/json/include
@@ -185,7 +185,7 @@ else()
         PUBLIC lib/coreclr/src/pal/prebuilt/inc
         PUBLIC lib/coreclr/src/pal/inc
         PUBLIC lib/coreclr/src/inc
-        PUBLIC lib/spdlog_x64-linux/include
+        PUBLIC lib/spdlog/include
         PUBLIC ${OUTPUT_DEPS_DIR}/fmt/include
         PUBLIC ${OUTPUT_DEPS_DIR}/re2
         PUBLIC ${OUTPUT_DEPS_DIR}/json/include
