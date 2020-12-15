@@ -5,25 +5,32 @@ project("Datadog.Trace.ClrProfiler.Native" VERSION 1.21.2)
 
 option(OSX "Setting compilation for OSX" ${APPLE})
 
-SET(MANAGED_LOADER_DIRECTORY
-    ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0
-)
+SET(MANAGED_LOADER_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
+
+SET(OUTPUT_BIN_DIR ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
+SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
+FILE(MAKE_DIRECTORY ${OUTPUT_BIN_DIR})
+FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
+
+SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
+
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    SET(BIT64 true)
+else()
+    SET(BIT64 false)
+endif()
 
 if (OSX)
     message(STATUS "Preparing OSX build.")
 
-    SET(OUTPUT_BIN_DIR ${CMAKE_BINARY_DIR}/bin/osx_x64)
-    SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.osx_x64)
-    FILE(MAKE_DIRECTORY ${OUTPUT_BIN_DIR})
-    FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
-
-    SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
-    SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
-    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
-
     add_compile_options(-std=c++11 -stdlib=libc++ -fPIC -fms-extensions)
-    add_compile_options(-DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX=1 -DUNICODE -DOSX)
+    add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX=1 -DUNICODE -DOSX)
     add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wno-pragma-pack)
+    if (BIT64)
+        add_compile_options(-DBIT64)
+    endif (BIT64)
 
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
@@ -95,18 +102,12 @@ else()
     SET (CMAKE_C_COMPILER   "/usr/bin/clang")
     SET (CMAKE_CXX_COMPILER "/usr/bin/clang++")
 
-    SET(OUTPUT_BIN_DIR ${CMAKE_BINARY_DIR}/bin/linux_x64)
-    SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.linux_x64)
-    FILE(MAKE_DIRECTORY ${OUTPUT_BIN_DIR})
-    FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
-
-    SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
-    SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
-    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
-
     add_compile_options(-std=c++11 -fPIC -fms-extensions)
-    add_compile_options(-DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE -DLINUX)
+    add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE -DLINUX)
     add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wno-pragmas)
+    if (BIT64)
+        add_compile_options(-DBIT64)
+    endif (BIT64)
 
     add_custom_command(
         OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
