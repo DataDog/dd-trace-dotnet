@@ -13,6 +13,11 @@ namespace Datadog.Trace.Tests.PlatformHelpers
     [AzureAppServicesRestorer]
     public class AzureAppServicesMetadataTests
     {
+        private const string AppServiceKind = "app";
+        private const string AppServiceType = "app";
+        private const string FunctionKind = "functionapp";
+        private const string FunctionType = "function";
+
         private static readonly List<string> EnvVars = new List<string>()
         {
             AzureAppServices.AzureAppServicesContextKey,
@@ -27,6 +32,36 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         private static readonly string SiteResourceGroup = "apm-dotnet-site-resource-group";
         private static readonly string ExpectedResourceId =
             $"/subscriptions/{SubscriptionId}/resourcegroups/{SiteResourceGroup}/providers/microsoft.web/sites/{DeploymentId}".ToLowerInvariant();
+
+        private static readonly string FunctionsVersion = "~3";
+        private static readonly string FunctionsRuntime = "dotnet";
+
+        [Fact]
+        public void AzureContext_AzureAppService_Default()
+        {
+            var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
+            var metadata = new AzureAppServices(vars);
+            Assert.Equal(actual: AzureContext.AzureAppService, expected: metadata.AzureContext);
+            Assert.Equal(actual: AppServiceKind, expected: metadata.SiteKind);
+            Assert.Equal(actual: AppServiceType, expected: metadata.SiteType);
+        }
+
+        [Fact]
+        public void AzureContext_AzureFunction_WhenFunctionVariablesPresent()
+        {
+            var vars = GetMockVariables(
+                SubscriptionId,
+                DeploymentId,
+                PlanResourceGroup,
+                SiteResourceGroup,
+                functionsVersion: FunctionsVersion,
+                functionsRuntime: FunctionsRuntime);
+
+            var metadata = new AzureAppServices(vars);
+            Assert.Equal(actual: AzureContext.AzureFunction, expected: metadata.AzureContext);
+            Assert.Equal(actual: FunctionKind, expected: metadata.SiteKind);
+            Assert.Equal(actual: FunctionType, expected: metadata.SiteType);
+        }
 
         [Fact]
         public void ResourceId_Created_WhenAllRequirementsExist()
@@ -43,6 +78,38 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             var vars = GetMockVariables(null, null, null, null);
             var metadata = new AzureAppServices(vars);
             Assert.True(metadata.IsRelevant);
+        }
+
+        [Fact]
+        public void OperatingSystem_Set()
+        {
+            var vars = GetMockVariables(null, null, null, null);
+            var metadata = new AzureAppServices(vars);
+            Assert.Equal(expected: "windows", actual: metadata.OperatingSystem);
+        }
+
+        [Fact]
+        public void InstanceId_Set()
+        {
+            var vars = GetMockVariables(null, null, null, null);
+            var metadata = new AzureAppServices(vars);
+            Assert.Equal(expected: "instance_id", actual: metadata.InstanceId);
+        }
+
+        [Fact]
+        public void InstanceName_Set()
+        {
+            var vars = GetMockVariables(null, null, null, null);
+            var metadata = new AzureAppServices(vars);
+            Assert.Equal(expected: "instance_name", actual: metadata.InstanceName);
+        }
+
+        [Fact]
+        public void Runtime_Set()
+        {
+            var vars = GetMockVariables(null, null, null, null);
+            var metadata = new AzureAppServices(vars);
+            Assert.True(metadata.Runtime?.Length > 0);
         }
 
         [Fact]
@@ -126,13 +193,40 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             Assert.True(!nonRootSpansWithTag.Any(), "No non root spans should have the resource id.");
         }
 
-        private IDictionary GetMockVariables(string subscriptionId, string deploymentId, string planResourceGroup, string siteResourceGroup)
+        private IDictionary GetMockVariables(
+            string subscriptionId,
+            string deploymentId,
+            string planResourceGroup,
+            string siteResourceGroup,
+            string functionsVersion = null,
+            string functionsRuntime = null)
         {
             var vars = Environment.GetEnvironmentVariables();
+
+            if (vars.Contains(AzureAppServices.InstanceNameKey))
+            {
+                // This is the COMPUTERNAME key which we'll remove for consistent testing
+                vars.Remove(AzureAppServices.InstanceNameKey);
+            }
+
             vars.Add(AzureAppServices.AzureAppServicesContextKey, "1");
             vars.Add(AzureAppServices.WebsiteOwnerNameKey, $"{subscriptionId}+{planResourceGroup}-EastUSwebspace");
             vars.Add(AzureAppServices.ResourceGroupKey, siteResourceGroup);
             vars.Add(AzureAppServices.SiteNameKey, deploymentId);
+            vars.Add(AzureAppServices.OperatingSystemKey, "windows");
+            vars.Add(AzureAppServices.InstanceIdKey, "instance_id");
+            vars.Add(AzureAppServices.InstanceNameKey, "instance_name");
+
+            if (functionsVersion != null)
+            {
+                vars.Add(AzureAppServices.FunctionsExtensionVersionKey, functionsVersion);
+            }
+
+            if (functionsRuntime != null)
+            {
+                vars.Add(AzureAppServices.FunctionsWorkerRuntimeKey, functionsRuntime);
+            }
+
             return vars;
         }
 

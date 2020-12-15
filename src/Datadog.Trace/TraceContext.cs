@@ -141,9 +141,15 @@ namespace Datadog.Trace
             if (AzureAppServices.Metadata?.IsRelevant ?? false)
             {
                 span.SetTag(Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
+                span.SetTag(Tags.AzureAppServicesSiteKind, AzureAppServices.Metadata.SiteKind);
+                span.SetTag(Tags.AzureAppServicesSiteType, AzureAppServices.Metadata.SiteType);
                 span.SetTag(Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata.ResourceGroup);
                 span.SetTag(Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
                 span.SetTag(Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
+                span.SetTag(Tags.AzureAppServicesInstanceId, AzureAppServices.Metadata.InstanceId);
+                span.SetTag(Tags.AzureAppServicesInstanceName, AzureAppServices.Metadata.InstanceName);
+                span.SetTag(Tags.AzureAppServicesOperatingSystem, AzureAppServices.Metadata.OperatingSystem);
+                span.SetTag(Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
             }
 
             // set the origin tag to the root span of each trace/subtrace
