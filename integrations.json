@@ -2298,7 +2298,7 @@
           "signature_types": [
             "System.Net.WebResponse"
           ],
-          "minimum_major": 4,
+          "minimum_major": 2,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
