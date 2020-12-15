@@ -63,7 +63,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [Fact]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
         public void SpansDisabledByAdoNetExcludedTypes()
         {
             var totalSpanCount = 21;
