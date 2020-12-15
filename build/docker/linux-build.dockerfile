@@ -29,7 +29,7 @@ RUN chmod +x /bin/wait-for-it
 
 FROM ubuntu:14.04 AS build-native-base
 RUN apt-get update && \
-    apt-get install -y \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
         git \
         wget \
         curl \
