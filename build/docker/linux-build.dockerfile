@@ -27,7 +27,7 @@ RUN chmod +x /bin/wait-for-it
 
 
 
-FROM ubuntu:14.04 AS build-native-base
+FROM ubuntu:20.04 AS build-native-base
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
         git \
@@ -36,8 +36,10 @@ RUN apt-get update && \
         cmake \
         make \
         llvm \
-        clang
-
+        clang \
+        gcc
+ENV CXX=clang++
+ENV CC=clang
 
 
 FROM build-managed-base as build-managed

@@ -8,4 +8,7 @@ RUN apt-get update && \
         cmake \
         make \
         llvm \
-        clang
+        clang \ 
+        gcc
+ENV CXX=clang++
+ENV CC=clang
