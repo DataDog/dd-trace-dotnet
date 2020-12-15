@@ -132,6 +132,14 @@ namespace Samples.WebRequest.NetFramework20
                     // listener was stopped,
                     // ignore to let the loop end and the method return
                 }
+                catch (ObjectDisposedException) 
+                { 
+                    // the response has been already disposed. 
+                } 
+                catch (InvalidOperationException) when (!listener.IsListening) 
+                { 
+                    // looks like it can happen on .NET Core when listener is stopped 
+                } 
             }
         }
     }
