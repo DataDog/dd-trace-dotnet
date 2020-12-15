@@ -99,8 +99,8 @@ if (OSX)
 else()
     message(STATUS "Preparing Linux build.")
 
-    SET (CMAKE_C_COMPILER   "/usr/bin/clang")
-    SET (CMAKE_CXX_COMPILER "/usr/bin/clang++")
+    SET (CMAKE_C_COMPILER   /usr/bin/clang)
+    SET (CMAKE_CXX_COMPILER /usr/bin/clang++)
 
     add_compile_options(-std=c++11 -fPIC -fms-extensions)
     add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE -DLINUX)
