@@ -187,22 +187,54 @@ namespace Datadog.Trace
         public const string Language = "language";
 
         /// <summary>
-        /// The resource id of the site instance in azure app services where the traced application is running.
+        /// The resource id of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesResourceId = "aas.resource.id";
 
         /// <summary>
-        /// The resource group of the site instance in azure app services where the traced application is running.
+        /// The resource group of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesResourceGroup = "aas.resource.group";
 
         /// <summary>
-        /// The site name of the site instance in azure app services where the traced application is running.
+        /// The site name of the site instance in Azure where the traced application is running.
         /// </summary>
         public const string AzureAppServicesSiteName = "aas.site.name";
 
         /// <summary>
-        /// The subscription id of the site instance in azure app services where the traced application is running.
+        /// The instance name in Azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesInstanceName = "aas.environment.instance_name";
+
+        /// <summary>
+        /// The instance id in Azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesInstanceId = "aas.environment.instance_id";
+
+        /// <summary>
+        /// The operating system in Azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesOperatingSystem = "aas.environment.os";
+
+        /// <summary>
+        /// The runtime in Azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesRuntime = "aas.environment.runtime";
+
+        /// <summary>
+        /// The kind of application instance running in Azure.
+        /// Possible values: app, api, mobileapp, app_linux, app_linux_container, functionapp, functionapp_linux, functionapp_linux_container
+        /// </summary>
+        public const string AzureAppServicesSiteKind = "aas.site.kind";
+
+        /// <summary>
+        /// The type of application instance running in Azure.
+        /// Possible values: app, function
+        /// </summary>
+        public const string AzureAppServicesSiteType = "aas.site.type";
+
+        /// <summary>
+        /// The subscription id of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesSubscriptionId = "aas.subscription.id";
 
