@@ -98,15 +98,19 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData("404 -401, 419,344_ 23-302, 201,_5633-55", "401,402,403,404,419,201")]
+        [InlineData("404 -401, 419,344_ 23-302, 201,_5633-55, 409-411", "401,402,403,404,419,201,409,410,411")]
         [InlineData("-33, 500-503,113#53,500-502-200,456_2, 590-590", "500,501,502,503,590")]
-        public void ParseHttpCodesReturnsExpectedKeys(string original, string expected)
+        public void ParseHttpCodes(string original, string expected)
         {
             var tracerSettings = new TracerSettings();
 
-            string joinedDictionaryKeys = string.Join(",", tracerSettings.ParseHttpCodesToDictionary(original).Keys);
+            bool[] errorStatusCodesArray = tracerSettings.ParseHttpCodesToArray(original);
+            string[] expectedKeysArray = expected.Split(',');
 
-            Assert.Equal(expected, joinedDictionaryKeys);
+            foreach (var value in expectedKeysArray)
+            {
+                Assert.True(errorStatusCodesArray[int.Parse(value)]);
+            }
         }
     }
 }

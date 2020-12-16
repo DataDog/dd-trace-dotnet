@@ -73,7 +73,7 @@ namespace Datadog.Trace.ExtensionMethods
             span.SetTag(Tags.HttpStatusCode, statusCodeString);
 
             // Check the customers SERVER http statuses that should be marked as errors
-            if (Tracer.Instance.Settings.HttpServerErrorCodes.TryGetValue(statusCode, out _))
+            if (Tracer.Instance.Settings.HttpServerErrorStatusCodes[statusCode])
             {
                 span.Error = true;
 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ExtensionMethods
             span.SetTag(Tags.HttpStatusCode, statusCodeString);
 
             // Check the customers CLIENT http statuses that should be marked as errors
-            if (Tracer.Instance.Settings.HttpClientErrorCodes.TryGetValue(statusCode, out _))
+            if (Tracer.Instance.Settings.HttpClientErrorStatusCodes[statusCode])
             {
                 span.Error = true;
 
