@@ -88,11 +88,18 @@ namespace Datadog.Trace.ClrProfiler
                 return null;
             }
 
+            var commandType = command.GetType();
+            if (tracer.Settings.AdoNetExcludedTypes.Count > 0 && tracer.Settings.AdoNetExcludedTypes.Contains(commandType.FullName))
+            {
+                // AdoNet type disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             Scope scope = null;
 
             try
             {
-                string dbType = GetDbType(command.GetType().Name);
+                string dbType = GetDbType(commandType.Name);
 
                 if (dbType == null)
                 {
