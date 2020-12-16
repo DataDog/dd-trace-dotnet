@@ -1,17 +1,15 @@
 cmake_minimum_required (VERSION 3.8)
 cmake_policy(SET CMP0015 NEW)
 
+# ******************************************************
 # Project definition
+# ******************************************************
+
 project("Datadog.Trace.ClrProfiler.Native" VERSION 1.21.2)
 
 # ******************************************************
 # Environment detection
 # ******************************************************
-
-# Detect bitness of the build
-if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-    SET(BIT64 true)
-endif()
 
 # Detect operating system
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -25,15 +23,59 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     SET(ISMACOS true)
 endif()
 
+# Detect bitness of the build
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(STATUS "Setting compilation for 64bits processor")
+    SET(BIT64 true)
+endif()
+
 # Detect architecture
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL amd64)
+    message(STATUS "Architecture is x64/AMD64")
     SET(ISAMD64 true)
 elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL x86 OR CMAKE_SYSTEM_PROCESSOR STREQUAL i686)
+    message(STATUS "Architecture is x86")
     SET(ISX86 true)
 elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
+    message(STATUS "Architecture is ARM64")
     SET(ISARM64 true)
 elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm)
+    message(STATUS "Architecture is ARM")
     SET(ISARM true)
+endif()
+
+# ******************************************************
+# Detect prerequisites
+# ******************************************************
+
+if (NOT EXISTS /usr/bin/git)
+    message(FATAL_ERROR "GIT is required to build the project")
+else()
+    message(STATUS "GIT was found")
+endif()
+
+if (NOT EXISTS /usr/bin/gcc)
+    message(FATAL_ERROR "GCC is required to build the project's dependencies")
+else()
+    message(STATUS "GCC was found")
+endif()
+
+if (NOT EXISTS /usr/bin/clang)
+    message(FATAL_ERROR "CLANG is required to build the project")
+else()
+    message(STATUS "CLANG was found")
+endif()
+
+if (NOT EXISTS /usr/bin/clang++)
+    message(FATAL_ERROR "CLANG++ is required to build the project")
+else()
+    message(STATUS "CLANG++ was found")
+endif()
+
+if (NOT EXISTS ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
+    message(FATAL_ERROR "Datadog.Trace.ClrProfiler.Loader must be build first.")
+else()
+    message(STATUS "Datadog.Trace.ClrProfiler.Loader was found")
 endif()
 
 # ******************************************************
@@ -88,30 +130,34 @@ SET(MANAGED_LOADER_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcor
 if (ISMACOS)
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
-            COMMAND cd ${OUTPUT_TMP_DIR} && touch stub.c && gcc -o stub.o -c stub.c && cp ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll Datadog.Trace.ClrProfiler.Managed.Loader.dll && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o -sectcreate binary dll Datadog.Trace.ClrProfiler.Managed.Loader.dll stub.o
+            COMMAND touch stub.c && gcc -o stub.o -c stub.c && cp ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll Datadog.Trace.ClrProfiler.Managed.Loader.dll && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o -sectcreate binary dll Datadog.Trace.ClrProfiler.Managed.Loader.dll stub.o
             DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll ${OUTPUT_DEPS_DIR}/json ${OUTPUT_DEPS_DIR}/re2 ${OUTPUT_DEPS_DIR}/fmt
+            WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o
-            COMMAND cd ${OUTPUT_TMP_DIR} && touch stub.c && gcc -o stub.o -c stub.c && cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb" Datadog.Trace.ClrProfiler.Managed.Loader.pdb && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o -sectcreate binary pdb Datadog.Trace.ClrProfiler.Managed.Loader.pdb stub.o
+            COMMAND touch stub.c && gcc -o stub.o -c stub.c && cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb" Datadog.Trace.ClrProfiler.Managed.Loader.pdb && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o -sectcreate binary pdb Datadog.Trace.ClrProfiler.Managed.Loader.pdb stub.o
             DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb ${OUTPUT_DEPS_DIR}/json ${OUTPUT_DEPS_DIR}/re2 ${OUTPUT_DEPS_DIR}/fmt
+            WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
 elseif(ISLINUX)
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
-            COMMAND cd ${OUTPUT_TMP_DIR} && cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll" Datadog.Trace.ClrProfiler.Managed.Loader.dll && ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o Datadog.Trace.ClrProfiler.Managed.Loader.dll
+            COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll" Datadog.Trace.ClrProfiler.Managed.Loader.dll && ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o Datadog.Trace.ClrProfiler.Managed.Loader.dll
             DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll ${OUTPUT_DEPS_DIR}/json ${OUTPUT_DEPS_DIR}/re2 ${OUTPUT_DEPS_DIR}/fmt
+            WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o
-            COMMAND cd ${OUTPUT_TMP_DIR} && cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb" Datadog.Trace.ClrProfiler.Managed.Loader.pdb && ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o Datadog.Trace.ClrProfiler.Managed.Loader.pdb
+            COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb" Datadog.Trace.ClrProfiler.Managed.Loader.pdb && ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o Datadog.Trace.ClrProfiler.Managed.Loader.pdb
             DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb ${OUTPUT_DEPS_DIR}/json ${OUTPUT_DEPS_DIR}/re2 ${OUTPUT_DEPS_DIR}/fmt
+            WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
 endif()
 SET(GENERATED_OBJ_FILES
         ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
         ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o
-        )
+)
 SET_SOURCE_FILES_PROPERTIES(
         ${GENERATED_OBJ_FILES}
         PROPERTIES
@@ -170,7 +216,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         string.cpp
         util.cpp
         ${GENERATED_OBJ_FILES}
-        )
+)
 
 set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
 
@@ -184,21 +230,21 @@ target_include_directories("Datadog.Trace.ClrProfiler.Native.static"
         PUBLIC ${OUTPUT_DEPS_DIR}/fmt/include
         PUBLIC ${OUTPUT_DEPS_DIR}/re2
         PUBLIC ${OUTPUT_DEPS_DIR}/json/include
-        )
+)
 
 # Define linker libraries
 if (ISMACOS)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
         ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
-        )
+    )
 elseif(ISLINUX)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
-            ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
-            ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
-            -static-libgcc
-            -static-libstdc++
-            )
+        ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
+        ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
+        -static-libgcc
+        -static-libstdc++
+    )
 endif()
 
 # ******************************************************
@@ -206,9 +252,9 @@ endif()
 # ******************************************************
 if (ISMACOS)
     add_library("Datadog.Trace.ClrProfiler.Native" SHARED
-            dllmain.cpp
-            interop.cpp
-            ${GENERATED_OBJ_FILES}
+        dllmain.cpp
+        interop.cpp
+        ${GENERATED_OBJ_FILES}
     )
 else()
     add_library("Datadog.Trace.ClrProfiler.Native" SHARED
