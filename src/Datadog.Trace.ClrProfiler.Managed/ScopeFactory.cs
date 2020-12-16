@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             var commandType = command.GetType();
-            if (tracer.Settings.AdoNetExcludedTypes.Contains(commandType.FullName))
+            if (tracer.Settings.AdoNetExcludedTypes.Count > 0 && tracer.Settings.AdoNetExcludedTypes.Contains(commandType.FullName))
             {
                 // AdoNet type disabled, don't create a scope, skip this trace
                 return null;
