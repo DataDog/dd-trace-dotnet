@@ -7,33 +7,31 @@ namespace Datadog.Trace.HttpOverStreams
     internal class DatadogHttpHeaderHelper
     {
         public const char CarriageReturn = '\r';
-        public const char LineFeed = '\n';
-        public static readonly string CrLf = Environment.NewLine;
-        public static readonly int CrLfLength = CrLf.Length;
+        public static readonly string NewLine = Environment.NewLine;
+        public static readonly int CrLfLength = NewLine.Length;
 
         public static async Task WriteLeadingHeaders(HttpRequest request, StreamWriter writer)
         {
             // optimization opportunity: cache the ascii-encoded bytes of commonly-used headers
-            await writer.WriteAsync($"{request.Verb} {request.Path} HTTP/1.1{CrLf}").ConfigureAwait(false);
-            await writer.WriteAsync($"Host: {request.Host}{CrLf}").ConfigureAwait(false);
-            await writer.WriteAsync($"Accept-Encoding: identity{CrLf}").ConfigureAwait(false);
-            await writer.WriteAsync($"Content-Length: {request.Content.Length ?? 0}{CrLf}").ConfigureAwait(false);
+            await writer.WriteAsync($"{request.Verb} {request.Path} HTTP/1.1{NewLine}").ConfigureAwait(false);
+            await writer.WriteAsync($"Host: {request.Host}{NewLine}").ConfigureAwait(false);
+            await writer.WriteAsync($"Accept-Encoding: identity{NewLine}").ConfigureAwait(false);
+            await writer.WriteAsync($"Content-Length: {request.Content.Length ?? 0}{NewLine}").ConfigureAwait(false);
 
-            await writer.WriteAsync($"{AgentHttpHeaderNames.Language}: .NET{CrLf}").ConfigureAwait(false);
-            await writer.WriteAsync($"{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.AssemblyVersion}{CrLf}").ConfigureAwait(false);
+            await writer.WriteAsync($"{AgentHttpHeaderNames.Language}: .NET{NewLine}").ConfigureAwait(false);
+            await writer.WriteAsync($"{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.AssemblyVersion}{NewLine}").ConfigureAwait(false);
             // don't add automatic instrumentation to requests from datadog code
-            await writer.WriteAsync($"{HttpHeaderNames.TracingEnabled}: false{CrLf}").ConfigureAwait(false);
+            await writer.WriteAsync($"{HttpHeaderNames.TracingEnabled}: false{NewLine}").ConfigureAwait(false);
         }
 
-        public static async Task WriteHeader(StreamWriter writer, HttpHeaders.HttpHeader header)
+        public static Task WriteHeader(StreamWriter writer, HttpHeaders.HttpHeader header)
         {
-            await writer.WriteAsync($"{header.Name}: {header.Value}{CrLf}").ConfigureAwait(false);
+            return writer.WriteAsync($"{header.Name}: {header.Value}{NewLine}");
         }
 
-        public static async Task WriteEndOfHeaders(StreamWriter writer)
+        public static Task WriteEndOfHeaders(StreamWriter writer)
         {
-            await writer.WriteAsync($"Content-Type: application/msgpack{CrLf}").ConfigureAwait(false);
-            await writer.WriteAsync(CrLf).ConfigureAwait(false);
+            return writer.WriteAsync($"Content-Type: application/msgpack{NewLine}{NewLine}");
         }
 
         public static void SkipFeed(StreamReader reader)

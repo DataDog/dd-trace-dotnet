@@ -25,19 +25,22 @@ namespace Datadog.Trace.HttpOverStreams
 
         public Encoding GetContentEncoding()
         {
-            if (ContentType == null)
+            // reduce getter calls
+            var contentType = ContentType;
+
+            if (contentType == null)
             {
                 return null;
             }
 
-            if (string.Equals("application/json", ContentType, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals("application/json", contentType, StringComparison.OrdinalIgnoreCase))
             {
                 // Default
                 return Utf8Encoding;
             }
 
             // text/plain; charset=utf-8
-            string[] pairs = ContentType?.Split(';');
+            string[] pairs = contentType.Split(';');
 
             foreach (string pair in pairs)
             {
@@ -55,7 +58,7 @@ namespace Datadog.Trace.HttpOverStreams
                 }
             }
 
-            Log.Warning("Assuming default UTF-8, Could not find an encoding for: {0}", ContentType);
+            Log.Warning("Assuming default UTF-8, Could not find an encoding for: {0}", contentType);
             return Utf8Encoding;
         }
     }

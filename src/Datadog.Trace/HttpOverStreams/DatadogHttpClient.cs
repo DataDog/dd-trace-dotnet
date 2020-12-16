@@ -14,11 +14,11 @@ namespace Datadog.Trace.HttpOverStreams
 
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
         {
-            await SendRequest(request, requestStream).ConfigureAwait(false);
-            return await ReadResponse(responseStream).ConfigureAwait(false);
+            await SendRequestAsync(request, requestStream).ConfigureAwait(false);
+            return await ReadResponseAsync(responseStream).ConfigureAwait(false);
         }
 
-        private async Task SendRequest(HttpRequest request, Stream requestStream)
+        private async Task SendRequestAsync(HttpRequest request, Stream requestStream)
         {
             // TODO: Determine if it's always ASCII
             using (var writer = new StreamWriter(requestStream, Encoding.ASCII, BufferSize, leaveOpen: true))
@@ -38,7 +38,7 @@ namespace Datadog.Trace.HttpOverStreams
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
 
-        private Task<HttpResponse> ReadResponse(Stream responseStream)
+        private async Task<HttpResponse> ReadResponseAsync(Stream responseStream)
         {
             var headers = new HttpHeaders();
             int statusCode = 0;
@@ -46,7 +46,7 @@ namespace Datadog.Trace.HttpOverStreams
 
             // hack: buffer the entire response so we can seek
             var memoryStream = new MemoryStream();
-            responseStream.CopyTo(memoryStream);
+            await responseStream.CopyToAsync(memoryStream);
             memoryStream.Position = 0;
             int streamPosition = 0;
 
@@ -140,7 +140,7 @@ namespace Datadog.Trace.HttpOverStreams
                 throw new DatadogHttpRequestException("Content length from http headers does not match content's actual length.");
             }
 
-            return Task.FromResult(new HttpResponse(statusCode, responseMessage, headers, new StreamContent(memoryStream, length)));
+            return new HttpResponse(statusCode, responseMessage, headers, new StreamContent(memoryStream, length));
         }
     }
 }

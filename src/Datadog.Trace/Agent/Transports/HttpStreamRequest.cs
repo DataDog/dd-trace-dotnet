@@ -47,7 +47,8 @@ namespace Datadog.Trace.Agent.Transports
                 await response.Content.CopyToAsync(responseContentStream).ConfigureAwait(false);
                 responseContentStream.Position = 0;
 
-                if (response.ContentLength != null && response.ContentLength != responseContentStream.Length)
+                var contentLength = response.ContentLength;
+                if (contentLength != null && contentLength != responseContentStream.Length)
                 {
                     throw new Exception("Content length from http headers does not match content's actual length.");
                 }
