@@ -56,10 +56,20 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
 
 #ifdef _WIN32
               " Windows"
-#elif OSX
+#elif MACOS
               " macOS"
 #else
               " Linux"
+#endif
+
+#ifdef AMD64
+            , " (amd64)"
+#elif X86
+            , " (x86)"
+#elif ARM64
+            , " (arm64)"
+#elif ARM
+            , " (arm)"
 #endif
   );
   trace::Debug("ClassFactory::CreateInstance");

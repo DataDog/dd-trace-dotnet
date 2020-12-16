@@ -9,7 +9,7 @@ namespace trace {
 
 typedef std::basic_string<WCHAR> WSTRING;
 
-#ifndef OSX
+#ifndef MACOS
 typedef std::basic_stringstream<WCHAR> WSTRINGSTREAM;
 #endif
 
