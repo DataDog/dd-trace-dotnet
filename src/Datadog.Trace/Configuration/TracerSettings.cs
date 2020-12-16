@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -148,15 +149,15 @@ namespace Datadog.Trace.Configuration
                                           // default value
                                           true;
 
-            var httpServerErrorCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatuses) ??
+            var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
                                            // Default value
                                            "500-599";
-            HttpServerErrorCodes = ParseHttpCodesToDictionary(httpServerErrorCodes);
+            HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
 
-            var httpClientErrorCodes = source?.GetString(ConfigurationKeys.HttpClientErrorStatuses) ??
+            var httpClientErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpClientErrorStatusCodes) ??
                                         // Default value
                                         "400-499";
-            HttpClientErrorCodes = ParseHttpCodesToDictionary(httpClientErrorCodes);
+            HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
 
             TraceQueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
                         ?? 1000;
@@ -310,14 +311,14 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for server integrations.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpServerErrorStatuses"/>
-        public IDictionary<int, bool> HttpServerErrorCodes { get; set; }
+        /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
+        public bool[] HttpServerErrorStatusCodes { get; set; }
 
         /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for client integrations.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpClientErrorStatuses"/>
-        public IDictionary<int, bool> HttpClientErrorCodes { get; set; }
+        /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
+        public bool[] HttpClientErrorStatusCodes { get; set; }
 
         /// <summary>
         /// Gets a value indicating the size of the trace buffer
@@ -388,48 +389,48 @@ namespace Datadog.Trace.Configuration
             return value == "1" || value == "true";
         }
 
-        internal IDictionary<int, bool> ParseHttpCodesToDictionary(string httpStatusErrorCodes)
+        internal bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)
         {
-            IDictionary<int, bool> httpErrorCodesDictionary = new Dictionary<int, bool>();
+            bool[] httpErrorCodesArray = new bool[600];
 
-            string[] configurationsArray = httpStatusErrorCodes.Split();
-            configurationsArray = string.Join(string.Empty, configurationsArray).Split(',');
+            string[] configurationsArray = httpStatusErrorCodes.Replace(" ", string.Empty).Split(',');
 
             foreach (string statusConfiguration in configurationsArray)
             {
-                int parsedStatus;
+                int startStatus;
 
+                // Checks that the value about to be used follows the `401-404` structure or single 3 digit number i.e. `401` else log the warning
                 if (!Regex.IsMatch(statusConfiguration, @"^\d{3}-\d{3}$|^\d{3}$"))
                 {
                     Log.Warning("Wrong format '{0}' for DD_HTTP_SERVER/CLIENT_ERROR_STATUSES configuration.", statusConfiguration);
                 }
-                else if (int.TryParse(statusConfiguration, out parsedStatus))
+
+                // If statusConfiguration equals a single value i.e. `401` parse the value and save to the array
+                else if (int.TryParse(statusConfiguration, out startStatus))
                 {
-                    httpErrorCodesDictionary[parsedStatus] = true;
+                    httpErrorCodesArray[startStatus] = true;
                 }
                 else
                 {
-                    var stringStatusCodeRange = statusConfiguration.Split('-');
-                    int[] intStatusCodeRange = { int.Parse(stringStatusCodeRange[0]), int.Parse(stringStatusCodeRange[1]) };
+                    string[] statusCodeLimitsRange = statusConfiguration.Split('-');
 
-                    parsedStatus = intStatusCodeRange[0];
+                    startStatus = int.Parse(statusCodeLimitsRange[0]);
+                    int endStatus = int.Parse(statusCodeLimitsRange[1]);
 
-                    if (intStatusCodeRange[1] < intStatusCodeRange[0])
+                    if (endStatus < startStatus)
                     {
-                        parsedStatus = intStatusCodeRange[1];
-                        intStatusCodeRange[1] = intStatusCodeRange[0];
-                        intStatusCodeRange[0] = parsedStatus;
+                        startStatus = endStatus;
+                        endStatus = int.Parse(statusCodeLimitsRange[0]);
                     }
 
-                    while (parsedStatus <= intStatusCodeRange[1])
+                    for (int statusCode = startStatus; statusCode <= endStatus; statusCode++)
                     {
-                        httpErrorCodesDictionary[parsedStatus] = true;
-                        parsedStatus++;
+                        httpErrorCodesArray[statusCode] = true;
                     }
                 }
             }
 
-            return httpErrorCodesDictionary;
+            return httpErrorCodesArray;
         }
     }
 }
