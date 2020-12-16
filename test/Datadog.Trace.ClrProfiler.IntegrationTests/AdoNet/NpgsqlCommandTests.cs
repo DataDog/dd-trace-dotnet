@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             SetEnvironmentVariable(ConfigurationKeys.AdoNetExcludedTypes, "System.Data.SqlClient.SqlCommand;Microsoft.Data.SqlClient.SqlCommand;MySql.Data.MySqlClient.MySqlCommand;Npgsql.NpgsqlCommand");
 
-            string packageVersion = PackageVersions.SystemDataSqlClient.First()[0] as string;
+            string packageVersion = PackageVersions.Npgsql.First()[0] as string;
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
