@@ -3,7 +3,7 @@ cmake_policy(SET CMP0015 NEW)
 
 option(OSX "Setting compilation for OSX" OFF)
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 1.21.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 1.21.1)
 
 SET(MANAGED_LOADER_DIRECTORY
     ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0
