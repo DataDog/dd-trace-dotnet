@@ -235,7 +235,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (tags != null)
                 {
-                    var bodyValue = body.As<IBody>();
+                    var bodyValue = body.As<BodyStruct>();
                     tags.MessageSize = bodyValue.Length.ToString();
                 }
 
@@ -324,16 +324,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             finally
             {
-                IBasicGetResult basicGetResult = null;
                 SpanContext propagatedContext = null;
+                string messageSize = null;
 
                 if (result != null)
                 {
-                    basicGetResult = result.As<IBasicGetResult>();
-                }
-
-                if (basicGetResult != null)
-                {
+                    var basicGetResult = result.As<BasicGetResultStruct>();
+                    messageSize = basicGetResult.Body.Length.ToString();
                     var basicPropertiesHeaders = basicGetResult.BasicProperties?.Headers;
 
                     // try to extract propagated context values from headers
@@ -358,9 +355,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     scope.Span.ResourceName = $"{command} {queueDisplayName}";
                 }
 
-                if (basicGetResult != null)
+                if (messageSize != null)
                 {
-                    tags.MessageSize = basicGetResult.Body.Length.ToString();
+                    tags.MessageSize = messageSize;
                 }
 
                 if (exception != null)
@@ -543,7 +540,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
                     scope.Span.ResourceName = $"{command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
-                    var bodyValue = body.As<IBody>();
+                    var bodyValue = body.As<BodyStruct>();
                     tags.MessageSize = bodyValue.Length.ToString();
 
                     var basicPropertiesValue = basicProperties.As<IBasicProperties>();
@@ -857,17 +854,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1600 // Elements must be documented
-        public interface IBasicGetResult
+        [DuckCopy]
+        public struct BasicGetResultStruct
         {
             /// <summary>
             /// Gets the message body of the result
             /// </summary>
-            IBody Body { get; }
+            public BodyStruct Body;
 
             /// <summary>
             /// Gets the message properties
             /// </summary>
-            IBasicProperties BasicProperties { get; }
+            public IBasicProperties BasicProperties;
         }
 
         public interface IBasicProperties
@@ -890,12 +888,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             bool IsDeliveryModePresent();
         }
 
-        public interface IBody
+        [DuckCopy]
+        public struct BodyStruct
         {
             /// <summary>
             /// Gets the length of the message body
             /// </summary>
-            int Length { get; }
+            public int Length;
         }
     }
 }
