@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog;
@@ -53,7 +54,9 @@ namespace Datadog.Trace.Tests.Logging
 
             _logger.Debug("Second debug level message");
 
-            Assert.Equal(2, _logEventSink.Events.Count);
+            Assert.True(
+                _logEventSink.Events.Count == 2,
+                $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
         }
 
         private class CollectionSink : ILogEventSink

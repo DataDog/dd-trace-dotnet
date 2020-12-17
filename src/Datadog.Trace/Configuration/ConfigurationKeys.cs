@@ -55,6 +55,14 @@ namespace Datadog.Trace.Configuration
         public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
 
         /// <summary>
+        /// Configuration key for a list of AdoNet types that will be excluded from automatic instrumentation.
+        /// Default is empty (all AdoNet types are included in automatic instrumentation).
+        /// Supports multiple values separated with semi-colons.
+        /// </summary>
+        /// <seealso cref="TracerSettings.AdoNetExcludedTypes"/>
+        public const string AdoNetExcludedTypes = "DD_TRACE_ADONET_EXCLUDED_TYPES";
+
+        /// <summary>
         /// Configuration key for the Agent host where the Tracer can send traces.
         /// Overridden by <see cref="AgentUri"/> if present.
         /// Default value is "localhost".

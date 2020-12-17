@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(new CustomSamplingRule(0.5f, "Allow_nothing", ".*", ".*"));
             RunSamplerTest(
                 sampler,
-                10_000, // Higher number for lower variance
+                50_000, // Higher number for lower variance
                 0.5f,
                 0.05f);
         }
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             RunSamplerTest(
                 sampler,
-                10_000, // Higher number for lower variance
+                50_000, // Higher number for lower variance
                 FallbackRate,
                 0.05f);
         }

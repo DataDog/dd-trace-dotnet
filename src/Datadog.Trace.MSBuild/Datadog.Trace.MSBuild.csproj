@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>1.21.0</Version>
+    <Version>1.21.1</Version>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
