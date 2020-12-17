@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
     public class HttpClientHandlerIntegration
     {
         private const string IntegrationName = "HttpMessageHandler";
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpMessageHandler));
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         /// <summary>
         /// OnMethodBegin callback

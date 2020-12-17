@@ -21,6 +21,19 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         internal static DynamicMethod CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
         {
+            /*
+             * OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
+             *      - CallTargetState OnMethodBegin<TTarget>(TTarget instance);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, TArg1 arg1);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 arg1, TArg2);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(TTarget instance, TArg1 arg1, TArg2, ...);
+             *      - CallTargetState OnMethodBegin<TTarget>();
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1>(TArg1 arg1);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TArg1 arg1, TArg2);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(TArg1 arg1, TArg2, ...);
+             *
+             */
+
             Log.Debug($"Creating BeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
             MethodInfo onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodBeginMethodInfo is null)
@@ -42,11 +55,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ParameterInfo[] onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
             if (onMethodBeginParameters.Length < argumentsTypes.Length)
             {
-                throw new ArgumentException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} paremeters in type: {integrationType.FullName} has less parameters than required.");
+                throw new ArgumentException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
             }
             else if (onMethodBeginParameters.Length > argumentsTypes.Length + 1)
             {
-                throw new ArgumentException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
+                throw new ArgumentException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
             }
             else if (onMethodBeginParameters.Length != argumentsTypes.Length && onMethodBeginParameters[0].ParameterType != genericArgumentsTypes[0])
             {
@@ -126,10 +139,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
 
             // Call method
-            // Log.Information("Generic Types: " + string.Join(", ", callGenericTypes.Select(t => t.FullName)));
-            // Log.Information("Method: " + onMethodBeginMethodInfo);
             onMethodBeginMethodInfo = onMethodBeginMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
-            // Log.Information("Method: " + onMethodBeginMethodInfo);
             ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, null);
             ilWriter.Emit(OpCodes.Ret);
 
@@ -139,6 +149,19 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         internal static DynamicMethod CreateSlowBeginMethodDelegate(Type integrationType, Type targetType)
         {
+            /*
+             * OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
+             *      - CallTargetState OnMethodBegin<TTarget>(TTarget instance);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, TArg1 arg1);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 arg1, TArg2);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(TTarget instance, TArg1 arg1, TArg2, ...);
+             *      - CallTargetState OnMethodBegin<TTarget>();
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1>(TArg1 arg1);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TArg1 arg1, TArg2);
+             *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(TArg1 arg1, TArg2, ...);
+             *
+             */
+
             Log.Debug($"Creating SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
             MethodInfo onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodBeginMethodInfo is null)
@@ -233,10 +256,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
 
             // Call method
-            // Log.Information("Generic Types: " + string.Join(", ", callGenericTypes.Select(t => t.FullName)));
-            // Log.Information("Method: " + onMethodBeginMethodInfo);
             onMethodBeginMethodInfo = onMethodBeginMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
-            // Log.Information("Method: " + onMethodBeginMethodInfo);
             ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, null);
             ilWriter.Emit(OpCodes.Ret);
 
@@ -246,6 +266,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType)
         {
+            /*
+             * OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
+             *      - CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state);
+             *      - CallTargetReturn OnMethodEnd<TTarget>(Exception exception, CallTargetState state);
+             *
+             */
+
             Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
             MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodEndMethodInfo is null)
@@ -267,11 +294,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ParameterInfo[] onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
             if (onMethodEndParameters.Length < 2)
             {
-                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has less parameters than required.");
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
             }
             else if (onMethodEndParameters.Length > 3)
             {
-                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
             }
 
             if (onMethodEndParameters[onMethodEndParameters.Length - 2].ParameterType != typeof(Exception))
@@ -286,7 +313,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             List<Type> callGenericTypes = new List<Type>();
 
-            bool mustLoadInstance = onMethodEndParameters[0].ParameterType.IsGenericParameter;
+            bool mustLoadInstance = onMethodEndParameters.Length == 3;
             Type instanceGenericType = genericArgumentsTypes[0];
             Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
             Type instanceProxyType = null;
@@ -339,6 +366,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
         {
+            /*
+             * OnMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
+             *      - CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
+             *      - CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
+             *      - CallTargetReturn<[Type]> OnMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+             *
+             */
+
             Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
             MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodEndMethodInfo is null)
@@ -360,11 +395,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ParameterInfo[] onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
             if (onMethodEndParameters.Length < 3)
             {
-                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has less parameters than required.");
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
             }
             else if (onMethodEndParameters.Length > 4)
             {
-                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
+                throw new ArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
             }
 
             if (onMethodEndParameters[onMethodEndParameters.Length - 2].ParameterType != typeof(Exception))
@@ -379,7 +414,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             List<Type> callGenericTypes = new List<Type>();
 
-            bool mustLoadInstance = onMethodEndParameters[0].ParameterType.IsGenericParameter;
+            bool mustLoadInstance = onMethodEndParameters.Length == 4;
             Type instanceGenericType = genericArgumentsTypes[0];
             Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
             Type instanceProxyType = null;
@@ -394,7 +429,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 callGenericTypes.Add(targetType);
             }
 
-            bool isAGenericReturnValue = onMethodEndParameters[1].ParameterType.IsGenericParameter;
+            int returnParameterIndex = onMethodEndParameters.Length == 4 ? 1 : 0;
+            bool isAGenericReturnValue = onMethodEndParameters[returnParameterIndex].ParameterType.IsGenericParameter;
             Type returnValueGenericType = null;
             Type returnValueGenericConstraint = null;
             Type returnValueProxyType = null;
@@ -413,9 +449,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     callGenericTypes.Add(returnType);
                 }
             }
-            else if (onMethodEndParameters[1].ParameterType != returnType)
+            else if (onMethodEndParameters[returnParameterIndex].ParameterType != returnType)
             {
-                throw new ArgumentException($"The ReturnValue type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is invalid. [{onMethodEndParameters[1].ParameterType} != {returnType}]");
+                throw new ArgumentException($"The ReturnValue type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is invalid. [{onMethodEndParameters[returnParameterIndex].ParameterType} != {returnType}]");
             }
 
             DynamicMethod callMethod = new DynamicMethod(
@@ -470,6 +506,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         internal static DynamicMethod CreateAsyncEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
         {
+            /*
+             * OnAsyncMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
+             *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
+             *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
+             *      - [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+             *
+             *      In case the continuation is for a Task/ValueTask, the returnValue type will be an object and the value null.
+             *      In case the continuation is for a Task<T>/ValueTask<T>, the returnValue type will be T with the instance value after the task completes.
+             *
+             */
+
             Log.Debug($"Creating AsyncEndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
             MethodInfo onAsyncMethodEndMethodInfo = integrationType.GetMethod(EndAsyncMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onAsyncMethodEndMethodInfo is null)
@@ -492,11 +539,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ParameterInfo[] onAsyncMethodEndParameters = onAsyncMethodEndMethodInfo.GetParameters();
             if (onAsyncMethodEndParameters.Length < 3)
             {
-                throw new ArgumentException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has less parameters than required.");
+                throw new ArgumentException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
             }
             else if (onAsyncMethodEndParameters.Length > 4)
             {
-                throw new ArgumentException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} paremeters in type: {integrationType.FullName} has more parameters than required.");
+                throw new ArgumentException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} parameters in type: {integrationType.FullName} has more parameters than required.");
             }
 
             if (onAsyncMethodEndParameters[onAsyncMethodEndParameters.Length - 2].ParameterType != typeof(Exception))
@@ -511,7 +558,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             List<Type> callGenericTypes = new List<Type>();
 
-            bool mustLoadInstance = onAsyncMethodEndParameters[0].ParameterType.IsGenericParameter;
+            bool mustLoadInstance = onAsyncMethodEndParameters.Length == 4;
             Type instanceGenericType = genericArgumentsTypes[0];
             Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
             Type instanceProxyType = null;
@@ -526,7 +573,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 callGenericTypes.Add(targetType);
             }
 
-            bool isAGenericReturnValue = onAsyncMethodEndParameters[1].ParameterType.IsGenericParameter;
+            int returnParameterIndex = onAsyncMethodEndParameters.Length == 4 ? 1 : 0;
+            bool isAGenericReturnValue = onAsyncMethodEndParameters[returnParameterIndex].ParameterType.IsGenericParameter;
             Type returnValueGenericType = null;
             Type returnValueGenericConstraint = null;
             Type returnValueProxyType = null;
@@ -545,9 +593,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     callGenericTypes.Add(returnType);
                 }
             }
-            else if (onAsyncMethodEndParameters[1].ParameterType != returnType)
+            else if (onAsyncMethodEndParameters[returnParameterIndex].ParameterType != returnType)
             {
-                throw new ArgumentException($"The ReturnValue type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is invalid. [{onAsyncMethodEndParameters[1].ParameterType} != {returnType}]");
+                throw new ArgumentException($"The ReturnValue type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is invalid. [{onAsyncMethodEndParameters[returnParameterIndex].ParameterType} != {returnType}]");
             }
 
             DynamicMethod callMethod = new DynamicMethod(
