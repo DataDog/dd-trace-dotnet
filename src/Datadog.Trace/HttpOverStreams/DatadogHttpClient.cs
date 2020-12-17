@@ -13,13 +13,13 @@ namespace Datadog.Trace.HttpOverStreams
         /// Typical response from the agent is ~148 bytes.
         /// Allow enough room for failure messages and future expanding.
         /// </summary>
-        private const int MaxResponseBufferSize = 5120;
+        public const int MaxResponseBufferSize = 5120;
 
         /// <summary>
         /// Typical headers sent to the agent are small.
         /// Allow enough room for future expansion of headers.
         /// </summary>
-        private const int MaxRequestHeadersBufferSize = 2560;
+        public const int MaxRequestHeadersBufferSize = 2560;
 
         private static readonly Vendors.Serilog.ILogger Logger = DatadogLogging.For<DatadogHttpClient>();
 

@@ -6,8 +6,6 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
 {
     internal class StreamContent : IHttpContent
     {
-        private const int BufferSize = 10240;
-
         public StreamContent(Stream stream, long? length)
         {
             Stream = stream;
@@ -22,7 +20,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
         {
             if (Length != null)
             {
-                await Stream.CopyToAsync(destination, (int)Length).ConfigureAwait(false);
+                await CopyToAsync(destination, (int)Length).ConfigureAwait(false);
             }
             else
             {
@@ -32,7 +30,9 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
 
         public async Task CopyToAsync(Stream destination, int count)
         {
-            var bytes = new byte[BufferSize];
+            // Because this is only ever used in the context of reading responses from the datadog agent:
+            // Use what is specified in the client
+            var bytes = new byte[DatadogHttpClient.MaxResponseBufferSize];
             int bytesLeft = count;
 
             while (bytesLeft > 0)
