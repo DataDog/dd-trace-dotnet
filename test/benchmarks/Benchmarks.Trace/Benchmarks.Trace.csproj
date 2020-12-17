@@ -33,7 +33,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />
     <ProjectReference Include="..\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-    <ProjectReference Include="..\..\..\src\Datadog.Trace.DuckTyping\Datadog.Trace.DuckTyping.csproj" />
     <ProjectReference Include="..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
