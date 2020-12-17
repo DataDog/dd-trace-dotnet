@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     if (string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase))
                     {
-                        Assert.Equal(SpanTypes.MessageClient, span.Type);
+                        Assert.Equal(SpanTypes.Queue, span.Type);
                         Assert.Equal("RabbitMQ", span.Tags[Tags.InstrumentationName]);
                         Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                         Assert.NotNull(span.Tags[Tags.AmqpCommand]);
