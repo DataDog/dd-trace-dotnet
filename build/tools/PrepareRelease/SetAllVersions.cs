@@ -59,10 +59,6 @@ namespace PrepareRelease
                 NugetVersionReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace.DuckTyping/Datadog.Trace.DuckTyping.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
                 "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj",
                 NugetVersionReplace);
 
@@ -91,10 +87,6 @@ namespace PrepareRelease
 
             SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Managed.Core/AssemblyInfo.cs",
-                text => MajorAssemblyVersionReplace(text, "."));
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.DuckTyping/AssemblyInfo.cs",
                 text => MajorAssemblyVersionReplace(text, "."));
 
             // Native profiler updates
