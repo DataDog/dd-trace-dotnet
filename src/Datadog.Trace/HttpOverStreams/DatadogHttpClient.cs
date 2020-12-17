@@ -31,7 +31,7 @@ namespace Datadog.Trace.HttpOverStreams
 
         private async Task SendRequestAsync(HttpRequest request, Stream requestStream)
         {
-            // TODO: Determine if it's always ASCII
+            // Headers are always ASCII per the HTTP spec
             using (var writer = new StreamWriter(requestStream, Encoding.ASCII, MaxRequestHeadersBufferSize, leaveOpen: true))
             {
                 await DatadogHttpHeaderHelper.WriteLeadingHeaders(request, writer).ConfigureAwait(false);
