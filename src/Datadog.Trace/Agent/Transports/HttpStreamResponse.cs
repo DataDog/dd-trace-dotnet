@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -28,7 +29,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<string> ReadAsStringAsync()
         {
-            using (var reader = new StreamReader(ResponseStream, Encoding, detectEncodingFromByteOrderMarks: false, 10240, leaveOpen: true))
+            using (var reader = new StreamReader(ResponseStream, Encoding, detectEncodingFromByteOrderMarks: false, DatadogHttpClient.MaxResponseBufferSize, leaveOpen: true))
             {
                 return await reader.ReadToEndAsync().ConfigureAwait(false);
             }
