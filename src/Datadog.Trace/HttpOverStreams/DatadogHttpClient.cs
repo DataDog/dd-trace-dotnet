@@ -9,7 +9,18 @@ namespace Datadog.Trace.HttpOverStreams
 {
     internal class DatadogHttpClient
     {
-        private const int BufferSize = 10240;
+        /// <summary>
+        /// Typical response from the agent is ~148 bytes.
+        /// Allow enough room for failure messages and future expanding.
+        /// </summary>
+        private const int MaxResponseBufferSize = 5120;
+
+        /// <summary>
+        /// Typical headers sent to the agent are small.
+        /// Allow enough room for future expansion of headers.
+        /// </summary>
+        private const int MaxRequestHeadersBufferSize = 2560;
+
         private static readonly Vendors.Serilog.ILogger Logger = DatadogLogging.For<DatadogHttpClient>();
 
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
@@ -21,7 +32,7 @@ namespace Datadog.Trace.HttpOverStreams
         private async Task SendRequestAsync(HttpRequest request, Stream requestStream)
         {
             // TODO: Determine if it's always ASCII
-            using (var writer = new StreamWriter(requestStream, Encoding.ASCII, BufferSize, leaveOpen: true))
+            using (var writer = new StreamWriter(requestStream, Encoding.ASCII, MaxRequestHeadersBufferSize, leaveOpen: true))
             {
                 await DatadogHttpHeaderHelper.WriteLeadingHeaders(request, writer).ConfigureAwait(false);
 
@@ -48,9 +59,11 @@ namespace Datadog.Trace.HttpOverStreams
             var memoryStream = new MemoryStream();
             await responseStream.CopyToAsync(memoryStream);
             memoryStream.Position = 0;
+
+            memoryStream.Position = 0;
             int streamPosition = 0;
 
-            using (var reader = new StreamReader(memoryStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, BufferSize, leaveOpen: true))
+            using (var reader = new StreamReader(memoryStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, MaxResponseBufferSize, leaveOpen: true))
             {
                 // https://tools.ietf.org/html/rfc2616#section-4.2
                 // HTTP/1.1 200 OK
