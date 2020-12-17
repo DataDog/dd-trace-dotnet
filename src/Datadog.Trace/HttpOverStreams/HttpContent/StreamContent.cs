@@ -20,7 +20,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
         {
             if (Length != null)
             {
-                await CopyToAsync(destination, (int)Length).ConfigureAwait(false);
+                await Stream.CopyToAsync(destination, (int)Length).ConfigureAwait(false);
             }
             else
             {
