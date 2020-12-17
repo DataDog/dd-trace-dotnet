@@ -132,10 +132,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
             }
 
-            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, exchange: exchange, routingKey: routingKey))
+            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
             {
-                tags?.SetSpanKind(SpanKinds.Consumer);
-
                 if (tags != null)
                 {
                     tags.MessageSize = body.Length.ToString();
@@ -233,10 +231,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
             }
 
-            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, exchange: exchange, routingKey: routingKey))
+            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
             {
-                tags?.SetSpanKind(SpanKinds.Consumer);
-
                 if (tags != null)
                 {
                     var bodyValue = body.As<IBody>();
@@ -354,9 +350,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                Scope scope = CreateScope(Tracer.Instance, out tags, command, parentContext: propagatedContext, queue: queue, startTime: startTime);
+                Scope scope = CreateScope(Tracer.Instance, out tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime);
 
-                tags?.SetSpanKind(SpanKinds.Consumer);
                 if (scope != null)
                 {
                     string queueDisplayName = string.IsNullOrEmpty(queue) || !queue.StartsWith("amq.gen-") ? queue : "<generated>";
@@ -440,10 +435,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             RabbitMQTags tags = null;
-            using (var scope = CreateScope(Tracer.Instance, out tags, command, exchange: exchange, routingKey: routingKey))
+            using (var scope = CreateScope(Tracer.Instance, out tags, command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey))
             {
-                tags?.SetSpanKind(SpanKinds.Producer);
-
                 if (scope != null)
                 {
                     string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
@@ -542,10 +535,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             RabbitMQTags tags = null;
-            using (var scope = CreateScope(Tracer.Instance, out tags, command, exchange: exchange, routingKey: routingKey))
+            using (var scope = CreateScope(Tracer.Instance, out tags, command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey))
             {
-                tags?.SetSpanKind(SpanKinds.Producer);
-
                 if (scope != null)
                 {
                     string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
@@ -819,7 +810,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        internal static Scope CreateScope(Tracer tracer, out RabbitMQTags tags, string command, ISpanContext parentContext = null, DateTimeOffset? startTime = null, string queue = null, string exchange = null, string routingKey = null)
+        internal static Scope CreateScope(Tracer tracer, out RabbitMQTags tags, string command, ISpanContext parentContext = null, string spanKind = SpanKinds.Client, DateTimeOffset? startTime = null, string queue = null, string exchange = null, string routingKey = null)
         {
             tags = null;
 
@@ -835,7 +826,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 Span parent = tracer.ActiveScope?.Span;
 
-                tags = new RabbitMQTags();
+                tags = new RabbitMQTags(spanKind);
                 scope = tracer.StartActiveWithTags(OperationName, parent: parentContext, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{IntegrationName}", startTime: startTime);
                 var span = scope.Span;
 

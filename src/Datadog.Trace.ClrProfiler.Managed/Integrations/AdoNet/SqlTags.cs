@@ -14,7 +14,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 new Property<SqlTags, string>(Trace.Tags.DbUser, t => t.DbUser, (t, v) => t.DbUser = v),
                 new Property<SqlTags, string>(Trace.Tags.OutHost, t => t.OutHost, (t, v) => t.OutHost = v));
 
-        public override string SpanKind => SpanKinds.Client;
+        public SqlTags()
+        {
+            SpanKind = SpanKinds.Client;
+        }
 
         public string DbType { get; set; }
 

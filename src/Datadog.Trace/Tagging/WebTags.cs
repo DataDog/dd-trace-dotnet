@@ -12,7 +12,10 @@ namespace Datadog.Trace.Tagging
                 new Property<WebTags, string>(Trace.Tags.HttpUrl, t => t.HttpUrl, (t, v) => t.HttpUrl = v),
                 new ReadOnlyProperty<WebTags, string>(Trace.Tags.Language, t => t.Language));
 
-        public override string SpanKind => SpanKinds.Server;
+        public WebTags()
+        {
+            SpanKind = SpanKinds.Server;
+        }
 
         public string HttpMethod { get; set; }
 

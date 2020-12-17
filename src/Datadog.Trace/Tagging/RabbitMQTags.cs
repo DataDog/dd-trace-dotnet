@@ -19,9 +19,18 @@ namespace Datadog.Trace.Tagging
                 new Property<RabbitMQTags, string>(Trace.Tags.AmqpRoutingKey, t => t.RoutingKey, (t, v) => t.RoutingKey = v),
                 new Property<RabbitMQTags, string>(Trace.Tags.MessageSize, t => t.MessageSize, (t, v) => t.MessageSize = v));
 
-        private string _spanKind = SpanKinds.Client;
+        // For the sake of unit tests, define a default constructor with the default behavior,
+        // though the RabbitMQ integration should use the constructor that takes a spanKind
+        // so the setter is only invoked once
+        public RabbitMQTags()
+        {
+            SpanKind = SpanKinds.Client;
+        }
 
-        public override string SpanKind => _spanKind;
+        public RabbitMQTags(string spanKind)
+        {
+            SpanKind = spanKind;
+        }
 
         public string InstrumentationName { get; set; }
 
@@ -36,11 +45,6 @@ namespace Datadog.Trace.Tagging
         public string MessageSize { get; set; }
 
         public string Queue { get; set; }
-
-        public void SetSpanKind(string spanKind)
-        {
-            _spanKind = spanKind;
-        }
 
         protected override IProperty<string>[] GetAdditionalTags() => RabbitMQTagsProperties;
     }

@@ -12,7 +12,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 new Property<ElasticsearchTags, string>(Trace.Tags.ElasticsearchMethod, t => t.Method, (t, v) => t.Method = v),
                 new Property<ElasticsearchTags, string>(Trace.Tags.ElasticsearchUrl, t => t.Url, (t, v) => t.Url = v));
 
-        public override string SpanKind => SpanKinds.Client;
+        public ElasticsearchTags()
+        {
+            SpanKind = SpanKinds.Client;
+        }
 
         public string InstrumentationName => ElasticsearchNetCommon.ComponentValue;
 

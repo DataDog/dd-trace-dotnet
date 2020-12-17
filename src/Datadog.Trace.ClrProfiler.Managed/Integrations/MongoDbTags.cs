@@ -15,7 +15,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 new Property<MongoDbTags, string>(Trace.Tags.OutHost, t => t.Host, (t, v) => t.Host = v),
                 new Property<MongoDbTags, string>(Trace.Tags.OutPort, t => t.Port, (t, v) => t.Port = v));
 
-        public override string SpanKind => SpanKinds.Client;
+        public MongoDbTags()
+        {
+            SpanKind = SpanKinds.Client;
+        }
 
         public string InstrumentationName => MongoDbIntegration.IntegrationName;
 
