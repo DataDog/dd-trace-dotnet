@@ -447,8 +447,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         var basicPropertiesValue = basicProperties.As<IBasicProperties>();
 
-                        // if (basicPropertiesValue.Instance != null && basicPropertiesValue.IsDeliveryModePresent())
-                        if (basicPropertiesValue.IsDeliveryModePresent())
+                        if (tags != null && basicPropertiesValue.IsDeliveryModePresent())
                         {
                             tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];
                         }
@@ -553,7 +552,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         var basicPropertiesValue = basicProperties.As<IBasicProperties>();
 
-                        // if (basicPropertiesValue.Instance != null && basicPropertiesValue.IsDeliveryModePresent())
                         if (tags != null && basicPropertiesValue.IsDeliveryModePresent())
                         {
                             tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];
