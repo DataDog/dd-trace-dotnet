@@ -438,9 +438,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
                     scope.Span.ResourceName = $"{command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
-                    if (tags != null && body != null)
+                    if (tags != null)
                     {
-                        tags.MessageSize = body.Length.ToString();
+                        tags.MessageSize = body?.Length.ToString() ?? "0";
                     }
 
                     if (basicProperties != null)
@@ -542,10 +542,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
                     scope.Span.ResourceName = $"{command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
-                    if (tags != null && body != null)
+                    if (tags != null)
                     {
-                        var bodyValue = body.As<BodyStruct>();
-                        tags.MessageSize = bodyValue.Length.ToString();
+                        tags.MessageSize = body?.As<BodyStruct>().Length.ToString() ?? "0";
                     }
 
                     if (basicProperties != null)
