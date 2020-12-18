@@ -14,10 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 new Property<GraphQLTags, string>(Trace.Tags.GraphQLOperationType, t => t.OperationType, (t, v) => t.OperationType = v),
                 new ReadOnlyProperty<GraphQLTags, string>(Trace.Tags.Language, t => t.Language));
 
-        public GraphQLTags()
-        {
-            SpanKind = SpanKinds.Server;
-        }
+        public override string SpanKind => SpanKinds.Server;
 
         public string InstrumentationName => GraphQLIntegration.IntegrationName;
 

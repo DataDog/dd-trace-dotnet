@@ -12,10 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 new Property<RedisTags, string>(Trace.Tags.OutPort, t => t.Port, (t, v) => t.Port = v),
                 new Property<RedisTags, string>(Trace.Tags.OutHost, t => t.Host, (t, v) => t.Host = v));
 
-        public RedisTags()
-        {
-            SpanKind = SpanKinds.Client;
-        }
+        public override string SpanKind => SpanKinds.Client;
 
         public string InstrumentationName => RedisBatch.IntegrationName;
 

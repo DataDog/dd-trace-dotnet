@@ -14,10 +14,7 @@ namespace Datadog.Trace.Tagging
 
         private const string HttpClientHandlerTypeKey = "http-client-handler-type";
 
-        public HttpTags()
-        {
-            SpanKind = SpanKinds.Client;
-        }
+        public override string SpanKind => SpanKinds.Client;
 
         public string InstrumentationName { get; set; }
 

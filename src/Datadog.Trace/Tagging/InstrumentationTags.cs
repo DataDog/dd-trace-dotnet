@@ -7,13 +7,13 @@ namespace Datadog.Trace.Tagging
     {
         protected static readonly IProperty<string>[] InstrumentationTagsProperties =
             CommonTagsProperties.Concat(
-                new Property<InstrumentationTags, string>(Trace.Tags.SpanKind, t => t.SpanKind, (t, v) => t.SpanKind = v));
+                new ReadOnlyProperty<InstrumentationTags, string>(Trace.Tags.SpanKind, t => t.SpanKind));
 
         protected static readonly IProperty<double?>[] InstrumentationMetricsProperties =
             CommonMetricsProperties.Concat(
                 new Property<InstrumentationTags, double?>(Trace.Tags.Analytics, t => t.AnalyticsSampleRate, (t, v) => t.AnalyticsSampleRate = v));
 
-        public string SpanKind { get; set; }
+        public abstract string SpanKind { get; }
 
         public double? AnalyticsSampleRate { get; set; }
 
