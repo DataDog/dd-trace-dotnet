@@ -1,21 +1,13 @@
-using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams.HttpContent;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams
 {
     internal class DatadogHttpClient
     {
-        /// <summary>
-        /// Typical response from the agent is ~148 bytes.
-        /// Allow enough room for failure messages and future expanding.
-        /// </summary>
-        public const int MaxResponseBufferSize = 5120;
-
         /// <summary>
         /// Typical headers sent to the agent are small.
         /// Allow enough room for future expansion of headers.
@@ -27,7 +19,7 @@ namespace Datadog.Trace.HttpOverStreams
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
         {
             await SendRequestAsync(request, requestStream).ConfigureAwait(false);
-            return await ReadResponseAsync(responseStream).ConfigureAwait(false);
+            return ReadResponse(responseStream);
         }
 
         private async Task SendRequestAsync(HttpRequest request, Stream requestStream)
@@ -50,18 +42,13 @@ namespace Datadog.Trace.HttpOverStreams
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
 
-        private async Task<HttpResponse> ReadResponseAsync(Stream responseStream)
+        private HttpResponse ReadResponse(Stream responseStream)
         {
             var headers = new HttpHeaders();
-            string reasonPhrase = null;
             char currentChar;
 
-            // hack: buffer the entire response so we can seek
-            var memoryStream = new MemoryStream();
-            await responseStream.CopyToAsync(memoryStream);
-            memoryStream.Position = 0;
-
             int streamPosition = 0;
+
             // https://tools.ietf.org/html/rfc2616#section-4.2
             // HTTP/1.1 200 OK
             // HTTP/1.1 XXX MESSAGE
@@ -70,15 +57,14 @@ namespace Datadog.Trace.HttpOverStreams
             const int statusCodeEnd = 12;
             const int startOfReasonPhrase = 13;
 
-            // TODO: Get these from a StringBuilderCache
-            var keyBuilder = new StringBuilder();
-            var valueBuilder = new StringBuilder();
+            // TODO: Get this from a StringBuilderCache
+            var stringBuilder = new StringBuilder();
 
             var chArray = new byte[1];
             void GoNextChar()
             {
                 streamPosition++;
-                chArray[0] = (byte)memoryStream.ReadByte();
+                chArray[0] = (byte)responseStream.ReadByte();
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
             }
 
@@ -107,7 +93,15 @@ namespace Datadog.Trace.HttpOverStreams
             while (streamPosition < statusCodeEnd)
             {
                 GoNextChar();
-                keyBuilder.Append(currentChar);
+                stringBuilder.Append(currentChar);
+            }
+
+            var potentialStatusCode = stringBuilder.ToString();
+            stringBuilder.Clear();
+
+            if (!int.TryParse(potentialStatusCode, out var statusCode))
+            {
+                throw new DatadogHttpRequestException("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
             }
 
             while (streamPosition < statusCodeStart)
@@ -128,20 +122,12 @@ namespace Datadog.Trace.HttpOverStreams
                     break;
                 }
 
-                valueBuilder.Append(currentChar);
+                stringBuilder.Append(currentChar);
             }
             while (true);
 
-            var potentialStatusCode = keyBuilder.ToString();
-            if (!int.TryParse(potentialStatusCode, out var statusCode))
-            {
-                throw new DatadogHttpRequestException("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
-            }
-
-            reasonPhrase = valueBuilder.ToString();
-
-            keyBuilder.Clear();
-            valueBuilder.Clear();
+            var reasonPhrase = stringBuilder.ToString();
+            stringBuilder.Clear();
 
             // read headers
             do
@@ -162,10 +148,13 @@ namespace Datadog.Trace.HttpOverStreams
                         break;
                     }
 
-                    keyBuilder.Append(currentChar);
+                    stringBuilder.Append(currentChar);
                     GoNextChar();
                 }
                 while (true);
+
+                var name = stringBuilder.ToString().Trim();
+                stringBuilder.Clear();
 
                 do
                 {
@@ -177,34 +166,20 @@ namespace Datadog.Trace.HttpOverStreams
                         break;
                     }
 
-                    valueBuilder.Append(currentChar);
+                    stringBuilder.Append(currentChar);
                 }
                 while (true);
 
-                var name = keyBuilder.ToString().Trim();
-                var value = valueBuilder.ToString().Trim();
+                var value = stringBuilder.ToString().Trim();
+                stringBuilder.Clear();
 
                 headers.Add(name, value);
-
-                keyBuilder.Clear();
-                valueBuilder.Clear();
             }
             while (true);
 
-            memoryStream.Position = streamPosition;
-            long bytesLeft = memoryStream.Length - memoryStream.Position;
             var length = long.TryParse(headers.GetValue("Content-Length"), out var headerValue) ? headerValue : (long?)null;
 
-            if (length == null)
-            {
-                length = bytesLeft;
-            }
-            else if (length != bytesLeft)
-            {
-                throw new DatadogHttpRequestException("Content length from http headers does not match content's actual length.");
-            }
-
-            return new HttpResponse(statusCode, reasonPhrase, headers, new StreamContent(memoryStream, length));
+            return new HttpResponse(statusCode, reasonPhrase, headers, new StreamContent(responseStream, length));
         }
     }
 }

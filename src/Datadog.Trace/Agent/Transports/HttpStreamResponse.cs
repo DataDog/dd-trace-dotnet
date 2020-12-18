@@ -29,7 +29,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<string> ReadAsStringAsync()
         {
-            using (var reader = new StreamReader(ResponseStream, Encoding, detectEncodingFromByteOrderMarks: false, DatadogHttpClient.MaxResponseBufferSize, leaveOpen: true))
+            using (var reader = new StreamReader(ResponseStream, Encoding, detectEncodingFromByteOrderMarks: false, (int)ContentLength, leaveOpen: true))
             {
                 return await reader.ReadToEndAsync().ConfigureAwait(false);
             }

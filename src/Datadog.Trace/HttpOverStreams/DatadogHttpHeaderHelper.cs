@@ -10,18 +10,27 @@ namespace Datadog.Trace.HttpOverStreams
         public static readonly string NewLine = Environment.NewLine;
         public static readonly int CrLfLength = NewLine.Length;
 
-        public static async Task WriteLeadingHeaders(HttpRequest request, StreamWriter writer)
-        {
-            // optimization opportunity: cache the ascii-encoded bytes of commonly-used headers
-            await writer.WriteAsync($"{request.Verb} {request.Path} HTTP/1.1{NewLine}").ConfigureAwait(false);
-            await writer.WriteAsync($"Host: {request.Host}{NewLine}").ConfigureAwait(false);
-            await writer.WriteAsync($"Accept-Encoding: identity{NewLine}").ConfigureAwait(false);
-            await writer.WriteAsync($"Content-Length: {request.Content.Length ?? 0}{NewLine}").ConfigureAwait(false);
+        private static string _metadataHeaders = null;
 
-            await writer.WriteAsync($"{AgentHttpHeaderNames.Language}: .NET{NewLine}").ConfigureAwait(false);
-            await writer.WriteAsync($"{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.AssemblyVersion}{NewLine}").ConfigureAwait(false);
-            // don't add automatic instrumentation to requests from datadog code
-            await writer.WriteAsync($"{HttpHeaderNames.TracingEnabled}: false{NewLine}").ConfigureAwait(false);
+        private static string MetadataHeaders
+        {
+            get
+            {
+                if (_metadataHeaders == null)
+                {
+                    _metadataHeaders =
+                        $"{AgentHttpHeaderNames.Language}: .NET{NewLine}{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.AssemblyVersion}{NewLine}{HttpHeaderNames.TracingEnabled}: false{NewLine}";
+                }
+
+                return _metadataHeaders;
+            }
+        }
+
+        public static Task WriteLeadingHeaders(HttpRequest request, StreamWriter writer)
+        {
+            var leadingHeaders =
+                $"{request.Verb} {request.Path} HTTP/1.1{NewLine}Host: {request.Host}{NewLine}Accept-Encoding: identity{NewLine}Content-Length: {request.Content.Length ?? 0}{NewLine}{MetadataHeaders}";
+            return writer.WriteAsync(leadingHeaders);
         }
 
         public static Task WriteHeader(StreamWriter writer, HttpHeaders.HttpHeader header)
