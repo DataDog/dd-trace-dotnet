@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IBasicPropertiesTypeName = "RabbitMQ.Client.IBasicProperties";
         private const string IDictionaryArgumentsTypeName = "System.Collections.Generic.IDictionary`2[System.String,System.Object]";
 
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.RabbitMQ));
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RabbitMQIntegration));
         private static readonly string[] DeliveryModeStrings = { null, "1", "2" };
 
