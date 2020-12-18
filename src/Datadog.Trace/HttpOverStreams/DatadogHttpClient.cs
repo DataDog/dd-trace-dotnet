@@ -53,7 +53,6 @@ namespace Datadog.Trace.HttpOverStreams
         private async Task<HttpResponse> ReadResponseAsync(Stream responseStream)
         {
             var headers = new HttpHeaders();
-            int statusCode = 0;
             string reasonPhrase = null;
             char currentChar;
 
@@ -62,75 +61,119 @@ namespace Datadog.Trace.HttpOverStreams
             await responseStream.CopyToAsync(memoryStream);
             memoryStream.Position = 0;
 
-            memoryStream.Position = 0;
             int streamPosition = 0;
+            // https://tools.ietf.org/html/rfc2616#section-4.2
+            // HTTP/1.1 200 OK
+            // HTTP/1.1 XXX MESSAGE
 
-            // The stream we read back from the agent will usually be a few hundred bytes
-            using (var reader = new StreamReader(memoryStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, (int)memoryStream.Length, leaveOpen: true))
+            const int statusCodeStart = 9;
+            const int statusCodeEnd = 12;
+            const int startOfReasonPhrase = 13;
+
+            // TODO: Get these from a StringBuilderCache
+            var keyBuilder = new StringBuilder();
+            var valueBuilder = new StringBuilder();
+
+            var chArray = new byte[1];
+            void GoNextChar()
             {
-                // https://tools.ietf.org/html/rfc2616#section-4.2
-                // HTTP/1.1 200 OK
-                // HTTP/1.1 XXX MESSAGE
+                streamPosition++;
+                chArray[0] = (byte)memoryStream.ReadByte();
+                currentChar = Encoding.ASCII.GetChars(chArray)[0];
+            }
 
-                const int statusCodeStart = 9;
-                const int statusCodeEnd = 12;
-                const int startOfReasonPhrase = 13;
-
-                // TODO: Get these from a StringBuilderCache
-                var keyBuilder = new StringBuilder();
-                var valueBuilder = new StringBuilder();
-
-                var chArray = new byte[1];
-                void GoNextChar()
+            bool IsNewLine()
+            {
+                if (currentChar.Equals(DatadogHttpHeaderHelper.CarriageReturn))
                 {
-                    streamPosition++;
-                    chArray[0] = (byte)reader.Read();
-                    currentChar = Encoding.ASCII.GetChars(chArray)[0];
-                }
-
-                bool IsNewLine()
-                {
-                    if (currentChar.Equals(DatadogHttpHeaderHelper.CarriageReturn))
+                    // end of headers
+                    if (DatadogHttpHeaderHelper.CrLfLength > 1)
                     {
-                        // end of headers
-                        if (DatadogHttpHeaderHelper.CrLfLength > 1)
-                        {
-                            // Skip the newline indicator
-                            GoNextChar();
-                        }
-
-                        return true;
+                        // Skip the newline indicator
+                        GoNextChar();
                     }
 
-                    return false;
+                    return true;
                 }
 
-                while (streamPosition < statusCodeStart)
+                return false;
+            }
+
+            while (streamPosition < statusCodeStart)
+            {
+                GoNextChar();
+            }
+
+            while (streamPosition < statusCodeEnd)
+            {
+                GoNextChar();
+                keyBuilder.Append(currentChar);
+            }
+
+            while (streamPosition < statusCodeStart)
+            {
+                GoNextChar();
+            }
+
+            while (streamPosition < startOfReasonPhrase)
+            {
+                GoNextChar();
+            }
+
+            do
+            {
+                GoNextChar();
+                if (IsNewLine())
                 {
-                    GoNextChar();
+                    break;
                 }
 
-                while (streamPosition < statusCodeEnd)
-                {
-                    GoNextChar();
-                    keyBuilder.Append(currentChar);
-                }
+                valueBuilder.Append(currentChar);
+            }
+            while (true);
 
-                while (streamPosition < statusCodeStart)
-                {
-                    GoNextChar();
-                }
+            var potentialStatusCode = keyBuilder.ToString();
+            if (!int.TryParse(potentialStatusCode, out var statusCode))
+            {
+                throw new DatadogHttpRequestException("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
+            }
 
-                while (streamPosition < startOfReasonPhrase)
+            reasonPhrase = valueBuilder.ToString();
+
+            keyBuilder.Clear();
+            valueBuilder.Clear();
+
+            // read headers
+            do
+            {
+                GoNextChar();
+
+                if (IsNewLine())
                 {
-                    GoNextChar();
+                    // Empty line, content starts next
+                    break;
                 }
 
                 do
                 {
+                    if (currentChar.Equals(':'))
+                    {
+                        // Value portion starts
+                        break;
+                    }
+
+                    keyBuilder.Append(currentChar);
                     GoNextChar();
+                }
+                while (true);
+
+                do
+                {
+                    GoNextChar();
+
                     if (IsNewLine())
                     {
+                        // Next header pair starts
                         break;
                     }
 
@@ -138,65 +181,15 @@ namespace Datadog.Trace.HttpOverStreams
                 }
                 while (true);
 
-                var potentialStatusCode = keyBuilder.ToString();
-                if (!int.TryParse(potentialStatusCode, out statusCode))
-                {
-                    throw new DatadogHttpRequestException("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
-                }
+                var name = keyBuilder.ToString().Trim();
+                var value = valueBuilder.ToString().Trim();
 
-                reasonPhrase = valueBuilder.ToString();
+                headers.Add(name, value);
 
                 keyBuilder.Clear();
                 valueBuilder.Clear();
-
-                // read headers
-                do
-                {
-                    GoNextChar();
-
-                    if (IsNewLine())
-                    {
-                        // Empty line, content starts next
-                        break;
-                    }
-
-                    do
-                    {
-                        if (currentChar.Equals(':'))
-                        {
-                            // Value portion starts
-                            break;
-                        }
-
-                        keyBuilder.Append(currentChar);
-                        GoNextChar();
-                    }
-                    while (true);
-
-                    do
-                    {
-                        GoNextChar();
-
-                        if (IsNewLine())
-                        {
-                            // Next header pair starts
-                            break;
-                        }
-
-                        valueBuilder.Append(currentChar);
-                    }
-                    while (true);
-
-                    var name = keyBuilder.ToString().Trim();
-                    var value = valueBuilder.ToString().Trim();
-
-                    headers.Add(name, value);
-
-                    keyBuilder.Clear();
-                    valueBuilder.Clear();
-                }
-                while (true);
             }
+            while (true);
 
             memoryStream.Position = streamPosition;
             long bytesLeft = memoryStream.Length - memoryStream.Position;
