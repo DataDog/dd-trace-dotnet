@@ -53,6 +53,10 @@ namespace Samples.RabbitMQ
                                             autoDelete: false,
                                             arguments: null);
                     channel.QueueBind(queueName, exchangeName, routingKey);
+                    channel.QueuePurge(queueName); // Ensure there are no more messages in this queue
+
+                    // Test an empty BasicGetResult
+                    channel.BasicGet(queueName, true);
 
                     // Send message to the exchange
                     string message = "PublishAndGet - Message";
@@ -92,6 +96,10 @@ namespace Samples.RabbitMQ
                 using (Tracer.Instance.StartActive("PublishAndGetDefault()"))
                 {
                     defaultQueueName = channel.QueueDeclare().QueueName;
+                    channel.QueuePurge(queueName); // Ensure there are no more messages in this queue
+
+                    // Test an empty BasicGetResult
+                    channel.BasicGet(defaultQueueName, true);
 
                     // Send message to the default exchange and use new queue as the routingKey
                     string message = "PublishAndGetDefault - Message";

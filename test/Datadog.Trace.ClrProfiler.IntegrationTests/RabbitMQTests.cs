@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
-            var expectedSpanCount = 24;
+            var expectedSpanCount = 26;
 
             int basicPublishCount = 0;
             int basicGetCount = 0;
@@ -35,6 +35,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int queueDeclareCount = 0;
             int queueBindCount = 0;
             var distributedParentSpans = new Dictionary<ulong, int>();
+
+            int emptyBasicGetCount = 0;
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
@@ -84,23 +86,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         else if (string.Equals(command, "basic.get", StringComparison.OrdinalIgnoreCase))
                         {
                             basicGetCount++;
-                            Assert.NotNull(span.ParentId);
 
-                            // Add the parent span ID to a dictionary so we can later assert 1:1 mappings
-                            if (distributedParentSpans.TryGetValue(span.ParentId.Value, out int count))
+                            // Successful responses will have the "message.size" tag
+                            // Empty responses will not
+                            if (span.Tags.TryGetValue("message.size", out string messageSize))
                             {
-                                distributedParentSpans[span.ParentId.Value] = count + 1;
+                                Assert.NotNull(span.ParentId);
+                                Assert.True(int.TryParse(messageSize, out _));
+
+                                // Add the parent span ID to a dictionary so we can later assert 1:1 mappings
+                                if (distributedParentSpans.TryGetValue(span.ParentId.Value, out int count))
+                                {
+                                    distributedParentSpans[span.ParentId.Value] = count + 1;
+                                }
+                                else
+                                {
+                                    distributedParentSpans[span.ParentId.Value] = 1;
+                                }
                             }
                             else
                             {
-                                distributedParentSpans[span.ParentId.Value] = 1;
+                                emptyBasicGetCount++;
                             }
 
                             Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
                             Assert.NotNull(span.Tags[Tags.AmqpQueue]);
-
-                            Assert.NotNull(span.Tags["message.size"]);
-                            Assert.True(int.TryParse(span.Tags["message.size"], out _));
 
                             // Enforce that the resource name has the following structure: "basic.get [<generated>|{actual queueName}]"
                             string regexPattern = @"basic\.get (?<queueName>\S*)";
@@ -178,16 +188,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 foreach (var span in manualSpans)
                 {
                     Assert.Equal("Samples.RabbitMQ", span.Service);
-                    Assert.Equal("1.0.0", span.Tags?.GetValueOrDefault(Tags.Version));
+                    Assert.Equal("1.0.0", span.Tags[Tags.Version]);
                 }
             }
+
+            // Assert that all empty get results are expected
+            Assert.Equal(2, emptyBasicGetCount);
 
             // Assert that each span that started a distributed trace (basic.publish)
             // has only one child span (basic.deliver or basic.get)
             Assert.All(distributedParentSpans, kvp => Assert.Equal(1, kvp.Value));
 
             Assert.Equal(5, basicPublishCount);
-            Assert.Equal(2, basicGetCount);
+            Assert.Equal(4, basicGetCount);
             Assert.Equal(3, basicDeliverCount);
 
             Assert.Equal(1, exchangeDeclareCount);
