@@ -117,6 +117,12 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
 
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+
   - task: DotNetCoreCLI@2
     displayName: dotnet build
     inputs:
@@ -168,6 +174,12 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
 
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+
   - task: DotNetCoreCLI@2
     displayName: dotnet build
     inputs:
@@ -210,6 +222,12 @@ jobs:
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build

@@ -5,7 +5,7 @@ namespace Datadog.Trace.Tagging
     internal class ReadOnlyProperty<TTags, TResult> : Property<TTags, TResult>
     {
         public ReadOnlyProperty(string key, Func<TTags, TResult> getter)
-            : base(key, getter, (value, tag) => { })
+            : base(key, getter, (_, _) => { })
         {
         }
 
