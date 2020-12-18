@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams.HttpContent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams
 {
@@ -53,7 +54,8 @@ namespace Datadog.Trace.HttpOverStreams
         {
             var headers = new HttpHeaders();
             int statusCode = 0;
-            string responseMessage = null;
+            string reasonPhrase = null;
+            char currentChar;
 
             // hack: buffer the entire response so we can seek
             var memoryStream = new MemoryStream();
@@ -63,72 +65,127 @@ namespace Datadog.Trace.HttpOverStreams
             memoryStream.Position = 0;
             int streamPosition = 0;
 
-            using (var reader = new StreamReader(memoryStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, MaxResponseBufferSize, leaveOpen: true))
+            // The stream we read back from the agent will usually be a few hundred bytes
+            using (var reader = new StreamReader(memoryStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, (int)memoryStream.Length, leaveOpen: true))
             {
                 // https://tools.ietf.org/html/rfc2616#section-4.2
                 // HTTP/1.1 200 OK
                 // HTTP/1.1 XXX MESSAGE
-                string line = reader.ReadLine();
-                streamPosition += reader.CurrentEncoding.GetByteCount(line) + DatadogHttpHeaderHelper.CrLfLength;
 
                 const int statusCodeStart = 9;
-                const int statusCodeLength = 3;
-                const int startOfMessage = 13;
-
-                if (!int.TryParse(line.Substring(statusCodeStart, statusCodeLength), out statusCode))
-                {
-                    throw new DatadogHttpRequestException("Invalid response, can't parse status code. Line was:" + line);
-                }
-
-                responseMessage = line.Substring(startOfMessage);
+                const int statusCodeEnd = 12;
+                const int startOfReasonPhrase = 13;
 
                 // TODO: Get these from a StringBuilderCache
                 var keyBuilder = new StringBuilder();
                 var valueBuilder = new StringBuilder();
 
-                // read headers
-                while (true)
+                var chArray = new byte[1];
+                void GoNextChar()
                 {
-                    var headerChar = Convert.ToChar(reader.Read());
                     streamPosition++;
+                    chArray[0] = (byte)reader.Read();
+                    currentChar = Encoding.ASCII.GetChars(chArray)[0];
+                }
 
-                    if (headerChar.Equals(DatadogHttpHeaderHelper.CarriageReturn))
+                bool IsNewLine()
+                {
+                    if (currentChar.Equals(DatadogHttpHeaderHelper.CarriageReturn))
                     {
                         // end of headers
-                        DatadogHttpHeaderHelper.SkipFeed(reader);
-                        streamPosition++;
+                        if (DatadogHttpHeaderHelper.CrLfLength > 1)
+                        {
+                            // Skip the newline indicator
+                            GoNextChar();
+                        }
+
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                while (streamPosition < statusCodeStart)
+                {
+                    GoNextChar();
+                }
+
+                while (streamPosition < statusCodeEnd)
+                {
+                    GoNextChar();
+                    keyBuilder.Append(currentChar);
+                }
+
+                while (streamPosition < statusCodeStart)
+                {
+                    GoNextChar();
+                }
+
+                while (streamPosition < startOfReasonPhrase)
+                {
+                    GoNextChar();
+                }
+
+                do
+                {
+                    GoNextChar();
+                    if (IsNewLine())
+                    {
+                        break;
+                    }
+
+                    valueBuilder.Append(currentChar);
+                }
+                while (true);
+
+                var potentialStatusCode = keyBuilder.ToString();
+                if (!int.TryParse(potentialStatusCode, out statusCode))
+                {
+                    throw new DatadogHttpRequestException("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
+                }
+
+                reasonPhrase = valueBuilder.ToString();
+
+                keyBuilder.Clear();
+                valueBuilder.Clear();
+
+                // read headers
+                do
+                {
+                    GoNextChar();
+
+                    if (IsNewLine())
+                    {
+                        // Empty line, content starts next
                         break;
                     }
 
                     do
                     {
-                        if (headerChar.Equals(':'))
+                        if (currentChar.Equals(':'))
                         {
+                            // Value portion starts
                             break;
                         }
 
-                        keyBuilder.Append(headerChar);
-                        headerChar = Convert.ToChar(reader.Read());
-                        streamPosition++;
+                        keyBuilder.Append(currentChar);
+                        GoNextChar();
                     }
                     while (true);
 
                     do
                     {
-                        var valueChar = Convert.ToChar(reader.Read());
-                        streamPosition++;
+                        GoNextChar();
 
-                        if (valueChar.Equals(DatadogHttpHeaderHelper.CarriageReturn))
+                        if (IsNewLine())
                         {
+                            // Next header pair starts
                             break;
                         }
 
-                        valueBuilder.Append(valueChar);
+                        valueBuilder.Append(currentChar);
                     }
                     while (true);
-
-                    DatadogHttpHeaderHelper.SkipFeed(reader);
-                    streamPosition++;
 
                     var name = keyBuilder.ToString().Trim();
                     var value = valueBuilder.ToString().Trim();
@@ -138,6 +195,7 @@ namespace Datadog.Trace.HttpOverStreams
                     keyBuilder.Clear();
                     valueBuilder.Clear();
                 }
+                while (true);
             }
 
             memoryStream.Position = streamPosition;
@@ -153,7 +211,7 @@ namespace Datadog.Trace.HttpOverStreams
                 throw new DatadogHttpRequestException("Content length from http headers does not match content's actual length.");
             }
 
-            return new HttpResponse(statusCode, responseMessage, headers, new StreamContent(memoryStream, length));
+            return new HttpResponse(statusCode, reasonPhrase, headers, new StreamContent(memoryStream, length));
         }
     }
 }

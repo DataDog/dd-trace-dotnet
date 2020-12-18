@@ -33,14 +33,5 @@ namespace Datadog.Trace.HttpOverStreams
         {
             return writer.WriteAsync($"Content-Type: application/msgpack{NewLine}{NewLine}");
         }
-
-        public static void SkipFeed(StreamReader reader)
-        {
-            if (CrLfLength > 1)
-            {
-                // Skip the newline indicator
-                reader.Read();
-            }
-        }
     }
 }
