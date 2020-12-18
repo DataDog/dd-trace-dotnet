@@ -193,7 +193,7 @@ namespace Datadog.Trace
 
                 if (Settings.RuntimeMetricsEnabled)
                 {
-                    _runtimeMetricsWriter = new RuntimeMetricsWriter(Statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort), 10000);
+                    _runtimeMetricsWriter = new RuntimeMetricsWriter(Statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort), TimeSpan.FromSeconds(10));
                 }
             }
         }
