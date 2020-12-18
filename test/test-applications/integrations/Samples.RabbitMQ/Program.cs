@@ -59,14 +59,13 @@ namespace Samples.RabbitMQ
                     channel.BasicGet(queueName, true);
 
                     // Send message to the exchange
-                    string message = "PublishAndGet - Message";
-                    var body = Encoding.UTF8.GetBytes(message);
+                    byte[] body = null;
 
                     channel.BasicPublish(exchange: exchangeName,
                                             routingKey: routingKey,
                                             basicProperties: null,
                                             body: body);
-                    Console.WriteLine($"[Program.PublishAndGet] BasicPublish - Sent message: {message}");
+                    Console.WriteLine($"[Program.PublishAndGet] BasicPublish - Sent message: {string.Empty}");
                 }
 
                 // Immediately get a message from the queue (bound to the exchange)
