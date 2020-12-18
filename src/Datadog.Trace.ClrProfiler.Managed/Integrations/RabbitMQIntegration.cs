@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var basicPropertiesValue = basicProperties.As<IBasicProperties>();
 
             // try to extract propagated context values from headers
-            if (basicPropertiesValue.Headers != null)
+            if (basicPropertiesValue?.Headers != null)
             {
                 try
                 {
@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
             {
-                if (tags != null)
+                if (tags != null && body != null)
                 {
                     tags.MessageSize = body.Length.ToString();
                 }
@@ -219,7 +219,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var basicPropertiesValue = basicProperties.As<IBasicProperties>();
 
             // try to extract propagated context values from headers
-            if (basicPropertiesValue.Headers != null)
+            if (basicPropertiesValue?.Headers != null)
             {
                 try
                 {
@@ -233,7 +233,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
             {
-                if (tags != null)
+                if (tags != null && body != null)
                 {
                     var bodyValue = body.As<BodyStruct>();
                     tags.MessageSize = bodyValue.Length.ToString();
@@ -347,25 +347,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                Scope scope = CreateScope(Tracer.Instance, out tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime);
-
-                if (scope != null)
+                using (var scope = CreateScope(Tracer.Instance, out tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
                 {
-                    string queueDisplayName = string.IsNullOrEmpty(queue) || !queue.StartsWith("amq.gen-") ? queue : "<generated>";
-                    scope.Span.ResourceName = $"{command} {queueDisplayName}";
-                }
+                    if (scope != null)
+                    {
+                        string queueDisplayName = string.IsNullOrEmpty(queue) || !queue.StartsWith("amq.gen-") ? queue : "<generated>";
+                        scope.Span.ResourceName = $"{command} {queueDisplayName}";
 
-                if (messageSize != null)
-                {
-                    tags.MessageSize = messageSize;
-                }
+                        if (tags != null && messageSize != null)
+                        {
+                            tags.MessageSize = messageSize;
+                        }
 
-                if (exception != null)
-                {
-                    scope?.Span.SetException(exception);
+                        if (exception != null)
+                        {
+                            scope.Span.SetException(exception);
+                        }
+                    }
                 }
-
-                scope?.Dispose();
             }
 
             return result;
@@ -431,8 +430,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            RabbitMQTags tags = null;
-            using (var scope = CreateScope(Tracer.Instance, out tags, command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey))
+            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey))
             {
                 if (scope != null)
                 {
@@ -440,23 +438,29 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
                     scope.Span.ResourceName = $"{command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
-                    tags.MessageSize = body.Length.ToString();
-
-                    var basicPropertiesValue = basicProperties.As<IBasicProperties>();
-
-                    // if (basicPropertiesValue.Instance != null && basicPropertiesValue.IsDeliveryModePresent())
-                    if (basicPropertiesValue.IsDeliveryModePresent())
+                    if (tags != null && body != null)
                     {
-                        tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];
+                        tags.MessageSize = body.Length.ToString();
                     }
 
-                    // add distributed tracing headers to the message
-                    if (basicPropertiesValue.Headers == null)
+                    if (basicProperties != null)
                     {
-                        basicPropertiesValue.Headers = new Dictionary<string, object>();
-                    }
+                        var basicPropertiesValue = basicProperties.As<IBasicProperties>();
 
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicPropertiesValue.Headers, headersSetter);
+                        // if (basicPropertiesValue.Instance != null && basicPropertiesValue.IsDeliveryModePresent())
+                        if (basicPropertiesValue.IsDeliveryModePresent())
+                        {
+                            tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];
+                        }
+
+                        // add distributed tracing headers to the message
+                        if (basicPropertiesValue.Headers == null)
+                        {
+                            basicPropertiesValue.Headers = new Dictionary<string, object>();
+                        }
+
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, basicPropertiesValue.Headers, headersSetter);
+                    }
                 }
 
                 try
@@ -531,8 +535,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            RabbitMQTags tags = null;
-            using (var scope = CreateScope(Tracer.Instance, out tags, command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey))
+            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey))
             {
                 if (scope != null)
                 {
@@ -540,24 +543,30 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
                     scope.Span.ResourceName = $"{command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
-                    var bodyValue = body.As<BodyStruct>();
-                    tags.MessageSize = bodyValue.Length.ToString();
-
-                    var basicPropertiesValue = basicProperties.As<IBasicProperties>();
-
-                    // if (basicPropertiesValue.Instance != null && basicPropertiesValue.IsDeliveryModePresent())
-                    if (basicPropertiesValue.IsDeliveryModePresent())
+                    if (tags != null && body != null)
                     {
-                        tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];
+                        var bodyValue = body.As<BodyStruct>();
+                        tags.MessageSize = bodyValue.Length.ToString();
                     }
 
-                    // add distributed tracing headers to the message
-                    if (basicPropertiesValue.Headers == null)
+                    if (basicProperties != null)
                     {
-                        basicPropertiesValue.Headers = new Dictionary<string, object>();
-                    }
+                        var basicPropertiesValue = basicProperties.As<IBasicProperties>();
 
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicPropertiesValue.Headers, headersSetter);
+                        // if (basicPropertiesValue.Instance != null && basicPropertiesValue.IsDeliveryModePresent())
+                        if (tags != null && basicPropertiesValue.IsDeliveryModePresent())
+                        {
+                            tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];
+                        }
+
+                        // add distributed tracing headers to the message
+                        if (basicPropertiesValue.Headers == null)
+                        {
+                            basicPropertiesValue.Headers = new Dictionary<string, object>();
+                        }
+
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, basicPropertiesValue.Headers, headersSetter);
+                    }
                 }
 
                 try
@@ -638,8 +647,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            RabbitMQTags tags = null;
-            using (var scope = CreateScope(Tracer.Instance, out tags, command, exchange: exchange))
+            using (var scope = CreateScope(Tracer.Instance, out _, command, exchange: exchange))
             {
                 try
                 {
@@ -713,8 +721,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            RabbitMQTags tags = null;
-            using (var scope = CreateScope(Tracer.Instance, out tags, command, queue: queue, exchange: exchange, routingKey: routingKey))
+            using (var scope = CreateScope(Tracer.Instance, out _, command, queue: queue, exchange: exchange, routingKey: routingKey))
             {
                 try
                 {
@@ -792,8 +799,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            RabbitMQTags tags = null;
-            using (var scope = CreateScope(Tracer.Instance, out tags, command, queue: queue))
+            using (var scope = CreateScope(Tracer.Instance, out _, command, queue: queue))
             {
                 try
                 {
