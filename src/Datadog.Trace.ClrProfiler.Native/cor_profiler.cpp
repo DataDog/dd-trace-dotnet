@@ -1031,9 +1031,10 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       pInstr = pInstr->m_pNext;
       rewriter_wrapper.SetILPosition(pInstr);
 
-      // IL Modification #2: Conditionally box System.Threading.CancellationToken
+      // IL Modification #2: Conditionally box System.Threading.CancellationToken or System.ReadOnlyMemory<T>
       //                     if it is the last argument in the target method.
       //
+      // System.Threading.CancellationToken:
       // If the last argument in the method signature is of the type
       // System.Threading.CancellationToken (a struct) then box it before calling our
       // integration method. This resolves https://github.com/DataDog/dd-trace-dotnet/issues/662,
@@ -1046,13 +1047,24 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       // variable as an object, this '0x6F' would be dereference to access the underlying object,
       // and an invalid memory read would occur and crash the application.
       //
-      // Currently, all integrations that use System.Threading.CancellationToken (a struct)
+      // System.ReadOnlyMemory<T>:
+      // If the last argument in the method signature is of the type
+      // System.ReadOnlyMemory<T> (a generic valuetype) then box it before calling our
+      // integration method. We need this modification for RabbitMQ.Client 6.x.x instrumentation
+      // that uses System.ReadOnlyMemory<byte> instead of byte[] for the message body parameter.
+      //
+      // Currently, all integrations that use either of the two types
       // have the argument as the last argument in the signature (lucky us!).
       // For now, we'll do the following:
       //   1) Get the method signature of the original target method
       //   2) Read the signature until the final argument type
-      //   3) If the type begins with `ELEMENT_TYPE_VALUETYPE`, uncompress the compressed type token that follows
-      //   4) If the type token represents System.Threading.CancellationToken, emit a 'box <type_token>' IL instruction before calling our wrapper method
+      //   3) Check for System.Threading.CancellationToken
+      //      3a) If the type begins with `ELEMENT_TYPE_VALUETYPE`, uncompress the compressed type token that follows
+      //      3b) If the type token represents System.Threading.CancellationToken, emit a 'box <type_token>' IL instruction before calling our wrapper method
+      //   4) Check for System.ReadOnlyMemory<T>
+      //      4a) If the type begins with `ELEMENT_TYPE_GENERICINST` and if the next byte is `ELEMENT_TYPE_VALUETYPE`, uncompress the compressed type token that follows
+      //      4b) If the type token represents System.ReadOnlyMemory<T>, emit a 'box <type_token>' IL instruction before calling our wrapper method. The type token
+      //          will be a TypeSpec representing the specific generic instantiation of System.ReadOnlyMemory<T>
       auto original_method_def = target.id;
       size_t argument_count = target.signature.NumberOfArguments();
       size_t return_type_index = target.signature.IndexOfReturnType();
@@ -1076,6 +1088,31 @@ HRESULT CorProfiler::ProcessReplacementCalls(
         // If we expand this to a general case, we would always perform the boxing regardless of type
         if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name == "System.Threading.CancellationToken"_W) {
           rewriter_wrapper.Box(valuetype_type_token);
+        }
+      }
+
+      if (signature_read_success && *pSigCurrent == ELEMENT_TYPE_GENERICINST) {
+        PCCOR_SIGNATURE p_start_byte = pSigCurrent;
+        PCCOR_SIGNATURE p_end_byte = p_start_byte;
+
+        pSigCurrent++;
+
+        if (*pSigCurrent == ELEMENT_TYPE_VALUETYPE) {
+          pSigCurrent++;
+          mdToken valuetype_type_token = CorSigUncompressToken(pSigCurrent);
+
+          // Currently, we only expect to see
+          // `System.ReadOnlyMemory<T>` as a valuetype in this
+          // position If we expand this to a general case, we would always
+          // perform the boxing regardless of type
+          if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name == "System.ReadOnlyMemory`1"_W
+              && ParseType(&p_end_byte)) {
+            size_t length = p_end_byte - p_start_byte;
+            mdTypeSpec type_token;
+            module_metadata->metadata_emit->GetTokenFromTypeSpec(
+                p_start_byte, (ULONG)length, &type_token);
+            rewriter_wrapper.Box(type_token);
+          }
         }
       }
 

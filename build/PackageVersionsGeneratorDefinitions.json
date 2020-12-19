@@ -29,6 +29,13 @@
     "MaxVersionExclusive": "5.0.0"
   },
   {
+    "IntegrationName": "RabbitMQ",
+    "SampleProjectName": "Samples.RabbitMQ",
+    "NugetPackageSearchName": "RabbitMQ.Client",
+    "MinVersion": "3.6.9",
+    "MaxVersionExclusive": "7.0.0"
+  },
+  {
     "IntegrationName": "SystemDataSqlClient",
     "SampleProjectName": "Samples.SqlServer",
     "NugetPackageSearchName": "System.Data.SqlClient",

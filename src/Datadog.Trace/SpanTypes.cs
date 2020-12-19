@@ -38,6 +38,11 @@ namespace Datadog.Trace
         public const string GraphQL = "graphql";
 
         /// <summary>
+        /// The span type for a message queue integration.
+        /// </summary>
+        public const string Queue = "queue";
+
+        /// <summary>
         /// The span type for a custom integration.
         /// </summary>
         public const string Custom = "custom";
