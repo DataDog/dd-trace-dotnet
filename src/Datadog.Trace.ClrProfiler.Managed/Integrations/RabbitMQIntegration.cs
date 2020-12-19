@@ -134,9 +134,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
             {
-                if (tags != null && body != null)
+                if (tags != null)
                 {
-                    tags.MessageSize = body.Length.ToString();
+                    tags.MessageSize = body?.Length.ToString() ?? "0";
                 }
 
                 try
@@ -233,10 +233,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
             {
-                if (tags != null && body != null)
+                if (tags != null)
                 {
-                    var bodyValue = body.As<BodyStruct>();
-                    tags.MessageSize = bodyValue.Length.ToString();
+                    tags.MessageSize = body?.As<BodyStruct>().Length.ToString() ?? "0";
                 }
 
                 try
