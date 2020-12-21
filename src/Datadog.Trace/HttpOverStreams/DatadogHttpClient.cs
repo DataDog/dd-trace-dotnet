@@ -14,6 +14,8 @@ namespace Datadog.Trace.HttpOverStreams
         /// </summary>
         public const int MaxRequestHeadersBufferSize = 2560;
 
+        private const string ContentLengthHeaderKey = "Content-Length";
+
         private static readonly Vendors.Serilog.ILogger Logger = DatadogLogging.For<DatadogHttpClient>();
 
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
@@ -46,7 +48,6 @@ namespace Datadog.Trace.HttpOverStreams
         {
             var headers = new HttpHeaders();
             char currentChar;
-
             int streamPosition = 0;
 
             // https://tools.ietf.org/html/rfc2616#section-4.2
@@ -85,11 +86,13 @@ namespace Datadog.Trace.HttpOverStreams
                 return false;
             }
 
+            // Skip to status code
             while (streamPosition < statusCodeStart)
             {
                 GoNextChar();
             }
 
+            // Read status code
             while (streamPosition < statusCodeEnd)
             {
                 GoNextChar();
@@ -104,16 +107,13 @@ namespace Datadog.Trace.HttpOverStreams
                 throw new DatadogHttpRequestException("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
             }
 
-            while (streamPosition < statusCodeStart)
-            {
-                GoNextChar();
-            }
-
+            // Skip to reason
             while (streamPosition < startOfReasonPhrase)
             {
                 GoNextChar();
             }
 
+            // Read reason
             do
             {
                 GoNextChar();
@@ -129,17 +129,19 @@ namespace Datadog.Trace.HttpOverStreams
             var reasonPhrase = stringBuilder.ToString();
             stringBuilder.Clear();
 
-            // read headers
+            // Read headers
             do
             {
                 GoNextChar();
 
+                // Check for end of headers
                 if (IsNewLine())
                 {
                     // Empty line, content starts next
                     break;
                 }
 
+                // Read key
                 do
                 {
                     if (currentChar.Equals(':'))
@@ -156,6 +158,7 @@ namespace Datadog.Trace.HttpOverStreams
                 var name = stringBuilder.ToString().Trim();
                 stringBuilder.Clear();
 
+                // Read value
                 do
                 {
                     GoNextChar();
@@ -177,7 +180,7 @@ namespace Datadog.Trace.HttpOverStreams
             }
             while (true);
 
-            var length = long.TryParse(headers.GetValue("Content-Length"), out var headerValue) ? headerValue : (long?)null;
+            var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
 
             return new HttpResponse(statusCode, reasonPhrase, headers, new StreamContent(responseStream, length));
         }
