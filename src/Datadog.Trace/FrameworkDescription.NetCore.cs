@@ -18,7 +18,7 @@ namespace Datadog.Trace
         private static FrameworkDescription Create()
         {
             var frameworkName = "unknown";
-            var frameworkDescription = "unknown";
+            var frameworkVersion = "unknown";
             var osPlatform = "unknown";
             var osArchitecture = "unknown";
             var processArchitecture = "unknown";
@@ -29,9 +29,9 @@ namespace Datadog.Trace
                 {
                     // RuntimeInformation.FrameworkDescription returns a string like ".NET Framework 4.7.2" or ".NET Core 2.1",
                     // we want to return everything before the last space
-                    frameworkDescription = RuntimeInformation.FrameworkDescription;
-                    int index = frameworkDescription.LastIndexOf(' ');
-                    frameworkName = frameworkDescription.Substring(0, index).Trim();
+                    frameworkVersion = RuntimeInformation.FrameworkDescription;
+                    int index = frameworkVersion.LastIndexOf(' ');
+                    frameworkName = frameworkVersion.Substring(0, index).Trim();
                 }
                 catch (Exception e)
                 {
@@ -53,7 +53,7 @@ namespace Datadog.Trace
 
                 osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
                 processArchitecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
-                frameworkDescription = GetNetCoreOrNetFrameworkVersion();
+                frameworkVersion = GetNetCoreOrNetFrameworkVersion();
             }
             catch (Exception ex)
             {
@@ -62,7 +62,7 @@ namespace Datadog.Trace
 
             return new FrameworkDescription(
                 name: frameworkName,
-                productVersion: frameworkDescription,
+                productVersion: frameworkVersion,
                 osPlatform: osPlatform,
                 osArchitecture: osArchitecture,
                 processArchitecture: processArchitecture);

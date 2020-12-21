@@ -19,13 +19,13 @@ namespace Datadog.Trace
         {
             var osArchitecture = "unknown";
             var processArchitecture = "unknown";
-            var frameworkDescription = "unknown";
+            var frameworkVersion = "unknown";
 
             try
             {
                 osArchitecture = Environment.Is64BitOperatingSystem ? "x64" : "x86";
                 processArchitecture = Environment.Is64BitProcess ? "x64" : "x86";
-                frameworkDescription = GetNetFrameworkVersion();
+                frameworkVersion = GetNetFrameworkVersion();
             }
             catch (Exception ex)
             {
@@ -34,7 +34,7 @@ namespace Datadog.Trace
 
             return new FrameworkDescription(
                 name: ".NET Framework",
-                productVersion: frameworkDescription,
+                productVersion: frameworkVersion,
                 osPlatform: "Windows",
                 osArchitecture: osArchitecture,
                 processArchitecture: processArchitecture);

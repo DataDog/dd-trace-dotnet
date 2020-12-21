@@ -229,11 +229,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                         span.SetTag(TestTags.Type, TestTags.TypeTest);
                         CIEnvironmentValues.DecorateSpan(span);
 
-                        span.SetTag(CommonTags.RuntimeName, FrameworkDescription.Instance.Name);
-                        span.SetTag(CommonTags.RuntimeOSArchitecture, FrameworkDescription.Instance.OSArchitecture);
-                        span.SetTag(CommonTags.RuntimeOSPlatform, FrameworkDescription.Instance.OSPlatform);
-                        span.SetTag(CommonTags.RuntimeProcessArchitecture, FrameworkDescription.Instance.ProcessArchitecture);
-                        span.SetTag(CommonTags.RuntimeVersion, FrameworkDescription.Instance.ProductVersion);
+                        var framework = FrameworkDescription.Instance;
+
+                        span.SetTag(CommonTags.RuntimeName, framework.Name);
+                        span.SetTag(CommonTags.RuntimeOSArchitecture, framework.OSArchitecture);
+                        span.SetTag(CommonTags.RuntimeOSPlatform, framework.OSPlatform);
+                        span.SetTag(CommonTags.RuntimeProcessArchitecture, framework.ProcessArchitecture);
+                        span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
 
                         if (testArguments != null)
                         {
