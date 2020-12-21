@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace Datadog.Trace.Cache
+namespace Datadog.Trace.Util
 {
     /// <summary>
     /// Provide a cached reusable instance of StringBuilder per thread.

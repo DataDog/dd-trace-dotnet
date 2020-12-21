@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Cache;
 
 namespace Datadog.Trace.Util
 {
