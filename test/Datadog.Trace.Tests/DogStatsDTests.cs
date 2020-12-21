@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests
             var statsd = new Mock<IDogStatsd>();
             var spans = SendSpan(tracerMetricsEnabled: false, statsd.Object);
 
-            Assert.True(spans.Count == 2, AssertionFailureMessage(1, spans));
+            Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
             // no methods should be called on the IStatsd
             statsd.VerifyNoOtherCalls();
