@@ -27,14 +27,10 @@ namespace Datadog.Trace.Agent
         public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IDogStatsd statsd)
         {
             Log.Debug("Creating new Api");
-
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
             _apiRequestFactory = apiRequestFactory ?? CreateRequestFactory();
-
-            // report runtime details
-            Log.Information(FrameworkDescription.Instance.ToString());
         }
 
         public void SetBaseEndpoint(Uri baseEndpoint)
