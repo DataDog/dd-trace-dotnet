@@ -262,6 +262,11 @@ namespace Datadog.Trace.TestHelpers
 
             [Key("metrics")]
             public Dictionary<string, double> Metrics { get; set; }
+
+            public override string ToString()
+            {
+                return $"TraceId={TraceId}, SpanId={SpanId}, Service={Service}, Name={Name}, Resource={Resource}, Type={Type}";
+            }
         }
     }
 }
