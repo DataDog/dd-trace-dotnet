@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
+using Datadog.Trace;
 
 namespace Samples.WebRequest
 {
@@ -84,6 +85,8 @@ namespace Samples.WebRequest
 
         private static void HandleHttpRequests(object state)
         {
+            var expectedHeaders = new[] { HttpHeaderNames.TraceId, HttpHeaderNames.ParentId, HttpHeaderNames.SamplingPriority };
+
             var listener = (HttpListener)state;
 
             while (listener.IsListening)
@@ -93,6 +96,16 @@ namespace Samples.WebRequest
                     var context = listener.GetContext();
 
                     Console.WriteLine("[HttpListener] received request");
+
+                    // Check Datadog headers
+                    foreach (var header in expectedHeaders)
+                    {
+                        if (context.Request.Headers[header] == null)
+                        {
+                            Console.Error.WriteLine($"Missing header {header} for request {context.Request.Url}");
+                            Environment.Exit(-1);
+                        }
+                    }
 
                     // read request content and headers
                     using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
