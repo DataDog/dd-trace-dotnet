@@ -291,7 +291,30 @@ jobs:
       restoreSolution: Datadog.Trace.sln
       verbosityRestore: Normal
 
-  # this triggers a dependency chain that builds all the managed and native dlls
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
+      projects: |
+        src/**/*.csproj
+
+  - task: NuGetCommand@2
+    displayName: nuget restore
+    inputs:
+      restoreSolution: Datadog.Trace.Native.sln
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: msbuild
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:BuildCpp
+      maximumCpuCount: true
+
   - task: MSBuild@1
     displayName: msbuild tracer-home
     inputs:
