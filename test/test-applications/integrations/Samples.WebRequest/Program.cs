@@ -19,11 +19,13 @@ namespace Samples.WebRequest
 
         private static string Url;
         private static bool _tracingDisabled;
+        private static bool _ignoreAsync;
 
         public static async Task Main(string[] args)
         {
             _tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
-            Console.WriteLine($"TracingDisabled {_tracingDisabled}");
+            _ignoreAsync = args.Any(arg => arg.Equals("IgnoreAsync", StringComparison.OrdinalIgnoreCase));
+            Console.WriteLine($"TracingDisabled {_tracingDisabled}, IgnoreAsync: {_ignoreAsync}");
 
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
             Console.WriteLine($"Port {port}");
@@ -99,24 +101,27 @@ namespace Samples.WebRequest
                     Console.WriteLine("[HttpListener] received request");
 
                     // Check Datadog headers
-                    foreach (var header in expectedHeaders)
+                    if (!_ignoreAsync || context.Request.Url.Query.IndexOf("Async", StringComparison.OrdinalIgnoreCase) == -1)
                     {
-                        bool headerMissing = context.Request.Headers[header] == null;
+                        foreach (var header in expectedHeaders)
+                        {
+                            bool headerMissing = context.Request.Headers[header] == null;
 
-                        if (_tracingDisabled)
-                        {
-                            if (!headerMissing)
+                            if (_tracingDisabled)
                             {
-                                Console.Error.WriteLine($"Found header {header} for request {context.Request.Url}");
-                                Environment.Exit(-1);
+                                if (!headerMissing)
+                                {
+                                    Console.Error.WriteLine($"Found header {header} for request {context.Request.Url}");
+                                    Environment.Exit(-1);
+                                }
                             }
-                        }
-                        else
-                        {
-                            if (headerMissing)
+                            else
                             {
-                                Console.Error.WriteLine($"Missing header {header} for request {context.Request.Url}");
-                                Environment.Exit(-1);
+                                if (headerMissing)
+                                {
+                                    Console.Error.WriteLine($"Missing header {header} for request {context.Request.Url}");
+                                    Environment.Exit(-1);
+                                }
                             }
                         }
                     }
