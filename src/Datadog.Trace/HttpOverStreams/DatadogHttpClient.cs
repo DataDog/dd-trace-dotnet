@@ -58,7 +58,7 @@ namespace Datadog.Trace.HttpOverStreams
             const int statusCodeEnd = 12;
             const int startOfReasonPhrase = 13;
 
-            // TODO: Get this from a StringBuilderCache
+            // TODO: Get this from StringBuilderCache after we determine safe maximum capacity
             var stringBuilder = new StringBuilder();
 
             var chArray = new byte[1];
