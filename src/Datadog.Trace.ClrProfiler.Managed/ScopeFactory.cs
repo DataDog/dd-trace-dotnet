@@ -19,6 +19,22 @@ namespace Datadog.Trace.ClrProfiler
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ScopeFactory));
 
+        public static Scope GetActiveHttpScope(Tracer tracer)
+        {
+            var scope = tracer.ActiveScope;
+
+            var parent = scope?.Span;
+
+            if (parent != null &&
+                parent.Type == SpanTypes.Http &&
+                parent.GetTag(Tags.InstrumentationName) != null)
+            {
+                return scope;
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Creates a scope for outbound http requests and populates some common details.
         /// </summary>
@@ -42,11 +58,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                Span parent = tracer.ActiveScope?.Span;
-
-                if (parent != null &&
-                    parent.Type == SpanTypes.Http &&
-                    parent.GetTag(Tags.InstrumentationName) != null)
+                if (GetActiveHttpScope(tracer) != null)
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
