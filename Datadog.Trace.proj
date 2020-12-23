@@ -130,7 +130,7 @@
       </ManagedProfilerPublishProject>
     </ItemGroup>
 
-    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="$(BuildInParallel)">
+    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="false">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -154,7 +154,7 @@
       </BuildLoggerPublishProject>
     </ItemGroup>
 
-    <MSBuild Targets="Publish" Projects="@(BuildLoggerPublishProject)" BuildInParallel="$(BuildInParallel)">
+    <MSBuild Targets="Publish" Projects="@(BuildLoggerPublishProject)" BuildInParallel="false">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
