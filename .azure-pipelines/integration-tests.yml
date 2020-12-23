@@ -284,6 +284,7 @@ jobs:
       arguments: /nowarn:netsdk1138
       projects: |
         src/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
 
   - task: NuGetCommand@2
     displayName: nuget restore
@@ -416,6 +417,7 @@ jobs:
       arguments: /nowarn:netsdk1138
       projects: |
         src/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
 
   - task: NuGetCommand@2
     displayName: nuget restore
