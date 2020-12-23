@@ -1,11 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using Datadog.Core.Tools;
@@ -17,10 +19,19 @@ namespace Datadog.Trace.TestHelpers
     public class MockTracerAgent : IDisposable
     {
         private readonly HttpListener _listener;
+        private readonly UdpClient _udpClient;
         private readonly Thread _listenerThread;
+        private readonly Thread _statsdThread;
 
-        public MockTracerAgent(int port = 8126, int retries = 5)
+        public MockTracerAgent(int port = 8126, int? statsdPort = null, int retries = 5)
         {
+            if (statsdPort != null)
+            {
+                _udpClient = new UdpClient(statsdPort.Value);
+                _statsdThread = new Thread(HandleStatsdRequests) { IsBackground = true };
+                _statsdThread.Start();
+            }
+
             // try up to 5 consecutive ports before giving up
             while (true)
             {
@@ -80,6 +91,8 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<Span> Spans { get; private set; } = ImmutableList<Span>.Empty;
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public ConcurrentQueue<string> StatsdRequests { get; } = new ConcurrentQueue<string>();
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -176,6 +189,18 @@ namespace Datadog.Trace.TestHelpers
             if (!assertion(header))
             {
                 throw new Exception($"Failed assertion for {headerKey} on {header}");
+            }
+        }
+
+        private void HandleStatsdRequests()
+        {
+            var endPoint = new IPEndPoint(IPAddress.Loopback, 0);
+
+            while (true)
+            {
+                var buffer = _udpClient.Receive(ref endPoint);
+
+                StatsdRequests.Enqueue(Encoding.UTF8.GetString(buffer));
             }
         }
 
