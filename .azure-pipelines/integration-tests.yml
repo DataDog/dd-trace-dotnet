@@ -6,14 +6,14 @@ trigger:
     exclude:
       - docs/*
       - .github/*
-pr:	
-  branches:	
-    include:	
-      - master	
-      - release/*	
-  paths:	
-    exclude:	
-      - docs/*	
+pr:
+  branches:
+    include:
+      - master
+      - release/*
+  paths:
+    exclude:
+      - docs/*
       - .github/*
 
 pool:
