@@ -233,7 +233,7 @@ namespace Datadog.Trace.TestHelpers
 
                     StatsdRequests.Enqueue(Encoding.UTF8.GetString(buffer));
                 }
-                catch (ObjectDisposedException)
+                catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
                 {
                     return;
                 }
