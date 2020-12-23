@@ -7,6 +7,16 @@ trigger:
       - docs/*
       - .github/*
 
+pr:	
+  branches:	
+    include:	
+      - master	
+      - release/*	
+  paths:	
+    exclude:	
+      - docs/*	
+      - .github/*
+
 pool:
   vmImage: ubuntu-18.04
 
