@@ -289,7 +289,7 @@ jobs:
   - task: NuGetCommand@2
     displayName: nuget restore
     inputs:
-      restoreSolution: Datadog.Trace.Native.sln
+      restoreSolution: Datadog.Trace.sln
       verbosityRestore: Normal
 
   - task: MSBuild@1
@@ -422,7 +422,7 @@ jobs:
   - task: NuGetCommand@2
     displayName: nuget restore
     inputs:
-      restoreSolution: Datadog.Trace.Native.sln
+      restoreSolution: Datadog.Trace.sln
       verbosityRestore: Normal
 
   - task: MSBuild@1
