@@ -417,6 +417,7 @@ jobs:
   - task: NuGetToolInstaller@1
     displayName: install nuget
 
+  # Useless comment to trigger CI
   - task: DotNetCoreCLI@2
     displayName: dotnet build
     inputs:
