@@ -138,7 +138,7 @@ namespace Datadog.Trace
 
         private void DecorateRootSpan(Span span)
         {
-            if (AzureAppServices.Metadata?.IsRelevant ?? false)
+            if (AzureAppServices.Metadata.IsRelevant)
             {
                 span.SetTag(Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
                 span.SetTag(Tags.AzureAppServicesSiteKind, AzureAppServices.Metadata.SiteKind);

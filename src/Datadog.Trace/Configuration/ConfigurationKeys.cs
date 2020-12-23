@@ -239,6 +239,12 @@ namespace Datadog.Trace.Configuration
         public const string DiagnosticSourceEnabled = "DD_DIAGNOSTIC_SOURCE_ENABLED";
 
         /// <summary>
+        /// Configuration key for setting the API key, used by the Agent.
+        /// This key is here for troubleshooting purposes.
+        /// </summary>
+        public const string ApiKey = "DD_API_KEY";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations

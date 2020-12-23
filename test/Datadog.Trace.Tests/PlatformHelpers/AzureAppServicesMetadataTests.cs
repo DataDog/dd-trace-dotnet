@@ -209,6 +209,12 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 vars.Remove(AzureAppServices.InstanceNameKey);
             }
 
+            if (!vars.Contains(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey))
+            {
+                // This is a needed configuration for the AAS extension
+                vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "1");
+            }
+
             vars.Add(AzureAppServices.AzureAppServicesContextKey, "1");
             vars.Add(AzureAppServices.WebsiteOwnerNameKey, $"{subscriptionId}+{planResourceGroup}-EastUSwebspace");
             vars.Add(AzureAppServices.ResourceGroupKey, siteResourceGroup);
