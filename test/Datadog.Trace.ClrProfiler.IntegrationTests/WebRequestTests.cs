@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 70 : 26; // .NET Framework automatic instrumentation doesn't cover Async / TaskAsync operations
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 71 : 27; // .NET Framework automatic instrumentation doesn't cover Async / TaskAsync operations
 
             var ignoreAsync = EnvironmentHelper.IsCoreClr() ? string.Empty : "IgnoreAsync ";
 

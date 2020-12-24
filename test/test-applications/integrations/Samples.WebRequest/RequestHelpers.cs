@@ -317,7 +317,7 @@ namespace Samples.WebRequest
             {
                 using (Tracer.Instance.StartActive("GetResponse"))
                 {
-                    // Create two separate request objects since .NET Core asserts only one response per request
+                    // Create separate request objects since .NET Core asserts only one response per request
                     HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetResponse", url));
                     if (tracingDisabled)
                     {
@@ -330,7 +330,7 @@ namespace Samples.WebRequest
 
                 using (Tracer.Instance.StartActive("GetResponseAsync"))
                 {
-                    // Create two separate request objects since .NET Core asserts only one response per request
+                    // Create separate request objects since .NET Core asserts only one response per request
                     HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetResponseAsync", url));
                     if (tracingDisabled)
                     {
@@ -339,6 +339,24 @@ namespace Samples.WebRequest
 
                     (await request.GetResponseAsync()).Close();
                     Console.WriteLine("Received response for request.GetResponseAsync()");
+                }
+
+                using (Tracer.Instance.StartActive("GetRequestStream"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetRequestStream", url));
+                    request.Method = "POST";
+
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                    }
+
+                    var stream = request.GetRequestStream();
+                    stream.Write(new byte[1], 0, 1);
+
+                    request.GetResponse().Close();
+                    Console.WriteLine("Received response for request.GetRequestStream()/GetResponse()");
                 }
             }
         }
