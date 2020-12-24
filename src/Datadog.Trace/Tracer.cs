@@ -560,11 +560,8 @@ namespace Datadog.Trace
                     writer.WritePropertyName("service");
                     writer.WriteValue(DefaultServiceName);
 
-                    if (!AzureAppServices.Metadata.IsRelevant)
-                    {
-                        writer.WritePropertyName("agent_url");
-                        writer.WriteValue(Settings.AgentUri);
-                    }
+                    writer.WritePropertyName("agent_url");
+                    writer.WriteValue(Settings.AgentUri);
 
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Source.DebugEnabled);
