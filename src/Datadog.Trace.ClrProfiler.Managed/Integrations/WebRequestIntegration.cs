@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -79,24 +78,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return callGetRequestStream(webRequest);
             }
 
-            var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags);
+            var tracer = Tracer.Instance;
 
-            try
+            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                if (scope != null)
+                var spanContext = ScopeFactory.CreateHttpSpanContext(tracer, IntegrationId);
+
+                if (spanContext != null)
                 {
-                    // add distributed tracing headers to the HTTP request
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
+                    // Add distributed tracing headers to the HTTP request
+                    SpanContextPropagator.Instance.Inject(spanContext, request.Headers.Wrap());
                 }
+            }
 
-                return callGetRequestStream(webRequest);
-            }
-            catch (Exception ex)
-            {
-                scope?.Span.SetException(ex);
-                scope?.Dispose();
-                throw;
-            }
+            return callGetRequestStream(webRequest);
         }
 
         /// <summary>
@@ -160,22 +155,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return callGetResponse(webRequest);
             }
 
-            var tracer = Tracer.Instance;
+            // Try to extract existing span context from headers
+            var spanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
 
-            HttpTags tags;
-
-            var scope = ScopeFactory.GetActiveHttpScope(tracer);
-
-            if (scope == null)
-            {
-                scope = ScopeFactory.CreateOutboundHttpScope(tracer, request.Method, request.RequestUri, IntegrationId, out tags);
-            }
-            else
-            {
-                tags = scope.Span.Tags as HttpTags;
-            }
-
-            using (scope)
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags, spanContext?.SpanId))
             {
                 try
                 {
@@ -224,8 +207,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Major5)]
         public static object GetResponseAsync(object webRequest, int opCode, int mdToken, long moduleVersionPtr)
         {
-            Console.WriteLine("GetResponseAsync");
-
             const string methodName = nameof(GetResponseAsync);
             Func<object, Task<WebResponse>> callGetResponseAsync;
 
