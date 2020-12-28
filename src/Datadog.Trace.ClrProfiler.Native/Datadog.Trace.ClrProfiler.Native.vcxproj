@@ -28,7 +28,7 @@
     <LIB_PATH>lib\</LIB_PATH>
     <LIB_PLATFORM Condition="'$(Platform)'=='x64'">x64</LIB_PLATFORM>
     <LIB_PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</LIB_PLATFORM>
-    <LIB_INCLUDES>$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\include;$(LIB_PATH)spdlog_$(LIB_PLATFORM)-windows-static\include</LIB_INCLUDES>
+    <LIB_INCLUDES>$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\include;$(LIB_PATH)spdlog\include</LIB_INCLUDES>
     <LIB_BINARIES Condition="'$(Configuration)'=='Release'">$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\lib\fmt.lib</LIB_BINARIES>
     <LIB_BINARIES Condition="'$(Configuration)'=='Debug'">$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\debug\lib\fmtd.lib</LIB_BINARIES>
   </PropertyGroup>
@@ -99,7 +99,7 @@
       <ConformanceMode>true</ConformanceMode>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>SPDLOG_FMT_EXTERNAL;BIT64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SPDLOG_FMT_EXTERNAL;BIT64;AMD64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Lib>
@@ -120,7 +120,7 @@
       <ConformanceMode>true</ConformanceMode>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>SPDLOG_FMT_EXTERNAL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SPDLOG_FMT_EXTERNAL;_UNICODE;UNICODE;X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Lib>
@@ -146,7 +146,7 @@
       <ConformanceMode>true</ConformanceMode>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>SPDLOG_FMT_EXTERNAL;_TARGET_64BIT;BIT64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SPDLOG_FMT_EXTERNAL;_TARGET_64BIT;BIT64;AMD64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Lib>
@@ -171,7 +171,7 @@
       <ConformanceMode>true</ConformanceMode>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>SPDLOG_FMT_EXTERNAL;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SPDLOG_FMT_EXTERNAL;_UNICODE;UNICODE;X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Lib>

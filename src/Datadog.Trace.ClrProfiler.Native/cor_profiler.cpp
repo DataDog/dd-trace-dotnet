@@ -20,7 +20,7 @@
 #include "resource.h"
 #include "util.h"
 
-#ifdef OSX
+#ifdef MACOS
 #include <mach-o/getsect.h>
 #include <mach-o/dyld.h>
 #endif
