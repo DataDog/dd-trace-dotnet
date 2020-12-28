@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -502,18 +503,23 @@ namespace Datadog.Trace
         {
             string agentError = null;
 
-            try
+            // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
+            // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
+            if (!AzureAppServices.Metadata.IsRelevant)
             {
-                var success = await _agentWriter.Ping().ConfigureAwait(false);
-
-                if (!success)
+                try
                 {
-                    agentError = "An error occurred while sending traces to the agent";
+                    var success = await _agentWriter.Ping().ConfigureAwait(false);
+
+                    if (!success)
+                    {
+                        agentError = "An error occurred while sending traces to the agent";
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                agentError = ex.Message;
+                catch (Exception ex)
+                {
+                    agentError = ex.Message;
+                }
             }
 
             try

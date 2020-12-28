@@ -2,7 +2,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
 {
@@ -47,6 +49,11 @@ namespace Datadog.Trace.Configuration
             TraceEnabled = source?.GetBool(ConfigurationKeys.TraceEnabled) ??
                            // default value
                            true;
+
+            if (AzureAppServices.Metadata.IsRelevant && AzureAppServices.Metadata.IsUnsafeToTrace)
+            {
+                TraceEnabled = false;
+            }
 
             var disabledIntegrationNames = source?.GetString(ConfigurationKeys.DisabledIntegrations)
                                                  ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??

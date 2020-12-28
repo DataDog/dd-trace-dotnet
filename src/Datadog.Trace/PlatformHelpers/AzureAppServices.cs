@@ -75,50 +75,69 @@ namespace Datadog.Trace.PlatformHelpers
 
         public AzureAppServices(IDictionary environmentVariables)
         {
-            IsRelevant = GetVariableIfExists(AzureAppServicesContextKey, environmentVariables)?.ToBoolean() ?? false;
-            if (IsRelevant)
+            try
             {
-                // Azure App Services Basis
-                SubscriptionId = GetSubscriptionId(environmentVariables);
-                ResourceGroup = GetVariableIfExists(ResourceGroupKey, environmentVariables);
-                SiteName = GetVariableIfExists(SiteNameKey, environmentVariables);
-                ResourceId = CompileResourceId();
+                IsRelevant = GetVariableIfExists(AzureAppServicesContextKey, environmentVariables)?.ToBoolean() ?? false;
 
-                InstanceId = GetVariableIfExists(InstanceIdKey, environmentVariables);
-                InstanceName = GetVariableIfExists(InstanceNameKey, environmentVariables);
-                OperatingSystem = GetVariableIfExists(OperatingSystemKey, environmentVariables);
-
-                // Functions
-                FunctionsWorkerRuntime =
-                    GetVariableIfExists(
-                        FunctionsWorkerRuntimeKey,
-                        environmentVariables,
-                        i => AzureContext = AzureContext.AzureFunction);
-                FunctionsExtensionVersion =
-                    GetVariableIfExists(
-                        FunctionsExtensionVersionKey,
-                        environmentVariables,
-                        i => AzureContext = AzureContext.AzureFunction);
-
-                switch (AzureContext)
+                if (IsRelevant)
                 {
-                    case AzureContext.AzureFunction:
-                        SiteKind = "functionapp";
-                        SiteType = "function";
-                        break;
-                    case AzureContext.AzureAppService:
-                        SiteKind = "app";
-                        SiteType = "app";
-                        break;
-                }
+                    var apiKey = GetVariableIfExists(Configuration.ConfigurationKeys.ApiKey, environmentVariables);
+                    if (apiKey == null)
+                    {
+                        Log.Error("The Azure Site Extension will not work if you have not configured DD_API_KEY.");
+                        IsUnsafeToTrace = true;
+                        return;
+                    }
 
-                Runtime = FrameworkDescription.Instance.Name;
+                    // Azure App Services Basis
+                    SubscriptionId = GetSubscriptionId(environmentVariables);
+                    ResourceGroup = GetVariableIfExists(ResourceGroupKey, environmentVariables);
+                    SiteName = GetVariableIfExists(SiteNameKey, environmentVariables);
+                    ResourceId = CompileResourceId();
+
+                    InstanceId = GetVariableIfExists(InstanceIdKey, environmentVariables);
+                    InstanceName = GetVariableIfExists(InstanceNameKey, environmentVariables);
+                    OperatingSystem = GetVariableIfExists(OperatingSystemKey, environmentVariables);
+
+                    // Functions
+                    FunctionsWorkerRuntime =
+                        GetVariableIfExists(
+                            FunctionsWorkerRuntimeKey,
+                            environmentVariables,
+                            i => AzureContext = AzureContext.AzureFunction);
+                    FunctionsExtensionVersion =
+                        GetVariableIfExists(
+                            FunctionsExtensionVersionKey,
+                            environmentVariables,
+                            i => AzureContext = AzureContext.AzureFunction);
+
+                    switch (AzureContext)
+                    {
+                        case AzureContext.AzureFunction:
+                            SiteKind = "functionapp";
+                            SiteType = "function";
+                            break;
+                        case AzureContext.AzureAppService:
+                            SiteKind = "app";
+                            SiteType = "app";
+                            break;
+                    }
+
+                    Runtime = FrameworkDescription.Instance.Name;
+                }
+            }
+            catch (Exception ex)
+            {
+                IsUnsafeToTrace = true;
+                Log.SafeLogError(ex, "Unable to initialize AzureAppServices metadata.");
             }
         }
 
         public static AzureAppServices Metadata { get; set; }
 
         public bool IsRelevant { get; }
+
+        public bool IsUnsafeToTrace { get; }
 
         public string SiteType { get; }
 
