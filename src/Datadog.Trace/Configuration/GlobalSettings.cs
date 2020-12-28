@@ -80,6 +80,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public static void Reload()
         {
+            DatadogLogging.Reset();
             Source = FromDefaultSources();
         }
 

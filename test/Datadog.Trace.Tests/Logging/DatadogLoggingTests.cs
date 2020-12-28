@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
 {
+    [CollectionDefinition(nameof(Datadog.Trace.Tests.Logging), DisableParallelization = true)]
     [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class DatadogLoggingTests : IDisposable
     {
