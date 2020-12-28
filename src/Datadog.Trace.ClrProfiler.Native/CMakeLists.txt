@@ -212,7 +212,6 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         logging.cpp
         metadata_builder.cpp
         miniutf.cpp
-        rejit_handler.cpp
         sig_helpers.cpp
         string.cpp
         util.cpp
