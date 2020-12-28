@@ -465,6 +465,7 @@ services:
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
     - MYSQL_PORT=3306
+    - RABBITMQ_HOST=rabbitmq
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.1
     depends_on:
@@ -475,6 +476,7 @@ services:
     - mongo
     - postgres
     - mysql
+    - rabbitmq
 
   IntegrationTests.ARM64.Core50:
     build:
@@ -494,6 +496,7 @@ services:
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
     - MYSQL_PORT=3306
+    - RABBITMQ_HOST=rabbitmq
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=net5.0
     depends_on:
@@ -504,3 +507,4 @@ services:
     - mongo
     - postgres
     - mysql
+    - rabbitmq
