@@ -47,10 +47,16 @@ jobs:
 
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
   # The script exposes the required environment variables to the following steps
-  - task: PowerShell@2
-    displayName: Install profiler latest release
-    inputs:
-      filePath: ./.azure-pipelines/setup_tracer.ps1
+
+  # PR: https://github.com/DataDog/dd-trace-dotnet/pull/1092
+  # Introduces a breaking change in the xUnit Integration causing instrumentation failure when
+  # using previous releases of the tracer. We have to disable the dogfooding until we release
+  # a new version of the tracer that includes the changes in the PR.
+  
+  #- task: PowerShell@2
+  #  displayName: Install profiler latest release
+  #  inputs:
+  #    filePath: ./.azure-pipelines/setup_tracer.ps1
 
   - task: UseDotNet@2
     displayName: install dotnet core runtime 2.1
@@ -81,7 +87,7 @@ jobs:
     inputs:
       command: build
       configuration: $(buildConfiguration)
-      arguments: /nowarn:netsdk1138 -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      arguments: /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
