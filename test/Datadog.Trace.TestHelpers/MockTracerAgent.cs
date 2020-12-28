@@ -1,11 +1,12 @@
 using System;
-using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using Datadog.Core.Tools;
@@ -17,10 +18,42 @@ namespace Datadog.Trace.TestHelpers
     public class MockTracerAgent : IDisposable
     {
         private readonly HttpListener _listener;
+        private readonly UdpClient _udpClient;
         private readonly Thread _listenerThread;
+        private readonly Thread _statsdThread;
+        private readonly CancellationTokenSource _cancellationTokenSource;
 
-        public MockTracerAgent(int port = 8126, int retries = 5)
+        public MockTracerAgent(int port = 8126, int retries = 5, bool useStatsd = false)
         {
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            if (useStatsd)
+            {
+                const int basePort = 11555;
+
+                var retriesLeft = retries;
+
+                while (true)
+                {
+                    try
+                    {
+                        _udpClient = new UdpClient(basePort + retriesLeft);
+                    }
+                    catch (Exception) when (retriesLeft > 0)
+                    {
+                        retriesLeft--;
+                        continue;
+                    }
+
+                    _statsdThread = new Thread(HandleStatsdRequests) { IsBackground = true };
+                    _statsdThread.Start();
+
+                    StatsdPort = basePort + retriesLeft;
+
+                    break;
+                }
+            }
+
             // try up to 5 consecutive ports before giving up
             while (true)
             {
@@ -73,6 +106,11 @@ namespace Datadog.Trace.TestHelpers
         public int Port { get; }
 
         /// <summary>
+        /// Gets the UDP port for statsd
+        /// </summary>
+        public int StatsdPort { get; }
+
+        /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
         /// </summary>
         public List<Func<Span, bool>> SpanFilters { get; private set; } = new List<Func<Span, bool>>();
@@ -80,6 +118,8 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<Span> Spans { get; private set; } = ImmutableList<Span>.Empty;
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public ConcurrentQueue<string> StatsdRequests { get; } = new ConcurrentQueue<string>();
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -149,6 +189,8 @@ namespace Datadog.Trace.TestHelpers
         public void Dispose()
         {
             _listener?.Stop();
+            _cancellationTokenSource.Cancel();
+            _udpClient?.Close();
         }
 
         protected virtual void OnRequestReceived(HttpListenerContext context)
@@ -176,6 +218,25 @@ namespace Datadog.Trace.TestHelpers
             if (!assertion(header))
             {
                 throw new Exception($"Failed assertion for {headerKey} on {header}");
+            }
+        }
+
+        private void HandleStatsdRequests()
+        {
+            var endPoint = new IPEndPoint(IPAddress.Loopback, 0);
+
+            while (!_cancellationTokenSource.IsCancellationRequested)
+            {
+                try
+                {
+                    var buffer = _udpClient.Receive(ref endPoint);
+
+                    StatsdRequests.Enqueue(Encoding.UTF8.GetString(buffer));
+                }
+                catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
+                {
+                    return;
+                }
             }
         }
 
