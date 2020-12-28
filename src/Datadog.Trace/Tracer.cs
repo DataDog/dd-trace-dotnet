@@ -42,7 +42,7 @@ namespace Datadog.Trace
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new object();
 
-        // private static RuntimeMetricsWriter _runtimeMetricsWriter;
+        private static RuntimeMetricsWriter _runtimeMetricsWriter;
 
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
@@ -191,11 +191,10 @@ namespace Datadog.Trace
                     _ = WriteDiagnosticLog();
                 }
 
-                // TODO: To re-enable when the backend is ready
-                // if (Settings.RuntimeMetricsEnabled)
-                // {
-                //     _runtimeMetricsWriter = new RuntimeMetricsWriter(Statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort), 10000);
-                // }
+                if (Settings.RuntimeMetricsEnabled)
+                {
+                    _runtimeMetricsWriter = new RuntimeMetricsWriter(Statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort), TimeSpan.FromSeconds(10));
+                }
             }
         }
 
@@ -519,8 +518,6 @@ namespace Datadog.Trace
 
             try
             {
-                var frameworkDescription = FrameworkDescription.Create();
-
                 var stringWriter = new StringWriter();
 
                 using (var writer = new JsonTextWriter(stringWriter))
@@ -531,7 +528,7 @@ namespace Datadog.Trace
                     writer.WriteValue(DateTime.Now);
 
                     writer.WritePropertyName("os_name");
-                    writer.WriteValue(frameworkDescription.OSPlatform);
+                    writer.WriteValue(FrameworkDescription.Instance.OSPlatform);
 
                     writer.WritePropertyName("os_version");
                     writer.WriteValue(Environment.OSVersion.ToString());
@@ -540,13 +537,13 @@ namespace Datadog.Trace
                     writer.WriteValue(TracerConstants.AssemblyVersion);
 
                     writer.WritePropertyName("platform");
-                    writer.WriteValue(frameworkDescription.ProcessArchitecture);
+                    writer.WriteValue(FrameworkDescription.Instance.ProcessArchitecture);
 
                     writer.WritePropertyName("lang");
-                    writer.WriteValue(frameworkDescription.Name);
+                    writer.WriteValue(FrameworkDescription.Instance.Name);
 
                     writer.WritePropertyName("lang_version");
-                    writer.WriteValue(frameworkDescription.ProductVersion);
+                    writer.WriteValue(FrameworkDescription.Instance.ProductVersion);
 
                     writer.WritePropertyName("env");
                     writer.WriteValue(Settings.Environment);
@@ -672,13 +669,11 @@ namespace Datadog.Trace
         {
             try
             {
-                var frameworkDescription = FrameworkDescription.Create();
-
                 var constantTags = new List<string>
                                    {
                                        "lang:.NET",
-                                       $"lang_interpreter:{frameworkDescription.Name}",
-                                       $"lang_version:{frameworkDescription.ProductVersion}",
+                                       $"lang_interpreter:{FrameworkDescription.Instance.Name}",
+                                       $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
                                        $"tracer_version:{TracerConstants.AssemblyVersion}",
                                        $"service:{serviceName}"
                                    };

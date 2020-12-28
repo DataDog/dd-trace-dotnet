@@ -26,11 +26,6 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net461_Datadog.Trace.DuckTyping.dll"
-              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.DuckTyping.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.MSBuild.dll"
               Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.MSBuild.dll"
               KeyPath="yes" Checksum="yes"/>

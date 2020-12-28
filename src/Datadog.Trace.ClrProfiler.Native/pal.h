@@ -14,7 +14,7 @@
 
 #endif
 
-#if OSX
+#if MACOS
 #include <libproc.h>
 #endif
 
@@ -70,7 +70,7 @@ inline WSTRING GetCurrentProcessName() {
   const DWORD len = GetModuleFileName(nullptr, buffer, length);
   const WSTRING current_process_path(buffer);
   return std::filesystem::path(current_process_path).filename();
-#elif OSX
+#elif MACOS
   const int length = 260;
   char* buffer = new char[length];
   proc_name(getpid(), buffer, length);

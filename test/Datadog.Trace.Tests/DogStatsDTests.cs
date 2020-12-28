@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Tests
             var statsd = new Mock<IDogStatsd>();
             var spans = SendSpan(tracerMetricsEnabled: false, statsd.Object);
 
-            Assert.True(spans.Count == 1, "Expected one span");
+            Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
             // no methods should be called on the IStatsd
             statsd.VerifyNoOtherCalls();
@@ -46,7 +47,7 @@ namespace Datadog.Trace.Tests
 
             var spans = SendSpan(tracerMetricsEnabled: true, statsd.Object);
 
-            Assert.True(spans.Count == 1, "Expected one span");
+            Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
             // for a single trace, these methods are called once with a value of "1"
             statsd.Verify(
@@ -131,6 +132,11 @@ namespace Datadog.Trace.Tests
             }
 
             return spans;
+        }
+
+        private static string AssertionFailureMessage(int expected, IImmutableList<MockTracerAgent.Span> spans)
+        {
+            return $"Expected {expected} span, received {spans.Count}: {Environment.NewLine}{string.Join(Environment.NewLine, spans.Select(s => s.ToString()))}";
         }
     }
 }

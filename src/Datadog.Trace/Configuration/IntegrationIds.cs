@@ -21,5 +21,6 @@ namespace Datadog.Trace.Configuration
         ServiceStackRedis,
         StackExchangeRedis,
         ServiceRemoting,
+        RabbitMQ,
     }
 }

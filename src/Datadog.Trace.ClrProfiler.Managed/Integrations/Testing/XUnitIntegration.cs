@@ -31,14 +31,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.XUnit));
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
-        private static readonly FrameworkDescription _runtimeDescription;
 
         static XUnitIntegration()
         {
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
-
-            _runtimeDescription = FrameworkDescription.Create();
         }
 
         /// <summary>
@@ -427,11 +424,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 span.SetTag(TestTags.Type, TestTags.TypeTest);
                 CIEnvironmentValues.DecorateSpan(span);
 
-                span.SetTag(CommonTags.RuntimeName, _runtimeDescription.Name);
-                span.SetTag(CommonTags.RuntimeOSArchitecture, _runtimeDescription.OSArchitecture);
-                span.SetTag(CommonTags.RuntimeOSPlatform, _runtimeDescription.OSPlatform);
-                span.SetTag(CommonTags.RuntimeProcessArchitecture, _runtimeDescription.ProcessArchitecture);
-                span.SetTag(CommonTags.RuntimeVersion, _runtimeDescription.ProductVersion);
+                var framework = FrameworkDescription.Instance;
+
+                span.SetTag(CommonTags.RuntimeName, framework.Name);
+                span.SetTag(CommonTags.RuntimeOSArchitecture, framework.OSArchitecture);
+                span.SetTag(CommonTags.RuntimeOSPlatform, framework.OSPlatform);
+                span.SetTag(CommonTags.RuntimeProcessArchitecture, framework.ProcessArchitecture);
+                span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
 
                 if (testArguments != null)
                 {

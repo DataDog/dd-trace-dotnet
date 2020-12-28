@@ -6,7 +6,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static class NativeMethods
     {
-        private static readonly bool IsWindows = string.Equals(FrameworkDescription.Create().OSPlatform, "Windows", StringComparison.OrdinalIgnoreCase);
+        private static readonly bool IsWindows = string.Equals(FrameworkDescription.Instance.OSPlatform, "Windows", StringComparison.OrdinalIgnoreCase);
 
         public static bool IsProfilerAttached()
         {

@@ -413,8 +413,9 @@ namespace Datadog.Trace.Tests
         public void DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose()
         {
             // Arrange
+            var prefix = Guid.NewGuid().ToString();
             var cde = new CountdownEvent(2);
-            var tracker = new InMemoryRemoteObjectTracker(cde);
+            var tracker = new InMemoryRemoteObjectTracker(cde, prefix);
             TrackingServices.RegisterTrackingHandler(tracker);
 
             // Set the minimum permissions needed to run code in the new AppDomain
@@ -425,11 +426,11 @@ namespace Datadog.Trace.Tests
             // Act
             try
             {
-                using (_tracer.StartActive("test-span"))
+                using (_tracer.StartActive($"{prefix}test-span"))
                 {
                     remote.DoCallBack(AppDomainHelpers.EmptyCallback);
 
-                    using (_tracer.StartActive("test-span-inner"))
+                    using (_tracer.StartActive($"{prefix}test-span-inner"))
                     {
                         remote.DoCallBack(AppDomainHelpers.EmptyCallback);
                     }
@@ -466,19 +467,29 @@ namespace Datadog.Trace.Tests
 
         private class InMemoryRemoteObjectTracker : ITrackingHandler
         {
-            private CountdownEvent _cde;
+            private readonly string _prefix;
+            private readonly CountdownEvent _cde;
 
-            public InMemoryRemoteObjectTracker(CountdownEvent cde)
+            public InMemoryRemoteObjectTracker(CountdownEvent cde, string prefix)
             {
                 _cde = cde;
+                _prefix = prefix;
             }
 
             public int DisconnectCount { get; set; }
 
             public void DisconnectedObject(object obj)
             {
-                DisconnectCount++;
-                _cde.Signal();
+                if (obj is DisposableObjectHandle handle)
+                {
+                    var scope = (Scope)handle.Unwrap();
+
+                    if (scope.Span.OperationName.StartsWith(_prefix))
+                    {
+                        DisconnectCount++;
+                        _cde.Signal();
+                    }
+                }
             }
 
             public void MarshaledObject(object obj, ObjRef or)

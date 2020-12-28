@@ -270,3 +270,8 @@ BenchmarkDotNet.Artifacts/
 deploy/linux/
 deploy/AzureAppServices/
 !build/artifacts
+
+# macOS temporal files
+*..DS_Store
+.DS_Store/*
+.DS_Store

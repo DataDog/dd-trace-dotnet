@@ -131,6 +131,13 @@ jobs:
     inputs:
       version: $(dotnetCoreSdkVersion)
 
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+      includePreviewVersions: true
+
   - task: DotNetCoreCLI@2
     displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
     inputs:

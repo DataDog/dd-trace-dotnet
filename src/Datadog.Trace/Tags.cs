@@ -150,6 +150,36 @@ namespace Datadog.Trace
         public const string GraphQLSource = "graphql.source";
 
         /// <summary>
+        /// The AMQP method.
+        /// </summary>
+        public const string AmqpCommand = "amqp.command";
+
+        /// <summary>
+        /// The name of the AMQP exchange the message was originally published to.
+        /// </summary>
+        public const string AmqpExchange = "amqp.exchange";
+
+        /// <summary>
+        /// The routing key for the AMQP message.
+        /// </summary>
+        public const string AmqpRoutingKey = "amqp.routing_key";
+
+        /// <summary>
+        /// The name of the queue for the AMQP message.
+        /// </summary>
+        public const string AmqpQueue = "amqp.queue";
+
+        /// <summary>
+        /// The delivery mode of the AMQP message.
+        /// </summary>
+        public const string AmqpDeliveryMode = "amqp.delivery_mode";
+
+        /// <summary>
+        /// The size of the message.
+        /// </summary>
+        public const string MessageSize = "message.size";
+
+        /// <summary>
         /// The sampling priority for the entire trace.
         /// </summary>
         public const string SamplingPriority = "sampling.priority";
@@ -187,22 +217,54 @@ namespace Datadog.Trace
         public const string Language = "language";
 
         /// <summary>
-        /// The resource id of the site instance in azure app services where the traced application is running.
+        /// The resource id of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesResourceId = "aas.resource.id";
 
         /// <summary>
-        /// The resource group of the site instance in azure app services where the traced application is running.
+        /// The resource group of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesResourceGroup = "aas.resource.group";
 
         /// <summary>
-        /// The site name of the site instance in azure app services where the traced application is running.
+        /// The site name of the site instance in Azure where the traced application is running.
         /// </summary>
         public const string AzureAppServicesSiteName = "aas.site.name";
 
         /// <summary>
-        /// The subscription id of the site instance in azure app services where the traced application is running.
+        /// The instance name in Azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesInstanceName = "aas.environment.instance_name";
+
+        /// <summary>
+        /// The instance id in Azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesInstanceId = "aas.environment.instance_id";
+
+        /// <summary>
+        /// The operating system in Azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesOperatingSystem = "aas.environment.os";
+
+        /// <summary>
+        /// The runtime in Azure where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesRuntime = "aas.environment.runtime";
+
+        /// <summary>
+        /// The kind of application instance running in Azure.
+        /// Possible values: app, api, mobileapp, app_linux, app_linux_container, functionapp, functionapp_linux, functionapp_linux_container
+        /// </summary>
+        public const string AzureAppServicesSiteKind = "aas.site.kind";
+
+        /// <summary>
+        /// The type of application instance running in Azure.
+        /// Possible values: app, function
+        /// </summary>
+        public const string AzureAppServicesSiteType = "aas.site.type";
+
+        /// <summary>
+        /// The subscription id of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesSubscriptionId = "aas.subscription.id";
 

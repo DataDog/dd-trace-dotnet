@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class WebRequestIntegration
     {
         private const string WebRequestTypeName = "System.Net.WebRequest";
+        private const string Major2 = "2";
         private const string Major4 = "4";
         private const string Major5 = "5";
 
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "System", // .NET Framework
             TargetType = WebRequestTypeName,
             TargetSignatureTypes = new[] { "System.Net.WebResponse" },
-            TargetMinimumVersion = Major4,
+            TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Net.Requests", // .NET Core

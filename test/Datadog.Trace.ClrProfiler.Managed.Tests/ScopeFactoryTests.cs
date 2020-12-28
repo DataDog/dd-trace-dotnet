@@ -1,9 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Data;
+using System.Data.Common;
+using System.Data.SqlClient;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using Moq;
+using MySql.Data.MySqlClient;
+using Npgsql;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
@@ -12,6 +19,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     {
         // declare here instead of using ScopeFactory.UrlIdPlaceholder so tests fails if value changes
         private const string Id = "?";
+
+        public static IEnumerable<object[]> GetDbCommandScopeData()
+        {
+            yield return new object[] { new System.Data.SqlClient.SqlCommand() };
+            yield return new object[] { new MySqlCommand() };
+            yield return new object[] { new NpgsqlCommand() };
+#if !NET452
+            yield return new object[] { new Microsoft.Data.SqlClient.SqlCommand() };
+#endif
+        }
 
         [Theory]
         [InlineData("users/", "users/")]
@@ -117,6 +134,90 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                         Assert.Null(automaticScope2);
                     }
                 }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDbCommandScopeData))]
+        public void CreateDbCommandScope_ReturnsNullForExcludedAdoNetTypes(IDbCommand command)
+        {
+            // Set up tracer
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.AdoNetExcludedTypes, command.GetType().FullName }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source);
+            var tracer = new Tracer(tracerSettings);
+
+            // Create scope
+            using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, new CustomDbCommand()))
+            {
+                using (var innerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
+                {
+                    Assert.Null(innerScope);
+                }
+
+                Assert.NotNull(outerScope);
+            }
+        }
+
+        private static Scope SystemDataSqlClientSqlCommandCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new System.Data.SqlClient.SqlCommand());
+
+        private static Scope PostgresCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new NpgsqlCommand());
+
+        private static Scope CustomCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new CustomDbCommand());
+
+#if !NET452
+        private static Scope MicrosoftDataSqlClientSqlCommandCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new Microsoft.Data.SqlClient.SqlCommand());
+#endif
+
+        private class CustomDbCommand : DbCommand
+        {
+            public override string CommandText { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            public override int CommandTimeout { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            public override CommandType CommandType { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            public override bool DesignTimeVisible { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            public override UpdateRowSource UpdatedRowSource { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            protected override DbConnection DbConnection { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            protected override DbParameterCollection DbParameterCollection => throw new NotImplementedException();
+
+            protected override DbTransaction DbTransaction { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            public override void Cancel()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override int ExecuteNonQuery()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override object ExecuteScalar()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void Prepare()
+            {
+                throw new NotImplementedException();
+            }
+
+            protected override DbParameter CreateDbParameter()
+            {
+                throw new NotImplementedException();
+            }
+
+            protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
+            {
+                throw new NotImplementedException();
             }
         }
     }
