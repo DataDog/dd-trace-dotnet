@@ -7,6 +7,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
 {
+    [CollectionDefinition(nameof(ConfigurationSourceTests), DisableParallelization = true)]
+    [Collection(nameof(ConfigurationSourceTests))]
     public class ConfigurationSourceTests
     {
         private static readonly Dictionary<string, string> TagsK1V1K2V2 = new Dictionary<string, string> { { "k1", "v1" }, { "k2", "v2" } };
