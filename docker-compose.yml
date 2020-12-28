@@ -41,6 +41,14 @@ services:
     environment:
     - discovery.type=single-node
 
+  elasticsearch7_arm64:
+    image: elasticsearch:7.10.1
+    ports:
+    - "127.0.0.1:9200:9200"
+    - "127.0.0.1:9300:9300"
+    environment:
+    - discovery.type=single-node
+
   postgres:
     image: postgres:10.5-alpine
     environment:
@@ -68,6 +76,14 @@ services:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
 
+  sqledge:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    ports:
+    - "127.0.0.1:1433:1433"
+    environment:
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=Strong!Passw0rd
+
   wcfservice:
     image: mcr.microsoft.com/dotnet/framework/wcf:4.8
     ports:
@@ -82,6 +98,18 @@ services:
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
     command: /project/build/docker/build.sh
+    volumes:
+    - ./:/project
+
+  build.arm64:
+    build:
+      context: ./
+      dockerfile: ./build/docker/dotnet.arm64.dockerfile
+    image: datadog-dotnet
+    environment:
+    - buildConfiguration=${buildConfiguration}
+    - publishTargetFramework=${publishTargetFramework}
+    command: /project/build/docker/build.arm64.sh
     volumes:
     - ./:/project
 
@@ -418,3 +446,61 @@ services:
     - postgres
     - mysql
     - rabbitmq
+
+  IntegrationTests.ARM64.Core31:
+    build:
+      context: ./
+      dockerfile: ./build/docker/dotnet.arm64.core31.dockerfile
+    image: datadog-dotnet-arm64-core31
+    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh
+    volumes:
+    - ./:/project
+    environment:
+    - MONGO_HOST=mongo
+    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+    - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
+    - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
+    - SQLSERVER_CONNECTION_STRING=Server=sqledge;User=sa;Password=Strong!Passw0rd
+    - POSTGRES_HOST=postgres
+    - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
+    - buildConfiguration=${buildConfiguration}
+    - publishTargetFramework=netcoreapp3.1
+    depends_on:
+    - servicestackredis
+    - stackexchangeredis
+    - elasticsearch7_arm64
+    - sqledge
+    - mongo
+    - postgres
+    - mysql
+
+  IntegrationTests.ARM64.Core50:
+    build:
+      context: ./
+      dockerfile: ./build/docker/dotnet.arm64.core50.dockerfile
+    image: datadog-dotnet-arm64-core50
+    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh
+    volumes:
+    - ./:/project
+    environment:
+    - MONGO_HOST=mongo
+    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+    - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
+    - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
+    - SQLSERVER_CONNECTION_STRING=Server=sqledge;User=sa;Password=Strong!Passw0rd
+    - POSTGRES_HOST=postgres
+    - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
+    - buildConfiguration=${buildConfiguration}
+    - publishTargetFramework=net5.0
+    depends_on:
+    - servicestackredis
+    - stackexchangeredis
+    - elasticsearch7_arm64
+    - sqledge
+    - mongo
+    - postgres
+    - mysql

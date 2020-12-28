@@ -500,3 +500,100 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: down
     condition: succeededOrFailed()
+
+- job: build_linux_profiler_arm64
+  pool: Arm64
+  workspace:
+    clean: all
+
+  steps:
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+    inputs:
+      command: build
+      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+      arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
+
+  - task: DockerCompose@0
+    displayName: docker-compose run Profiler
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run Profiler
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+    artifact: linux-tracer-home_arm
+
+- job: Linux_arm64
+  timeoutInMinutes: 120
+  pool: Arm64
+  workspace:
+    clean: all
+
+  dependsOn: build_linux_profiler_arm64
+  condition: succeeded()
+  strategy:
+    matrix:
+      netcoreapp3_1:
+        publishTargetFramework: netcoreapp3.1
+      net5_0:
+        publishTargetFramework: net5.0
+
+  variables:
+    TestAllPackageVersions: true
+
+  steps:
+  - download: current
+    artifact: linux-tracer-home_arm
+
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/linux-tracer-home_arm
+      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/arm64
+
+  - task: DockerCompose@0
+    displayName: docker-compose run build.arm64
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build.arm64
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests.ARM64.Core31
+    condition: eq(variables['publishTargetFramework'], 'netcoreapp3.1')
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.ARM64.Core31
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests.ARM64.Core50
+    condition: eq(variables['publishTargetFramework'], 'net5.0')
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.ARM64.Core50
+
+  - task: PublishTestResults@2
+    displayName: publish test results
+    inputs:
+      testResultsFormat: VSTest
+      testResultsFiles: test/**/*.trx
+    condition: succeededOrFailed()
