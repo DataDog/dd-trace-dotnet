@@ -99,7 +99,33 @@ jobs:
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet
 
-- job: macos_managed
+- job: managed_linux_arm64
+  pool: Arm64
+  workspace:
+    clean: all
+
+  steps:
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
+      projects: |
+        src/**/*.csproj
+        test/**/*.Tests.csproj
+        benchmarks/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/**/*.Tests.csproj
+
+- job: managed_macos
   pool:
     vmImage: macOS-10.15
 
@@ -147,6 +173,7 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
+
 
 - job: windows_profiler
   strategy:
