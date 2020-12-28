@@ -123,15 +123,7 @@ namespace Datadog.Trace.PlatformHelpers
                             break;
                     }
 
-                    try
-                    {
-                        var frameworkDescription = FrameworkDescription.Create();
-                        Runtime = frameworkDescription.Name;
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Unable to determine runtime for Azure.");
-                    }
+                    Runtime = FrameworkDescription.Instance.Name;
                 }
             }
             catch (Exception ex)
