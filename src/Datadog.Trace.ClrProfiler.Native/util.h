@@ -31,6 +31,12 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name,
 // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
 std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name);
 
+// Convert Hex to string
+WSTRING HexStr(const void *data, int len);
+
+// Convert Token to string
+WSTRING TokenStr(const mdToken *token);
+
 template <class Container>
 bool Contains(const Container &items,
               const typename Container::value_type &value) {

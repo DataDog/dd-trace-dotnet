@@ -139,6 +139,17 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  const auto is_calltarget_enabled = IsCallTargetEnabled();
+
+  // Initialize ReJIT handler and define the Rewriter Callback
+  if (is_calltarget_enabled) {
+      rejit_handler = new RejitHandler(this->info_, [this](RejitHandlerModule* mod, RejitHandlerModuleMethod* method) {
+          return this->CallTarget_RewriterCallback(mod, method);
+      });
+  } else {
+      rejit_handler = NULL;
+  }
+
   // load all available integrations from JSON files
   const std::vector<Integration> all_integrations =
       LoadIntegrationsFromEnvironment();
@@ -151,13 +162,16 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const std::vector<Integration> integrations =
       FilterIntegrationsByName(all_integrations, disabled_integration_names);
 
-  // check if there are any enabled integrations left
-  if (integrations.empty()) {
+  integration_methods_ =
+      FlattenIntegrations(integrations, is_calltarget_enabled);
+
+    // check if there are any enabled integrations left
+  if (integration_methods_.empty()) {
     Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: no enabled integrations found.");
     return E_FAIL;
+  } else {
+    Debug("Number of Integrations loaded: ", integration_methods_.size());
   }
-
-  integration_methods_ = FlattenIntegrations(integrations);
 
   const WSTRING netstandard_enabled =
       GetEnvironmentValue(environment::netstandard_enabled);
@@ -173,9 +187,23 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
-                     COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
+                     COR_PRF_MONITOR_MODULE_LOADS |
                      COR_PRF_MONITOR_ASSEMBLY_LOADS |
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+
+  if (is_calltarget_enabled) {
+    Info("CallTarget instrumentation is enabled.");
+    event_mask |= COR_PRF_ENABLE_REJIT;
+  } else {
+    Info("CallTarget instrumentation is disabled.");
+  }
+  
+  if (!EnableInlining()) {
+    Info("JIT Inlining is disabled.");
+    event_mask |= COR_PRF_DISABLE_INLINING;
+  } else {
+    Info("JIT Inlining is enabled.");
+  }
 
   if (DisableOptimizations()) {
     Info("Disabling all code optimizations.");
@@ -356,6 +384,32 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
        module_info.assembly.name == "System.Private.CoreLib"_W)) {
     corlib_module_loaded = true;
     corlib_app_domain_id = app_domain_id;
+    
+    ComPtr<IUnknown> metadata_interfaces;
+    auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+    
+    // Get the IMetaDataAssemblyImport interface to get metadata from the
+    // managed assembly
+    const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+    const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
+
+    hr = assembly_import->GetAssemblyProps(
+        assembly_metadata.assembly_token, &corAssemblyProperty.ppbPublicKey,
+        &corAssemblyProperty.pcbPublicKey, &corAssemblyProperty.pulHashAlgId,
+        NULL, 0, NULL, &corAssemblyProperty.pMetaData,
+        &corAssemblyProperty.assemblyFlags);
+
+    if (FAILED(hr)) {
+      Warn("AssemblyLoadFinished failed to get properties for COR assembly ");
+    }
+
+    corAssemblyProperty.szName = module_info.assembly.name;
+
+    Info("COR library: ", corAssemblyProperty.szName, " ",
+         corAssemblyProperty.pMetaData.usMajorVersion, ".",
+         corAssemblyProperty.pMetaData.usMinorVersion, ".",
+         corAssemblyProperty.pMetaData.usRevisionNumber);
+
     return S_OK;
   }
 
@@ -460,7 +514,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   ModuleMetadata* module_metadata = new ModuleMetadata(
       metadata_import, metadata_emit, assembly_import, assembly_emit,
       module_info.assembly.name, app_domain_id,
-      module_version_id, filtered_integrations);
+      module_version_id, filtered_integrations, &corAssemblyProperty);
 
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
@@ -469,6 +523,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
         module_info.assembly.name, " AppDomain ",
         module_info.assembly.app_domain_id, " ",
         module_info.assembly.app_domain_name);
+
+  // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+  if (IsCallTargetEnabled()) {
+    CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
+  }
+
   return S_OK;
 }
 
@@ -513,6 +573,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
+  Warn("Exiting.");
   is_attached_ = false;
   return S_OK;
 }
@@ -656,6 +717,34 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   return S_OK;
 }
 
+HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, 
+    FunctionID calleeId, BOOL* pfShouldInline) {
+  ModuleID calleeModuleId;
+  mdToken calleFunctionToken = mdTokenNil;
+  auto hr = this->info_->GetFunctionInfo(calleeId, NULL, &calleeModuleId,
+                                         &calleFunctionToken);
+
+  *pfShouldInline = true;
+
+  if (FAILED(hr)) {
+    Warn("*** JITInlining: Failed to get the function info of the calleId: ", calleeId);
+    return S_OK;
+  }
+
+  RejitHandlerModule* handlerModule = nullptr;
+  if (rejit_handler->TryGetModule(calleeModuleId, &handlerModule)) {
+    RejitHandlerModuleMethod* handlerMethod = nullptr;
+    if (handlerModule->TryGetMethod(calleFunctionToken, &handlerMethod)) {
+      Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
+           ", MethodDef=", TokenStr(&calleFunctionToken), "]");
+      *pfShouldInline = false;
+      return S_OK;
+    } 
+  }
+
+  return S_OK;
+}
+
 //
 // ICorProfilerCallback6 methods
 //
@@ -760,7 +849,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
     const FunctionID function_id,
     const ModuleID module_id,
     const mdToken function_token,
-    const trace::FunctionInfo& caller,
+    const FunctionInfo& caller,
     const std::vector<MethodReplacement> method_replacements) {
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
@@ -868,10 +957,12 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       // to define a MethodSpec
       // Generate a method ref token for the wrapper method
       mdMemberRef wrapper_method_ref = mdMemberRefNil;
+      mdTypeRef wrapper_type_ref = mdTypeRefNil;
       auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
                                                               module_id,
                                                               method_replacement,
-                                                              wrapper_method_ref);
+                                                              wrapper_method_ref, 
+                                                              wrapper_type_ref);
       if (!generated_wrapper_method_ref) {
         Warn(
           "JITCompilationStarted failed to obtain wrapper method ref for ",
@@ -1227,10 +1318,12 @@ HRESULT CorProfiler::ProcessInsertionCalls(
 
     // Generate a method ref token for the wrapper method
     mdMemberRef wrapper_method_ref = mdMemberRefNil;
+    mdTypeRef wrapper_type_ref = mdTypeRefNil;
     auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
                                                             module_id,
                                                             method_replacement,
-                                                            wrapper_method_ref);
+                                                            wrapper_method_ref, 
+                                                            wrapper_type_ref);
     if (!generated_wrapper_method_ref) {
       Warn(
         "JITCompilationStarted failed to obtain wrapper method ref for ",
@@ -1272,9 +1365,12 @@ bool CorProfiler::GetWrapperMethodRef(
     ModuleMetadata* module_metadata,
     ModuleID module_id,
     const MethodReplacement& method_replacement,
-    mdMemberRef& wrapper_method_ref) {
+    mdMemberRef& wrapper_method_ref,
+    mdTypeRef& wrapper_type_ref) {
   const auto& wrapper_method_key =
       method_replacement.wrapper_method.get_method_cache_key();
+  const auto& wrapper_type_key =
+      method_replacement.wrapper_method.get_type_cache_key();
 
   // Resolve the MethodRef now. If the method is generic, we'll need to use it
   // later to define a MethodSpec
@@ -1325,7 +1421,8 @@ bool CorProfiler::GetWrapperMethodRef(
                                               wrapper_method_ref);
     }
   }
-
+  module_metadata->TryGetWrapperParentTypeRef(wrapper_type_key,
+                                              wrapper_type_ref);
   return true;
 }
 
@@ -1335,19 +1432,111 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
              managed_profiler_loaded_app_domains.end();
 }
 
+const std::string indent_values[] = {
+    "",
+    std::string(2 * 1, ' '),
+    std::string(2 * 2, ' '),
+    std::string(2 * 3, ' '),
+    std::string(2 * 4, ' '),
+    std::string(2 * 5, ' '),
+    std::string(2 * 6, ' '),
+    std::string(2 * 7, ' '),
+    std::string(2 * 8, ' '),
+    std::string(2 * 9, ' '),
+    std::string(2 * 10, ' '),
+};
+
 std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
                                     const FunctionInfo& caller, ModuleMetadata* module_metadata) {
   std::stringstream orig_sstream;
   orig_sstream << title;
   orig_sstream << ToString(caller.type.name);
   orig_sstream << ".";
-  orig_sstream << ToString(caller.name.c_str());
+  orig_sstream << ToString(caller.name);
   orig_sstream << " => (max_stack: ";
   orig_sstream << rewriter->GetMaxStackValue();
   orig_sstream << ")" << std::endl;
+
+  const auto ehCount = rewriter->GetEHCount();
+  const auto ehPtr = rewriter->GetEHPointer();
+  int indent = 1;
+
+  PCCOR_SIGNATURE originalSignature = NULL;
+  ULONG originalSignatureSize = 0;
+  mdToken localVarSig = rewriter->GetTkLocalVarSig();
+
+  if (localVarSig != mdTokenNil) {
+    auto hr = module_metadata->metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
+    if (SUCCEEDED(hr)) {
+      orig_sstream << std::endl
+                   << ". Local Var Signature: "
+                   << ToString(HexStr(originalSignature, originalSignatureSize)) 
+                   << std::endl;
+    }
+  }
+
+  orig_sstream << std::endl;
   for (ILInstr* cInstr = rewriter->GetILList()->m_pNext;
        cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext) {
     
+    if (ehCount > 0) {
+      for (unsigned int i = 0; i < ehCount; i++) {
+        const auto currentEH = ehPtr[i];
+        if (currentEH.m_Flags == COR_ILEXCEPTION_CLAUSE_FINALLY) {
+          if (currentEH.m_pTryBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
+            orig_sstream << ".try {" << std::endl;
+            indent++;
+          }
+          if (currentEH.m_pTryEnd == cInstr) {
+            indent--;
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
+            orig_sstream << "}" << std::endl;
+          }
+          if (currentEH.m_pHandlerBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
+            orig_sstream <<  ".finally {" << std::endl;
+            indent++;
+          }
+        }
+      }
+      for (unsigned int i = 0; i < ehCount; i++) {
+        const auto currentEH = ehPtr[i];
+        if (currentEH.m_Flags == COR_ILEXCEPTION_CLAUSE_NONE) {
+          if (currentEH.m_pTryBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
+            orig_sstream << ".try {" << std::endl;
+            indent++;
+          }
+          if (currentEH.m_pTryEnd == cInstr) {
+            indent--;
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
+            orig_sstream << "}" << std::endl;
+          }
+          if (currentEH.m_pHandlerBegin == cInstr) {
+            if (indent > 0) {
+              orig_sstream << indent_values[indent];
+            }
+            orig_sstream << ".catch {" << std::endl;
+            indent++;
+          }
+        }
+      }
+    }
+
+    if (indent > 0) {
+      orig_sstream << indent_values[indent];
+    }
     orig_sstream << cInstr;
     orig_sstream << ": ";
     if (cInstr->m_opcode < opcodes_names.size()) {
@@ -1390,8 +1579,7 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
         auto hr = module_metadata->metadata_import->GetUserString(
             (mdString)cInstr->m_Arg32, szString, 1024, &szStringLength);
         if (SUCCEEDED(hr)) {
-          orig_sstream << "  | ";
-          orig_sstream << "\"";
+          orig_sstream << "  | \"";
           orig_sstream << ToString(WSTRING(szString, szStringLength));
           orig_sstream << "\"";
         }
@@ -1401,6 +1589,19 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
       orig_sstream << cInstr->m_Arg64;
     }
     orig_sstream << std::endl;
+
+    if (ehCount > 0) {
+      for (unsigned int i = 0; i < ehCount; i++) {
+        const auto currentEH = ehPtr[i];
+        if (currentEH.m_pHandlerEnd == cInstr) {
+          indent--;
+          if (indent > 0) {
+            orig_sstream << indent_values[indent];
+          }
+          orig_sstream << "}" << std::endl;
+        }
+      }
+    }
   }
   return orig_sstream.str();
 }
@@ -2229,4 +2430,651 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
 #endif
   return;
 }
+
+
+// ***
+// * ReJIT Methods
+// ***
+
+HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId, BOOL fIsSafeToBlock) {
+  Debug("ReJITCompilationStarted: [functionId: ", functionId, ", rejitId: ", rejitId, ", safeToBlock: ", fIsSafeToBlock, "]");
+  // we notify the reJIT handler of this event
+  return rejit_handler->NotifyReJITCompilationStarted(functionId, rejitId);
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdMethodDef methodId, ICorProfilerFunctionControl* pFunctionControl) {
+  Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId, "]");
+
+  // we get the module_metadata from the moduleId. 
+  ModuleMetadata* module_metadata = nullptr;
+  {
+    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+    if (module_id_to_info_map_.count(moduleId) > 0) {
+      module_metadata = module_id_to_info_map_[moduleId];
+    } else {
+      return S_OK;
+    }
+  }
+
+  // we notify the reJIT handler of this event and pass the module_metadata.
+  return rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl, module_metadata);
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus, BOOL fIsSafeToBlock) {
+  Debug("ReJITCompilationFinished: [functionId: ", functionId, ", rejitId: ", rejitId, ", hrStatus: ", hrStatus, ", safeToBlock: ", fIsSafeToBlock, "]");
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus) {
+  Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId, ", hrStatus: ", hrStatus, "]");
+  return S_OK;
+}
+
+// ***
+// * CallTarget Methods
+// ***
+
+/// <summary>
+/// Search for methods to instrument in a module and request a ReJIT to them for a CallTarget instrumentation
+/// </summary>
+/// <param name="module_id">Module id</param>
+/// <param name="module_metadata">Module metadata for the module</param>
+/// <param name="filtered_integrations">Filtered vector of integrations to be applied</param>
+/// <returns>Number of ReJIT requests made</returns>
+size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata, std::vector<IntegrationMethod> filtered_integrations) {
+  auto metadata_import = module_metadata->metadata_import;
+  std::vector<ModuleID> vtModules;
+  std::vector<mdMethodDef> vtMethodDefs;
+
+  for (IntegrationMethod integration : filtered_integrations) {
+
+    // If the integration is not for the current assembly we skip.
+    if (integration.replacement.target_method.assembly.name != module_metadata->assemblyName) {
+      continue;
+    }
+
+    // If the integration mode is not CallTarget we skip.
+    if (integration.replacement.wrapper_method.action != calltarget_modification_action) {
+      continue;
+    }
+
+    // We are in the right module, so we try to load the mdTypeDef from the integration target type name.
+    mdTypeDef typeDef = mdTypeDefNil;
+    auto hr = metadata_import->FindTypeDefByName(integration.replacement.target_method.type_name.c_str(), mdTokenNil, &typeDef);
+    if (FAILED(hr)) {
+      Warn("Can't load the TypeDef for: ", integration.replacement.target_method.type_name, ", Module: ", module_metadata->assemblyName);
+      continue;
+    }
+
+    // Now we enumerate all methods with the same target method name. (All overloads of the method)
+    auto enumMethods = Enumerator<mdMethodDef>(
+        [metadata_import, integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
+          return metadata_import->EnumMethodsWithName(ptr, typeDef, integration.replacement.target_method.method_name.c_str(), arr, max, cnt);
+        },
+        [metadata_import](HCORENUM ptr) -> void {
+          metadata_import->CloseEnum(ptr);
+        });
+
+    auto enumIterator = enumMethods.begin();
+    while (enumIterator != enumMethods.end()) {
+      auto methodDef = *enumIterator;
+
+      // Extract the function info from the mdMethodDef
+      const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
+      if (!caller.IsValid()) {
+        Warn("The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
+        enumIterator = ++enumIterator;
+        continue;
+      }
+
+      // We create a new function info into the heap from the caller functionInfo in the stack, to be used later in the ReJIT process
+      auto functionInfo = new FunctionInfo(caller);
+      hr = functionInfo->method_signature.TryParse();
+      if (FAILED(hr)) {
+        Warn("The method signature: ", functionInfo->method_signature.str(), " cannot be parsed.");
+        delete functionInfo;
+        enumIterator = ++enumIterator;
+        continue;
+      }
+
+      // Compare if the current mdMethodDef contains the same number of arguments as the instrumentation target
+      const auto numOfArgs = functionInfo->method_signature.NumberOfArguments();
+      if (numOfArgs != integration.replacement.target_method.signature_types.size() - 1) {
+        Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name, " doesn't have the right number of arguments.");
+        delete functionInfo;
+        enumIterator = ++enumIterator;
+        continue;
+      }
+
+      // Compare each mdMethodDef argument type to the instrumentation target
+      bool argumentsMismatch = false;
+      const auto methodArguments = functionInfo->method_signature.GetMethodArguments();
+      Debug("Comparing signature for method: ", integration.replacement.target_method.type_name, ".", integration.replacement.target_method.method_name);
+      for (unsigned int i = 0; i < numOfArgs; i++) {
+        const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadata_import);
+        const auto integrationArgumentTypeName = integration.replacement.target_method.signature_types[i + 1];
+        Debug("  -> ", argumentTypeName, " = ", integrationArgumentTypeName);
+        if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != "_"_W) {
+          argumentsMismatch = true;
+          break;
+        }
+      }
+      if (argumentsMismatch) {
+        Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name, " doesn't have the right type of arguments.");
+        delete functionInfo;
+        enumIterator = ++enumIterator;
+        continue;
+      }
+
+      // As we are in the right method, we gather all information we need and stored it in to the ReJIT handler.
+      auto moduleHandler = rejit_handler->GetOrAddModule(module_id);
+      moduleHandler->SetModuleMetadata(module_metadata);
+      auto methodHandler = moduleHandler->GetOrAddMethod(methodDef);
+      methodHandler->SetFunctionInfo(functionInfo);
+      methodHandler->SetMethodReplacement(new MethodReplacement(integration.replacement));
+
+      // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
+      vtModules.push_back(module_id);
+      vtMethodDefs.push_back(methodDef);
+      
+      bool caller_assembly_is_domain_neutral = runtime_information_.is_desktop() && corlib_module_loaded && module_metadata->app_domain_id == corlib_app_domain_id;
+
+      Info("Enqueue for ReJIT [ModuleId=", module_id,
+           ", MethodDef=", TokenStr(&methodDef), 
+           ", AppDomainId=", module_metadata->app_domain_id,
+           ", IsDomainNeutral=", caller_assembly_is_domain_neutral,
+           ", Assembly=", module_metadata->assemblyName, 
+           ", Type=", caller.type.name, 
+           ", Method=", caller.name, 
+           ", Signature=", caller.signature.str(),
+           "]");
+      
+      enumIterator = ++enumIterator;
+    }
+  }
+
+  // Request the ReJIT for all integrations found in the module.
+  if (vtMethodDefs.size() > 0) {
+    Info("Requesting ReJIT for ", vtMethodDefs.size(), " methods.");
+    this->info_->RequestReJIT((ULONG)vtMethodDefs.size(), vtModules.data(), vtMethodDefs.data());
+  }
+
+  // We return the number of ReJIT requests
+  return vtMethodDefs.size();
+}
+
+/// <summary>
+/// Rewrite the target method body with the calltarget implementation. (This is function is triggered by the ReJIT handler)
+/// Resulting code structure:
+/// 
+/// - Add locals for TReturn (if non-void method), CallTargetState, CallTargetReturn/CallTargetReturn<TReturn>, Exception
+/// - Initialize locals
+///
+/// try
+/// {
+///   try
+///   {
+///     try
+///     {
+///       - Invoke BeginMethod with object instance (or null if static method) and original method arguments
+///       - Store result into CallTargetState local
+///     }
+///     catch
+///     {
+///       - Invoke LogException(Exception)
+///     }
+///
+///     - Execute original method instructions
+///       * All RET instructions are replaced with a LEAVE_S. If non-void method, the value on the stack is first stored in the TReturn local.
+///   }
+///   catch (Exception)
+///   {
+///     - Store exception into Exception local
+///     - throw
+///   }
+/// }
+/// finally
+/// {
+///   try
+///   {
+///     - Invoke EndMethod with object instance (or null if static method), TReturn local (if non-void method), CallTargetState local, and Exception local
+///     - Store result into CallTargetReturn/CallTargetReturn<TReturn> local
+///     - If non-void method, store CallTargetReturn<TReturn>.GetReturnValue() into TReturn local
+///   }
+///   catch
+///   {
+///     - Invoke LogException(Exception)
+///   }
+/// }
+///
+/// - If non-void method, load TReturn local
+/// - RET
+/// </summary>
+/// <param name="moduleHandler">Module ReJIT handler representation</param>
+/// <param name="methodHandler">Method ReJIT handler representation</param>
+/// <returns>Result of the rewriting</returns>
+HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) {
+  ModuleID module_id = moduleHandler->GetModuleId();
+  ModuleMetadata* module_metadata = moduleHandler->GetModuleMetadata();
+  FunctionInfo* caller = methodHandler->GetFunctionInfo();
+  CallTargetTokens* callTargetTokens = module_metadata->GetCallTargetTokens();
+  mdToken function_token = caller->id;
+  FunctionMethodArgument retFuncArg = caller->method_signature.GetRet();
+  MethodReplacement* method_replacement = methodHandler->GetMethodReplacement();
+  unsigned int retFuncElementType;
+  int retTypeFlags = retFuncArg.GetTypeFlags(retFuncElementType);
+  bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
+  bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
+  std::vector<FunctionMethodArgument> methodArguments = caller->method_signature.GetMethodArguments();
+  int numArgs = caller->method_signature.NumberOfArguments();
+  auto metaEmit = module_metadata->metadata_emit;
+  auto metaImport = module_metadata->metadata_import;
+
+  // *** Get all references to the wrapper type
+  mdMemberRef wrapper_method_ref = mdMemberRefNil;
+  mdTypeRef wrapper_type_ref = mdTypeRefNil;
+  GetWrapperMethodRef(module_metadata, module_id, *method_replacement, wrapper_method_ref, wrapper_type_ref);
+
+  Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name, 
+       "() [IsVoid=", isVoid, 
+       ", IsStatic=", isStatic, 
+       ", IntegrationType=", method_replacement->wrapper_method.type_name,
+       ", Arguments=", numArgs, 
+       "]");
+
+  // *** Create rewriter
+  ILRewriter rewriter(this->info_, methodHandler->GetFunctionControl(), module_id, function_token);
+  bool modified = false;
+  auto hr = rewriter.Import();
+  if (FAILED(hr)) {
+    Warn("*** CallTarget_RewriterCallback(): Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
+    return hr;
+  }
+
+  // *** Store the original il code text if the dump_il option is enabled.
+  std::string original_code;
+  if (dump_il_rewrite_enabled) {
+    original_code = GetILCodes(
+        "*** CallTarget_RewriterCallback(): Original Code: ", &rewriter,
+        *caller, module_metadata);
+  }
+
+  // *** Create the rewriter wrapper helper
+  ILRewriterWrapper reWriterWrapper(&rewriter);
+  reWriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
+
+  // *** Modify the Local Var Signature of the method and initialize the new local vars
+  ULONG callTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
+  ULONG exceptionIndex = static_cast<ULONG>(ULONG_MAX);
+  ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
+  ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
+  mdToken callTargetStateToken = mdTokenNil;
+  mdToken exceptionToken = mdTokenNil;
+  mdToken callTargetReturnToken = mdTokenNil;
+  ILInstr* firstInstruction;
+  callTargetTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, caller, 
+      &callTargetStateIndex, &exceptionIndex, 
+      &callTargetReturnIndex, &returnValueIndex, 
+      &callTargetStateToken,
+      &exceptionToken, &callTargetReturnToken, &firstInstruction);
+
+  // ***
+  // BEGIN METHOD PART
+  // ***
+
+  // *** Load instance into the stack (if not static)
+  if (isStatic) {
+    if (caller->type.valueType) {
+      // Static methods in a ValueType can't be instrumented. 
+      // In the future this can be supported by adding a local for the valuetype and initialize it to the default value.
+      // After the signature modification we need to emit the following IL to initialize and load into the stack.
+      //    ldloca.s [localIndex]
+      //    initobj [valueType]
+      //    ldloc.s [localIndex]
+      Warn("*** CallTarget_RewriterCallback(): Static methods in a ValueType cannot be instrumented. ");
+      return E_FAIL;
+    }
+    reWriterWrapper.LoadNull();
+  } else {
+    reWriterWrapper.LoadArgument(0);
+    if (caller->type.valueType) {
+      if (caller->type.type_spec != mdTypeSpecNil) {
+        reWriterWrapper.LoadObj(caller->type.type_spec);
+      } 
+      else if (!caller->type.isGeneric) {
+        reWriterWrapper.LoadObj(caller->type.id);
+      } else {
+        // Generic struct instrumentation is not supported
+        // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns 
+        // The parent token as mdTypeDef and not as a mdTypeSpec
+        // that's because the method definition is stored in the mdTypeDef
+        // The problem is that we don't have the exact Spec of that generic
+        // We can't emit LoadObj or Box because that would result in an invalid IL.
+        // This problem doesn't occur on a class type because we can always relay in the
+        // object type.
+        return E_FAIL;
+      }
+    }
+  }
+
+  // *** Load the method arguments to the stack
+  unsigned elementType;
+  if (numArgs <= 6) {
+    // Load the arguments directly (FastPath)
+    for (int i = 0; i < numArgs; i++) {
+      reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+      auto argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+      if (argTypeFlags & TypeFlagByRef) {
+        Warn(
+            "*** CallTarget_RewriterCallback(): Methods with ref parameters "
+            "cannot be instrumented. ");
+        return E_FAIL;
+      }
+    }
+  } else {
+    // Load the arguments inside an object array (SlowPath)
+    reWriterWrapper.CreateArray(callTargetTokens->GetObjectTypeRef(), numArgs);
+    for (int i = 0; i < numArgs; i++) {
+      reWriterWrapper.BeginLoadValueIntoArray(i);
+      reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+      auto argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+      if (argTypeFlags & TypeFlagByRef) {
+        Warn(
+            "*** CallTarget_RewriterCallback(): Methods with ref parameters "
+            "cannot be instrumented. ");
+        return E_FAIL;
+      }
+      if (argTypeFlags & TypeFlagBoxedType) {
+        auto tok = methodArguments[i].GetTypeTok(
+            metaEmit, callTargetTokens->GetCorLibAssemblyRef());
+        if (tok == mdTokenNil) {
+          return E_FAIL;
+        }
+        reWriterWrapper.Box(tok);
+      }
+      reWriterWrapper.EndLoadValueIntoArray();
+    }
+  }
+
+  // *** Emit BeginMethod call
+  ILInstr* beginCallInstruction;
+  switch (numArgs) { 
+    case 0: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithoutArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type, 
+          &beginCallInstruction));
+      break;
+    }
+    case 1: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &beginCallInstruction));
+      break;
+    }
+    case 2: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1],
+          &beginCallInstruction));
+      break;
+    }
+    case 3: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &beginCallInstruction));
+      break;
+    }
+    case 4: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &beginCallInstruction));
+      break;
+    }
+    case 5: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &methodArguments[4], &beginCallInstruction));
+      break;
+    }
+    case 6: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &methodArguments[4], &methodArguments[5],
+          &beginCallInstruction));
+      break;
+    }
+    default: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArgumentsArray(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &beginCallInstruction));
+      break;
+    }
+  }
+  reWriterWrapper.StLocal(callTargetStateIndex);
+  ILInstr* pStateLeaveToBeginOriginalMethodInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+  // *** BeginMethod call catch
+  ILInstr* beginMethodCatchFirstInstr = nullptr;
+  callTargetTokens->WriteLogException(&reWriterWrapper, wrapper_type_ref,
+                                      &caller->type,
+                                      &beginMethodCatchFirstInstr);
+  ILInstr* beginMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+  // *** BeginMethod exception handling clause
+  EHClause beginMethodExClause{};
+  beginMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+  beginMethodExClause.m_pTryBegin = firstInstruction;
+  beginMethodExClause.m_pTryEnd = beginMethodCatchFirstInstr;
+  beginMethodExClause.m_pHandlerBegin = beginMethodCatchFirstInstr;
+  beginMethodExClause.m_pHandlerEnd = beginMethodCatchLeaveInstr;
+  beginMethodExClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
+
+  // ***
+  // METHOD EXECUTION
+  // ***
+  ILInstr* beginOriginalMethodInstr = reWriterWrapper.GetCurrentILInstr();
+  pStateLeaveToBeginOriginalMethodInstr->m_pTarget = beginOriginalMethodInstr;
+  beginMethodCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+
+  // ***
+  // ENDING OF THE METHOD EXECUTION
+  // ***
+
+  // *** Create return instruction and insert it at the end
+  ILInstr* methodReturnInstr = rewriter.NewILInstr();
+  methodReturnInstr->m_opcode = CEE_RET;
+  rewriter.InsertAfter(rewriter.GetILList()->m_pPrev, methodReturnInstr);
+  reWriterWrapper.SetILPosition(methodReturnInstr);
+  
+  // ***
+  // EXCEPTION CATCH
+  // ***
+  ILInstr* startExceptionCatch = reWriterWrapper.StLocal(exceptionIndex);
+  reWriterWrapper.SetILPosition(methodReturnInstr);
+  reWriterWrapper.Rethrow();
+  ILInstr* methodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+  // ***
+  // EXCEPTION FINALLY / END METHOD PART
+  // ***
+  ILInstr* endMethodTryStartInstr;
+
+  // *** Load instance into the stack (if not static)
+  if (isStatic) {
+    if (caller->type.valueType) {
+      // Static methods in a ValueType can't be instrumented.
+      // In the future this can be supported by adding a local for the valuetype
+      // and initialize it to the default value. After the signature
+      // modification we need to emit the following IL to initialize and load
+      // into the stack.
+      //    ldloca.s [localIndex]
+      //    initobj [valueType]
+      //    ldloc.s [localIndex]
+      Warn(
+          "CallTarget_RewriterCallback: Static methods in a ValueType cannot "
+          "be instrumented. ");
+      return E_FAIL;
+    }
+    endMethodTryStartInstr = reWriterWrapper.LoadNull();
+  } else {
+    endMethodTryStartInstr = reWriterWrapper.LoadArgument(0);
+    if (caller->type.valueType) {
+      if (caller->type.type_spec != mdTypeSpecNil) {
+        reWriterWrapper.LoadObj(caller->type.type_spec);
+      } else if (!caller->type.isGeneric) {
+        reWriterWrapper.LoadObj(caller->type.id);
+      } else {
+        // Generic struct instrumentation is not supported
+        // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns 
+        // The parent token as mdTypeDef and not as a mdTypeSpec
+        // that's because the method definition is stored in the mdTypeDef
+        // The problem is that we don't have the exact Spec of that generic
+        // We can't emit LoadObj or Box because that would result in an invalid IL.
+        // This problem doesn't occur on a class type because we can always relay in the
+        // object type.
+        return E_FAIL;
+      }
+    }
+  }
+
+  // *** Load the return value is is not void
+  if (!isVoid) {
+    reWriterWrapper.LoadLocal(returnValueIndex);
+  }
+
+  reWriterWrapper.LoadLocal(exceptionIndex);
+  reWriterWrapper.LoadLocal(callTargetStateIndex);
+  
+  ILInstr* endMethodCallInstr;
+  if (isVoid) {
+    callTargetTokens->WriteEndVoidReturnMemberRef(
+        &reWriterWrapper, wrapper_type_ref, &caller->type, &endMethodCallInstr);
+  } else {
+    callTargetTokens->WriteEndReturnMemberRef(&reWriterWrapper,
+                                              wrapper_type_ref, &caller->type,
+                                              &retFuncArg, &endMethodCallInstr);
+  }
+  reWriterWrapper.StLocal(callTargetReturnIndex);
+
+  if (!isVoid) {
+    ILInstr* callTargetReturnGetReturnInstr;
+    reWriterWrapper.LoadLocalAddress(callTargetReturnIndex);
+    callTargetTokens->WriteCallTargetReturnGetReturnValue(&reWriterWrapper, callTargetReturnToken, &callTargetReturnGetReturnInstr);
+    reWriterWrapper.StLocal(returnValueIndex);
+  }
+
+  ILInstr* endMethodTryLeave = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+  // *** EndMethod call catch
+  ILInstr* endMethodCatchFirstInstr = nullptr;
+  callTargetTokens->WriteLogException(&reWriterWrapper, wrapper_type_ref,
+                                      &caller->type, &endMethodCatchFirstInstr);
+  ILInstr* endMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+  // *** EndMethod exception handling clause
+  EHClause endMethodExClause{};
+  endMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+  endMethodExClause.m_pTryBegin = endMethodTryStartInstr;
+  endMethodExClause.m_pTryEnd = endMethodCatchFirstInstr;
+  endMethodExClause.m_pHandlerBegin = endMethodCatchFirstInstr;
+  endMethodExClause.m_pHandlerEnd = endMethodCatchLeaveInstr;
+  endMethodExClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
+
+  // *** EndMethod leave to finally
+  ILInstr* endFinallyInstr = reWriterWrapper.EndFinally();
+  endMethodTryLeave->m_pTarget = endFinallyInstr;
+  endMethodCatchLeaveInstr->m_pTarget = endFinallyInstr;
+
+  // ***
+  // METHOD RETURN
+  // ***
+
+  // Load the current return value from the local var
+  if (!isVoid) {
+    reWriterWrapper.LoadLocal(returnValueIndex);
+  }
+
+  // Resolving branching to the end of the method
+  methodCatchLeaveInstr->m_pTarget = endFinallyInstr->m_pNext;
+  
+  // Changes all returns to a LEAVE.S
+  for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
+       pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
+    switch (pInstr->m_opcode) {
+      case CEE_RET: {
+        if (pInstr != methodReturnInstr) {
+          if (!isVoid) {
+            reWriterWrapper.SetILPosition(pInstr);
+            reWriterWrapper.StLocal(returnValueIndex);
+          }
+          pInstr->m_opcode = CEE_LEAVE_S;
+          pInstr->m_pTarget = endFinallyInstr->m_pNext;
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  // Exception handling clauses
+  EHClause exClause{};
+  exClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+  exClause.m_pTryBegin = firstInstruction;
+  exClause.m_pTryEnd = startExceptionCatch;
+  exClause.m_pHandlerBegin = startExceptionCatch;
+  exClause.m_pHandlerEnd = methodCatchLeaveInstr;
+  exClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
+
+  EHClause finallyClause{};
+  finallyClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FINALLY;
+  finallyClause.m_pTryBegin = firstInstruction;
+  finallyClause.m_pTryEnd = methodCatchLeaveInstr->m_pNext;
+  finallyClause.m_pHandlerBegin = methodCatchLeaveInstr->m_pNext;
+  finallyClause.m_pHandlerEnd = endFinallyInstr;
+
+  // ***
+  // Update and Add exception clauses
+  // ***
+  auto ehCount = rewriter.GetEHCount();
+  auto newEHClauses = new EHClause[ehCount + 4];
+  for (unsigned i = 0; i < ehCount; i++) {
+    newEHClauses[i] = rewriter.GetEHPointer()[i];
+  }
+
+  // *** Add the new EH clauses
+  ehCount += 4;
+  newEHClauses[ehCount - 4] = beginMethodExClause;
+  newEHClauses[ehCount - 3] = endMethodExClause;
+  newEHClauses[ehCount - 2] = exClause;
+  newEHClauses[ehCount - 1] = finallyClause;
+  rewriter.SetEHClause(newEHClauses, ehCount);
+  
+  if (dump_il_rewrite_enabled) {
+    Info(original_code);
+    Info(GetILCodes("*** CallTarget_RewriterCallback(): Modified Code: ",
+                    &rewriter, *caller, module_metadata));
+  }
+
+  hr = rewriter.Export();
+
+  if (FAILED(hr)) {
+    Warn(
+        "*** CallTarget_RewriterCallback(): Call to ILRewriter.Export() failed for "
+        "ModuleID=",
+        module_id, " ", function_token);
+    return hr;
+  }
+
+  Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".",
+        caller->name, "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
+        ", IntegrationType=", method_replacement->wrapper_method.type_name,
+        ", Arguments=", numArgs, "]");
+  return S_OK;
+}
+
 }  // namespace trace

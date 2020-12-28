@@ -4,6 +4,7 @@
 
 #include <set>
 #include <stack>
+#include "dd_profiler_constants.h"
 #include "environment_variables.h"
 #include "logging.h"
 #include "macros.h"
@@ -110,8 +111,7 @@ std::vector<BYTE> GetSignatureByteRepresentation(
   return signature_data;
 }
 
-FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
-                             const mdToken& token) {
+FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token) {
   mdToken parent_token = mdTokenNil;
   mdToken method_spec_token = mdTokenNil;
   mdToken method_def_token = mdTokenNil;
@@ -173,14 +173,15 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
             type_info,
             MethodSignature(final_signature_bytes),
             MethodSignature(method_spec_signature),
-            method_def_token};
+             method_def_token, FunctionMethodSignature(raw_signature, raw_signature_len)};
   }
 
   final_signature_bytes =
       GetSignatureByteRepresentation(raw_signature_len, raw_signature);
 
   return {token, WSTRING(function_name), type_info,
-          MethodSignature(final_signature_bytes)};
+          MethodSignature(final_signature_bytes),
+          FunctionMethodSignature(raw_signature, raw_signature_len)};
 }
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id) {
@@ -205,6 +206,11 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   mdToken parent_token = mdTokenNil;
   WCHAR type_name[kNameMaxSize]{};
   DWORD type_name_len = 0;
+  DWORD type_flags;
+  TypeInfo* extendsInfo = nullptr;
+  mdToken type_extends = mdTokenNil;
+  bool type_valueType = false;
+  bool type_isGeneric = false;
 
   HRESULT hr = E_FAIL;
   const auto token_type = TypeFromToken(token);
@@ -212,7 +218,13 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   switch (token_type) {
     case mdtTypeDef:
       hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize,
-                                            &type_name_len, nullptr, nullptr);
+                                            &type_name_len, &type_flags,
+                                            &type_extends);
+      if (type_extends != mdTokenNil) {
+        extendsInfo = new TypeInfo(GetTypeInfo(metadata_import, type_extends));
+        type_valueType = extendsInfo->name == "System.ValueType"_W ||
+                         extendsInfo->name == "System.Enum"_W;
+      }
       break;
     case mdtTypeRef:
       hr = metadata_import->GetTypeRefProps(token, &parent_token, type_name,
@@ -228,11 +240,13 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       if (FAILED(hr) || signature_length < 3) {
         return {};
       }
-
+      
       if (signature[0] & ELEMENT_TYPE_GENERICINST) {
         mdToken type_token;
         CorSigUncompressToken(&signature[2], &type_token);
-        return GetTypeInfo(metadata_import, type_token);
+        const auto baseType = GetTypeInfo(metadata_import, type_token);
+        return {baseType.id, baseType.name, token, token_type,
+                baseType.extend_from, baseType.valueType, baseType.isGeneric};
       }
     } break;
     case mdtModuleRef:
@@ -250,7 +264,14 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
     return {};
   }
 
-  return {token, WSTRING(type_name)};
+  const auto type_name_string = WSTRING(type_name);
+  const auto generic_token_index = type_name_string.rfind("`"_W);
+  if (generic_token_index != std::string::npos) {
+    const auto idxFromRight = type_name_string.length() - generic_token_index - 1;
+    type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
+  }
+
+  return { token, type_name_string, mdTypeSpecNil, token_type, extendsInfo, type_valueType, type_isGeneric };
 }
 
 mdAssemblyRef FindAssemblyRef(
@@ -289,12 +310,20 @@ std::vector<Integration> FilterIntegrationsByName(
 }
 
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations) {
+    const std::vector<Integration>& integrations, 
+    bool is_calltarget_enabled) {
   std::vector<IntegrationMethod> flattened;
 
   for (auto& i : integrations) {
     for (auto& mr : i.method_replacements) {
-      flattened.emplace_back(i.integration_name, mr);
+      const auto isCallTargetIntegration =
+          mr.wrapper_method.action == calltarget_modification_action;
+
+      if (is_calltarget_enabled && isCallTargetIntegration) {
+        flattened.emplace_back(i.integration_name, mr);
+      } else if (!is_calltarget_enabled && !isCallTargetIntegration) {
+        flattened.emplace_back(i.integration_name, mr);
+      }
     }
   }
 
@@ -411,6 +440,30 @@ bool DisableOptimizations() {
   }
 
   // default to false: don't disable JIT optimizations
+  return false;
+}
+
+bool EnableInlining() {
+  const auto enable_inlining =
+      GetEnvironmentValue(environment::clr_enable_inlining);
+
+  if (enable_inlining == "1"_W || enable_inlining == "true"_W) {
+    return true;
+  }
+
+  // default to false: don't inline.
+  return false;
+}
+
+bool IsCallTargetEnabled() {
+  const auto calltarget_enabled =
+      GetEnvironmentValue(environment::calltarget_enabled);
+
+  if (calltarget_enabled == "1"_W || calltarget_enabled == "true"_W) {
+    return true;
+  }
+
+  // default to false: calltarget integrations are removed from the integrations.json
   return false;
 }
 
@@ -999,4 +1052,551 @@ bool ReturnTypeIsValueTypeOrGeneric(
           ret_type_token);
   }
 }
+
+
+// FunctionMethodArgument
+int FunctionMethodArgument::GetTypeFlags(unsigned& elementType) const {
+  int flag = 0;
+  PCCOR_SIGNATURE pbCur = &pbBase[offset];
+
+  if (*pbCur == ELEMENT_TYPE_VOID) {
+    elementType = ELEMENT_TYPE_VOID;
+    flag |= TypeFlagVoid;
+    return flag;
+  }
+
+  if (*pbCur == ELEMENT_TYPE_BYREF) {
+    pbCur++;
+    flag |= TypeFlagByRef;
+  }
+
+  elementType = *pbCur;
+
+  switch (*pbCur) {
+    case ELEMENT_TYPE_BOOLEAN:
+    case ELEMENT_TYPE_CHAR:
+    case ELEMENT_TYPE_I1:
+    case ELEMENT_TYPE_U1:
+    case ELEMENT_TYPE_U2:
+    case ELEMENT_TYPE_I2:
+    case ELEMENT_TYPE_I4:
+    case ELEMENT_TYPE_U4:
+    case ELEMENT_TYPE_I8:
+    case ELEMENT_TYPE_U8:
+    case ELEMENT_TYPE_R4:
+    case ELEMENT_TYPE_R8:
+    case ELEMENT_TYPE_I:
+    case ELEMENT_TYPE_U:
+    case ELEMENT_TYPE_VALUETYPE:
+    case ELEMENT_TYPE_MVAR:
+    case ELEMENT_TYPE_VAR:
+      flag |= TypeFlagBoxedType;
+      break;
+    case ELEMENT_TYPE_GENERICINST:
+      pbCur++;
+      if (*pbCur == ELEMENT_TYPE_VALUETYPE) {
+        flag |= TypeFlagBoxedType;
+      }
+      break;
+    default:
+      break;
+  }
+  return flag;
+}
+
+mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const {
+  mdToken token = mdTokenNil;
+  PCCOR_SIGNATURE pbCur = &pbBase[offset];
+  const PCCOR_SIGNATURE pStart = pbCur;
+
+  if (*pbCur == ELEMENT_TYPE_BYREF) {
+    pbCur++;
+  }
+
+  switch (*pbCur) {
+    case ELEMENT_TYPE_BOOLEAN:
+      pEmit->DefineTypeRefByName(corLibRef, SystemBoolean.data(), &token);
+      break;
+    case ELEMENT_TYPE_CHAR:
+      pEmit->DefineTypeRefByName(corLibRef, SystemChar.data(), &token);
+      break;
+    case ELEMENT_TYPE_I1:
+      pEmit->DefineTypeRefByName(corLibRef, SystemByte.data(), &token);
+      break;
+    case ELEMENT_TYPE_U1:
+      pEmit->DefineTypeRefByName(corLibRef, SystemSByte.data(), &token);
+      break;
+    case ELEMENT_TYPE_U2:
+      pEmit->DefineTypeRefByName(corLibRef, SystemUInt16.data(), &token);
+      break;
+    case ELEMENT_TYPE_I2:
+      pEmit->DefineTypeRefByName(corLibRef, SystemInt16.data(), &token);
+      break;
+    case ELEMENT_TYPE_I4:
+      pEmit->DefineTypeRefByName(corLibRef, SystemInt32.data(), &token);
+      break;
+    case ELEMENT_TYPE_U4:
+      pEmit->DefineTypeRefByName(corLibRef, SystemUInt32.data(), &token);
+      break;
+    case ELEMENT_TYPE_I8:
+      pEmit->DefineTypeRefByName(corLibRef, SystemInt64.data(), &token);
+      break;
+    case ELEMENT_TYPE_U8:
+      pEmit->DefineTypeRefByName(corLibRef, SystemUInt64.data(), &token);
+      break;
+    case ELEMENT_TYPE_R4:
+      pEmit->DefineTypeRefByName(corLibRef, SystemSingle.data(), &token);
+      break;
+    case ELEMENT_TYPE_R8:
+      pEmit->DefineTypeRefByName(corLibRef, SystemDouble.data(), &token);
+      break;
+    case ELEMENT_TYPE_I:
+      pEmit->DefineTypeRefByName(corLibRef, SystemIntPtr.data(), &token);
+      break;
+    case ELEMENT_TYPE_U:
+      pEmit->DefineTypeRefByName(corLibRef, SystemUIntPtr.data(), &token);
+      break;
+    case ELEMENT_TYPE_STRING:
+      pEmit->DefineTypeRefByName(corLibRef, SystemString.data(), &token);
+      break;
+    case ELEMENT_TYPE_OBJECT:
+      pEmit->DefineTypeRefByName(corLibRef, SystemObject.data(), &token);
+      break;
+    case ELEMENT_TYPE_CLASS:
+      pbCur++;
+      token = CorSigUncompressToken(pbCur);
+      break;
+    case ELEMENT_TYPE_VALUETYPE:
+      pbCur++;
+      token = CorSigUncompressToken(pbCur);
+      break;
+    case ELEMENT_TYPE_GENERICINST:
+    case ELEMENT_TYPE_SZARRAY:
+    case ELEMENT_TYPE_MVAR:
+    case ELEMENT_TYPE_VAR:
+      pEmit->GetTokenFromTypeSpec(
+          pbCur, length - static_cast<ULONG>(pbCur - pStart), &token);
+      break;
+    default:
+      break;
+  }
+  return token;
+}
+
+WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport) {
+  WSTRING tokenName = ""_W;
+  bool ref_flag = false;
+  if (*pbCur == ELEMENT_TYPE_BYREF) {
+    pbCur++;
+    ref_flag = true;
+  }
+
+  switch (*pbCur) {
+    case ELEMENT_TYPE_BOOLEAN:
+      tokenName = SystemBoolean;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_CHAR:
+      tokenName = SystemChar;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_I1:
+      tokenName = SystemByte;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_U1:
+      tokenName = SystemSByte;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_U2:
+      tokenName = SystemUInt16;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_I2:
+      tokenName = SystemInt16;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_I4:
+      tokenName = SystemInt32;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_U4:
+      tokenName = SystemUInt32;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_I8:
+      tokenName = SystemInt64;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_U8:
+      tokenName = SystemUInt64;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_R4:
+      tokenName = SystemSingle;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_R8:
+      tokenName = SystemDouble;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_I:
+      tokenName = SystemIntPtr;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_U:
+      tokenName = SystemUIntPtr;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_STRING:
+      tokenName = SystemString;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_OBJECT:
+      tokenName = SystemObject;
+      pbCur++;
+      break;
+    case ELEMENT_TYPE_CLASS:
+    case ELEMENT_TYPE_VALUETYPE: {
+      pbCur++;
+      mdToken token;
+      pbCur += CorSigUncompressToken(pbCur, &token);
+      tokenName = GetTypeInfo(pImport, token).name;
+      break;
+    }
+    case ELEMENT_TYPE_SZARRAY: {
+      pbCur++;
+      tokenName = GetSigTypeTokName(pbCur, pImport) + "[]"_W;
+      break;
+    }
+    case ELEMENT_TYPE_GENERICINST: {
+      pbCur++;
+      tokenName = GetSigTypeTokName(pbCur, pImport);
+      tokenName += "["_W;
+      ULONG num = 0;
+      pbCur += CorSigUncompressData(pbCur, &num);
+      for (ULONG i = 0; i < num; i++) {
+        tokenName += GetSigTypeTokName(pbCur, pImport);
+        if (i != num - 1) {
+          tokenName += ","_W;
+        }
+      }
+      tokenName += "]"_W;
+      break;
+    }
+    case ELEMENT_TYPE_MVAR: {
+      pbCur++;
+      ULONG num = 0;
+      pbCur += CorSigUncompressData(pbCur, &num);
+      tokenName = "!!"_W + ToWSTRING(std::to_string(num));
+      break;
+    }
+    case ELEMENT_TYPE_VAR: {
+      pbCur++;
+      ULONG num = 0;
+      pbCur += CorSigUncompressData(pbCur, &num);
+      tokenName = "!"_W + ToWSTRING(std::to_string(num));
+      break;
+    }
+    default:
+      break;
+  }
+
+  if (ref_flag) {
+    tokenName += "&"_W;
+  }
+  return tokenName;
+}
+
+WSTRING FunctionMethodArgument::GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const {
+  PCCOR_SIGNATURE pbCur = &pbBase[offset];
+  return GetSigTypeTokName(pbCur, pImport);
+}
+
+ULONG FunctionMethodArgument::GetSignature(PCCOR_SIGNATURE& data) const {
+  data = &pbBase[offset];
+  return length;
+}
+
+// FunctionMethodSignature
+bool ParseByte(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned char* pbOut) {
+  if (pbCur < pbEnd) {
+    *pbOut = *pbCur;
+    pbCur++;
+    return true;
+  }
+
+  return false;
+}
+
+bool ParseNumber(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned* pOut) {
+  // parse the variable length number format (0-4 bytes)
+
+  unsigned char b1 = 0, b2 = 0, b3 = 0, b4 = 0;
+
+  // at least one byte in the encoding, read that
+
+  if (!ParseByte(pbCur, pbEnd, &b1)) return false;
+
+  if (b1 == 0xff) {
+    // special encoding of 'NULL'
+    // not sure what this means as a number, don't expect to see it except for
+    // string lengths which we don't encounter anyway so calling it an error
+    return false;
+  }
+
+  // early out on 1 byte encoding
+  if ((b1 & 0x80) == 0) {
+    *pOut = (int)b1;
+    return true;
+  }
+
+  // now at least 2 bytes in the encoding, read 2nd byte
+  if (!ParseByte(pbCur, pbEnd, &b2)) return false;
+
+  // early out on 2 byte encoding
+  if ((b1 & 0x40) == 0) {
+    *pOut = (((b1 & 0x3f) << 8) | b2);
+    return true;
+  }
+
+  // must be a 4 byte encoding
+  if ((b1 & 0x20) != 0) {
+    // 4 byte encoding has this bit clear -- error if not
+    return false;
+  }
+
+  if (!ParseByte(pbCur, pbEnd, &b3)) return false;
+
+  if (!ParseByte(pbCur, pbEnd, &b4)) return false;
+
+  *pOut = ((b1 & 0x1f) << 24) | (b2 << 16) | (b3 << 8) | b4;
+  return true;
+}
+
+bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd,
+                              unsigned char* pIndexTypeOut,
+                              unsigned* pIndexOut) {
+  // parse an encoded typedef or typeref
+  unsigned encoded = 0;
+
+  if (!ParseNumber(pbCur, pbEnd, &encoded)) return false;
+
+  *pIndexTypeOut = (unsigned char)(encoded & 0x3);
+  *pIndexOut = (encoded >> 2);
+  return true;
+}
+
+/*  we don't support
+    PTR CustomMod* VOID
+    PTR CustomMod* Type
+    FNPTR MethodDefSig
+    FNPTR MethodRefSig
+    ARRAY Type ArrayShape
+    SZARRAY CustomMod+ Type (but we do support SZARRAY Type)
+ */
+bool ParseType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd) {
+  /*
+  Type ::= ( BOOLEAN | CHAR | I1 | U1 | U2 | U2 | I4 | U4 | I8 | U8 | R4 | R8 |
+  I | U | | VALUETYPE TypeDefOrRefEncoded | CLASS TypeDefOrRefEncoded | STRING
+  | OBJECT
+  | PTR CustomMod* VOID
+  | PTR CustomMod* Type
+  | FNPTR MethodDefSig
+  | FNPTR MethodRefSig
+  | ARRAY Type ArrayShape
+  | SZARRAY CustomMod* Type
+  | GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+  | VAR Number
+  | MVAR Number
+  */
+
+  unsigned char elem_type;
+  unsigned index;
+  unsigned number;
+  unsigned char indexType;
+
+  if (!ParseByte(pbCur, pbEnd, &elem_type)) return false;
+
+  switch (elem_type) {
+    case ELEMENT_TYPE_BOOLEAN:
+    case ELEMENT_TYPE_CHAR:
+    case ELEMENT_TYPE_I1:
+    case ELEMENT_TYPE_U1:
+    case ELEMENT_TYPE_U2:
+    case ELEMENT_TYPE_I2:
+    case ELEMENT_TYPE_I4:
+    case ELEMENT_TYPE_U4:
+    case ELEMENT_TYPE_I8:
+    case ELEMENT_TYPE_U8:
+    case ELEMENT_TYPE_R4:
+    case ELEMENT_TYPE_R8:
+    case ELEMENT_TYPE_I:
+    case ELEMENT_TYPE_U:
+    case ELEMENT_TYPE_STRING:
+    case ELEMENT_TYPE_OBJECT:
+      // simple types
+      break;
+
+    case ELEMENT_TYPE_PTR:
+      return false;
+
+    case ELEMENT_TYPE_CLASS:
+      // CLASS TypeDefOrRefEncoded
+      if (!ParseTypeDefOrRefEncoded(pbCur, pbEnd, &indexType, &index))
+        return false;
+      break;
+
+    case ELEMENT_TYPE_VALUETYPE:
+      // VALUETYPE TypeDefOrRefEncoded
+      if (!ParseTypeDefOrRefEncoded(pbCur, pbEnd, &indexType, &index))
+        return false;
+
+      break;
+
+    case ELEMENT_TYPE_FNPTR:
+      // FNPTR MethodDefSig
+      // FNPTR MethodRefSig
+
+      return false;
+
+    case ELEMENT_TYPE_ARRAY:
+      // ARRAY Type ArrayShape
+      return false;
+
+    case ELEMENT_TYPE_SZARRAY:
+      // SZARRAY Type
+
+      if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD)
+        return false;
+
+      if (!ParseType(pbCur, pbEnd)) return false;
+
+      break;
+
+    case ELEMENT_TYPE_GENERICINST:
+      // GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+      if (!ParseByte(pbCur, pbEnd, &elem_type)) return false;
+
+      if (elem_type != ELEMENT_TYPE_CLASS &&
+          elem_type != ELEMENT_TYPE_VALUETYPE)
+        return false;
+
+      if (!ParseTypeDefOrRefEncoded(pbCur, pbEnd, &indexType, &index))
+        return false;
+
+      if (!ParseNumber(pbCur, pbEnd, &number)) return false;
+
+      for (unsigned i = 0; i < number; i++) {
+        if (!ParseType(pbCur, pbEnd)) return false;
+      }
+      break;
+
+    case ELEMENT_TYPE_VAR:
+      // VAR Number
+      if (!ParseNumber(pbCur, pbEnd, &number)) return false;
+
+      break;
+
+    case ELEMENT_TYPE_MVAR:
+      // MVAR Number
+      if (!ParseNumber(pbCur, pbEnd, &number)) return false;
+
+      break;
+  }
+
+  return true;
+}
+
+// Param ::= CustomMod* ( TYPEDBYREF | [BYREF] Type )
+// CustomMod* TYPEDBYREF we don't support
+bool ParseParam(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd) {
+  if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD) {
+    return false;
+  }
+
+  if (pbCur >= pbEnd) return false;
+
+  if (*pbCur == ELEMENT_TYPE_TYPEDBYREF) return false;
+
+  if (*pbCur == ELEMENT_TYPE_BYREF) pbCur++;
+
+  return ParseType(pbCur, pbEnd);
+}
+
+// RetType ::= CustomMod* ( VOID | TYPEDBYREF | [BYREF] Type )
+// CustomMod* TYPEDBYREF we don't support
+bool ParseRetType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd) {
+
+  if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD)
+    return false;
+
+  if (pbCur >= pbEnd) 
+      return false;
+
+  if (*pbCur == ELEMENT_TYPE_TYPEDBYREF) 
+      return false;
+
+  if (*pbCur == ELEMENT_TYPE_VOID) {
+    pbCur++;
+    return true;
+  }
+
+  if (*pbCur == ELEMENT_TYPE_BYREF) 
+      pbCur++;
+
+  return ParseType(pbCur, pbEnd);
+}
+
+
+HRESULT FunctionMethodSignature::TryParse() {
+  PCCOR_SIGNATURE pbCur = pbBase;
+  PCCOR_SIGNATURE pbEnd = pbBase + len;
+  unsigned char elem_type;
+
+  IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &elem_type));
+
+  if (elem_type & IMAGE_CEE_CS_CALLCONV_GENERIC) {
+    unsigned gen_param_count;
+    IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &gen_param_count));
+    numberOfTypeArguments = gen_param_count;
+  }
+
+  unsigned param_count;
+  IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &param_count));
+  numberOfArguments = param_count;
+
+  const PCCOR_SIGNATURE pbRet = pbCur;
+
+  IfFalseRetFAIL(ParseRetType(pbCur, pbEnd));
+  ret.pbBase = pbBase;
+  ret.length = (ULONG)(pbCur - pbRet);
+  ret.offset = (ULONG)(pbCur - pbBase - ret.length);
+
+  auto fEncounteredSentinal = false;
+  for (unsigned i = 0; i < param_count; i++) {
+    if (pbCur >= pbEnd) return E_FAIL;
+
+    if (*pbCur == ELEMENT_TYPE_SENTINEL) {
+      if (fEncounteredSentinal) return E_FAIL;
+
+      fEncounteredSentinal = true;
+      pbCur++;
+    }
+
+    const PCCOR_SIGNATURE pbParam = pbCur;
+
+    IfFalseRetFAIL(ParseParam(pbCur, pbEnd));
+
+    FunctionMethodArgument argument{};
+    argument.pbBase = pbBase;
+    argument.length = (ULONG)(pbCur - pbParam);
+    argument.offset = (ULONG)(pbCur - pbBase - argument.length);
+
+    params.push_back(argument);
+  }
+
+  return S_OK;
+}
+
 }  // namespace trace

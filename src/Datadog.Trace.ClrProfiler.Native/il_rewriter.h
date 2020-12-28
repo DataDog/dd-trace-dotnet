@@ -86,7 +86,15 @@ class ILRewriter {
 
   void InitializeTiny();
 
+  mdToken GetTkLocalVarSig();
+
   void SetTkLocalVarSig(mdToken tkLocalVarSig);
+
+  unsigned GetEHCount();
+
+  EHClause* GetEHPointer();
+
+  void SetEHClause(EHClause* ehPointer, unsigned ehLength);
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //

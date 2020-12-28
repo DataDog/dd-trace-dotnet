@@ -215,6 +215,8 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         sig_helpers.cpp
         string.cpp
         util.cpp
+        calltarget_tokens.cpp
+        rejit_handler.cpp
         ${GENERATED_OBJ_FILES}
 )
 

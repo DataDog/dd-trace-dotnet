@@ -23,5 +23,12 @@ namespace Datadog.Trace.ClrProfiler
         /// adding ASP.NET middleware.
         /// </summary>
         InsertFirst,
+
+        /// <summary>
+        /// The target method gets modified with two calls, the first one at the
+        /// begining of the method body, and then at the end before returning the
+        /// control to the caller.
+        /// </summary>
+        CallTargetModification,
     }
 }

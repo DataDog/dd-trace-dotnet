@@ -46,17 +46,17 @@ namespace Datadog.Trace.ClrProfiler
             {
                 MinimumMajor = MinimumMinor = MinimumPatch = ushort.MinValue;
                 var parts = value.Split('.');
-                if (parts.Length > 0)
+                if (parts.Length > 0 && parts[0] != "*")
                 {
                     MinimumMajor = ushort.Parse(parts[0]);
                 }
 
-                if (parts.Length > 1)
+                if (parts.Length > 1 && parts[1] != "*")
                 {
                     MinimumMinor = ushort.Parse(parts[1]);
                 }
 
-                if (parts.Length > 2)
+                if (parts.Length > 2 && parts[2] != "*")
                 {
                     MinimumPatch = ushort.Parse(parts[2]);
                 }
@@ -74,17 +74,17 @@ namespace Datadog.Trace.ClrProfiler
             {
                 MaximumMajor = MaximumMinor = MaximumPatch = ushort.MaxValue;
                 var parts = value.Split('.');
-                if (parts.Length > 0)
+                if (parts.Length > 0 && parts[0] != "*")
                 {
                     MaximumMajor = ushort.Parse(parts[0]);
                 }
 
-                if (parts.Length > 1)
+                if (parts.Length > 1 && parts[1] != "*")
                 {
                     MaximumMinor = ushort.Parse(parts[1]);
                 }
 
-                if (parts.Length > 2)
+                if (parts.Length > 2 && parts[2] != "*")
                 {
                     MaximumPatch = ushort.Parse(parts[2]);
                 }

@@ -148,9 +148,20 @@ void ILRewriter::InitializeTiny() {
   m_fGenerateTinyHeader = true;
 }
 
+mdToken ILRewriter::GetTkLocalVarSig() { return m_tkLocalVarSig; }
+
 void ILRewriter::SetTkLocalVarSig(mdToken tkLocalVarSig) {
   m_tkLocalVarSig = tkLocalVarSig;
   m_fGenerateTinyHeader = false;
+}
+
+unsigned ILRewriter::GetEHCount() { return m_nEH; }
+
+EHClause* ILRewriter::GetEHPointer() { return m_pEH; }
+
+void ILRewriter::SetEHClause(EHClause* ehPointer, unsigned ehLength) {
+  m_nEH = ehLength;
+  m_pEH = ehPointer;
 }
 
 HRESULT ILRewriter::Import() {

@@ -15,6 +15,7 @@
 #include "module_metadata.h"
 #include "pal.h"
 #include "il_rewriter.h"
+#include "rejit_handler.h"
 
 namespace trace {
 
@@ -35,6 +36,14 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
   bool is_desktop_iis = false;
+  
+  //
+  // CallTarget Members
+  //
+  RejitHandler* rejit_handler;
+
+  // Cor assembly properties
+  AssemblyProperty corAssemblyProperty{};
 
   //
   // OpCodes helper
@@ -53,7 +62,8 @@ class CorProfiler : public CorProfilerBase {
   bool GetWrapperMethodRef(ModuleMetadata* module_metadata,
                            ModuleID module_id,
                            const MethodReplacement& method_replacement,
-                           mdMemberRef& wrapper_method_ref);
+                           mdMemberRef& wrapper_method_ref,
+                           mdTypeRef& wrapper_type_ref);
   HRESULT ProcessReplacementCalls(ModuleMetadata* module_metadata,
                                          const FunctionID function_id,
                                          const ModuleID module_id,
@@ -78,6 +88,14 @@ class CorProfiler : public CorProfilerBase {
                              const mdToken function_token);
   HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
                            mdMethodDef* ret_method_token);
+
+  //
+  // CallTarget Methods
+  //
+  size_t CallTarget_RequestRejitForModule(
+    ModuleID module_id, ModuleMetadata* module_metadata,
+    std::vector<IntegrationMethod> filtered_integrations);
+  HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
  public:
   CorProfiler() = default;
@@ -107,6 +125,28 @@ class CorProfiler : public CorProfilerBase {
   HRESULT STDMETHODCALLTYPE Shutdown() override;
 
   HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
+  
+  HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId,
+                                        FunctionID calleeId,
+                                        BOOL* pfShouldInline) override;
+  //
+  // ReJIT Methods
+  //
+
+  HRESULT STDMETHODCALLTYPE ReJITCompilationStarted(
+      FunctionID functionId, ReJITID rejitId, BOOL fIsSafeToBlock) override;
+
+  HRESULT STDMETHODCALLTYPE
+  GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
+                     ICorProfilerFunctionControl* pFunctionControl) override;
+
+  HRESULT STDMETHODCALLTYPE ReJITCompilationFinished(
+      FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
+      BOOL fIsSafeToBlock) override;
+
+  HRESULT STDMETHODCALLTYPE ReJITError(ModuleID moduleId, mdMethodDef methodId,
+                                       FunctionID functionId,
+                                       HRESULT hrStatus) override;
 
   //
   // ICorProfilerCallback6 methods

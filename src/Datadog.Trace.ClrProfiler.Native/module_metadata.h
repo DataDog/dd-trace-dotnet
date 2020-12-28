@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "calltarget_tokens.h"
 #include "clr_helpers.h"
 #include "com_ptr.h"
 #include "integration.h"
@@ -17,6 +18,7 @@ class ModuleMetadata {
   std::unordered_map<WSTRING, mdMemberRef> wrapper_refs{};
   std::unordered_map<WSTRING, mdTypeRef> wrapper_parent_type{};
   std::unordered_set<WSTRING> failed_wrapper_keys{};
+  CallTargetTokens* calltargetTokens = nullptr;
 
  public:
   const ComPtr<IMetaDataImport2> metadata_import{};
@@ -27,6 +29,8 @@ class ModuleMetadata {
   AppDomainID app_domain_id;
   GUID module_version_id;
   std::vector<IntegrationMethod> integrations = {};
+  AssemblyProperty* corAssemblyProperty{};
+
 
   ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
                  ComPtr<IMetaDataEmit2> metadata_emit,
@@ -35,7 +39,8 @@ class ModuleMetadata {
                  WSTRING assembly_name,
                  AppDomainID app_domain_id,
                  GUID module_version_id,
-                 std::vector<IntegrationMethod> integrations)
+                 std::vector<IntegrationMethod> integrations, 
+                 AssemblyProperty* corAssemblyProperty)
       : metadata_import(metadata_import),
         metadata_emit(metadata_emit),
         assembly_import(assembly_import),
@@ -43,7 +48,8 @@ class ModuleMetadata {
         assemblyName(assembly_name),
         app_domain_id(app_domain_id),
         module_version_id(module_version_id),
-        integrations(integrations) {}
+        integrations(integrations),
+        corAssemblyProperty(corAssemblyProperty) {}
 
   bool TryGetWrapperMemberRef(const WSTRING& keyIn,
                               mdMemberRef& valueOut) const {
@@ -103,6 +109,13 @@ class ModuleMetadata {
       }
     }
     return enabled;
+  }
+
+  inline CallTargetTokens* GetCallTargetTokens() {
+    if (calltargetTokens == nullptr) {
+      calltargetTokens = new CallTargetTokens(this);
+    }
+    return calltargetTokens;
   }
 };
 

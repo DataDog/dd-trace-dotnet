@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
     public class HttpMessageHandlerTests : TestHelper
     {
         public HttpMessageHandlerTests(ITestOutputHelper output)
@@ -17,11 +18,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [Fact]
+        [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces()
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void SubmitsTraces(bool enableCallTarget, bool enableInlining)
         {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 35 : 31;
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
@@ -58,11 +64,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Fact]
+        [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void TracingDisabled_DoesNotSubmitsTraces()
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void TracingDisabled_DoesNotSubmitsTraces(bool enableCallTarget, bool enableInlining)
         {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             const string expectedOperationName = "http.request";
 
             int agentPort = TcpPortProvider.GetOpenPort();
