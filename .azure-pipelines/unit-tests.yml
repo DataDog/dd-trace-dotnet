@@ -99,6 +99,55 @@ jobs:
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet
 
+- job: macos_managed
+  pool:
+    vmImage: macOS-10.15
+
+  steps:
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 2.1
+    inputs:
+      packageType: runtime
+      version: 2.1.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 3.0
+    inputs:
+      packageType: runtime
+      version: 3.0.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 3.1
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdkVersion)
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
+      projects: |
+        src/**/*.csproj
+        test/**/*.Tests.csproj
+        benchmarks/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/**/*.Tests.csproj
+
 - job: windows_profiler
   strategy:
     matrix:
@@ -200,6 +249,28 @@ jobs:
       make
     displayName: build_profiler
 
+- job: linux_profiler_arm64
+  pool: Arm64
+  workspace:
+    clean: all
+
+  steps:
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
+      projects: |
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+  
+  - script: |
+      cd ./src/Datadog.Trace.ClrProfiler.Native
+      CXX=clang++ CC=clang cmake .
+      make
+    displayName: build_profiler
+
 - job: macos_profiler
   pool:
     vmImage: macOS-10.15
@@ -231,52 +302,3 @@ jobs:
       cmake .
       make
     displayName: build_profiler
-
-- job: macos_managed
-  pool:
-    vmImage: macOS-10.15
-
-  steps:
-
-  - task: UseDotNet@2
-    displayName: install dotnet core runtime 2.1
-    inputs:
-      packageType: runtime
-      version: 2.1.x
-
-  - task: UseDotNet@2
-    displayName: install dotnet core runtime 3.0
-    inputs:
-      packageType: runtime
-      version: 3.0.x
-
-  - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.1
-    inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
-
-  - task: UseDotNet@2
-    displayName: install dotnet core sdk 5.0
-    inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdk5Version)
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build
-    inputs:
-      command: build
-      configuration: $(buildConfiguration)
-      arguments: /nowarn:netsdk1138
-      projects: |
-        src/**/*.csproj
-        test/**/*.Tests.csproj
-        benchmarks/**/*.csproj
-        !src/Datadog.Trace.Tools.Runner/*.csproj
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet test
-    inputs:
-      command: test
-      configuration: $(buildConfiguration)
-      projects: test/**/*.Tests.csproj
