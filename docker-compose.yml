@@ -447,37 +447,6 @@ services:
     - mysql
     - rabbitmq
 
-  IntegrationTests.ARM64.Core31:
-    build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.arm64.core31.dockerfile
-    image: datadog-dotnet-arm64-core31
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh
-    volumes:
-    - ./:/project
-    environment:
-    - MONGO_HOST=mongo
-    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
-    - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
-    - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-    - SQLSERVER_CONNECTION_STRING=Server=sqledge;User=sa;Password=Strong!Passw0rd
-    - POSTGRES_HOST=postgres
-    - MYSQL_HOST=mysql
-    - MYSQL_PORT=3306
-    - RABBITMQ_HOST=rabbitmq
-    - buildConfiguration=${buildConfiguration}
-    - publishTargetFramework=netcoreapp3.1
-    depends_on:
-    - servicestackredis
-    - stackexchangeredis
-    - elasticsearch7_arm64
-    - sqledge
-    - mongo
-    - postgres
-    - mysql
-    - rabbitmq
-
   IntegrationTests.ARM64.Core50:
     build:
       context: ./
