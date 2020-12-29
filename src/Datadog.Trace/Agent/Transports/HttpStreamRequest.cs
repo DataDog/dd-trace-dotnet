@@ -44,7 +44,7 @@ namespace Datadog.Trace.Agent.Transports
 
                 // buffer the entire contents for now
                 var responseContentStream = new MemoryStream();
-                await response.Content.CopyToAsync(responseContentStream).ConfigureAwait(false);
+                await response.Content.CopyToAsync(responseContentStream, DatadogHttpValues.MaximumResponseBufferSize).ConfigureAwait(false);
                 responseContentStream.Position = 0;
 
                 var contentLength = response.ContentLength;

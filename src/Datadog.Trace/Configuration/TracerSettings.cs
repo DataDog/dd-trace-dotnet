@@ -92,7 +92,12 @@ namespace Datadog.Trace.Configuration
 
             TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
 
-            TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs) ?? 100;
+            TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs)
+#if DEBUG
+            ?? 20_000;
+#else
+            ?? 100;
+#endif
 
             TracesTransport = source?.GetString(ConfigurationKeys.TracesTransport);
 

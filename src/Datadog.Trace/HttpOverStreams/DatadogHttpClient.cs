@@ -39,7 +39,7 @@ namespace Datadog.Trace.HttpOverStreams
                 await DatadogHttpHeaderHelper.WriteEndOfHeaders(writer).ConfigureAwait(false);
             }
 
-            await request.Content.CopyToAsync(requestStream).ConfigureAwait(false);
+            await request.Content.CopyToAsync(requestStream, DatadogHttpValues.MaximumRequestBufferSize).ConfigureAwait(false);
             Logger.Debug("Datadog HTTP: Flushing stream.");
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
@@ -71,10 +71,10 @@ namespace Datadog.Trace.HttpOverStreams
 
             bool IsNewLine()
             {
-                if (currentChar.Equals(DatadogHttpHeaderHelper.CarriageReturn))
+                if (currentChar.Equals(DatadogHttpValues.CarriageReturn))
                 {
                     // end of headers
-                    if (DatadogHttpHeaderHelper.CrLfLength > 1)
+                    if (DatadogHttpValues.CrLfLength > 1)
                     {
                         // Skip the newline indicator
                         GoNextChar();

@@ -15,16 +15,21 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
 
         public long? Length { get; }
 
-        public async Task CopyToAsync(Stream destination)
+        public Task CopyToAsync(Stream destination, int maxBufferSize)
         {
+            var maxLengthToRead = maxBufferSize;
+
             if (Length != null)
             {
-                await Stream.CopyToAsync(destination, (int)Length).ConfigureAwait(false);
+                if (Length > maxBufferSize)
+                {
+                    throw new DatadogHttpRequestException($"Content length ({Length}) is above bounds of expected size ({maxBufferSize}), terminating request.");
+                }
+
+                maxLengthToRead = (int)Length;
             }
-            else
-            {
-                await Stream.CopyToAsync(destination).ConfigureAwait(false);
-            }
+
+            return Stream.CopyToAsync(destination, maxLengthToRead);
         }
     }
 }
