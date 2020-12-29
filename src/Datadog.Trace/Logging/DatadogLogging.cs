@@ -13,7 +13,8 @@ namespace Datadog.Trace.Logging
 {
     internal static class DatadogLogging
     {
-        internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
+        internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new LoggingLevelSwitch(DefaultLogLevel);
+        private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
         private static readonly ILogger SharedLogger = null;
 
@@ -118,6 +119,11 @@ namespace Datadog.Trace.Logging
                     // ignore
                 }
             }
+        }
+
+        internal static void Reset()
+        {
+            LoggingLevelSwitch.MinimumLevel = DefaultLogLevel;
         }
 
         internal static void SetLogLevel(LogEventLevel logLevel)
