@@ -426,7 +426,7 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
   // *** Create de MethodSpec using the FunctionMethodArgument
 
   // Gets the Return type signature
-  PCCOR_SIGNATURE methodArgumentSignature = NULL;
+  PCCOR_SIGNATURE methodArgumentSignature = nullptr;
   ULONG methodArgumentSignatureSize;
   methodArgumentSignatureSize =
       methodArgument->GetSignature(methodArgumentSignature);
@@ -476,7 +476,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
 
   ModuleMetadata* module_metadata = GetMetadata();
 
-  PCCOR_SIGNATURE originalSignature = NULL;
+  PCCOR_SIGNATURE originalSignature = nullptr;
   ULONG originalSignatureSize = 0;
   mdToken localVarSig = reWriter->GetTkLocalVarSig();
 
@@ -512,12 +512,12 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
 
   // Gets the Return type signature
-  PCCOR_SIGNATURE returnSignatureType = NULL;
+  PCCOR_SIGNATURE returnSignatureType = nullptr;
   ULONG returnSignatureTypeSize = 0;
 
   // Gets the CallTargetReturn<T> mdTypeSpec
   mdToken callTargetReturn = mdTokenNil;
-  PCCOR_SIGNATURE callTargetReturnSignature = NULL;
+  PCCOR_SIGNATURE callTargetReturnSignature = nullptr;
   ULONG callTargetReturnSignatureSize;
   unsigned callTargetReturnBuffer;
   ULONG callTargetReturnSize;
@@ -591,7 +591,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   // Add new locals
 
   // Return value local
-  if (returnSignatureType != NULL) {
+  if (returnSignatureType != nullptr) {
     memcpy(&newSignatureBuffer[newSignatureOffset], returnSignatureType,
            returnSignatureTypeSize);
     newSignatureOffset += returnSignatureTypeSize;
@@ -604,7 +604,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   newSignatureOffset += exTypeRefSize;
 
   // CallTarget Return value
-  if (callTargetReturnSignature != NULL) {
+  if (callTargetReturnSignature != nullptr) {
     memcpy(&newSignatureBuffer[newSignatureOffset], callTargetReturnSignature,
            callTargetReturnSignatureSize);
     newSignatureOffset += callTargetReturnSignatureSize;
@@ -634,7 +634,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   *callTargetStateToken = callTargetStateTypeRef;
   *exceptionToken = exTypeRef;
   *callTargetReturnToken = callTargetReturn;
-  if (returnSignatureType != NULL) {
+  if (returnSignatureType != nullptr) {
     *returnValueIndex = newLocalsCount - 4;
   } else {
     *returnValueIndex = static_cast<ULONG>(ULONG_MAX);

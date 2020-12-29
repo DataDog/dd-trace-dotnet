@@ -32,6 +32,8 @@ class RejitHandlerModuleMethod {
     this->methodDef = methodDef;
     this->pFunctionControl = nullptr;
     this->module = module;
+    this->functionInfo = nullptr;
+    this->methodReplacement = nullptr;
   }
   inline mdMethodDef GetMethodDef() { return this->methodDef; }
   inline ICorProfilerFunctionControl* GetFunctionControl() {

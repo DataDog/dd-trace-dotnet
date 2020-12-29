@@ -147,7 +147,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
           return this->CallTarget_RewriterCallback(mod, method);
       });
   } else {
-      rejit_handler = NULL;
+      rejit_handler = nullptr;
   }
 
   // load all available integrations from JSON files
@@ -1453,7 +1453,7 @@ const std::string indent_values[] = {
     std::string(2 * 10, ' '),
 };
 
-std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
+std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewriter,
                                     const FunctionInfo& caller, ModuleMetadata* module_metadata) {
   std::stringstream orig_sstream;
   orig_sstream << title;
@@ -1468,7 +1468,7 @@ std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
   const auto ehPtr = rewriter->GetEHPointer();
   int indent = 1;
 
-  PCCOR_SIGNATURE originalSignature = NULL;
+  PCCOR_SIGNATURE originalSignature = nullptr;
   ULONG originalSignatureSize = 0;
   mdToken localVarSig = rewriter->GetTkLocalVarSig();
 
@@ -2414,13 +2414,13 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
   *symbolsSize = pdb_end - pdb_start;
   *pSymbolsArray = (BYTE*)pdb_start;
 #else
-    const auto imgCount = _dyld_image_count();
+    const unsigned int imgCount = _dyld_image_count();
 
     for(auto i = 0; i < imgCount; i++) {
-        const auto name = std::string(_dyld_get_image_name(i));
+        const std::string name = std::string(_dyld_get_image_name(i));
 
         if (name.rfind("Datadog.Trace.ClrProfiler.Native.dylib") != std::string::npos) {
-            const auto header = (const struct mach_header_64 *) _dyld_get_image_header(i);
+            const mach_header_64* header = (const struct mach_header_64 *) _dyld_get_image_header(i);
 
             unsigned long dllSize;
             const auto dllData = getsectiondata(header, "binary", "dll", &dllSize);
@@ -2435,7 +2435,6 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
         }
     }
 #endif
-  return;
 }
 
 
@@ -2488,12 +2487,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
 /// <param name="module_metadata">Module metadata for the module</param>
 /// <param name="filtered_integrations">Filtered vector of integrations to be applied</param>
 /// <returns>Number of ReJIT requests made</returns>
-size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata, std::vector<IntegrationMethod> filtered_integrations) {
+size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata, const std::vector<IntegrationMethod> &filtered_integrations) {
   auto metadata_import = module_metadata->metadata_import;
   std::vector<ModuleID> vtModules;
   std::vector<mdMethodDef> vtMethodDefs;
 
-  for (IntegrationMethod integration : filtered_integrations) {
+  for (const IntegrationMethod& integration : filtered_integrations) {
 
     // If the integration is not for the current assembly we skip.
     if (integration.replacement.target_method.assembly.name != module_metadata->assemblyName) {
@@ -2601,7 +2600,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
   }
 
   // Request the ReJIT for all integrations found in the module.
-  if (vtMethodDefs.size() > 0) {
+  if (!vtMethodDefs.empty()) {
     Info("Requesting ReJIT for ", vtMethodDefs.size(), " methods.");
     this->info_->RequestReJIT((ULONG)vtMethodDefs.size(), vtModules.data(), vtMethodDefs.data());
   }
