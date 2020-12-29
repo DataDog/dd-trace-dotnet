@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.8.1" },
                 new object[] { "2.9.3" },
                 new object[] { "2.10.4" },
+                new object[] { "2.11.5" },
 #endif
             };
 
