@@ -15,7 +15,7 @@ namespace Datadog.Trace
             get { return _instance ?? (_instance = Create()); }
         }
 
-        private static FrameworkDescription Create()
+        public static FrameworkDescription Create()
         {
             var osArchitecture = "unknown";
             var processArchitecture = "unknown";
