@@ -1,12 +1,13 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpStreamResponse : IApiResponse
     {
+        private string _responseCache;
+
         public HttpStreamResponse(int statusCode, long contentLength, Encoding encoding, Stream responseStream)
         {
             StatusCode = statusCode;
@@ -29,10 +30,15 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<string> ReadAsStringAsync()
         {
-            using (var reader = new StreamReader(ResponseStream, Encoding, detectEncodingFromByteOrderMarks: false, (int)ContentLength, leaveOpen: true))
+            if (_responseCache == null)
             {
-                return await reader.ReadToEndAsync().ConfigureAwait(false);
+                using (var reader = new StreamReader(ResponseStream, Encoding, detectEncodingFromByteOrderMarks: false, (int)ContentLength, leaveOpen: true))
+                {
+                    _responseCache = await reader.ReadToEndAsync().ConfigureAwait(false);
+                }
             }
+
+            return _responseCache;
         }
     }
 }
