@@ -242,7 +242,7 @@ jobs:
     condition: succeededOrFailed()
 
 - job: Windows
-  timeoutInMinutes: 80
+  timeoutInMinutes: 100
   strategy:
     matrix:
       x64:
@@ -357,7 +357,7 @@ jobs:
     condition: succeededOrFailed()
     
 - job: Windows_IIS
-  timeoutInMinutes: 80
+  timeoutInMinutes: 100
   strategy:
     matrix:
       x64:
