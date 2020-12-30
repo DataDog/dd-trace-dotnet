@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -113,7 +114,9 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
                 // ignored
             }
 
-            Assert.True(writer.ExceptionCounts.IsEmpty);
+            writer.ExceptionCounts.TryGetValue(nameof(CustomException1), out var count);
+
+            Assert.Equal(0, count);
         }
 
         private class CustomException1 : Exception
