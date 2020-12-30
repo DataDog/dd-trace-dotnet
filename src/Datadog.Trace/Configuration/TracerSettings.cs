@@ -354,6 +354,23 @@ namespace Datadog.Trace.Configuration
             Integrations.SetDisabledIntegrations(DisabledIntegrationNames);
         }
 
+        internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)
+        {
+            var source = serverStatusCode ? HttpServerErrorStatusCodes : HttpClientErrorStatusCodes;
+
+            if (source == null)
+            {
+                return false;
+            }
+
+            if (statusCode >= source.Length)
+            {
+                return false;
+            }
+
+            return source[statusCode];
+        }
+
         internal bool IsIntegrationEnabled(IntegrationInfo integration, bool defaultValue = true)
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())

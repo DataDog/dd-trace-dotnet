@@ -343,7 +343,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 HttpContext httpContext = arg.As<HttpRequestInStopStruct>().HttpContext;
 
-                scope.Span.SetHttpServerStatusCode(httpContext.Response.StatusCode);
+                scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
                 scope.Dispose();
             }
         }

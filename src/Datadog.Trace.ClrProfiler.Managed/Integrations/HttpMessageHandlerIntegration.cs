@@ -10,7 +10,6 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -273,7 +272,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (scope != null)
                     {
-                        scope.Span.SetHttpClientStatusCode(statusCode);
+                        scope.Span.SetHttpStatusCode(statusCode, isServer: false);
                     }
 
                     return response;
