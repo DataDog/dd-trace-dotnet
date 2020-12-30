@@ -132,7 +132,7 @@ HRESULT RejitHandler::NotifyReJITParameters(
     return S_FALSE;
   }
 
-  if (moduleHandler->GetModuleId() == NULL) {
+  if (moduleHandler->GetModuleId() == 0) {
     Warn(
         "NotifyReJITCompilationStarted: ModuleID is missing for "
         "MethodDef: ",

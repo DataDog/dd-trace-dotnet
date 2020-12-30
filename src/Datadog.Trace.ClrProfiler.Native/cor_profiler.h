@@ -30,7 +30,7 @@ class CorProfiler : public CorProfilerBase {
 
   bool instrument_domain_neutral_assemblies = false;
   bool corlib_module_loaded = false;
-  AppDomainID corlib_app_domain_id;
+  AppDomainID corlib_app_domain_id = 0;
   bool managed_profiler_loaded_domain_neutral = false;
   std::unordered_set<AppDomainID> managed_profiler_loaded_app_domains;
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
@@ -40,7 +40,7 @@ class CorProfiler : public CorProfilerBase {
   //
   // CallTarget Members
   //
-  RejitHandler* rejit_handler;
+  RejitHandler* rejit_handler = nullptr;
 
   // Cor assembly properties
   AssemblyProperty corAssemblyProperty{};
@@ -77,7 +77,7 @@ class CorProfiler : public CorProfilerBase {
                                          const FunctionInfo& caller,
                                          const std::vector<MethodReplacement> method_replacements);
   bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
-  std::string GetILCodes(std::string title, ILRewriter* rewriter,
+  std::string GetILCodes(const std::string& title, ILRewriter* rewriter,
                          const FunctionInfo& caller,
                          ModuleMetadata* module_metadata);
   //
@@ -94,7 +94,7 @@ class CorProfiler : public CorProfilerBase {
   //
   size_t CallTarget_RequestRejitForModule(
     ModuleID module_id, ModuleMetadata* module_metadata,
-    std::vector<IntegrationMethod> filtered_integrations);
+    const std::vector<IntegrationMethod>& filtered_integrations);
   HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
  public:
