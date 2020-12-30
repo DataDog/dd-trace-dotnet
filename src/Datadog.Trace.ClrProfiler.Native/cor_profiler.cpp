@@ -574,13 +574,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
   Warn("Exiting.");
+  Logger::Instance()->Flush();
   is_attached_ = false;
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded() {
+  CorProfilerBase::ProfilerDetachSucceeded();
+
+  // keep this lock until we are done using the module,
+  // to prevent it from unloading while in use
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
   Warn("Detaching profiler.");
-  Logger::Shutdown();
+  Logger::Instance()->Flush();
   return S_OK;
 }
 
