@@ -277,9 +277,9 @@ namespace Datadog.Trace.TestHelpers
                 {
                     // the response has been already disposed.
                 }
-                catch (InvalidOperationException) when (!_listener.IsListening)
+                catch (Exception) when (!_listener.IsListening)
                 {
-                    // looks like it can happen on .NET Core when listener is stopped
+                    // we don't care about any exception when listener is stopped
                 }
             }
         }
