@@ -593,8 +593,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
   Warn("Exiting.");
-  Logger::Instance()->Flush();
   is_attached_.store(false);
+  Logger::Shutdown();
   return S_OK;
 }
 
