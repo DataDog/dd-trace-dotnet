@@ -21,7 +21,7 @@ namespace trace {
 
 class CorProfiler : public CorProfilerBase {
  private:
-  bool is_attached_ = false;
+  std::atomic_bool is_attached_ = {false};
   RuntimeInformation runtime_information_;
   std::vector<IntegrationMethod> integration_methods_;
 

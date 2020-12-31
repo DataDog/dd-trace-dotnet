@@ -263,7 +263,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // we're in!
   Info("Profiler attached.");
   this->info_->AddRef();
-  is_attached_ = true;
+  is_attached_.store(true);
   profiler = this;
   return S_OK;
 }
@@ -288,6 +288,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+  // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+  if (!is_attached_) {
+    return S_OK;
+  }
 
   const auto assembly_info = GetAssemblyInfo(this->info_, assembly_id);
   if (!assembly_info.IsValid()) {
@@ -363,6 +368,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+  // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+  if (!is_attached_) {
+    return S_OK;
+  }
 
   const auto module_info = GetModuleInfo(this->info_, module_id);
   if (!module_info.IsValid()) {
@@ -533,6 +543,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
+  if (!is_attached_) {
+    return S_OK;
+  }
+
   if (debug_logging_enabled) {
     const auto module_info = GetModuleInfo(this->info_, module_id);
 
@@ -548,6 +562,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
   // take this lock so we block until the
   // module metadata is not longer being used
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+  // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+  if (!is_attached_) {
+    return S_OK;
+  }
 
   // remove module metadata from map
   if (module_id_to_info_map_.count(module_id) > 0) {
@@ -575,19 +594,28 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
 
   Warn("Exiting.");
   Logger::Instance()->Flush();
-  is_attached_ = false;
+  is_attached_.store(false);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded() {
+  if (!is_attached_) {
+    return S_OK;
+  }
   CorProfilerBase::ProfilerDetachSucceeded();
 
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
+  // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+  if (!is_attached_) {
+    return S_OK;
+  }
+
   Warn("Detaching profiler.");
   Logger::Instance()->Flush();
+  is_attached_.store(false);
   return S_OK;
 }
 
@@ -600,6 +628,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+  // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+  if (!is_attached_) {
+    return S_OK;
+  }
 
   ModuleID module_id;
   mdToken function_token = mdTokenNil;
@@ -726,6 +759,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, 
     FunctionID calleeId, BOOL* pfShouldInline) {
+  if (!is_attached_) {
+    return S_OK;
+  }
+
   ModuleID calleeModuleId;
   mdToken calleFunctionToken = mdTokenNil;
   auto hr = this->info_->GetFunctionInfo(calleeId, NULL, &calleeModuleId,
@@ -735,6 +772,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId,
 
   if (FAILED(hr)) {
     Warn("*** JITInlining: Failed to get the function info of the calleId: ", calleeId);
+    return S_OK;
+  }
+
+  if (rejit_handler == nullptr) {
     return S_OK;
   }
 
@@ -2443,12 +2484,19 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
 // ***
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId, BOOL fIsSafeToBlock) {
+  if (!is_attached_) {
+    return S_OK;
+  }
   Debug("ReJITCompilationStarted: [functionId: ", functionId, ", rejitId: ", rejitId, ", safeToBlock: ", fIsSafeToBlock, "]");
   // we notify the reJIT handler of this event
   return rejit_handler->NotifyReJITCompilationStarted(functionId, rejitId);
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdMethodDef methodId, ICorProfilerFunctionControl* pFunctionControl) {
+  if (!is_attached_) {
+    return S_OK;
+  }
+
   Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId, "]");
 
   // we get the module_metadata from the moduleId. 
@@ -2467,11 +2515,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus, BOOL fIsSafeToBlock) {
+  if (!is_attached_) {
+    return S_OK;
+  }
+
   Debug("ReJITCompilationFinished: [functionId: ", functionId, ", rejitId: ", rejitId, ", hrStatus: ", hrStatus, ", safeToBlock: ", fIsSafeToBlock, "]");
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus) {
+  if (!is_attached_) {
+    return S_OK;
+  }
+
   Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId, ", hrStatus: ", hrStatus, "]");
   return S_OK;
 }
