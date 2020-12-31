@@ -312,13 +312,13 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the HTTP status code that should be marked as errors for server integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
-        public bool[] HttpServerErrorStatusCodes { get; set; }
+        internal bool[] HttpServerErrorStatusCodes { get; set; }
 
         /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for client integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
-        public bool[] HttpClientErrorStatusCodes { get; set; }
+        internal bool[] HttpClientErrorStatusCodes { get; set; }
 
         /// <summary>
         /// Gets a value indicating the size of the trace buffer
@@ -344,6 +344,26 @@ namespace Datadog.Trace.Configuration
         public static CompositeConfigurationSource CreateDefaultConfigurationSource()
         {
             return GlobalSettings.CreateDefaultConfigurationSource();
+        }
+
+        /// <summary>
+        /// Sets the HTTP status code that should be marked as errors for client integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
+        /// <param name="statusCodes">Status codes that should be marked as errors</param>
+        public void SetHttpClientErrorStatusCodes(IEnumerable<int> statusCodes)
+        {
+            HttpClientErrorStatusCodes = ParseHttpCodesToArray(string.Join(",", statusCodes));
+        }
+
+        /// <summary>
+        /// Sets the HTTP status code that should be marked as errors for server integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
+        /// <param name="statusCodes">Status codes that should be marked as errors</param>
+        public void SetHttpServerErrorStatusCodes(IEnumerable<int> statusCodes)
+        {
+            HttpServerErrorStatusCodes = ParseHttpCodesToArray(string.Join(",", statusCodes));
         }
 
         /// <summary>
@@ -410,6 +430,14 @@ namespace Datadog.Trace.Configuration
         {
             bool[] httpErrorCodesArray = new bool[600];
 
+            void TrySetValue(int index)
+            {
+                if (index >= 0 && index < httpErrorCodesArray.Length)
+                {
+                    httpErrorCodesArray[index] = true;
+                }
+            }
+
             string[] configurationsArray = httpStatusErrorCodes.Replace(" ", string.Empty).Split(',');
 
             foreach (string statusConfiguration in configurationsArray)
@@ -425,7 +453,7 @@ namespace Datadog.Trace.Configuration
                 // If statusConfiguration equals a single value i.e. `401` parse the value and save to the array
                 else if (int.TryParse(statusConfiguration, out startStatus))
                 {
-                    httpErrorCodesArray[startStatus] = true;
+                    TrySetValue(startStatus);
                 }
                 else
                 {
@@ -442,7 +470,7 @@ namespace Datadog.Trace.Configuration
 
                     for (int statusCode = startStatus; statusCode <= endStatus; statusCode++)
                     {
-                        httpErrorCodesArray[statusCode] = true;
+                        TrySetValue(statusCode);
                     }
                 }
             }
