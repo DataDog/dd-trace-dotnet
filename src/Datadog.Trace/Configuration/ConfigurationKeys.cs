@@ -264,7 +264,8 @@ namespace Datadog.Trace.Configuration
         /// This key is here for troubleshooting purposes.
         /// </summary>
         public const string ApiKey = "DD_API_KEY";
-        
+
+        /// <summary>
         /// Configuration key for overriding the transport to use for communicating with the trace agent.
         /// Default value is <c>null</c>.
         /// Override options available: <c>datadog-tcp</c>, <c>datadog-named-pipes</c>
