@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             HttpClient = new HttpClient();
             HttpClient.DefaultRequestHeaders.Add(HeaderName1, HeaderValue1);
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1Upper}:{HeaderTagName1}");
+            SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-501-234, s342, 500");
 
             SetServiceVersion(ServiceVersion);
 
@@ -90,6 +91,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     var errorMessage = SpanExpectation.GetTag(span, Tags.ErrorMsg);
 
                     if (errorMessage != "This was a bad request.")
+                    {
+                        failures.Add($"Expected specific error message within {span.Resource}. Found \"{errorMessage}\"");
+                    }
+
+                    return failures;
+                });
+
+            CreateTopLevelExpectation(
+                url: "/status-code/402",
+                httpMethod: "GET",
+                httpStatus: "402",
+                resourceUrl: "status-code/{statusCode}",
+                serviceVersion: ServiceVersion,
+                additionalCheck: span =>
+                {
+                    var failures = new List<string>();
+
+                    if (span.Error == 0)
+                    {
+                        failures.Add($"Expected Error flag set within {span.Resource}");
+                    }
+
+                    var errorMessage = SpanExpectation.GetTag(span, Tags.ErrorMsg);
+
+                    if (errorMessage != "The HTTP response has status code 402.")
                     {
                         failures.Add($"Expected specific error message within {span.Resource}. Found \"{errorMessage}\"");
                     }

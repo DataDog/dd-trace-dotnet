@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -146,6 +148,16 @@ namespace Datadog.Trace.Configuration
             StartupDiagnosticLogEnabled = source?.GetBool(ConfigurationKeys.StartupDiagnosticLogEnabled) ??
                                           // default value
                                           true;
+
+            var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
+                                           // Default value
+                                           "500-599";
+            HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
+
+            var httpClientErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpClientErrorStatusCodes) ??
+                                        // Default value
+                                        "400-499";
+            HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
 
             TraceQueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
                         ?? 1000;
@@ -297,6 +309,18 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
+        /// Gets or sets the HTTP status code that should be marked as errors for server integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
+        internal bool[] HttpServerErrorStatusCodes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the HTTP status code that should be marked as errors for client integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
+        internal bool[] HttpClientErrorStatusCodes { get; set; }
+
+        /// <summary>
         /// Gets a value indicating the size of the trace buffer
         /// </summary>
         internal int TraceQueueSize { get; }
@@ -323,11 +347,48 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <summary>
+        /// Sets the HTTP status code that should be marked as errors for client integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
+        /// <param name="statusCodes">Status codes that should be marked as errors</param>
+        public void SetHttpClientErrorStatusCodes(IEnumerable<int> statusCodes)
+        {
+            HttpClientErrorStatusCodes = ParseHttpCodesToArray(string.Join(",", statusCodes));
+        }
+
+        /// <summary>
+        /// Sets the HTTP status code that should be marked as errors for server integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
+        /// <param name="statusCodes">Status codes that should be marked as errors</param>
+        public void SetHttpServerErrorStatusCodes(IEnumerable<int> statusCodes)
+        {
+            HttpServerErrorStatusCodes = ParseHttpCodesToArray(string.Join(",", statusCodes));
+        }
+
+        /// <summary>
         /// Populate the internal structures. Modifying the settings past this point is not supported
         /// </summary>
         internal void Freeze()
         {
             Integrations.SetDisabledIntegrations(DisabledIntegrationNames);
+        }
+
+        internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)
+        {
+            var source = serverStatusCode ? HttpServerErrorStatusCodes : HttpClientErrorStatusCodes;
+
+            if (source == null)
+            {
+                return false;
+            }
+
+            if (statusCode >= source.Length)
+            {
+                return false;
+            }
+
+            return source[statusCode];
         }
 
         internal bool IsIntegrationEnabled(IntegrationInfo integration, bool defaultValue = true)
@@ -363,6 +424,58 @@ namespace Datadog.Trace.Configuration
             var value = EnvironmentHelpers.GetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", string.Empty);
 
             return value == "1" || value == "true";
+        }
+
+        internal bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)
+        {
+            bool[] httpErrorCodesArray = new bool[600];
+
+            void TrySetValue(int index)
+            {
+                if (index >= 0 && index < httpErrorCodesArray.Length)
+                {
+                    httpErrorCodesArray[index] = true;
+                }
+            }
+
+            string[] configurationsArray = httpStatusErrorCodes.Replace(" ", string.Empty).Split(',');
+
+            foreach (string statusConfiguration in configurationsArray)
+            {
+                int startStatus;
+
+                // Checks that the value about to be used follows the `401-404` structure or single 3 digit number i.e. `401` else log the warning
+                if (!Regex.IsMatch(statusConfiguration, @"^\d{3}-\d{3}$|^\d{3}$"))
+                {
+                    Log.Warning("Wrong format '{0}' for DD_HTTP_SERVER/CLIENT_ERROR_STATUSES configuration.", statusConfiguration);
+                }
+
+                // If statusConfiguration equals a single value i.e. `401` parse the value and save to the array
+                else if (int.TryParse(statusConfiguration, out startStatus))
+                {
+                    TrySetValue(startStatus);
+                }
+                else
+                {
+                    string[] statusCodeLimitsRange = statusConfiguration.Split('-');
+
+                    startStatus = int.Parse(statusCodeLimitsRange[0]);
+                    int endStatus = int.Parse(statusCodeLimitsRange[1]);
+
+                    if (endStatus < startStatus)
+                    {
+                        startStatus = endStatus;
+                        endStatus = int.Parse(statusCodeLimitsRange[0]);
+                    }
+
+                    for (int statusCode = startStatus; statusCode <= endStatus; statusCode++)
+                    {
+                        TrySetValue(statusCode);
+                    }
+                }
+            }
+
+            return httpErrorCodesArray;
         }
     }
 }

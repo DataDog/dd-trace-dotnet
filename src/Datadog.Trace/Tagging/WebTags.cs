@@ -2,11 +2,11 @@ using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class WebTags : InstrumentationTags
+    internal class WebTags : InstrumentationTags, IHasStatusCode
     {
         protected static readonly IProperty<string>[] WebTagsProperties =
             InstrumentationTagsProperties.Concat(
-                new Property<WebTags, string>(Trace.Tags.HttpStatusCode, t => t.StatusCode, (t, v) => t.StatusCode = v),
+                new Property<WebTags, string>(Trace.Tags.HttpStatusCode, t => t.HttpStatusCode, (t, v) => t.HttpStatusCode = v),
                 new Property<WebTags, string>(Trace.Tags.HttpMethod, t => t.HttpMethod, (t, v) => t.HttpMethod = v),
                 new Property<WebTags, string>(Trace.Tags.HttpRequestHeadersHost, t => t.HttpRequestHeadersHost, (t, v) => t.HttpRequestHeadersHost = v),
                 new Property<WebTags, string>(Trace.Tags.HttpUrl, t => t.HttpUrl, (t, v) => t.HttpUrl = v),
@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tagging
 
         public string Language => TracerConstants.Language;
 
-        public string StatusCode { get; set; }
+        public string HttpStatusCode { get; set; }
 
         protected override IProperty<string>[] GetAdditionalTags() => WebTagsProperties;
     }

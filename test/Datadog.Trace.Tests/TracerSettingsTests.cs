@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Agent;
@@ -95,6 +97,58 @@ namespace Datadog.Trace.Tests
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
             Assert.Equal(expected, tracerSettings.AgentUri.ToString());
+        }
+
+        [Theory]
+        [InlineData("404 -401, 419,344_ 23-302, 201,_5633-55, 409-411", "401,402,403,404,419,201,409,410,411")]
+        [InlineData("-33, 500-503,113#53,500-502-200,456_2, 590-590", "500,501,502,503,590")]
+        [InlineData("800", "")]
+        [InlineData("599-605,700-800", "599")]
+        public void ParseHttpCodes(string original, string expected)
+        {
+            var tracerSettings = new TracerSettings();
+
+            bool[] errorStatusCodesArray = tracerSettings.ParseHttpCodesToArray(original);
+            string[] expectedKeysArray = expected.Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var value in expectedKeysArray)
+            {
+                Assert.True(errorStatusCodesArray[int.Parse(value)]);
+            }
+        }
+
+        [Fact]
+        public void SetClientHttpCodes()
+        {
+            SetAndValidateStatusCodes((s, c) => s.SetHttpClientErrorStatusCodes(c), s => s.HttpClientErrorStatusCodes);
+        }
+
+        [Fact]
+        public void SetServerHttpCodes()
+        {
+            SetAndValidateStatusCodes((s, c) => s.SetHttpServerErrorStatusCodes(c), s => s.HttpServerErrorStatusCodes);
+        }
+
+        private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)
+        {
+            var settings = new TracerSettings();
+            var statusCodes = new Queue<int>(new[] { 100, 201, 503 });
+
+            setStatusCodes(settings, statusCodes);
+
+            var result = getStatusCodes(settings);
+
+            for (int i = 0; i < 600; i++)
+            {
+                if (result[i])
+                {
+                    var code = statusCodes.Dequeue();
+
+                    Assert.Equal(code, i);
+                }
+            }
+
+            Assert.Empty(statusCodes);
         }
     }
 }

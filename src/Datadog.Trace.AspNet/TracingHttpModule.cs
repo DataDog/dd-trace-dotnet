@@ -160,7 +160,7 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    scope.Span.SetServerStatusCode(app.Context.Response.StatusCode);
+                    scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
                     scope.Dispose();
                 }
             }

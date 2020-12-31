@@ -2,7 +2,7 @@ using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class HttpTags : InstrumentationTags
+    internal class HttpTags : InstrumentationTags, IHasStatusCode
     {
         protected static readonly IProperty<string>[] HttpTagsProperties =
             InstrumentationTagsProperties.Concat(
@@ -25,46 +25,6 @@ namespace Datadog.Trace.Tagging
         public string HttpClientHandlerType { get; set; }
 
         public string HttpStatusCode { get; set; }
-
-        public static string ConvertStatusCodeToString(int statusCode)
-        {
-            if (statusCode == 200)
-            {
-                return "200";
-            }
-
-            if (statusCode == 302)
-            {
-                return "302";
-            }
-
-            if (statusCode == 401)
-            {
-                return "401";
-            }
-
-            if (statusCode == 403)
-            {
-                return "403";
-            }
-
-            if (statusCode == 404)
-            {
-                return "404";
-            }
-
-            if (statusCode == 500)
-            {
-                return "500";
-            }
-
-            if (statusCode == 503)
-            {
-                return "503";
-            }
-
-            return statusCode.ToString();
-        }
 
         protected override IProperty<string>[] GetAdditionalTags() => HttpTagsProperties;
     }

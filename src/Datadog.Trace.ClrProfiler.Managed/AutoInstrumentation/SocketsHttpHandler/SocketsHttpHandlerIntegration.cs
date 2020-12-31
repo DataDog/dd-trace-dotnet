@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
@@ -104,14 +105,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
 
             try
             {
-                if (exception is null)
-                {
-                    if (integrationState.Tags != null)
-                    {
-                        integrationState.Tags.HttpStatusCode = HttpTags.ConvertStatusCodeToString(responseMessage.StatusCode);
-                    }
-                }
-                else
+                integrationState.Scope.Span.SetHttpStatusCode(responseMessage.StatusCode, isServer: false);
+
+                if (exception != null)
                 {
                     integrationState.Scope.Span.SetException(exception);
                 }
