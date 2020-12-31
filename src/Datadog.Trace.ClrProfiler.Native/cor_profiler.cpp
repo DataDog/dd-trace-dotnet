@@ -263,7 +263,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // we're in!
   Info("Profiler attached.");
   this->info_->AddRef();
-  is_attached_ = true;
+  is_attached_.store(true);
   profiler = this;
   return S_OK;
 }
@@ -594,7 +594,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
 
   Warn("Exiting.");
   Logger::Instance()->Flush();
-  is_attached_ = false;
+  is_attached_.store(false);
   return S_OK;
 }
 
@@ -615,7 +615,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded() {
 
   Warn("Detaching profiler.");
   Logger::Instance()->Flush();
-  is_attached_ = false;
+  is_attached_.store(false);
   return S_OK;
 }
 
