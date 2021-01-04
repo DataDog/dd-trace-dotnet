@@ -5,6 +5,7 @@ using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
 
@@ -75,6 +76,11 @@ namespace Benchmarks.Trace
         private class FakeApiRequestFactory : IApiRequestFactory
         {
             private readonly IApiRequestFactory _realFactory = new ApiWebRequestFactory();
+
+            public string Info(Uri endpoint)
+            {
+                return endpoint.ToString();
+            }
 
             public IApiRequest Create(Uri endpoint)
             {
