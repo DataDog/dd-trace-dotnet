@@ -64,5 +64,30 @@ namespace Datadog.Trace.Agent.Transports
                 return new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream);
             }
         }
+
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+        {
+            using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
+            {
+                var content = new BufferContent(traces);
+                var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
+
+                // send request, get response
+                var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
+
+                // buffer the entire contents for now
+                var responseContentStream = new MemoryStream();
+                await response.Content.CopyToAsync(responseContentStream, ResponseReadBufferSize).ConfigureAwait(false);
+                responseContentStream.Position = 0;
+
+                var contentLength = response.ContentLength;
+                if (contentLength != null && contentLength != responseContentStream.Length)
+                {
+                    throw new Exception("Content length from http headers does not match content's actual length.");
+                }
+
+                return new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream);
+            }
+        }
     }
 }

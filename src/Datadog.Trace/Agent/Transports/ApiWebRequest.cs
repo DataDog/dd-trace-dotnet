@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
@@ -28,11 +29,34 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
         {
             _request.Method = "POST";
-
             _request.ContentType = "application/msgpack";
+
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 await CachedSerializer.Instance.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
+            }
+
+            try
+            {
+                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                return new ApiWebResponse(httpWebResponse);
+            }
+            catch (WebException exception)
+                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+            {
+                // If the exception is caused by an error status code, ignore it and let the caller handle the result
+                return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
+        }
+
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+        {
+            _request.Method = "POST";
+            _request.ContentType = "application/msgpack";
+
+            using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            {
+                await requestStream.WriteAsync(traces.Array, traces.Offset, traces.Count).ConfigureAwait(false);
             }
 
             try

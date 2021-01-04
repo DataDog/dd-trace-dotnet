@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.DogStatsd;
@@ -12,6 +13,7 @@ namespace Datadog.Trace.Agent
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
 
+        private readonly ConcurrentQueue<Span[]> _pendingTraces = new ConcurrentQueue<Span[]>();
         private readonly AgentWriterBuffer<Span[]> _tracesBuffer;
         private readonly IDogStatsd _statsd;
         private readonly Task _flushTask;

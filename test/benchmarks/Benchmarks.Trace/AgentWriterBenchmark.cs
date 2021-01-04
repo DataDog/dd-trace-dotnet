@@ -18,6 +18,7 @@ namespace Benchmarks.Trace
         private const int SpanCount = 1000;
 
         private static readonly IAgentWriter AgentWriter;
+        private static readonly IAgentWriter EagerAgentWriter;
         private static readonly Span[] Spans;
         private static readonly Span[] EnrichedSpans;
 
@@ -31,6 +32,7 @@ namespace Benchmarks.Trace
             var api = new Api(settings.AgentUri, new FakeApiRequestFactory(), statsd: null);
 
             AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false, queueSize: SpanCount * 2);
+            EagerAgentWriter = new EagerAgentWriter(api, statsd: null, automaticFlush: false, queueSize: SpanCount * 2);
 
             Spans = new Span[SpanCount];
             EnrichedSpans = new Span[SpanCount];
@@ -46,7 +48,9 @@ namespace Benchmarks.Trace
 
             // Run benchmarks once to reduce noise
             new AgentWriterBenchmark().WriteAndFlushTraces().GetAwaiter().GetResult();
+            new AgentWriterBenchmark().WriteAndFlushTracesNew().GetAwaiter().GetResult();
             new AgentWriterBenchmark().WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
+            new AgentWriterBenchmark().WriteAndFlushEnrichedTracesNew().GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -59,6 +63,13 @@ namespace Benchmarks.Trace
             return AgentWriter.FlushTracesAsync();
         }
 
+        [Benchmark]
+        public Task WriteAndFlushTracesNew()
+        {
+            EagerAgentWriter.WriteTrace(Spans);
+            return EagerAgentWriter.FlushTracesAsync();
+        }
+
         /// <summary>
         /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics)
         /// </summary>
@@ -67,6 +78,13 @@ namespace Benchmarks.Trace
         {
             AgentWriter.WriteTrace(EnrichedSpans);
             return AgentWriter.FlushTracesAsync();
+        }
+
+        [Benchmark]
+        public Task WriteAndFlushEnrichedTracesNew()
+        {
+            EagerAgentWriter.WriteTrace(EnrichedSpans);
+            return EagerAgentWriter.FlushTracesAsync();
         }
 
         /// <summary>
@@ -109,6 +127,16 @@ namespace Benchmarks.Trace
                 using (var requestStream = Stream.Null)
                 {
                     await CachedSerializer.Instance.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
+                }
+
+                return new FakeApiResponse();
+            }
+
+            public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+            {
+                using (var requestStream = Stream.Null)
+                {
+                    await requestStream.WriteAsync(traces.Array, traces.Offset, traces.Count).ConfigureAwait(false);
                 }
 
                 return new FakeApiResponse();

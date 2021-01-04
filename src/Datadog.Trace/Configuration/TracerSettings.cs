@@ -90,6 +90,8 @@ namespace Datadog.Trace.Configuration
 
             AgentUri = new Uri(agentUri);
 
+            DynamicFlushing = source?.GetBool("DD_TRACE_DYNAMIC_FLUSH") ?? false;
+
             TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
 
             TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs)
@@ -233,6 +235,11 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentHost"/>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether blablabla
+        /// </summary>
+        public bool DynamicFlushing { get; set; }
 
         /// <summary>
         /// Gets or sets the key used to determine the transport for sending traces.

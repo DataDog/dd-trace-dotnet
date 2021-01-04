@@ -34,6 +34,19 @@ namespace Datadog.Trace.Agent.Transports
                 return new HttpClientResponse(response);
             }
         }
+
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+        {
+            // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
+            using (var content = new BinaryTracesMessagePackContent(traces))
+            {
+                _request.Content = content;
+
+                var response = await _client.SendAsync(_request).ConfigureAwait(false);
+
+                return new HttpClientResponse(response);
+            }
+        }
     }
 }
 #endif
