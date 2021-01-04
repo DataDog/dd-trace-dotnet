@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -21,7 +22,7 @@ namespace Datadog.Trace.Agent
         private readonly IDogStatsd _statsd;
         private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
         private readonly string _containerId;
-        private Uri _tracesEndpoint; // The Uri may be reassigned dynamically so that retry attempts may attempt updated Agent ports
+        private readonly Uri _tracesEndpoint;
         private string _cachedResponse;
 
         public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IDogStatsd statsd)
@@ -31,11 +32,6 @@ namespace Datadog.Trace.Agent
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
             _apiRequestFactory = apiRequestFactory ?? CreateRequestFactory();
-        }
-
-        public void SetBaseEndpoint(Uri baseEndpoint)
-        {
-            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
         }
 
         public async Task<bool> SendTracesAsync(Span[][] traces)
@@ -57,7 +53,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, $"An error occurred while generating http request to send traces to the agent at {_tracesEndpoint}");
+                    Log.Error(ex, "An error occurred while generating http request to send traces to the agent at {0}", _apiRequestFactory.Info(_tracesEndpoint));
                     return false;
                 }
 
@@ -81,14 +77,14 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
+                    exception = ex;
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
-                        Log.Error(ex, "An error occurred while sending {0} traces to the agent at {1}", traces.Length, _tracesEndpoint);
+                        Log.Error(ex, "An error occurred while sending {0} traces to the agent at {1}", traces.Length, _apiRequestFactory.Info(_tracesEndpoint));
                         return false;
                     }
 #endif
-                    exception = ex;
                 }
 
                 // Error handling block
@@ -97,7 +93,7 @@ namespace Datadog.Trace.Agent
                     if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error(exception, "An error occurred while sending {0} traces to the agent at {1}", traces.Length, _tracesEndpoint);
+                        Log.Error(exception, "An error occurred while sending {0} traces to the agent at {1}", traces.Length, _apiRequestFactory.Info(_tracesEndpoint));
                         return false;
                     }
 
@@ -118,21 +114,13 @@ namespace Datadog.Trace.Agent
 
                     if (isSocketException)
                     {
-                        Log.Debug(exception, "Unable to communicate with the trace agent at {0}", _tracesEndpoint);
-                        TracingProcessManager.TryForceTraceAgentRefresh();
+                        Log.Debug(exception, "Unable to communicate with the trace agent at {0}", _apiRequestFactory.Info(_tracesEndpoint));
                     }
 
                     // Execute retry delay
                     await Task.Delay(sleepDuration).ConfigureAwait(false);
                     retryCount++;
                     sleepDuration *= 2;
-
-                    // After retry delay
-                    if (isSocketException)
-                    {
-                        // Ensure we have the most recent port before trying again
-                        TracingProcessManager.TraceAgentMetadata.ForcePortFileRead();
-                    }
 
                     continue;
                 }
@@ -145,8 +133,10 @@ namespace Datadog.Trace.Agent
         private static IApiRequestFactory CreateRequestFactory()
         {
 #if NETCOREAPP
+            Log.Information("Using {0} for trace transport.", nameof(HttpClientRequestFactory));
             return new HttpClientRequestFactory();
 #else
+            Log.Information("Using {0} for trace transport.", nameof(ApiWebRequestFactory));
             return new ApiWebRequestFactory();
 #endif
         }
@@ -216,7 +206,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Traces sent successfully to the Agent at {0}, but an error occurred deserializing the response.", _tracesEndpoint);
+                    Log.Error(ex, "Traces sent successfully to the Agent at {0}, but an error occurred deserializing the response.", _apiRequestFactory.Info(_tracesEndpoint));
                 }
             }
             finally

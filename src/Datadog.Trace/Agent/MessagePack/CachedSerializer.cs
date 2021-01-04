@@ -8,8 +8,8 @@ namespace Datadog.Trace.Agent.MessagePack
     internal class CachedSerializer
     {
         internal static readonly CachedSerializer Instance = new CachedSerializer();
-
         private const int InitialBufferSize = 64 * 1024;
+
         private byte[] _buffer;
 
         public CachedSerializer()

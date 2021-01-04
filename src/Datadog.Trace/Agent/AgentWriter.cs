@@ -28,11 +28,6 @@ namespace Datadog.Trace.Agent
             _flushTask = automaticFlush ? Task.Run(FlushTracesTaskLoopAsync) : Task.FromResult(true);
         }
 
-        public void SetApiBaseEndpoint(Uri uri)
-        {
-            _api.SetBaseEndpoint(uri);
-        }
-
         public Task<bool> Ping()
         {
             return _api.SendTracesAsync(ArrayHelper.Empty<Span[]>());

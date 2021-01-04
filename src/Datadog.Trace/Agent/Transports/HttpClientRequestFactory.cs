@@ -2,7 +2,7 @@
 using System;
 using System.Net.Http;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpClientRequestFactory : IApiRequestFactory
     {
@@ -18,6 +18,11 @@ namespace Datadog.Trace.Agent
 
             // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+        }
+
+        public string Info(Uri endpoint)
+        {
+            return endpoint.ToString();
         }
 
         public IApiRequest Create(Uri endpoint)

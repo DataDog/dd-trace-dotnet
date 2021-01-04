@@ -90,6 +90,17 @@ namespace Datadog.Trace.Configuration
 
             AgentUri = new Uri(agentUri);
 
+            TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
+
+            TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs)
+#if DEBUG
+            ?? 20_000;
+#else
+            ?? 100;
+#endif
+
+            TracesTransport = source?.GetString(ConfigurationKeys.TracesTransport);
+
             if (string.Equals(AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
             {
                 // Replace localhost with 127.0.0.1 to avoid DNS resolution.
@@ -216,6 +227,34 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentHost"/>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; set; }
+
+        /// <summary>
+        /// Gets or sets the key used to determine the transport for sending traces.
+        /// Default is <c>null</c>, which will use the default path decided in <see cref="Agent.Api"/>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TracesTransport"/>
+        public string TracesTransport { get; set; }
+
+        /// <summary>
+        /// Gets or sets the windows pipe name where the Tracer can connect to the Agent.
+        /// Default is <c>null</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TracesPipeName"/>
+        public string TracesPipeName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in milliseconds for the windows named pipe requests.
+        /// Default is <c>100</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TracesPipeTimeoutMs"/>
+        public int TracesPipeTimeoutMs { get; set; }
+
+        /// <summary>
+        /// Gets or sets the windows pipe name where the Tracer can send stats.
+        /// Default is <c>null</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.MetricsPipeName"/>
+        public string MetricsPipeName { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether default Analytics are enabled.
