@@ -85,7 +85,7 @@ jobs:
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
-        benchmarks/**/*.csproj
+        test/benchmarks/**/*.csproj
         !src/Datadog.Trace.Tools.Runner/*.csproj
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet
