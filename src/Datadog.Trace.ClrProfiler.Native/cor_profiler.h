@@ -12,6 +12,7 @@
 #include "cor_profiler_base.h"
 #include "environment_variables.h"
 #include "integration.h"
+#include "loader.h"
 #include "module_metadata.h"
 #include "pal.h"
 #include "il_rewriter.h"
@@ -33,10 +34,14 @@ class CorProfiler : public CorProfilerBase {
   AppDomainID corlib_app_domain_id = 0;
   bool managed_profiler_loaded_domain_neutral = false;
   std::unordered_set<AppDomainID> managed_profiler_loaded_app_domains;
-  std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
   bool is_desktop_iis = false;
-  
+
+  //
+  // Loader
+  //
+  Loader* loader_ = nullptr;
+
   //
   // CallTarget Members
   //
@@ -80,14 +85,6 @@ class CorProfiler : public CorProfilerBase {
   std::string GetILCodes(const std::string& title, ILRewriter* rewriter,
                          const FunctionInfo& caller,
                          ModuleMetadata* module_metadata);
-  //
-  // Startup methods
-  //
-  HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&,
-                             const ModuleID module_id,
-                             const mdToken function_token);
-  HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
-                           mdMethodDef* ret_method_token);
   HRESULT AddIISPreStartInitFlags(const ModuleID module_id,
                            const mdToken function_token);
 
@@ -103,9 +100,6 @@ class CorProfiler : public CorProfilerBase {
   CorProfiler() = default;
 
   bool IsAttached() const;
-
-  void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize,
-                                 BYTE** pSymbolsArray, int* symbolsSize) const;
 
   //
   // ICorProfilerCallback methods

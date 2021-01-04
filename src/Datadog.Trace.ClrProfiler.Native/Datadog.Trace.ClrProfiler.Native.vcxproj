@@ -196,6 +196,7 @@
     <ClInclude Include="integration.h" />
     <ClInclude Include="integration_loader.h" />
     <ClInclude Include="clr_helpers.h" />
+    <ClInclude Include="loader.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="macros.h" />
     <ClInclude Include="metadata_builder.h" />
@@ -219,6 +220,7 @@
     <ClCompile Include="il_rewriter_wrapper.cpp" />
     <ClCompile Include="integration.cpp" />
     <ClCompile Include="integration_loader.cpp" />
+    <ClCompile Include="loader.cpp" />
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="miniutf.cpp" />
