@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -21,9 +22,9 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
 
             if (Length != null)
             {
-                if (Length > maxBufferSize)
+                if (Length > int.MaxValue)
                 {
-                    throw new DatadogHttpRequestException($"Content length ({Length}) is above bounds of expected size ({maxBufferSize}), terminating request.");
+                    throw new Exception($"Content length is above integer maximum, this is unexpected and requests cannot be sent.");
                 }
 
                 maxLengthToRead = (int)Length;

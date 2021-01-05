@@ -39,7 +39,7 @@ namespace Datadog.Trace.HttpOverStreams
                 await DatadogHttpHeaderHelper.WriteEndOfHeaders(writer).ConfigureAwait(false);
             }
 
-            await request.Content.CopyToAsync(requestStream, DatadogHttpValues.MaximumRequestBufferSize).ConfigureAwait(false);
+            await request.Content.CopyToAsync(requestStream, DatadogHttpValues.DefaultMaximumRequestBufferSize).ConfigureAwait(false);
             Logger.Debug("Datadog HTTP: Flushing stream.");
             await requestStream.FlushAsync().ConfigureAwait(false);
         }

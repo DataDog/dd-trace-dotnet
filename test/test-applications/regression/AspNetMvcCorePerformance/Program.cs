@@ -88,6 +88,12 @@ namespace AspNetMvcCorePerformance
                 {
                     Thread.Sleep(1000);
                 }
+
+                foreach (var exceptionGroup in exceptionBag.GroupBy(e => e.Message))
+                {
+                    Console.WriteLine($"Exceptions ({exceptionGroup.Count()}) Found: {exceptionGroup.Key}");
+                    Console.WriteLine(exceptionGroup.First());
+                }
             }
             catch (Exception ex)
             {
