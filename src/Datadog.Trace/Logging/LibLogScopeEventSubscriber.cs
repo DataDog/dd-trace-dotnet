@@ -75,7 +75,7 @@ namespace Datadog.Trace.Logging
 
         public void StackOnSpanOpened(object sender, SpanEventArgs spanEventArgs)
         {
-            SetSerilogCompatibleLogContext(_defaultServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            SetSerilogCompatibleLogContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
         }
 
         public void StackOnSpanClosed(object sender, SpanEventArgs spanEventArgs)
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Logging
         public void MapOnSpanActivated(object sender, SpanEventArgs spanEventArgs)
         {
             RemoveAllCorrelationIdentifierContexts();
-            SetLogContext(_defaultServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            SetLogContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
         }
 
         public void MapOnTraceEnded(object sender, SpanEventArgs spanEventArgs)
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Logging
 
         private void SetDefaultValues()
         {
-            SetLogContext(_defaultServiceName, _version, _env, 0, 0);
+            SetLogContext(0, 0);
         }
 
         private void RemoveLastCorrelationIdentifierContext()
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        private void SetLogContext(string service, string version, string env, ulong traceId, ulong spanId)
+        private void SetLogContext(ulong traceId, ulong spanId)
         {
             if (!_safeToAddToMdc)
             {
@@ -156,13 +156,13 @@ namespace Datadog.Trace.Logging
                 // TODO: Debug logs
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.ServiceKey, service, destructure: false));
+                        CorrelationIdentifier.ServiceKey, _defaultServiceName, destructure: false));
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.VersionKey, version, destructure: false));
+                        CorrelationIdentifier.VersionKey, _version, destructure: false));
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.EnvKey, env, destructure: false));
+                        CorrelationIdentifier.EnvKey, _env, destructure: false));
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
                         CorrelationIdentifier.TraceIdKey, traceId.ToString(), destructure: false));
@@ -177,7 +177,7 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        private void SetSerilogCompatibleLogContext(string service, string version, string env, ulong traceId, ulong spanId)
+        private void SetSerilogCompatibleLogContext(ulong traceId, ulong spanId)
         {
             if (!_safeToAddToMdc)
             {
@@ -189,13 +189,13 @@ namespace Datadog.Trace.Logging
                 // TODO: Debug logs
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.SerilogServiceKey, service, destructure: false));
+                        CorrelationIdentifier.SerilogServiceKey, _defaultServiceName, destructure: false));
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.SerilogVersionKey, version, destructure: false));
+                        CorrelationIdentifier.SerilogVersionKey, _version, destructure: false));
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.SerilogEnvKey, env, destructure: false));
+                        CorrelationIdentifier.SerilogEnvKey, _env, destructure: false));
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
                         CorrelationIdentifier.SerilogTraceIdKey, traceId.ToString(), destructure: false));
