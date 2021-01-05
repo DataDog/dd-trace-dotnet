@@ -31,6 +31,7 @@ namespace Datadog.Trace.Logging
         private readonly ConcurrentStack<IDisposable> _contextDisposalStack = new ConcurrentStack<IDisposable>();
 
         private bool _safeToAddToMdc = true;
+        private bool _executingIISPreApp = false;
 
         // IMPORTANT: For all logging frameworks, do not set any default values for
         //            "dd.trace_id" and "dd.span_id" when initializing the subscriber
@@ -50,6 +51,12 @@ namespace Datadog.Trace.Logging
             _defaultServiceName = defaultServiceName;
             _version = version;
             _env = env;
+            _safeToAddToMdc = true;
+
+#if NETFRAMEWORK
+            _scopeManager.TraceStarted += OnTraceStarted_RefreshIISState;
+            RefreshIISPreAppState(traceId: null);
+#endif
 
             try
             {
@@ -73,26 +80,50 @@ namespace Datadog.Trace.Logging
             }
         }
 
+#if NETFRAMEWORK
+        public void OnTraceStarted_RefreshIISState(object sender, SpanEventArgs spanEventArgs)
+        {
+            // If we were previously executing in the IIS PreApp Code, refresh this evaluation
+            // If not, do not waste cycles
+            if (_executingIISPreApp)
+            {
+                RefreshIISPreAppState(traceId: spanEventArgs.Span.TraceId);
+            }
+        }
+#endif
+
         public void StackOnSpanOpened(object sender, SpanEventArgs spanEventArgs)
         {
-            SetSerilogCompatibleLogContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            if (!_executingIISPreApp)
+            {
+                SetSerilogCompatibleLogContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            }
         }
 
         public void StackOnSpanClosed(object sender, SpanEventArgs spanEventArgs)
         {
-            RemoveLastCorrelationIdentifierContext();
+            if (!_executingIISPreApp)
+            {
+                RemoveLastCorrelationIdentifierContext();
+            }
         }
 
         public void MapOnSpanActivated(object sender, SpanEventArgs spanEventArgs)
         {
-            RemoveAllCorrelationIdentifierContexts();
-            SetLogContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            if (!_executingIISPreApp)
+            {
+                RemoveAllCorrelationIdentifierContexts();
+                SetLogContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            }
         }
 
         public void MapOnTraceEnded(object sender, SpanEventArgs spanEventArgs)
         {
-            RemoveAllCorrelationIdentifierContexts();
-            SetDefaultValues();
+            if (!_executingIISPreApp)
+            {
+                RemoveAllCorrelationIdentifierContexts();
+                SetDefaultValues();
+            }
         }
 
         public void Dispose()
@@ -209,5 +240,22 @@ namespace Datadog.Trace.Logging
                 RemoveAllCorrelationIdentifierContexts();
             }
         }
+
+#if NETFRAMEWORK
+        private void RefreshIISPreAppState(ulong? traceId)
+        {
+            var stackTrace = new StackTrace(false);
+            var initialStackFrame = stackTrace.GetFrame(stackTrace.FrameCount - 1);
+            var initialMethod = initialStackFrame.GetMethod();
+
+            _executingIISPreApp = initialMethod.DeclaringType.FullName.Equals("System.Web.Hosting.HostingEnvironment", StringComparison.OrdinalIgnoreCase)
+                                  && initialMethod.Name.Equals("Initialize", StringComparison.OrdinalIgnoreCase);
+
+            if (_executingIISPreApp && traceId != null)
+            {
+                Log.Warning("IIS is still initializing the application. Automatic logs injection will be disabled until the application begins processing incoming requests. Affected traceId={0}", traceId);
+            }
+        }
+#endif
     }
 }
