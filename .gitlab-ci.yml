@@ -3,10 +3,7 @@ stages:
   - binary_build
   
 variables:
-  ## DBTODO this is the current branch of -buildimages.  Once the common
-  ## container is merged to master, then this needs to be updated with the
-  ## resulting tag prior to merging
-  DATADOG_AGENT_WINBUILDIMAGES: v3599352-d498c03
+  DATADOG_AGENT_WINBUILDIMAGES: v3651799-a21376a
     
 driver_build:
   only:
