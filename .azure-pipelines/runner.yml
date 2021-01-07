@@ -233,6 +233,6 @@ jobs:
     displayName: Uploading runner standalone linux-x64 artifact
     artifact: runner-standalone-linux-x64
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/macos-x64
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64
     displayName: Uploading runner standalone macos-x64 artifact
     artifact: runner-standalone-macos-x64
