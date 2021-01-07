@@ -15,7 +15,18 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public string Assembly
         {
-            get => string.Empty;
+            get
+            {
+                switch (Assemblies?.Length ?? 0)
+                {
+                    case 0:
+                        return null;
+                    case 1:
+                        return Assemblies[0];
+                    default:
+                        throw new NotSupportedException("Multiple assemblies are not supported using this property. Use Assemblies property instead.");
+                }
+            }
             set => Assemblies = new[] { value };
         }
 
