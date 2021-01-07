@@ -3,7 +3,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    internal abstract class ScopeManagerBase : IScopeManager
+    internal abstract class ScopeManagerBase : IScopeManager, IScopeRawAccess
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ScopeManagerBase));
 
@@ -18,6 +18,12 @@ namespace Datadog.Trace
         public event EventHandler<SpanEventArgs> TraceEnded;
 
         public abstract Scope Active { get; protected set; }
+
+        Scope IScopeRawAccess.Active
+        {
+            get => Active;
+            set => Active = value;
+        }
 
         public Scope Activate(Span span, bool finishOnClose)
         {

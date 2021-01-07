@@ -7,21 +7,51 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// </summary>
     public readonly struct CallTargetState
     {
+        private readonly Scope _oldScope;
+        private readonly Scope _scope;
         private readonly object _state;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
         /// </summary>
-        /// <param name="state">Object state instance</param>
-        public CallTargetState(object state)
+        /// <param name="scope">Scope instance</param>
+        public CallTargetState(Scope scope)
         {
+            _oldScope = null;
+            _scope = scope;
+            _state = null;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
+        /// </summary>
+        /// <param name="scope">Scope instance</param>
+        /// <param name="state">Object state instance</param>
+        public CallTargetState(Scope scope, object state)
+        {
+            _oldScope = null;
+            _scope = scope;
             _state = state;
         }
+
+        private CallTargetState(Scope oldScope, Scope scope, object state)
+        {
+            _oldScope = oldScope;
+            _scope = scope;
+            _state = state;
+        }
+
+        /// <summary>
+        /// Gets the CallTarget BeginMethod scope
+        /// </summary>
+        public Scope Scope => _scope;
 
         /// <summary>
         /// Gets the CallTarget BeginMethod state
         /// </summary>
         public object State => _state;
+
+        internal Scope OldScope => _oldScope;
 
         /// <summary>
         /// Gets the default call target state (used by the native side to initialize the locals)
@@ -39,7 +69,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>String value</returns>
         public override string ToString()
         {
-            return $"{typeof(CallTargetState).FullName}({_state})";
+            return $"{typeof(CallTargetState).FullName}({_oldScope}, {_scope}, {_state})";
+        }
+
+        internal static CallTargetState WithPreviousScope(Scope oldScope, CallTargetState state)
+        {
+            return new CallTargetState(oldScope, state._scope, state._state);
         }
     }
 }
