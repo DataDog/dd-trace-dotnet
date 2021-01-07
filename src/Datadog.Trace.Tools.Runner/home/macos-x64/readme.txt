@@ -1,0 +1,1 @@
+﻿Here must go the native binaries for macos-x64

@@ -45,6 +45,10 @@ namespace Datadog.Trace.Tools.Runner
             {
                 tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
             }
+            else if (platform == Platform.MacOS)
+            {
+                tracerProfiler64 = FileExists(Path.Combine(tracerHome, "macos-x64", "Datadog.Trace.ClrProfiler.Native.dylib"));
+            }
 
             var envVars = new Dictionary<string, string>
             {

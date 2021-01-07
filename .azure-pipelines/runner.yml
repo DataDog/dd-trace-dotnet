@@ -76,6 +76,42 @@ jobs:
     displayName: Uploading linux tracer home artifact
     artifact: linux-tracer-home
 
+- job: macos_profiler
+  pool:
+    vmImage: macOS-10.15
+  steps:
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 3.1
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdkVersion)
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
+      projects: |
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+
+  - script: |
+      cd ./src/Datadog.Trace.ClrProfiler.Native
+      cmake .
+      make
+    displayName: build_profiler
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin
+    displayName: Uploading macos profiler artifact
+    artifact: macos-profiler
+
 - job: build_runner_tool_and_standalone
   dependsOn: build_linux_profiler
   condition: succeeded()
@@ -97,6 +133,16 @@ jobs:
     inputs:
       sourceFolder: $(Pipeline.Workspace)/linux-tracer-home
       targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
+
+  - download: current
+    artifact: macos-profiler
+    patterns: '**/*.dylib'
+
+  - task: CopyFiles@2
+    displayName: Copying native macos binary from previous job
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/macos-profiler
+      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/macos-x64
 
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
   # The script exposes the required environment variables to the following steps
@@ -186,3 +232,7 @@ jobs:
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64
     displayName: Uploading runner standalone linux-x64 artifact
     artifact: runner-standalone-linux-x64
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/macos-x64
+    displayName: Uploading runner standalone macos-x64 artifact
+    artifact: runner-standalone-macos-x64
