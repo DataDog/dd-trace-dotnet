@@ -8,12 +8,6 @@ namespace Datadog.Trace.HttpOverStreams
 {
     internal class DatadogHttpClient
     {
-        /// <summary>
-        /// Typical headers sent to the agent are small.
-        /// Allow enough room for future expansion of headers.
-        /// </summary>
-        public const int MaxRequestHeadersBufferSize = 2560;
-
         private const string ContentLengthHeaderKey = "Content-Length";
 
         private static readonly Vendors.Serilog.ILogger Logger = DatadogLogging.For<DatadogHttpClient>();
@@ -27,7 +21,7 @@ namespace Datadog.Trace.HttpOverStreams
         private async Task SendRequestAsync(HttpRequest request, Stream requestStream)
         {
             // Headers are always ASCII per the HTTP spec
-            using (var writer = new StreamWriter(requestStream, Encoding.ASCII, MaxRequestHeadersBufferSize, leaveOpen: true))
+            using (var writer = new StreamWriter(requestStream, Encoding.ASCII, bufferSize: -1, leaveOpen: true))
             {
                 await DatadogHttpHeaderHelper.WriteLeadingHeaders(request, writer).ConfigureAwait(false);
 
@@ -39,7 +33,7 @@ namespace Datadog.Trace.HttpOverStreams
                 await DatadogHttpHeaderHelper.WriteEndOfHeaders(writer).ConfigureAwait(false);
             }
 
-            await request.Content.CopyToAsync(requestStream, DatadogHttpValues.DefaultMaximumRequestBufferSize).ConfigureAwait(false);
+            await request.Content.CopyToAsync(requestStream, null).ConfigureAwait(false);
             Logger.Debug("Datadog HTTP: Flushing stream.");
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
