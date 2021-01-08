@@ -40,8 +40,4 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="home\macos-x64\readme.txt" />
-  </ItemGroup>
-
 </Project>

@@ -142,7 +142,7 @@ jobs:
     displayName: Copying native macos binary from previous job
     inputs:
       sourceFolder: $(Pipeline.Workspace)/macos-profiler
-      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/macos-x64
+      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/osx-x64
 
   # Install the tracer latest stable release to attach the profiler to the build and test steps.
   # The script exposes the required environment variables to the following steps
@@ -216,6 +216,16 @@ jobs:
       maximumCpuCount: true
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet-runner-tool
+
+  - task: DeleteFiles@1
+    displayName: 'Remove unneeded files'
+    inputs:
+      contents: |
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/!(*.nupkg)
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64/home
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86/home
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64/home
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64/home
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool
     displayName: Uploading runner dotnet tool artifact
