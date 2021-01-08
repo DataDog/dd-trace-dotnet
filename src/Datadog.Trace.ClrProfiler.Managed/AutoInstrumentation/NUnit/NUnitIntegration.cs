@@ -85,7 +85,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
                     }
 
                     IList value = testMethodProperties[key];
-                    IEnumerable<string> values = Enumerable.Empty<string>();
                     if (value != null)
                     {
                         List<string> lstValues = new List<string>();
@@ -99,10 +98,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
                             lstValues.Add(valObj.ToString());
                         }
 
-                        values = lstValues;
+                        span.SetTag($"{TestTags.Traits}.{key}", string.Join(", ", lstValues));
                     }
-
-                    span.SetTag($"{TestTags.Traits}.{key}", string.Join(", ", values) ?? "(null)");
+                    else
+                    {
+                        span.SetTag($"{TestTags.Traits}.{key}", "(null)");
+                    }
                 }
             }
 
