@@ -1,3 +1,4 @@
+using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
@@ -35,6 +36,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
             }
 
             return new CallTargetState(NUnitIntegration.CreateScope(executionContext, typeof(TTarget)));
+        }
+
+        /// <summary>
+        /// OnMethodEnd callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TResult">TestResult type</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="returnValue">Original method return value</param>
+        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
+        /// <param name="state">Calltarget state value</param>
+        /// <returns>Return value of the method</returns>
+        public static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, CallTargetState state)
+        {
+            Scope scope = (Scope)state.State;
+            if (scope != null)
+            {
+                NUnitIntegration.FinishScope(scope, exception);
+                scope.Dispose();
+            }
+
+            return new CallTargetReturn<TResult>(returnValue);
         }
     }
 }
