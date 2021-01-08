@@ -220,12 +220,12 @@ jobs:
   - task: DeleteFiles@1
     displayName: 'Remove unneeded files'
     inputs:
-      contents: |
+      Contents: |
         $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/!(*.nupkg)
-        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64/home
-        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86/home
-        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64/home
-        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64/home
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64/home*
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86/home*
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64/home*
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64/home*
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool
     displayName: Uploading runner dotnet tool artifact
@@ -244,5 +244,5 @@ jobs:
     artifact: runner-standalone-linux-x64
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64
-    displayName: Uploading runner standalone macos-x64 artifact
-    artifact: runner-standalone-macos-x64
+    displayName: Uploading runner standalone osx-x64 artifact
+    artifact: runner-standalone-osx-x64
