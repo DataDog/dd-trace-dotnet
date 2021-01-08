@@ -7,6 +7,6 @@ namespace Datadog.Trace.HttpOverStreams
     {
         long? Length { get; }
 
-        Task CopyToAsync(Stream destination, int maxBufferSize);
+        Task CopyToAsync(Stream destination, int? bufferSize);
     }
 }
