@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         Assert.Equal("mongodb.query", spans[i].Name);
                         Assert.Equal(SpanTypes.MongoDb, spans[i].Type);
                         Assert.False(spans[i].Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
+                        Assert.True(spans[i].Tags?.ContainsKey(Tags.MongoDbQuery));
                     }
                     else
                     {
