@@ -34,26 +34,32 @@ Public Class SqlCommandExecutorVb
     End Function
 
     Public Overrides Sub ExecuteReader(command As SqlCommand)
-        command.ExecuteReader()
+        Using command.ExecuteReader()
+        End Using
     End Sub
 
     Public Overrides Sub ExecuteReader(command As SqlCommand, behavior As CommandBehavior)
-        command.ExecuteReader(behavior)
+        Using command.ExecuteReader(behavior)
+        End Using
     End Sub
 
-    Public Overrides Function ExecuteReaderAsync(command As SqlCommand) As Task
-        Return command.ExecuteReaderAsync()
+    Public Overrides Async Function ExecuteReaderAsync(command As SqlCommand) As Task
+        Using Await command.ExecuteReaderAsync()
+        End Using
     End Function
 
-    Public Overrides Function ExecuteReaderAsync(command As SqlCommand, behavior As CommandBehavior) As Task
-        Return command.ExecuteReaderAsync(behavior)
+    Public Overrides Async Function ExecuteReaderAsync(command As SqlCommand, behavior As CommandBehavior) As Task
+        Using Await command.ExecuteReaderAsync(behavior)
+        End Using
     End Function
 
-    Public Overrides Function ExecuteReaderAsync(command As SqlCommand, cancellationToken As CancellationToken) As Task
-        Return command.ExecuteReaderAsync(cancellationToken)
+    Public Overrides Async Function ExecuteReaderAsync(command As SqlCommand, cancellationToken As CancellationToken) As Task
+        Using Await command.ExecuteReaderAsync(cancellationToken)
+        End Using
     End Function
 
-    Public Overrides Function ExecuteReaderAsync(command As SqlCommand, behavior As CommandBehavior, cancellationToken As CancellationToken) As Task
-        Return command.ExecuteReaderAsync(behavior, cancellationToken)
+    Public Overrides Async Function ExecuteReaderAsync(command As SqlCommand, behavior As CommandBehavior, cancellationToken As CancellationToken) As Task
+        Using Await command.ExecuteReaderAsync(behavior, cancellationToken)
+        End Using
     End Function
 End Class
