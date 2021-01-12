@@ -1,4 +1,3 @@
-using System.Data.SqlClient;
 using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
@@ -29,11 +28,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // Once this is fully supported, this will add another 2 complete groups for all frameworks instead
             // of 4 extra spans on net461 and netcoreapp2.0+
 #if NET452
-            var expectedSpanCount = 49; // 7 queries * 7 groups
+            var expectedSpanCount = 56; // 7 queries * 8 groups
 #elif NET461
-            var expectedSpanCount = 77; // 7 queries * 11 groups
+            var expectedSpanCount = 84; // 7 queries * 12 groups
 #else
-            var expectedSpanCount = 81; // 7 queries * 11 groups + 4 spans from generic wrapper on .NET Core
+            var expectedSpanCount = 88; // 7 queries * 12 groups + 4 spans from generic wrapper on .NET Core
 #endif
 
             const string dbType = "sql-server";

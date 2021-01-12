@@ -3,6 +3,7 @@ using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using Samples.DatabaseHelper;
+using Samples.SqlServer.Vb;
 
 namespace Samples.SqlServer
 {
@@ -12,11 +13,13 @@ namespace Samples.SqlServer
         {
             var commandFactory = new DbCommandFactory($"[System-Data-SqlClient-Test-{Guid.NewGuid():N}]");
             var commandExecutor = new SqlCommandExecutor();
+            var commandExecutorVb = new SqlCommandExecutorVb();
             var cts = new CancellationTokenSource();
 
             using (var connection = OpenConnection())
             {
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+                await RelationalDatabaseTestHarness.RunSingleAsync(connection, commandFactory, commandExecutorVb, cts.Token);
             }
 
             // allow time to flush
