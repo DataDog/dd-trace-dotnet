@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Datadog.Trace.Logging.LogProviders;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging
 {
@@ -13,6 +14,9 @@ namespace Datadog.Trace.Logging
     {
         private const int _numPropertiesSetOnSpanEvent = 5;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(LibLogScopeEventSubscriber));
+
+        private static bool _executingIISPreStartInit = false;
+
         private readonly IScopeManager _scopeManager;
         private readonly string _defaultServiceName;
         private readonly string _version;
@@ -31,7 +35,29 @@ namespace Datadog.Trace.Logging
         private readonly ConcurrentStack<IDisposable> _contextDisposalStack = new ConcurrentStack<IDisposable>();
 
         private bool _safeToAddToMdc = true;
-        private bool _executingIISPreStartInit = false;
+
+#if NETFRAMEWORK
+        static LibLogScopeEventSubscriber()
+        {
+            _executingIISPreStartInit = true;
+
+            // Determine if .NET Framework process is IIS or IIS Express
+            try
+            {
+                string processName = ProcessHelpers.GetCurrentProcessName();
+
+                if (!processName.Equals("w3wp", StringComparison.OrdinalIgnoreCase) &&
+                    !processName.Equals("iisexpress", StringComparison.OrdinalIgnoreCase))
+                {
+                    _executingIISPreStartInit = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.SafeLogError(ex, "Error obtaining the process name for quickly validating IIS PreStartInit condition.");
+            }
+        }
+#endif
 
         // IMPORTANT: For all logging frameworks, do not set any default values for
         //            "dd.trace_id" and "dd.span_id" when initializing the subscriber
@@ -53,8 +79,11 @@ namespace Datadog.Trace.Logging
             _env = env;
 
 #if NETFRAMEWORK
-            _scopeManager.TraceStarted += OnTraceStarted_RefreshIISState;
-            RefreshIISPreAppState(traceId: null);
+            if (_executingIISPreStartInit)
+            {
+                _scopeManager.TraceStarted += OnTraceStarted_RefreshIISState;
+                RefreshIISPreAppState(traceId: null);
+            }
 #endif
 
             try
@@ -241,14 +270,17 @@ namespace Datadog.Trace.Logging
         }
 
 #if NETFRAMEWORK
+#pragma warning disable SA1202 // Elements must be ordered by access
         private void RefreshIISPreAppState(ulong? traceId)
         {
+            Debug.Assert(!_executingIISPreStartInit, $"{nameof(_executingIISPreStartInit)} should always be false when entering {nameof(RefreshIISPreAppState)}");
+
             var stackTrace = new StackTrace(false);
             var initialStackFrame = stackTrace.GetFrame(stackTrace.FrameCount - 1);
             var initialMethod = initialStackFrame.GetMethod();
 
             _executingIISPreStartInit = initialMethod.DeclaringType.FullName.Equals("System.Web.Hosting.HostingEnvironment", StringComparison.OrdinalIgnoreCase)
-                                  && initialMethod.Name.Equals("Initialize", StringComparison.OrdinalIgnoreCase);
+                                    && initialMethod.Name.Equals("Initialize", StringComparison.OrdinalIgnoreCase);
 
             if (_executingIISPreStartInit && traceId != null)
             {
