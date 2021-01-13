@@ -9,6 +9,14 @@ namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpStreamRequest : IApiRequest
     {
+        /// <summary>
+        /// This value is greater than any reasonable response we would receive from the agent.
+        /// It is smaller than the internal default of 81920
+        /// https://source.dot.net/#System.Private.CoreLib/Stream.cs,122
+        /// It is a multiple of 4096.
+        /// </summary>
+        private const int ResponseReadBufferSize = 12_228;
+
         private readonly Uri _uri;
         private readonly DatadogHttpClient _client;
         private readonly IStreamFactory _streamFactory;
@@ -44,7 +52,7 @@ namespace Datadog.Trace.Agent.Transports
 
                 // buffer the entire contents for now
                 var responseContentStream = new MemoryStream();
-                await response.Content.CopyToAsync(responseContentStream, DatadogHttpValues.MaximumResponseBufferSize).ConfigureAwait(false);
+                await response.Content.CopyToAsync(responseContentStream, ResponseReadBufferSize).ConfigureAwait(false);
                 responseContentStream.Position = 0;
 
                 var contentLength = response.ContentLength;

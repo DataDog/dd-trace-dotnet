@@ -428,8 +428,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            var result = ExecuteNonQuery(command, opCode, mdToken, moduleVersionPtr, SystemSqlDataReaderTypeName);
-            return result;
+            return ExecuteNonQuery(command, opCode, mdToken, moduleVersionPtr, SystemSqlClientNamespace);
         }
 
         /// <summary>

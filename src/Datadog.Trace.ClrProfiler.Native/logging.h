@@ -28,6 +28,7 @@ class Logger : public Singleton<Logger> {
   void Error(const std::string& str);
   void Critical(const std::string& str);
   void Flush();
+  static void Shutdown() { spdlog::shutdown(); }
 };
 
 template <typename Arg>
