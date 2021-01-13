@@ -15,7 +15,10 @@ namespace Datadog.Trace.Logging
     {
         private const int _numPropertiesSetOnSpanEvent = 5;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(LibLogScopeEventSubscriber));
+#if NETFRAMEWORK
         private static readonly string NamedSlotName = "Datadog_IISPreInitStart";
+        private static bool _performAppDomainFlagChecks = false;
+#endif
 
         private static bool _executingIISPreStartInit = false;
 
@@ -41,7 +44,35 @@ namespace Datadog.Trace.Logging
 #if NETFRAMEWORK
         static LibLogScopeEventSubscriber()
         {
-            RefreshIISPreAppState(traceId: null);
+            // Check if IIS automatic instrumentation has set the AppDomain property to indicate the PreStartInit state
+            // If the property is not set, we must rely on a different method of determining the state
+            object state = AppDomain.CurrentDomain.GetData(NamedSlotName);
+            if (state is bool boolState)
+            {
+                _performAppDomainFlagChecks = true;
+                _executingIISPreStartInit = boolState;
+            }
+            else
+            {
+                _performAppDomainFlagChecks = false;
+                _executingIISPreStartInit = true;
+
+                try
+                {
+                    string processName = ProcessHelpers.GetCurrentProcessName();
+
+                    if (!processName.Equals("w3wp", StringComparison.OrdinalIgnoreCase) &&
+                        !processName.Equals("iisexpress", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // IIS is not running so we do not anticipate issues with IIS PreStartInit code execution
+                        _executingIISPreStartInit = false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.SafeLogError(ex, "Error obtaining the process name for quickly validating IIS PreStartInit condition.");
+                }
+            }
         }
 #endif
 
@@ -68,7 +99,6 @@ namespace Datadog.Trace.Logging
             if (_executingIISPreStartInit)
             {
                 _scopeManager.TraceStarted += OnTraceStarted_RefreshIISState;
-                RefreshIISPreAppState(traceId: null);
             }
 #endif
 
@@ -258,16 +288,32 @@ namespace Datadog.Trace.Logging
 #if NETFRAMEWORK
 #pragma warning disable SA1202 // Elements must be ordered by access
 #pragma warning disable SA1204 // Static elements must appear before instance elements
-        private static void RefreshIISPreAppState(ulong? traceId)
+        private static void RefreshIISPreAppState(ulong traceId)
         {
             Debug.Assert(!_executingIISPreStartInit, $"{nameof(_executingIISPreStartInit)} should always be false when entering {nameof(RefreshIISPreAppState)}");
 
-            object state = AppDomain.CurrentDomain.GetData(NamedSlotName);
-            _executingIISPreStartInit = state is bool boolState && boolState;
+            if (_performAppDomainFlagChecks)
+            {
+                object state = AppDomain.CurrentDomain.GetData(NamedSlotName);
+                _executingIISPreStartInit = state is bool boolState && boolState;
+            }
+            else
+            {
+                var stackTrace = new StackTrace(false);
+                var initialStackFrame = stackTrace.GetFrame(stackTrace.FrameCount - 1);
+                var initialMethod = initialStackFrame.GetMethod();
 
-            if (_executingIISPreStartInit && traceId != null)
+                _executingIISPreStartInit = initialMethod.DeclaringType.FullName.Equals("System.Web.Hosting.HostingEnvironment", StringComparison.OrdinalIgnoreCase)
+                                            && initialMethod.Name.Equals("Initialize", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (_executingIISPreStartInit)
             {
                 Log.Warning("IIS is still initializing the application. Automatic logs injection will be disabled until the application begins processing incoming requests. Affected traceId={0}", traceId);
+            }
+            else
+            {
+                Log.Information("Automatic logs injection has resumed, starting with traceId={0}", traceId);
             }
         }
 #endif

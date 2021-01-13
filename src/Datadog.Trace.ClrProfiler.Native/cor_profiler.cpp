@@ -712,6 +712,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       Warn("JITCompilationStarted: Call to RunILStartupHook() failed for ", module_id, " ", function_token);
       return S_OK;
     }
+
+    if (is_desktop_iis) {
+      hr = AddIISPreStartInitFlags(module_id,
+                                   function_token);
+
+      if (FAILED(hr)) {
+        Warn("JITCompilationStarted: Call to AddIISPreStartInitFlags() failed for ",
+             module_id, " ", function_token);
+        return S_OK;
+      }
+    }
   }
 
   // we don't actually need to instrument anything in
@@ -2150,15 +2161,6 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
     return hr;
   }
 
-  ULONG string_len = 0;
-  WCHAR string_contents[kNameMaxSize]{};
-  hr = metadata_import->GetUserString(load_helper_token, string_contents,
-                                      kNameMaxSize, &string_len);
-  if (FAILED(hr)) {
-    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
-    return hr;
-  }
-
   // Generate a locals signature defined in the following way:
   //   [0] System.IntPtr ("assemblyPtr" - address of assembly bytes)
   //   [1] System.Int32  ("assemblySize" - size of assembly bytes)
@@ -2411,6 +2413,194 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   hr = rewriter_void.Export();
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
+    return hr;
+  }
+
+  return S_OK;
+}
+
+HRESULT CorProfiler::AddIISPreStartInitFlags(
+    const ModuleID module_id,
+    const mdToken function_token) {
+  ComPtr<IUnknown> metadata_interfaces;
+  auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
+                                           IID_IMetaDataImport2,
+                                           metadata_interfaces.GetAddressOf());
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: failed to get metadata interface for ",
+         module_id);
+    return hr;
+  }
+
+  const auto metadata_import =
+      metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+  const auto metadata_emit =
+      metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
+      IID_IMetaDataAssemblyImport);
+  const auto assembly_emit =
+      metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  hr = rewriter.Import();
+
+  if (FAILED(hr)) {
+    Warn("RunILStartupHook: Call to ILRewriter.Import() failed for ", module_id,
+         " ", function_token);
+    return hr;
+  }
+
+  ILRewriterWrapper rewriter_wrapper(&rewriter);
+
+  // Get mscorlib assembly ref
+  mdModuleRef mscorlib_ref;
+  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+
+  // Get System.Boolean type token
+  mdToken boolToken;
+  metadata_emit->DefineTypeRefByName(mscorlib_ref, SystemBoolean.data(),
+                                     &boolToken);
+
+  // Get System.AppDomain type ref
+  mdTypeRef system_appdomain_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(
+      mscorlib_ref, "System.AppDomain"_W.c_str(), &system_appdomain_type_ref);
+  if (FAILED(hr)) {
+    Warn("Wrapper objectTypeRef could not be defined.");
+    return hr;
+  }
+
+  // Get a MemberRef for System.AppDomain.get_CurrentDomain()
+  COR_SIGNATURE appdomain_get_current_domain_signature_start[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,
+      0,
+      ELEMENT_TYPE_CLASS,  // ret = System.AppDomain
+      // insert compressed token for System.AppDomain TypeRef here
+  };
+  ULONG start_length = sizeof(appdomain_get_current_domain_signature_start);
+
+  BYTE system_appdomain_type_ref_compressed_token[4];
+  ULONG token_length = CorSigCompressToken(
+      system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
+
+  COR_SIGNATURE* appdomain_get_current_domain_signature =
+      new COR_SIGNATURE[start_length + token_length];
+  memcpy(appdomain_get_current_domain_signature,
+         appdomain_get_current_domain_signature_start, start_length);
+  memcpy(&appdomain_get_current_domain_signature[start_length],
+         system_appdomain_type_ref_compressed_token, token_length);
+
+  mdMemberRef appdomain_get_current_domain_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      system_appdomain_type_ref, "get_CurrentDomain"_W.c_str(),
+      appdomain_get_current_domain_signature, start_length + token_length,
+      &appdomain_get_current_domain_member_ref);
+  delete[] appdomain_get_current_domain_signature;
+
+  // Get AppDomain.SetData
+  COR_SIGNATURE appdomain_set_data_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT | IMAGE_CEE_CS_CALLCONV_HASTHIS,  // Calling convention
+      2,                              // Number of parameters
+      ELEMENT_TYPE_VOID,              // Return type
+      ELEMENT_TYPE_STRING,             // List of parameter types
+      ELEMENT_TYPE_OBJECT
+  };
+  mdMemberRef appdomain_set_data_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      system_appdomain_type_ref, "SetData"_W.c_str(),
+      appdomain_set_data_signature,
+      sizeof(appdomain_set_data_signature),
+      &appdomain_set_data_member_ref);
+
+  // Define "Datadog_IISPreInitStart" string
+  // Create a string representing
+  // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup" Create OS-specific
+  // implementations because on Windows, creating the string via
+  // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str() does not
+  // create the proper string for CreateInstance to successfully call
+#ifdef _WIN32
+  LPCWSTR pre_init_start_str = L"Datadog_IISPreInitStart";
+  auto pre_init_start_str_size = wcslen(pre_init_start_str);
+#else
+  char16_t load_helper_str[] =
+      u"Datadog_IISPreInitStart";
+  auto pre_init_start_str_size =
+      std::char_traits<char16_t>::length(pre_init_start_str);
+#endif
+
+  mdString pre_init_start_string_token;
+  hr = metadata_emit->DefineUserString(pre_init_start_str,
+                                       (ULONG)pre_init_start_str_size,
+                                       &pre_init_start_string_token);
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: DefineUserString failed");
+    return hr;
+  }
+
+  // Get first instruction and set the rewriter to that location
+  ILInstr* pInstr = rewriter.GetILList()->m_pNext;
+  rewriter_wrapper.SetILPosition(pInstr);
+  ILInstr* pCurrentInstr = NULL;
+  ILInstr* pNewInstr = NULL;
+
+  //////////////////////////////////////////////////
+  // At the beginning of the method, call
+  // AppDomain.CurrentDomain.SetData(string, true)
+
+  // Call AppDomain.get_CurrentDomain
+  rewriter_wrapper.CallMember(appdomain_get_current_domain_member_ref, false);
+
+  // ldstr "Datadog_IISPreInitStart"
+  pCurrentInstr = rewriter_wrapper.GetCurrentILInstr();
+  pNewInstr = rewriter.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDSTR;
+  pNewInstr->m_Arg32 = pre_init_start_string_token;
+  rewriter.InsertBefore(pCurrentInstr, pNewInstr);
+
+  // load a boxed version of the boolean true
+  rewriter_wrapper.LoadInt32(1);
+  rewriter_wrapper.Box(boolToken);
+
+  // Call AppDomain.SetData(string, object)
+  rewriter_wrapper.CallMember(appdomain_set_data_member_ref, true);
+
+  //////////////////////////////////////////////////
+  // At the end of the method, call
+  // AppDomain.CurrentDomain.SetData(string, false)
+  pInstr = rewriter.GetILList()->m_pPrev;  // The last instruction should be a 'ret' instruction
+
+  // Append a ret instruction so we can use the existing ret as the first instruction for our rewriting
+  pNewInstr = rewriter.NewILInstr();
+  pNewInstr->m_opcode = CEE_RET;
+  rewriter.InsertAfter(pInstr, pNewInstr);
+  rewriter_wrapper.SetILPosition(pNewInstr);
+
+  // Call AppDomain.get_CurrentDomain
+  // Special case: rewrite the previous ret instruction with this call
+  pInstr->m_opcode = CEE_CALL;
+  pInstr->m_Arg32 = appdomain_get_current_domain_member_ref;
+
+  // ldstr "Datadog_IISPreInitStart"
+  pCurrentInstr = rewriter_wrapper.GetCurrentILInstr();
+  pNewInstr = rewriter.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDSTR;
+  pNewInstr->m_Arg32 = pre_init_start_string_token;
+  rewriter.InsertBefore(pCurrentInstr, pNewInstr);
+
+  // load a boxed version of the boolean false
+  rewriter_wrapper.LoadInt32(0);
+  rewriter_wrapper.Box(boolToken);
+
+  // Call AppDomain.SetData(string, object)
+  rewriter_wrapper.CallMember(appdomain_set_data_member_ref, true);
+
+  //////////////////////////////////////////////////
+  // Finished with the IL rewriting, save the result
+  hr = rewriter.Export();
+
+  if (FAILED(hr)) {
+    Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ModuleID=",
+         module_id, " ", function_token);
     return hr;
   }
 

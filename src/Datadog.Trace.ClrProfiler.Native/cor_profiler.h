@@ -88,6 +88,8 @@ class CorProfiler : public CorProfilerBase {
                              const mdToken function_token);
   HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
                            mdMethodDef* ret_method_token);
+  HRESULT AddIISPreStartInitFlags(const ModuleID module_id,
+                           const mdToken function_token);
 
   //
   // CallTarget Methods
