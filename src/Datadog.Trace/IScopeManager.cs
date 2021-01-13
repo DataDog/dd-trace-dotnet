@@ -7,6 +7,8 @@ namespace Datadog.Trace
     /// </summary>
     internal interface IScopeManager
     {
+        event EventHandler<SpanEventArgs> TraceStarted;
+
         event EventHandler<SpanEventArgs> SpanOpened;
 
         event EventHandler<SpanEventArgs> SpanActivated;
