@@ -92,7 +92,7 @@ namespace PrepareRelease
             // Native profiler updates
             SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
-                text => FullVersionReplace(text, "."));
+                text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
             SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
@@ -128,9 +128,9 @@ namespace PrepareRelease
             return Regex.Replace(text, VersionPattern(fourPartVersion: true), FourPartVersionString(), RegexOptions.Singleline);
         }
 
-        private static string FullVersionReplace(string text, string split)
+        private static string FullVersionReplace(string text, string split, string prefix = "")
         {
-            return Regex.Replace(text, VersionPattern(split), VersionString(split), RegexOptions.Singleline);
+            return Regex.Replace(text, prefix + VersionPattern(split), prefix + VersionString(split), RegexOptions.Singleline);
         }
 
         private static string FullAssemblyNameReplace(string text)
