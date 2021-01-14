@@ -532,9 +532,15 @@ namespace Datadog.Trace.Configuration
 
         internal string GetServiceName(Tracer tracer, string serviceName)
         {
-            return ServiceNameMappings.TryGetValue(serviceName, out string mappedServiceName)
-                ? mappedServiceName
-                : $"{tracer.DefaultServiceName}-{serviceName}";
+            if (ServiceNameMappings.Count > 0
+                && ServiceNameMappings.TryGetValue(serviceName, out string mappedServiceName))
+            {
+                return mappedServiceName;
+            }
+            else
+            {
+                return $"{tracer.DefaultServiceName}-{serviceName}";
+            }
         }
     }
 }
