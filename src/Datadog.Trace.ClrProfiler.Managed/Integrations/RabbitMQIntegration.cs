@@ -826,7 +826,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Span parent = tracer.ActiveScope?.Span;
 
                 tags = new RabbitMQTags(spanKind);
-                scope = tracer.StartActiveWithTags(OperationName, parent: parentContext, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{IntegrationName}", startTime: startTime);
+                scope = tracer.StartActiveWithTags(OperationName, parent: parentContext, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}", startTime: startTime);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Queue;
