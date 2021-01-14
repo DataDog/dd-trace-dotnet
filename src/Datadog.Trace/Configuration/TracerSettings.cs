@@ -141,6 +141,14 @@ namespace Datadog.Trace.Configuration
             HeaderTags = HeaderTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
+            ServiceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings) ??
+                         // default value (empty)
+                         new ConcurrentDictionary<string, string>();
+
+            // Filter out mappings with empty keys or empty values, and trim whitespace
+            ServiceNameMappings = ServiceNameMappings.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
+                                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+
             DogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort) ??
                             // default value
                             8125;
@@ -306,6 +314,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
         /// </summary>
         public IDictionary<string, string> HeaderTags { get; set; }
+
+        /// <summary>
+        /// Gets or sets the map of service name keys to tag names, which are used to customise the service name of <see cref="Span"/>.
+        /// </summary>
+        public IDictionary<string, string> ServiceNameMappings { get; set; }
 
         /// <summary>
         /// Gets or sets the port where the DogStatsd server is listening for connections.
@@ -515,6 +528,13 @@ namespace Datadog.Trace.Configuration
             }
 
             return httpErrorCodesArray;
+        }
+
+        internal string GetServiceName(Tracer tracer, string serviceName)
+        {
+            return ServiceNameMappings.TryGetValue(serviceName, out string mappedServiceName)
+                ? mappedServiceName
+                : $"{tracer.DefaultServiceName}-{serviceName}";
         }
     }
 }

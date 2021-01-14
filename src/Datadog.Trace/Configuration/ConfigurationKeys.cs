@@ -134,6 +134,12 @@ namespace Datadog.Trace.Configuration
         public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
 
         /// <summary>
+        /// Configuration key for a map of services to rename.
+        /// </summary>
+        /// <seealso cref="TracerSettings.ServiceNameMappings"/>
+        public const string ServiceNameMappings = "DD_TRACE_SERVICE_MAPPING";
+
+        /// <summary>
         /// Configuration key for setting the size of the trace buffer
         /// </summary>
         public const string QueueSize = "DD_TRACE_QUEUE_SIZE";
