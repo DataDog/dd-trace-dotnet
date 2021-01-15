@@ -63,6 +63,26 @@ namespace Samples.DatabaseHelper
             }
         }
 
+        public static async Task RunSingleAsync(
+            IDbConnection connection,
+            DbCommandFactory commandFactory,
+            IDbCommandExecutor providerSpecificCommandExecutor,
+            CancellationToken cancellationToken)
+        {
+            var executors = new List<IDbCommandExecutor>
+                            {
+                                providerSpecificCommandExecutor
+                            };
+
+            using (var root = Tracer.Instance.StartActive("root"))
+            {
+                foreach (var executor in executors)
+                {
+                    await RunAsync(connection, commandFactory, executor, cancellationToken);
+                }
+            }
+        }
+
         /// <summary>
         /// Helper method that runs ADO.NET test suite for the specified <see cref="IDbCommandExecutor"/>
         /// in addition to other built-in implementations.

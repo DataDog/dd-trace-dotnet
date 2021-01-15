@@ -404,6 +404,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.RuntimeMetrics", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LargePayload", "test\test-applications\regression\LargePayload\LargePayload.csproj", "{D20E8A18-DF59-46D3-A894-A448F7593237}"
 EndProject
+Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "Samples.SqlServer.Vb", "test\test-applications\integrations\dependency-libs\Samples.SqlServer.Vb\Samples.SqlServer.Vb.vbproj", "{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}*SharedItemsImports = 5
@@ -1486,6 +1488,18 @@ Global
 		{D20E8A18-DF59-46D3-A894-A448F7593237}.Release|x64.Build.0 = Release|x64
 		{D20E8A18-DF59-46D3-A894-A448F7593237}.Release|x86.ActiveCfg = Release|x86
 		{D20E8A18-DF59-46D3-A894-A448F7593237}.Release|x86.Build.0 = Release|x86
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Debug|x64.Build.0 = Debug|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Debug|x86.Build.0 = Debug|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Release|x64.ActiveCfg = Release|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Release|x64.Build.0 = Release|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Release|x86.ActiveCfg = Release|Any CPU
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1602,6 +1616,7 @@ Global
 		{C1210E08-58E5-44D4-BE6F-634C3FC5E410} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{600953C4-BD8F-4A4B-A275-6D6F9EF48342} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{D20E8A18-DF59-46D3-A894-A448F7593237} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{CDE0C4D2-4B75-4ED0-988D-08E08B23B895} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
