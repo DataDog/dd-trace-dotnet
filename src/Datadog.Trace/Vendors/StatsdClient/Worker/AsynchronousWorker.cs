@@ -49,7 +49,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
             _waiter = waiter;
             for (int i = 0; i < workerThreadCount; ++i)
             {
-                _workers.Add(Task.Run(() => Dequeue()));
+                _workers.Add(Task.Factory.StartNew(() => Dequeue(), TaskCreationOptions.LongRunning));
             }
         }
 
