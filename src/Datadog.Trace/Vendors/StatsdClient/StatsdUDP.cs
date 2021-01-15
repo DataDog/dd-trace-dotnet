@@ -12,72 +12,8 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    #pragma warning disable CS1591
-    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:ElementsMustBeDocumented", Justification = "See ObsoleteAttribute.")]
-    [ObsoleteAttribute("This class will become private in a future release.")]
-    internal class StatsdUDP : IDisposable, IStatsdUDP
+    internal class StatsdUDP
     {
-        public StatsdUDP(int maxUDPPacketSize = StatsdConfig.DefaultStatsdMaxUDPPacketSize)
-        : this(GetHostNameFromEnvVar(), GetPortFromEnvVar(StatsdConfig.DefaultStatsdPort), maxUDPPacketSize)
-        {
-        }
-
-        public StatsdUDP(string name = null, int port = 0, int maxUDPPacketSize = StatsdConfig.DefaultStatsdMaxUDPPacketSize)
-        {
-            Port = port;
-            if (Port == 0)
-            {
-                Port = GetPortFromEnvVar(StatsdConfig.DefaultStatsdPort);
-            }
-
-            Name = name;
-            if (string.IsNullOrEmpty(Name))
-            {
-                Name = GetHostNameFromEnvVar();
-            }
-
-            MaxUDPPacketSize = maxUDPPacketSize;
-
-            UDPSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            var ipAddress = GetIpv4Address(Name);
-
-            IPEndpoint = new IPEndPoint(ipAddress, Port);
-        }
-
-        public IPEndPoint IPEndpoint { get; private set; }
-
-        private int MaxUDPPacketSize { get; set; } // In bytes; default is MetricsConfig.DefaultStatsdMaxUDPPacketSize.
-                                                   // Set to zero for no limit.
-
-        private Socket UDPSocket { get; set; }
-
-        private string Name { get; set; }
-
-        private int Port { get; set; }
-
-        public void Send(string command)
-        {
-            SocketSender.Send(
-                MaxUDPPacketSize,
-                command,
-                encodedCommand => UDPSocket.SendTo(encodedCommand, encodedCommand.Length, SocketFlags.None, IPEndpoint));
-        }
-
-        public Task SendAsync(string command)
-        {
-            return SocketSender.SendAsync(
-                IPEndpoint,
-                UDPSocket,
-                MaxUDPPacketSize,
-                new ArraySegment<byte>(Encoding.UTF8.GetBytes(command)));
-        }
-
-        public void Dispose()
-        {
-            UDPSocket.Dispose();
-        }
-
         internal static IPAddress GetIpv4Address(string name)
         {
             IPAddress ipAddress;
@@ -109,31 +45,6 @@ namespace Datadog.Trace.Vendors.StatsdClient
             }
 
             return ipAddress;
-        }
-
-        private static string GetHostNameFromEnvVar()
-        {
-            return Environment.GetEnvironmentVariable(StatsdConfig.DD_AGENT_HOST_ENV_VAR);
-        }
-
-        private static int GetPortFromEnvVar(int defaultValue)
-        {
-            int port = defaultValue;
-            string portString = Environment.GetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR);
-
-            if (portString != null)
-            {
-                try
-                {
-                    port = int.Parse(portString);
-                }
-                catch (FormatException)
-                {
-                    throw new ArgumentException("Environment Variable 'DD_DOGSTATSD_PORT' bad format");
-                }
-            }
-
-            return port;
         }
     }
 }

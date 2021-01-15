@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Datadog.Trace.Vendors.StatsdClient.Bufferize;
+using Datadog.Trace.Vendors.StatsdClient.Statistic;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
 namespace Datadog.Trace.Vendors.StatsdClient
@@ -19,6 +20,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
         private static string _telemetryPrefix = "datadog.dogstatsd.client.";
         private readonly Timer _optionalTimer;
         private readonly string[] _optionalTags;
+        private readonly MetricSerializer _optionalMetricSerializer;
         private readonly ITransport _optionalTransport;
 
         private int _metricsSent;
@@ -36,11 +38,13 @@ namespace Datadog.Trace.Vendors.StatsdClient
         }
 
         public Telemetry(
+            MetricSerializer metricSerializer,
             string assemblyVersion,
             TimeSpan flushInterval,
             ITransport transport,
             string[] globalTags)
         {
+            _optionalMetricSerializer = metricSerializer;
             _optionalTransport = transport;
 
             var transportStr = transport.TelemetryClientTransport;
@@ -146,17 +150,19 @@ namespace Datadog.Trace.Vendors.StatsdClient
 
         private void SendMetric(string metricName, int value)
         {
-            if (_optionalTransport != null)
+            if (_optionalTransport != null && _optionalMetricSerializer != null)
             {
-#pragma warning disable 618 // obsolete warning disable
-                var message = Statsd.Metric.GetCommand<Statsd.Counting, int>(
-#pragma warning restore 618 // obsolete warning disable
-                    string.Empty,
-                    metricName,
-                    value,
-                    1.0,
-                    _optionalTags);
-                var bytes = BufferBuilder.GetBytes(message);
+                var serializedMetric = new SerializedMetric();
+                var metricStats = new StatsMetric
+                {
+                    MetricType = MetricType.Count,
+                    StatName = metricName,
+                    NumericValue = value,
+                    SampleRate = 1.0,
+                    Tags = _optionalTags,
+                };
+                _optionalMetricSerializer.SerializeTo(ref metricStats, serializedMetric);
+                var bytes = BufferBuilder.GetBytes(serializedMetric.ToString());
                 _optionalTransport.Send(bytes, bytes.Length);
             }
         }
