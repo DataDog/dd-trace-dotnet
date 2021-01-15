@@ -109,7 +109,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             if (value != null)
             {
-                _statsd.Gauge(path, value);
+                _statsd.Gauge(path, value.Value);
             }
         }
 
@@ -128,7 +128,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 return;
             }
 
-            _statsd.Counter(path, value - lastValue);
+            _statsd.Counter(path, value.Value - lastValue.Value);
             lastValue = value;
         }
 
