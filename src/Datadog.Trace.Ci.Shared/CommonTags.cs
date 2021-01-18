@@ -61,6 +61,16 @@ namespace Datadog.Trace.Ci
         public const string CIJobUrl = "ci.job.url";
 
         /// <summary>
+        /// CI Job Name
+        /// </summary>
+        public const string CIJobName = "ci.job.name";
+
+        /// <summary>
+        /// CI Stage Name
+        /// </summary>
+        public const string StageName = "ci.stage.name";
+
+        /// <summary>
         /// CI Job url
         /// </summary>
         public const string CIWorkspacePath = "ci.workspace_path";
