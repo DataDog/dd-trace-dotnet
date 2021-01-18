@@ -39,6 +39,7 @@ namespace PrepareRelease
                                          {
                                              name = g.Key,
                                              method_replacements = from item in g
+                                                                   from assembly in item.attribute.Assemblies
                                                                    select new
                                                                    {
                                                                        caller = new
@@ -49,7 +50,7 @@ namespace PrepareRelease
                                                                        },
                                                                        target = new
                                                                        {
-                                                                           assembly = item.attribute.Assembly,
+                                                                           assembly = assembly,
                                                                            type = item.attribute.Type,
                                                                            method = item.attribute.Method,
                                                                            signature = (string)null,

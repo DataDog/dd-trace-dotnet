@@ -11,8 +11,30 @@ namespace Datadog.Trace.ClrProfiler
     {
         /// <summary>
         /// Gets or sets the name of the assembly that contains the target method to be intercepted.
+        /// Required if <see cref="Assemblies"/> is not set.
         /// </summary>
-        public string Assembly { get; set; }
+        public string Assembly
+        {
+            get
+            {
+                switch (Assemblies?.Length ?? 0)
+                {
+                    case 0:
+                        return null;
+                    case 1:
+                        return Assemblies[0];
+                    default:
+                        throw new NotSupportedException("Multiple assemblies are not supported using this property. Use Assemblies property instead.");
+                }
+            }
+            set => Assemblies = new[] { value };
+        }
+
+        /// <summary>
+        /// Gets or sets the name of the assemblies that contain the target method to be intercepted.
+        /// Required if <see cref="Assembly"/> is not set.
+        /// </summary>
+        public string[] Assemblies { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the type that contains the target method to be intercepted.
