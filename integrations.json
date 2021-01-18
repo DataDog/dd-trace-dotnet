@@ -100,7 +100,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit.XUnitTestAssemblyRunnerRunTestCollectionAsyncIntegration",
           "action": "CallTargetModification"
         }
@@ -126,7 +126,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit.XUnitTestAssemblyRunnerRunTestCollectionAsyncIntegration",
           "action": "CallTargetModification"
         }
@@ -148,7 +148,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit.XUnitTestInvokerRunAsyncIntegration",
           "action": "CallTargetModification"
         }
@@ -170,7 +170,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit.XUnitTestInvokerRunAsyncIntegration",
           "action": "CallTargetModification"
         }
@@ -192,7 +192,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit.XUnitTestRunnerRunAsyncIntegration",
           "action": "CallTargetModification"
         }
@@ -214,7 +214,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit.XUnitTestRunnerRunAsyncIntegration",
           "action": "CallTargetModification"
         }
