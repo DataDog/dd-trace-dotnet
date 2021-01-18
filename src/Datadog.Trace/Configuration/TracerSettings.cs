@@ -141,13 +141,15 @@ namespace Datadog.Trace.Configuration
             HeaderTags = HeaderTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            ServiceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings) ??
+            var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings) ??
                          // default value (empty)
                          new ConcurrentDictionary<string, string>();
 
             // Filter out mappings with empty keys or empty values, and trim whitespace
-            ServiceNameMappings = ServiceNameMappings.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
+            serviceNameMappings = serviceNameMappings.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+
+            ServiceNameMappings = new ServiceNames(serviceNameMappings);
 
             DogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort) ??
                             // default value
@@ -316,11 +318,6 @@ namespace Datadog.Trace.Configuration
         public IDictionary<string, string> HeaderTags { get; set; }
 
         /// <summary>
-        /// Gets or sets the map of service name keys to tag names, which are used to customise the service name of <see cref="Span"/>.
-        /// </summary>
-        public IDictionary<string, string> ServiceNameMappings { get; set; }
-
-        /// <summary>
         /// Gets or sets the port where the DogStatsd server is listening for connections.
         /// Default is <c>8125</c>.
         /// </summary>
@@ -378,6 +375,11 @@ namespace Datadog.Trace.Configuration
         internal int TraceQueueSize { get; }
 
         /// <summary>
+        /// Gets configuration values for changing service names based on configuration
+        /// </summary>
+        internal ServiceNames ServiceNameMappings { get; }
+
+        /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.
         /// </summary>
@@ -416,6 +418,16 @@ namespace Datadog.Trace.Configuration
         public void SetHttpServerErrorStatusCodes(IEnumerable<int> statusCodes)
         {
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(string.Join(",", statusCodes));
+        }
+
+        /// <summary>
+        /// Sets a mapping to use as the service name within a <see cref="Span"/>
+        /// </summary>
+        /// <param name="originalName">The original name of the service, for example <code>sql-server</code> or <code>graphql</code> </param>
+        /// <param name="newName">The new name to use for the service</param>
+        public void SetServiceNameMapping(string originalName, string newName)
+        {
+            ServiceNameMappings.SetServiceNameMapping(originalName, newName);
         }
 
         /// <summary>
@@ -532,15 +544,7 @@ namespace Datadog.Trace.Configuration
 
         internal string GetServiceName(Tracer tracer, string serviceName)
         {
-            if (ServiceNameMappings.Count > 0
-                && ServiceNameMappings.TryGetValue(serviceName, out string mappedServiceName))
-            {
-                return mappedServiceName;
-            }
-            else
-            {
-                return $"{tracer.DefaultServiceName}-{serviceName}";
-            }
+            return ServiceNameMappings.GetServiceName(tracer.DefaultServiceName, serviceName);
         }
     }
 }
