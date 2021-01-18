@@ -39,7 +39,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
-            span.SetMetric(Tags.Analytics, 1.0d);
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(TestTags.Suite, testSuite);
