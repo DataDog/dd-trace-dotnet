@@ -141,13 +141,9 @@ namespace Datadog.Trace.Configuration
             HeaderTags = HeaderTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings) ??
-                         // default value (empty)
-                         new ConcurrentDictionary<string, string>();
-
-            // Filter out mappings with empty keys or empty values, and trim whitespace
-            serviceNameMappings = serviceNameMappings.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
-                                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+            var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings)
+                                      ?.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
+                                      ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             ServiceNameMappings = new ServiceNames(serviceNameMappings);
 

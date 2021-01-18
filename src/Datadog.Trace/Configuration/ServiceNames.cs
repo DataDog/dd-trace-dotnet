@@ -10,12 +10,7 @@ namespace Datadog.Trace.Configuration
 
         public ServiceNames(IDictionary<string, string> mappings)
         {
-            if (mappings is null)
-            {
-                throw new ArgumentNullException(nameof(mappings));
-            }
-
-            if (mappings.Count > 0)
+            if (mappings?.Count > 0)
             {
                 _mappings = new Dictionary<string, string>(mappings);
             }

@@ -59,6 +59,18 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void CanPassNullToConstructor()
+        {
+            var serviceName = "elasticsearch";
+            var expected = $"{ApplicationName}-{serviceName}";
+            var serviceNames = new ServiceNames(null);
+
+            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public void CanAddMappingsLater()
         {
             var serviceName = "elasticsearch";
