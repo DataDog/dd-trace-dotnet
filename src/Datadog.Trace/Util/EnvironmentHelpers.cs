@@ -27,7 +27,7 @@ namespace Datadog.Trace.Util
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Error while reading environment variable {0}", key);
+                Logger.Warning(ex, "Error while reading environment variable {EnvironmentVariable}", key);
             }
 
             return defaultValue;

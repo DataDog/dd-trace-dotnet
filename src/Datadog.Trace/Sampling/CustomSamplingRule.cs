@@ -127,7 +127,7 @@ namespace Datadog.Trace.Sampling
                 _hasPoisonedRegex = true;
                 Log.Error(
                     timeoutEx,
-                    "Timeout when trying to match against {0} on {1}.",
+                    "Timeout when trying to match against {Value} on {Pattern}.",
                     input,
                     pattern);
             }

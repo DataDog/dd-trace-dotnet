@@ -185,7 +185,7 @@ namespace Datadog.Trace
 
             if (hasValue)
             {
-                Log.Warning("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
+                Log.Warning("Could not parse {HeaderName} headers: {HeaderValues}", headerName, string.Join(",", headerValues));
             }
 
             return 0;
@@ -209,7 +209,7 @@ namespace Datadog.Trace
 
             if (hasValue)
             {
-                Log.Warning("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
+                Log.Warning("Could not parse {HeaderName} headers: {HeaderValues}", headerName, string.Join(",", headerValues));
             }
 
             return 0;
@@ -238,7 +238,7 @@ namespace Datadog.Trace
             if (hasValue)
             {
                 Log.Warning(
-                    "Could not parse {0} headers: {1}",
+                    "Could not parse {HeaderName} headers: {HeaderValues}",
                     headerName,
                     string.Join(",", headerValues));
             }
@@ -268,7 +268,7 @@ namespace Datadog.Trace
             if (hasValue)
             {
                 Log.Warning(
-                    "Could not parse {0} headers: {1}",
+                    "Could not parse {HeaderName} headers: {HeaderValues}",
                     headerName,
                     string.Join(",", headerValues));
             }

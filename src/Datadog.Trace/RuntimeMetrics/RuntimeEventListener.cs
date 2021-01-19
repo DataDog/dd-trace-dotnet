@@ -134,7 +134,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Error while processing event {0} {1}", eventData.EventId, eventData.EventName);
+                Log.Warning(ex, "Error while processing event {EventId} {EventName}", eventData.EventId, eventData.EventName);
             }
         }
 
@@ -181,7 +181,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 }
                 else
                 {
-                    Log.Debug<object>("EventCounter {0} has no Mean or Increment field", name);
+                    Log.Debug<object>("EventCounter {CounterName} has no Mean or Increment field", name);
                 }
             }
         }

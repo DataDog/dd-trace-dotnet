@@ -53,19 +53,19 @@ namespace Datadog.Trace
 
                 if (DomainMetadata.ShouldAvoidAppDomain())
                 {
-                    Log.Information("Skipping process manager initialization for AppDomain: {0}", DomainMetadata.AppDomainName);
+                    Log.Information("Skipping process manager initialization for AppDomain: {AppDomain}", DomainMetadata.AppDomainName);
                     return;
                 }
 
                 if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
                 {
-                    Log.Warning("Directory for trace agent does not exist: {0}", TraceAgentMetadata.DirectoryPath);
+                    Log.Warning("Directory for trace agent does not exist: {Directory}", TraceAgentMetadata.DirectoryPath);
                     return;
                 }
 
                 _cancellationTokenSource = new CancellationTokenSource();
 
-                Log.Debug("Starting child processes from process {0}, AppDomain {1}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
+                Log.Debug("Starting child processes from process {ProcessName}, AppDomain {AppDomain}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
                 StartProcesses();
             }
             catch (Exception ex)
@@ -88,7 +88,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    Log.Debug("There is no path configured for {0}.", metadata.Name);
+                    Log.Debug("There is no path configured for {ProcessName}.", metadata.Name);
                 }
             }
         }
@@ -97,7 +97,7 @@ namespace Datadog.Trace
         {
             const int circuitBreakerMax = 5;
             var path = metadata.ProcessPath;
-            Log.Debug("Starting keep alive for {0}.", path);
+            Log.Debug("Starting keep alive for {Process}.", path);
 
             return Task.Run(
                 async () =>
@@ -111,7 +111,7 @@ namespace Datadog.Trace
                         {
                             if (_cancellationTokenSource.Token.IsCancellationRequested)
                             {
-                                Log.Debug("Shutdown triggered for keep alive {0}.", path);
+                                Log.Debug("Shutdown triggered for keep alive {Process}.", path);
                                 return;
                             }
 
@@ -121,7 +121,7 @@ namespace Datadog.Trace
 
                                 if (metadata.ProgramIsRunning())
                                 {
-                                    Log.Debug("{0} is already running.", path);
+                                    Log.Debug("{Process} is already running.", path);
                                     continue;
                                 }
 
@@ -132,26 +132,26 @@ namespace Datadog.Trace
                                     startInfo.Arguments = metadata.ProcessArguments;
                                 }
 
-                                Log.Debug("Starting {0}.", path);
+                                Log.Debug("Starting {Process}.", path);
                                 metadata.Process = Process.Start(startInfo);
 
                                 await Task.Delay(150, _cancellationTokenSource.Token).ConfigureAwait(false);
 
                                 if (metadata.Process == null || metadata.Process.HasExited)
                                 {
-                                    Log.Error("{0} has failed to start.", path);
+                                    Log.Error("{Process} has failed to start.", path);
                                     sequentialFailures++;
                                 }
                                 else
                                 {
-                                    Log.Debug("Successfully started {0}.", path);
+                                    Log.Debug("Successfully started {Process}.", path);
                                     sequentialFailures = 0;
                                 }
                             }
                             catch (Exception ex)
                             {
                                 metadata.IsFaulted = true;
-                                Log.Error(ex, "Exception when trying to start an instance of {0}.", path);
+                                Log.Error(ex, "Exception when trying to start an instance of {Process}.", path);
                                 sequentialFailures++;
                             }
                             finally
@@ -171,14 +171,14 @@ namespace Datadog.Trace
 
                             if (sequentialFailures >= circuitBreakerMax)
                             {
-                                Log.Error("Circuit breaker triggered for {0}. Max failed retries reached ({1}).", path, sequentialFailures);
+                                Log.Error("Circuit breaker triggered for {Process}. Max failed retries reached ({ErrorCount}).", path, sequentialFailures);
                                 break;
                             }
                         }
                     }
                     finally
                     {
-                        Log.Debug("Keep alive is dropping for {0}.", path);
+                        Log.Debug("Keep alive is dropping for {Process}.", path);
                         metadata.IsBeingManaged = false;
                     }
                 },
@@ -243,7 +243,7 @@ namespace Datadog.Trace
                         return true;
                     }
 
-                    Log.Debug("Program [{0}] is no longer running", ProcessPath);
+                    Log.Debug("Program [{Process}] is no longer running", ProcessPath);
 
                     return false;
                 }
@@ -251,7 +251,7 @@ namespace Datadog.Trace
                 {
                     try
                     {
-                        Log.Error(ex, "Error when checking for running program {0}.", ProcessPath);
+                        Log.Error(ex, "Error when checking for running program {Process}.", ProcessPath);
                     }
                     catch
                     {
