@@ -30,8 +30,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
 
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-
             var expectedSpanCount = 21; // 7 queries * 3 groups (The group of generic constraint calls is not currently supported)
 
             if (enableCallTarget)
