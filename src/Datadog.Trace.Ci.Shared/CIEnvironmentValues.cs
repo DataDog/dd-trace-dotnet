@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -79,7 +80,7 @@ namespace Datadog.Trace.Ci
             // Clean Refs
             // **********
 
-            var regex = new Regex(@"^refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)$", RegexOptions.Compiled);
+            var regex = new Regex(@"^refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)$");
 
             try
             {
@@ -157,72 +158,20 @@ namespace Datadog.Trace.Ci
                 return;
             }
 
-            span.SetTag(CommonTags.CIProvider, Provider);
-
-            if (!string.IsNullOrEmpty(PipelineId))
-            {
-                span.SetTag(CommonTags.CIPipelineId, PipelineId);
-            }
-
-            if (!string.IsNullOrEmpty(PipelineName))
-            {
-                span.SetTag(CommonTags.CIPipelineName, PipelineName);
-            }
-
-            if (!string.IsNullOrEmpty(PipelineNumber))
-            {
-                span.SetTag(CommonTags.CIPipelineNumber, PipelineNumber);
-            }
-
-            if (!string.IsNullOrEmpty(PipelineUrl))
-            {
-                span.SetTag(CommonTags.CIPipelineUrl, PipelineUrl);
-            }
-
-            if (!string.IsNullOrEmpty(JobUrl))
-            {
-                span.SetTag(CommonTags.CIJobUrl, JobUrl);
-            }
-
-            if (!string.IsNullOrEmpty(JobName))
-            {
-                span.SetTag(CommonTags.CIJobName, JobName);
-            }
-
-            if (!string.IsNullOrEmpty(StageName))
-            {
-                span.SetTag(CommonTags.StageName, StageName);
-            }
-
-            if (!string.IsNullOrEmpty(WorkspacePath))
-            {
-                span.SetTag(CommonTags.CIWorkspacePath, WorkspacePath);
-            }
-
-            if (!string.IsNullOrEmpty(Repository))
-            {
-                span.SetTag(CommonTags.GitRepository, Repository);
-            }
-
-            if (!string.IsNullOrEmpty(Commit))
-            {
-                span.SetTag(CommonTags.GitCommit, Commit);
-            }
-
-            if (!string.IsNullOrEmpty(Branch))
-            {
-                span.SetTag(CommonTags.GitBranch, Branch);
-            }
-
-            if (!string.IsNullOrEmpty(Tag))
-            {
-                span.SetTag(CommonTags.GitTag, Tag);
-            }
-
-            if (!string.IsNullOrEmpty(SourceRoot))
-            {
-                span.SetTag(CommonTags.BuildSourceRoot, SourceRoot);
-            }
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIProvider, Provider);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineId, PipelineId);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineName, PipelineName);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineNumber, PipelineNumber);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineUrl, PipelineUrl);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIJobUrl, JobUrl);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIJobName, JobName);
+            span.SetTagIfNotNullOrEmpty(CommonTags.StageName, StageName);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIWorkspacePath, WorkspacePath);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitRepository, Repository);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommit, Commit);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitBranch, Branch);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitTag, Tag);
+            span.SetTagIfNotNullOrEmpty(CommonTags.BuildSourceRoot, SourceRoot);
         }
 
         private static void SetupTravisEnvironment()
@@ -420,6 +369,7 @@ namespace Datadog.Trace.Ci
             Branch = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BRANCH");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static string ExpandPath(string path)
         {
             if (path is null)
@@ -437,6 +387,15 @@ namespace Datadog.Trace.Ci
             }
 
             return path;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SetTagIfNotNullOrEmpty(this Span span, string key, string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                span.SetTag(key, value);
+            }
         }
     }
 }
