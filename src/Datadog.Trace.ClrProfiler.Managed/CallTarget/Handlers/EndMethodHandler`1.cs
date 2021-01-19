@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 // This is used to mimic the ExecutionContext copy from the StateMachine
                 if (((IDatadogTracer)Tracer.Instance).ScopeManager is IScopeRawAccess rawAccess)
                 {
-                    rawAccess.Active = state.OldScope;
+                    rawAccess.Active = state.PreviousScope;
                 }
             }
 

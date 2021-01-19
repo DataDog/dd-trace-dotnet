@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// </summary>
     public readonly struct CallTargetState
     {
-        private readonly Scope _oldScope;
+        private readonly Scope _previousScope;
         private readonly Scope _scope;
         private readonly object _state;
 
@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="scope">Scope instance</param>
         public CallTargetState(Scope scope)
         {
-            _oldScope = null;
+            _previousScope = null;
             _scope = scope;
             _state = null;
         }
@@ -29,14 +29,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="state">Object state instance</param>
         public CallTargetState(Scope scope, object state)
         {
-            _oldScope = null;
+            _previousScope = null;
             _scope = scope;
             _state = state;
         }
 
-        private CallTargetState(Scope oldScope, Scope scope, object state)
+        private CallTargetState(Scope previousScope, Scope scope, object state)
         {
-            _oldScope = oldScope;
+            _previousScope = previousScope;
             _scope = scope;
             _state = state;
         }
@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// </summary>
         public object State => _state;
 
-        internal Scope OldScope => _oldScope;
+        internal Scope PreviousScope => _previousScope;
 
         /// <summary>
         /// Gets the default call target state (used by the native side to initialize the locals)
@@ -69,12 +69,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>String value</returns>
         public override string ToString()
         {
-            return $"{typeof(CallTargetState).FullName}({_oldScope}, {_scope}, {_state})";
+            return $"{typeof(CallTargetState).FullName}({_previousScope}, {_scope}, {_state})";
         }
 
-        internal static CallTargetState WithPreviousScope(Scope oldScope, CallTargetState state)
+        internal static CallTargetState WithPreviousScope(Scope previousScope, CallTargetState state)
         {
-            return new CallTargetState(oldScope, state._scope, state._state);
+            return new CallTargetState(previousScope, state._scope, state._state);
         }
     }
 }
