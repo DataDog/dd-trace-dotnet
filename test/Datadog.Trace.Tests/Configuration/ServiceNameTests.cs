@@ -76,11 +76,30 @@ namespace Datadog.Trace.Tests.Configuration
             var serviceName = "elasticsearch";
             var expected = "custom-name";
             var serviceNames = new ServiceNames(new Dictionary<string, string>());
-            serviceNames.SetServiceNameMapping(serviceName, expected);
+            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { serviceName, expected } });
 
             var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
 
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void ReplacesExistingMappings()
+        {
+            var serviceNames = new ServiceNames(new Dictionary<string, string>
+            {
+                { "sql-server", "custom-db" },
+                { "elasticsearch", "original-service" },
+            });
+            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { "elasticsearch", "custom-name" } });
+
+            var mongodbActual = serviceNames.GetServiceName(ApplicationName, "mongodb");
+            var elasticActual = serviceNames.GetServiceName(ApplicationName, "elasticsearch");
+            var sqlActual = serviceNames.GetServiceName(ApplicationName, "sql-server");
+
+            Assert.Equal($"{ApplicationName}-mongodb", mongodbActual);
+            Assert.Equal("custom-name", elasticActual);
+            Assert.Equal($"{ApplicationName}-sql-server", sqlActual);
         }
     }
 }

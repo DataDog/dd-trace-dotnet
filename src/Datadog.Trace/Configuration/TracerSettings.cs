@@ -417,13 +417,13 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <summary>
-        /// Sets a mapping to use as the service name within a <see cref="Span"/>
+        /// Sets the mappings to use for service names within a <see cref="Span"/>
         /// </summary>
-        /// <param name="originalName">The original name of the service, for example <code>sql-server</code> or <code>graphql</code> </param>
-        /// <param name="newName">The new name to use for the service</param>
-        public void SetServiceNameMapping(string originalName, string newName)
+        /// <param name="mappings">Mappings to use from original service name (e.g. <code>sql-server</code> or <code>graphql</code>)
+        /// as the <see cref="KeyValuePair{TKey, TValue}.Key"/>) to replacement service names as <see cref="KeyValuePair{TKey, TValue}.Value"/>).</param>
+        public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
         {
-            ServiceNameMappings.SetServiceNameMapping(originalName, newName);
+            ServiceNameMappings.SetServiceNameMappings(mappings);
         }
 
         /// <summary>

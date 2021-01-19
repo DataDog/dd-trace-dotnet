@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Datadog.Trace.Configuration
 {
@@ -28,16 +28,11 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        public void SetServiceNameMapping(string originalName, string newName)
+        public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
         {
             lock (_lock)
             {
-                var others = _mappings;
-                others = others is null
-                    ? new Dictionary<string, string>()
-                    : new Dictionary<string, string>(others);
-                others[originalName] = newName;
-                _mappings = others;
+                _mappings = mappings.ToDictionary(x => x.Key, x => x.Value);
             }
         }
     }
