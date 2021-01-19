@@ -102,7 +102,7 @@ namespace Datadog.Trace.Tests
 
             // these method can be called multiple times (send heartbeat)
             statsd.Verify(
-                s => s.Gauge(TracerMetricNames.Health.Heartbeat, It.IsAny<int>(), 1, null),
+                s => s.Gauge(TracerMetricNames.Health.Heartbeat, It.IsAny<double>(), 1, null),
                 Times.AtLeastOnce());
         }
 
