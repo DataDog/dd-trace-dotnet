@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
@@ -15,6 +10,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         public static class TypeNames
         {
             public const string CommandBehavior = "System.Data.CommandBehavior";
+
+            public const string DbDataReaderType = "System.Data.Common.DbDataReader";
+            public const string DbDataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>";
         }
 
         public static class MethodNames
@@ -27,6 +25,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             public const string ExecuteReader = "ExecuteReader";
             public const string ExecuteReaderAsync = "ExecuteReaderAsync";
+
+            public const string ExecuteDbDataReader = "ExecuteDbDataReader";
+            public const string ExecuteDbDataReaderAsync = "ExecuteDbDataReaderAsync";
         }
     }
 }

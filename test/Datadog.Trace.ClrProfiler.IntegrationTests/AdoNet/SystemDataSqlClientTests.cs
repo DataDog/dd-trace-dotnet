@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using Datadog.Core.Tools;
@@ -16,12 +17,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetSystemDataSqlClient()
+        {
+            foreach (object[] item in PackageVersions.SystemDataSqlClient)
+            {
+                yield return item.Concat(new object[] { false, false, }).ToArray();
+                yield return item.Concat(new object[] { true, false, }).ToArray();
+                yield return item.Concat(new object[] { true, true, }).ToArray();
+            }
+        }
+
         [Theory]
-        [MemberData(nameof(PackageVersions.SystemDataSqlClient), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetSystemDataSqlClient))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTracesWithNetStandard(string packageVersion)
+        public void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget, bool enableInlining)
         {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             // Note: The automatic instrumentation currently does not instrument on the generic wrappers
             // due to an issue with constrained virtual method calls. This leads to an inconsistency where
             // the .NET Core apps generate 4 more spans than .NET Framework apps (2 ExecuteReader calls *
@@ -35,6 +48,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 #else
             var expectedSpanCount = 102; // 7 queries * 14 groups + 4 spans from generic wrapper on .NET Core
 #endif
+
+            if (enableCallTarget)
+            {
+                expectedSpanCount = 112; // CallTarget support instrumenting a constrained generic caller.
+            }
 
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
@@ -64,11 +82,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Fact]
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SpansDisabledByAdoNetExcludedTypes()
+        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
         {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             var totalSpanCount = 21;
 
             const string dbType = "sql-server";

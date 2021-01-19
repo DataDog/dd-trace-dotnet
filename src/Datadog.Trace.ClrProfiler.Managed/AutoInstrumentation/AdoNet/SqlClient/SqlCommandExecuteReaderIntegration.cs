@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
