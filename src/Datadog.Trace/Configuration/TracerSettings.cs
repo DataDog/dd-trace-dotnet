@@ -130,7 +130,7 @@ namespace Datadog.Trace.Configuration
                          new ConcurrentDictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespace
-            GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
+            GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             HeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags) ??
@@ -138,11 +138,11 @@ namespace Datadog.Trace.Configuration
                          new ConcurrentDictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespace
-            HeaderTags = HeaderTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
+            HeaderTags = HeaderTags.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings)
-                                      ?.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
+                                      ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                       ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             ServiceNameMappings = new ServiceNames(serviceNameMappings);
