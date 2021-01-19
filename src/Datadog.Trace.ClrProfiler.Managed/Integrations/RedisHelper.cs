@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return null;
             }
 
-            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
+            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
             Scope scope = null;
 
             try

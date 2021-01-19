@@ -461,7 +461,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             Tracer tracer = Tracer.Instance;
-            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
+            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
 
             Scope scope = null;
 
