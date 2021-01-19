@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -12,6 +13,10 @@ namespace Datadog.Trace.Ci
 
         static CIEnvironmentValues()
         {
+            // **********
+            // Setup variables
+            // **********
+
             if (EnvironmentHelpers.GetEnvironmentVariable("TRAVIS") != null)
             {
                 SetupTravisEnvironment();
@@ -53,17 +58,60 @@ namespace Datadog.Trace.Ci
                 SetupBuildkiteEnvironment();
             }
 
+            // **********
+            // Remove sensitive info from repository url
+            // **********
+            if (Uri.TryCreate(Repository, UriKind.Absolute, out Uri repository))
+            {
+                if (!string.IsNullOrEmpty(repository.UserInfo))
+                {
+                    Repository = repository.GetComponents(UriComponents.Fragment | UriComponents.Query | UriComponents.Path | UriComponents.Port | UriComponents.Host | UriComponents.Scheme, UriFormat.SafeUnescaped);
+                }
+            }
+
+            // **********
+            // Expand ~ in Paths
+            // **********
+
+            SourceRoot = ExpandPath(SourceRoot);
+            WorkspacePath = ExpandPath(WorkspacePath);
+
+            // **********
+            // Clean Refs
+            // **********
+
+            var regex = new Regex(@"^refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)$");
+
+            try
+            {
+                // Clean tag name
+                if (!string.IsNullOrEmpty(Tag))
+                {
+                    var match = regex.Match(Tag);
+                    if (match.Success && match.Groups.Count == 4)
+                    {
+                        Tag = !string.IsNullOrWhiteSpace(match.Groups[1].Value) ? match.Groups[1].Value : match.Groups[2].Value;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Error fixing tag name: {0}", Tag);
+            }
+
             try
             {
                 // Clean branch name
                 if (!string.IsNullOrEmpty(Branch))
                 {
-                    var regex = new Regex(@"^refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)$", RegexOptions.Compiled);
                     var match = regex.Match(Branch);
                     if (match.Success && match.Groups.Count == 4)
                     {
                         Branch = !string.IsNullOrWhiteSpace(match.Groups[1].Value) ? match.Groups[1].Value : match.Groups[3].Value;
-                        Tag = match.Groups[2].Value;
+                        if (string.IsNullOrEmpty(Tag))
+                        {
+                            Tag = match.Groups[2].Value;
+                        }
                     }
                 }
             }
@@ -97,6 +145,10 @@ namespace Datadog.Trace.Ci
 
         public static string JobUrl { get; private set; }
 
+        public static string JobName { get; private set; }
+
+        public static string StageName { get; private set; }
+
         public static string WorkspacePath { get; private set; }
 
         public static void DecorateSpan(Span span)
@@ -106,20 +158,20 @@ namespace Datadog.Trace.Ci
                 return;
             }
 
-            span.SetTag(CommonTags.CIProvider, Provider);
-            span.SetTag(CommonTags.CIPipelineId, PipelineId);
-            span.SetTag(CommonTags.CIPipelineName, PipelineName);
-            span.SetTag(CommonTags.CIPipelineNumber, PipelineNumber);
-            span.SetTag(CommonTags.CIPipelineUrl, PipelineUrl);
-            span.SetTag(CommonTags.CIJobUrl, JobUrl);
-            span.SetTag(CommonTags.CIWorkspacePath, WorkspacePath);
-
-            span.SetTag(CommonTags.GitRepository, Repository);
-            span.SetTag(CommonTags.GitCommit, Commit);
-            span.SetTag(CommonTags.GitBranch, Branch);
-            span.SetTag(CommonTags.GitTag, Tag);
-
-            span.SetTag(CommonTags.BuildSourceRoot, SourceRoot);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIProvider, Provider);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineId, PipelineId);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineName, PipelineName);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineNumber, PipelineNumber);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineUrl, PipelineUrl);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIJobUrl, JobUrl);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIJobName, JobName);
+            span.SetTagIfNotNullOrEmpty(CommonTags.StageName, StageName);
+            span.SetTagIfNotNullOrEmpty(CommonTags.CIWorkspacePath, WorkspacePath);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitRepository, Repository);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommit, Commit);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitBranch, Branch);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitTag, Tag);
+            span.SetTagIfNotNullOrEmpty(CommonTags.BuildSourceRoot, SourceRoot);
         }
 
         private static void SetupTravisEnvironment()
@@ -181,15 +233,24 @@ namespace Datadog.Trace.Ci
             Commit = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_SHA");
             SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("CI_PROJECT_DIR");
             WorkspacePath = EnvironmentHelpers.GetEnvironmentVariable("CI_PROJECT_DIR");
+
             PipelineId = EnvironmentHelpers.GetEnvironmentVariable("CI_PIPELINE_ID");
+            PipelineName = EnvironmentHelpers.GetEnvironmentVariable("CI_PROJECT_PATH");
             PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("CI_PIPELINE_IID");
             PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("CI_PIPELINE_URL");
+
             JobUrl = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_URL");
+            JobName = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_NAME");
+            StageName = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_STAGE");
             Branch = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_BRANCH");
+            Tag = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_TAG");
             if (string.IsNullOrWhiteSpace(Branch))
             {
                 Branch = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_REF_NAME");
             }
+
+            // Clean pipeline url
+            PipelineUrl = PipelineUrl.Replace("/-/pipelines/", "/pipelines/");
         }
 
         private static void SetupAppveyorEnvironment()
@@ -204,6 +265,7 @@ namespace Datadog.Trace.Ci
             PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_BUILD_NUMBER");
             PipelineUrl = string.Format("https://ci.appveyor.com/project/{0}/builds/{1}", EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_PROJECT_SLUG"), EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_BUILD_ID"));
             Branch = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH");
+            Tag = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_TAG_NAME");
             if (string.IsNullOrWhiteSpace(Branch))
             {
                 Branch = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_BRANCH");
@@ -305,6 +367,35 @@ namespace Datadog.Trace.Ci
             PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_NUMBER");
             PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_URL");
             Branch = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BRANCH");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string ExpandPath(string path)
+        {
+            if (path is null)
+            {
+                return null;
+            }
+
+            if (path.IndexOf('~') != -1)
+            {
+                string homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
+                                   Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    ? Environment.GetEnvironmentVariable("HOME")
+                    : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
+                path = path.Replace("~", homePath);
+            }
+
+            return path;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SetTagIfNotNullOrEmpty(this Span span, string key, string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                span.SetTag(key, value);
+            }
         }
     }
 }
