@@ -162,6 +162,47 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             }
         }
 
+        [Theory]
+        [MemberData(nameof(GetDbCommandScopeData))]
+        public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
+        {
+            // Set up tracer
+            var dbType = ScopeFactory.GetDbType(command.GetType().Name);
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.ServiceNameMappings, $"{dbType}:my-custom-type" }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source);
+            var tracer = new Tracer(tracerSettings);
+
+            // Create scope
+            using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
+            {
+                Assert.Equal("my-custom-type", outerScope.Span.ServiceName);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDbCommandScopeData))]
+        public void CreateDbCommandScope_IgnoresReplacementServiceNameWhenNotProvided(IDbCommand command)
+        {
+            // Set up tracer
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.ServiceNameMappings, $"something:my-custom-type" }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source);
+            var tracer = new Tracer(tracerSettings);
+
+            // Create scope
+            using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
+            {
+                Assert.NotEqual("my-custom-type", outerScope.Span.ServiceName);
+            }
+        }
+
         private static Scope SystemDataSqlClientSqlCommandCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new System.Data.SqlClient.SqlCommand());
 
         private static Scope PostgresCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new NpgsqlCommand());

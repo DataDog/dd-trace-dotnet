@@ -23,6 +23,7 @@
 
     <!-- this referenced project only targets netstandard2.0 -->
     <ProjectReference Condition="'$(TargetFramework)' != 'net452'" Include="..\dependency-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj" />
+    <ProjectReference Include="..\dependency-libs\Samples.SqlServer.Vb\Samples.SqlServer.Vb.vbproj" />
   </ItemGroup>
 
 </Project>

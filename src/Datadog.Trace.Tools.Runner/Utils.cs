@@ -133,11 +133,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             ProcessStartInfo processInfo = new ProcessStartInfo(filename)
             {
-                RedirectStandardError = true,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
                 UseShellExecute = false,
-                CreateNoWindow = true,
                 WorkingDirectory = currentDirectory,
             };
 
@@ -168,17 +164,19 @@ namespace Datadog.Trace.Tools.Runner
                 using (Process childProcess = new Process())
                 {
                     childProcess.StartInfo = startInfo;
-                    childProcess.OutputDataReceived += (sender, e) => Console.WriteLine(e.Data);
-                    childProcess.ErrorDataReceived += (sender, e) => Console.Error.WriteLine(e.Data);
                     childProcess.EnableRaisingEvents = true;
                     childProcess.Start();
-                    childProcess.BeginOutputReadLine();
-                    childProcess.BeginErrorReadLine();
 
                     using (cancellationToken.Register(() =>
                     {
-                        childProcess?.StandardInput.Close();
-                        childProcess?.Kill();
+                        try
+                        {
+                            childProcess.Kill();
+                        }
+                        catch
+                        {
+                            // .
+                        }
                     }))
                     {
                         childProcess.WaitForExit();

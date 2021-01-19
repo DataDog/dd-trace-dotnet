@@ -105,7 +105,10 @@ namespace Datadog.Trace.ClrProfiler
                 string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
                 tags = new HttpTags();
-                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}", spanId: spanId);
+
+                string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName, spanId: spanId);
+
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
@@ -167,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler
                     return null;
                 }
 
-                string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
+                string serviceName = tracer.Settings.GetServiceName(tracer, dbType);
                 string operationName = $"{dbType}.query";
 
                 var tags = new SqlTags();
