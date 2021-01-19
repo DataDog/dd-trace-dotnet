@@ -340,13 +340,7 @@ namespace Datadog.Trace
                 {
                     Log.Debug(
                         "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        SpanId,
-                        Context.ParentId,
-                        TraceId,
-                        ServiceName,
-                        ResourceName,
-                        OperationName,
-                        Tags);
+                        new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
                 }
             }
         }
