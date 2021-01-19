@@ -54,7 +54,7 @@ namespace PrepareRelease
                                                                            type = item.attribute.Type,
                                                                            method = item.attribute.Method,
                                                                            signature = (string)null,
-                                                                           signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParametersTypesNames).ToArray(),
+                                                                           signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParametersTypesNames ?? Enumerable.Empty<string>()).ToArray(),
                                                                            minimum_major = item.attribute.VersionRange.MinimumMajor,
                                                                            minimum_minor = item.attribute.VersionRange.MinimumMinor,
                                                                            minimum_patch = item.attribute.VersionRange.MinimumPatch,
