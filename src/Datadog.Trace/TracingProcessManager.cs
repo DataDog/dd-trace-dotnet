@@ -116,7 +116,7 @@ namespace Datadog.Trace
                         {
                             if (metadata.SequentialFailures >= MaxFailures)
                             {
-                                Log.Error("Maximum retries ({ErrorCount}) reached starting {Process}.", path, MaxFailures);
+                                Log.Error<string, int>("Maximum retries ({ErrorCount}) reached starting {Process}.", path, MaxFailures);
                                 metadata.ProcessState = ProcessState.Faulted;
                                 return;
                             }

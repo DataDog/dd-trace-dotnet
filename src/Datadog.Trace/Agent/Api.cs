@@ -41,7 +41,7 @@ namespace Datadog.Trace.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
-            Log.Debug("Sending {Count} traces to the DD agent", traces.Length);
+            Log.Debug<int>("Sending {Count} traces to the DD agent", traces.Length);
 
             while (true)
             {
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                Log.Debug("Successfully sent {Count} traces to the DD agent", traces.Length);
+                Log.Debug<int>("Successfully sent {Count} traces to the DD agent", traces.Length);
                 return true;
             }
         }
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Agent
                         }
                         catch (Exception ex)
                         {
-                            Log.Error(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
+                            Log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
                         }
                     }
 

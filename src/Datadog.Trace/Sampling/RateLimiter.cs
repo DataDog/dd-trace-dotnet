@@ -59,7 +59,7 @@ namespace Datadog.Trace.Sampling
 
                 if (count >= _maxTracesPerInterval)
                 {
-                    Log.Warning("Dropping trace id {TraceId} with count of {Count} for last {Interval}ms.", span.TraceId, count, _intervalMilliseconds);
+                    Log.Warning<ulong, int, int>("Dropping trace id {TraceId} with count of {Count} for last {Interval}ms.", span.TraceId, count, _intervalMilliseconds);
                     return false;
                 }
 
