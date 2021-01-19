@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -33,6 +34,7 @@ namespace Datadog.Trace.Tests.Logging
         {
             // On test cleanup, reload the GlobalSettings
             GlobalSettings.Reload();
+            Clock.Reset();
         }
 
         [Fact]
@@ -73,6 +75,101 @@ namespace Datadog.Trace.Tests.Logging
             Assert.Equal("123", property.Value.ToString());
             Assert.Equal("Warning level message with argument '123'", log.RenderMessage());
         }
+
+        [Fact]
+        public void RateLimiting_WhenLoggingIsOnSeparateLines_DoesntRateLimit()
+        {
+            const int secondsBetweenLogs = 60;
+            var rateLimiter = new LogRateLimiter(secondsBetweenLogs);
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+
+            var clock = new SimpleClock();
+            Clock.SetForCurrentThread(clock);
+
+            logger.Warning("Warning level message");
+            logger.Warning("Warning level message");
+            logger.Warning("Warning level message");
+
+            clock.UtcNow = clock.UtcNow.AddSeconds(secondsBetweenLogs);
+            logger.Warning("Warning level message");
+
+            Assert.True(
+                _logEventSink.Events.Count == 4,
+                $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
+        }
+
+        [Fact]
+        public void RateLimiting_WhenLoggingIsASingleLocation_AppliesRateLimiting()
+        {
+            const int secondsBetweenLogs = 60;
+            var rateLimiter = new LogRateLimiter(secondsBetweenLogs);
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+
+            var clock = new SimpleClock();
+            Clock.SetForCurrentThread(clock);
+
+            WriteRateLimitedLogMessage(logger, "Warning level message");
+            WriteRateLimitedLogMessage(logger, "Warning level message");
+            WriteRateLimitedLogMessage(logger, "Warning level message");
+
+            clock.UtcNow = clock.UtcNow.AddSeconds(secondsBetweenLogs);
+            WriteRateLimitedLogMessage(logger, "Warning level message");
+
+            Assert.True(
+                _logEventSink.Events.Count == 2,
+                $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
+        }
+
+        [Fact]
+        public void RateLimiting_ConsidersLogMessagesOnSameLineToBeSame()
+        {
+            const int secondsBetweenLogs = 60;
+            var rateLimiter = new LogRateLimiter(secondsBetweenLogs);
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+
+            var clock = new SimpleClock();
+            Clock.SetForCurrentThread(clock);
+
+#pragma warning disable SA1107 // Code must not contain multiple statements on one line
+            logger.Warning("Warning level message"); logger.Warning("Warning level message");
+#pragma warning restore SA1107 // Code must not contain multiple statements on one line
+
+            Assert.True(
+                _logEventSink.Events.Count == 1,
+                $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
+        }
+
+        [Fact]
+        public void MessageTemplates_WhenRateLimitingEnabled_IncludesTheNumberOfSkippedMessages()
+        {
+            const int secondsBetweenLogs = 60;
+            var rateLimiter = new LogRateLimiter(secondsBetweenLogs);
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+            var clock = new SimpleClock();
+            Clock.SetForCurrentThread(clock);
+
+            WriteRateLimitedLogMessage(logger, "Warning level message");
+
+            // these aren't written, as rate limited
+            WriteRateLimitedLogMessage(logger, "Warning level message");
+            WriteRateLimitedLogMessage(logger, "Warning level message");
+            WriteRateLimitedLogMessage(logger, "Warning level message");
+
+            clock.UtcNow = clock.UtcNow.AddSeconds(secondsBetweenLogs);
+            WriteRateLimitedLogMessage(logger, "Warning level message");
+
+            Assert.True(
+                _logEventSink.Events.Count == 2,
+                $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
+
+            Assert.Collection(
+                _logEventSink.Events,
+                log => log.RenderMessage().EndsWith(", 0 additional messages skipped"),
+                log => log.RenderMessage().EndsWith(", 3 additional messages skipped"));
+        }
+
+        private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)
+            => logger.Warning(message);
 
         private class CollectionSink : ILogEventSink
         {

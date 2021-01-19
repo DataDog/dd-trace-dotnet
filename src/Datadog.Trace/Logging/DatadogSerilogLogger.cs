@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -10,10 +9,12 @@ namespace Datadog.Trace.Logging
     {
         private static readonly object[] NoPropertyValues = new object[0];
         private readonly ILogger _logger;
+        private readonly ILogRateLimiter _rateLimiter;
 
-        public DatadogSerilogLogger(ILogger logger)
+        public DatadogSerilogLogger(ILogger logger, ILogRateLimiter rateLimiter)
         {
             _logger = logger;
+            _rateLimiter = rateLimiter;
         }
 
         public bool IsEnabled(LogEventLevel level) => _logger.IsEnabled(level);
@@ -138,36 +139,52 @@ namespace Datadog.Trace.Logging
         public void Error(Exception exception, string messageTemplate, object[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Error, exception, messageTemplate, args, sourceLine, sourceFile);
 
-        private void Write<T>(LogEventLevel level, Exception exception, string messageTemplate, T property, int sourceLine,  string sourceFile)
+        private void Write<T>(LogEventLevel level, Exception exception, string messageTemplate, T property, int sourceLine, string sourceFile)
         {
             if (_logger.IsEnabled(level))
             {
                 // Avoid boxing + array allocation if disabled
-                Write(level, exception, messageTemplate, new object[] { property }, sourceLine, sourceFile);
+                WriteIfNotRateLimited(level, exception, messageTemplate, new object[] { property }, sourceLine, sourceFile);
             }
         }
 
-        private void Write<T0, T1>(LogEventLevel level, Exception exception, string messageTemplate, T0 property0, T1 property1, int sourceLine,  string sourceFile)
+        private void Write<T0, T1>(LogEventLevel level, Exception exception, string messageTemplate, T0 property0, T1 property1, int sourceLine, string sourceFile)
         {
             if (_logger.IsEnabled(level))
             {
                 // Avoid boxing + array allocation if disabled
-                Write(level, exception, messageTemplate, new object[] { property0, property1 }, sourceLine, sourceFile);
+                WriteIfNotRateLimited(level, exception, messageTemplate, new object[] { property0, property1 }, sourceLine, sourceFile);
             }
         }
 
-        private void Write<T0, T1, T2>(LogEventLevel level, Exception exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine,  string sourceFile)
+        private void Write<T0, T1, T2>(LogEventLevel level, Exception exception, string messageTemplate, T0 property0, T1 property1, T2 property2, int sourceLine, string sourceFile)
         {
             if (_logger.IsEnabled(level))
             {
                 // Avoid boxing + array allocation if disabled
-                Write(level, exception, messageTemplate, new object[] { property0, property1, property2 }, sourceLine, sourceFile);
+                WriteIfNotRateLimited(level, exception, messageTemplate, new object[] { property0, property1, property2 }, sourceLine, sourceFile);
             }
         }
 
-        private void Write(LogEventLevel level, Exception exception, string messageTemplate, object[] args, int sourceLine,  string sourceFile)
+        private void Write(LogEventLevel level, Exception exception, string messageTemplate, object[] args, int sourceLine, string sourceFile)
         {
-            _logger.Write(level, exception, messageTemplate, args);
+            if (_logger.IsEnabled(level))
+            {
+                // Avoid rate limiting calculation if log level is disabled
+                WriteIfNotRateLimited(level, exception, messageTemplate, args, sourceLine, sourceFile);
+            }
+        }
+
+        private void WriteIfNotRateLimited(LogEventLevel level, Exception exception, string messageTemplate, object[] args, int sourceLine, string sourceFile)
+        {
+            if (_rateLimiter.ShouldLog(sourceFile, sourceLine, out var skipCount))
+            {
+                var newArgs = new object[args.Length + 1];
+                Array.Copy(args, newArgs, args.Length);
+                newArgs[args.Length] = skipCount;
+
+                _logger.Write(level, exception, messageTemplate + ", {SkipCount} additional messages skipped", newArgs);
+            }
         }
     }
 }
