@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
         /// <returns>Return value of the method</returns>
         public static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, CallTargetState state)
         {
-            Scope scope = (Scope)state.State;
+            Scope scope = state.Scope;
             if (scope != null)
             {
                 NUnitIntegration.FinishScope(scope, exception);
