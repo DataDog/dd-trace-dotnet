@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MsTestV2
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
             where TTarget : ITestMethodRunner
         {
-            Scope scope = (Scope)state.State;
+            Scope scope = state.Scope;
             if (scope != null)
             {
                 Array returnValueArray = returnValue as Array;
