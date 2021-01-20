@@ -101,10 +101,10 @@ namespace Datadog.Trace.PlatformHelpers
                     SiteName = GetVariableIfExists(SiteNameKey, environmentVariables);
                     ResourceId = CompileResourceId();
 
-                    SiteExtensionVersion = GetVariableIfExists(SiteExtensionVersionKey, environmentVariables);
-                    InstanceId = GetVariableIfExists(InstanceIdKey, environmentVariables);
-                    InstanceName = GetVariableIfExists(InstanceNameKey, environmentVariables);
-                    OperatingSystem = GetVariableIfExists(OperatingSystemKey, environmentVariables);
+                    InstanceId = GetVariableIfExists(InstanceIdKey, environmentVariables) ?? "unknown";
+                    InstanceName = GetVariableIfExists(InstanceNameKey, environmentVariables) ?? "unknown";
+                    OperatingSystem = GetVariableIfExists(OperatingSystemKey, environmentVariables) ?? "unknown";
+                    SiteExtensionVersion = GetVariableIfExists(SiteExtensionVersionKey, environmentVariables) ?? "unknown";
 
                     // Functions
                     FunctionsWorkerRuntime =
