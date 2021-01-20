@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -16,7 +17,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string instrumentedType,
             string methodName,
             string instanceType = null,
-            string[] relevantArguments = null)
+            string[] relevantArguments = null,
+            [CallerLineNumber] int sourceLine = 0,
+            [CallerFilePath] string sourceFile = "")
         {
             var instrumentedMethod = $"{instrumentedType}.{methodName}(...)";
 
@@ -33,7 +36,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var moduleVersionId = PointerHelpers.GetGuidFromNativePointer(moduleVersionPointer);
             logger.Error(
                 exception,
-                $"Error (MVID: {moduleVersionId}, mdToken: {mdToken}, opCode: {opCode}) could not retrieve: {instrumentedMethod}");
+                $"Error (MVID: {moduleVersionId}, mdToken: {mdToken}, opCode: {opCode}) could not retrieve: {instrumentedMethod}",
+                sourceLine,
+                sourceFile);
 
             var statsd = Tracer.Instance.Statsd;
 

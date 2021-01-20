@@ -270,11 +270,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <typeparam name="TIntegration">Integration type</typeparam>
         /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="exception">Integration exception instance</param>
+        /// <param name="sourceLine">Auto-generated <see cref="CallerLineNumberAttribute"/> for log rate limiting. Must be left unspecified</param>
+        /// <param name="sourceFile">Auto-generated <see cref="CallerFilePathAttribute"/> for log rate limiting. Must be left unspecified</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogException<TIntegration, TTarget>(Exception exception)
+        public static void LogException<TIntegration, TTarget>(Exception exception, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
         {
             DebugLog($"ProfilerOK: LogException<{typeof(TIntegration)}, {typeof(TTarget)}>({exception})");
-            IntegrationOptions<TIntegration, TTarget>.LogException(exception);
+            IntegrationOptions<TIntegration, TTarget>.LogException(exception, sourceLine, sourceFile);
         }
 
         /// <summary>
