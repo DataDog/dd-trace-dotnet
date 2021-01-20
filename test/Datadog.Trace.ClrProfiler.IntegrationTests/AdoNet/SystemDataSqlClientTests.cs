@@ -51,7 +51,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             if (enableCallTarget)
             {
+#if NET452
+                expectedSpanCount = 77; // CallTarget support instrumenting a constrained generic caller.
+#else
                 expectedSpanCount = 112; // CallTarget support instrumenting a constrained generic caller.
+#endif
             }
 
             const string dbType = "sql-server";

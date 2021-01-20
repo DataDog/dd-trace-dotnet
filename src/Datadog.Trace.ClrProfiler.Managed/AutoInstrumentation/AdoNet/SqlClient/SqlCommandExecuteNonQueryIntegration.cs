@@ -50,17 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            Scope scope = (Scope)state.State;
-            if (scope != null)
-            {
-                if (exception != null)
-                {
-                    scope.Span.SetException(exception);
-                }
-
-                scope.Dispose();
-            }
-
+            state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }
