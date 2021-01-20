@@ -290,7 +290,7 @@ namespace Datadog.Trace.Logging
 #pragma warning disable SA1204 // Static elements must appear before instance elements
         private static void RefreshIISPreAppState(ulong traceId)
         {
-            Debug.Assert(!_executingIISPreStartInit, $"{nameof(_executingIISPreStartInit)} should always be false when entering {nameof(RefreshIISPreAppState)}");
+            Debug.Assert(_executingIISPreStartInit, $"{nameof(_executingIISPreStartInit)} should always be true when entering {nameof(RefreshIISPreAppState)}");
 
             if (_performAppDomainFlagChecks)
             {
