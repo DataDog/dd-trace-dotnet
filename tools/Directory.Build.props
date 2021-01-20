@@ -1,6 +1,11 @@
 <Project>
   <Import Project="..\Directory.Build.props" />
 
+  <PropertyGroup>
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
   <!-- StyleCop -->
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.tools.cs" />
