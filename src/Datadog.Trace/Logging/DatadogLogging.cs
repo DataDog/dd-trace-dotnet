@@ -14,6 +14,7 @@ namespace Datadog.Trace.Logging
     internal static class DatadogLogging
     {
         internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new LoggingLevelSwitch(DefaultLogLevel);
+        private const int DefaultLogMessageRateLimit = 60;
         private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
         private static readonly IDatadogLogger SharedLogger = null;
@@ -22,7 +23,7 @@ namespace Datadog.Trace.Logging
         static DatadogLogging()
         {
             // No-op for if we fail to construct the file logger
-            var defaultRateLimiter = new NullLogRateLimiter();
+            var defaultRateLimiter = new LogRateLimiter(DefaultLogMessageRateLimit);
             InternalLogger =
                 new LoggerConfiguration()
                    .WriteTo.Sink<NullSink>()
@@ -88,6 +89,13 @@ namespace Datadog.Trace.Logging
 
                 InternalLogger = loggerConfiguration.CreateLogger();
                 SharedLogger = new DatadogSerilogLogger(InternalLogger, defaultRateLimiter);
+
+                var rate = GetRateLimit();
+                ILogRateLimiter rateLimiter = rate == 0
+                    ? new NullLogRateLimiter()
+                    : new LogRateLimiter(rate);
+
+                SharedLogger = new DatadogSerilogLogger(InternalLogger, rateLimiter);
             }
             catch
             {
@@ -156,6 +164,19 @@ namespace Datadog.Trace.Logging
         internal static void UseDefaultLevel()
         {
             SetLogLevel(DefaultLogLevel);
+        }
+
+        private static int GetRateLimit()
+        {
+            string rawRateLimit = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogRateLimit);
+            if (!string.IsNullOrEmpty(rawRateLimit)
+                && int.TryParse(rawRateLimit, out var rate)
+                && (rate < 0))
+            {
+                return rate;
+            }
+
+            return DefaultLogMessageRateLimit;
         }
 
         private static string GetLogDirectory()

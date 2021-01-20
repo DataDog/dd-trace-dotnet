@@ -225,6 +225,13 @@ namespace Datadog.Trace.Configuration
         public const string MaxLogFileSize = "DD_MAX_LOGFILE_SIZE";
 
         /// <summary>
+        /// Configuration key for setting the number of seconds between,
+        /// identical log messages, for Tracer log files.
+        /// Default value is 60s. Setting to 0 disables rate limiting.
+        /// </summary>
+        public const string LogRateLimit = "DD_LOGGING_RATE";
+
+        /// <summary>
         /// Configuration key for setting the path to the .NET Tracer native log file.
         /// This also determines the output folder of the .NET Tracer managed log files.
         /// Overridden by <see cref="LogDirectory"/> if present.
