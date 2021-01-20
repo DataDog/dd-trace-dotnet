@@ -232,6 +232,11 @@ namespace Datadog.Trace
         public const string AzureAppServicesSiteName = "aas.site.name";
 
         /// <summary>
+        /// The version of the extension installed where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesExtensionVersion = "aas.environment.extension_version";
+
+        /// <summary>
         /// The instance name in Azure where the traced application is running.
         /// </summary>
         public const string AzureAppServicesInstanceName = "aas.environment.instance_name";

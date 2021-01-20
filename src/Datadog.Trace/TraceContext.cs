@@ -150,6 +150,7 @@ namespace Datadog.Trace
                 span.SetTag(Tags.AzureAppServicesInstanceName, AzureAppServices.Metadata.InstanceName);
                 span.SetTag(Tags.AzureAppServicesOperatingSystem, AzureAppServices.Metadata.OperatingSystem);
                 span.SetTag(Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
+                span.SetTag(Tags.AzureAppServicesExtensionVersion, AzureAppServices.Metadata.SiteExtensionVersion);
             }
 
             // set the origin tag to the root span of each trace/subtrace
