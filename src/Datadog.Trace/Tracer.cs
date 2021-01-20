@@ -565,7 +565,7 @@ namespace Datadog.Trace
                 catch (Exception ex)
                 {
                     // Unable to call into System.Web.dll
-                    Log.SafeLogError(ex, "Unable to get application name through ASP.NET settings");
+                    Log.Error(ex, "Unable to get application name through ASP.NET settings");
                 }
 
                 return Assembly.GetEntryAssembly()?.GetName().Name ??
@@ -573,7 +573,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error creating default service name.");
+                Log.Error(ex, "Error creating default service name.");
                 return null;
             }
         }
@@ -642,7 +642,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, $"Unable to instantiate {nameof(Statsd)} client.");
+                Log.Error(ex, $"Unable to instantiate {nameof(Statsd)} client.");
                 return new NoOpStatsd();
             }
         }
@@ -681,7 +681,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error flushing traces on shutdown.");
+                Log.Error(ex, "Error flushing traces on shutdown.");
             }
         }
 

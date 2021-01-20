@@ -136,7 +136,7 @@ namespace Datadog.Trace.PlatformHelpers
             catch (Exception ex)
             {
                 IsUnsafeToTrace = true;
-                Log.SafeLogError(ex, "Unable to initialize AzureAppServices metadata.");
+                Log.Error(ex, "Unable to initialize AzureAppServices metadata.");
             }
         }
 
@@ -206,7 +206,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Could not successfully setup the resource ID for Azure App Services.");
+                Log.Error(ex, "Could not successfully setup the resource ID for Azure App Services.");
             }
 
             return resourceId;
@@ -228,7 +228,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Could not successfully retrieve the subscription ID for Azure App Services.");
+                Log.Error(ex, "Could not successfully retrieve the subscription ID for Azure App Services.");
             }
 
             return null;

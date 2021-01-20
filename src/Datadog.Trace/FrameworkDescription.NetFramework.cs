@@ -29,7 +29,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error getting framework description.");
+                Log.Error(ex, "Error getting framework description.");
             }
 
             return new FrameworkDescription(
@@ -63,7 +63,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.SafeLogError(e, "Error getting .NET Framework version from Windows Registry");
+                Log.Error(e, "Error getting .NET Framework version from Windows Registry");
             }
 
             if (productVersion == null)

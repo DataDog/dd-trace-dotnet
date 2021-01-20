@@ -69,7 +69,7 @@ namespace Datadog.Trace.Logging
                 }
                 catch (Exception ex)
                 {
-                    Log.SafeLogError(ex, "Error obtaining the process name for quickly validating IIS PreStartInit condition.");
+                    Log.Error(ex, "Error obtaining the process name for quickly validating IIS PreStartInit condition.");
                 }
             }
 
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Logging
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
+                Log.Error(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
             }
         }
 

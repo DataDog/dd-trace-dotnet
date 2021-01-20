@@ -75,7 +75,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.SafeLogError(e, "Error getting framework version from [AssemblyInformationalVersion]");
+                Log.Error(e, "Error getting framework version from [AssemblyInformationalVersion]");
             }
 
             if (productVersion == null)
@@ -88,7 +88,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception e)
                 {
-                    Log.SafeLogError(e, "Error getting framework version from [AssemblyFileVersion]");
+                    Log.Error(e, "Error getting framework version from [AssemblyFileVersion]");
                 }
             }
 

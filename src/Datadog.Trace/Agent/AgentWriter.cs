@@ -111,7 +111,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.SafeLogError(ex, "An unhandled error occurred during the flushing task");
+                    Log.Error(ex, "An unhandled error occurred during the flushing task");
                 }
             }
         }

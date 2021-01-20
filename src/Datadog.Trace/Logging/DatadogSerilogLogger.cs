@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -177,13 +178,32 @@ namespace Datadog.Trace.Logging
 
         private void WriteIfNotRateLimited(LogEventLevel level, Exception exception, string messageTemplate, object[] args, int sourceLine, string sourceFile)
         {
-            if (_rateLimiter.ShouldLog(sourceFile, sourceLine, out var skipCount))
+            try
             {
-                var newArgs = new object[args.Length + 1];
-                Array.Copy(args, newArgs, args.Length);
-                newArgs[args.Length] = skipCount;
+                if (_rateLimiter.ShouldLog(sourceFile, sourceLine, out var skipCount))
+                {
+                    var newArgs = new object[args.Length + 1];
+                    Array.Copy(args, newArgs, args.Length);
+                    newArgs[args.Length] = skipCount;
 
-                _logger.Write(level, exception, messageTemplate + ", {SkipCount} additional messages skipped", newArgs);
+                    _logger.Write(level, exception, messageTemplate + ", {SkipCount} additional messages skipped", newArgs);
+                }
+            }
+            catch
+            {
+                try
+                {
+                    var ex = exception is null ? string.Empty : $"; {exception}";
+                    var properties = args.Length == 0
+                        ? string.Empty
+                        : "; " + string.Join(", ", args.Select(x => x.ToString()));
+
+                    Console.Error.WriteLine($"{messageTemplate}{properties}{ex}");
+                }
+                catch
+                {
+                    // ignore
+                }
             }
         }
     }

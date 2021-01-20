@@ -35,7 +35,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception e)
                 {
-                    Log.SafeLogError(e, "Error getting framework name from RuntimeInformation");
+                    Log.Error(e, "Error getting framework name from RuntimeInformation");
                 }
 
                 if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
@@ -57,7 +57,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error getting framework description.");
+                Log.Error(ex, "Error getting framework description.");
             }
 
             return new FrameworkDescription(
@@ -96,7 +96,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception e)
                 {
-                    Log.SafeLogError(e, "Error getting .NET Core version from assembly path");
+                    Log.Error(e, "Error getting .NET Core version from assembly path");
                 }
             }
 

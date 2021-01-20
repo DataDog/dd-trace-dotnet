@@ -7,6 +7,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
@@ -168,6 +169,36 @@ namespace Datadog.Trace.Tests.Logging
                 log => log.RenderMessage().EndsWith(", 3 additional messages skipped"));
         }
 
+        [Fact]
+        public void ErrorsDuringRateLimiting_DontBubbleUp()
+        {
+            var rateLimiter = new FailingRateLimiter();
+            var logger = new DatadogSerilogLogger(_logger, rateLimiter);
+
+            // Should not throw
+            logger.Warning("Warning level message");
+
+            Assert.True(rateLimiter.WasInvoked);
+            Assert.Empty(_logEventSink.Events);
+        }
+
+        [Fact]
+        public void ErrorsDuringLogging_DontBubbleUp()
+        {
+            var mockLogger = new Mock<ILogger>();
+            mockLogger
+                .Setup(x => x.Write(It.IsAny<LogEventLevel>(), It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<object[]>()))
+                .Throws(new NotImplementedException());
+
+            var logger = new DatadogSerilogLogger(mockLogger.Object, new NullLogRateLimiter());
+
+            // Should not throw
+            logger.Warning("Warning level message");
+
+            Assert.Empty(_logEventSink.Events);
+            mockLogger.Verify();
+        }
+
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)
             => logger.Warning(message);
 
@@ -178,6 +209,17 @@ namespace Datadog.Trace.Tests.Logging
             public void Emit(LogEvent le)
             {
                 Events.Add(le);
+            }
+        }
+
+        private class FailingRateLimiter : ILogRateLimiter
+        {
+            public bool WasInvoked { get; private set; }
+
+            public bool ShouldLog(string filePath, int lineNumber, out uint skipCount)
+            {
+                WasInvoked = true;
+                throw new NotImplementedException();
             }
         }
     }

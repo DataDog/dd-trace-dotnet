@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void LogException(Exception exception)
         {
-            Log.SafeLogError(exception, exception?.Message, null);
+            Log.Error(exception, exception?.Message);
             if (exception is DuckTypeException)
             {
                 Log.Warning($"DuckTypeException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");
