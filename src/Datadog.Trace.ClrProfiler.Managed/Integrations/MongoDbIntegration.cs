@@ -442,7 +442,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     query = command.ToString();
 
-                    resourceName = query;
+                    resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"}";
                 }
             }
             catch (Exception ex)
@@ -463,7 +463,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.Type = SpanTypes.MongoDb;
                 span.ResourceName = resourceName;
                 tags.DbName = databaseName;
-                tags.DbOperation = operationName;
                 tags.Query = query;
                 tags.Collection = collectionName;
                 tags.Host = host;
