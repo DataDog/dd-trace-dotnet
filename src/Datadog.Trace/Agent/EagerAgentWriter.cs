@@ -18,6 +18,8 @@ namespace Datadog.Trace.Agent
         private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 #endif
 
+        private const int BatchPeriod = 100;
+
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<EagerAgentWriter>();
 
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
@@ -30,6 +32,8 @@ namespace Datadog.Trace.Agent
 
         private readonly SpanBuffer _frontBuffer;
         private readonly SpanBuffer _backBuffer;
+
+        private readonly ManualResetEventSlim _serializationMutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
 
         /// <summary>
         /// The currently active buffer.
@@ -73,6 +77,11 @@ namespace Datadog.Trace.Agent
             else
             {
                 _pendingTraces.Enqueue(new WorkItem(trace));
+
+                if (!_serializationMutex.IsSet)
+                {
+                    _serializationMutex.Set();
+                }
             }
 
             if (_statsd != null)
@@ -88,6 +97,8 @@ namespace Datadog.Trace.Agent
             {
                 return;
             }
+
+            _serializationMutex.Set();
 
             await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)))
                       .ConfigureAwait(false);
@@ -268,12 +279,28 @@ namespace Datadog.Trace.Agent
 
         private void SerializeTracesLoop()
         {
+            /* Trying to find a compromise between contradictory goals (in order of priority):
+             *  - not keeping the traces in the queue for too long
+             *  - keeping the overhead of the producer thread to a minimum
+             *  - keeping the overhead of the consumer thread to a minimum
+             *
+             * To achieve this, the thread wakes up every BatchPeriod milliseconds and processes all available traces.
+             * If there are no traces, then the mutex is used to sleep for a longer period of time.
+             * Having a mutex prevents the thread from waking up if the server receives no traffic.
+             * Resetting the mutex only when no traces have been enqueued for a while prevents
+             * the producer thread from paying the cost of setting the mutex every time.
+             */
+
             while (true)
             {
+                bool hasDequeuedTraces = false;
+
                 try
                 {
                     while (_pendingTraces.TryDequeue(out var item))
                     {
+                        hasDequeuedTraces = true;
+
                         if (item.Trace == null)
                         {
                             // Found a watermark
@@ -294,7 +321,16 @@ namespace Datadog.Trace.Agent
                     return;
                 }
 
-                Thread.Sleep(100);
+                if (hasDequeuedTraces)
+                {
+                    Thread.Sleep(BatchPeriod);
+                }
+                else
+                {
+                    // No traces were pushed in the last period, wait undefinitely
+                    _serializationMutex.Wait();
+                    _serializationMutex.Reset();
+                }
             }
         }
 

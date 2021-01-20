@@ -32,7 +32,7 @@ namespace Benchmarks.Trace
             var api = new Api(settings.AgentUri, new FakeApiRequestFactory(), statsd: null);
 
             AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false, queueSize: SpanCount * 2);
-            EagerAgentWriter = new EagerAgentWriter(api, statsd: null, automaticFlush: false, queueSize: SpanCount * 2);
+            EagerAgentWriter = new EagerAgentWriter(api, statsd: null, automaticFlush: false);
 
             Spans = new Span[SpanCount];
             EnrichedSpans = new Span[SpanCount];
