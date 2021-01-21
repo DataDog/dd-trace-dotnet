@@ -1,6 +1,6 @@
-FROM ubuntu:20.04
+FROM ubuntu:18.04
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
+RUN apt-get update && apt-get install -y --fix-missing \
     build-essential \
     rpm \
     ruby \

@@ -79,7 +79,7 @@ stages:
 
   - job: linux_packages
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-18.04
     variables:
       tracerHome: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
 
