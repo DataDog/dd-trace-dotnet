@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
                 {
                     if (exception != null)
                     {
-                        scope.Span.SetException(exception);
+                        scope.Span?.SetException(exception);
                     }
                 }
                 finally
