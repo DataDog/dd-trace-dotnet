@@ -372,11 +372,18 @@ jobs:
     msiOutputDirectory: src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
 
   steps:
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
+
   - task: UseDotNet@2
     displayName: install dotnet core sdk 2.1
     inputs:
       packageType: sdk
       version: 2.1.x
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 3.0
@@ -384,11 +391,17 @@ jobs:
       packageType: sdk
       version: 3.0.x
 
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
+
   - task: UseDotNet@2
     displayName: install dotnet core sdk 3.1
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 5
@@ -397,14 +410,23 @@ jobs:
       version: $(dotnetCoreSdk5Version)
       includePreviewVersions: true
 
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
+
   - task: NuGetToolInstaller@1
     displayName: install nuget
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
 
   - task: NuGetCommand@2
     displayName: nuget restore
     inputs:
       restoreSolution: Datadog.Trace.sln
       verbosityRestore: Normal
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
 
   # this triggers a dependency chain that builds all the managed and native dlls
   - task: MSBuild@1
@@ -416,6 +438,9 @@ jobs:
       msbuildArguments: /t:msi /p:RunWixToolsOutOfProc=true /p:TracerHomeDirectory=$(publishOutput)
       maximumCpuCount: true
 
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
+
   - task: MSBuild@1
     displayName: Build .NET Framework projects (not SDK-based projects)
     inputs:
@@ -424,6 +449,9 @@ jobs:
       configuration: $(buildConfiguration)
       msbuildArguments: /t:BuildFrameworkReproductions
       maximumCpuCount: true
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build integration tests
@@ -437,6 +465,9 @@ jobs:
         !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
 
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
+
   - task: DotNetCoreCLI@2
     displayName: dotnet build samples
     inputs:
@@ -446,11 +477,17 @@ jobs:
         !test/test-applications/integrations/dependency-libs/**/*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138
 
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
+
   - task: NuGetCommand@2
     displayName: nuget restore IIS samples
     inputs:
       restoreSolution: test/test-applications/aspnet/samples-iis.sln
       verbosityRestore: Normal
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
 
   - task: MSBuild@1
     displayName: Publish IIS samples
@@ -460,11 +497,17 @@ jobs:
       msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml'
       maximumCpuCount: true
 
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
+
   - task: DockerCompose@0
     displayName: docker-compose build IIS containers
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: build --build-arg DOTNET_TRACER_MSI=$(msiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationRegKey
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
 
   - task: DockerCompose@0
     displayName: docker-compose start IIS containers
@@ -472,11 +515,17 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
 
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
+
   - powershell: |
       [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
       $publish = New-Object System.EnterpriseServices.Internal.Publish
       Get-ChildItem $(publishOutput)/net45 -Filter *.dll | Foreach-Object { $publish.GacInstall($_.FullName) }
     displayName: Add net45 Datadog.Trace.ClrProfiler.Managed assets to the GAC
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test --filter LoadFromGAC=True
@@ -486,6 +535,9 @@ jobs:
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True&IIS!=True" -p:Platform=$(buildPlatform)
 
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
+
   - task: DotNetCoreCLI@2
     displayName: dotnet test IIS
     inputs:
@@ -493,6 +545,9 @@ jobs:
       configuration: $(buildConfiguration)
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: --filter "(IIS=True)" -p:Platform=$(buildPlatform)
+
+  - pwsh: Get-PSDrive
+    displayName: HDD Info
 
   - task: DockerCompose@0
     displayName: docker-compose stop services
