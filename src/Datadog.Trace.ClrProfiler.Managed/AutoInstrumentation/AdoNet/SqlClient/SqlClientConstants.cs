@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
             public const string AssemblyName = "System.Data";
             public const string SqlClientAssemblyName = "System.Data.SqlClient";
             public const string SqlCommandType = "System.Data.SqlClient.SqlCommand";
-            public const string MinimumVersion = "2.0.0";
+            public const string MinimumVersion = "4.0.0";
             public const string MaximumVersion = "4.*.*";
             public const string SqlDataReaderType = "System.Data.SqlClient.SqlDataReader";
             public const string SqlDataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>";
