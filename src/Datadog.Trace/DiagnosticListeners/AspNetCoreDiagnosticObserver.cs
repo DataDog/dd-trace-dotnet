@@ -321,7 +321,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     routeTemplate = $"{controllerName}/{actionName}";
                 }
 
-                string resourceName = $"{httpMethod} {routeTemplate}";
+                string resourceName = $"{httpMethod} /{routeTemplate}";
 
                 // override the parent's resource name with the MVC route template
                 span.ResourceName = resourceName;
