@@ -2522,7 +2522,7 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
   LPCWSTR pre_init_start_str = L"Datadog_IISPreInitStart";
   auto pre_init_start_str_size = wcslen(pre_init_start_str);
 #else
-  char16_t load_helper_str[] =
+  char16_t pre_init_start_str[] =
       u"Datadog_IISPreInitStart";
   auto pre_init_start_str_size =
       std::char_traits<char16_t>::length(pre_init_start_str);
