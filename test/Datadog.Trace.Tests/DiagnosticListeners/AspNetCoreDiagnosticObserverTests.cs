@@ -83,13 +83,50 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Assert.Equal(TracerConstants.Language, span.GetTag(Tags.Language));
         }
 
-        private static Tracer GetTracer()
+        [Theory]
+        [InlineData("/", "GET /Home/Index")]
+        [InlineData("/home", "GET /Home/Index")]
+        [InlineData("/home/get", "GET /Home/Get")]
+        [InlineData("/home/get/3", "GET /Home/Get")]
+        [InlineData("/home/error", "GET /Home/Error")]
+        [InlineData("/Api", "GET /api/{id?}")]
+        [InlineData("/api/123", "GET /api/{id?}")]
+        [InlineData("/unknown", "GET /unknown")]
+        [InlineData("/home/1/action", "GET /home/?/action")]
+        public async Task SpanResourceName_IsConsistentAcrossRoutes(string path, string expectedSpanResourceName)
+        {
+            var writer = new LoggingAgentWriter();
+            Tracer.Instance = GetTracer(writer);
+
+            var builder = new WebHostBuilder()
+                .UseStartup<Startup>();
+
+            var testServer = new TestServer(builder);
+            var client = testServer.CreateClient();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };
+
+            using (var diagnosticManager = new DiagnosticManager(observers))
+            {
+                diagnosticManager.Start();
+                DiagnosticManager.Instance = diagnosticManager;
+                try
+                {
+                    await client.GetStringAsync(path);
+                }
+                catch { }
+
+                Assert.Contains(writer.Spans, x => x.ResourceName == expectedSpanResourceName);
+                DiagnosticManager.Instance = null;
+            }
+        }
+
+        private static Tracer GetTracer(IAgentWriter writer = null)
         {
             var settings = new TracerSettings();
-            var writerMock = new Mock<IAgentWriter>();
+            writer ??= new Mock<IAgentWriter>().Object;
             var samplerMock = new Mock<ISampler>();
 
-            return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            return new Tracer(settings, writer, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         private static HttpContext GetHttpContext()
@@ -137,6 +174,19 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 base.After(methodUnderTest);
             }
         }
+
+        private class LoggingAgentWriter : IAgentWriter
+        {
+            public List<Span> Spans { get; } = new List<Span>();
+
+            public Task FlushAndCloseAsync() => Task.CompletedTask;
+
+            public Task FlushTracesAsync() => Task.CompletedTask;
+
+            public Task<bool> Ping() => Task.FromResult(true);
+
+            public void WriteTrace(Span[] trace) => Spans.AddRange(trace);
+        }
     }
 
     /// <summary>
@@ -151,10 +201,18 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             return "Hello world";
         }
 
+        public string Get(int id) => $"Hello {id}";
+
         public void Error()
         {
             throw new Exception();
         }
+    }
+
+    public class ApiController
+    {
+        [HttpGet("api/{id?}")]
+        public string Get() => "Hello world";
     }
 }
 
