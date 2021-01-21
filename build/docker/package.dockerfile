@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     rpm \
     ruby \
     ruby-dev \
-    rubygems
+    rubygems \
+    git
 
 RUN gem install --no-ri --no-rdoc fpm
