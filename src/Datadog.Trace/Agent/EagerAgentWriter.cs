@@ -18,8 +18,6 @@ namespace Datadog.Trace.Agent
         private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 #endif
 
-        private const int BatchPeriod = 100;
-
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<EagerAgentWriter>();
 
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
@@ -35,6 +33,8 @@ namespace Datadog.Trace.Agent
 
         private readonly ManualResetEventSlim _serializationMutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
 
+        private readonly int _batchInterval;
+
         /// <summary>
         /// The currently active buffer.
         /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer
@@ -45,10 +45,11 @@ namespace Datadog.Trace.Agent
 
         private TaskCompletionSource<bool> _forceFlush;
 
-        public EagerAgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush = true, int bufferSize = 1024 * 1024 * 10)
+        public EagerAgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush = true, int bufferSize = 1024 * 1024 * 10, int batchInterval = 100)
         {
             _api = api;
             _statsd = statsd;
+            _batchInterval = batchInterval;
 
             var formatterResolver = SpanFormatterResolver.Instance;
 
@@ -323,7 +324,7 @@ namespace Datadog.Trace.Agent
 
                 if (hasDequeuedTraces)
                 {
-                    Thread.Sleep(BatchPeriod);
+                    Thread.Sleep(_batchInterval);
                 }
                 else
                 {
