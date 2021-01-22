@@ -10,24 +10,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
     /// Task[int] System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
     /// Task[int] Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
     /// </summary>
-    [InstrumentMethod(
-        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName },
-        Type = SqlClientConstants.SystemData.SqlCommandType,
+    [SqlClientConstants.SystemData.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
         ReturnTypeName = "System.Threading.Tasks.Task`1<System.Int32>",
-        ParametersTypesNames = new[] { ClrNames.CancellationToken },
-        MinimumVersion = SqlClientConstants.SystemData.MinimumVersion,
-        MaximumVersion = SqlClientConstants.SystemData.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
-    [InstrumentMethod(
-        Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName,
-        Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType,
+        ParametersTypesNames = new[] { ClrNames.CancellationToken })]
+    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
         ReturnTypeName = "System.Threading.Tasks.Task`1<System.Int32>",
-        ParametersTypesNames = new[] { ClrNames.CancellationToken },
-        MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion,
-        MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
+        ParametersTypesNames = new[] { ClrNames.CancellationToken })]
     public class SqlCommandExecuteNonQueryAsyncIntegration
     {
         /// <summary>

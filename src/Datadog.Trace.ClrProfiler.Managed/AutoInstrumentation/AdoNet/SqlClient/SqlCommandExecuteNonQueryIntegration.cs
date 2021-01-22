@@ -9,22 +9,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
     /// int System.Data.SqlClient.SqlCommand.ExecuteNonQuery()
     /// int Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQuery()
     /// </summary>
-    [InstrumentMethod(
-        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName },
-        Type = SqlClientConstants.SystemData.SqlCommandType,
+    [SqlClientConstants.SystemData.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteNonQuery,
-        ReturnTypeName = ClrNames.Int32,
-        MinimumVersion = SqlClientConstants.SystemData.MinimumVersion,
-        MaximumVersion = SqlClientConstants.SystemData.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
-    [InstrumentMethod(
-        Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName,
-        Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType,
+        ReturnTypeName = ClrNames.Int32)]
+    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteNonQuery,
-        ReturnTypeName = ClrNames.Int32,
-        MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion,
-        MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
+        ReturnTypeName = ClrNames.Int32)]
     public class SqlCommandExecuteNonQueryIntegration
     {
         /// <summary>

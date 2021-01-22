@@ -9,22 +9,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
     /// object System.Data.SqlClient.SqlCommand.ExecuteScalar()
     /// object Microsoft.Data.SqlClient.SqlCommand.ExecuteScalar()
     /// </summary>
-    [InstrumentMethod(
-        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName },
-        Type = SqlClientConstants.SystemData.SqlCommandType,
+    [SqlClientConstants.SystemData.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteScalar,
-        ReturnTypeName = ClrNames.Object,
-        MinimumVersion = SqlClientConstants.SystemData.MinimumVersion,
-        MaximumVersion = SqlClientConstants.SystemData.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
-    [InstrumentMethod(
-        Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName,
-        Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType,
+        ReturnTypeName = ClrNames.Object)]
+    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteScalar,
-        ReturnTypeName = ClrNames.Object,
-        MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion,
-        MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
+        ReturnTypeName = ClrNames.Object)]
     public class SqlCommandExecuteScalarIntegration
     {
         /// <summary>

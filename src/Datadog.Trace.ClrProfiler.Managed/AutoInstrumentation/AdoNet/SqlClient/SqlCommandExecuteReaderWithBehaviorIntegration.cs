@@ -11,42 +11,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
     /// SqlDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteReader(CommandBehavior)
     /// DbDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteDbDataReader(CommandBehavior)
     /// </summary>
-    [InstrumentMethod(
-        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName },
-        Type = SqlClientConstants.SystemData.SqlCommandType,
+    [SqlClientConstants.SystemData.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteReader,
         ReturnTypeName = SqlClientConstants.SystemData.SqlDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
-        MinimumVersion = SqlClientConstants.SystemData.MinimumVersion,
-        MaximumVersion = SqlClientConstants.SystemData.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
-    [InstrumentMethod(
-        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName },
-        Type = SqlClientConstants.SystemData.SqlCommandType,
+        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
+    [SqlClientConstants.SystemData.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteDbDataReader,
         ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
-        MinimumVersion = SqlClientConstants.SystemData.MinimumVersion,
-        MaximumVersion = SqlClientConstants.SystemData.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
-    [InstrumentMethod(
-        Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName,
-        Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType,
+        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
+    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteReader,
         ReturnTypeName = SqlClientConstants.MicrosoftDataSqlClient.SqlDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
-        MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion,
-        MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
-    [InstrumentMethod(
-        Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName,
-        Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType,
+        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
+    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteDbDataReader,
         ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
-        MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion,
-        MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
+        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
     public class SqlCommandExecuteReaderWithBehaviorIntegration
     {
         /// <summary>

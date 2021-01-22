@@ -162,7 +162,7 @@
             "System.Threading.Tasks.Task`1<System.Int32>",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -185,7 +185,7 @@
             "System.Threading.Tasks.Task`1<System.Int32>",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -230,7 +230,7 @@
           "signature_types": [
             "System.Int32"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -252,7 +252,7 @@
           "signature_types": [
             "System.Int32"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -298,7 +298,7 @@
             "System.Data.CommandBehavior",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -322,7 +322,7 @@
             "System.Data.CommandBehavior",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -346,7 +346,7 @@
             "System.Data.CommandBehavior",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -370,7 +370,7 @@
             "System.Data.CommandBehavior",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -440,7 +440,7 @@
           "signature_types": [
             "System.Data.SqlClient.SqlDataReader"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -462,7 +462,7 @@
           "signature_types": [
             "System.Data.SqlClient.SqlDataReader"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -507,7 +507,7 @@
             "System.Data.SqlClient.SqlDataReader",
             "System.Data.CommandBehavior"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -530,7 +530,7 @@
             "System.Data.SqlClient.SqlDataReader",
             "System.Data.CommandBehavior"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -553,7 +553,7 @@
             "System.Data.Common.DbDataReader",
             "System.Data.CommandBehavior"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -576,7 +576,7 @@
             "System.Data.Common.DbDataReader",
             "System.Data.CommandBehavior"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -645,7 +645,7 @@
             "System.Threading.Tasks.Task`1<System.Object>",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -668,7 +668,7 @@
             "System.Threading.Tasks.Task`1<System.Object>",
             "System.Threading.CancellationToken"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -713,7 +713,7 @@
           "signature_types": [
             "System.Object"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
@@ -735,7 +735,7 @@
           "signature_types": [
             "System.Object"
           ],
-          "minimum_major": 2,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,

@@ -23,7 +23,9 @@ namespace PrepareRelease
             // and create objects that will generate correct JSON schema
             var callTargetIntegrations = from assembly in assemblies
                                          from wrapperType in assembly.GetTypes()
-                                         let attributes = wrapperType.GetCustomAttributes<InstrumentMethodAttribute>(inherit: false)
+                                         let attributes = wrapperType.GetCustomAttributes(inherit: false)
+                                                .Select(a => a is InstrumentMethodAttribute ima ? ima : null)
+                                                .Where(a => a != null)
                                          where attributes.Any()
                                          from attribute in attributes
                                          let integrationName = attribute.IntegrationName

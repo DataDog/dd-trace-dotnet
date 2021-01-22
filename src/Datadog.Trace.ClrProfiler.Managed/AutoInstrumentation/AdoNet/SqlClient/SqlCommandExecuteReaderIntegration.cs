@@ -9,22 +9,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
     /// SqlDataReader System.Data.SqlClient.SqlCommand.ExecuteReader()
     /// SqlDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteReader()
     /// </summary>
-    [InstrumentMethod(
-        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName },
-        Type = SqlClientConstants.SystemData.SqlCommandType,
+    [SqlClientConstants.SystemData.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteReader,
-        ReturnTypeName = SqlClientConstants.SystemData.SqlDataReaderType,
-        MinimumVersion = SqlClientConstants.SystemData.MinimumVersion,
-        MaximumVersion = SqlClientConstants.SystemData.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
-    [InstrumentMethod(
-        Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName,
-        Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType,
+        ReturnTypeName = SqlClientConstants.SystemData.SqlDataReaderType)]
+    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
         Method = AdoNetConstants.MethodNames.ExecuteReader,
-        ReturnTypeName = SqlClientConstants.MicrosoftDataSqlClient.SqlDataReaderType,
-        MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion,
-        MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion,
-        IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
+        ReturnTypeName = SqlClientConstants.MicrosoftDataSqlClient.SqlDataReaderType)]
     public class SqlCommandExecuteReaderIntegration
     {
         /// <summary>
