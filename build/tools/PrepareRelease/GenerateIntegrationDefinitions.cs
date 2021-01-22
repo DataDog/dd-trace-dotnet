@@ -23,7 +23,9 @@ namespace PrepareRelease
             // and create objects that will generate correct JSON schema
             var callTargetIntegrations = from assembly in assemblies
                                          from wrapperType in assembly.GetTypes()
-                                         let attributes = wrapperType.GetCustomAttributes<InstrumentMethodAttribute>(inherit: false)
+                                         let attributes = wrapperType.GetCustomAttributes(inherit: false)
+                                                .Select(a => a is InstrumentMethodAttribute ima ? ima : null)
+                                                .Where(a => a != null)
                                          where attributes.Any()
                                          from attribute in attributes
                                          let integrationName = attribute.IntegrationName
@@ -54,7 +56,7 @@ namespace PrepareRelease
                                                                            type = item.attribute.Type,
                                                                            method = item.attribute.Method,
                                                                            signature = (string)null,
-                                                                           signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParametersTypesNames).ToArray(),
+                                                                           signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParametersTypesNames ?? Enumerable.Empty<string>()).ToArray(),
                                                                            minimum_major = item.attribute.VersionRange.MinimumMajor,
                                                                            minimum_minor = item.attribute.VersionRange.MinimumMinor,
                                                                            minimum_patch = item.attribute.VersionRange.MinimumPatch,
