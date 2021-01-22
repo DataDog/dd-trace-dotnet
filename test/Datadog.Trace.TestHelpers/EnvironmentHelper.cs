@@ -91,9 +91,14 @@ namespace Datadog.Trace.TestHelpers
             return ExecutingAssembly.Location;
         }
 
+        public static bool IsNet5()
+        {
+            return Environment.Version.Major >= 5;
+        }
+
         public static bool IsCoreClr()
         {
-            return RuntimeFrameworkDescription.Contains("core") || Environment.Version.Major >= 5;
+            return RuntimeFrameworkDescription.Contains("core") || IsNet5();
         }
 
         public static string GetRuntimeIdentifier()
