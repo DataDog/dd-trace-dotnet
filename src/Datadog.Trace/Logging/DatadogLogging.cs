@@ -16,15 +16,18 @@ namespace Datadog.Trace.Logging
         internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new LoggingLevelSwitch(DefaultLogLevel);
         private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
-        private static readonly ILogger SharedLogger = null;
+        private static readonly IDatadogLogger SharedLogger = null;
+        private static readonly ILogger InternalLogger = null;
 
         static DatadogLogging()
         {
             // No-op for if we fail to construct the file logger
-            SharedLogger =
+            InternalLogger =
                 new LoggerConfiguration()
                    .WriteTo.Sink<NullSink>()
                    .CreateLogger();
+            SharedLogger = new DatadogSerilogLogger(InternalLogger);
+
             try
             {
                 if (GlobalSettings.Source.DebugEnabled)
@@ -81,7 +84,8 @@ namespace Datadog.Trace.Logging
                     // At all costs, make sure the logger works when possible.
                 }
 
-                SharedLogger = loggerConfiguration.CreateLogger();
+                InternalLogger = loggerConfiguration.CreateLogger();
+                SharedLogger = new DatadogSerilogLogger(InternalLogger);
             }
             catch
             {
@@ -89,19 +93,35 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        public static ILogger GetLogger(Type classType)
+        public static IDatadogLogger GetLoggerFor(Type classType)
         {
             // Tells us which types are loaded, when, and how often.
             SharedLogger.Debug($"Logger retrieved for: {classType.AssemblyQualifiedName}");
             return SharedLogger;
         }
 
+        public static IDatadogLogger GetLoggerFor<T>()
+        {
+            return GetLoggerFor(typeof(T));
+        }
+
+        [Obsolete("This method is deprecated and will be removed. Use GetLoggerFor() instead. " +
+            "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
+        public static ILogger GetLogger(Type classType)
+        {
+            // Tells us which types are loaded, when, and how often.
+            SharedLogger.Debug($"Obsolete logger retrieved for: {classType.AssemblyQualifiedName}");
+            return InternalLogger;
+        }
+
+        [Obsolete("This method is deprecated and will be removed. Use GetLoggerFor() instead. " +
+            "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
         public static ILogger For<T>()
         {
             return GetLogger(typeof(T));
         }
 
-        public static void SafeLogError(this ILogger logger, Exception ex, string message, params object[] args)
+        public static void SafeLogError(this IDatadogLogger logger, Exception ex, string message, params object[] args)
         {
             try
             {
