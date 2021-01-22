@@ -45,7 +45,7 @@ namespace Datadog.Trace.Agent
 
         private TaskCompletionSource<bool> _forceFlush;
 
-        public EagerAgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush = true, int bufferSize = 1024 * 1024 * 10, int batchInterval = 100)
+        public EagerAgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
         {
             _api = api;
             _statsd = statsd;
@@ -55,8 +55,8 @@ namespace Datadog.Trace.Agent
 
             _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
 
-            _frontBuffer = new SpanBuffer(bufferSize, formatterResolver);
-            _backBuffer = new SpanBuffer(bufferSize, formatterResolver);
+            _frontBuffer = new SpanBuffer(maxBufferSize, formatterResolver);
+            _backBuffer = new SpanBuffer(maxBufferSize, formatterResolver);
             _activeBuffer = _frontBuffer;
 
             _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.FromResult(true);

@@ -8,19 +8,22 @@ namespace Datadog.Trace.Agent
     internal class SpanBuffer
     {
         private const int HeaderSize = 5;
+        private const int InitialBufferSize = 64 * 1024;
 
         private readonly IMessagePackFormatter<Span[]> _formatter;
         private readonly IFormatterResolver _formatterResolver;
         private readonly object _syncRoot = new object();
+        private readonly int _maxBufferSize;
 
         private byte[] _buffer;
         private bool _locked;
         private int _offset;
 
-        public SpanBuffer(int bufferSize, IFormatterResolver formatterResolver)
+        public SpanBuffer(int maxBufferSize, IFormatterResolver formatterResolver)
         {
+            _maxBufferSize = maxBufferSize;
             _offset = HeaderSize;
-            _buffer = new byte[bufferSize];
+            _buffer = new byte[InitialBufferSize];
             _formatterResolver = formatterResolver;
             _formatter = _formatterResolver.GetFormatter<Span[]>();
         }
@@ -49,7 +52,7 @@ namespace Datadog.Trace.Agent
 
                 var size = _formatter.Serialize(ref temporaryBuffer, 0, trace, _formatterResolver);
 
-                if (size + _offset >= _buffer.Length)
+                if (!EnsureCapacity(size + _offset))
                 {
                     IsFull = true;
                     return false;
@@ -98,6 +101,39 @@ namespace Datadog.Trace.Agent
                 IsFull = false;
                 _locked = false;
             }
+        }
+
+        private bool EnsureCapacity(int minDesiredSize)
+        {
+            if (minDesiredSize <= _buffer.Length)
+            {
+                return true;
+            }
+
+            if (minDesiredSize > _maxBufferSize)
+            {
+                return false;
+            }
+
+            int size = _buffer.Length;
+
+            while (size < minDesiredSize && size < _maxBufferSize)
+            {
+                size *= 2;
+            }
+
+            if (size > _maxBufferSize)
+            {
+                size = _maxBufferSize;
+            }
+
+            var newBuffer = new byte[size];
+
+            Buffer.BlockCopy(_buffer, 0, newBuffer, 0, _offset);
+
+            _buffer = newBuffer;
+
+            return true;
         }
     }
 }

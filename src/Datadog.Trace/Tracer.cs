@@ -100,7 +100,7 @@ namespace Datadog.Trace
                 if (Settings.DynamicFlushing)
                 {
                     Log.Warning("Using eager agent writer");
-                    _agentWriter = new EagerAgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), Statsd);
+                    _agentWriter = new EagerAgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), Statsd, maxBufferSize: Settings.TraceBufferSize);
                 }
                 else
                 {
