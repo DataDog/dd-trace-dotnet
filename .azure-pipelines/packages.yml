@@ -239,7 +239,7 @@ stages:
         sudo apt-get install -y unzip python3-setuptools
         curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
         unzip awscli-bundle.zip
-        python3 ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+        sudo python3 ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
       displayName: Install AWS CLI
 
     - script: aws configure set aws_access_key_id $SECRET
