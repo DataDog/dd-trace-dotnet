@@ -311,25 +311,11 @@ jobs:
       maximumCpuCount: true
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet build integration tests
+    displayName: dotnet build solution
     inputs:
       command: build
-      projects: |
-        test/test-applications/regression/**/*.csproj
-        test/*.IntegrationTests/*.IntegrationTests.csproj
-        !test/test-applications/regression/**/ExpenseItDemo*.csproj
-        !test/test-applications/regression/**/EntityFramework6x*.csproj
-        !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+      projects: Dataddog.Trace.sln
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build samples
-    inputs:
-      command: build
-      projects: |
-        test/test-applications/integrations/**/*.csproj
-        !test/test-applications/integrations/dependency-libs/**/*.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -426,25 +412,11 @@ jobs:
       maximumCpuCount: true
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet build integration tests
+    displayName: dotnet build solution
     inputs:
       command: build
-      projects: |
-        test/test-applications/regression/**/*.csproj
-        test/*.IntegrationTests/*.IntegrationTests.csproj
-        !test/test-applications/regression/**/ExpenseItDemo*.csproj
-        !test/test-applications/regression/**/EntityFramework6x*.csproj
-        !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+      projects: Dataddog.Trace.sln
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build samples
-    inputs:
-      command: build
-      projects: |
-        test/test-applications/integrations/**/*.csproj
-        !test/test-applications/integrations/dependency-libs/**/*.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138
 
   - task: NuGetCommand@2
     displayName: nuget restore IIS samples
