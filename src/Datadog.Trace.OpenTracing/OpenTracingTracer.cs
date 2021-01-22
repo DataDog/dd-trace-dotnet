@@ -8,7 +8,7 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingTracer : ITracer
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<OpenTracingTracer>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OpenTracingTracer>();
 
         private readonly Dictionary<string, ICodec> _codecs;
 

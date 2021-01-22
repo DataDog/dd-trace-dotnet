@@ -15,7 +15,7 @@ namespace Datadog.Trace.MSBuild
     /// </summary>
     public class DatadogLogger : INodeLogger
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(DatadogLogger));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogLogger));
 
         private Tracer _tracer = null;
         private Span _buildSpan = null;

@@ -3,13 +3,12 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Ci
 {
     internal static class CIEnvironmentValues
     {
-        private static readonly ILogger Logger = DatadogLogging.GetLogger(typeof(CIEnvironmentValues));
+        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
 
         static CIEnvironmentValues()
         {

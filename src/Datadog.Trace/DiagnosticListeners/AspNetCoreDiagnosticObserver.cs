@@ -33,7 +33,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AspNetCoreDiagnosticObserver>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
         private readonly Tracer _tracer;
 
         private string _hostingHttpRequestInStartEventKey;

@@ -10,7 +10,7 @@ namespace Datadog.Trace.Agent
 {
     internal class AgentWriter : IAgentWriter
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
         private readonly AgentWriterBuffer<Span[]> _tracesBuffer;
         private readonly IDogStatsd _statsd;

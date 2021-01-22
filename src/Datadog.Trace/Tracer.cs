@@ -25,7 +25,7 @@ namespace Datadog.Trace
     public class Tracer : IDatadogTracer
     {
         private const string UnknownServiceName = "UnknownService";
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
 
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.

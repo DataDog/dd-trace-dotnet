@@ -13,7 +13,7 @@ namespace Datadog.Trace.Logging
     internal class LibLogScopeEventSubscriber : IDisposable
     {
         private const int _numPropertiesSetOnSpanEvent = 5;
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(LibLogScopeEventSubscriber));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LibLogScopeEventSubscriber));
 #if NETFRAMEWORK
         private static readonly string NamedSlotName = "Datadog_IISPreInitStart";
         private static bool _performAppDomainFlagChecks = false;

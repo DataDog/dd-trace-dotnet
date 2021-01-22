@@ -5,7 +5,7 @@ namespace Datadog.Trace
 {
     internal abstract class ScopeManagerBase : IScopeManager, IScopeRawAccess
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ScopeManagerBase));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeManagerBase));
 
         public event EventHandler<SpanEventArgs> TraceStarted;
 

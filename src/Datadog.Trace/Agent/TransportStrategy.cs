@@ -11,7 +11,7 @@ namespace Datadog.Trace.Agent
         public const string DatadogTcp = "DATADOG-TCP";
         public const string DatadogNamedPipes = "DATADOG-NAMED-PIPES";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
 
         public static IApiRequestFactory Get(TracerSettings settings)
         {

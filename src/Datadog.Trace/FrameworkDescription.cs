@@ -10,7 +10,7 @@ namespace Datadog.Trace
 {
     internal partial class FrameworkDescription
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(FrameworkDescription));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FrameworkDescription));
 
         private static readonly Assembly RootAssembly = typeof(object).Assembly;
 

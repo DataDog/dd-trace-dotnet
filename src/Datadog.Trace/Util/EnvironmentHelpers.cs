@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Util
 {
@@ -11,7 +10,7 @@ namespace Datadog.Trace.Util
     /// </summary>
     internal static class EnvironmentHelpers
     {
-        private static readonly ILogger Logger = DatadogLogging.GetLogger(typeof(EnvironmentHelpers));
+        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers));
 
         /// <summary>
         /// Safe wrapper around Environment.GetEnvironmentVariable

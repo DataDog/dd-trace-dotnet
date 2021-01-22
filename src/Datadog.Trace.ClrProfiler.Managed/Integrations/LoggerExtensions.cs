@@ -1,13 +1,14 @@
 using System;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     internal static class LoggerExtensions
     {
         public static void ErrorRetrievingMethod(
-            this Vendors.Serilog.ILogger logger,
+            this IDatadogLogger logger,
             Exception exception,
             long moduleVersionPointer,
             int mdToken,

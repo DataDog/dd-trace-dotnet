@@ -16,7 +16,7 @@ namespace Datadog.Trace.HttpOverStreams
 
         private const string ContentLengthHeaderKey = "Content-Length";
 
-        private static readonly Vendors.Serilog.ILogger Logger = DatadogLogging.For<DatadogHttpClient>();
+        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogHttpClient>();
 
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
         {

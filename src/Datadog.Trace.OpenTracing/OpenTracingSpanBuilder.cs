@@ -9,7 +9,7 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpanBuilder : ISpanBuilder
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<OpenTracingSpanBuilder>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OpenTracingSpanBuilder>();
 
         private readonly OpenTracingTracer _tracer;
         private readonly object _lock = new object();

@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public static readonly string ProfilerClsid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(Instrumentation));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Instrumentation));
 
         /// <summary>
         /// Gets a value indicating whether Datadog's profiler is attached to the current process.

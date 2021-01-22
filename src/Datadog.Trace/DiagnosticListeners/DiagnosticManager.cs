@@ -10,7 +10,7 @@ namespace Datadog.Trace.DiagnosticListeners
 {
     internal sealed class DiagnosticManager : IDiagnosticManager, IObserver<DiagnosticListener>, IDisposable
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<DiagnosticManager>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiagnosticManager>();
 
         private readonly IEnumerable<DiagnosticObserver> _diagnosticObservers;
         private readonly List<IDisposable> _subscriptions = new List<IDisposable>();

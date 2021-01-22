@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
     internal static class IntegrationOptions<TIntegration, TTarget>
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(IntegrationOptions<TIntegration, TTarget>));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntegrationOptions<TIntegration, TTarget>));
 
         private static volatile bool _disableIntegration = false;
 
