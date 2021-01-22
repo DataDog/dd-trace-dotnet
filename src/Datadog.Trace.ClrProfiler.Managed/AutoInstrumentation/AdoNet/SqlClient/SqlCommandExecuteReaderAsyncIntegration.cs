@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
     /// Task[DbDataReader] Microsoft.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
     /// </summary>
     [InstrumentMethod(
-        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemData.SqlClientAssemblyName },
+        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName },
         Type = SqlClientConstants.SystemData.SqlCommandType,
         Method = AdoNetConstants.MethodNames.ExecuteReaderAsync,
         ReturnTypeName = SqlClientConstants.SystemData.SqlDataReaderTaskType,
@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
         MaximumVersion = SqlClientConstants.SystemData.MaximumVersion,
         IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
     [InstrumentMethod(
-        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemData.SqlClientAssemblyName },
+        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName },
         Type = SqlClientConstants.SystemData.SqlCommandType,
         Method = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync,
         ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType,
@@ -31,22 +31,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
         MaximumVersion = SqlClientConstants.SystemData.MaximumVersion,
         IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
     [InstrumentMethod(
-        Assembly = SqlClientConstants.MicrosoftData.AssemblyName,
-        Type = SqlClientConstants.MicrosoftData.SqlCommandType,
+        Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName,
+        Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType,
         Method = AdoNetConstants.MethodNames.ExecuteReaderAsync,
-        ReturnTypeName = SqlClientConstants.MicrosoftData.SqlDataReaderTaskType,
+        ReturnTypeName = SqlClientConstants.MicrosoftDataSqlClient.SqlDataReaderTaskType,
         ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
-        MinimumVersion = SqlClientConstants.MicrosoftData.MinimumVersion,
-        MaximumVersion = SqlClientConstants.MicrosoftData.MaximumVersion,
+        MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion,
+        MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion,
         IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
     [InstrumentMethod(
-        Assembly = SqlClientConstants.MicrosoftData.AssemblyName,
-        Type = SqlClientConstants.MicrosoftData.SqlCommandType,
+        Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName,
+        Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType,
         Method = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync,
         ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType,
         ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
-        MinimumVersion = SqlClientConstants.MicrosoftData.MinimumVersion,
-        MaximumVersion = SqlClientConstants.MicrosoftData.MaximumVersion,
+        MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion,
+        MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion,
         IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
     public class SqlCommandExecuteReaderAsyncIntegration
     {

@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
     /// Task[object] Microsoft.Data.SqlClient.SqlCommand.ExecuteScalarAsync(CancellationToken)
     /// </summary>
     [InstrumentMethod(
-        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemData.SqlClientAssemblyName },
+        Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName },
         Type = SqlClientConstants.SystemData.SqlCommandType,
         Method = AdoNetConstants.MethodNames.ExecuteScalarAsync,
         ReturnTypeName = "System.Threading.Tasks.Task`1<System.Object>",
@@ -20,13 +20,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
         MaximumVersion = SqlClientConstants.SystemData.MaximumVersion,
         IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
     [InstrumentMethod(
-        Assembly = SqlClientConstants.MicrosoftData.AssemblyName,
-        Type = SqlClientConstants.MicrosoftData.SqlCommandType,
+        Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName,
+        Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType,
         Method = AdoNetConstants.MethodNames.ExecuteScalarAsync,
         ReturnTypeName = "System.Threading.Tasks.Task`1<System.Object>",
         ParametersTypesNames = new[] { ClrNames.CancellationToken },
-        MinimumVersion = SqlClientConstants.MicrosoftData.MinimumVersion,
-        MaximumVersion = SqlClientConstants.MicrosoftData.MaximumVersion,
+        MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion,
+        MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion,
         IntegrationName = SqlClientConstants.SqlCommandIntegrationName)]
     public class SqlCommandExecuteScalarAsyncIntegration
     {
