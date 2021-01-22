@@ -315,7 +315,7 @@ jobs:
     inputs:
       command: build
       projects: Dataddog.Trace.sln
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
+      arguments: --no-restore --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -416,7 +416,7 @@ jobs:
     inputs:
       command: build
       projects: Dataddog.Trace.sln
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
+      arguments: --no-restore --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
 
   - task: NuGetCommand@2
     displayName: nuget restore IIS samples
