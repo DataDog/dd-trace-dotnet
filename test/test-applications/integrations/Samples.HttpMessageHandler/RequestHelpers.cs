@@ -146,16 +146,16 @@ namespace Samples.HttpMessageHandler
                     using (Tracer.Instance.StartActive("SendAsync"))
                     {
                         await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url));
-                        Console.WriteLine("Received response for client.PostAsync(HttpRequestMessage)");
+                        Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage)");
 
                         await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), CancellationToken.None);
                         Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage, CancellationToken)");
 
                         await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead);
-                        Console.WriteLine("Received response for client.PostAsync(HttpRequestMessage, HttpCompletionOption)");
+                        Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage, HttpCompletionOption)");
 
                         await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead, CancellationToken.None);
-                        Console.WriteLine("Received response for client.PostAsync(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
+                        Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
                     }
 
                     using (Tracer.Instance.StartActive("ErrorSpanBelow"))
