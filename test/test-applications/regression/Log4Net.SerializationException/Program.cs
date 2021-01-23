@@ -22,7 +22,7 @@ namespace Log4Net.SerializationException
                 // This would happen if any values were stored in data slots
                 Console.WriteLine("Calling the ApplicationWithLog4Net.Program in a separate AppDomain");
 
-                AppDomainProxy.Call(applicationAppDomain, "ApplicationWithLog4Net", "ApplicationWithLog4Net.Program", "ToString", null);
+                AppDomainProxy.Call(applicationAppDomain, "ApplicationWithLog4Net", "ApplicationWithLog4Net.Program", "Invoke", null);
                 AppDomain.Unload(applicationAppDomain);
             }
             catch (Exception ex)

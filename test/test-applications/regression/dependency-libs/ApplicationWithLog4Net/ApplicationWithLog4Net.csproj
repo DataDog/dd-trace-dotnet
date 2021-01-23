@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj" />
+    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
   <ItemGroup>
