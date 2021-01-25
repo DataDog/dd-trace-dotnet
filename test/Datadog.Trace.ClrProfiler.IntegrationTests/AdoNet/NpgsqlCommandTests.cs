@@ -61,7 +61,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 // Assert.Equal(expectedSpanCount, spans.Count); // Assert an exact match once we can correctly instrument the generic constraint case
-                Assert.True(spans.Count == expectedSpanCount || spans.Count == expectedSpanCount + 4);
+
+                if (enableCallTarget)
+                {
+                    Assert.Equal(expectedSpanCount, spans.Count);
+                }
+                else
+                {
+                    Assert.True(spans.Count == expectedSpanCount || spans.Count == expectedSpanCount + 4);
+                }
 
                 foreach (var span in spans)
                 {
