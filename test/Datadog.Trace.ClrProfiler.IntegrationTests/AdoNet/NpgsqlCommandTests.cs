@@ -44,6 +44,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
 #endif
 
+            if (enableCallTarget)
+            {
+#if NET452
+                expectedSpanCount = 57;
+#else
+                expectedSpanCount = 92;
+#endif
+            }
+
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.Npgsql-" + dbType;
