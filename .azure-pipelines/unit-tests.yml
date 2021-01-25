@@ -91,7 +91,11 @@ jobs:
       command: build
       configuration: $(buildConfiguration)
       arguments: --no-restore /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
-      projects: Datadog.Trace.sln
+      projects: |
+        src/**/*.csproj
+        test/**/*.Tests.csproj
+        test/benchmarks/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet
 
@@ -129,6 +133,7 @@ jobs:
     inputs:
       command: test
       configuration: $(buildConfiguration)
+      arguments: --no-build --no-restore
       projects: test/**/*.Tests.csproj
 
 - job: managed_macos
@@ -177,6 +182,7 @@ jobs:
     displayName: dotnet test
     inputs:
       command: test
+      arguments: --no-build --no-restore
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
 
