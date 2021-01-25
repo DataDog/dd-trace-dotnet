@@ -76,12 +76,21 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdk5Version)
 
+  - task: NuGetToolInstaller@1
+    displayName: install nuget
+
+  - task: NuGetCommand@2
+    displayName: nuget restore
+    inputs:
+      restoreSolution: Datadog.Trace.sln
+      verbosityRestore: Normal
+
   - task: DotNetCoreCLI@2
     displayName: dotnet build
     inputs:
       command: build
       configuration: $(buildConfiguration)
-      arguments: /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      arguments: --no-restore /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: Datadog.Trace.sln
     env:
       DD_SERVICE_NAME: dd-tracer-dotnet
