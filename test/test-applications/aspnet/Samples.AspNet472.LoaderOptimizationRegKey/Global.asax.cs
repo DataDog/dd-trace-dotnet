@@ -25,7 +25,7 @@ namespace Samples.AspNet472.LoaderOptimizationRegKey
 
         public static void InitializeTracePreStart()
         {
-            InitializeTrace("AutomaticLogInjectionInPreAppStart.MvcApplication.InitializeTracePreStart");
+            InitializeTrace("Samples.AspNet472.LoaderOptimizationRegKey.InitializeTracePreStart");
         }
 
         public static void InitializeTrace(string callingMethod)
