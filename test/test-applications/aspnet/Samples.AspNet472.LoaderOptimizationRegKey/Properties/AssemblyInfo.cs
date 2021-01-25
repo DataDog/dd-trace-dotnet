@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -33,3 +33,5 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config")]
+[assembly: System.Web.PreApplicationStartMethod(typeof(Samples.AspNet472.LoaderOptimizationRegKey.Global), nameof(Samples.AspNet472.LoaderOptimizationRegKey.Global.InitializeTracePreStart))]
