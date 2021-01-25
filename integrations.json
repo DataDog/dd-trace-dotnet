@@ -73,6 +73,30 @@
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler.HttpClientHandlerIntegration",
           "action": "CallTargetModification"
         }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Http",
+          "type": "System.Net.Http.HttpClientHandler",
+          "method": "Send",
+          "signature_types": [
+            "System.Net.Http.HttpResponseMessage",
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 5,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler.HttpClientHandlerSyncIntegration",
+          "action": "CallTargetModification"
+        }
       }
     ]
   },
@@ -2304,6 +2328,32 @@
         "caller": {},
         "target": {
           "assembly": "System.Net.Http",
+          "type": "System.Net.Http.HttpMessageHandler",
+          "method": "Send",
+          "signature_types": [
+            "System.Net.Http.HttpResponseMessage",
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 5,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpMessageHandler_Send",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Http",
           "type": "System.Net.Http.HttpClientHandler",
           "method": "SendAsync",
           "signature_types": [
@@ -2322,6 +2372,32 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
           "method": "HttpClientHandler_SendAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Http",
+          "type": "System.Net.Http.HttpClientHandler",
+          "method": "Send",
+          "signature_types": [
+            "System.Net.Http.HttpResponseMessage",
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 5,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "HttpClientHandler_Send",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
