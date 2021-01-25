@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         [Fact]
         [Trait("Category", "Smoke")]
+        [Trait("Category", "ArmUnsupported")]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);
