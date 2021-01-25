@@ -329,7 +329,7 @@ jobs:
       projects: |
         test/test-applications/integrations/**/*.csproj
         !test/test-applications/integrations/dependency-libs/**/*.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -475,7 +475,7 @@ jobs:
       projects: |
         test/test-applications/integrations/**/*.csproj
         !test/test-applications/integrations/dependency-libs/**/*.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true  /nowarn:netsdk1138
 
   - pwsh: Get-PSDrive
     displayName: HDD Info
