@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
@@ -15,11 +16,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandard(string packageVersion)
+        public static IEnumerable<object[]> GetNpgsql()
         {
+            foreach (object[] item in PackageVersions.Npgsql)
+            {
+                yield return item.Concat(new object[] { false, false, }).ToArray();
+                yield return item.Concat(new object[] { true, false, }).ToArray();
+                yield return item.Concat(new object[] { true, true, }).ToArray();
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetNpgsql))]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget, bool enableInlining)
+        {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             // Note: The automatic instrumentation currently does not instrument on the generic wrappers
             // due to an issue with constrained virtual method calls. This leads to an inconsistency where
             // a newer library version may have 4 more spans than an older one (2 ExecuteReader calls *
@@ -61,10 +74,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Fact]
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
         [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes()
+        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
         {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             var totalSpanCount = 21;
 
             const string dbType = "postgres";
