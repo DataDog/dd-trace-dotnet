@@ -28,7 +28,6 @@ variables:
 jobs:
 
 - job: build_linux_profiler
-
   steps:
   - task: UseDotNet@2
     displayName: install dotnet core sdk 3.1
