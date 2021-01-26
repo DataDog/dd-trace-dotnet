@@ -189,6 +189,13 @@ namespace Datadog.Trace
         {
             get
             {
+#if DEBUG
+                if (Monitor.IsEntered(_globalInstanceLock))
+                {
+                    throw new InvalidOperationException("Recursive call to Tracer.Instance detected");
+                }
+#endif
+
                 return LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
             }
 
@@ -398,6 +405,12 @@ namespace Datadog.Trace
             {
                 _agentWriter.WriteTrace(trace);
             }
+        }
+
+        internal static void Reset()
+        {
+            _firstInitialization = 1;
+            _instance = null;
         }
 
         internal Scope StartActiveWithTags(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true, ITags tags = null)
