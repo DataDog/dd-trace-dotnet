@@ -1163,6 +1163,37 @@
     ]
   },
   {
+    "name": "RabbitMQ",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "RabbitMQ.Client",
+          "type": "RabbitMQ.Client.Impl.ModelBase",
+          "method": "QueueBind",
+          "signature_types": [
+            "System.Void",
+            "System.String",
+            "System.String",
+            "System.String",
+            "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 9,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueBindIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "OracleCommand",
     "method_replacements": [
       {
