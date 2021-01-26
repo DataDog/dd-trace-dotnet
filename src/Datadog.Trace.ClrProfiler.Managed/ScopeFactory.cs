@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -188,6 +189,48 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error creating or populating scope.");
             }
 
+            return scope;
+        }
+
+        public static Scope CreateRabbitMQScope(Tracer tracer, out RabbitMQTags tags, string command, ISpanContext parentContext = null, string spanKind = SpanKinds.Client, DateTimeOffset? startTime = null, string queue = null, string exchange = null, string routingKey = null)
+        {
+            tags = null;
+
+            if (!tracer.Settings.IsIntegrationEnabled(RabbitMQConstants.IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope scope = null;
+
+            try
+            {
+                Span parent = tracer.ActiveScope?.Span;
+
+                tags = new RabbitMQTags(spanKind);
+                string serviceName = tracer.Settings.GetServiceName(tracer, RabbitMQConstants.ServiceName);
+                scope = tracer.StartActiveWithTags(RabbitMQConstants.OperationName, parent: parentContext, tags: tags, serviceName: serviceName, startTime: startTime);
+                var span = scope.Span;
+
+                span.Type = SpanTypes.Queue;
+                span.ResourceName = command;
+                tags.Command = command;
+
+                tags.Queue = queue;
+                tags.Exchange = exchange;
+                tags.RoutingKey = routingKey;
+
+                tags.InstrumentationName = RabbitMQConstants.IntegrationName;
+                tags.SetAnalyticsSampleRate(RabbitMQConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            // always returns the scope, even if it's null because we couldn't create it,
+            // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
         }
 
