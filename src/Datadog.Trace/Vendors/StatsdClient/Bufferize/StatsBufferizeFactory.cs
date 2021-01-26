@@ -5,6 +5,7 @@
 using System;
 using System.Net;
 using Mono.Unix;
+using Datadog.Trace.Vendors.StatsdClient.Aggregator;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
 namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
@@ -12,16 +13,24 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
     internal class StatsBufferizeFactory : IStatsBufferizeFactory
     {
         public StatsBufferize CreateStatsBufferize(
-            BufferBuilder bufferBuilder,
+            StatsRouter statsRouter,
             int workerMaxItemCount,
             TimeSpan? blockingQueueTimeout,
             TimeSpan maxIdleWaitBeforeSending)
         {
             return new StatsBufferize(
-                bufferBuilder,
+                statsRouter,
                 workerMaxItemCount,
                 blockingQueueTimeout,
                 maxIdleWaitBeforeSending);
+        }
+
+        public StatsRouter CreateStatsRouter(
+            Serializers serializers,
+            BufferBuilder bufferBuilder,
+            Aggregators optionalAggregators)
+        {
+            return new StatsRouter(serializers, bufferBuilder, optionalAggregators);
         }
 
         public ITransport CreateUDPTransport(IPEndPoint endPoint)
@@ -36,9 +45,9 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
             return new UnixDomainSocketTransport(endPoint, udsBufferFullBlockDuration);
         }
 
-        public Telemetry CreateTelemetry(string assemblyVersion, TimeSpan flushInterval, ITransport transport, string[] globalTags)
+        public Telemetry CreateTelemetry(MetricSerializer metricSerializer, string assemblyVersion, TimeSpan flushInterval, ITransport transport, string[] globalTags)
         {
-            return new Telemetry(assemblyVersion, flushInterval, transport, globalTags);
+            return new Telemetry(metricSerializer, assemblyVersion, flushInterval, transport, globalTags);
         }
 
         public ITransport CreateNamedPipeTransport(string pipeName)

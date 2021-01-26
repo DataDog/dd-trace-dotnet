@@ -42,20 +42,20 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
             return _encoding.GetBytes(message);
         }
 
-        public bool Add(SerializedMetric serializedMetric)
+        public void Add(SerializedMetric serializedMetric)
         {
             var length = serializedMetric.CopyToChars(_charsBuffers);
 
             if (length < 0)
             {
-                return false;
+                throw new InvalidOperationException($"The metric size exceeds the internal buffer capacity {_charsBuffers.Length}: {serializedMetric.ToString()}");
             }
 
             var byteCount = _encoding.GetByteCount(_charsBuffers, 0, length);
 
             if (byteCount > Capacity)
             {
-                return false;
+                throw new InvalidOperationException($"The metric size exceeds the buffer capacity {Capacity}: {serializedMetric.ToString()}");
             }
 
             if (Length != 0)
@@ -76,7 +76,6 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
 
             // GetBytes requires the buffer to be big enough otherwise it throws, that is why we use GetByteCount.
             Length += _encoding.GetBytes(_charsBuffers, 0, length, _buffer, Length);
-            return true;
         }
 
         public void HandleBufferAndReset()

@@ -5,6 +5,7 @@
 using System;
 using System.Net;
 using Mono.Unix;
+using Datadog.Trace.Vendors.StatsdClient.Aggregator;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
 namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
@@ -16,10 +17,15 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
     internal interface IStatsBufferizeFactory
     {
         StatsBufferize CreateStatsBufferize(
-          BufferBuilder bufferBuilder,
+          StatsRouter statsRouter,
           int workerMaxItemCount,
           TimeSpan? blockingQueueTimeout,
           TimeSpan maxIdleWaitBeforeSending);
+
+        StatsRouter CreateStatsRouter(
+            Serializers serializers,
+            BufferBuilder bufferBuilder,
+            Aggregators optionalAggregators);
 
         ITransport CreateUDPTransport(IPEndPoint endPoint);
 
@@ -30,6 +36,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
         ITransport CreateNamedPipeTransport(string pipeName);
 
         Telemetry CreateTelemetry(
+            MetricSerializer metricSerializer,
             string assemblyVersion,
             TimeSpan flushInterval,
             ITransport transport,

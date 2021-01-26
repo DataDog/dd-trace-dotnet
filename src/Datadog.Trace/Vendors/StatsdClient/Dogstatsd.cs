@@ -97,9 +97,8 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="value">A given delta.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of the value.</typeparam>
-        public static void Counter<T>(string statName, T value, double sampleRate = 1.0, string[] tags = null) =>
-            _dogStatsdService.Counter<T>(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
+        public static void Counter(string statName, double value, double sampleRate = 1.0, string[] tags = null) =>
+            _dogStatsdService.Counter(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
 
         /// <summary>
         /// Increments the specified counter.
@@ -128,9 +127,8 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="value">The value of the gauge.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of the value.</typeparam>
-        public static void Gauge<T>(string statName, T value, double sampleRate = 1.0, string[] tags = null) =>
-            _dogStatsdService.Gauge<T>(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
+        public static void Gauge(string statName, double value, double sampleRate = 1.0, string[] tags = null) =>
+            _dogStatsdService.Gauge(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
 
         /// <summary>
         /// Records a value for the specified named histogram.
@@ -139,9 +137,8 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="value">The value of the histogram.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of the value.</typeparam>
-        public static void Histogram<T>(string statName, T value, double sampleRate = 1.0, string[] tags = null) =>
-            _dogStatsdService.Histogram<T>(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
+        public static void Histogram(string statName, double value, double sampleRate = 1.0, string[] tags = null) =>
+            _dogStatsdService.Histogram(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
 
         /// <summary>
         /// Records a value for the specified named distribution.
@@ -150,9 +147,8 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="value">The value of the distribution.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of the value.</typeparam>
-        public static void Distribution<T>(string statName, T value, double sampleRate = 1.0, string[] tags = null) =>
-            _dogStatsdService.Distribution<T>(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
+        public static void Distribution(string statName, double value, double sampleRate = 1.0, string[] tags = null) =>
+            _dogStatsdService.Distribution(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
 
         /// <summary>
         /// Records a value for the specified set.
@@ -166,15 +162,24 @@ namespace Datadog.Trace.Vendors.StatsdClient
             _dogStatsdService.Set<T>(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
 
         /// <summary>
+        /// Records a value for the specified set.
+        /// </summary>
+        /// <param name="statName">The name of the metric.</param>
+        /// <param name="value">The value to set.</param>
+        /// <param name="sampleRate">Percentage of metric to be sent.</param>
+        /// <param name="tags">Array of tags to be added to the data.</param>
+        public static void Set(string statName, string value, double sampleRate = 1.0, string[] tags = null) =>
+            _dogStatsdService.Set(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
+
+        /// <summary>
         /// Records an execution time in milliseconds.
         /// </summary>
         /// <param name="statName">The name of the metric.</param>
         /// <param name="value">The time in millisecond.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of value parameter.</typeparam>
-        public static void Timer<T>(string statName, T value, double sampleRate = 1.0, string[] tags = null) =>
-            _dogStatsdService.Timer<T>(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
+        public static void Timer(string statName, double value, double sampleRate = 1.0, string[] tags = null) =>
+            _dogStatsdService.Timer(statName: statName, value: value, sampleRate: sampleRate, tags: tags);
 
         /// <summary>
         /// Creates a timer that records the execution time until Dispose is called on the returned value.
@@ -225,6 +230,14 @@ namespace Datadog.Trace.Vendors.StatsdClient
             string[] tags = null,
             string message = null) =>
                 _dogStatsdService.ServiceCheck(name, status, timestamp, hostname, tags, message);
+
+        /// <summary>
+        /// Flushes all metrics.
+        /// </summary>
+        public static void Flush()
+        {
+            _dogStatsdService.Flush();
+        }
 
         /// <summary>
         /// Disposes the instance of DogStatsdService.

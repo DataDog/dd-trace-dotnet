@@ -31,8 +31,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="value">A given delta.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of the value.</typeparam>
-        void Counter<T>(string statName, T value, double sampleRate = 1, string[] tags = null);
+        void Counter(string statName, double value, double sampleRate = 1, string[] tags = null);
 
         /// <summary>
         /// Decrements the specified counter.
@@ -73,8 +72,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="value">The value of the gauge.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of the value.</typeparam>
-        void Gauge<T>(string statName, T value, double sampleRate = 1, string[] tags = null);
+        void Gauge(string statName, double value, double sampleRate = 1, string[] tags = null);
 
         /// <summary>
         /// Records a value for the specified named histogram.
@@ -83,8 +81,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="value">The value of the histogram.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of the value.</typeparam>
-        void Histogram<T>(string statName, T value, double sampleRate = 1, string[] tags = null);
+        void Histogram(string statName, double value, double sampleRate = 1, string[] tags = null);
 
         /// <summary>
         /// Records a value for the specified named distribution.
@@ -93,8 +90,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="value">The value of the distribution.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of the value.</typeparam>
-        void Distribution<T>(string statName, T value, double sampleRate = 1, string[] tags = null);
+        void Distribution(string statName, double value, double sampleRate = 1, string[] tags = null);
 
         /// <summary>
         /// Increments the specified counter.
@@ -114,6 +110,15 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="tags">Array of tags to be added to the data.</param>
         /// <typeparam name="T">The type of the value.</typeparam>
         void Set<T>(string statName, T value, double sampleRate = 1, string[] tags = null);
+
+        /// <summary>
+        /// Records a value for the specified set.
+        /// </summary>
+        /// <param name="statName">The name of the metric.</param>
+        /// <param name="value">The value to set.</param>
+        /// <param name="sampleRate">Percentage of metric to be sent.</param>
+        /// <param name="tags">Array of tags to be added to the data.</param>
+        void Set(string statName, string value, double sampleRate = 1, string[] tags = null);
 
         /// <summary>
         /// Creates a timer that records the execution time until Dispose is called on the returned value.
@@ -151,8 +156,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="value">The time in millisecond.</param>
         /// <param name="sampleRate">Percentage of metric to be sent.</param>
         /// <param name="tags">Array of tags to be added to the data.</param>
-        /// <typeparam name="T">The type of value parameter.</typeparam>
-        void Timer<T>(string statName, T value, double sampleRate = 1, string[] tags = null);
+        void Timer(string statName, double value, double sampleRate = 1, string[] tags = null);
 
         /// <summary>
         /// Records a run status for the specified named service check.

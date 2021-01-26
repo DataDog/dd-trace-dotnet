@@ -7,15 +7,11 @@ namespace Datadog.Trace.DogStatsd
     {
         public ITelemetryCounters TelemetryCounters => null;
 
-        public void Dispose()
-        {
-        }
-
         public void Configure(StatsdConfig config)
         {
         }
 
-        public void Counter<T>(string statName, T value, double sampleRate = 1, string[] tags = null)
+        public void Counter(string statName, double value, double sampleRate = 1, string[] tags = null)
         {
         }
 
@@ -27,15 +23,15 @@ namespace Datadog.Trace.DogStatsd
         {
         }
 
-        public void Gauge<T>(string statName, T value, double sampleRate = 1, string[] tags = null)
+        public void Gauge(string statName, double value, double sampleRate = 1, string[] tags = null)
         {
         }
 
-        public void Histogram<T>(string statName, T value, double sampleRate = 1, string[] tags = null)
+        public void Histogram(string statName, double value, double sampleRate = 1, string[] tags = null)
         {
         }
 
-        public void Distribution<T>(string statName, T value, double sampleRate = 1, string[] tags = null)
+        public void Distribution(string statName, double value, double sampleRate = 1, string[] tags = null)
         {
         }
 
@@ -44,6 +40,10 @@ namespace Datadog.Trace.DogStatsd
         }
 
         public void Set<T>(string statName, T value, double sampleRate = 1, string[] tags = null)
+        {
+        }
+
+        public void Set(string statName, string value, double sampleRate = 1, string[] tags = null)
         {
         }
 
@@ -61,11 +61,15 @@ namespace Datadog.Trace.DogStatsd
             return func();
         }
 
-        public void Timer<T>(string statName, T value, double sampleRate = 1, string[] tags = null)
+        public void Timer(string statName, double value, double sampleRate = 1, string[] tags = null)
         {
         }
 
         public void ServiceCheck(string name, Status status, int? timestamp = null, string hostname = null, string[] tags = null, string message = null)
+        {
+        }
+
+        public void Dispose()
         {
         }
 

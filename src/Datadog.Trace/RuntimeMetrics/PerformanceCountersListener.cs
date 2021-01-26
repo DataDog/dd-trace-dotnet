@@ -30,7 +30,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private int? _previousGen1Count;
         private int? _previousGen2Count;
 
-        private long? _lastContentionCount;
+        private double? _lastContentionCount;
 
         public PerformanceCountersListener(IDogStatsd statsd)
         {
@@ -109,11 +109,11 @@ namespace Datadog.Trace.RuntimeMetrics
 
             if (value != null)
             {
-                _statsd.Gauge(path, value);
+                _statsd.Gauge(path, value.Value);
             }
         }
 
-        private void TryUpdateCounter(string path, PerformanceCounterWrapper counter, ref long? lastValue)
+        private void TryUpdateCounter(string path, PerformanceCounterWrapper counter, ref double? lastValue)
         {
             var value = counter.GetValue(_instanceName);
 
@@ -128,7 +128,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 return;
             }
 
-            _statsd.Counter(path, value - lastValue);
+            _statsd.Counter(path, value.Value - lastValue.Value);
             lastValue = value;
         }
 
