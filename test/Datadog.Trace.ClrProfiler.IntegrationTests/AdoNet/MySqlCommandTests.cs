@@ -33,6 +33,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
 #endif
 
+            if (enableCallTarget)
+            {
+#if NET452
+                expectedSpanCount = 62;
+#else
+                expectedSpanCount = 97;
+#endif
+            }
+
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.MySql-" + dbType;
