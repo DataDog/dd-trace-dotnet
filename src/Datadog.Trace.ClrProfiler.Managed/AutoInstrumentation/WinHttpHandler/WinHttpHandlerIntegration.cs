@@ -39,15 +39,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
         {
-            Log.Warning("WinHttpHandler started");
             if (IsTracingEnabled(requestMessage.Headers))
             {
-                Log.Warning("WinHttpHandler enabled");
                 Scope scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationId, out HttpTags tags);
                 if (scope != null)
                 {
-                    Log.Warning("WinHttpHandler scope created");
-
                     tags.HttpClientHandlerType = instance.GetType().FullName;
 
                     // add distributed tracing headers to the HTTP request
