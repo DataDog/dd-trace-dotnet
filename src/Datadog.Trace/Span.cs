@@ -35,7 +35,7 @@ namespace Datadog.Trace
             StartTime = start ?? Context.TraceContext.UtcNow;
 
             Log.Debug(
-                "Span started: [s_id: {0}, p_id: {1}, t_id: {2}]",
+                "Span started: [s_id: {SpanID}, p_id: {ParentId}, t_id: {TraceId}]",
                 SpanId,
                 Context.ParentId,
                 TraceId);
@@ -197,7 +197,7 @@ namespace Datadog.Trace
                     }
                     else
                     {
-                        Log.Warning("Value {0} has incorrect format for tag {1}", value, Trace.Tags.Analytics);
+                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Trace.Tags.Analytics);
                     }
 
                     break;
@@ -223,7 +223,7 @@ namespace Datadog.Trace
                     }
                     else
                     {
-                        Log.Warning("Value {0} has incorrect format for tag {1}", value, Trace.Tags.Measured);
+                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Trace.Tags.Measured);
                     }
 
                     break;
@@ -339,7 +339,7 @@ namespace Datadog.Trace
                 if (IsLogLevelDebugEnabled)
                 {
                     Log.Debug(
-                        "Span closed: [s_id: {0}, p_id: {1}, t_id: {2}] for (Service: {3}, Resource: {4}, Operation: {5}, Tags: [{6}])",
+                        "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
                         SpanId,
                         Context.ParentId,
                         TraceId,

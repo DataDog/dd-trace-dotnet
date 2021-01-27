@@ -37,7 +37,7 @@ namespace Datadog.Trace.Sampling
                         var sampleRate = rule.GetSamplingRate(span);
 
                         Log.Debug(
-                            "Matched on rule {0}. Applying rate of {1} to trace id {2}",
+                            "Matched on rule {RuleName}. Applying rate of {Rate} to trace id {TraceId}",
                             rule.RuleName,
                             sampleRate,
                             traceId);
@@ -47,7 +47,7 @@ namespace Datadog.Trace.Sampling
                 }
             }
 
-            Log.Debug("No rules matched for trace {0}", traceId);
+            Log.Debug("No rules matched for trace {TraceId}", traceId);
 
             return SamplingPriority.AutoKeep;
         }

@@ -60,6 +60,20 @@ namespace Datadog.Trace.Tests.Logging
                 $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
         }
 
+        [Fact]
+        public void MessageTemplates_ReplacesArgumentsCorrectly()
+        {
+            var value = 123;
+            _logger.Warning("Warning level message with argument '{MyArgument}'", value);
+
+            var log = Assert.Single(_logEventSink.Events);
+            var property = Assert.Single(log.Properties);
+
+            Assert.Equal("MyArgument", property.Key);
+            Assert.Equal("123", property.Value.ToString());
+            Assert.Equal("Warning level message with argument '123'", log.RenderMessage());
+        }
+
         private class CollectionSink : ILogEventSink
         {
             public List<LogEvent> Events { get; } = new List<LogEvent>();

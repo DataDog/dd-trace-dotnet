@@ -117,7 +117,7 @@ namespace Datadog.Trace.Ci
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Error fixing branch name: {0}", Branch);
+                Logger.Warning(ex, "Error fixing branch name: {BranchName}", Branch);
             }
         }
 

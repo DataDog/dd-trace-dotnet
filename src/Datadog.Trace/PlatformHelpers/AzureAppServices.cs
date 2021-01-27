@@ -184,19 +184,19 @@ namespace Datadog.Trace.PlatformHelpers
                 if (SubscriptionId == null)
                 {
                     success = false;
-                    Log.Warning("Could not successfully retrieve the subscription ID from variable: {0}", WebsiteOwnerNameKey);
+                    Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", WebsiteOwnerNameKey);
                 }
 
                 if (SiteName == null)
                 {
                     success = false;
-                    Log.Warning("Could not successfully retrieve the deployment ID from variable: {0}", SiteNameKey);
+                    Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", SiteNameKey);
                 }
 
                 if (ResourceGroup == null)
                 {
                     success = false;
-                    Log.Warning("Could not successfully retrieve the resource group name from variable: {0}", ResourceGroupKey);
+                    Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", ResourceGroupKey);
                 }
 
                 if (success)

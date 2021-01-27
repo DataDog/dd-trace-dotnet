@@ -58,7 +58,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     if (Log.IsEnabled(LogEventLevel.Verbose))
                     {
                         Log.Verbose(
-                            "Subscriber '{0}' returned subscription for '{1}'",
+                            "Subscriber '{SubscriberType}' returned subscription for '{ListenerName}'",
                             subscriber.GetType().Name,
                             listener.Name);
                     }

@@ -58,7 +58,7 @@ namespace Datadog.Trace.HttpOverStreams
                 }
             }
 
-            Log.Warning("Assuming default UTF-8, Could not find an encoding for: {0}", contentType);
+            Log.Warning("Assuming default UTF-8, Could not find an encoding for: {ContentType}", contentType);
             return Utf8Encoding;
         }
     }
