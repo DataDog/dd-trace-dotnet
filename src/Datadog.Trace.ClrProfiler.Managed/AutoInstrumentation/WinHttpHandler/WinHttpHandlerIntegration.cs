@@ -25,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         private static readonly IntegrationInfo WinHttpHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.WinHttpHandler));
-        private static readonly Vendors.Serilog.ILogger Log = Datadog.Trace.Logging.DatadogLogging.GetLogger(typeof(WinHttpHandlerIntegration));
 
         /// <summary>
         /// OnMethodBegin callback
