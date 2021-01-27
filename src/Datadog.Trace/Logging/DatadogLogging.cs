@@ -29,7 +29,7 @@ namespace Datadog.Trace.Logging
             {
                 if (GlobalSettings.Source.DebugEnabled)
                 {
-                    LoggingLevelSwitch.MinimumLevel = LogEventLevel.Verbose;
+                    LoggingLevelSwitch.MinimumLevel = LogEventLevel.Debug;
                 }
 
                 var maxLogSizeVar = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MaxLogFileSize);
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Logging
 
         internal static void UseDefaultLevel()
         {
-            SetLogLevel(LogEventLevel.Information);
+            SetLogLevel(DefaultLogLevel);
         }
 
         private static string GetLogDirectory()
