@@ -667,12 +667,17 @@ namespace Datadog.Trace
                 }
 
                 var statsd = new DogStatsdService();
-                statsd.Configure(new StatsdConfig
+                if (AzureAppServices.Metadata.IsRelevant)
                 {
-                    StatsdServerName = settings.AgentUri.DnsSafeHost,
-                    StatsdPort = port,
-                    ConstantTags = constantTags.ToArray()
-                });
+                    statsd.Configure(new StatsdConfig
+                    {
+                        ConstantTags = constantTags.ToArray()
+                    });
+                }
+                else
+                {
+                    statsd.Configure(new StatsdConfig { StatsdServerName = settings.AgentUri.DnsSafeHost, StatsdPort = port, ConstantTags = constantTags.ToArray() });
+                }
 
                 return statsd;
             }
