@@ -140,11 +140,6 @@ namespace Datadog.Trace.Configuration
         public const string ServiceNameMappings = "DD_TRACE_SERVICE_MAPPING";
 
         /// <summary>
-        /// Configuration key for setting the length of the trace buffer
-        /// </summary>
-        public const string QueueSize = "DD_TRACE_QUEUE_SIZE";
-
-        /// <summary>
         /// Configuration key for setting the size of the trace buffer
         /// </summary>
         public const string BufferSize = "DD_TRACE_BUFFER_SIZE";

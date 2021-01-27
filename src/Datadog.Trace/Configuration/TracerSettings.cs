@@ -175,9 +175,6 @@ namespace Datadog.Trace.Configuration
                                         "400-499";
             HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
 
-            TraceQueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
-                        ?? 1000;
-
             TraceBufferSize = source?.GetInt32(ConfigurationKeys.BufferSize)
                 ?? 1024 * 1024 * 10; // 10MB
 
@@ -369,11 +366,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
         internal bool[] HttpClientErrorStatusCodes { get; set; }
-
-        /// <summary>
-        /// Gets a value indicating the size of the trace buffer
-        /// </summary>
-        internal int TraceQueueSize { get; }
 
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
