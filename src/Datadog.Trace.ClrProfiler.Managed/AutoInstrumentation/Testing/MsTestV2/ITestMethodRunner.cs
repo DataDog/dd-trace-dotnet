@@ -1,6 +1,6 @@
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
     /// <summary>
     /// TestMethodRunner ducktype interface

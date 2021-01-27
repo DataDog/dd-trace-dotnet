@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
     /// <summary>
     /// TestMethod ducktype interface

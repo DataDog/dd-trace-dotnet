@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
     /// NUnit.VisualStudio.TestAdapter.NUnitTestAdapter.Unload() calltarget instrumentation

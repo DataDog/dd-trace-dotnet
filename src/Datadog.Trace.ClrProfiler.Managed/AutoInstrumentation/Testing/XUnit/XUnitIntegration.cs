@@ -4,7 +4,7 @@ using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ExtensionMethods;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     internal static class XUnitIntegration
     {

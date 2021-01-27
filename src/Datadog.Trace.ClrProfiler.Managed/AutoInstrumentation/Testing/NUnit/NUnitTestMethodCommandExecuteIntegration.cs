@@ -1,21 +1,21 @@
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
-    /// NUnit.Framework.Internal.Commands.SkipCommand.Execute() calltarget instrumentation
+    /// NUnit.Framework.Internal.Commands.TestMethodCommand.Execute() calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "nunit.framework",
-        TypeName = "NUnit.Framework.Internal.Commands.SkipCommand",
+        TypeName = "NUnit.Framework.Internal.Commands.TestMethodCommand",
         MethodName = "Execute",
         ReturnTypeName = "NUnit.Framework.Internal.TestResult",
         ParameterTypeNames = new[] { "NUnit.Framework.Internal.TestExecutionContext" },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = IntegrationName)]
-    public class NUnitSkipCommandExecuteIntegration
+    public class NUnitTestMethodCommandExecuteIntegration
     {
         private const string IntegrationName = "NUnit";
 

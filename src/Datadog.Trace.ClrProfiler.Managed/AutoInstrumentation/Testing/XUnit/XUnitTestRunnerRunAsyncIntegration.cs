@@ -1,7 +1,7 @@
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     /// <summary>
     /// Xunit.Sdk.TestRunner`1.RunAsync calltarget instrumentation

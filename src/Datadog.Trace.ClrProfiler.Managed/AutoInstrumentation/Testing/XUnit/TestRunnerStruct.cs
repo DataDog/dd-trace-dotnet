@@ -2,13 +2,13 @@ using System;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     /// <summary>
-    /// TestInvoker`1 structure
+    /// TestRunner`1 structure
     /// </summary>
     [DuckCopy]
-    public struct TestInvokerStruct
+    public struct TestRunnerStruct
     {
         /// <summary>
         /// Test class Type
@@ -34,5 +34,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
         /// Exception aggregator
         /// </summary>
         public IExceptionAggregator Aggregator;
+
+        /// <summary>
+        /// Skip reason
+        /// </summary>
+        public string SkipReason;
     }
 }

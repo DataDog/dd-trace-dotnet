@@ -2,34 +2,23 @@ using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     /// <summary>
-    /// Microsoft.VisualStudio.TestPlatform.TestFramework.Execute calltarget instrumentation
+    /// Xunit.Sdk.TestAssemblyRunner`1.RunTestCollectionAsync calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assembly = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
-        Type = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
-        Method = "RunCleanup",
-        ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.RunCleanupResult",
-        ParametersTypesNames = new string[0],
-        MinimumVersion = "14.0.0",
-        MaximumVersion = "14.*.*",
+        AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
+        TypeName = "Xunit.Sdk.TestAssemblyRunner`1",
+        MethodName = "RunTestCollectionAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
+        ParameterTypeNames = new[] { "Xunit.Sdk.IMessageBus", "_", "_", "_" },
+        MinimumVersion = "2.2.0",
+        MaximumVersion = "2.*.*",
         IntegrationName = IntegrationName)]
-    public class UnitTestRunnerRunCleanupIntegration
+    public static class XUnitTestAssemblyRunnerRunTestCollectionAsyncIntegration
     {
-        private const string IntegrationName = "MSTestV2";
-
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
-        {
-            return CallTargetState.GetDefault();
-        }
+        private const string IntegrationName = "XUnit";
 
         /// <summary>
         /// OnAsyncMethodEnd callback

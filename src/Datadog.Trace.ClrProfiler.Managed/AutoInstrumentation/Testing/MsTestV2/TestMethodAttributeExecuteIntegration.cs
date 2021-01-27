@@ -2,7 +2,7 @@ using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
     /// <summary>
     /// Microsoft.VisualStudio.TestPlatform.TestFramework.Execute calltarget instrumentation

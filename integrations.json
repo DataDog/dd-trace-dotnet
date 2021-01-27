@@ -655,7 +655,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MsTestV2.TestMethodAttributeExecuteIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -677,7 +677,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MsTestV2.TestMethodRunnerExecuteIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -699,7 +699,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MsTestV2.UnitTestRunnerRunCleanupIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunCleanupIntegration",
           "action": "CallTargetModification"
         }
       }
