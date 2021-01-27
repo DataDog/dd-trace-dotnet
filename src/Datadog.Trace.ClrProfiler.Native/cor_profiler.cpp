@@ -248,7 +248,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // Create the loader class
-  loader_ = new Loader(this->info_);
+  loader_ = new Loader(this->info_, process_name == "w3wp.exe"_W || process_name == "iisexpress.exe"_W);
 
   // writing opcodes vector for the IL dumper
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, flow) \

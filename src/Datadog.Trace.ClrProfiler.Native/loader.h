@@ -12,12 +12,13 @@ namespace trace {
     private:
         RuntimeInformation runtime_information_;
         ICorProfilerInfo4* info_;
+        bool is_iis_;
 
         std::mutex loaders_loaded_mutex_;
         std::unordered_set<AppDomainID> loaders_loaded_;
 
     public:
-        Loader(ICorProfilerInfo4* info);
+        Loader(ICorProfilerInfo4* info, bool isIIS);
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
 

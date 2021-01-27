@@ -35,6 +35,7 @@ namespace trace {
             "System.Data"_W,
             "System.EnterpriseServices"_W,
             "System.Numerics"_W,
+            "System.Runtime.Caching"_W,
             "System.Security"_W,
             "System.Transactions"_W,
             "System.Xml"_W,
@@ -42,9 +43,10 @@ namespace trace {
             "System.Web.ApplicationServices"_W,
     };
 
-    Loader::Loader(ICorProfilerInfo4* info) {
+    Loader::Loader(ICorProfilerInfo4* info, bool isIIS) {
         info_ = info;
         runtime_information_ = GetRuntimeInformation(info);
+        is_iis_ = isIIS;
         loader = this;
     }
 
@@ -69,7 +71,7 @@ namespace trace {
         // retrieve AppDomainID from AssemblyID
         //
         AppDomainID app_domain_id = 0;
-        WCHAR assembly_name[100];
+        WCHAR assembly_name[250];
         DWORD assembly_name_len = 0;
         hr = this->info_->GetAssemblyInfo(assembly_id, 100, &assembly_name_len,
                                           assembly_name, &app_domain_id, NULL);
@@ -80,6 +82,30 @@ namespace trace {
         }
 
         auto assembly_name_string = WSTRING(assembly_name);
+
+        //
+        // retrieve AppDomain Name
+        //
+
+        WCHAR app_domain_name[250];
+        DWORD app_domain_name_len = 0;
+
+        hr = this->info_->GetAppDomainInfo(app_domain_id, kNameMaxSize,
+                                    &app_domain_name_len, app_domain_name,
+                                    nullptr);
+
+        WSTRING app_domain_name_string;
+        if (SUCCEEDED(hr)) {
+          app_domain_name_string = WSTRING(app_domain_name);
+        } else {
+          app_domain_name_string = ""_W;
+        }
+
+        // If we are in the IIS process we skip the default domain
+        if (is_iis_ && app_domain_name_string == "DefaultDomain"_W) {
+            Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, ". The module belongs to the DefaultDomain in IIS process.");
+            return E_FAIL;
+        }
 
         //
         // check if the module is not the loader itself
@@ -101,12 +127,12 @@ namespace trace {
         //
         for (const auto asm_name : assemblies_exclusion_list_) {
             if (assembly_name_string == asm_name) {
-                Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string);
+                Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
                 return E_FAIL;
             }
         }
 
-        Debug("Loader::InjectLoaderToModuleInitializer: Analyzing ", assembly_name_string);
+        Debug("Loader::InjectLoaderToModuleInitializer: Analyzing ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
 
         //
         // the loader is not loaded yet for this AppDomain
@@ -798,7 +824,7 @@ namespace trace {
             return hr;
         }
 
-        Debug("Loader::InjectLoaderToModuleInitializer [ModuleID=", module_id,
+        Info("Loader::InjectLoaderToModuleInitializer [ModuleID=", module_id,
               ", AssemblyID=", assembly_id,
               ", AssemblyName=", assembly_name_string,
               ", AppDomainID=", app_domain_id,
@@ -824,7 +850,7 @@ namespace trace {
             return false;
         }
 
-        Debug("Loader::GetAssemblyAndSymbolsBytes Loading loader data for AppDomainID=", appDomainId);
+        Info("Loader::GetAssemblyAndSymbolsBytes Loading loader data for AppDomainID=", appDomainId);
         loaders_loaded_.insert(appDomainId);
 
 #ifdef _WIN32
