@@ -39,7 +39,7 @@ namespace Datadog.Trace.Agent
 
             if (!success)
             {
-                Log.Debug("Trace buffer is full. Dropping a trace from the buffer.");
+                Log.Warning("Trace buffer is full. Dropping a trace from the buffer.");
             }
 
             if (_statsd != null)

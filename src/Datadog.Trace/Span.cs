@@ -128,7 +128,7 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
-                Log.Debug("SetTag should not be called after the span was closed");
+                Log.Warning("SetTag should not be called after the span was closed");
                 return this;
             }
 
