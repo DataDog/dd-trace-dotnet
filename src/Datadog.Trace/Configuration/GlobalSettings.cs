@@ -66,7 +66,7 @@ namespace Datadog.Trace.Configuration
 
             if (enabled)
             {
-                DatadogLogging.SetLogLevel(LogEventLevel.Verbose);
+                DatadogLogging.SetLogLevel(LogEventLevel.Debug);
             }
             else
             {
