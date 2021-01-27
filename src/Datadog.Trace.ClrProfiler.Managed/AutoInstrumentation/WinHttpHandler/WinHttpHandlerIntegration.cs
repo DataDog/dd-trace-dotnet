@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
     /// System.Net.Http.WinHttpHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = "System.Net.Http",
+        AssemblyName = "System.Net.Http.WinHttpHandler",
         TypeName = "System.Net.Http.WinHttpHandler",
         MethodName = "SendAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         private static readonly IntegrationInfo WinHttpHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.WinHttpHandler));
+        private static readonly Vendors.Serilog.ILogger Log = Datadog.Trace.Logging.DatadogLogging.GetLogger(typeof(WinHttpHandlerIntegration));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -38,11 +39,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
         {
+            Log.Warning("WinHttpHandler started");
             if (IsTracingEnabled(requestMessage.Headers))
             {
+                Log.Warning("WinHttpHandler enabled");
                 Scope scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationId, out HttpTags tags);
                 if (scope != null)
                 {
+                    Log.Warning("WinHttpHandler scope created");
+
                     tags.HttpClientHandlerType = instance.GetType().FullName;
 
                     // add distributed tracing headers to the HTTP request
