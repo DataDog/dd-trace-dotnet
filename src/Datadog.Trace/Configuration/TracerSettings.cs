@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -89,8 +88,6 @@ namespace Datadog.Trace.Configuration
                            $"http://{agentHost}:{agentPort}";
 
             AgentUri = new Uri(agentUri);
-
-            DynamicFlushing = source?.GetBool("DD_TRACE_DYNAMIC_FLUSH") ?? false;
 
             TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
 
@@ -241,11 +238,6 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentHost"/>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether blablabla
-        /// </summary>
-        public bool DynamicFlushing { get; set; }
 
         /// <summary>
         /// Gets or sets the key used to determine the transport for sending traces.

@@ -97,16 +97,8 @@ namespace Datadog.Trace
 
             if (agentWriter == null)
             {
-                if (Settings.DynamicFlushing)
-                {
-                    Log.Warning("Using eager agent writer");
-                    _agentWriter = new EagerAgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), Statsd, maxBufferSize: Settings.TraceBufferSize);
-                }
-                else
-                {
-                    Log.Warning("Using classic agent writer");
-                    _agentWriter = new AgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), Statsd, queueSize: Settings.TraceQueueSize);
-                }
+                Log.Warning("Using eager agent writer");
+                _agentWriter = new AgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), Statsd, maxBufferSize: Settings.TraceBufferSize);
             }
             else
             {

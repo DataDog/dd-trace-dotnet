@@ -7,7 +7,7 @@ namespace Datadog.Trace.Agent
 {
     internal class SpanBuffer
     {
-        private const int HeaderSize = 5;
+        internal const int HeaderSize = 5;
         private const int InitialBufferSize = 64 * 1024;
 
         private readonly IMessagePackFormatter<Span[]> _formatter;

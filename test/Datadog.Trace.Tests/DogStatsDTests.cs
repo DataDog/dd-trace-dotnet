@@ -95,11 +95,6 @@ namespace Datadog.Trace.Tests
                 Times.AtLeastOnce());
             */
 
-            // these method can be called multiple times with a "1000" value (the max buffer size, constant)
-            statsd.Verify(
-                s => s.Gauge(TracerMetricNames.Queue.MaxTraces, 1000, 1, null),
-                Times.AtLeastOnce());
-
             // these method can be called multiple times (send heartbeat)
             statsd.Verify(
                 s => s.Gauge(TracerMetricNames.Health.Heartbeat, It.IsAny<double>(), 1, null),
@@ -128,7 +123,7 @@ namespace Datadog.Trace.Tests
                     Thread.Sleep(5);
                 }
 
-                spans = agent.WaitForSpans(1);
+                spans = agent.WaitForSpans(1, timeoutInMilliseconds: 1000000);
             }
 
             return spans;
