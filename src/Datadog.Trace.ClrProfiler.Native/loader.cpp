@@ -27,14 +27,17 @@ namespace trace {
     // Also well-known assemblies we want to avoid.
     WSTRING assemblies_exclusion_list_[] = {
             "mscorlib"_W,
+            "netstandard"_W,
             "System.Private.CoreLib"_W,
             "System"_W,
             "System.Core"_W,
             "System.Configuration"_W,
             "System.Data"_W,
             "System.EnterpriseServices"_W,
+            "System.Numerics"_W,
             "System.Security"_W,
             "System.Transactions"_W,
+            "System.Xml"_W,
             "System.Web"_W,
             "System.Web.ApplicationServices"_W,
     };
