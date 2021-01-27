@@ -60,7 +60,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
             catch (Exception ex)
             {
-                Log.Information(ex, "Error while renewing counter");
+                Log.Warning(ex, "Error while renewing counter");
             }
         }
     }
