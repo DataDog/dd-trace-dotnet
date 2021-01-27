@@ -8,7 +8,7 @@ namespace Datadog.Trace.Agent
     internal class SpanBuffer
     {
         internal const int HeaderSize = 5;
-        private const int InitialBufferSize = 64 * 1024;
+        internal const int InitialBufferSize = 64 * 1024;
 
         private readonly IMessagePackFormatter<Span[]> _formatter;
         private readonly IFormatterResolver _formatterResolver;
@@ -23,7 +23,7 @@ namespace Datadog.Trace.Agent
         {
             _maxBufferSize = maxBufferSize;
             _offset = HeaderSize;
-            _buffer = new byte[InitialBufferSize];
+            _buffer = new byte[Math.Min(InitialBufferSize, maxBufferSize)];
             _formatterResolver = formatterResolver;
             _formatter = _formatterResolver.GetFormatter<Span[]>();
         }
