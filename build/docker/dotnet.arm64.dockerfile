@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:5.0
+FROM mcr.microsoft.com/dotnet/sdk:5.0.102-ca-patch-buster-slim
 
 # Install aspnetcore-runtime-3.1.10
 RUN wget https://download.visualstudio.microsoft.com/download/pr/936a9563-1dad-4c4b-b366-c7fcc3e28215/a1edcaf4c35bce760d07e3f1f3d0b9cf/aspnetcore-runtime-3.1.10-linux-arm64.tar.gz && \
