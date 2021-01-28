@@ -89,6 +89,6 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the CallTarget Class used to instrument the method
         /// </summary>
-        public Type CallTargetClassType { get; set; }
+        public Type CallTargetType { get; set; }
     }
 }

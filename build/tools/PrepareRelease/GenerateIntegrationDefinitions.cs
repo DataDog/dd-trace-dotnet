@@ -25,7 +25,7 @@ namespace PrepareRelease
                                                             .Select(a => a as InstrumentMethodAttribute)
                                                             .Where(a => a != null).ToList()
                                                      from attribute in attributes
-                                                     let callTargetClassCheck = attribute.CallTargetClassType ?? throw new NullReferenceException("The usage of InstrumentMethodAttribute in assembly scope must define the CallTargetClass property.")
+                                                     let callTargetClassCheck = attribute.CallTargetType ?? throw new NullReferenceException("The usage of InstrumentMethodAttribute in assembly scope must define the CallTargetClass property.")
                                                      select attribute;
 
             // Extract all InstrumentMethodAttribute from the classes
@@ -36,7 +36,7 @@ namespace PrepareRelease
                                                             .Where(a => a != null)
                                                             .Select(a =>
                                                             {
-                                                                a.CallTargetClassType = wrapperType;
+                                                                a.CallTargetType = wrapperType;
                                                                 return a;
                                                             }).ToList()
                                                     from attribute in attributes
@@ -46,8 +46,8 @@ namespace PrepareRelease
             // and create objects that will generate correct JSON schema
             var callTargetIntegrations = from attribute in assemblyInstrumentMethodAttributes.Concat(classesInstrumentMethodAttributes)
                                          let integrationName = attribute.IntegrationName
-                                         let assembly = attribute.CallTargetClassType.Assembly
-                                         let wrapperType = attribute.CallTargetClassType
+                                         let assembly = attribute.CallTargetType.Assembly
+                                         let wrapperType = attribute.CallTargetType
                                          orderby integrationName
                                          group new
                                          {
