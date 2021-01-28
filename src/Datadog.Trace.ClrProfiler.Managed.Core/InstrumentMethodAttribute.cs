@@ -6,7 +6,7 @@ namespace Datadog.Trace.ClrProfiler
     /// Attribute that indicates that the decorated class is meant to intercept a method
     /// by modifying the method body with callbacks. Used to generate the integration definitions file.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
     public class InstrumentMethodAttribute : Attribute
     {
         /// <summary>
@@ -85,5 +85,10 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets or sets the integration name. Allows to group several integration with a single integration name.
         /// </summary>
         public string IntegrationName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the CallTarget Class used to instrument the method
+        /// </summary>
+        public Type CallTargetClass { get; set; }
     }
 }

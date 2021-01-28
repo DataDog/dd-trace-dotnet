@@ -19,16 +19,35 @@ namespace PrepareRelease
             var assemblies = new List<Assembly>();
             assemblies.Add(typeof(Instrumentation).Assembly);
 
-            // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InstrumentMethod]
+            // Extract all InstrumentMethodAttribute at assembly scope level
+            var assemblyInstrumentMethodAttributes = from assembly in assemblies
+                                                     let attributes = assembly.GetCustomAttributes(inherit: false)
+                                                            .Select(a => a as InstrumentMethodAttribute)
+                                                            .Where(a => a != null).ToList()
+                                                     from attribute in attributes
+                                                     let callTargetClassCheck = attribute.CallTargetClass ?? throw new NullReferenceException("The usage of InstrumentMethodAttribute in assembly scope must define the CallTargetClass property.")
+                                                     select attribute;
+
+            // Extract all InstrumentMethodAttribute from the classes
+            var classesInstrumentMethodAttributes = from assembly in assemblies
+                                                    from wrapperType in assembly.GetTypes()
+                                                    let attributes = wrapperType.GetCustomAttributes(inherit: false)
+                                                            .Select(a => a as InstrumentMethodAttribute)
+                                                            .Where(a => a != null)
+                                                            .Select(a =>
+                                                            {
+                                                                a.CallTargetClass = wrapperType;
+                                                                return a;
+                                                            }).ToList()
+                                                    from attribute in attributes
+                                                    select attribute;
+
+            // combine all InstrumentMethodAttributes
             // and create objects that will generate correct JSON schema
-            var callTargetIntegrations = from assembly in assemblies
-                                         from wrapperType in assembly.GetTypes()
-                                         let attributes = wrapperType.GetCustomAttributes(inherit: false)
-                                                .Select(a => a is InstrumentMethodAttribute ima ? ima : null)
-                                                .Where(a => a != null)
-                                         where attributes.Any()
-                                         from attribute in attributes
+            var callTargetIntegrations = from attribute in assemblyInstrumentMethodAttributes.Concat(classesInstrumentMethodAttributes)
                                          let integrationName = attribute.IntegrationName
+                                         let assembly = attribute.CallTargetClass.Assembly
+                                         let wrapperType = attribute.CallTargetClass
                                          orderby integrationName
                                          group new
                                          {

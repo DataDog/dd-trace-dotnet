@@ -3,31 +3,25 @@ using System.Data.Common;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     /// <summary>
     /// CallTarget instrumentation for:
-    /// Task[int] System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
-    /// Task[int] Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
+    /// Task[*DataReader] [Command].ExecuteReaderAsync(CommandBehavior, CancellationToken)
+    /// Task[DbDataReader] [Command].ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
     /// </summary>
-    [SqlClientConstants.SystemData.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
-        ReturnTypeName = "System.Threading.Tasks.Task`1<System.Int32>",
-        ParametersTypesNames = new[] { ClrNames.CancellationToken })]
-    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
-        ReturnTypeName = "System.Threading.Tasks.Task`1<System.Int32>",
-        ParametersTypesNames = new[] { ClrNames.CancellationToken })]
-    public class SqlCommandExecuteNonQueryAsyncIntegration
+    public class CommandExecuteReaderAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TBehavior">Command Behavior type</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="commandBehavior">Command behavior</param>
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, CancellationToken cancellationToken)
+        public static CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior, CancellationToken cancellationToken)
         {
             return new CallTargetState(ScopeFactory.CreateDbCommandScope(Tracer.Instance, instance as DbCommand));
         }

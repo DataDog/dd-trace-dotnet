@@ -2,20 +2,13 @@ using System;
 using System.Data.Common;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     /// <summary>
     /// CallTarget instrumentation for:
-    /// int System.Data.SqlClient.SqlCommand.ExecuteNonQuery()
-    /// int Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQuery()
+    /// [*]DataReader [Command].ExecuteReader()
     /// </summary>
-    [SqlClientConstants.SystemData.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteNonQuery,
-        ReturnTypeName = ClrNames.Int32)]
-    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteNonQuery,
-        ReturnTypeName = ClrNames.Int32)]
-    public class SqlCommandExecuteNonQueryIntegration
+    public class CommandExecuteReaderIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

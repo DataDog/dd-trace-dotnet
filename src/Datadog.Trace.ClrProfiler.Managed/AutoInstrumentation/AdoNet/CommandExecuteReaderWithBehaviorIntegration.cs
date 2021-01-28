@@ -2,32 +2,14 @@ using System;
 using System.Data.Common;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     /// <summary>
     /// CallTarget instrumentation for:
-    /// SqlDataReader System.Data.SqlClient.SqlCommand.ExecuteReader(CommandBehavior)
-    /// DbDataReader System.Data.SqlClient.SqlCommand.ExecuteDbDataReader(CommandBehavior)
-    /// SqlDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteReader(CommandBehavior)
-    /// DbDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteDbDataReader(CommandBehavior)
+    /// [*]DataReader [Command].ExecuteReader(CommandBehavior)
+    /// [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
     /// </summary>
-    [SqlClientConstants.SystemData.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteReader,
-        ReturnTypeName = SqlClientConstants.SystemData.SqlDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
-    [SqlClientConstants.SystemData.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteDbDataReader,
-        ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
-    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteReader,
-        ReturnTypeName = SqlClientConstants.MicrosoftDataSqlClient.SqlDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
-    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteDbDataReader,
-        ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
-    public class SqlCommandExecuteReaderWithBehaviorIntegration
+    public class CommandExecuteReaderWithBehaviorIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

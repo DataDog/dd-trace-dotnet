@@ -895,6 +895,30 @@
       {
         "caller": {},
         "target": {
+          "assembly": "Microsoft.Data.SqlClient",
+          "type": "Microsoft.Data.SqlClient.SqlCommand",
+          "method": "ExecuteReaderAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>",
+            "System.Data.CommandBehavior",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient.SqlCommandExecuteReaderAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "System.Data",
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteDbDataReaderAsync",
@@ -931,30 +955,6 @@
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient.SqlCommandExecuteReaderAsyncIntegration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "Microsoft.Data.SqlClient",
-          "type": "Microsoft.Data.SqlClient.SqlCommand",
-          "method": "ExecuteReaderAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>",
-            "System.Data.CommandBehavior",
-            "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 1,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -1103,6 +1103,29 @@
       {
         "caller": {},
         "target": {
+          "assembly": "Microsoft.Data.SqlClient",
+          "type": "Microsoft.Data.SqlClient.SqlCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "Microsoft.Data.SqlClient.SqlDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient.SqlCommandExecuteReaderWithBehaviorIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "System.Data",
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteDbDataReader",
@@ -1137,29 +1160,6 @@
           "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient.SqlCommandExecuteReaderWithBehaviorIntegration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "Microsoft.Data.SqlClient",
-          "type": "Microsoft.Data.SqlClient.SqlCommand",
-          "method": "ExecuteReader",
-          "signature_types": [
-            "Microsoft.Data.SqlClient.SqlDataReader",
-            "System.Data.CommandBehavior"
-          ],
-          "minimum_major": 1,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
