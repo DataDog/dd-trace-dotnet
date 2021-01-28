@@ -7,11 +7,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
     /// NUnit.Framework.Internal.Commands.TestMethodCommand.Execute() calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assembly = "nunit.framework",
-        Type = "NUnit.Framework.Internal.Commands.TestMethodCommand",
-        Method = "Execute",
+        AssemblyName = "nunit.framework",
+        TypeName = "NUnit.Framework.Internal.Commands.TestMethodCommand",
+        MethodName = "Execute",
         ReturnTypeName = "NUnit.Framework.Internal.TestResult",
-        ParametersTypesNames = new[] { "NUnit.Framework.Internal.TestExecutionContext" },
+        ParameterTypeNames = new[] { "NUnit.Framework.Internal.TestExecutionContext" },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = IntegrationName)]

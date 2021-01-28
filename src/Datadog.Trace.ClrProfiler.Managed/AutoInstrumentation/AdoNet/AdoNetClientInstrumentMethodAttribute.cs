@@ -8,8 +8,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         {
             AdoNetClientData = (IAdoNetClientData)Activator.CreateInstance(adoNetClientDataType);
 
-            Assembly = AdoNetClientData.AssemblyName;
-            Type = AdoNetClientData.SqlCommandType;
+            AssemblyName = AdoNetClientData.AssemblyName;
+            TypeName = AdoNetClientData.SqlCommandType;
             MinimumVersion = AdoNetClientData.MinimumVersion;
             MaximumVersion = AdoNetClientData.MaximumVersion;
             IntegrationName = AdoNetClientData.IntegrationName;
@@ -22,10 +22,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CommandExecuteNonQueryAsyncAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
-                Method = AdoNetConstants.MethodNames.ExecuteNonQueryAsync;
-                ReturnTypeName = AdoNetConstants.TypeNames.IntTaskType;
-                ParametersTypesNames = new[] { ClrNames.CancellationToken };
-                CallTargetClass = typeof(CommandExecuteNonQueryAsyncIntegration);
+                MethodName = AdoNetConstants.MethodNames.ExecuteNonQueryAsync;
+                ReturnTypeName = AdoNetConstants.TypeNames.Int32TaskType;
+                ParameterTypeNames = new[] { ClrNames.CancellationToken };
+                CallTargetClassType = typeof(CommandExecuteNonQueryAsyncIntegration);
             }
         }
 
@@ -34,9 +34,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CommandExecuteNonQueryAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
-                Method = AdoNetConstants.MethodNames.ExecuteNonQuery;
+                MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery;
                 ReturnTypeName = ClrNames.Int32;
-                CallTargetClass = typeof(CommandExecuteNonQueryIntegration);
+                CallTargetClassType = typeof(CommandExecuteNonQueryIntegration);
             }
         }
 
@@ -45,10 +45,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CommandExecuteReaderAsyncAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
-                Method = AdoNetConstants.MethodNames.ExecuteReaderAsync;
+                MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
                 ReturnTypeName = AdoNetClientData.DataReaderTaskType;
-                ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
-                CallTargetClass = typeof(CommandExecuteReaderAsyncIntegration);
+                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
+                CallTargetClassType = typeof(CommandExecuteReaderAsyncIntegration);
             }
         }
 
@@ -57,10 +57,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CommandExecuteDbDataReaderAsyncAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
-                Method = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync;
+                MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync;
                 ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType;
-                ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
-                CallTargetClass = typeof(CommandExecuteReaderAsyncIntegration);
+                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
+                CallTargetClassType = typeof(CommandExecuteReaderAsyncIntegration);
             }
         }
 
@@ -69,9 +69,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CommandExecuteReaderAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
-                Method = AdoNetConstants.MethodNames.ExecuteReader;
+                MethodName = AdoNetConstants.MethodNames.ExecuteReader;
                 ReturnTypeName = AdoNetClientData.DataReaderType;
-                CallTargetClass = typeof(CommandExecuteReaderIntegration);
+                CallTargetClassType = typeof(CommandExecuteReaderIntegration);
             }
         }
 
@@ -80,10 +80,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CommandExecuteReaderWithBehaviorAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
-                Method = AdoNetConstants.MethodNames.ExecuteReader;
+                MethodName = AdoNetConstants.MethodNames.ExecuteReader;
                 ReturnTypeName = AdoNetClientData.DataReaderType;
-                ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior };
-                CallTargetClass = typeof(CommandExecuteReaderWithBehaviorIntegration);
+                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior };
+                CallTargetClassType = typeof(CommandExecuteReaderWithBehaviorIntegration);
             }
         }
 
@@ -92,10 +92,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CommandExecuteDbDataReaderWithBehaviorAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
-                Method = AdoNetConstants.MethodNames.ExecuteDbDataReader;
+                MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader;
                 ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType;
-                ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior };
-                CallTargetClass = typeof(CommandExecuteReaderWithBehaviorIntegration);
+                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior };
+                CallTargetClassType = typeof(CommandExecuteReaderWithBehaviorIntegration);
             }
         }
 
@@ -104,10 +104,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CommandExecuteScalarAsyncAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
-                Method = AdoNetConstants.MethodNames.ExecuteScalarAsync;
+                MethodName = AdoNetConstants.MethodNames.ExecuteScalarAsync;
                 ReturnTypeName = AdoNetConstants.TypeNames.ObjectTaskType;
-                ParametersTypesNames = new[] { ClrNames.CancellationToken };
-                CallTargetClass = typeof(CommandExecuteScalarAsyncIntegration);
+                ParameterTypeNames = new[] { ClrNames.CancellationToken };
+                CallTargetClassType = typeof(CommandExecuteScalarAsyncIntegration);
             }
         }
 
@@ -116,9 +116,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CommandExecuteScalarAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
-                Method = AdoNetConstants.MethodNames.ExecuteScalar;
+                MethodName = AdoNetConstants.MethodNames.ExecuteScalar;
                 ReturnTypeName = ClrNames.Object;
-                CallTargetClass = typeof(CommandExecuteScalarIntegration);
+                CallTargetClassType = typeof(CommandExecuteScalarIntegration);
             }
         }
     }

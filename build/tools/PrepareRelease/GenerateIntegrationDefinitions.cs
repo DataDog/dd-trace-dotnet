@@ -25,7 +25,7 @@ namespace PrepareRelease
                                                             .Select(a => a as InstrumentMethodAttribute)
                                                             .Where(a => a != null).ToList()
                                                      from attribute in attributes
-                                                     let callTargetClassCheck = attribute.CallTargetClass ?? throw new NullReferenceException("The usage of InstrumentMethodAttribute in assembly scope must define the CallTargetClass property.")
+                                                     let callTargetClassCheck = attribute.CallTargetClassType ?? throw new NullReferenceException("The usage of InstrumentMethodAttribute in assembly scope must define the CallTargetClass property.")
                                                      select attribute;
 
             // Extract all InstrumentMethodAttribute from the classes
@@ -36,7 +36,7 @@ namespace PrepareRelease
                                                             .Where(a => a != null)
                                                             .Select(a =>
                                                             {
-                                                                a.CallTargetClass = wrapperType;
+                                                                a.CallTargetClassType = wrapperType;
                                                                 return a;
                                                             }).ToList()
                                                     from attribute in attributes
@@ -46,8 +46,8 @@ namespace PrepareRelease
             // and create objects that will generate correct JSON schema
             var callTargetIntegrations = from attribute in assemblyInstrumentMethodAttributes.Concat(classesInstrumentMethodAttributes)
                                          let integrationName = attribute.IntegrationName
-                                         let assembly = attribute.CallTargetClass.Assembly
-                                         let wrapperType = attribute.CallTargetClass
+                                         let assembly = attribute.CallTargetClassType.Assembly
+                                         let wrapperType = attribute.CallTargetClassType
                                          orderby integrationName
                                          group new
                                          {
@@ -60,7 +60,7 @@ namespace PrepareRelease
                                          {
                                              name = g.Key,
                                              method_replacements = from item in g
-                                                                   from assembly in item.attribute.Assemblies
+                                                                   from assembly in item.attribute.AssemblyNames
                                                                    select new
                                                                    {
                                                                        caller = new
@@ -72,10 +72,10 @@ namespace PrepareRelease
                                                                        target = new
                                                                        {
                                                                            assembly = assembly,
-                                                                           type = item.attribute.Type,
-                                                                           method = item.attribute.Method,
+                                                                           type = item.attribute.TypeName,
+                                                                           method = item.attribute.MethodName,
                                                                            signature = (string)null,
-                                                                           signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParametersTypesNames ?? Enumerable.Empty<string>()).ToArray(),
+                                                                           signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParameterTypeNames ?? Enumerable.Empty<string>()).ToArray(),
                                                                            minimum_major = item.attribute.VersionRange.MinimumMajor,
                                                                            minimum_minor = item.attribute.VersionRange.MinimumMinor,
                                                                            minimum_patch = item.attribute.VersionRange.MinimumPatch,

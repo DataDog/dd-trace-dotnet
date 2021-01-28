@@ -1,4 +1,4 @@
-﻿namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     internal interface IAdoNetClientData
     {

@@ -11,42 +11,42 @@ namespace Datadog.Trace.ClrProfiler
     {
         /// <summary>
         /// Gets or sets the name of the assembly that contains the target method to be intercepted.
-        /// Required if <see cref="Assemblies"/> is not set.
+        /// Required if <see cref="AssemblyNames"/> is not set.
         /// </summary>
-        public string Assembly
+        public string AssemblyName
         {
             get
             {
-                switch (Assemblies?.Length ?? 0)
+                switch (AssemblyNames?.Length ?? 0)
                 {
                     case 0:
                         return null;
                     case 1:
-                        return Assemblies[0];
+                        return AssemblyNames[0];
                     default:
-                        throw new NotSupportedException("Multiple assemblies are not supported using this property. Use Assemblies property instead.");
+                        throw new NotSupportedException("Multiple assemblies are not supported using this property. Use AssemblyNames property instead.");
                 }
             }
-            set => Assemblies = new[] { value };
+            set => AssemblyNames = new[] { value };
         }
 
         /// <summary>
         /// Gets or sets the name of the assemblies that contain the target method to be intercepted.
-        /// Required if <see cref="Assembly"/> is not set.
+        /// Required if <see cref="AssemblyName"/> is not set.
         /// </summary>
-        public string[] Assemblies { get; set; }
+        public string[] AssemblyNames { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the type that contains the target method to be intercepted.
         /// Required.
         /// </summary>
-        public string Type { get; set; }
+        public string TypeName { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the target method to be intercepted.
         /// If null, default to the name of the decorated method.
         /// </summary>
-        public string Method { get; set; }
+        public string MethodName { get; set; }
 
         /// <summary>
         /// Gets or sets the return type name
@@ -56,10 +56,10 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the parameters type array for the target method to be intercepted.
         /// </summary>
-        public string[] ParametersTypesNames { get; set; }
+        public string[] ParameterTypeNames { get; set; }
 
         /// <summary>
-        /// Gets the target version range for <see cref="Assembly"/>.
+        /// Gets the target version range for <see cref="AssemblyName"/>.
         /// </summary>
         public IntegrationVersionRange VersionRange { get; } = new IntegrationVersionRange();
 
@@ -89,6 +89,6 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the CallTarget Class used to instrument the method
         /// </summary>
-        public Type CallTargetClass { get; set; }
+        public Type CallTargetClassType { get; set; }
     }
 }

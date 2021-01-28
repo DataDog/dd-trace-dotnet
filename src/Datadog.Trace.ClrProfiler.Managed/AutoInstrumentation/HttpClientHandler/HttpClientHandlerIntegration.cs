@@ -12,11 +12,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
     /// System.Net.Http.HttpClientHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assembly = "System.Net.Http",
-        Type = "System.Net.Http.HttpClientHandler",
-        Method = "SendAsync",
+        AssemblyName = "System.Net.Http",
+        TypeName = "System.Net.Http.HttpClientHandler",
+        MethodName = "SendAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
-        ParametersTypesNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
+        ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
         MinimumVersion = "4.0.0",
         MaximumVersion = "5.*.*",
         IntegrationName = IntegrationName)]

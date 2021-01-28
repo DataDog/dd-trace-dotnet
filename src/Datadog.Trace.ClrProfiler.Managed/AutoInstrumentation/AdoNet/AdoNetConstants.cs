@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public const string DbDataReaderType = "System.Data.Common.DbDataReader";
             public const string DbDataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>";
 
-            public const string IntTaskType = "System.Threading.Tasks.Task`1<System.Int32>";
+            public const string Int32TaskType = "System.Threading.Tasks.Task`1<System.Int32>";
             public const string ObjectTaskType = "System.Threading.Tasks.Task`1<System.Object>";
         }
 
