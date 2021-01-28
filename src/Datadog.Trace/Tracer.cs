@@ -669,6 +669,8 @@ namespace Datadog.Trace
                 var statsd = new DogStatsdService();
                 if (AzureAppServices.Metadata.IsRelevant)
                 {
+                    // Environment variables set by the Azure App Service extension are used internally.
+                    // Setting the server name will force UDP, when we need named pipes.
                     statsd.Configure(new StatsdConfig
                     {
                         ConstantTags = constantTags.ToArray()
