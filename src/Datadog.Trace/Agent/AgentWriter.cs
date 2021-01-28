@@ -41,7 +41,7 @@ namespace Datadog.Trace.Agent
         /// </summary>
         private SpanBuffer _activeBuffer;
 
-        private byte[] _spanBuffer = new byte[1024];
+        private byte[] _temporaryBuffer = new byte[1024];
 
         private TaskCompletionSource<bool> _forceFlush;
 
@@ -169,6 +169,10 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        /// <summary>
+        /// Flush the active buffer, and the fallback buffer if full
+        /// </summary>
+        /// <returns>Async operation</returns>
         private async Task FlushBuffers()
         {
             try
@@ -206,7 +210,6 @@ namespace Datadog.Trace.Agent
                 {
                     _statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
                     _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
-                    // _statsd.Gauge(TracerMetricNames.Queue.MaxTraces, _tracesBuffer.MaxSize);
                 }
 
                 if (buffer.TraceCount > 0)
@@ -250,9 +253,11 @@ namespace Datadog.Trace.Agent
                 return null;
             }
 
+            // We use a double-buffering mechanism
+            // This allows the serialization thread to keep doing its job while a buffer is being flushed
             var buffer = _activeBuffer;
 
-            if (buffer.TryWrite(trace, ref _spanBuffer))
+            if (buffer.TryWrite(trace, ref _temporaryBuffer))
             {
                 // Serialization to the primary buffer succeeded
                 return;
@@ -266,7 +271,7 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(trace, ref _spanBuffer))
+                if (buffer.TryWrite(trace, ref _temporaryBuffer))
                 {
                     // Serialization to the secondary buffer succeeded
                     return;

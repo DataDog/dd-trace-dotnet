@@ -71,6 +71,8 @@ namespace Datadog.Trace.Tests.Agent
             Assert.Equal(0, buffer.TraceCount);
             Assert.True(buffer.IsFull);
 
+            buffer.Lock();
+
             var innerBuffer = buffer.Data;
 
             Assert.True(innerBuffer.Array.Skip(SpanBuffer.HeaderSize).All(b => b == 0x0), "No data should have been written to the buffer");
@@ -119,6 +121,8 @@ namespace Datadog.Trace.Tests.Agent
 
             Assert.Equal(0, buffer.TraceCount);
             Assert.Equal(0, buffer.SpanCount);
+
+            buffer.Lock();
 
             var innerBuffer = buffer.Data;
             Assert.Equal(SpanBuffer.HeaderSize, innerBuffer.Count);

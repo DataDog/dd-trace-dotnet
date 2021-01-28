@@ -28,7 +28,19 @@ namespace Datadog.Trace.Agent
             _formatter = _formatterResolver.GetFormatter<Span[]>();
         }
 
-        public ArraySegment<byte> Data => new ArraySegment<byte>(_buffer, 0, _offset);
+        public ArraySegment<byte> Data
+        {
+            get
+            {
+                if (!_locked)
+                {
+                    // Sanity check - headers are written when the buffer is locked
+                    throw new InvalidOperationException("Data was extracted from the buffer without locking");
+                }
+
+                return new ArraySegment<byte>(_buffer, 0, _offset);
+            }
+        }
 
         public int TraceCount { get; private set; }
 
@@ -50,6 +62,8 @@ namespace Datadog.Trace.Agent
                     return false;
                 }
 
+                // We don't know what the serialized size of the payload will be,
+                // so we need to write to a temporary buffer first
                 var size = _formatter.Serialize(ref temporaryBuffer, 0, trace, _formatterResolver);
 
                 if (!EnsureCapacity(size + _offset))
@@ -84,6 +98,7 @@ namespace Datadog.Trace.Agent
                     return false;
                 }
 
+                // Use a fixed-size header
                 MessagePackBinary.WriteArrayHeaderForceArray32Block(ref _buffer, 0, (uint)TraceCount);
                 _locked = true;
 
@@ -107,16 +122,19 @@ namespace Datadog.Trace.Agent
         {
             if (minDesiredSize <= _buffer.Length)
             {
+                // The buffer is already big enough
                 return true;
             }
 
             if (minDesiredSize > _maxBufferSize)
             {
+                // Trying to write more than the allowed limit
                 return false;
             }
 
             int size = _buffer.Length;
 
+            // Double the size of the buffer until it's big enough
             while (size < minDesiredSize && size < _maxBufferSize)
             {
                 size *= 2;
