@@ -26,7 +26,7 @@ namespace PrepareRelease
                                                             .Where(a => a != null).ToList()
                                                      from attribute in attributes
                                                      let callTargetClassCheck = attribute.CallTargetType
-                                                        ?? throw new NullReferenceException($"The usage of InstrumentMethodAttribute[Type={attribute.TypeName}, Method={attribute.MethodName}] in assembly scope must define the CallTargetClass property.")
+                                                        ?? throw new NullReferenceException($"The usage of InstrumentMethodAttribute[Type={attribute.TypeName}, Method={attribute.MethodName}] in assembly scope must define the CallTargetType property.")
                                                      select attribute;
 
             // Extract all InstrumentMethodAttribute from the classes
