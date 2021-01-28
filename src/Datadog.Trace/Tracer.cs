@@ -678,7 +678,12 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    statsd.Configure(new StatsdConfig { StatsdServerName = settings.AgentUri.DnsSafeHost, StatsdPort = port, ConstantTags = constantTags.ToArray() });
+                    statsd.Configure(new StatsdConfig
+                    {
+                        StatsdServerName = settings.AgentUri.DnsSafeHost,
+                        StatsdPort = port,
+                        ConstantTags = constantTags.ToArray()
+                    });
                 }
 
                 return statsd;
