@@ -667,12 +667,24 @@ namespace Datadog.Trace
                 }
 
                 var statsd = new DogStatsdService();
-                statsd.Configure(new StatsdConfig
+                if (AzureAppServices.Metadata.IsRelevant)
                 {
-                    StatsdServerName = settings.AgentUri.DnsSafeHost,
-                    StatsdPort = port,
-                    ConstantTags = constantTags.ToArray()
-                });
+                    // Environment variables set by the Azure App Service extension are used internally.
+                    // Setting the server name will force UDP, when we need named pipes.
+                    statsd.Configure(new StatsdConfig
+                    {
+                        ConstantTags = constantTags.ToArray()
+                    });
+                }
+                else
+                {
+                    statsd.Configure(new StatsdConfig
+                    {
+                        StatsdServerName = settings.AgentUri.DnsSafeHost,
+                        StatsdPort = port,
+                        ConstantTags = constantTags.ToArray()
+                    });
+                }
 
                 return statsd;
             }
