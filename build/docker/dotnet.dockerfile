@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:5.0
+FROM mcr.microsoft.com/dotnet/sdk:5.0.102-ca-patch-buster-slim
 
 # Instructions to install .NET Core runtimes from
 # https://docs.microsoft.com/en-us/dotnet/core/install/linux-package-manager-debian10
