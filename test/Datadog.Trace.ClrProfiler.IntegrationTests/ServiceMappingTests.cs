@@ -5,6 +5,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [CollectionDefinition(nameof(WebRequestTests), DisableParallelization = true)]
     public class ServiceMappingTests : TestHelper
     {
         public ServiceMappingTests(ITestOutputHelper output)
