@@ -38,50 +38,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
         {
-            Scope scope = null;
-            HttpTags tags = null;
-
             if (IsTracingEnabled(requestMessage.Headers))
             {
-                scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationId, out tags);
+                Scope scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationId, out HttpTags tags);
                 if (scope != null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;
 
                     // add distributed tracing headers to the HTTP request
                     SpanContextPropagator.Instance.Inject(scope.Span.Context, new HttpHeadersCollection(requestMessage.Headers));
+
+                    return new CallTargetState(scope);
                 }
             }
 
-            return new CallTargetState(new IntegrationState(scope, tags));
-        }
-
-        /// <summary>
-        /// OnMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TReturn">Type of the return value</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="returnValue">Task of HttpResponse message instance</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
-        {
-            IntegrationState integrationState = (IntegrationState)state.State;
-            if (integrationState.Scope != null)
-            {
-                // Before returning the control flow we need to restore the parent Scope setted by ScopeFactory.CreateOutboundHttpScope
-                // This doesn't affect to OnAsyncMethodEnd async continuation, an ExecutionContext is captured
-                // by the inner await.
-                IScopeManager scopeManager = ((IDatadogTracer)Tracer.Instance).ScopeManager;
-                if (scopeManager.Active == integrationState.Scope)
-                {
-                    scopeManager.Close(integrationState.Scope);
-                }
-            }
-
-            return new CallTargetReturn<TReturn>(returnValue);
+            return CallTargetState.GetDefault();
         }
 
         /// <summary>
@@ -97,24 +68,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
         public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, CallTargetState state)
             where TResponse : IHttpResponseMessage
         {
-            IntegrationState integrationState = (IntegrationState)state.State;
-            if (integrationState.Scope is null)
+            Scope scope = state.Scope;
+
+            if (scope is null)
             {
                 return responseMessage;
             }
 
             try
             {
-                integrationState.Scope.Span.SetHttpStatusCode(responseMessage.StatusCode, isServer: false);
+                scope.Span.SetHttpStatusCode(responseMessage.StatusCode, isServer: false);
 
                 if (exception != null)
                 {
-                    integrationState.Scope.Span.SetException(exception);
+                    scope.Span.SetException(exception);
                 }
             }
             finally
             {
-                integrationState.Scope.Dispose();
+                scope.Dispose();
             }
 
             return responseMessage;
@@ -150,18 +122,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
             }
 
             return true;
-        }
-
-        private readonly struct IntegrationState
-        {
-            public readonly Scope Scope;
-            public readonly HttpTags Tags;
-
-            public IntegrationState(Scope scope, HttpTags tags)
-            {
-                Scope = scope;
-                Tags = tags;
-            }
         }
     }
 }

@@ -4,57 +4,110 @@
 //------------------------------------------------------------------------------
 using System;
 using Datadog.Trace.Vendors.StatsdClient.Bufferize;
+using Datadog.Trace.Vendors.StatsdClient.Statistic;
+using Datadog.Trace.Vendors.StatsdClient.Utils;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
     internal class MetricsSender
     {
-#pragma warning disable 618
-        // MANUAL CHANGE: Obsolete ignore because this is internal code
         private readonly Telemetry _optionalTelemetry;
         private readonly StatsBufferize _statsBufferize;
-        private readonly Serializers _serializers;
         private readonly bool _truncateIfTooLong;
         private readonly IStopWatchFactory _stopwatchFactory;
         private readonly IRandomGenerator _randomGenerator;
+        private readonly Pool<Stats> _pool;
 
         internal MetricsSender(
                     StatsBufferize statsBufferize,
                     IRandomGenerator randomGenerator,
                     IStopWatchFactory stopwatchFactory,
-                    Serializers serializers,
                     Telemetry optionalTelemetry,
-                    bool truncateIfTooLong)
+                    bool truncateIfTooLong,
+                    int poolMaxAllocation)
         {
             _stopwatchFactory = stopwatchFactory;
             _statsBufferize = statsBufferize;
             _randomGenerator = randomGenerator;
             _optionalTelemetry = optionalTelemetry;
-            _serializers = serializers;
             _truncateIfTooLong = truncateIfTooLong;
+            _pool = new Pool<Stats>(pool => new Stats(pool), poolMaxAllocation);
         }
-#pragma warning restore 618
 
         public void SendEvent(string title, string text, string alertType = null, string aggregationKey = null, string sourceType = null, int? dateHappened = null, string priority = null, string hostname = null, string[] tags = null, bool truncateIfTooLong = false)
         {
-            truncateIfTooLong = truncateIfTooLong || _truncateIfTooLong;
-            var optionalSerializedMetric = _serializers.EventSerializer.Serialize(title, text, alertType, aggregationKey, sourceType, dateHappened, priority, hostname, tags, truncateIfTooLong);
-            Send(optionalSerializedMetric, () => _optionalTelemetry?.OnEventSent());
+            if (TryDequeueStats(out var stats))
+            {
+                stats.Kind = StatsKind.Event;
+                stats.Event.Tags = tags;
+                stats.Event.Title = title;
+                stats.Event.Text = text;
+                stats.Event.AlertType = alertType;
+                stats.Event.AggregationKey = aggregationKey;
+                stats.Event.SourceType = sourceType;
+                stats.Event.DateHappened = dateHappened;
+                stats.Event.Priority = priority;
+                stats.Event.Hostname = hostname;
+                stats.Event.TruncateIfTooLong = truncateIfTooLong || _truncateIfTooLong;
+
+                Send(stats, () => _optionalTelemetry?.OnEventSent());
+            }
         }
 
         public void SendServiceCheck(string name, int status, int? timestamp = null, string hostname = null, string[] tags = null, string serviceCheckMessage = null, bool truncateIfTooLong = false)
         {
-            truncateIfTooLong = truncateIfTooLong || _truncateIfTooLong;
-            var optionalSerializedMetric = _serializers.ServiceCheckSerializer.Serialize(name, status, timestamp, hostname, tags, serviceCheckMessage, truncateIfTooLong);
-            Send(optionalSerializedMetric, () => _optionalTelemetry?.OnServiceCheckSent());
+            if (TryDequeueStats(out var stats))
+            {
+                stats.Kind = StatsKind.ServiceCheck;
+                stats.ServiceCheck.Tags = tags;
+                stats.ServiceCheck.Name = name;
+                stats.ServiceCheck.Status = status;
+                stats.ServiceCheck.Timestamp = timestamp;
+                stats.ServiceCheck.Hostname = hostname;
+                stats.ServiceCheck.ServiceCheckMessage = serviceCheckMessage;
+                stats.ServiceCheck.TruncateIfTooLong = truncateIfTooLong || _truncateIfTooLong;
+                Send(stats, () => _optionalTelemetry?.OnServiceCheckSent());
+            }
         }
 
-        public void SendMetric<T>(MetricType metricType, string name, T value, double sampleRate = 1.0, string[] tags = null)
+        public void SendMetric(MetricType metricType, string name, double value, double sampleRate = 1.0, string[] tags = null)
+        {
+            if (metricType == MetricType.Set)
+            {
+                throw new ArgumentException($"{nameof(SendMetric)} does not support `MetricType.Set`.");
+            }
+
+            if (_randomGenerator.ShouldSend(sampleRate))
+            {
+                if (TryDequeueStats(out var stats))
+                {
+                    stats.Kind = StatsKind.Metric;
+                    stats.Metric.Tags = tags;
+                    stats.Metric.MetricType = metricType;
+                    stats.Metric.StatName = name;
+                    stats.Metric.SampleRate = sampleRate;
+                    stats.Metric.NumericValue = value;
+
+                    Send(stats, () => _optionalTelemetry?.OnMetricSent());
+                }
+            }
+        }
+
+        public void SendSetMetric(string name, string value, double sampleRate = 1.0, string[] tags = null)
         {
             if (_randomGenerator.ShouldSend(sampleRate))
             {
-                var optionalSerializedMetric = _serializers.MetricSerializer.Serialize(metricType, name, value, sampleRate, tags);
-                Send(optionalSerializedMetric, () => _optionalTelemetry?.OnMetricSent());
+                if (TryDequeueStats(out var stats))
+                {
+                    stats.Kind = StatsKind.Metric;
+                    stats.Metric.Tags = tags;
+                    stats.Metric.MetricType = MetricType.Set;
+                    stats.Metric.StatName = name;
+                    stats.Metric.SampleRate = sampleRate;
+                    stats.Metric.StringValue = value;
+
+                    Send(stats, () => _optionalTelemetry?.OnMetricSent());
+                }
             }
         }
 
@@ -74,9 +127,20 @@ namespace Datadog.Trace.Vendors.StatsdClient
             }
         }
 
-        private void Send(SerializedMetric optionalSerializedMetric, Action onSuccess)
+        private bool TryDequeueStats(out Stats stats)
         {
-            if (optionalSerializedMetric != null && _statsBufferize.Send(optionalSerializedMetric))
+            if (_pool.TryDequeue(out stats))
+            {
+                return true;
+            }
+
+            _optionalTelemetry?.OnPacketsDroppedQueue();
+            return false;
+        }
+
+        private void Send(Stats metricFields, Action onSuccess)
+        {
+            if (_statsBufferize.Send(metricFields))
             {
                 onSuccess();
             }

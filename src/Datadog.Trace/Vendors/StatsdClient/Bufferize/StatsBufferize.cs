@@ -4,6 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.Vendors.StatsdClient.Statistic;
 using Datadog.Trace.Vendors.StatsdClient.Worker;
 
 namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
@@ -13,26 +14,26 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
     /// </summary>
     internal class StatsBufferize : IDisposable
     {
-        private readonly AsynchronousWorker<SerializedMetric> _worker;
+        private readonly AsynchronousWorker<Stats> _worker;
 
         public StatsBufferize(
-            BufferBuilder bufferBuilder,
+            StatsRouter statsRouter,
             int workerMaxItemCount,
             TimeSpan? blockingQueueTimeout,
             TimeSpan maxIdleWaitBeforeSending)
         {
-            var handler = new WorkerHandler(bufferBuilder, maxIdleWaitBeforeSending);
+            var handler = new WorkerHandler(statsRouter, maxIdleWaitBeforeSending);
 
-            // `handler` (and also `bufferBuilder`) do not need to be thread safe as long as workerMaxItemCount is 1.
-            this._worker = new AsynchronousWorker<SerializedMetric>(
+            // `handler` (and also `statsRouter`) do not need to be thread safe as long as `workerThreadCount` is 1.
+            this._worker = new AsynchronousWorker<Stats>(
                 handler,
                 new Waiter(),
-                1,
+                workerThreadCount: 1,
                 workerMaxItemCount,
                 blockingQueueTimeout);
         }
 
-        public bool Send(SerializedMetric serializedMetric)
+        public bool Send(Stats serializedMetric)
         {
             if (!this._worker.TryEnqueue(serializedMetric))
             {
@@ -43,32 +44,33 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
             return true;
         }
 
+        public void Flush()
+        {
+            this._worker.Flush();
+        }
+
         public void Dispose()
         {
             this._worker.Dispose();
         }
 
-        private class WorkerHandler : IAsynchronousWorkerHandler<SerializedMetric>
+        private class WorkerHandler : IAsynchronousWorkerHandler<Stats>
         {
-            private readonly BufferBuilder _bufferBuilder;
+            private readonly StatsRouter _statsRouter;
             private readonly TimeSpan _maxIdleWaitBeforeSending;
             private System.Diagnostics.Stopwatch _stopwatch;
 
-            public WorkerHandler(BufferBuilder bufferBuilder, TimeSpan maxIdleWaitBeforeSending)
+            public WorkerHandler(StatsRouter statsRouter, TimeSpan maxIdleWaitBeforeSending)
             {
-                _bufferBuilder = bufferBuilder;
+                _statsRouter = statsRouter;
                 _maxIdleWaitBeforeSending = maxIdleWaitBeforeSending;
             }
 
-            public void OnNewValue(SerializedMetric serializedMetric)
+            public void OnNewValue(Stats stats)
             {
-                using (serializedMetric)
+                using (stats)
                 {
-                    if (!_bufferBuilder.Add(serializedMetric))
-                    {
-                        throw new InvalidOperationException($"The metric size exceeds the buffer capacity: {serializedMetric.ToString()}");
-                    }
-
+                    _statsRouter.Route(stats);
                     _stopwatch = null;
                 }
             }
@@ -82,7 +84,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
 
                 if (_stopwatch.ElapsedMilliseconds > _maxIdleWaitBeforeSending.TotalMilliseconds)
                 {
-                    this._bufferBuilder.HandleBufferAndReset();
+                    this._statsRouter.OnIdle();
 
                     return true;
                 }
@@ -90,9 +92,9 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
                 return true;
             }
 
-            public void OnShutdown()
+            public void Flush()
             {
-                this._bufferBuilder.HandleBufferAndReset();
+                this._statsRouter.Flush();
             }
         }
     }

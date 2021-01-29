@@ -5,8 +5,8 @@
     <Description>A DogStatsD client for C#. DogStatsD is an extension of the StatsD metric server for use with Datadog. For more information visit http://datadoghq.com.</Description>
     <Authors>Datadog</Authors>
     <TargetFrameworks>netstandard1.3;netstandard2.0;net45;net461</TargetFrameworks>
-    <PackageVersion>5.1.0</PackageVersion>
-    <Version>5.0.0</Version>
+    <PackageVersion>6.0.0</PackageVersion>
+    <Version>6.0.0</Version>
     <PackageLicenseUrl>https://github.com/DataDog/dogstatsd-csharp-client/blob/master/MIT-LICENCE.md</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/DataDog/dogstatsd-csharp-client</PackageProjectUrl>
     <SignAssembly>true</SignAssembly>

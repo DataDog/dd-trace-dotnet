@@ -1,4 +1,4 @@
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
+#if !NET452
 using Xunit;
 using Xunit.Abstractions;
 
@@ -12,11 +12,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             AssumeSuccessOnTimeout = true;
         }
 
-        [TargetFrameworkVersionsFact("net461;netcoreapp2.1;netcoreapp3.0")]
+        [Fact]
         [Trait("Category", "Smoke")]
+        [Trait("Category", "ArmUnsupported")]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);
         }
     }
 }
+#endif

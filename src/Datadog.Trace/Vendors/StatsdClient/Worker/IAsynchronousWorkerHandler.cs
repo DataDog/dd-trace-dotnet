@@ -18,8 +18,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
         bool OnIdle();
 
         /// <summary>
-        /// Called when AsynchronousWorker is shutdown.
+        /// Called when AsynchronousWorker request a flush operation.
         /// </summary>
-        void OnShutdown();
+        void Flush();
     }
 }

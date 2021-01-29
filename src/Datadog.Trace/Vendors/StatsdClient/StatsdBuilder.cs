@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Mono.Unix;
+using Datadog.Trace.Vendors.StatsdClient.Aggregator;
 using Datadog.Trace.Vendors.StatsdClient.Bufferize;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
@@ -32,27 +33,39 @@ namespace Datadog.Trace.Vendors.StatsdClient
             var transportData = CreateTransportData(endPoint, config);
             var transport = transportData.Transport;
             var globalTags = GetGlobalTags(config);
-            var telemetry = CreateTelemetry(config, globalTags, endPoint, transportData.Transport);
+            var serializers = CreateSerializers(config.Prefix, globalTags, config.Advanced.MaxMetricsInAsyncQueue);
+            var telemetry = CreateTelemetry(serializers.MetricSerializer, config, globalTags, endPoint, transportData.Transport);
             var statsBufferize = CreateStatsBufferize(
                 telemetry,
                 transportData.Transport,
                 transportData.BufferCapacity,
-                config.Advanced);
+                config.Advanced,
+                serializers,
+                config.ClientSideAggregation);
 
-            var serializers = CreateSerializers(config.Prefix, globalTags, config.Advanced.MaxMetricsInAsyncQueue);
-
-#pragma warning disable 618
-            // MANUAL CHANGE: Obsolete ignore because this is internal code
             var metricsSender = new MetricsSender(
                 statsBufferize,
                 new RandomGenerator(),
                 new StopWatchFactory(),
-                serializers,
                 telemetry,
-                config.StatsdTruncateIfTooLong);
-#pragma warning restore 618
-
+                config.StatsdTruncateIfTooLong,
+                config.Advanced.MaxMetricsInAsyncQueue * 2);
             return new StatsdData(metricsSender, statsBufferize, transport, telemetry);
+        }
+
+        private static void AddTag(List<string> tags, string tagKey, string environmentVariableName, string originalValue = null)
+        {
+            var value = originalValue;
+
+            if (string.IsNullOrEmpty(value))
+            {
+                value = Environment.GetEnvironmentVariable(environmentVariableName);
+            }
+
+            if (!string.IsNullOrEmpty(value))
+            {
+                tags.Add($"{tagKey}:{value}");
+            }
         }
 
         private static DogStatsdEndPoint BuildEndPoint(StatsdConfig config)
@@ -86,9 +99,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
             string[] constantTags,
             int maxMetricsInAsyncQueue)
         {
-            // poolMaxAllocation must be greater than maxMetricsInAsyncQueue.
-            var poolMaxAllocation = maxMetricsInAsyncQueue * 2;
-            var serializerHelper = new SerializerHelper(constantTags, poolMaxAllocation);
+            var serializerHelper = new SerializerHelper(constantTags);
 
             return new Serializers
             {
@@ -128,16 +139,16 @@ namespace Datadog.Trace.Vendors.StatsdClient
                 globalTags.AddRange(config.ConstantTags);
             }
 
-            string entityId = Environment.GetEnvironmentVariable(StatsdConfig.EntityIdEnvVar);
-            if (!string.IsNullOrEmpty(entityId))
-            {
-                globalTags.Add($"{_entityIdInternalTagKey}:{entityId}");
-            }
+            AddTag(globalTags, _entityIdInternalTagKey, StatsdConfig.EntityIdEnvVar);
+            AddTag(globalTags, StatsdConfig.ServiceTagKey, StatsdConfig.ServiceEnvVar, config.ServiceName);
+            AddTag(globalTags, StatsdConfig.EnvironmentTagKey, StatsdConfig.EnvironmentEnvVar, config.Environment);
+            AddTag(globalTags, StatsdConfig.VersionTagKey, StatsdConfig.VersionEnvVar, config.ServiceVersion);
 
             return globalTags.ToArray();
         }
 
         private Telemetry CreateTelemetry(
+            MetricSerializer metricSerializer,
             StatsdConfig config,
             string[] globalTags,
             DogStatsdEndPoint dogStatsdEndPoint,
@@ -156,7 +167,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
                     telemetryTransport = CreateTransport(optionalTelemetryEndPoint, config);
                 }
 
-                return _factory.CreateTelemetry(version, telemetryFlush.Value, telemetryTransport, globalTags);
+                return _factory.CreateTelemetry(metricSerializer, version, telemetryFlush.Value, telemetryTransport, globalTags);
             }
 
             // Telemetry is not enabled
@@ -210,13 +221,34 @@ namespace Datadog.Trace.Vendors.StatsdClient
             Telemetry telemetry,
             ITransport transport,
             int bufferCapacity,
-            AdvancedStatsConfig config)
+            AdvancedStatsConfig config,
+            Serializers serializers,
+            ClientSideAggregationConfig optionalClientSideAggregationConfig)
         {
             var bufferHandler = new BufferBuilderHandler(telemetry, transport);
             var bufferBuilder = new BufferBuilder(bufferHandler, bufferCapacity, "\n");
 
+            Aggregators optionalAggregators = null;
+            if (optionalClientSideAggregationConfig != null)
+            {
+                var parameters = new MetricAggregatorParameters(
+                    serializers.MetricSerializer,
+                    bufferBuilder,
+                    optionalClientSideAggregationConfig.MaxUniqueStatsBeforeFlush,
+                    optionalClientSideAggregationConfig.FlushInterval);
+
+                optionalAggregators = new Aggregators
+                {
+                    OptionalCount = new CountAggregator(parameters),
+                    OptionalGauge = new GaugeAggregator(parameters),
+                    OptionalSet = new SetAggregator(parameters, telemetry),
+                };
+            }
+
+            var statsRouter = _factory.CreateStatsRouter(serializers, bufferBuilder, optionalAggregators);
+
             var statsBufferize = _factory.CreateStatsBufferize(
-                bufferBuilder,
+                statsRouter,
                 config.MaxMetricsInAsyncQueue,
                 config.MaxBlockDuration,
                 config.DurationBeforeSendingNotFullBuffer);
@@ -226,10 +258,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
 
         private ITransport CreateUDPTransport(DogStatsdEndPoint endPoint)
         {
-#pragma warning disable 618
-            // MANUAL CHANGE: Obsolete ignore because this is internal code
             var address = StatsdUDP.GetIpv4Address(endPoint.ServerName);
-#pragma warning restore 618
             var port = endPoint.Port;
 
             var ipEndPoint = new System.Net.IPEndPoint(address, port);

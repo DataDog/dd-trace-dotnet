@@ -42,7 +42,7 @@ namespace Datadog.Trace.Sampling
                 return sampleRate;
             }
 
-            Log.Debug("Could not establish sample rate for trace {0}", span.TraceId);
+            Log.Debug("Could not establish sample rate for trace {TraceId}", span.TraceId);
 
             return 1;
         }
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Sampling
 
                     if (key == null)
                     {
-                        Log.Warning("Could not parse sample rate key {0}", pair.Key);
+                        Log.Warning("Could not parse sample rate key {SampleRateKey}", pair.Key);
                         continue;
                     }
 

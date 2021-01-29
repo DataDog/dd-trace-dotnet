@@ -137,7 +137,7 @@ namespace Datadog.Trace.Configuration
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Unable to parse configuration value for {0} as key-value pairs of strings.", key);
+                    Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", key);
                     return null;
                 }
             }

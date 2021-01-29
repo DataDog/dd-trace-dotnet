@@ -114,7 +114,7 @@ namespace Datadog.Trace
 
                 if (globalRate < 0f || globalRate > 1f)
                 {
-                    Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
+                    Log.Warning("{ConfigurationKey} configuration of {ConfigurationValue} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
                 }
                 else
                 {
@@ -538,7 +538,7 @@ namespace Datadog.Trace
                     writer.WriteEndObject();
                 }
 
-                Log.Information("DATADOG TRACER CONFIGURATION - {0}", stringWriter.ToString());
+                Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
             }
             catch (Exception ex)
             {
@@ -619,12 +619,24 @@ namespace Datadog.Trace
                 }
 
                 var statsd = new DogStatsdService();
-                statsd.Configure(new StatsdConfig
+                if (AzureAppServices.Metadata.IsRelevant)
                 {
-                    StatsdServerName = settings.AgentUri.DnsSafeHost,
-                    StatsdPort = port,
-                    ConstantTags = constantTags.ToArray()
-                });
+                    // Environment variables set by the Azure App Service extension are used internally.
+                    // Setting the server name will force UDP, when we need named pipes.
+                    statsd.Configure(new StatsdConfig
+                    {
+                        ConstantTags = constantTags.ToArray()
+                    });
+                }
+                else
+                {
+                    statsd.Configure(new StatsdConfig
+                    {
+                        StatsdServerName = settings.AgentUri.DnsSafeHost,
+                        StatsdPort = port,
+                        ConstantTags = constantTags.ToArray()
+                    });
+                }
 
                 return statsd;
             }
@@ -647,7 +659,7 @@ namespace Datadog.Trace
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Log.Warning("Application threw an unhandled exception: {0}", e.ExceptionObject);
+            Log.Warning("Application threw an unhandled exception: {Exception}", e.ExceptionObject);
             RunShutdownTasks();
         }
 

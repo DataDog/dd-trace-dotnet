@@ -16,6 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <PackageReference Include="RabbitMQ.Client" Version="$(ApiVersion)" />
   </ItemGroup>
 

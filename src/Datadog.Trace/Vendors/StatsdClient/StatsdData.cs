@@ -29,6 +29,12 @@ namespace Datadog.Trace.Vendors.StatsdClient
 
         public Telemetry Telemetry { get; private set; }
 
+        public void Flush()
+        {
+            _statsBufferize?.Flush();
+            Telemetry.Flush();
+        }
+
         public void Dispose()
         {
             // _statsBufferize and _telemetry must be disposed before _statsSender to make

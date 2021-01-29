@@ -1,5 +1,5 @@
+#if !NET452
 using Datadog.Core.Tools;
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [TargetFrameworkVersionsFact("net461;netcoreapp2.1;netcoreapp3.0")]
+        [Fact]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
@@ -27,3 +27,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         }
     }
 }
+#endif

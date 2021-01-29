@@ -66,7 +66,7 @@ namespace trace {
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
 
-  inline WSTRING managed_profiler_full_assembly_version = "Datadog.Trace.ClrProfiler.Managed, Version=1.22.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W;
+  inline WSTRING managed_profiler_full_assembly_version = "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W;
 
   inline WSTRING calltarget_modification_action = "CallTargetModification"_W;
 

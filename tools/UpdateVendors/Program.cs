@@ -40,8 +40,8 @@ namespace UpdateVendors
 
             UpdateVendor(
                 libraryName: "StatsdClient",
-                downloadUrl: "https://github.com/DataDog/dogstatsd-csharp-client/archive/5.1.0.zip",
-                pathToSrc: new[] { "dogstatsd-csharp-client-5.1.0", "src", "StatsdClient" },
+                downloadUrl: "https://github.com/DataDog/dogstatsd-csharp-client/archive/6.0.0.zip",
+                pathToSrc: new[] { "dogstatsd-csharp-client-6.0.0", "src", "StatsdClient" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
 
             UpdateVendor(

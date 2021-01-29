@@ -22,6 +22,12 @@ namespace Datadog.Trace.PlatformHelpers
         internal const string AzureAppServicesContextKey = "DD_AZURE_APP_SERVICES";
 
         /// <summary>
+        /// Configuration key which has the running version of the Azure Site Extension.
+        /// This is set within the applicationHost.xdt file.
+        /// </summary>
+        internal const string SiteExtensionVersionKey = "DD_AAS_DOTNET_EXTENSION_VERSION";
+
+        /// <summary>
         /// Example: 8c500027-5f00-400e-8f00-60000000000f+apm-dotnet-EastUSwebspace
         /// Format: {subscriptionId}+{planResourceGroup}-{hostedInRegion}
         /// </summary>
@@ -95,9 +101,10 @@ namespace Datadog.Trace.PlatformHelpers
                     SiteName = GetVariableIfExists(SiteNameKey, environmentVariables);
                     ResourceId = CompileResourceId();
 
-                    InstanceId = GetVariableIfExists(InstanceIdKey, environmentVariables);
-                    InstanceName = GetVariableIfExists(InstanceNameKey, environmentVariables);
-                    OperatingSystem = GetVariableIfExists(OperatingSystemKey, environmentVariables);
+                    InstanceId = GetVariableIfExists(InstanceIdKey, environmentVariables) ?? "unknown";
+                    InstanceName = GetVariableIfExists(InstanceNameKey, environmentVariables) ?? "unknown";
+                    OperatingSystem = GetVariableIfExists(OperatingSystemKey, environmentVariables) ?? "unknown";
+                    SiteExtensionVersion = GetVariableIfExists(SiteExtensionVersionKey, environmentVariables) ?? "unknown";
 
                     // Functions
                     FunctionsWorkerRuntime =
@@ -139,6 +146,8 @@ namespace Datadog.Trace.PlatformHelpers
 
         public bool IsUnsafeToTrace { get; }
 
+        public string SiteExtensionVersion { get; }
+
         public string SiteType { get; }
 
         public string SiteKind { get; }
@@ -175,19 +184,19 @@ namespace Datadog.Trace.PlatformHelpers
                 if (SubscriptionId == null)
                 {
                     success = false;
-                    Log.Warning("Could not successfully retrieve the subscription ID from variable: {0}", WebsiteOwnerNameKey);
+                    Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", WebsiteOwnerNameKey);
                 }
 
                 if (SiteName == null)
                 {
                     success = false;
-                    Log.Warning("Could not successfully retrieve the deployment ID from variable: {0}", SiteNameKey);
+                    Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", SiteNameKey);
                 }
 
                 if (ResourceGroup == null)
                 {
                     success = false;
-                    Log.Warning("Could not successfully retrieve the resource group name from variable: {0}", ResourceGroupKey);
+                    Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", ResourceGroupKey);
                 }
 
                 if (success)

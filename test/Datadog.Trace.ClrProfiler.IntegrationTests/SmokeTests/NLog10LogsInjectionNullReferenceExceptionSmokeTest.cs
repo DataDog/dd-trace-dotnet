@@ -1,4 +1,4 @@
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
+#if NETFRAMEWORK
 using Xunit;
 using Xunit.Abstractions;
 
@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
         }
 
-        [TargetFrameworkVersionsFact("net452;net461")]
+        [Fact]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
@@ -20,3 +20,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         }
     }
 }
+#endif

@@ -1,5 +1,5 @@
+#if NETCOREAPP2_1
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
         }
 
-        [TargetFrameworkVersionsFact("netcoreapp2.1")]
+        [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task MeetsAllAspNetCoreMvcExpectations()
@@ -22,3 +22,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 }
+#endif

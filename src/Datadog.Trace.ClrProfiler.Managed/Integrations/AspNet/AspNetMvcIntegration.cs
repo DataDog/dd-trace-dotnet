@@ -205,7 +205,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error instrumenting method {0}", "System.Web.Mvc.Async.IAsyncActionInvoker.BeginInvokeAction()");
+                Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Mvc.Async.IAsyncActionInvoker.BeginInvokeAction()");
             }
 
             Func<object, object, object, object, object, object> instrumentedMethod;
@@ -288,7 +288,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error instrumenting method {0}", $"{AsyncActionInvokerTypeName}.EndInvokeAction()");
+                Log.Error(ex, "Error instrumenting method {MethodName}", $"{AsyncActionInvokerTypeName}.EndInvokeAction()");
             }
 
             Func<object, object, bool> instrumentedMethod;

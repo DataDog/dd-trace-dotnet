@@ -35,6 +35,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal("Samples.MongoDB", firstSpan.Service);
                 Assert.Null(firstSpan.Type);
 
+                int spansWithResourceName = 0;
+
                 for (int i = 1; i < spans.Count; i++)
                 {
                     if (spans[i].Service == "Samples.MongoDB-mongodb")
@@ -42,14 +44,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         Assert.Equal("mongodb.query", spans[i].Name);
                         Assert.Equal(SpanTypes.MongoDb, spans[i].Type);
                         Assert.False(spans[i].Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
+
+                        if (spans[i].Resource != null && spans[i].Resource != "mongodb.query")
+                        {
+                            spansWithResourceName++;
+                            Assert.True(spans[i].Tags?.ContainsKey(Tags.MongoDbQuery), $"No query found on span {spans[i]}");
+                        }
                     }
                     else
                     {
                         // These are manual traces
                         Assert.Equal("Samples.MongoDB", spans[i].Service);
-                        Assert.Equal("1.0.0", spans[i].Tags?.GetValueOrDefault(Tags.Version));
+                        Assert.True("1.0.0" == spans[i].Tags?.GetValueOrDefault(Tags.Version), spans[i].ToString());
                     }
                 }
+
+                Assert.False(spansWithResourceName == 0, "Extraction of the command failed on all spans");
             }
         }
     }
