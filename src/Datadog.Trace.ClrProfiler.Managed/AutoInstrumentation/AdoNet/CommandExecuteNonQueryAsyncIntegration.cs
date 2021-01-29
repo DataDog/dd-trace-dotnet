@@ -3,22 +3,13 @@ using System.Data.Common;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     /// <summary>
     /// CallTarget instrumentation for:
-    /// Task[int] System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
-    /// Task[int] Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
+    /// Task[int] [Command].ExecuteNonQueryAsync(CancellationToken)
     /// </summary>
-    [SqlClientConstants.SystemData.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
-        ReturnTypeName = "System.Threading.Tasks.Task`1<System.Int32>",
-        ParametersTypesNames = new[] { ClrNames.CancellationToken })]
-    [SqlClientConstants.MicrosoftDataSqlClient.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
-        ReturnTypeName = "System.Threading.Tasks.Task`1<System.Int32>",
-        ParametersTypesNames = new[] { ClrNames.CancellationToken })]
-    public class SqlCommandExecuteNonQueryAsyncIntegration
+    public class CommandExecuteNonQueryAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

@@ -19,16 +19,36 @@ namespace PrepareRelease
             var assemblies = new List<Assembly>();
             assemblies.Add(typeof(Instrumentation).Assembly);
 
-            // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InstrumentMethod]
+            // Extract all InstrumentMethodAttribute at assembly scope level
+            var assemblyInstrumentMethodAttributes = from assembly in assemblies
+                                                     let attributes = assembly.GetCustomAttributes(inherit: false)
+                                                            .Select(a => a as InstrumentMethodAttribute)
+                                                            .Where(a => a != null).ToList()
+                                                     from attribute in attributes
+                                                     let callTargetClassCheck = attribute.CallTargetType
+                                                        ?? throw new NullReferenceException($"The usage of InstrumentMethodAttribute[Type={attribute.TypeName}, Method={attribute.MethodName}] in assembly scope must define the CallTargetType property.")
+                                                     select attribute;
+
+            // Extract all InstrumentMethodAttribute from the classes
+            var classesInstrumentMethodAttributes = from assembly in assemblies
+                                                    from wrapperType in assembly.GetTypes()
+                                                    let attributes = wrapperType.GetCustomAttributes(inherit: false)
+                                                            .Select(a => a as InstrumentMethodAttribute)
+                                                            .Where(a => a != null)
+                                                            .Select(a =>
+                                                            {
+                                                                a.CallTargetType = wrapperType;
+                                                                return a;
+                                                            }).ToList()
+                                                    from attribute in attributes
+                                                    select attribute;
+
+            // combine all InstrumentMethodAttributes
             // and create objects that will generate correct JSON schema
-            var callTargetIntegrations = from assembly in assemblies
-                                         from wrapperType in assembly.GetTypes()
-                                         let attributes = wrapperType.GetCustomAttributes(inherit: false)
-                                                .Select(a => a is InstrumentMethodAttribute ima ? ima : null)
-                                                .Where(a => a != null)
-                                         where attributes.Any()
-                                         from attribute in attributes
+            var callTargetIntegrations = from attribute in assemblyInstrumentMethodAttributes.Concat(classesInstrumentMethodAttributes)
                                          let integrationName = attribute.IntegrationName
+                                         let assembly = attribute.CallTargetType.Assembly
+                                         let wrapperType = attribute.CallTargetType
                                          orderby integrationName
                                          group new
                                          {
@@ -41,7 +61,7 @@ namespace PrepareRelease
                                          {
                                              name = g.Key,
                                              method_replacements = from item in g
-                                                                   from assembly in item.attribute.Assemblies
+                                                                   from assembly in item.attribute.AssemblyNames
                                                                    select new
                                                                    {
                                                                        caller = new
@@ -53,10 +73,10 @@ namespace PrepareRelease
                                                                        target = new
                                                                        {
                                                                            assembly = assembly,
-                                                                           type = item.attribute.Type,
-                                                                           method = item.attribute.Method,
+                                                                           type = item.attribute.TypeName,
+                                                                           method = item.attribute.MethodName,
                                                                            signature = (string)null,
-                                                                           signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParametersTypesNames ?? Enumerable.Empty<string>()).ToArray(),
+                                                                           signature_types = new string[] { item.attribute.ReturnTypeName }.Concat(item.attribute.ParameterTypeNames ?? Enumerable.Empty<string>()).ToArray(),
                                                                            minimum_major = item.attribute.VersionRange.MinimumMajor,
                                                                            minimum_minor = item.attribute.VersionRange.MinimumMinor,
                                                                            minimum_patch = item.attribute.VersionRange.MinimumPatch,

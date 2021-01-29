@@ -7,11 +7,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
     /// Xunit.Sdk.TestRunner`1.RunAsync calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assemblies = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
-        Type = "Xunit.Sdk.TestRunner`1",
-        Method = "RunAsync",
+        AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
+        TypeName = "Xunit.Sdk.TestRunner`1",
+        MethodName = "RunAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
-        ParametersTypesNames = new string[0],
         MinimumVersion = "2.2.0",
         MaximumVersion = "2.*.*",
         IntegrationName = IntegrationName)]

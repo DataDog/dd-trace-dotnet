@@ -8,11 +8,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
     /// Xunit.Sdk.TestAssemblyRunner`1.RunTestCollectionAsync calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assemblies = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
-        Type = "Xunit.Sdk.TestAssemblyRunner`1",
-        Method = "RunTestCollectionAsync",
+        AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
+        TypeName = "Xunit.Sdk.TestAssemblyRunner`1",
+        MethodName = "RunTestCollectionAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
-        ParametersTypesNames = new[] { "Xunit.Sdk.IMessageBus", "_", "_", "_" },
+        ParameterTypeNames = new[] { "Xunit.Sdk.IMessageBus", "_", "_", "_" },
         MinimumVersion = "2.2.0",
         MaximumVersion = "2.*.*",
         IntegrationName = IntegrationName)]

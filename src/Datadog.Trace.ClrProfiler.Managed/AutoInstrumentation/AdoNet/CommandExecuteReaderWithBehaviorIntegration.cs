@@ -2,32 +2,14 @@ using System;
 using System.Data.Common;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     /// <summary>
     /// CallTarget instrumentation for:
-    /// MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader(CommandBehavior)
-    /// DbDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
-    /// MySqlDataReader MySqlConnector.MySqlCommand.ExecuteReader(CommandBehavior)
-    /// DbDataReader MySqlConnector.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
+    /// [*]DataReader [Command].ExecuteReader(CommandBehavior)
+    /// [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
     /// </summary>
-    [MySqlClientConstants.MySqlData.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteReader,
-        ReturnTypeName = MySqlClientConstants.MySqlData.SqlDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
-    [MySqlClientConstants.MySqlData.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteDbDataReader,
-        ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
-    [MySqlClientConstants.MySqlConnector.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteReader,
-        ReturnTypeName = MySqlClientConstants.MySqlConnector.SqlDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
-    [MySqlClientConstants.MySqlConnector.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteDbDataReader,
-        ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
-        ParametersTypesNames = new[] { AdoNetConstants.TypeNames.CommandBehavior })]
-    public class MySqlCommandExecuteReaderWithBehaviorIntegration
+    public class CommandExecuteReaderWithBehaviorIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

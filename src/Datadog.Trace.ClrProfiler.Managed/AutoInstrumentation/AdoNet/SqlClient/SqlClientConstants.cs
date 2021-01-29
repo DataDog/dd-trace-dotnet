@@ -4,53 +4,55 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
     {
         public const string SqlCommandIntegrationName = "SqlCommand";
 
-        public static class SystemData
+        internal struct SystemDataAdoNetClientData : IAdoNetClientData
         {
-            public const string AssemblyName = "System.Data";
-            public const string SqlCommandType = "System.Data.SqlClient.SqlCommand";
-            public const string MinimumVersion = "4.0.0";
-            public const string MaximumVersion = "4.*.*";
-            public const string SqlDataReaderType = "System.Data.SqlClient.SqlDataReader";
-            public const string SqlDataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>";
+            public string IntegrationName => SqlCommandIntegrationName;
 
-            public class InstrumentSqlCommandAttribute : Datadog.Trace.ClrProfiler.InstrumentMethodAttribute
-            {
-                public InstrumentSqlCommandAttribute()
-                {
-                    Assemblies = new[] { SqlClientConstants.SystemData.AssemblyName, SqlClientConstants.SystemDataSqlClient.AssemblyName };
-                    Type = SqlClientConstants.SystemData.SqlCommandType;
-                    MinimumVersion = SqlClientConstants.SystemData.MinimumVersion;
-                    MaximumVersion = SqlClientConstants.SystemData.MaximumVersion;
-                    IntegrationName = SqlClientConstants.SqlCommandIntegrationName;
-                }
-            }
+            public string AssemblyName => "System.Data";
+
+            public string SqlCommandType => "System.Data.SqlClient.SqlCommand";
+
+            public string MinimumVersion => "4.0.0";
+
+            public string MaximumVersion => "4.*.*";
+
+            public string DataReaderType => "System.Data.SqlClient.SqlDataReader";
+
+            public string DataReaderTaskType => "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>";
         }
 
-        public static class SystemDataSqlClient
+        internal struct SystemDataSqlClientAdoNetClientData : IAdoNetClientData
         {
-            public const string AssemblyName = "System.Data.SqlClient";
+            public string IntegrationName => SqlCommandIntegrationName;
+
+            public string AssemblyName => "System.Data.SqlClient";
+
+            public string SqlCommandType => "System.Data.SqlClient.SqlCommand";
+
+            public string MinimumVersion => "4.0.0";
+
+            public string MaximumVersion => "4.*.*";
+
+            public string DataReaderType => "System.Data.SqlClient.SqlDataReader";
+
+            public string DataReaderTaskType => "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>";
         }
 
-        public static class MicrosoftDataSqlClient
+        internal struct MicrosoftDataAdoNetClientData : IAdoNetClientData
         {
-            public const string AssemblyName = "Microsoft.Data.SqlClient";
-            public const string SqlCommandType = "Microsoft.Data.SqlClient.SqlCommand";
-            public const string MinimumVersion = "1.0.0";
-            public const string MaximumVersion = "2.*.*";
-            public const string SqlDataReaderType = "Microsoft.Data.SqlClient.SqlDataReader";
-            public const string SqlDataReaderTaskType = "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>";
+            public string IntegrationName => SqlCommandIntegrationName;
 
-            public class InstrumentSqlCommandAttribute : Datadog.Trace.ClrProfiler.InstrumentMethodAttribute
-            {
-                public InstrumentSqlCommandAttribute()
-                {
-                    Assembly = SqlClientConstants.MicrosoftDataSqlClient.AssemblyName;
-                    Type = SqlClientConstants.MicrosoftDataSqlClient.SqlCommandType;
-                    MinimumVersion = SqlClientConstants.MicrosoftDataSqlClient.MinimumVersion;
-                    MaximumVersion = SqlClientConstants.MicrosoftDataSqlClient.MaximumVersion;
-                    IntegrationName = SqlClientConstants.SqlCommandIntegrationName;
-                }
-            }
+            public string AssemblyName => "Microsoft.Data.SqlClient";
+
+            public string SqlCommandType => "Microsoft.Data.SqlClient.SqlCommand";
+
+            public string MinimumVersion => "1.0.0";
+
+            public string MaximumVersion => "2.*.*";
+
+            public string DataReaderType => "Microsoft.Data.SqlClient.SqlDataReader";
+
+            public string DataReaderTaskType => "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>";
         }
     }
 }

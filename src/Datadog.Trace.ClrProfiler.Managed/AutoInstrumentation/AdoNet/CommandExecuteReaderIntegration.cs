@@ -2,20 +2,13 @@ using System;
 using System.Data.Common;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     /// <summary>
     /// CallTarget instrumentation for:
-    /// object MySql.Data.MySqlClient.MySqlCommand.ExecuteScalar()
-    /// object MySqlConnector.MySqlCommand.ExecuteScalar()
+    /// [*]DataReader [Command].ExecuteReader()
     /// </summary>
-    [MySqlClientConstants.MySqlData.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteScalar,
-        ReturnTypeName = ClrNames.Object)]
-    [MySqlClientConstants.MySqlConnector.InstrumentSqlCommand(
-        Method = AdoNetConstants.MethodNames.ExecuteScalar,
-        ReturnTypeName = ClrNames.Object)]
-    public class MySqlCommandExecuteScalarIntegration
+    public class CommandExecuteReaderIntegration
     {
         /// <summary>
         /// OnMethodBegin callback

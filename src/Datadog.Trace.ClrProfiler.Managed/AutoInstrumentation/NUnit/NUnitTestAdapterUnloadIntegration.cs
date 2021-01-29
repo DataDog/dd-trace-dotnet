@@ -8,11 +8,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
     /// NUnit.VisualStudio.TestAdapter.NUnitTestAdapter.Unload() calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assembly = "NUnit3.TestAdapter",
-        Type = "NUnit.VisualStudio.TestAdapter.NUnitTestAdapter",
-        Method = "Unload",
+        AssemblyName = "NUnit3.TestAdapter",
+        TypeName = "NUnit.VisualStudio.TestAdapter.NUnitTestAdapter",
+        MethodName = "Unload",
         ReturnTypeName = ClrNames.Void,
-        ParametersTypesNames = new string[0],
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = IntegrationName)]
