@@ -173,8 +173,7 @@ namespace Datadog.Trace
 
                                     var startInfo = new ProcessStartInfo
                                     {
-                                        FileName = path,
-                                        UseShellExecute = false
+                                        FileName = path
                                     };
 
                                     if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
@@ -183,17 +182,20 @@ namespace Datadog.Trace
                                     }
 
                                     metadata.Process = Process.Start(startInfo);
+                                    var timeout = 2000;
 
-                                    while (!metadata.NamedPipeIsBound())
+                                    while (!metadata.NamedPipeIsBound() && timeout > 0)
                                     {
-                                        Thread.Sleep(100);
-
                                         if (metadata.Process == null || metadata.Process.HasExited)
                                         {
                                             Log.Error("{Process} has failed to start.", path);
                                             metadata.SequentialFailures++;
                                             metadata.ProcessState = ProcessState.Faulted;
+                                            break;
                                         }
+
+                                        Thread.Sleep(100);
+                                        timeout -= 100;
                                     }
 
                                     Log.Debug("Successfully started {Process}.", path);
