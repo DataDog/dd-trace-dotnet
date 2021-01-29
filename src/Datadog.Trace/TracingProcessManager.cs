@@ -117,7 +117,7 @@ namespace Datadog.Trace
                         {
                             if (metadata.SequentialFailures >= MaxFailures)
                             {
-                                Log.Error("Circuit breaker triggered for {Process}. Max retries reached ({ErrorCount}).", path, MaxFailures);
+                                Log.Error("Maximum retries ({ErrorCount}) reached starting {Process}.", path, MaxFailures);
                                 metadata.ProcessState = ProcessState.Faulted;
                                 return;
                             }
@@ -202,7 +202,7 @@ namespace Datadog.Trace
 
                                         if (metadata.Process == null || metadata.Process.HasExited)
                                         {
-                                            Log.Error("{Process} has failed to start.", path);
+                                            Log.Error("Failed to start {Process}.", path);
                                             metadata.ProcessState = ProcessState.Faulted;
                                             break;
                                         }
@@ -215,7 +215,7 @@ namespace Datadog.Trace
                             catch (Exception ex)
                             {
                                 metadata.ProcessState = ProcessState.Faulted;
-                                Log.Error(ex, "Exception when trying to start an instance of {Process}.", path);
+                                Log.Error(ex, "Failed to start {Process}.", path);
                             }
                             finally
                             {
