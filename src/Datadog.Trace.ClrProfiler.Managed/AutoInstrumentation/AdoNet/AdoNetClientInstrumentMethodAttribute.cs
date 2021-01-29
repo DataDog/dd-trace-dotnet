@@ -47,20 +47,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
                 ReturnTypeName = AdoNetClientData.DataReaderTaskType;
-                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
+                ParameterTypeNames = new[] { ClrNames.CancellationToken };
                 CallTargetType = typeof(CommandExecuteReaderAsyncIntegration);
             }
         }
 
-        internal class CommandExecuteDbDataReaderAsyncAttribute : AdoNetClientInstrumentMethodAttribute
+        internal class CommandExecuteReaderWithBehaviorAsyncAttribute : AdoNetClientInstrumentMethodAttribute
         {
-            public CommandExecuteDbDataReaderAsyncAttribute(Type adoNetClientDataType)
+            public CommandExecuteReaderWithBehaviorAsyncAttribute(Type adoNetClientDataType)
+                : base(adoNetClientDataType)
+            {
+                MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
+                ReturnTypeName = AdoNetClientData.DataReaderTaskType;
+                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
+                CallTargetType = typeof(CommandExecuteReaderWithBehaviorAsyncIntegration);
+            }
+        }
+
+        internal class CommandExecuteDbDataReaderWithBehaviorAsyncAttribute : AdoNetClientInstrumentMethodAttribute
+        {
+            public CommandExecuteDbDataReaderWithBehaviorAsyncAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync;
                 ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType;
                 ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
-                CallTargetType = typeof(CommandExecuteReaderAsyncIntegration);
+                CallTargetType = typeof(CommandExecuteReaderWithBehaviorAsyncIntegration);
             }
         }
 

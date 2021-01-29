@@ -1,0 +1,87 @@
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql.MySqlConstants;
+
+/********************************************************************************
+ * Task<int> .ExecuteNonQueryAsync(CancellationToken)
+ ********************************************************************************/
+
+// Task<int> MySqlConnector.MySqlCommand.ExecuteNonQueryAsync(CancellationToken)
+[assembly: CommandExecuteNonQueryAsync(typeof(MySqlConnectorClientData))]
+
+/********************************************************************************
+ * int .ExecuteNonQuery()
+ ********************************************************************************/
+
+// int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQuery()
+[assembly: CommandExecuteNonQuery(typeof(MySqlDataClientData))]
+
+// int MySqlConnector.MySqlCommand.ExecuteNonQuery()
+[assembly: CommandExecuteNonQuery(typeof(MySqlConnectorClientData))]
+
+/********************************************************************************
+ * Task<[*]DataReader> .ExecuteReaderAsync(CancellationToken)
+ ********************************************************************************/
+
+// Task<MySqlDataReader> MySqlConnector.MySqlCommand.ExecuteReaderAsync(CancellationToken)
+[assembly: CommandExecuteReaderAsync(typeof(MySqlConnectorClientData))]
+
+/********************************************************************************
+ * Task<[*]DataReader> .ExecuteReaderAsync(CommandBehavior, CancellationToken)
+ ********************************************************************************/
+
+// Task<MySqlDataReader> MySqlConnector.MySqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
+[assembly: CommandExecuteReaderWithBehaviorAsync(typeof(MySqlConnectorClientData))]
+
+/********************************************************************************
+ * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+ ********************************************************************************/
+
+// Task<DbDataReader> MySqlConnector.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(MySqlConnectorClientData))]
+
+/********************************************************************************
+ * [*]DataReader .ExecuteReader()
+ ********************************************************************************/
+
+// MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader()
+[assembly: CommandExecuteReader(typeof(MySqlDataClientData))]
+
+// MySqlDataReader MySqlConnector.MySqlCommand.ExecuteReader()
+[assembly: CommandExecuteReader(typeof(MySqlConnectorClientData))]
+
+/********************************************************************************
+ * [*]DataReader [Command].ExecuteReader(CommandBehavior)
+ ********************************************************************************/
+
+// MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader(CommandBehavior)
+[assembly: CommandExecuteReaderWithBehavior(typeof(MySqlDataClientData))]
+
+// MySqlDataReader MySqlConnector.MySqlCommand.ExecuteReader(CommandBehavior)
+[assembly: CommandExecuteReaderWithBehavior(typeof(MySqlConnectorClientData))]
+
+/********************************************************************************
+ * [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
+ ********************************************************************************/
+
+// DbDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
+[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MySqlDataClientData))]
+
+// DbDataReader MySqlConnector.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
+[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MySqlConnectorClientData))]
+
+/********************************************************************************
+ * Task<object> .ExecuteScalarAsync(CancellationToken)
+ ********************************************************************************/
+
+// Task<object> MySqlConnector.MySqlCommand.ExecuteScalarAsync(CancellationToken)
+[assembly: CommandExecuteScalarAsync(typeof(MySqlConnectorClientData))]
+
+/********************************************************************************
+ * object .ExecuteScalar()
+ ********************************************************************************/
+
+// object MySql.Data.MySqlClient.MySqlCommand.ExecuteScalar()
+[assembly: CommandExecuteScalar(typeof(MySqlDataClientData))]
+
+// object MySqlConnector.MySqlCommand.ExecuteScalar()
+[assembly: CommandExecuteScalar(typeof(MySqlConnectorClientData))]

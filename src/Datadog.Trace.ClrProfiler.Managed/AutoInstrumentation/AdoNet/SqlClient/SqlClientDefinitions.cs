@@ -28,22 +28,22 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient.SqlC
  ********************************************************************************/
 
 // Task<SqlDataReader> System.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteReaderAsync(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteReaderAsync(typeof(SystemDataSqlClientAdoNetClientData))]
+[assembly: CommandExecuteReaderWithBehaviorAsync(typeof(SystemDataAdoNetClientData))]
+[assembly: CommandExecuteReaderWithBehaviorAsync(typeof(SystemDataSqlClientAdoNetClientData))]
 
 // Task<SqlDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteReaderAsync(typeof(MicrosoftDataAdoNetClientData))]
+[assembly: CommandExecuteReaderWithBehaviorAsync(typeof(MicrosoftDataAdoNetClientData))]
 
 /********************************************************************************
  * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
  ********************************************************************************/
 
 // Task<DbDataReader> System.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderAsync(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteDbDataReaderAsync(typeof(SystemDataSqlClientAdoNetClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(SystemDataAdoNetClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(SystemDataSqlClientAdoNetClientData))]
 
 // Task<DbDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderAsync(typeof(MicrosoftDataAdoNetClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(MicrosoftDataAdoNetClientData))]
 
 /********************************************************************************
  * [*]DataReader .ExecuteReader()
