@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -11,7 +11,7 @@ namespace Samples.AspNet472.LoaderOptimizationRegKey
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-
+            Global.InitializeTrace("Samples.AspNet472.LoaderOptimizationRegKey._Default.Page_Load");
         }
     }
 }
