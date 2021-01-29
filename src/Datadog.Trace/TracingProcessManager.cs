@@ -203,7 +203,6 @@ namespace Datadog.Trace
                                         if (metadata.Process == null || metadata.Process.HasExited)
                                         {
                                             Log.Error("{Process} has failed to start.", path);
-                                            metadata.SequentialFailures++;
                                             metadata.ProcessState = ProcessState.Faulted;
                                             break;
                                         }
