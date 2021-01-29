@@ -39,9 +39,13 @@ namespace Datadog.Trace.Tools.Runner
             {
                 Platform = Platform.Linux;
             }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Platform = Platform.MacOS;
+            }
             else
             {
-                Console.Error.WriteLine("The current platform is not supported. Supported platforms are: Windows and Linux.");
+                Console.Error.WriteLine("The current platform is not supported. Supported platforms are: Windows, Linux and MacOS.");
                 Environment.Exit(-1);
                 return;
             }
