@@ -15,10 +15,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        [Fact]
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandard()
+        public void SubmitsTracesWithNetStandard(bool enableCallTarget, bool enableInlining)
         {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             // Note: The automatic instrumentation currently bails out on the generic wrappers.
             // Once this is implemented, this will add another 1 group for the direct assembly reference
             // and another 1 group for the netstandard assembly reference
@@ -27,6 +32,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 #else
             var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
 #endif
+
+            if (enableCallTarget)
+            {
+#if NET452
+                expectedSpanCount = 62;
+#else
+                expectedSpanCount = 97;
+#endif
+            }
 
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
@@ -56,10 +70,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Fact]
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
         [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes()
+        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
         {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             var totalSpanCount = 21;
 
             const string dbType = "mysql";
