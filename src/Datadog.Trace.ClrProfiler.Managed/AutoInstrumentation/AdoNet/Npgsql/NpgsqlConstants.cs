@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql
             {
                 public InstrumentSqlCommandAttribute()
                 {
-                    Assembly = AssemblyName;
+                    Assembly = NpgsqlConstants.Npgsql.AssemblyName;
                     Type = NpgsqlConstants.Npgsql.SqlCommandType;
                     MinimumVersion = NpgsqlConstants.Npgsql.MinimumVersion;
                     MaximumVersion = NpgsqlConstants.Npgsql.MaximumVersion;
