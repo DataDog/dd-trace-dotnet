@@ -19,6 +19,56 @@ namespace Datadog.Trace.ClrProfiler
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ScopeFactory));
 
+        public static Scope GetActiveHttpScope(Tracer tracer)
+        {
+            var scope = tracer.ActiveScope;
+
+            var parent = scope?.Span;
+
+            if (parent != null &&
+                parent.Type == SpanTypes.Http &&
+                parent.GetTag(Tags.InstrumentationName) != null)
+            {
+                return scope;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Creates a span context for outbound http requests, or get the active one.
+        /// Used to propagate headers without changing the active span.
+        /// </summary>
+        /// <param name="tracer">The tracer instance to use to create the span.</param>
+        /// <param name="integrationId">The id of the integration creating this scope.</param>
+        /// <returns>A span context to use to populate headers</returns>
+        public static SpanContext CreateHttpSpanContext(Tracer tracer, IntegrationInfo integrationId)
+        {
+            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
+            {
+                // integration disabled, skip this trace
+                return null;
+            }
+
+            try
+            {
+                var activeScope = GetActiveHttpScope(tracer);
+
+                if (activeScope != null)
+                {
+                    return activeScope.Span.Context;
+                }
+
+                return tracer.CreateSpanContext(serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating span context.");
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Creates a scope for outbound http requests and populates some common details.
         /// </summary>
@@ -27,8 +77,9 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="requestUri">The URI requested by the request.</param>
         /// <param name="integrationId">The id of the integration creating this scope.</param>
         /// <param name="tags">The tags associated to the scope</param>
+        /// <param name="spanId">The span ID</param>
         /// <returns>A new pre-populated scope.</returns>
-        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags)
+        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? spanId = null)
         {
             tags = null;
 
@@ -42,11 +93,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                Span parent = tracer.ActiveScope?.Span;
-
-                if (parent != null &&
-                    parent.Type == SpanTypes.Http &&
-                    parent.GetTag(Tags.InstrumentationName) != null)
+                if (GetActiveHttpScope(tracer) != null)
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -60,7 +107,8 @@ namespace Datadog.Trace.ClrProfiler
                 tags = new HttpTags();
 
                 string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName, spanId: spanId);
+
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
