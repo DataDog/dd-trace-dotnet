@@ -43,7 +43,6 @@ namespace Datadog.Trace
         };
 
         private static readonly ILogger Log = DatadogLogging.For<TracingProcessManager>();
-        private static CancellationTokenSource _cancellationTokenSource;
 
         internal enum ProcessState
         {
@@ -73,8 +72,6 @@ namespace Datadog.Trace
                     Log.Warning("Directory for trace agent does not exist: {Directory}", TraceAgentMetadata.DirectoryPath);
                     return;
                 }
-
-                _cancellationTokenSource = new CancellationTokenSource();
 
                 Log.Debug("Starting child processes from process {ProcessName}, AppDomain {AppDomain}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
                 StartProcesses();
@@ -113,16 +110,12 @@ namespace Datadog.Trace
                 {
                     try
                     {
+                        // Indicate that there is a worker responsible for doing this
+                        // This acts as a lock
                         metadata.IsBeingManaged = true;
 
                         while (true)
                         {
-                            if (_cancellationTokenSource.Token.IsCancellationRequested)
-                            {
-                                Log.Debug("Shutdown triggered for keep alive {Process}.", path);
-                                return;
-                            }
-
                             if (metadata.SequentialFailures >= MaxFailures)
                             {
                                 Log.Error("Circuit breaker triggered for {Process}. Max retries reached ({ErrorCount}).", path, MaxFailures);
@@ -170,7 +163,7 @@ namespace Datadog.Trace
                                 }
                                 else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted)
                                 {
-                                    // This means we have tried to start from this domain before and we're in a keep alive check
+                                    // This means we have tried to start from this domain before
                                     metadata.ProcessState = metadata.NamedPipeIsBound() ? ProcessState.Healthy : ProcessState.ReadyToStart;
                                 }
 
@@ -178,7 +171,11 @@ namespace Datadog.Trace
                                 {
                                     Log.Debug("Attempting to start {Process}.", path);
 
-                                    var startInfo = new ProcessStartInfo { FileName = path };
+                                    var startInfo = new ProcessStartInfo
+                                    {
+                                        FileName = path,
+                                        UseShellExecute = false
+                                    };
 
                                     if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
                                     {
