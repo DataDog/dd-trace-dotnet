@@ -28,6 +28,7 @@
     <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x64" />
     <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x86" />
     <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=osx-x64" />
   </Target>
 
   <Target Name="BuildCSharpProjects">
