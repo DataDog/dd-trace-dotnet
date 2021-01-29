@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -83,6 +84,12 @@ namespace Datadog.Trace
 
         private static void StartProcesses()
         {
+            if (AzureAppServices.Metadata.DebugModeEnabled)
+            {
+                // This ensures that a single setting from applicationConfig can enable debug logs for every aspect of the extension
+                EnvironmentHelpers.SetEnvironmentVariable("DD_LOG_LEVEL", "debug");
+            }
+
             foreach (var metadata in Processes)
             {
                 if (!string.IsNullOrWhiteSpace(metadata.ProcessPath))
