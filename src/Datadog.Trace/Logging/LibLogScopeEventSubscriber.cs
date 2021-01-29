@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Threading;
 using Datadog.Trace.Logging.LogProviders;
 using Datadog.Trace.Util;
 
@@ -72,6 +71,11 @@ namespace Datadog.Trace.Logging
                 {
                     Log.SafeLogError(ex, "Error obtaining the process name for quickly validating IIS PreStartInit condition.");
                 }
+            }
+
+            if (_executingIISPreStartInit)
+            {
+                Log.Warning("Automatic logs injection detected that IIS is still initializating. The {Source} will be checked at the start of each trace to only enable automatic logs injection when IIS is finished initializing.", _performAppDomainFlagChecks ? "AppDomain" : "System.Diagnostics.StackTrace");
             }
         }
 #endif
