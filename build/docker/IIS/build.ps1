@@ -29,13 +29,7 @@ msbuild $solution /p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml
 
 # Build Datadog MSI's
 nuget restore $trace_solution
-msbuild $trace_proj /t:BuildCsharp /p:Configuration=Release
-
-msbuild $trace_proj /t:BuildCpp /p:"Configuration=Release;Platform=x64"
-msbuild $trace_proj /t:BuildCpp /p:"Configuration=Release;Platform=x86"
-
-msbuild $trace_proj /t:msi /p:"Configuration=Release;Platform=x64"
-msbuild $trace_proj /t:msi /p:"Configuration=Release;Platform=x86"
+msbuild $trace_proj /t:msi /p:"Configuration=Release;Platform=All"
 
 # Build IIS container
 pushd $repo_root
