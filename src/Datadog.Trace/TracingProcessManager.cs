@@ -235,7 +235,6 @@ namespace Datadog.Trace
         internal class ProcessMetadata
         {
             private string _processPath;
-            private ProcessState _processState = ProcessState.NeverChecked;
 
             public string PipeName { get; set; }
 
@@ -252,17 +251,7 @@ namespace Datadog.Trace
 
             public int SequentialFailures { get; set; }
 
-            public ProcessState ProcessState
-            {
-                get => _processState;
-                set
-                {
-                    PreviousState = _processState;
-                    _processState = value;
-                }
-            }
-
-            public ProcessState PreviousState { get; private set; }
+            public ProcessState ProcessState { get; set; } = ProcessState.NeverChecked;
 
             public string ProcessPath
             {
