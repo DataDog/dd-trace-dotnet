@@ -128,6 +128,12 @@ namespace Datadog.Trace.Tests.Agent
             Assert.Equal(SpanBuffer.HeaderSize, innerBuffer.Count);
         }
 
+        [Fact]
+        public void InvalidSize()
+        {
+            Assert.Throws<ArgumentException>(() => new SpanBuffer(4, SpanFormatterResolver.Instance));
+        }
+
         [MessagePack.MessagePackObject]
         public struct FakeSpan
         {

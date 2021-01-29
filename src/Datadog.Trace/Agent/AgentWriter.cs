@@ -66,6 +66,14 @@ namespace Datadog.Trace.Agent
             _flushTask.ContinueWith(t => Log.SafeLogError(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
+        internal event Action Flushed;
+
+        internal SpanBuffer ActiveBuffer => _activeBuffer;
+
+        internal SpanBuffer FrontBuffer => _frontBuffer;
+
+        internal SpanBuffer BackBuffer => _backBuffer;
+
         public Task<bool> Ping()
         {
             return _api.SendTracesAsync(new ArraySegment<byte>(ArrayHelper.Empty<byte>(), 0, 0), 0);
@@ -121,12 +129,22 @@ namespace Datadog.Trace.Agent
                 // Enqueue a watermark to know when it's done serializing all currently enqueued traces
                 var tcs = new TaskCompletionSource<bool>(TaskOptions);
 
-                _pendingTraces.Enqueue(new WorkItem(() => CompleteTaskCompletionSource(tcs)));
+                WriteWatermark(() => CompleteTaskCompletionSource(tcs));
 
                 await tcs.Task.ConfigureAwait(false);
             }
 
             await FlushBuffers().ConfigureAwait(false);
+        }
+
+        internal void WriteWatermark(Action watermark, bool wakeUpThread = true)
+        {
+            _pendingTraces.Enqueue(new WorkItem(watermark));
+
+            if (wakeUpThread)
+            {
+                _serializationMutex.Set();
+            }
         }
 
         private static void CompleteTaskCompletionSource<T>(TaskCompletionSource<T> tcs)
@@ -166,6 +184,8 @@ namespace Datadog.Trace.Agent
                 {
                     return;
                 }
+
+                Flushed?.Invoke();
             }
         }
 
@@ -308,8 +328,6 @@ namespace Datadog.Trace.Agent
                 {
                     while (_pendingTraces.TryDequeue(out var item))
                     {
-                        hasDequeuedTraces = true;
-
                         if (item.Trace == null)
                         {
                             // Found a watermark
@@ -317,6 +335,7 @@ namespace Datadog.Trace.Agent
                             continue;
                         }
 
+                        hasDequeuedTraces = true;
                         SerializeTrace(item.Trace);
                     }
                 }

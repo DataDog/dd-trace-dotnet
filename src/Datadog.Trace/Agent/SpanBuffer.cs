@@ -21,6 +21,11 @@ namespace Datadog.Trace.Agent
 
         public SpanBuffer(int maxBufferSize, IFormatterResolver formatterResolver)
         {
+            if (maxBufferSize < HeaderSize)
+            {
+                throw new ArgumentException(nameof(maxBufferSize), $"Buffer size should be at least {HeaderSize}");
+            }
+
             _maxBufferSize = maxBufferSize;
             _offset = HeaderSize;
             _buffer = new byte[Math.Min(InitialBufferSize, maxBufferSize)];
@@ -47,6 +52,12 @@ namespace Datadog.Trace.Agent
         public int SpanCount { get; private set; }
 
         public bool IsFull { get; private set; }
+
+        // For tests only
+        internal bool IsLocked => _locked;
+
+        // For tests only
+        internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == HeaderSize;
 
         public bool TryWrite(Span[] trace, ref byte[] temporaryBuffer)
         {
