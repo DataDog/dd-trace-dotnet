@@ -137,6 +137,11 @@ namespace Datadog.Trace.Logging
             {
                 RefreshIISPreAppState(traceId: spanEventArgs.Span.TraceId);
             }
+
+            if (!_executingIISPreStartInit)
+            {
+                _scopeManager.TraceStarted -= OnTraceStarted_RefreshIISState;
+            }
         }
 #endif
 
