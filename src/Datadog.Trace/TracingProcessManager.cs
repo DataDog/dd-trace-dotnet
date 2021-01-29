@@ -47,7 +47,7 @@ namespace Datadog.Trace
 
         internal enum ProcessState
         {
-            NotRunning,
+            NeverChecked,
             ReadyToStart,
             Faulted,
             Healthy
@@ -109,7 +109,7 @@ namespace Datadog.Trace
             Log.Debug("Starting keep alive for {Process}.", path);
 
             return Task.Factory.StartNew(
-                async () =>
+                () =>
                 {
                     try
                     {
@@ -125,39 +125,42 @@ namespace Datadog.Trace
 
                             if (metadata.SequentialFailures >= MaxFailures)
                             {
-                                Log.Error("Circuit breaker triggered for {Process}. Max failed retries reached ({ErrorCount}).", path, MaxFailures);
+                                Log.Error("Circuit breaker triggered for {Process}. Max retries reached ({ErrorCount}).", path, MaxFailures);
                                 metadata.ProcessState = ProcessState.Faulted;
                                 return;
                             }
 
                             try
                             {
-                                if (metadata.ProcessState == ProcessState.NotRunning)
+                                if (metadata.ProcessState == ProcessState.NeverChecked)
                                 {
                                     // This means we have never tried from this domain
-                                    var pipeIsBound = metadata.NamedPipeIsBound();
-
-                                    if (pipeIsBound)
+                                    if (metadata.NamedPipeIsBound())
                                     {
-                                        // It is possible that if a pipe is bound it may still be shutting down from last time
+                                        // Assume healthy to start but:
+                                        // It is possible that if a pipe is bound it may yet be cleaned up from a previous shutdown
+                                        metadata.ProcessState = ProcessState.Healthy;
+
                                         // Check on a delay to be sure we have the agent available
                                         var attempts = 7;
                                         var delay = 50d;
 
                                         while (--attempts > 0)
                                         {
-                                            await Task.Delay((int)delay);
-                                            if (!metadata.NamedPipeIsBound())
+                                            Thread.Sleep((int)delay);
+
+                                            if (metadata.NamedPipeIsBound())
                                             {
-                                                metadata.ProcessState = ProcessState.ReadyToStart;
-                                                break;
+                                                // Should result in a max delay of ~3.28 seconds before giving up
+                                                delay = delay * 1.75d;
+                                                continue;
                                             }
 
-                                            // Should result in a max delay of ~3.28 seconds before giving up
-                                            delay = delay * 1.75d;
+                                            // The named pipe is no longer bound
+                                            // Time to initialize the process
+                                            metadata.ProcessState = ProcessState.ReadyToStart;
+                                            break;
                                         }
-
-                                        metadata.ProcessState = ProcessState.Healthy;
                                     }
                                     else
                                     {
@@ -168,22 +171,13 @@ namespace Datadog.Trace
                                 else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted)
                                 {
                                     // This means we have tried to start from this domain before and we're in a keep alive check
-                                    if (!metadata.NamedPipeIsBound())
-                                    {
-                                        // We must try to restart this process
-                                        metadata.ProcessState = ProcessState.ReadyToStart;
-                                    }
-                                    else
-                                    {
-                                        // No need to try to start it
-                                        metadata.ProcessState = ProcessState.Healthy;
-                                    }
-
-                                    Log.Debug("{Process} is already running.", path);
+                                    metadata.ProcessState = metadata.NamedPipeIsBound() ? ProcessState.Healthy : ProcessState.ReadyToStart;
                                 }
 
                                 if (metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
+                                    Log.Debug("Attempting to start {Process}.", path);
+
                                     var startInfo = new ProcessStartInfo { FileName = path };
 
                                     if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
@@ -191,12 +185,11 @@ namespace Datadog.Trace
                                         startInfo.Arguments = metadata.ProcessArguments;
                                     }
 
-                                    Log.Debug("Starting {Process}.", path);
                                     metadata.Process = Process.Start(startInfo);
 
                                     while (!metadata.NamedPipeIsBound())
                                     {
-                                        await Task.Delay(100, _cancellationTokenSource.Token).ConfigureAwait(false);
+                                        Thread.Sleep(100);
 
                                         if (metadata.Process == null || metadata.Process.HasExited)
                                         {
@@ -221,12 +214,12 @@ namespace Datadog.Trace
                                 {
                                     metadata.SequentialFailures++;
                                     // Quicker retry in these cases
-                                    await Task.Delay(ExceptionRetryInterval, _cancellationTokenSource.Token).ConfigureAwait(false);
+                                    Thread.Sleep(ExceptionRetryInterval);
                                 }
                                 else
                                 {
                                     // Delay for a reasonable amount of time before we check to see if the process is alive again.
-                                    await Task.Delay(KeepAliveInterval, _cancellationTokenSource.Token).ConfigureAwait(false);
+                                   Thread.Sleep(KeepAliveInterval);
                                 }
                             }
                         }
@@ -243,7 +236,7 @@ namespace Datadog.Trace
         internal class ProcessMetadata
         {
             private string _processPath;
-            private ProcessState _processState = ProcessState.NotRunning;
+            private ProcessState _processState = ProcessState.NeverChecked;
 
             public string PipeName { get; set; }
 
