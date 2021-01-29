@@ -144,7 +144,7 @@ namespace Datadog.Trace
 
                                         while (--attempts > 0)
                                         {
-                                            await Task.Delay((int)delay);
+                                            await Task.Delay((int)delay).ConfigureAwait(false);
 
                                             if (metadata.ProcessIsHealthy())
                                             {
@@ -208,7 +208,7 @@ namespace Datadog.Trace
                                             break;
                                         }
 
-                                        await Task.Delay(100);
+                                        await Task.Delay(100).ConfigureAwait(false);
                                         timeout -= 100;
                                     }
                                 }
@@ -224,12 +224,12 @@ namespace Datadog.Trace
                                 {
                                     metadata.SequentialFailures++;
                                     // Quicker retry in these cases
-                                    await Task.Delay(ExceptionRetryInterval);
+                                    await Task.Delay(ExceptionRetryInterval).ConfigureAwait(false);
                                 }
                                 else
                                 {
                                     // Delay for a reasonable amount of time before we check to see if the process is alive again.
-                                    await Task.Delay(KeepAliveInterval);
+                                    await Task.Delay(KeepAliveInterval).ConfigureAwait(false);
                                 }
                             }
                         }
