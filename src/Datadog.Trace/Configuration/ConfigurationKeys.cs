@@ -92,11 +92,11 @@ namespace Datadog.Trace.Configuration
         public const string TracesPipeTimeoutMs = "DD_TRACE_PIPE_TIMEOUT_MS";
 
         /// <summary>
-        /// Configuration key for the name of the pipe where the Tracer can send metrics.
+        /// Configuration key for the named pipe that DogStatsD binds to.
         /// Default value is <c>null</c>.
         /// </summary>
         /// <seealso cref="TracerSettings.MetricsPipeName"/>
-        public const string MetricsPipeName = "DD_DOGSTATSD_WINDOWS_PIPE_NAME";
+        public const string MetricsPipeName = "DD_DOGSTATSD_PIPE_NAME";
 
         /// <summary>
         /// Sibling setting for <see cref="AgentPort"/>.
