@@ -119,6 +119,7 @@ namespace Datadog.Trace
                             {
                                 Log.Error("Circuit breaker triggered for {Process}. Max retries reached ({ErrorCount}).", path, MaxFailures);
                                 metadata.ProcessState = ProcessState.Faulted;
+                                return;
                             }
 
                             try
@@ -137,7 +138,7 @@ namespace Datadog.Trace
                                         // Assume healthy to start, but look for problems
                                         metadata.ProcessState = ProcessState.Healthy;
 
-                                        // Check on a delay to be sure we have the agent available
+                                        // Check on a delay to be sure we keep the process available after a shutdown
                                         var attempts = 7;
                                         var delay = 50d;
 
@@ -176,7 +177,8 @@ namespace Datadog.Trace
 
                                     var startInfo = new ProcessStartInfo
                                     {
-                                        FileName = path
+                                        FileName = path,
+                                        UseShellExecute = false // Force consistency in behavior between Framework and Core
                                     };
 
                                     if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
@@ -234,7 +236,7 @@ namespace Datadog.Trace
                     }
                     finally
                     {
-                        Log.Debug("Keep alive is dropping for {Process}.", path);
+                        Log.Warning("Keep alive is dropping for {Process}.", path);
                         metadata.IsBeingManaged = false;
                     }
                 });
