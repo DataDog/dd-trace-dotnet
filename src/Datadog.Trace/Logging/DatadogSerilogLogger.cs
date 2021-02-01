@@ -196,7 +196,7 @@ namespace Datadog.Trace.Logging
                     var ex = exception is null ? string.Empty : $"; {exception}";
                     var properties = args.Length == 0
                         ? string.Empty
-                        : "; " + string.Join(", ", args.Select(x => x.ToString()));
+                        : "; " + string.Join(", ", args);
 
                     Console.Error.WriteLine($"{messageTemplate}{properties}{ex}");
                 }
