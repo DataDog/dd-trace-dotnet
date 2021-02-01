@@ -547,9 +547,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
         auto methodName = "InvokePreStartInitMethods"_W;
         hr = metadata_import->FindMethod(typeDef, methodName.c_str(), nullptr, 0, &methodDef);
         if (SUCCEEDED(hr)) {
-          Info("InvokePreStartInitMethod was found and enqueue for rejit");
-          module_metadata->SetWrapperMemberRef(methodName, methodDef);
-          module_metadata->SetWrapperParentTypeRef(typeName, typeDef);
+          Info("InvokePreStartInitMethod was found and enqueued for rejit");
+          module_metadata->invoke_pre_start_init_methodDef = methodDef;
           ModuleID moduleInfoArray[1] = {module_info.id};
           mdMethodDef methodDefArray[1] = {methodDef};
           hr = this->info_->RequestReJIT(1, moduleInfoArray, methodDefArray);
@@ -708,7 +707,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (is_desktop_iis && 
       module_metadata->assemblyName == WStr("System.Web") && 
       caller.type.name == WStr("System.Web.Compilation.BuildManager") && 
-      caller.name == WStr("InvokePreStartInitMethods"_)) {
+      caller.name == WStr("InvokePreStartInitMethods") && 
+      !IsCallTargetEnabled()) {
     hr = AddIISPreStartInitFlags(module_id, function_token, nullptr);
 
     if (FAILED(hr)) {
@@ -1870,6 +1870,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
     } else {
       return S_OK;
     }
+  }
+
+  // check if the reJIT is for AddIISPreStartInitFlags
+  if (methodId == module_metadata->invoke_pre_start_init_methodDef) {
+    Info("*** ReJIT Rewriting System.Web.Compilation.BuildManager.InvokePreStartInitMethods()");
+    return AddIISPreStartInitFlags(moduleId, methodId, pFunctionControl);
   }
 
   // we notify the reJIT handler of this event and pass the module_metadata.

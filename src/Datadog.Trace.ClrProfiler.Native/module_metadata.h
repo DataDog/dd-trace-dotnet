@@ -30,7 +30,7 @@ class ModuleMetadata {
   GUID module_version_id;
   std::vector<IntegrationMethod> integrations = {};
   AssemblyProperty* corAssemblyProperty{};
-
+  mdMethodDef invoke_pre_start_init_methodDef = mdMethodDefNil;
 
   ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
                  ComPtr<IMetaDataEmit2> metadata_emit,
