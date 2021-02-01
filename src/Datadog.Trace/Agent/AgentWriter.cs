@@ -20,6 +20,8 @@ namespace Datadog.Trace.Agent
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
 
+        private static readonly ArraySegment<byte> EmptyPayload;
+
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
         private readonly IDogStatsd _statsd;
         private readonly Task _flushTask;
@@ -44,6 +46,12 @@ namespace Datadog.Trace.Agent
         private byte[] _temporaryBuffer = new byte[1024];
 
         private TaskCompletionSource<bool> _forceFlush;
+
+        static AgentWriter()
+        {
+            var data = Vendors.MessagePack.MessagePackSerializer.Serialize(ArrayHelper.Empty<Span[]>());
+            EmptyPayload = new ArraySegment<byte>(data);
+        }
 
         public AgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
         {
@@ -76,7 +84,7 @@ namespace Datadog.Trace.Agent
 
         public Task<bool> Ping()
         {
-            return _api.SendTracesAsync(new ArraySegment<byte>(ArrayHelper.Empty<byte>(), 0, 0), 0);
+            return _api.SendTracesAsync(EmptyPayload, 0);
         }
 
         public void WriteTrace(Span[] trace)
