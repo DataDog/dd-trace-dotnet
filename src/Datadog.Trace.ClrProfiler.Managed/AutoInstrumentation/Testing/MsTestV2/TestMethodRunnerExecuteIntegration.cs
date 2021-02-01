@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
@@ -13,18 +13,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
     /// Microsoft.VisualStudio.TestPlatform.TestFramework.Execute calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assembly = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
-        Type = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
-        Method = "Execute",
+        AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+        TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+        MethodName = "Execute",
         ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult",
-        ParametersTypesNames = new string[0],
+        ParameterTypeNames = new string[0],
         MinimumVersion = "14.0.0",
         MaximumVersion = "14.*.*",
         IntegrationName = IntegrationName)]
     public class TestMethodRunnerExecuteIntegration
     {
-        private const string IntegrationName = "MSTestV2";
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TestMethodRunnerExecuteIntegration));
+        private const string IntegrationName = nameof(IntegrationIds.MsTestV2);
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         static TestMethodRunnerExecuteIntegration()
         {
@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : ITestMethodRunner, IDuckType
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return CallTargetState.GetDefault();
             }
@@ -182,7 +182,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             }
 
             var classCategories = methodInfo.DeclaringType?.GetCustomAttributes(true);
-            if (!(classCategories is null))
+            if (classCategories is not null)
             {
                 foreach (var tattr in classCategories)
                 {

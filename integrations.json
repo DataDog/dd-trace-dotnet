@@ -77,6 +77,78 @@
     ]
   },
   {
+    "name": "MsTestV2",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.VisualStudio.TestPlatform.TestFramework",
+          "type": "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+          "method": "Execute",
+          "signature_types": [
+            "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult",
+            "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"
+          ],
+          "minimum_major": 14,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 14,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+          "type": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+          "method": "Execute",
+          "signature_types": [
+            "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult"
+          ],
+          "minimum_major": 14,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 14,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+          "type": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
+          "method": "RunCleanup",
+          "signature_types": [
+            "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.RunCleanupResult"
+          ],
+          "minimum_major": 14,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 14,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunCleanupIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "MySqlCommand",
     "method_replacements": [
       {
@@ -628,78 +700,6 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration",
-          "action": "CallTargetModification"
-        }
-      }
-    ]
-  },
-  {
-    "name": "MSTestV2",
-    "method_replacements": [
-      {
-        "caller": {},
-        "target": {
-          "assembly": "Microsoft.VisualStudio.TestPlatform.TestFramework",
-          "type": "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
-          "method": "Execute",
-          "signature_types": [
-            "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult",
-            "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"
-          ],
-          "minimum_major": 14,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 14,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteIntegration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
-          "type": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
-          "method": "Execute",
-          "signature_types": [
-            "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult"
-          ],
-          "minimum_major": 14,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 14,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
-          "type": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
-          "method": "RunCleanup",
-          "signature_types": [
-            "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.RunCleanupResult"
-          ],
-          "minimum_major": 14,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 14,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunCleanupIntegration",
           "action": "CallTargetModification"
         }
       }

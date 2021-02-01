@@ -1,5 +1,6 @@
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
@@ -17,7 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         IntegrationName = IntegrationName)]
     public class NUnitSkipCommandExecuteIntegration
     {
-        private const string IntegrationName = "NUnit";
+        private const string IntegrationName = nameof(IntegrationIds.NUnit);
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         /// <summary>
         /// OnMethodBegin callback
@@ -30,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         public static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext executionContext)
             where TContext : ITestExecutionContext
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return CallTargetState.GetDefault();
             }

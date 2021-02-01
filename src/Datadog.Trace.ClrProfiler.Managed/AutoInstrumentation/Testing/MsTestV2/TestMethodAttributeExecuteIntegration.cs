@@ -1,5 +1,6 @@
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
@@ -8,17 +9,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
     /// Microsoft.VisualStudio.TestPlatform.TestFramework.Execute calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assembly = "Microsoft.VisualStudio.TestPlatform.TestFramework",
-        Type = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
-        Method = "Execute",
+        AssemblyName = "Microsoft.VisualStudio.TestPlatform.TestFramework",
+        TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+        MethodName = "Execute",
         ReturnTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult",
-        ParametersTypesNames = new[] { "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod" },
+        ParameterTypeNames = new[] { "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod" },
         MinimumVersion = "14.0.0",
         MaximumVersion = "14.*.*",
         IntegrationName = IntegrationName)]
     public class TestMethodAttributeExecuteIntegration
     {
-        private const string IntegrationName = "MSTestV2";
+        private const string IntegrationName = nameof(IntegrationIds.MsTestV2);
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         /// <summary>
         /// OnMethodBegin callback
@@ -45,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 Scope scope = Tracer.Instance.ActiveScope;
                 if (scope != null)
