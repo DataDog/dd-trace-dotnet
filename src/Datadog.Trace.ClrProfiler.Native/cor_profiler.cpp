@@ -679,9 +679,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (is_desktop_iis && 
       module_metadata->assemblyName == WStr("System.Web") && 
       caller.type.name == WStr("System.Web.Compilation.BuildManager") && 
-      caller.name == WStr("InvokePreStartInitMethods") &&
-      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
-      first_jit_compilation_app_domains.end()) {
+      caller.name == WStr("InvokePreStartInitMethods")) {
     hr = AddIISPreStartInitFlags(module_id, function_token);
 
     if (FAILED(hr)) {
