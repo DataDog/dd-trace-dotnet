@@ -27,7 +27,7 @@ namespace Datadog.Trace.Util
             }
             catch (Exception ex)
             {
-                Logger.SafeLogError(ex, "Error setting environment variable {EnvironmentVariable}={Value}", key, value);
+                Logger.Value.Error(ex, "Error setting environment variable {EnvironmentVariable}={Value}", key, value);
             }
         }
 
