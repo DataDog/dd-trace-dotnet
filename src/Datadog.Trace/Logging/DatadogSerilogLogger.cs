@@ -8,7 +8,7 @@ namespace Datadog.Trace.Logging
 {
     internal class DatadogSerilogLogger : IDatadogLogger
     {
-        private static readonly object[] NoPropertyValues = new object[0];
+        private static readonly object[] NoPropertyValues = Datadog.Trace.Util.ArrayHelper.Empty<object>();
         private readonly ILogger _logger;
         private readonly ILogRateLimiter _rateLimiter;
 
