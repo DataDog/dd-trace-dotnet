@@ -120,13 +120,34 @@ namespace Datadog.Trace.Agent
 
             _serializationMutex.Set();
 
-            await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)))
-                      .ConfigureAwait(false);
+            var delay = Task.Delay(TimeSpan.FromSeconds(20));
 
-            if (!_flushTask.IsCompleted)
+            var completedTask = await Task.WhenAny(_serializationTask, delay)
+                .ConfigureAwait(false);
+
+            if (completedTask != delay)
             {
-                Log.Warning("Could not flush all traces before process exit");
+                await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)))
+                    .ConfigureAwait(false);
+
+                if (_frontBuffer.TraceCount == 0 && _backBuffer.TraceCount == 0)
+                {
+                    // All good
+                    return;
+                }
+
+                // In some situations, the flush thread can exit before flushing all the threads
+                // Force a flush for the leftover traces
+                completedTask = await Task.WhenAny(Task.Run(() => FlushBuffers(flushAllBuffers: true)), delay)
+                    .ConfigureAwait(false);
+
+                if (completedTask != delay)
+                {
+                    return;
+                }
             }
+
+            Log.Warning("Could not flush all traces before process exit");
         }
 
         public async Task FlushTracesAsync()
@@ -200,8 +221,9 @@ namespace Datadog.Trace.Agent
         /// <summary>
         /// Flush the active buffer, and the fallback buffer if full
         /// </summary>
+        /// <param name="flushAllBuffers">If set to true, then flush the back buffer even if not full</param>
         /// <returns>Async operation</returns>
-        private async Task FlushBuffers()
+        private async Task FlushBuffers(bool flushAllBuffers = false)
         {
             try
             {
@@ -209,7 +231,7 @@ namespace Datadog.Trace.Agent
                 var fallbackBuffer = activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
 
                 // First, flush the back buffer if full
-                if (fallbackBuffer.IsFull)
+                if (fallbackBuffer.IsFull || flushAllBuffers)
                 {
                     await FlushBuffer(fallbackBuffer).ConfigureAwait(false);
                 }
