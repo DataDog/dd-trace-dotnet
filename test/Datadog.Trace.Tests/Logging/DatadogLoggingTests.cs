@@ -18,6 +18,7 @@ namespace Datadog.Trace.Tests.Logging
     {
         private readonly ILogger _logger = null;
         private readonly CollectionSink _logEventSink;
+        private IDisposable _clockDisposable;
 
         public DatadogLoggingTests()
         {
@@ -35,7 +36,7 @@ namespace Datadog.Trace.Tests.Logging
         {
             // On test cleanup, reload the GlobalSettings
             GlobalSettings.Reload();
-            Clock.Reset();
+            _clockDisposable?.Dispose();
         }
 
         [Fact]
@@ -85,7 +86,7 @@ namespace Datadog.Trace.Tests.Logging
             var logger = new DatadogSerilogLogger(_logger, rateLimiter);
 
             var clock = new SimpleClock();
-            Clock.SetForCurrentThread(clock);
+            _clockDisposable = Clock.SetForCurrentThread(clock);
 
             logger.Warning("Warning level message");
             logger.Warning("Warning level message");
@@ -107,7 +108,7 @@ namespace Datadog.Trace.Tests.Logging
             var logger = new DatadogSerilogLogger(_logger, rateLimiter);
 
             var clock = new SimpleClock();
-            Clock.SetForCurrentThread(clock);
+            _clockDisposable = Clock.SetForCurrentThread(clock);
 
             WriteRateLimitedLogMessage(logger, "Warning level message");
             WriteRateLimitedLogMessage(logger, "Warning level message");
@@ -129,7 +130,7 @@ namespace Datadog.Trace.Tests.Logging
             var logger = new DatadogSerilogLogger(_logger, rateLimiter);
 
             var clock = new SimpleClock();
-            Clock.SetForCurrentThread(clock);
+            _clockDisposable = Clock.SetForCurrentThread(clock);
 
 #pragma warning disable SA1107 // Code must not contain multiple statements on one line
             logger.Warning("Warning level message"); logger.Warning("Warning level message");
@@ -147,7 +148,7 @@ namespace Datadog.Trace.Tests.Logging
             var rateLimiter = new LogRateLimiter(secondsBetweenLogs);
             var logger = new DatadogSerilogLogger(_logger, rateLimiter);
             var clock = new SimpleClock();
-            Clock.SetForCurrentThread(clock);
+            _clockDisposable = Clock.SetForCurrentThread(clock);
 
             WriteRateLimitedLogMessage(logger, "Warning level message");
 

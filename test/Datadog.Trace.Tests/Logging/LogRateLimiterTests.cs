@@ -12,24 +12,26 @@ namespace Datadog.Trace.Tests.Logging
     {
         private const int SecondsBetweenLogs = 60;
         private readonly LogRateLimiter _rateLimiter;
+        private readonly SimpleClock _clock;
+        private IDisposable _clockDisposable;
 
         public LogRateLimiterTests()
         {
             _rateLimiter = new LogRateLimiter(SecondsBetweenLogs);
+            _clock = new SimpleClock();
+            _clockDisposable = Clock.SetForCurrentThread(_clock);
         }
 
         public static IEnumerable<object[]> GetSecondIntervals(int count, int increment)
             => Enumerable.Range(1, count).Select(x => new object[] { x * increment });
 
-        public void Dispose() => Clock.Reset();
+        public void Dispose() => _clockDisposable?.Dispose();
 
         [Fact]
         public void IdenticalLogs_WhenFasterThanAllowedRate_DoesNotWriteSubsequentLogs()
         {
             const string filePath = @"C:\some\path";
             const int lineNo = 123;
-
-            Clock.SetForCurrentThread(new SimpleClock());
 
             // first log is always true
             var shouldLogFirstMessage = _rateLimiter.ShouldLog(filePath, lineNo, out _);
@@ -49,8 +51,6 @@ namespace Datadog.Trace.Tests.Logging
             const string filePath = @"C:\some\path";
             const int lineNo = 123;
 
-            var clock = new SimpleClock();
-            Clock.SetForCurrentThread(clock);
             var messagesLogged = 0;
 
             // first log is always true
@@ -61,7 +61,7 @@ namespace Datadog.Trace.Tests.Logging
             // can't guarantee which one, as depends when time bucket rolls over
             for (int i = 0; i < SecondsBetweenLogs; i++)
             {
-                clock.UtcNow = clock.UtcNow.AddSeconds(1);
+                _clock.UtcNow = _clock.UtcNow.AddSeconds(1);
                 var shouldLog = _rateLimiter.ShouldLog(filePath, lineNo, out _);
                 if (shouldLog)
                 {
@@ -79,12 +79,10 @@ namespace Datadog.Trace.Tests.Logging
             const string filePath = @"C:\some\path";
             const int lineNo = 123;
 
-            var clock = new SimpleClock();
-            Clock.SetForCurrentThread(clock);
             var shouldLogFirstMessage = _rateLimiter.ShouldLog(filePath, lineNo, out _);
             Assert.True(shouldLogFirstMessage);
 
-            clock.UtcNow = clock.UtcNow.AddSeconds(secondsPassed);
+            _clock.UtcNow = _clock.UtcNow.AddSeconds(secondsPassed);
             var shouldLogSecondMessage = _rateLimiter.ShouldLog(filePath, lineNo, out _);
             Assert.True(shouldLogSecondMessage);
         }
@@ -96,9 +94,6 @@ namespace Datadog.Trace.Tests.Logging
             const int lineNo = 123;
             const uint expectedSkipCount = 10u;
 
-            var clock = new SimpleClock();
-            Clock.SetForCurrentThread(clock);
-
             _rateLimiter.ShouldLog(filePath, lineNo, out var initialSkipCount);
             Assert.Equal(0u, initialSkipCount);
 
@@ -107,7 +102,7 @@ namespace Datadog.Trace.Tests.Logging
                 _rateLimiter.ShouldLog(filePath, lineNo, out _);
             }
 
-            clock.UtcNow = clock.UtcNow.AddSeconds(SecondsBetweenLogs);
+            _clock.UtcNow = _clock.UtcNow.AddSeconds(SecondsBetweenLogs);
 
             _rateLimiter.ShouldLog(filePath, lineNo, out var actualSkipCount);
             Assert.Equal(expectedSkipCount, actualSkipCount);
@@ -122,10 +117,27 @@ namespace Datadog.Trace.Tests.Logging
         {
             const int lineNo = 123;
 
-            var clock = new SimpleClock();
-            Clock.SetForCurrentThread(clock);
             var shouldLog = _rateLimiter.ShouldLog(filePath, lineNo, out _);
             Assert.True(shouldLog);
+        }
+
+        [Fact]
+        public void LogsFromDifferentFiles_WithinTimePeriod_AreAlwaysLogged()
+        {
+            const int lineNo = 123;
+            var paths = new[]
+            {
+                @"C:\some\path",
+                @"C:\some\other_path",
+                @"C:\some\Path",
+                @"note%aR34LPath"
+            };
+
+            foreach (var path in paths)
+            {
+                var shouldLog = _rateLimiter.ShouldLog(path, lineNo, out _);
+                Assert.True(shouldLog);
+            }
         }
 
         [Theory]
@@ -137,10 +149,34 @@ namespace Datadog.Trace.Tests.Logging
         {
             const string filePath = @"C:\some\path";
 
-            var clock = new SimpleClock();
-            Clock.SetForCurrentThread(clock);
             var shouldLog = _rateLimiter.ShouldLog(filePath, lineNo, out _);
             Assert.True(shouldLog);
+        }
+
+        [Fact]
+        public void LogsFromDifferentLines_WithinTimePeriod_AreAlwaysLogged()
+        {
+            const string filePath = @"C:\some\path";
+            var lineNos = new[] { 0, 10, 123, -1 };
+
+            foreach (var lineNo in lineNos)
+            {
+                var shouldLog = _rateLimiter.ShouldLog(filePath, lineNo, out _);
+                Assert.True(shouldLog);
+            }
+        }
+
+        [Fact]
+        public void WhenCallerLineNumberAndCallerFilePathHaveDefaults_AlwaysLogs()
+        {
+            const int lineNo = 0;
+            const string filePath = "";
+
+            for (var i = 0; i < 10; i++)
+            {
+                var shouldLog = _rateLimiter.ShouldLog(filePath, lineNo, out _);
+                Assert.True(shouldLog);
+            }
         }
     }
 }

@@ -182,11 +182,19 @@ namespace Datadog.Trace.Logging
             {
                 if (_rateLimiter.ShouldLog(sourceFile, sourceLine, out var skipCount))
                 {
-                    var newArgs = new object[args.Length + 1];
-                    Array.Copy(args, newArgs, args.Length);
-                    newArgs[args.Length] = skipCount;
+                    // RFC suggests we should always add the "messages skipped" line, but feels like uneccessary noise
+                    if (skipCount > 0)
+                    {
+                        var newArgs = new object[args.Length + 1];
+                        Array.Copy(args, newArgs, args.Length);
+                        newArgs[args.Length] = skipCount;
 
-                    _logger.Write(level, exception, messageTemplate + ", {SkipCount} additional messages skipped", newArgs);
+                        _logger.Write(level, exception, messageTemplate + ", {SkipCount} additional messages skipped", newArgs);
+                    }
+                    else
+                    {
+                        _logger.Write(level, exception, messageTemplate, args);
+                    }
                 }
             }
             catch

@@ -10,6 +10,8 @@ namespace Datadog.Trace.Util
     /// </summary>
     internal static class EnvironmentHelpers
     {
+        // EnvironmentHelpers is called when initialising DataDogLogging.SharedLogger
+        // Using Lazy<> here avoids setting the Logger field to the "null" logger, before initialization is complete
         private static readonly Lazy<IDatadogLogger> Logger = new Lazy<IDatadogLogger>(() => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
 
         /// <summary>

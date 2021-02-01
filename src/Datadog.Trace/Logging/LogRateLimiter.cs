@@ -12,8 +12,8 @@ namespace Datadog.Trace.Logging
 #endif
 
         private readonly int _secondsBetweenLogs;
-        private readonly ConcurrentDictionary<int, LogRateBucketInfo> _buckets
-            = new ConcurrentDictionary<int, LogRateBucketInfo>();
+        private readonly ConcurrentDictionary<LogRateBucketKey, LogRateBucketInfo> _buckets
+            = new ConcurrentDictionary<LogRateBucketKey, LogRateBucketInfo>();
 
         public LogRateLimiter(int secondsBetweenLogs)
         {
@@ -28,10 +28,17 @@ namespace Datadog.Trace.Logging
         /// <inheritdoc/>
         public bool ShouldLog(string filePath, int lineNumber, out uint skipCount)
         {
+            if (filePath == string.Empty && lineNumber == 0)
+            {
+                // Shouldn't happen, but playing it safe incase there's a problem with the attributes
+                skipCount = 0;
+                return true;
+            }
+
             // RFC says we should take log context, level, filename and lineNumber into account
             // but we don't currently set the log context name in IDatadogLogger. FilePath and
             // lineNumber should generally sufficient to uniquely identify the log given our API anyway
-            var key = HashCode.Combine(filePath, lineNumber);
+            var key = new LogRateBucketKey(filePath, lineNumber);
 
 #if NET45
             TimeSpan diff = Clock.UtcNow - _unixEpoch;
@@ -62,17 +69,41 @@ namespace Datadog.Trace.Logging
             return new LogRateBucketInfo(currentTimeBucket, skipCount: 0, previous.SkipCount);
         }
 
-        public struct LogRateBucketInfo
+        public readonly struct LogRateBucketInfo
         {
-            public int TimeBucket;
-            public uint SkipCount;
-            public uint PreviousSkipCount;
+            public readonly int TimeBucket;
+            public readonly uint SkipCount;
+            public readonly uint PreviousSkipCount;
 
             public LogRateBucketInfo(int timeBucket, uint skipCount, uint previousSkipCount)
             {
                 TimeBucket = timeBucket;
                 SkipCount = skipCount;
                 PreviousSkipCount = previousSkipCount;
+            }
+        }
+
+        public readonly struct LogRateBucketKey
+        {
+            public readonly string FilePath;
+            public readonly int LineNo;
+
+            public LogRateBucketKey(string filePath, int lineNo)
+            {
+                FilePath = filePath;
+                LineNo = lineNo;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is LogRateBucketKey key &&
+                       FilePath == key.FilePath &&
+                       LineNo == key.LineNo;
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(FilePath, LineNo);
             }
         }
     }
