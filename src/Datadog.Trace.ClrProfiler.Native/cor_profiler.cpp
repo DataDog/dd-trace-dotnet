@@ -536,6 +536,35 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
   if (IsCallTargetEnabled()) {
+
+    // Enqueue ReJIT for System.Web.Compilation.BuildManager.InvokePreStartInitMethods()
+    if (module_metadata->assemblyName == "System.Web"_W) {
+      mdTypeDef typeDef = mdTypeDefNil;
+      auto typeName = "System.Web.Compilation.BuildManager"_W;
+      auto hr = metadata_import->FindTypeDefByName(typeName.c_str(), mdTokenNil, &typeDef);
+      if (SUCCEEDED(hr)) {
+        mdMethodDef methodDef = mdMethodDefNil;
+        auto methodName = "InvokePreStartInitMethods"_W;
+        hr = metadata_import->FindMethod(typeDef, methodName.c_str(), nullptr, 0, &methodDef);
+        if (SUCCEEDED(hr)) {
+          Info("InvokePreStartInitMethod was found and enqueue for rejit");
+          module_metadata->SetWrapperMemberRef(methodName, methodDef);
+          module_metadata->SetWrapperParentTypeRef(typeName, typeDef);
+          ModuleID moduleInfoArray[1] = {module_info.id};
+          mdMethodDef methodDefArray[1] = {methodDef};
+          hr = this->info_->RequestReJIT(1, moduleInfoArray, methodDefArray);
+          if (FAILED(hr)) {
+            Warn("Can't enqueue rejit for: ", methodName, ", Type: ", typeName);
+          }
+        } else {
+          Warn("Can't load the MethodDef for: ", methodName, ", Type: ", typeName);
+        }
+      } else {
+        Warn("Can't load the TypeDef for: ", typeName, ", Module: ", module_metadata->assemblyName);
+      }
+    }
+
+    // Enqueue ReJIT for integrations
     CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
   }
 
@@ -679,8 +708,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (is_desktop_iis && 
       module_metadata->assemblyName == WStr("System.Web") && 
       caller.type.name == WStr("System.Web.Compilation.BuildManager") && 
-      caller.name == WStr("InvokePreStartInitMethods")) {
-    hr = AddIISPreStartInitFlags(module_id, function_token);
+      caller.name == WStr("InvokePreStartInitMethods"_)) {
+    hr = AddIISPreStartInitFlags(module_id, function_token, nullptr);
 
     if (FAILED(hr)) {
       Warn("JITCompilationStarted: Call to AddIISPreStartInitFlags() failed for ",
@@ -1624,7 +1653,8 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
 
 HRESULT CorProfiler::AddIISPreStartInitFlags(
     const ModuleID module_id,
-    const mdToken function_token) {
+    const mdToken function_token,
+    ICorProfilerFunctionControl* pFunctionControl) {
   ComPtr<IUnknown> metadata_interfaces;
   auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
                                            IID_IMetaDataImport2,
@@ -1644,7 +1674,7 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  ILRewriter rewriter(this->info_, pFunctionControl, module_id, function_token);
   hr = rewriter.Import();
 
   if (FAILED(hr)) {

@@ -86,7 +86,8 @@ class CorProfiler : public CorProfilerBase {
                          const FunctionInfo& caller,
                          ModuleMetadata* module_metadata);
   HRESULT AddIISPreStartInitFlags(const ModuleID module_id,
-                           const mdToken function_token);
+                           const mdToken function_token, 
+                           ICorProfilerFunctionControl* pFunctionControl);
 
   //
   // CallTarget Methods

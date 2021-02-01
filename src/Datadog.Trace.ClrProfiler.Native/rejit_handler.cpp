@@ -50,6 +50,7 @@ RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(mdMethodDef methodD
   methods[methodDef] = methodHandler;
   return methodHandler;
 }
+
 bool RejitHandlerModule::TryGetMethod(mdMethodDef methodDef,
                                       RejitHandlerModuleMethod** methodHandler) {
   std::lock_guard<std::mutex> guard(methods_lock);
