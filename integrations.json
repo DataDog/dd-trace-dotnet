@@ -5,7 +5,7 @@
       {
         "caller": {},
         "target": {
-          "assembly": "System.Net.Http",
+          "assembly": "System.Net.Http.WinHttpHandler",
           "type": "System.Net.Http.WinHttpHandler",
           "method": "SendAsync",
           "signature_types": [
@@ -4024,7 +4024,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
           "method": "GetRequestStream",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -4048,7 +4048,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.21.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
           "method": "GetRequestStream",
           "signature": "00 04 1C 1C 08 08 0A",

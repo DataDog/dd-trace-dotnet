@@ -1,35 +1,29 @@
-using System.Globalization;
-using System.Linq;
 using Datadog.Core.Tools;
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [CollectionDefinition(nameof(ServiceMappingTests), DisableParallelization = true)]
+    [CollectionDefinition(nameof(WebRequestTests), DisableParallelization = true)]
     public class ServiceMappingTests : TestHelper
     {
         public ServiceMappingTests(ITestOutputHelper output)
-            : base("HttpMessageHandler", output)
+            : base("WebRequest", output)
         {
-            SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_SERVICE_MAPPING", "some-trace:not-used,http-client:my-custom-client");
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
+        [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(false, false)]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
-        public void RenamesService(bool enableCallTarget, bool enableInlining)
+        public void RenamesService()
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 71 : 27; // .NET Framework automatic instrumentation doesn't cover Async / TaskAsync operations
 
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 36 : 32;
+            var ignoreAsync = EnvironmentHelper.IsCoreClr() ? string.Empty : "IgnoreAsync ";
+
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "my-custom-client";
 
@@ -40,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"Port={httpPort}"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{ignoreAsync}Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -52,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(expectedOperationName, span.Name);
                     Assert.Equal(expectedServiceName, span.Service);
                     Assert.Equal(SpanTypes.Http, span.Type);
-                    Assert.Equal("HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
+                    Assert.Matches("WebRequest|HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
             }
