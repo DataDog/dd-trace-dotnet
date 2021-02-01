@@ -131,6 +131,8 @@ namespace Datadog.Trace.PlatformHelpers
                     }
 
                     Runtime = FrameworkDescription.Instance.Name;
+
+                    DebugModeEnabled = GetVariableIfExists(Configuration.ConfigurationKeys.DebugEnabled, environmentVariables)?.ToBoolean() ?? true;
                 }
             }
             catch (Exception ex)
@@ -141,6 +143,8 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         public static AzureAppServices Metadata { get; set; }
+
+        public bool DebugModeEnabled { get; }
 
         public bool IsRelevant { get; }
 

@@ -9,10 +9,10 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WinHttpHandler
 {
     /// <summary>
-    /// System.Net.Http.SocketsHttpHandler calltarget instrumentation
+    /// System.Net.Http.WinHttpHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = "System.Net.Http",
+        AssemblyName = "System.Net.Http.WinHttpHandler",
         TypeName = "System.Net.Http.WinHttpHandler",
         MethodName = "SendAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,

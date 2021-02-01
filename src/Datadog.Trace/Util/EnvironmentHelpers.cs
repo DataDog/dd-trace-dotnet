@@ -15,6 +15,23 @@ namespace Datadog.Trace.Util
         private static readonly Lazy<IDatadogLogger> Logger = new Lazy<IDatadogLogger>(() => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
 
         /// <summary>
+        /// Safe wrapper around Environment.SetEnvironmentVariable
+        /// </summary>
+        /// <param name="key">Name of the environment variable to set</param>
+        /// <param name="value">Value to set</param>
+        public static void SetEnvironmentVariable(string key, string value)
+        {
+            try
+            {
+                Environment.SetEnvironmentVariable(key, value);
+            }
+            catch (Exception ex)
+            {
+                Logger.SafeLogError(ex, "Error setting environment variable {EnvironmentVariable}={Value}", key, value);
+            }
+        }
+
+        /// <summary>
         /// Safe wrapper around Environment.GetEnvironmentVariable
         /// </summary>
         /// <param name="key">Name of the environment variable to fetch</param>
