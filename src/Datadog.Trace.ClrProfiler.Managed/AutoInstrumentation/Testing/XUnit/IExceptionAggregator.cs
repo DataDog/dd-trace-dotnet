@@ -1,6 +1,6 @@
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     /// <summary>
     /// Exception aggregator interface

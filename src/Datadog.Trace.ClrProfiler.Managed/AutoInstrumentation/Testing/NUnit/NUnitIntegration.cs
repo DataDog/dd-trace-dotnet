@@ -6,7 +6,7 @@ using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ExtensionMethods;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {

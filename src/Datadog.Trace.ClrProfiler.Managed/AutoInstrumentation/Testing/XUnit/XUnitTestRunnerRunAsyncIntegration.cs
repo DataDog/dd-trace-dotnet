@@ -1,7 +1,8 @@
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     /// <summary>
     /// Xunit.Sdk.TestRunner`1.RunAsync calltarget instrumentation
@@ -16,7 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
         IntegrationName = IntegrationName)]
     public static class XUnitTestRunnerRunAsyncIntegration
     {
-        private const string IntegrationName = "XUnit";
+        private const string IntegrationName = nameof(IntegrationIds.XUnit);
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         /// <summary>
         /// OnMethodBegin callback
@@ -26,17 +28,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.XUnit
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                return CallTargetState.GetDefault();
-            }
+                TestRunnerStruct runnerInstance = instance.As<TestRunnerStruct>();
 
-            TestRunnerStruct runnerInstance = instance.As<TestRunnerStruct>();
-
-            // Skip test support
-            if (runnerInstance.SkipReason != null)
-            {
-                XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType());
+                // Skip test support
+                if (runnerInstance.SkipReason != null)
+                {
+                    XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType());
+                }
             }
 
             return CallTargetState.GetDefault();

@@ -1,8 +1,9 @@
 using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
     /// NUnit.VisualStudio.TestAdapter.NUnitTestAdapter.Unload() calltarget instrumentation
@@ -17,7 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
         IntegrationName = IntegrationName)]
     public class NUnitTestAdapterUnloadIntegration
     {
-        private const string IntegrationName = "NUnit";
+        private const string IntegrationName = nameof(IntegrationIds.NUnit);
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         /// <summary>
         /// OnMethodBegin callback
@@ -40,25 +42,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
         /// <returns>Return value of the method</returns>
         public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                return CallTargetReturn.GetDefault();
-            }
-
-            SynchronizationContext context = SynchronizationContext.Current;
-            try
-            {
-                SynchronizationContext.SetSynchronizationContext(null);
-                // We have to ensure the flush of the buffer after we finish the tests of an assembly.
-                // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
-                // So the last spans in buffer aren't send to the agent.
-                // Other times we reach the 500 items of the buffer in a sec and the tracer start to drop spans.
-                // In a test scenario we must keep all spans.
-                Tracer.Instance.FlushAsync().GetAwaiter().GetResult();
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(context);
+                SynchronizationContext context = SynchronizationContext.Current;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    // We have to ensure the flush of the buffer after we finish the tests of an assembly.
+                    // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
+                    // So the last spans in buffer aren't send to the agent.
+                    // Other times we reach the 500 items of the buffer in a sec and the tracer start to drop spans.
+                    // In a test scenario we must keep all spans.
+                    Tracer.Instance.FlushAsync().GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(context);
+                }
             }
 
             return CallTargetReturn.GetDefault();

@@ -1,23 +1,25 @@
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
-    /// NUnit.Framework.Internal.Commands.TestMethodCommand.Execute() calltarget instrumentation
+    /// NUnit.Framework.Internal.Commands.SkipCommand.Execute() calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "nunit.framework",
-        TypeName = "NUnit.Framework.Internal.Commands.TestMethodCommand",
+        TypeName = "NUnit.Framework.Internal.Commands.SkipCommand",
         MethodName = "Execute",
         ReturnTypeName = "NUnit.Framework.Internal.TestResult",
         ParameterTypeNames = new[] { "NUnit.Framework.Internal.TestExecutionContext" },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = IntegrationName)]
-    public class NUnitTestMethodCommandExecuteIntegration
+    public class NUnitSkipCommandExecuteIntegration
     {
-        private const string IntegrationName = "NUnit";
+        private const string IntegrationName = nameof(IntegrationIds.NUnit);
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         /// <summary>
         /// OnMethodBegin callback
@@ -30,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.NUnit
         public static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext executionContext)
             where TContext : ITestExecutionContext
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return CallTargetState.GetDefault();
             }

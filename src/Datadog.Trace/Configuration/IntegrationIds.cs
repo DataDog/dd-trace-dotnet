@@ -14,6 +14,8 @@ namespace Datadog.Trace.Configuration
         GraphQL,
         MongoDb,
         XUnit,
+        NUnit,
+        MsTestV2,
         Wcf,
         WebRequest,
         ElasticsearchNet5,
