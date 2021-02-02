@@ -90,21 +90,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
+                string routeUrl = route?.Url;
+                string areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
+                string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+                string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+
+                if (string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
+                {
+                    resourceName = $"{httpMethod} /{routeUrl.ToLowerInvariant()}";
+                }
+
                 if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
                 {
                     var cleanUri = UriHelpers.GetRelativeUrl(httpContext.Request.Url, tryRemoveIds: true);
                     resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
                 }
 
-                string areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
-                string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-
                 if (string.IsNullOrEmpty(resourceName))
                 {
                     // Keep the legacy resource name, just to have something
                     resourceName = $"{httpMethod} {controllerName}.{actionName}";
                 }
+
+                // Fail safe to catch templates in routing values
+                resourceName =
+                    resourceName
+                       .Replace("{area}", areaName)
+                       .Replace("{controller}", controllerName)
+                       .Replace("{action}", actionName);
 
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
@@ -129,13 +142,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scope = Tracer.Instance.StartActiveWithTags(OperationName, propagatedContext, tags: tags);
                 Span span = scope.Span;
 
-                // Fail safe to catch templates in routing values
-                resourceName =
-                    resourceName
-                       .Replace("{area}", areaName)
-                       .Replace("{controller}", controllerName)
-                       .Replace("{action}", actionName);
-
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
                     method: httpMethod,
@@ -144,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     tags,
                     tagsFromHeaders);
 
-                tags.AspNetRoute = route?.Url;
+                tags.AspNetRoute = routeUrl;
                 tags.AspNetArea = areaName;
                 tags.AspNetController = controllerName;
                 tags.AspNetAction = actionName;
