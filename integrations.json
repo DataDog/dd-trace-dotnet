@@ -174,6 +174,28 @@
       {
         "caller": {},
         "target": {
+          "assembly": "MySql.Data",
+          "type": "MySql.Data.MySqlClient.MySqlCommand",
+          "method": "ExecuteNonQuery",
+          "signature_types": [
+            "System.Int32"
+          ],
+          "minimum_major": 6,
+          "minimum_minor": 7,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "System.Net.Http",
           "type": "System.Net.Http.SocketsHttpHandler",
           "method": "SendAsync",
@@ -298,6 +320,28 @@
       {
         "caller": {},
         "target": {
+          "assembly": "MySql.Data",
+          "type": "MySql.Data.MySqlClient.MySqlCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "MySql.Data.MySqlClient.MySqlDataReader"
+          ],
+          "minimum_major": 6,
+          "minimum_minor": 7,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
           "type": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
           "method": "Execute",
@@ -314,6 +358,29 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MySql.Data",
+          "type": "MySql.Data.MySqlClient.MySqlCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "MySql.Data.MySqlClient.MySqlDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 6,
+          "minimum_minor": 7,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -392,6 +459,29 @@
       {
         "caller": {},
         "target": {
+          "assembly": "MySql.Data",
+          "type": "MySql.Data.MySqlClient.MySqlCommand",
+          "method": "ExecuteDbDataReader",
+          "signature_types": [
+            "System.Data.Common.DbDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 6,
+          "minimum_minor": 7,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "MySqlConnector",
           "type": "MySqlConnector.MySqlCommand",
           "method": "ExecuteNonQuery",
@@ -455,6 +545,28 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MySql.Data",
+          "type": "MySql.Data.MySqlClient.MySqlCommand",
+          "method": "ExecuteScalar",
+          "signature_types": [
+            "System.Object"
+          ],
+          "minimum_major": 6,
+          "minimum_minor": 7,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.22.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration",
           "action": "CallTargetModification"
         }
       },

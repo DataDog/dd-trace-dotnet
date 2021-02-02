@@ -14,6 +14,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql.MySqlCon
 
 // int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQuery()
 [assembly: CommandExecuteNonQuery(typeof(MySqlDataClientData))]
+[assembly: CommandExecuteNonQuery(typeof(MySqlData8ClientData))]
 
 // int MySqlConnector.MySqlCommand.ExecuteNonQuery()
 [assembly: CommandExecuteNonQuery(typeof(MySqlConnectorClientData))]
@@ -45,6 +46,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql.MySqlCon
 
 // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader()
 [assembly: CommandExecuteReader(typeof(MySqlDataClientData))]
+[assembly: CommandExecuteReader(typeof(MySqlData8ClientData))]
 
 // MySqlDataReader MySqlConnector.MySqlCommand.ExecuteReader()
 [assembly: CommandExecuteReader(typeof(MySqlConnectorClientData))]
@@ -55,6 +57,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql.MySqlCon
 
 // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader(CommandBehavior)
 [assembly: CommandExecuteReaderWithBehavior(typeof(MySqlDataClientData))]
+[assembly: CommandExecuteReaderWithBehavior(typeof(MySqlData8ClientData))]
 
 // MySqlDataReader MySqlConnector.MySqlCommand.ExecuteReader(CommandBehavior)
 [assembly: CommandExecuteReaderWithBehavior(typeof(MySqlConnectorClientData))]
@@ -65,6 +68,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql.MySqlCon
 
 // DbDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
 [assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MySqlDataClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MySqlData8ClientData))]
 
 // DbDataReader MySqlConnector.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
 [assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MySqlConnectorClientData))]
@@ -82,6 +86,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql.MySqlCon
 
 // object MySql.Data.MySqlClient.MySqlCommand.ExecuteScalar()
 [assembly: CommandExecuteScalar(typeof(MySqlDataClientData))]
+[assembly: CommandExecuteScalar(typeof(MySqlData8ClientData))]
 
 // object MySqlConnector.MySqlCommand.ExecuteScalar()
 [assembly: CommandExecuteScalar(typeof(MySqlConnectorClientData))]

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
@@ -15,12 +16,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetMySqlData()
+        {
+            foreach (object[] item in PackageVersions.MySqlData)
+            {
+                yield return item.Concat(new object[] { false, false, }).ToArray();
+                yield return item.Concat(new object[] { true, false, }).ToArray();
+                yield return item.Concat(new object[] { true, true, }).ToArray();
+            }
+        }
+
         [Theory]
-        [InlineData(false, false)]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
+        [MemberData(nameof(GetMySqlData))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandard(bool enableCallTarget, bool enableInlining)
+        public void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget, bool enableInlining)
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
 
@@ -52,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
