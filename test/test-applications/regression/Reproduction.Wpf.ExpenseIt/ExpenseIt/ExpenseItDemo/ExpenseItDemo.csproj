@@ -127,6 +127,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj">
+      <Project>{d95d5e26-f32a-481d-a15a-ef7b3b56d2e0}</Project>
+      <Name>Datadog.Trace.ClrProfiler.Managed.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
       <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
       <Name>Datadog.Trace.ClrProfiler.Managed</Name>

@@ -66,8 +66,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        internal static void SetEnvironmentFromDictionary(IDictionary values)
+        internal void SetEnvironmentFromDictionary(IDictionary values)
         {
+            foreach (DictionaryEntry item in _originalEnvVars)
+            {
+                Environment.SetEnvironmentVariable(item.Key.ToString(), null);
+            }
+
             foreach (DictionaryEntry item in values)
             {
                 Environment.SetEnvironmentVariable(item.Key.ToString(), item.Value.ToString());
@@ -78,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             foreach (DictionaryEntry item in values)
             {
-                Environment.SetEnvironmentVariable(item.Key.ToString(), string.Empty);
+                Environment.SetEnvironmentVariable(item.Key.ToString(), null);
             }
 
             foreach (DictionaryEntry item in _originalEnvVars)
