@@ -116,8 +116,8 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
 
-  - publish: $(Agent.JobName)_dotnet-tracer-native.log
-    artifact: profiler-logs
+  - publish: dotnet-tracer-native.log
+    artifact: $(Agent.JobName)_profiler-logs
     condition: succeededOrFailed()
 
   - task: PublishTestResults@2
@@ -238,8 +238,8 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core50
 
-  - publish: $(Agent.JobName)_dotnet-tracer-native.log
-    artifact: profiler-logs
+  - publish: dotnet-tracer-native.log
+    artifact: $(Agent.JobName)_profiler-logs
     condition: succeededOrFailed()
 
   - task: PublishTestResults@2
@@ -584,8 +584,8 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.ARM64.Core50
 
-  - publish: $(Agent.JobName)_dotnet-tracer-native.log
-    artifact: profiler-logs
+  - publish: dotnet-tracer-native.log
+    artifact: $(Agent.JobName)_profiler-logs
     condition: succeededOrFailed()
 
   - task: PublishTestResults@2
