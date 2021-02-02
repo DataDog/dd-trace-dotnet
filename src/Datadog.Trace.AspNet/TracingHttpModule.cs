@@ -161,6 +161,13 @@ namespace Datadog.Trace.AspNet
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
                     scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
+
+                    if (app.Context.Items["__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename"] is string resourceName
+                        && !string.IsNullOrEmpty(resourceName))
+                    {
+                        scope.Span.ResourceName = resourceName;
+                    }
+
                     scope.Dispose();
                 }
             }

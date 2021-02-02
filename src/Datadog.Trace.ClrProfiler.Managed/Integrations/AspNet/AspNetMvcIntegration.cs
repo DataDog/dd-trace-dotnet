@@ -156,6 +156,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.AspNetAction = actionName;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+
+                // set the resource name in the HttpContext so TracingHttpModule can update it
+                httpContext.Items["__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename"] = resourceName;
             }
             catch (Exception ex)
             {
