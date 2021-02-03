@@ -1,7 +1,9 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.AspNet;
+using System.Threading;
+using Datadog.Trace;
+using Datadog.Trace.Configuration;
 using log4net;
 using log4net.Config;
 
@@ -11,25 +13,22 @@ namespace ApplicationWithLog4Net
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(Program));
 
-        static void Main(string[] args)
+        public void Invoke()
         {
             var logRepository = LogManager.GetRepository(typeof(Program).Assembly);
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
 
+            // Write some log message
             log.Info("Message");
-        }
 
-        public override string ToString()
-        {
-            // Set DD_LOGS_INJECTION to enable the automatic trace injection
-            Environment.SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            // Set up Tracer
+            var settings = new TracerSettings()
+            {
+                LogsInjectionEnabled = true
+            };
+            Tracer.Instance = new Tracer(settings);
 
-            // Let's call AspNetStartup.Register now
-            // This will create a Tracer and, if buggy, store items in the CallContext
-            // which will need to be passed by ref or deserialized when transitioning AppDomains
-            HttpApplicationStartup.Register();
-
-            return "ApplicationWithLog4Net.Program";
+            Thread.Sleep(1000);
         }
     }
 }
