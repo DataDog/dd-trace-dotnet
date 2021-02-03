@@ -29,18 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(BasicGetIntegration));
 
-        private static Func<IDictionary<string, object>, string, IEnumerable<string>> headersGetter = ((carrier, key) =>
-        {
-            if (carrier.TryGetValue(key, out object value) && value is byte[] bytes)
-            {
-                return new[] { Encoding.UTF8.GetString(bytes) };
-            }
-            else
-            {
-                return Enumerable.Empty<string>();
-            }
-        });
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -83,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 {
                     try
                     {
-                        propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesHeaders, headersGetter);
+                        propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesHeaders, ContextPropagation.HeadersGetter);
                     }
                     catch (Exception ex)
                     {

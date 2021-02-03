@@ -29,11 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(BasicPublishIntegration));
 
-        private static Action<IDictionary<string, object>, string, string> headersSetter = ((carrier, key, value) =>
-        {
-            carrier[key] = Encoding.UTF8.GetBytes(value);
-        });
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -77,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                         basicProperties.Headers = new Dictionary<string, object>();
                     }
 
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicProperties.Headers, headersSetter);
+                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicProperties.Headers, ContextPropagation.HeadersSetter);
                 }
             }
 
