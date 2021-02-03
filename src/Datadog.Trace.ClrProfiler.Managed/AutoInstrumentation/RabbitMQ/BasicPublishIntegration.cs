@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     tags.MessageSize = body?.Length.ToString() ?? "0";
                 }
 
-                if (basicProperties != null)
+                if (basicProperties.Instance != null)
                 {
                     if (tags != null && basicProperties.IsDeliveryModePresent())
                     {
