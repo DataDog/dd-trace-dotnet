@@ -33,7 +33,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine();
                 Console.WriteLine($"Starting HTTP listener at {Url}");
 
-                // send http requests using HttpClient
+                // send async http requests using HttpClient
                 Console.WriteLine();
                 Console.WriteLine("Sending async request with default HttpClient.");
                 using (var client = new HttpClient())
@@ -72,7 +72,33 @@ namespace Samples.HttpMessageHandler
                 }
 #endif
 
+#if NET5_0
+                // send sync http requests using HttpClient
+                Console.WriteLine();
+                Console.WriteLine("Sending sync request with default HttpClient.");
+                using (var client = new HttpClient())
+                {
+                    RequestHelpers.SendHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                }
 
+                // send async http requests using HttpClient with CustomHandler
+                Console.WriteLine();
+                Console.WriteLine("Sending sync request with HttpClient(CustomHandler).");
+                using (var client = new HttpClient(new CustomHandler()))
+                {
+                    RequestHelpers.SendHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                }
+
+                // send sync http requests using HttpClient with raw SocketsHttpHandler
+                Console.WriteLine();
+                Console.WriteLine("Sending sync request with HttpClient(SocketsHttpHandler).");
+                using (var client = new HttpClient(new SocketsHttpHandler()))
+                {
+                    RequestHelpers.SendHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                }
+
+                // sync http requests using HttpClient are not supported with WinHttpHandler
+#endif
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
                 listener.Stop();

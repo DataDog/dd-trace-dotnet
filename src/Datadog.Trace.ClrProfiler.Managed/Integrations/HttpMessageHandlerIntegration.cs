@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpMessageHandler = SystemNetHttp + "." + HttpMessageHandlerTypeName;
         private const string HttpClientHandler = SystemNetHttp + "." + HttpClientHandlerTypeName;
         private const string SendAsync = "SendAsync";
+        private const string Send = "Send";
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpMessageHandler));
         private static readonly IntegrationInfo SocketHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpSocketsHandler));
@@ -141,6 +142,89 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
+        /// Instrumentation wrapper for HttpMessageHandler.Send/>.
+        /// </summary>
+        /// <param name="handler">The HttpMessageHandler instance to instrument.</param>
+        /// <param name="request">The HttpRequestMessage that represents the current HTTP request.</param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>Returns the value returned by the inner method call.</returns>
+        [InterceptMethod(
+            TargetAssembly = SystemNetHttp,
+            TargetType = HttpMessageHandler,
+            TargetMethod = Send,
+            TargetSignatureTypes = new[] { ClrNames.HttpResponseMessage, ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
+            TargetMinimumVersion = Major5,
+            TargetMaximumVersion = Major5)]
+
+        public static object HttpMessageHandler_Send(
+            object handler,
+            object request,
+            object boxedCancellationToken,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            // original signature:
+            // HttpResponseMessage HttpMessageHandler.Send(HttpRequestMessage request, CancellationToken cancellationToken)
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
+            var callOpCode = (OpCodeValue)opCode;
+            var httpMessageHandler = handler.GetInstrumentedType(SystemNetHttp, HttpMessageHandlerTypeName);
+
+            Func<object, object, CancellationToken, object> instrumentedMethod = null;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<object, object, CancellationToken, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, Send)
+                       .WithConcreteType(httpMessageHandler)
+                       .WithParameters(request, cancellationToken)
+                       .WithNamespaceAndNameFilters(NamespaceAndNameFilters)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: HttpMessageHandler,
+                    methodName: Send,
+                    instanceType: handler.GetType().AssemblyQualifiedName);
+                throw;
+            }
+
+            var reportedType = callOpCode == OpCodeValue.Call ? httpMessageHandler : handler.GetType();
+            var requestValue = request.As<HttpRequestMessageStruct>();
+
+            var isHttpClientHandler = handler.GetInstrumentedType(SystemNetHttp, HttpClientHandlerTypeName) != null;
+
+            if (!(isHttpClientHandler || IsSocketsHttpHandlerEnabled(reportedType)) ||
+                !IsTracingEnabled(requestValue.Headers))
+            {
+                // skip instrumentation
+                return instrumentedMethod(handler, request, cancellationToken);
+            }
+
+            return SendInternal(
+                    instrumentedMethod,
+                    reportedType,
+                    requestValue,
+                    handler,
+                    request,
+                    cancellationToken);
+        }
+
+        /// <summary>
         /// Instrumentation wrapper for HttpClientHandler.SendAsync.
         /// </summary>
         /// <param name="handler">The HttpClientHandler instance to instrument.</param>
@@ -239,6 +323,85 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 .Cast(taskResultType);
         }
 
+        /// <summary>
+        /// Instrumentation wrapper for HttpClientHandler.Send.
+        /// </summary>
+        /// <param name="handler">The HttpClientHandler instance to instrument.</param>
+        /// <param name="request">The HttpRequestMessage that represents the current HTTP request.</param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>Returns the value returned by the inner method call.</returns>
+        [InterceptMethod(
+            TargetAssembly = SystemNetHttp,
+            TargetType = HttpClientHandler,
+            TargetMethod = Send,
+            TargetSignatureTypes = new[] { ClrNames.HttpResponseMessage, ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
+            TargetMinimumVersion = Major5,
+            TargetMaximumVersion = Major5)]
+        public static object HttpClientHandler_Send(
+            object handler,
+            object request,
+            object boxedCancellationToken,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            // original signature:
+            // HttpResponseMessage HttpClientHandler.Send(HttpRequestMessage request, CancellationToken cancellationToken)
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
+            var callOpCode = (OpCodeValue)opCode;
+            var httpClientHandler = handler.GetInstrumentedType(SystemNetHttp, HttpClientHandlerTypeName);
+
+            Func<object, object, CancellationToken, object> instrumentedMethod = null;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<object, object, CancellationToken, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, Send)
+                       .WithConcreteType(httpClientHandler)
+                       .WithParameters(request, cancellationToken)
+                       .WithNamespaceAndNameFilters(NamespaceAndNameFilters)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: HttpClientHandler,
+                    methodName: Send,
+                    instanceType: handler.GetType().AssemblyQualifiedName);
+                throw;
+            }
+
+            var requestValue = request.As<HttpRequestMessageStruct>();
+            var reportedType = callOpCode == OpCodeValue.Call ? httpClientHandler : handler.GetType();
+
+            if (!IsTracingEnabled(requestValue.Headers))
+            {
+                // skip instrumentation
+                return instrumentedMethod(handler, request, cancellationToken);
+            }
+
+            return SendInternal(
+                    instrumentedMethod,
+                    reportedType,
+                    requestValue,
+                    handler,
+                    request,
+                    cancellationToken);
+        }
+
         private static async Task<object> SendAsyncInternal(
             Func<object, object, CancellationToken, object> sendAsync,
             Type reportedType,
@@ -266,6 +429,49 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     await task.ConfigureAwait(false);
 
                     var response = task.As<TaskObjectStruct>().Result;
+
+                    // this tag can only be set after the response is returned
+                    int statusCode = response.As<HttpResponseMessageStruct>().StatusCode;
+
+                    if (scope != null)
+                    {
+                        scope.Span.SetHttpStatusCode(statusCode, isServer: false);
+                    }
+
+                    return response;
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        private static object SendInternal(
+            Func<object, object, CancellationToken, object> send,
+            Type reportedType,
+            HttpRequestMessageStruct requestValue,
+            object handler,
+            object request,
+            CancellationToken cancellationToken)
+        {
+            var httpMethod = requestValue.Method.Method;
+            var requestUri = requestValue.RequestUri;
+
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationId, out var tags))
+            {
+                try
+                {
+                    if (scope != null)
+                    {
+                        tags.HttpClientHandlerType = reportedType.FullName;
+
+                        // add distributed tracing headers to the HTTP request
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, new HttpHeadersCollection(requestValue.Headers));
+                    }
+
+                    var response = send(handler, request, cancellationToken);
 
                     // this tag can only be set after the response is returned
                     int statusCode = response.As<HttpResponseMessageStruct>().StatusCode;

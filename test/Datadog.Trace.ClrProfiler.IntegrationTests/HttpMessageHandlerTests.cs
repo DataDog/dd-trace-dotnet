@@ -52,7 +52,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             ConfigureInstrumentation(inlining, instrumentation, enableSocketsHandler);
 
-            var expectedSpanCount = CalculateExpectedAsyncSpans(instrumentation, inlining.EnableCallTarget);
+            var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation, inlining.EnableCallTarget);
+            var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
+
+            var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
 
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
@@ -144,6 +147,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // SocketsHttpHandler instrumentation is on by default
             if (EnvironmentHelper.IsCoreClr() && (instrumentation.InstrumentSocketHandler ?? true))
+            {
+                expectedSpanCount += spansPerHttpClient;
+            }
+
+            return expectedSpanCount;
+        }
+
+        private static int CalculateExpectedSyncSpans(InstrumentationOptions instrumentation)
+        {
+            // Sync requests are only enabled in .NET 5
+            if (!EnvironmentHelper.IsNet5())
+            {
+                return 0;
+            }
+
+            var spansPerHttpClient = 21;
+
+            var expectedSpanCount = spansPerHttpClient * 2; // default HttpClient and CustomHttpClientHandler
+
+            // SocketsHttpHandler instrumentation is on by default
+            if (instrumentation.InstrumentSocketHandler ?? true)
             {
                 expectedSpanCount += spansPerHttpClient;
             }

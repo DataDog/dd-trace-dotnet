@@ -163,5 +163,102 @@ namespace Samples.HttpMessageHandler
                 }
             }
         }
+
+#if NET5_0
+        public static void SendHttpClientRequests(HttpClient client, bool tracingDisabled, string url, string requestContent)
+        {
+            // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
+            Console.WriteLine($"[HttpClient] sending sync requests to {url}");
+
+            if (tracingDisabled)
+            {
+                client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+            }
+
+            using (Tracer.Instance.StartActive("HttpClientRequest"))
+            {
+                using (Tracer.Instance.StartActive("Send.Delete"))
+                {
+                    client.Send(new HttpRequestMessage(HttpMethod.Delete, url));
+                    Console.WriteLine("Received response for DELETE client.Send(HttpRequestMessage)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Delete, url), CancellationToken.None);
+                    Console.WriteLine("Received response for DELETE client.Send(HttpRequestMessage, CancellationToken)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Delete, url), HttpCompletionOption.ResponseContentRead);
+                    Console.WriteLine("Received response for DELETE client.Send(HttpRequestMessage, HttpCompletionOption)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Delete, url), HttpCompletionOption.ResponseContentRead, CancellationToken.None);
+                    Console.WriteLine("Received response for DELETE client.Send(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
+                }
+
+                using (Tracer.Instance.StartActive("Send.Get"))
+                {
+                    client.Send(new HttpRequestMessage(HttpMethod.Get, url));
+                    Console.WriteLine("Received response for GET client.Send(HttpRequestMessage)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Get, url), CancellationToken.None);
+                    Console.WriteLine("Received response for GET client.Send(HttpRequestMessage, CancellationToken)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead);
+                    Console.WriteLine("Received response for GET client.Send(HttpRequestMessage, HttpCompletionOption)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead, CancellationToken.None);
+                    Console.WriteLine("Received response for GET client.Send(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
+                }
+
+                using (Tracer.Instance.StartActive("Send.Patch"))
+                {
+                    client.Send(new HttpRequestMessage(HttpMethod.Patch, url) { Content = new StringContent(requestContent, Utf8) });
+                    Console.WriteLine("Received response for PATCH client.Send(HttpRequestMessage)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Patch, url) { Content = new StringContent(requestContent, Utf8) }, CancellationToken.None);
+                    Console.WriteLine("Received response for PATCH client.Send(HttpRequestMessage, CancellationToken)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Patch, url) { Content = new StringContent(requestContent, Utf8) }, HttpCompletionOption.ResponseContentRead);
+                    Console.WriteLine("Received response for PATCH client.Send(HttpRequestMessage, HttpCompletionOption)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Patch, url) { Content = new StringContent(requestContent, Utf8) }, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
+                    Console.WriteLine("Received response for PATCH client.Send(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
+                }
+
+                using (Tracer.Instance.StartActive("Send.Post"))
+                {
+                    client.Send(new HttpRequestMessage(HttpMethod.Post, url) { Content = new StringContent(requestContent, Utf8) });
+                    Console.WriteLine("Received response for POST client.Send(HttpRequestMessage)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Post, url) { Content = new StringContent(requestContent, Utf8) }, CancellationToken.None);
+                    Console.WriteLine("Received response for POST client.Send(HttpRequestMessage, CancellationToken)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Post, url) { Content = new StringContent(requestContent, Utf8) }, HttpCompletionOption.ResponseContentRead);
+                    Console.WriteLine("Received response for POST client.Send(HttpRequestMessage, HttpCompletionOption)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Post, url) { Content = new StringContent(requestContent, Utf8) }, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
+                    Console.WriteLine("Received response for POST client.Send(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
+                }
+
+                using (Tracer.Instance.StartActive("Send.Put"))
+                {
+                    client.Send(new HttpRequestMessage(HttpMethod.Put, url) { Content = new StringContent(requestContent, Utf8) });
+                    Console.WriteLine("Received response for PUT client.Send(HttpRequestMessage)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Put, url) { Content = new StringContent(requestContent, Utf8) }, CancellationToken.None);
+                    Console.WriteLine("Received response for PUT client.Send(HttpRequestMessage, CancellationToken)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Put, url) { Content = new StringContent(requestContent, Utf8) }, HttpCompletionOption.ResponseContentRead);
+                    Console.WriteLine("Received response for PUT client.Send(HttpRequestMessage, HttpCompletionOption)");
+
+                    client.Send(new HttpRequestMessage(HttpMethod.Put, url) { Content = new StringContent(requestContent, Utf8) }, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
+                    Console.WriteLine("Received response for PUT client.Send(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
+                }
+
+                using (Tracer.Instance.StartActive("ErrorSpanBelow"))
+                {
+                    client.Send(new HttpRequestMessage(HttpMethod.Get, $"{url}HttpErrorCode"));
+                    Console.WriteLine("Received response for client.Get Error Span");
+                }
+            }
+        }
+#endif
     }
 }
