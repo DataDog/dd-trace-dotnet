@@ -53,7 +53,7 @@ class CorProfiler : public CorProfilerBase {
   //
   // Module helper variables
   //
-  std::mutex module_id_to_info_map_lock_;
+  std::recursive_mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
 
   //

@@ -287,7 +287,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+  std::lock_guard<std::recursive_mutex> guard(module_id_to_info_map_lock_);
 
   // double check if is_attached_ has changed to avoid possible race condition with shutdown function
   if (!is_attached_) {
@@ -367,7 +367,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+  std::lock_guard<std::recursive_mutex> guard(module_id_to_info_map_lock_);
 
   // double check if is_attached_ has changed to avoid possible race condition with shutdown function
   if (!is_attached_) {
@@ -561,7 +561,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
 
   // take this lock so we block until the
   // module metadata is not longer being used
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+  std::lock_guard<std::recursive_mutex> guard(module_id_to_info_map_lock_);
 
   // double check if is_attached_ has changed to avoid possible race condition with shutdown function
   if (!is_attached_) {
@@ -590,7 +590,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
 
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+  std::lock_guard<std::recursive_mutex> guard(module_id_to_info_map_lock_);
 
   Warn("Exiting.");
   is_attached_.store(false);
@@ -606,7 +606,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded() {
 
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+  std::lock_guard<std::recursive_mutex> guard(module_id_to_info_map_lock_);
 
   // double check if is_attached_ has changed to avoid possible race condition with shutdown function
   if (!is_attached_) {
@@ -627,7 +627,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
-  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+  std::lock_guard<std::recursive_mutex> guard(module_id_to_info_map_lock_);
 
   // double check if is_attached_ has changed to avoid possible race condition with shutdown function
   if (!is_attached_) {
@@ -2692,7 +2692,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
   // we get the module_metadata from the moduleId. 
   ModuleMetadata* module_metadata = nullptr;
   {
-    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+    std::lock_guard<std::recursive_mutex> guard(module_id_to_info_map_lock_);
     if (module_id_to_info_map_.count(moduleId) > 0) {
       module_metadata = module_id_to_info_map_[moduleId];
     } else {
