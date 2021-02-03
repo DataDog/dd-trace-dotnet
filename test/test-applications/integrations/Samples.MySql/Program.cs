@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
@@ -31,6 +32,13 @@ namespace Samples.MySql
             if (connectionString == null)
             {
                 var oldMySqlServer = typeof(MySqlConnection).Assembly.GetName().Version.Major != 8;
+#if !NET452
+                if (oldMySqlServer)
+                {
+                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                }
+#endif
+
                 var host = Environment.GetEnvironmentVariable(oldMySqlServer ? "MYSQL57_HOST" : "MYSQL_HOST") ?? "localhost";
                 var port = Environment.GetEnvironmentVariable(oldMySqlServer ? "MYSQL57_PORT" : "MYSQL_PORT") ?? "3307";
                 connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world";

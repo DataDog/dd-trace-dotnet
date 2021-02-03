@@ -11,6 +11,11 @@
 
   <ItemGroup>
     <PackageReference Include="MySql.Data" Version="$(ApiVersion)" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net452'" Include="System.Security.Permissions" Version="5.0.0" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net452'" Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net452'" Include="System.Management" Version="5.0.0" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net452'" Include="System.Text.Encoding" Version="4.3.0" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net452'" Include="System.Text.Encoding.CodePages" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
