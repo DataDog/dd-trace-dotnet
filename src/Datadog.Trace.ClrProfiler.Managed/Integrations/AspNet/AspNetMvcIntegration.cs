@@ -65,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 RouteData routeData = controllerContext.RouteData;
                 Route route = routeData?.Route as Route;
                 RouteValueDictionary routeValues = routeData?.Values;
+                bool wasAttributeRouted = false;
 
                 if (route == null && routeData?.Route.GetType().FullName == RouteCollectionRouteTypeName)
                 {
@@ -74,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // route was defined using attribute routing i.e. [Route("/path/{id}")]
                         // get route and routeValues from the RouteData in routeMatches
+                        wasAttributeRouted = true;
                         route = routeMatches[0].Route as Route;
                         routeValues = routeMatches[0].Values;
 
@@ -118,6 +120,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Replace("{area}", areaName)
                        .Replace("{controller}", controllerName)
                        .Replace("{action}", actionName);
+
+                if (!wasAttributeRouted && routeValues is not null && route is not null)
+                {
+                    // Remove unused parameters from conventional route templates
+                    // Don't bother with routes defined using attribute routing
+                    foreach (var parameter in route.Defaults)
+                    {
+                        var parameterName = parameter.Key;
+                        if (parameterName != "area"
+                            && parameterName != "controller"
+                            && parameterName != "action"
+                            && !routeValues.ContainsKey(parameterName))
+                        {
+                            resourceName = resourceName.Replace($"/{{{parameterName}}}", string.Empty);
+                        }
+                    }
+                }
 
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
