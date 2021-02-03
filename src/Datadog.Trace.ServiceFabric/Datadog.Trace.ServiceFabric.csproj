@@ -9,7 +9,7 @@
     <PlatformTarget>x64</PlatformTarget>
 
     <!-- NuGet -->
-    <Version>1.20.0-alpha1</Version>
+    <Version>1.23.0-alpha1</Version>
     <Title>Datadog APM</Title>
     <Description>Service Remoting instrumentation for Datadog APM</Description>
     <IncludeSymbols>true</IncludeSymbols>
