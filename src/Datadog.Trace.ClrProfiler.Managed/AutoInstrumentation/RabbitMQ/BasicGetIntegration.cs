@@ -101,17 +101,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             return new CallTargetReturn<TResult>(basicGetResult);
         }
-
-        private readonly struct IntegrationState
-        {
-            public readonly Scope Scope;
-            public readonly RabbitMQTags Tags;
-
-            public IntegrationState(Scope scope, RabbitMQTags tags)
-            {
-                Scope = scope;
-                Tags = tags;
-            }
-        }
     }
 }
