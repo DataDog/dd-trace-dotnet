@@ -11,6 +11,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [CollectionDefinition(nameof(WebRequestTests), DisableParallelization = true)]
+    [Collection(nameof(WebRequestTests))]
     public class WebRequestTests : TestHelper
     {
         public WebRequestTests(ITestOutputHelper output)
