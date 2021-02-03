@@ -1,4 +1,5 @@
 ﻿{
   "shadowCopy": false,
-  "diagnosticMessages": true
+  "diagnosticMessages": true,
+  "internalDiagnosticMessages": true
 }
