@@ -104,6 +104,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
 #else
             var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
+            if (packageVersion == "6.8.8")
+            {
+                expectedSpanCount = 76; // For this version the callsite instrumentation returns 2 spans less.
+            }
 #endif
 
             if (enableCallTarget)
