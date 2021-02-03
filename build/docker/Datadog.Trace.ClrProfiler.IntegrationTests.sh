@@ -6,9 +6,9 @@ cd "$( dirname "${BASH_SOURCE[0]}" )"/../../
 mkdir -p /var/log/datadog/dotnet
 touch /var/log/datadog/dotnet/dotnet-tracer-native.log
 
-dotnet vstest test/Datadog.Trace.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.IntegrationTests/results
+dotnet test test/Datadog.Trace.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.IntegrationTests/results -v normal --ReporterSwitch=verbose
 
-dotnet vstest test/Datadog.Trace.OpenTracing.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.OpenTracing.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.OpenTracing.IntegrationTests/results
+dotnet test test/Datadog.Trace.OpenTracing.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.OpenTracing.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.OpenTracing.IntegrationTests/results -v normal --ReporterSwitch=verbose
 
 wait-for-it servicestackredis:6379 -- \
 wait-for-it stackexchangeredis:6379 -- \
@@ -17,6 +17,6 @@ wait-for-it elasticsearch5:9200 -- \
 wait-for-it sqlserver:1433 -- \
 wait-for-it mongo:27017 -- \
 wait-for-it postgres:5432 -- \
-dotnet vstest test/Datadog.Trace.ClrProfiler.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.ClrProfiler.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.ClrProfiler.IntegrationTests/results
+dotnet test test/Datadog.Trace.ClrProfiler.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.ClrProfiler.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.ClrProfiler.IntegrationTests/results -v normal --ReporterSwitch=verbose
 
 cp /var/log/datadog/dotnet/dotnet-tracer-native.log /project/
