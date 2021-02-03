@@ -1,0 +1,129 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
+{
+    /// <summary>
+    /// RabbitMQ.Client BasicGet calltarget instrumentation
+    /// </summary>
+    [InstrumentMethod(
+        Assembly = "RabbitMQ.Client",
+        Type = "RabbitMQ.Client.Impl.ModelBase",
+        Method = "BasicGet",
+        ReturnTypeName = "RabbitMQ.Client.BasicGetResult",
+        ParametersTypesNames = new[] { ClrNames.String, ClrNames.Bool },
+        MinimumVersion = "3.6.9",
+        MaximumVersion = "6.*.*",
+        IntegrationName = RabbitMQConstants.IntegrationName)]
+    public class BasicGetIntegration
+    {
+        private const string Command = "basic.get";
+
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(BasicGetIntegration));
+
+        private static Func<IDictionary<string, object>, string, IEnumerable<string>> headersGetter = ((carrier, key) =>
+        {
+            if (carrier.TryGetValue(key, out object value) && value is byte[] bytes)
+            {
+                return new[] { Encoding.UTF8.GetString(bytes) };
+            }
+            else
+            {
+                return Enumerable.Empty<string>();
+            }
+        });
+
+        /// <summary>
+        /// OnMethodBegin callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="queue">The queue name of the message</param>
+        /// <param name="autoAck">The original autoAck argument</param>
+        /// <returns>Calltarget state value</returns>
+        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, bool autoAck)
+        {
+            return new CallTargetState(scope: null, state: queue, startTime: DateTimeOffset.UtcNow);
+        }
+
+        /// <summary>
+        /// OnMethodEnd callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TResult">Type of the BasicGetResult</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="basicGetResult">BasicGetResult instance</param>
+        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
+        /// <param name="state">Calltarget state value</param>
+        /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
+        public static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult basicGetResult, Exception exception, CallTargetState state)
+            where TResult : IBasicGetResult, IDuckType
+        {
+            string queue = (string)state.State;
+            DateTimeOffset? startTime = state.StartTime;
+
+            SpanContext propagatedContext = null;
+            string messageSize = null;
+
+            if (basicGetResult.Instance != null)
+            {
+                messageSize = basicGetResult.Body?.Length.ToString();
+                var basicPropertiesHeaders = basicGetResult.BasicProperties?.Headers;
+
+                // try to extract propagated context values from headers
+                if (basicPropertiesHeaders != null)
+                {
+                    try
+                    {
+                        propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesHeaders, headersGetter);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error extracting propagated headers.");
+                    }
+                }
+            }
+
+            using (var scope = ScopeFactory.CreateRabbitMQScope(Tracer.Instance, out RabbitMQTags tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
+            {
+                if (scope != null)
+                {
+                    string queueDisplayName = string.IsNullOrEmpty(queue) || !queue.StartsWith("amq.gen-") ? queue : "<generated>";
+                    scope.Span.ResourceName = $"{Command} {queueDisplayName}";
+
+                    if (tags != null && messageSize != null)
+                    {
+                        tags.MessageSize = messageSize;
+                    }
+
+                    if (exception != null)
+                    {
+                        scope.Span.SetException(exception);
+                    }
+                }
+            }
+
+            return new CallTargetReturn<TResult>(basicGetResult);
+        }
+
+        private readonly struct IntegrationState
+        {
+            public readonly Scope Scope;
+            public readonly RabbitMQTags Tags;
+
+            public IntegrationState(Scope scope, RabbitMQTags tags)
+            {
+                Scope = scope;
+                Tags = tags;
+            }
+        }
+    }
+}

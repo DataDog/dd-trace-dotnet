@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
@@ -10,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         private readonly Scope _previousScope;
         private readonly Scope _scope;
         private readonly object _state;
+        private readonly DateTimeOffset? _startTime;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
@@ -20,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             _previousScope = null;
             _scope = scope;
             _state = null;
+            _startTime = null;
         }
 
         /// <summary>
@@ -32,6 +35,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             _previousScope = null;
             _scope = scope;
             _state = state;
+            _startTime = null;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
+        /// </summary>
+        /// <param name="scope">Scope instance</param>
+        /// <param name="state">Object state instance</param>
+        /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
+        public CallTargetState(Scope scope, object state, DateTimeOffset? startTime)
+        {
+            _previousScope = null;
+            _scope = scope;
+            _state = state;
+            _startTime = startTime;
         }
 
         private CallTargetState(Scope previousScope, Scope scope, object state)
@@ -39,6 +57,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             _previousScope = previousScope;
             _scope = scope;
             _state = state;
+            _startTime = null;
         }
 
         /// <summary>
@@ -52,6 +71,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         public object State => _state;
 
         internal Scope PreviousScope => _previousScope;
+
+        internal DateTimeOffset? StartTime => _startTime;
 
         /// <summary>
         /// Gets the default call target state (used by the native side to initialize the locals)
