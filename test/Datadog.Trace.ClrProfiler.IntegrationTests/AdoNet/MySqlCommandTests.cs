@@ -16,10 +16,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetMySqlData()
+        public static IEnumerable<object[]> GetMySql8Data()
         {
             foreach (object[] item in PackageVersions.MySqlData)
             {
+                if (!((string)item[0]).StartsWith('8'))
+                {
+                    continue;
+                }
+
+                yield return item.Concat(new object[] { false, false, }).ToArray();
+                yield return item.Concat(new object[] { true, false, }).ToArray();
+                yield return item.Concat(new object[] { true, true, }).ToArray();
+            }
+        }
+
+        public static IEnumerable<object[]> GetOldMySqlData()
+        {
+            foreach (object[] item in PackageVersions.MySqlData)
+            {
+                if (((string)item[0]).StartsWith('8'))
+                {
+                    continue;
+                }
+
                 yield return item.Concat(new object[] { false, false, }).ToArray();
                 yield return item.Concat(new object[] { true, false, }).ToArray();
                 yield return item.Concat(new object[] { true, true, }).ToArray();
@@ -27,9 +47,52 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         [Theory]
-        [MemberData(nameof(GetMySqlData))]
+        [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitsTracesWithNetStandardInMySql8(string packageVersion, bool enableCallTarget, bool enableInlining)
+        {
+            SubmitsTracesWithNetStandard(packageVersion, enableCallTarget, enableInlining);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetOldMySqlData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "ArmUnsupported")]
+        public void SubmitsTracesWithNetStandardInOldMySql(string packageVersion, bool enableCallTarget, bool enableInlining)
+        {
+            SubmitsTracesWithNetStandard(packageVersion, enableCallTarget, enableInlining);
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        [Trait("Category", "EndToEnd")]
+        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
+        {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
+            var totalSpanCount = 21;
+
+            const string dbType = "mysql";
+            const string expectedOperationName = dbType + ".query";
+
+            SetEnvironmentVariable(ConfigurationKeys.AdoNetExcludedTypes, "System.Data.SqlClient.SqlCommand;Microsoft.Data.SqlClient.SqlCommand;MySql.Data.MySqlClient.MySqlCommand;Npgsql.NpgsqlCommand");
+
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
+
+                var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+                Assert.NotEmpty(spans);
+                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+            }
+        }
+
+        private void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget, bool enableInlining)
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
 
@@ -76,35 +139,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     Assert.Equal(dbType, span.Tags[Tags.DbType]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
-            }
-        }
-
-        [Theory]
-        [InlineData(false, false)]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
-        [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
-        {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
-
-            var totalSpanCount = 21;
-
-            const string dbType = "mysql";
-            const string expectedOperationName = dbType + ".query";
-
-            SetEnvironmentVariable(ConfigurationKeys.AdoNetExcludedTypes, "System.Data.SqlClient.SqlCommand;Microsoft.Data.SqlClient.SqlCommand;MySql.Data.MySqlClient.MySqlCommand;Npgsql.NpgsqlCommand");
-
-            int agentPort = TcpPortProvider.GetOpenPort();
-
-            using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port))
-            {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
-
-                var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
-                Assert.NotEmpty(spans);
-                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
             }
         }
     }

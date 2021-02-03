@@ -30,8 +30,9 @@ namespace Samples.MySql
 
             if (connectionString == null)
             {
-                var host = Environment.GetEnvironmentVariable("MYSQL_HOST") ?? "localhost";
-                var port = Environment.GetEnvironmentVariable("MYSQL_PORT") ?? "3307";
+                var oldMySqlServer = typeof(MySqlConnection).Assembly.GetName().Version.Major != 8;
+                var host = Environment.GetEnvironmentVariable(oldMySqlServer ? "MYSQL57_HOST" : "MYSQL_HOST") ?? "localhost";
+                var port = Environment.GetEnvironmentVariable(oldMySqlServer ? "MYSQL57_PORT" : "MYSQL_PORT") ?? "3307";
                 connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world";
             }
 
