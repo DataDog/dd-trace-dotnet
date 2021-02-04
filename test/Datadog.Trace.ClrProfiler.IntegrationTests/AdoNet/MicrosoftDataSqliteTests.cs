@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             SetEnvironmentVariable(ConfigurationKeys.AdoNetExcludedTypes, "System.Data.SQLite.SQLiteCommand;Microsoft.Data.Sqlite.SqliteCommand");
 
-            string packageVersion = PackageVersions.MicrosoftDataSqlClient.First()[0] as string;
+            string packageVersion = PackageVersions.MicrosoftDataSqlite.First()[0] as string;
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
