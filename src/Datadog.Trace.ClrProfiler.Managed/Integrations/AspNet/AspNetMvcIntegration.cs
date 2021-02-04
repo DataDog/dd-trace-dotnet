@@ -99,6 +99,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
                 }
 
+                string areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
                 string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
 
@@ -134,6 +135,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // Fail safe to catch templates in routing values
                 resourceName =
                     resourceName
+                       .Replace("{area}", areaName)
                        .Replace("{controller}", controllerName)
                        .Replace("{action}", actionName);
 
@@ -146,6 +148,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     tagsFromHeaders);
 
                 tags.AspNetRoute = route?.Url;
+                tags.AspNetArea = areaName;
                 tags.AspNetController = controllerName;
                 tags.AspNetAction = actionName;
 

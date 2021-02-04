@@ -246,7 +246,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string expectedSpanType,
             string expectedOperationName,
             string expectedResourceName,
-            string expectedServiceVersion)
+            string expectedServiceVersion,
+            IDictionary<string, string> expectedTags = null)
         {
             IImmutableList<MockTracerAgent.Span> spans;
 
@@ -283,6 +284,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
+
+            if (expectedTags is not null)
+            {
+                foreach (var expectedTag in expectedTags)
+                {
+                    Assert.Equal(expectedTag.Value, span.Tags.GetValueOrDefault(expectedTag.Key));
+                }
+            }
         }
 
         internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
