@@ -39,9 +39,18 @@ namespace Samples.MySql
                 }
 #endif
 
-                var host = Environment.GetEnvironmentVariable(oldMySqlServer ? "MYSQL57_HOST" : "MYSQL_HOST") ?? "localhost";
-                var port = Environment.GetEnvironmentVariable(oldMySqlServer ? "MYSQL57_PORT" : "MYSQL_PORT") ?? "3307";
-                connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world";
+                if (oldMySqlServer)
+                {
+                    var host = Environment.GetEnvironmentVariable("MYSQL57_HOST") ?? "localhost";
+                    var port = Environment.GetEnvironmentVariable("MYSQL57_PORT") ?? "3307";
+                    connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world;ssl-mode=None";
+                }
+                else
+                {
+                    var host = Environment.GetEnvironmentVariable("MYSQL_HOST") ?? "localhost";
+                    var port = Environment.GetEnvironmentVariable("MYSQL_PORT") ?? "3307";
+                    connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world";
+                }
             }
 
             var connection = new MySqlConnection(connectionString);
