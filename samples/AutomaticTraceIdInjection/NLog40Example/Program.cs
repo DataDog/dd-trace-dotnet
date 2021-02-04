@@ -1,7 +1,7 @@
 using Datadog.Trace;
 using NLog;
 
-namespace NLog438Example
+namespace NLog40Example
 {
     class Program
     {
@@ -9,7 +9,7 @@ namespace NLog438Example
 
         static void Main(string[] args)
         {
-            MappedDiagnosticsContext.Set("order-number", 1024);
+            MappedDiagnosticsContext.Set("order-number", 1024.ToString());
             Logger.Info("Message before a trace.");
 
             using (var scope = Tracer.Instance.StartActive("NLog45Example - Main()"))
