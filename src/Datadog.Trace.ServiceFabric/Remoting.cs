@@ -3,8 +3,6 @@ using System.Globalization;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Tagging;
 using Microsoft.ServiceFabric.Services.Remoting.V2;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Client;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Runtime;
@@ -282,17 +280,18 @@ namespace Datadog.Trace.ServiceFabric
 
         private static Span CreateSpan(
             Tracer tracer,
-            SpanContext? context,
+            ISpanContext? context,
             string spanKind,
             ServiceRemotingRequestEventArgs? eventArgs,
             IServiceRemotingRequestMessageHeader? messageHeader)
         {
             string? methodName = null;
             string? resourceName = null;
-            string? serviceUrl = eventArgs?.ServiceUri?.AbsoluteUri;
+            string? serviceUrl = null;
 
             if (eventArgs != null)
             {
+                serviceUrl = eventArgs.ServiceUri?.AbsoluteUri;
                 methodName = eventArgs.MethodName;
 
                 if (string.IsNullOrEmpty(methodName))
@@ -304,37 +303,40 @@ namespace Datadog.Trace.ServiceFabric
                 resourceName = serviceUrl == null ? methodName : $"{serviceUrl}/{methodName}";
             }
 
-            Span span = tracer.StartSpan(GetSpanName(spanKind), context);
+            var tags = new RemotingTags(spanKind);
+
+            Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
             span.ResourceName = resourceName ?? "unknown";
-            span.SetTag(Tags.SpanKind, spanKind);
 
             if (serviceUrl != null)
             {
-                span.SetTag("service-remoting.uri", serviceUrl);
+                tags.Uri = serviceUrl;
             }
 
             if (methodName != null)
             {
-                span.SetTag("service-remoting.method-name", methodName);
+                tags.MethodName = methodName;
             }
 
             if (messageHeader != null)
             {
-                span.SetTag("service-remoting.method-id", messageHeader.MethodId.ToString(CultureInfo.InvariantCulture));
-                span.SetTag("service-remoting.interface-id", messageHeader.InterfaceId.ToString(CultureInfo.InvariantCulture));
+                tags.MethodId = messageHeader.MethodId.ToString(CultureInfo.InvariantCulture);
+                tags.InterfaceId = messageHeader.InterfaceId.ToString(CultureInfo.InvariantCulture);
 
                 if (messageHeader.InvocationId != null)
                 {
-                    span.SetTag("service-remoting.invocation-id", messageHeader.InvocationId);
+                    tags.InvocationId = messageHeader.InvocationId;
                 }
             }
 
             switch (spanKind)
             {
                 case SpanKinds.Client when _clientAnalyticsSampleRate != null:
+                    // TODO: use tags.SetAnalyticsSampleRate()
                     span.SetTag(Tags.Analytics, _clientAnalyticsSampleRate);
                     break;
                 case SpanKinds.Server when _serverAnalyticsSampleRate != null:
+                    // TODO: use tags.SetAnalyticsSampleRate()
                     span.SetTag(Tags.Analytics, _serverAnalyticsSampleRate);
                     break;
             }
