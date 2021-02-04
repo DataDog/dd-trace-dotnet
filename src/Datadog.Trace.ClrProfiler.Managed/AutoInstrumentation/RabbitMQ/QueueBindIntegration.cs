@@ -8,11 +8,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// RabbitMQ.Client QueueBind calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assembly = "RabbitMQ.Client",
-        Type = "RabbitMQ.Client.Impl.ModelBase",
-        Method = "QueueBind",
+        AssemblyName = "RabbitMQ.Client",
+        TypeName = "RabbitMQ.Client.Impl.ModelBase",
+        MethodName = "QueueBind",
         ReturnTypeName = ClrNames.Void,
-        ParametersTypesNames = new[] { ClrNames.String, ClrNames.String, ClrNames.String, RabbitMQConstants.IDictionaryArgumentsTypeName },
+        ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.String, RabbitMQConstants.IDictionaryArgumentsTypeName },
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
         IntegrationName = RabbitMQConstants.IntegrationName)]

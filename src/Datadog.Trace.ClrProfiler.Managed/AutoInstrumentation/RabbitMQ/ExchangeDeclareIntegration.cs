@@ -8,11 +8,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// RabbitMQ.Client ExchangeDeclare calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assembly = "RabbitMQ.Client",
-        Type = "RabbitMQ.Client.Framing.Impl.Model",
-        Method = "_Private_ExchangeDeclare",
+        AssemblyName = "RabbitMQ.Client",
+        TypeName = "RabbitMQ.Client.Framing.Impl.Model",
+        MethodName = "_Private_ExchangeDeclare",
         ReturnTypeName = ClrNames.Void,
-        ParametersTypesNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, RabbitMQConstants.IDictionaryArgumentsTypeName },
+        ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, RabbitMQConstants.IDictionaryArgumentsTypeName },
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
         IntegrationName = RabbitMQConstants.IntegrationName)]

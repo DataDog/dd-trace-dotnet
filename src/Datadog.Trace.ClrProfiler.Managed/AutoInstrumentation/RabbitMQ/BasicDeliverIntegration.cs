@@ -9,11 +9,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// RabbitMQ.Client BasicDeliver calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        Assembly = "RabbitMQ.Client",
-        Type = "RabbitMQ.Client.Events.EventingBasicConsumer",
-        Method = "HandleBasicDeliver",
+        AssemblyName = "RabbitMQ.Client",
+        TypeName = "RabbitMQ.Client.Events.EventingBasicConsumer",
+        MethodName = "HandleBasicDeliver",
         ReturnTypeName = ClrNames.Void,
-        ParametersTypesNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
+        ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
         IntegrationName = RabbitMQConstants.IntegrationName)]
