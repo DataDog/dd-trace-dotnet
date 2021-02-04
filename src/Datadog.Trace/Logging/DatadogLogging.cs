@@ -151,7 +151,7 @@ namespace Datadog.Trace.Logging
             string rawRateLimit = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogRateLimit);
             if (!string.IsNullOrEmpty(rawRateLimit)
                 && int.TryParse(rawRateLimit, out var rate)
-                && (rate >= 1))
+                && (rate >= 0))
             {
                 return rate;
             }
