@@ -73,5 +73,16 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite.SqliteC
 // object System.Data.SQLite.SQLiteCommand.ExecuteScalar()
 [assembly: CommandExecuteScalar(typeof(SystemDataSqliteClientData))]
 
-// public int ExecuteNonQuery(CommandBehavior behavior)
-// public object ExecuteScalar(CommandBehavior behavior)
+/********************************************************************************
+ * object .ExecuteScalar(CommandBehavior)
+ ********************************************************************************/
+
+// object System.Data.SQLite.SQLiteCommand.ExecuteScalar(CommandBehavior)
+[assembly: CommandExecuteScalarWithBehavior(typeof(SystemDataSqliteClientData))]
+
+/********************************************************************************
+ * int .ExecuteNonQuery(CommandBehavior)
+ ********************************************************************************/
+
+// int System.Data.SQLite.SQLiteCommand.ExecuteNonQuery(CommandBehavior)
+[assembly: CommandExecuteNonQueryWithBehavior(typeof(SystemDataSqliteClientData))]

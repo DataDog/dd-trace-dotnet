@@ -40,6 +40,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
         }
 
+        internal class CommandExecuteNonQueryWithBehaviorAttribute : AdoNetClientInstrumentMethodAttribute
+        {
+            public CommandExecuteNonQueryWithBehaviorAttribute(Type adoNetClientDataType)
+                : base(adoNetClientDataType)
+            {
+                MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery;
+                ReturnTypeName = ClrNames.Int32;
+                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior };
+                CallTargetType = typeof(CommandExecuteNonQueryWithBehaviorIntegration);
+            }
+        }
+
         internal class CommandExecuteReaderAsyncAttribute : AdoNetClientInstrumentMethodAttribute
         {
             public CommandExecuteReaderAsyncAttribute(Type adoNetClientDataType)
@@ -131,6 +143,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 MethodName = AdoNetConstants.MethodNames.ExecuteScalar;
                 ReturnTypeName = ClrNames.Object;
                 CallTargetType = typeof(CommandExecuteScalarIntegration);
+            }
+        }
+
+        internal class CommandExecuteScalarWithBehaviorAttribute : AdoNetClientInstrumentMethodAttribute
+        {
+            public CommandExecuteScalarWithBehaviorAttribute(Type adoNetClientDataType)
+                : base(adoNetClientDataType)
+            {
+                MethodName = AdoNetConstants.MethodNames.ExecuteScalar;
+                ReturnTypeName = ClrNames.Object;
+                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior };
+                CallTargetType = typeof(CommandExecuteScalarWithBehaviorIntegration);
             }
         }
     }
