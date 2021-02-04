@@ -11,8 +11,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.ServiceFabric.Services" Version="4.0.470" />
 
-    <PackageReference Include="Datadog.Trace.ServiceFabric" Version="1.19.4-alpha3" />
-    <!--<ProjectReference Include="..\..\..\source\datadog\dd-trace-dotnet\src\Datadog.Trace.ServiceFabric\Datadog.Trace.ServiceFabric.csproj" />-->
+    <!-- <PackageReference Include="Datadog.Trace.ServiceFabric" Version="1.23.0-alpha1" /> -->
+    <ProjectReference Include="..\..\..\src\Datadog.Trace.ServiceFabric\Datadog.Trace.ServiceFabric.csproj" />
 
     <ProjectReference Include="..\WeatherService.Abstractions\WeatherService.Abstractions.csproj" />
   </ItemGroup>
