@@ -43,7 +43,7 @@ namespace Samples.MySql
                 {
                     var host = Environment.GetEnvironmentVariable("MYSQL57_HOST") ?? "localhost";
                     var port = Environment.GetEnvironmentVariable("MYSQL57_PORT") ?? "3307";
-                    connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world;ssl-mode=None";
+                    connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world;SslMode=None";
                 }
                 else
                 {
