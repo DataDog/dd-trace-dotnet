@@ -3,6 +3,8 @@ using System.Globalization;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Tagging;
 using Microsoft.ServiceFabric.Services.Remoting.V2;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Client;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Runtime;
@@ -308,22 +310,22 @@ namespace Datadog.Trace.ServiceFabric
 
             if (serviceUrl != null)
             {
-                span.SetTag(Tags.HttpUrl, serviceUrl);
+                span.SetTag("service-remoting.uri", serviceUrl);
             }
 
             if (methodName != null)
             {
-                span.SetTag("method-name", methodName);
+                span.SetTag("service-remoting.method-name", methodName);
             }
 
             if (messageHeader != null)
             {
-                span.SetTag("method-id", messageHeader.MethodId.ToString(CultureInfo.InvariantCulture));
-                span.SetTag("interface-id", messageHeader.InterfaceId.ToString(CultureInfo.InvariantCulture));
+                span.SetTag("service-remoting.method-id", messageHeader.MethodId.ToString(CultureInfo.InvariantCulture));
+                span.SetTag("service-remoting.interface-id", messageHeader.InterfaceId.ToString(CultureInfo.InvariantCulture));
 
                 if (messageHeader.InvocationId != null)
                 {
-                    span.SetTag("invocation-id", messageHeader.InvocationId);
+                    span.SetTag("service-remoting.invocation-id", messageHeader.InvocationId);
                 }
             }
 
