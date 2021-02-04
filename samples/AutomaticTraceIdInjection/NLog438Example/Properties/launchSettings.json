@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "NLog438Example": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_LOGS_INJECTION": "true"
+      }
+    }
+  }
+}
