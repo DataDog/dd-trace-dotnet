@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.5.1" },
                 new object[] { "6.6.0" },
                 new object[] { "6.7.0" },
-                new object[] { "6.8.6" },
+                new object[] { "6.8.7" },
 #endif
             };
 
@@ -203,6 +203,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.9.12" },
                 new object[] { "6.10.9" },
                 new object[] { "8.0.23" },
+#endif
+            };
+
+        public static IEnumerable<object[]> MicrosoftDataSqlite =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "2.0.1" },
+                new object[] { "2.1.14" },
+                new object[] { "2.2.6" },
+                new object[] { "3.0.3" },
+                new object[] { "3.1.12" },
+                new object[] { "5.0.3" },
 #endif
             };
 
