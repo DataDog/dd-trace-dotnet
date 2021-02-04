@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string exchange, string routingKey, bool mandatory, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IBasicProperties, IDuckType
-            where TBody : IBody // Versions < 6.0.0: TBody is byte[] // Versions >= 6.0.0: TBody is ReadOnlyMemory<byte>
+            where TBody : IBody, IDuckType // Versions < 6.0.0: TBody is byte[] // Versions >= 6.0.0: TBody is ReadOnlyMemory<byte>
         {
             var scope = ScopeFactory.CreateRabbitMQScope(Tracer.Instance, out RabbitMQTags tags, Command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey);
 
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
                 if (tags != null)
                 {
-                    tags.MessageSize = body?.Length.ToString() ?? "0";
+                    tags.MessageSize = body.Instance != null ? body.Length.ToString() : "0";
                 }
 
                 if (basicProperties.Instance != null)
