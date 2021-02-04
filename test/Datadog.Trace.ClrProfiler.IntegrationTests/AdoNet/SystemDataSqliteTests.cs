@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [InlineData(true, true)]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("Category", "ArmUnsupported")]
         public void SubmitsTracesWithNetStandard(bool enableCallTarget, bool enableInlining)
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
@@ -62,6 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [InlineData(true, true)]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("Category", "ArmUnsupported")]
         public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
