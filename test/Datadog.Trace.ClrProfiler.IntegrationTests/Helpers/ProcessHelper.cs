@@ -30,7 +30,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public bool Drain(int timeout = Timeout.Infinite)
         {
-            return _outputMutex.Wait(timeout / 2) && _errorMutex.Wait(timeout / 2);
+            if (timeout != Timeout.Infinite)
+            {
+                timeout /= 2;
+            }
+
+            return _outputMutex.Wait(timeout) && _errorMutex.Wait(timeout);
         }
 
         public void Dispose()
