@@ -6,9 +6,7 @@ namespace WeatherService.Abstractions
     {
         public DateTime Date { get; set; }
 
-        public int TemperatureC { get; set; }
-
-        public int TemperatureF => 32 + (int)(TemperatureC * 1.8);
+        public int Temperature { get; set; }
 
         public string Message { get; set; }
     }

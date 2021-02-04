@@ -28,11 +28,6 @@ namespace WeatherService
             return this.CreateServiceRemotingInstanceListeners();
         }
 
-        public Task<string> Echo(string message)
-        {
-            return Task.FromResult(message);
-        }
-
         public Task<WeatherForecast> GetWeather(string message)
         {
             var rng = new Random();
@@ -40,7 +35,7 @@ namespace WeatherService
             var forecast = new WeatherForecast
                            {
                                Date = DateTime.Now,
-                               TemperatureC = rng.Next(-20, 55),
+                               Temperature = rng.Next(-100, 100),
                                Message = message
                            };
 

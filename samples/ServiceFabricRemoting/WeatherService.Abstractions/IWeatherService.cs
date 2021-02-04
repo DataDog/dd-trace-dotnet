@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Services.Remoting;
 using Microsoft.ServiceFabric.Services.Remoting.FabricTransport;
 
@@ -8,8 +8,6 @@ namespace WeatherService.Abstractions
 {
     public interface IWeatherService : IService
     {
-        Task<string> Echo(string message);
-
         Task<WeatherForecast> GetWeather(string message);
     }
 }
