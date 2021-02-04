@@ -13,7 +13,7 @@
     <PackageReference Include="MySql.Data" Version="$(ApiVersion)" />
   </ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' != 'net452'">
+  <ItemGroup Condition="'$(TargetFramework)' != 'net452'">
     <PackageReference Include="System.Security.Permissions" Version="5.0.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
     <PackageReference Include="System.Management" Version="5.0.0" />

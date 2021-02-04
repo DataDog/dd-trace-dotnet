@@ -33,7 +33,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         public static IEnumerable<object[]> GetOldMySqlData()
         {
-            yield return new object[] { "6.9.12", true, true };
             foreach (object[] item in PackageVersions.MySqlData)
             {
                 if ((string)item[0] == string.Empty || ((string)item[0]).StartsWith("8"))
