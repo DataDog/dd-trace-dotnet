@@ -9,6 +9,7 @@ using Xunit;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     [CollectionDefinition(nameof(CIEnvironmentVariableTests), DisableParallelization = true)]
+    [Collection(nameof(CIEnvironmentVariableTests))]
     public class CIEnvironmentVariableTests
     {
         private IDictionary _originalEnvVars;
