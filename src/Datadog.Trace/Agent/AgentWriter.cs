@@ -18,7 +18,7 @@ namespace Datadog.Trace.Agent
         private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 #endif
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
         private static readonly ArraySegment<byte> EmptyPayload;
 
@@ -68,10 +68,10 @@ namespace Datadog.Trace.Agent
             _activeBuffer = _frontBuffer;
 
             _serializationTask = automaticFlush ? Task.Factory.StartNew(SerializeTracesLoop, TaskCreationOptions.LongRunning) : Task.FromResult(true);
-            _serializationTask.ContinueWith(t => Log.SafeLogError(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
+            _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.FromResult(true);
-            _flushTask.ContinueWith(t => Log.SafeLogError(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
+            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         internal event Action Flushed;
@@ -241,7 +241,7 @@ namespace Datadog.Trace.Agent
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "An unhandled error occurred while flushing trace buffers");
+                Log.Error(ex, "An unhandled error occurred while flushing trace buffers");
             }
         }
 
@@ -269,7 +269,7 @@ namespace Datadog.Trace.Agent
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "An unhandled error occurred while flushing a buffer");
+                Log.Error(ex, "An unhandled error occurred while flushing a buffer");
             }
             finally
             {
@@ -371,7 +371,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.SafeLogError(ex, "An error occured in the serialization thread");
+                    Log.Error(ex, "An error occured in the serialization thread");
                 }
 
                 if (_processExit.Task.IsCompleted)

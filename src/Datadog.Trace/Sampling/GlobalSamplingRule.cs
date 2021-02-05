@@ -6,7 +6,7 @@ namespace Datadog.Trace.Sampling
 {
     internal class GlobalSamplingRule : ISamplingRule
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<GlobalSamplingRule>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<GlobalSamplingRule>();
 
         private readonly float _globalRate;
 

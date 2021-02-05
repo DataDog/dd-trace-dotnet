@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string Major5 = "5";
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.WebRequest));
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(WebRequestIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WebRequestIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetRequestStream"/>.

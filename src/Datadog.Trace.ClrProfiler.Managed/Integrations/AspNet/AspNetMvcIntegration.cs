@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string RouteCollectionRouteTypeName = "System.Web.Mvc.Routing.RouteCollectionRoute";
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNetMvc));
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetMvcIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetMvcIntegration));
 
         /// <summary>
         /// Creates a scope used to instrument an MVC action and populates some common details.
@@ -99,6 +99,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
                 }
 
+                string areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
                 string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
 
@@ -134,6 +135,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // Fail safe to catch templates in routing values
                 resourceName =
                     resourceName
+                       .Replace("{area}", areaName)
                        .Replace("{controller}", controllerName)
                        .Replace("{action}", actionName);
 
@@ -146,6 +148,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     tagsFromHeaders);
 
                 tags.AspNetRoute = route?.Url;
+                tags.AspNetArea = areaName;
                 tags.AspNetController = controllerName;
                 tags.AspNetAction = actionName;
 

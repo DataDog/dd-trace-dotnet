@@ -7,7 +7,7 @@ namespace Datadog.Trace.Sampling
     {
         private const ulong KnuthFactor = 1_111_111_111_111_111_111;
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RuleBasedSampler>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuleBasedSampler>();
 
         private readonly IRateLimiter _limiter;
         private readonly DefaultSamplingRule _defaultRule = new DefaultSamplingRule();

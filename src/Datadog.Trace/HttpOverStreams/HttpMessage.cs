@@ -6,7 +6,7 @@ namespace Datadog.Trace.HttpOverStreams
 {
     internal abstract class HttpMessage
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<HttpMessage>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpMessage>();
         private static readonly UTF8Encoding Utf8Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
         public HttpMessage(HttpHeaders headers, IHttpContent content)

@@ -14,22 +14,28 @@ namespace Datadog.Trace.Logging
     internal static class DatadogLogging
     {
         internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new LoggingLevelSwitch(DefaultLogLevel);
+        private const int DefaultLogMessageRateLimit = 60;
         private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
-        private static readonly ILogger SharedLogger = null;
+        private static readonly IDatadogLogger SharedLogger = null;
+        private static readonly ILogger InternalLogger = null;
 
         static DatadogLogging()
         {
             // No-op for if we fail to construct the file logger
-            SharedLogger =
+            var defaultRateLimiter = new LogRateLimiter(DefaultLogMessageRateLimit);
+            InternalLogger =
                 new LoggerConfiguration()
                    .WriteTo.Sink<NullSink>()
                    .CreateLogger();
+
+            SharedLogger = new DatadogSerilogLogger(InternalLogger, defaultRateLimiter);
+
             try
             {
                 if (GlobalSettings.Source.DebugEnabled)
                 {
-                    LoggingLevelSwitch.MinimumLevel = LogEventLevel.Verbose;
+                    LoggingLevelSwitch.MinimumLevel = LogEventLevel.Debug;
                 }
 
                 var maxLogSizeVar = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MaxLogFileSize);
@@ -81,7 +87,15 @@ namespace Datadog.Trace.Logging
                     // At all costs, make sure the logger works when possible.
                 }
 
-                SharedLogger = loggerConfiguration.CreateLogger();
+                InternalLogger = loggerConfiguration.CreateLogger();
+                SharedLogger = new DatadogSerilogLogger(InternalLogger, defaultRateLimiter);
+
+                var rate = GetRateLimit();
+                ILogRateLimiter rateLimiter = rate == 0
+                    ? new NullLogRateLimiter()
+                    : new LogRateLimiter(rate);
+
+                SharedLogger = new DatadogSerilogLogger(InternalLogger, rateLimiter);
             }
             catch
             {
@@ -89,36 +103,32 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        public static ILogger GetLogger(Type classType)
+        public static IDatadogLogger GetLoggerFor(Type classType)
         {
             // Tells us which types are loaded, when, and how often.
             SharedLogger.Debug($"Logger retrieved for: {classType.AssemblyQualifiedName}");
             return SharedLogger;
         }
 
+        public static IDatadogLogger GetLoggerFor<T>()
+        {
+            return GetLoggerFor(typeof(T));
+        }
+
+        [Obsolete("This method is deprecated and will be removed. Use GetLoggerFor() instead. " +
+            "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
+        public static ILogger GetLogger(Type classType)
+        {
+            // Tells us which types are loaded, when, and how often.
+            SharedLogger.Debug($"Obsolete logger retrieved for: {classType.AssemblyQualifiedName}");
+            return InternalLogger;
+        }
+
+        [Obsolete("This method is deprecated and will be removed. Use GetLoggerFor() instead. " +
+            "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
         public static ILogger For<T>()
         {
             return GetLogger(typeof(T));
-        }
-
-        public static void SafeLogError(this ILogger logger, Exception ex, string message, params object[] args)
-        {
-            try
-            {
-                logger.Error(ex, message, args);
-            }
-            catch
-            {
-                try
-                {
-                    message = string.Format(message, args);
-                    Console.Error.WriteLine($"{message} {ex}");
-                }
-                catch
-                {
-                    // ignore
-                }
-            }
         }
 
         internal static void Reset()
@@ -133,7 +143,20 @@ namespace Datadog.Trace.Logging
 
         internal static void UseDefaultLevel()
         {
-            SetLogLevel(LogEventLevel.Information);
+            SetLogLevel(DefaultLogLevel);
+        }
+
+        private static int GetRateLimit()
+        {
+            string rawRateLimit = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogRateLimit);
+            if (!string.IsNullOrEmpty(rawRateLimit)
+                && int.TryParse(rawRateLimit, out var rate)
+                && (rate >= 0))
+            {
+                return rate;
+            }
+
+            return DefaultLogMessageRateLimit;
         }
 
         private static string GetLogDirectory()

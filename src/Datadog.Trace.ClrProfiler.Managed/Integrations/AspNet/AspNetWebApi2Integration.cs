@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNetWebApi2));
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetWebApi2Integration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetWebApi2Integration));
 
         /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.
@@ -281,6 +281,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 string controller = string.Empty;
                 string action = string.Empty;
+                string area = string.Empty;
                 try
                 {
                     var routeValues = controllerContext.GetProperty<object>("RouteData").GetProperty<IDictionary<string, object>>("Values").GetValueOrDefault();
@@ -288,6 +289,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                         action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                        area = (routeValues.GetValueOrDefault("area") as string)?.ToLowerInvariant();
                     }
                 }
                 catch
@@ -297,6 +299,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // Fail safe to catch templates in routing values
                 resourceName =
                     resourceName
+                       .Replace("{area}", area)
                        .Replace("{controller}", controller)
                        .Replace("{action}", action);
 
@@ -310,6 +313,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 tags.AspNetAction = action;
                 tags.AspNetController = controller;
+                tags.AspNetArea = area;
                 tags.AspNetRoute = route;
             }
             catch (Exception ex)

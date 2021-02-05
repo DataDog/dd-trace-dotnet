@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string OperationName = "http.request";
         public const string ServiceName = "http-client";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ScopeFactory));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeFactory));
 
         public static Scope GetActiveHttpScope(Tracer tracer)
         {

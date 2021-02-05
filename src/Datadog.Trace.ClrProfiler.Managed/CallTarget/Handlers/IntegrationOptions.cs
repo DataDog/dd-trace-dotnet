@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
     internal static class IntegrationOptions<TIntegration, TTarget>
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(IntegrationOptions<TIntegration, TTarget>));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntegrationOptions<TIntegration, TTarget>));
 
         private static volatile bool _disableIntegration = false;
 
@@ -17,9 +17,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         internal static void DisableIntegration() => _disableIntegration = true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogException(Exception exception)
+        internal static void LogException(Exception exception, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
         {
-            Log.SafeLogError(exception, exception?.Message, null);
+            Log.Error(exception, exception?.Message, sourceLine, sourceFile);
             if (exception is DuckTypeException)
             {
                 Log.Warning($"DuckTypeException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");

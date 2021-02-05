@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IDictionaryArgumentsTypeName = "System.Collections.Generic.IDictionary`2[System.String,System.Object]";
 
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RabbitMQIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RabbitMQIntegration));
         private static readonly string[] DeliveryModeStrings = { null, "1", "2" };
 
         private static Action<IDictionary<string, object>, string, string> headersSetter = ((carrier, key, value) =>

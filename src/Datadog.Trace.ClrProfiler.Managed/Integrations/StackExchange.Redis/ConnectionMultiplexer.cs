@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private const string StackExchangeRedisResultProcessorGeneric = "StackExchange.Redis.ResultProcessor`1<T>";
         private const string StackExchangeRedisResultProcessor = "StackExchange.Redis.ResultProcessor`1";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ConnectionMultiplexer));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ConnectionMultiplexer));
         private static readonly IntegrationInfo IntegrationId = RedisBatch.IntegrationId;
 
         /// <summary>

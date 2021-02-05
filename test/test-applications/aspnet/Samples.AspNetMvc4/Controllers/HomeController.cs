@@ -49,5 +49,11 @@ namespace Samples.AspNetMvc4.Controllers
         {
             throw new Exception("Oops, it broke.");
         }
+
+        public ActionResult Identifier(int id)
+        {
+            ViewBag.Message = "Identifier set to " + id;
+            return View("About");
+        }
     }
 }

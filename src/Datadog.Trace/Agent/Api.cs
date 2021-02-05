@@ -16,7 +16,7 @@ namespace Datadog.Trace.Agent
     {
         private const string TracesPath = "/v0.4/traces";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Api>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Api>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IDogStatsd _statsd;
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
-            Log.Debug("Sending {Count} traces to the DD agent", numberOfTraces);
+            Log.Debug<int>("Sending {Count} traces to the DD agent", numberOfTraces);
 
             while (true)
             {
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                Log.Debug("Successfully sent {Count} traces to the DD agent", numberOfTraces);
+                Log.Debug<int>("Successfully sent {Count} traces to the DD agent", numberOfTraces);
                 return true;
             }
         }
@@ -181,7 +181,7 @@ namespace Datadog.Trace.Agent
                         }
                         catch (Exception ex)
                         {
-                            Log.Error(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
+                            Log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
                         }
                     }
 

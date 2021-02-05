@@ -21,7 +21,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private const int EventContentionStop = 91;
         private const int EventGcGlobalHeapHistory = 205;
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RuntimeEventListener>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeEventListener>();
 
         private static readonly string[] GcCountMetricNames = { MetricsNames.Gen0CollectionsCount, MetricsNames.Gen1CollectionsCount, MetricsNames.Gen2CollectionsCount };
         private static readonly string[] CompactingGcTags = { "compacting_gc:true" };

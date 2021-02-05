@@ -52,7 +52,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             ConfigureInstrumentation(inlining, instrumentation, enableSocketsHandler);
 
-            var expectedSpanCount = CalculateExpectedAsyncSpans(instrumentation, inlining.EnableCallTarget);
+            var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation, inlining.EnableCallTarget);
+            var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
+
+            var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
 
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
@@ -151,6 +154,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return expectedSpanCount;
         }
 
+        private static int CalculateExpectedSyncSpans(InstrumentationOptions instrumentation)
+        {
+            // Sync requests are only enabled in .NET 5
+            if (!EnvironmentHelper.IsNet5())
+            {
+                return 0;
+            }
+
+            var spansPerHttpClient = 21;
+
+            var expectedSpanCount = spansPerHttpClient * 2; // default HttpClient and CustomHttpClientHandler
+
+            // SocketsHttpHandler instrumentation is on by default
+            if (instrumentation.InstrumentSocketHandler ?? true)
+            {
+                expectedSpanCount += spansPerHttpClient;
+            }
+
+            return expectedSpanCount;
+        }
+
         private void ConfigureInstrumentation(InliningOptions inlining, InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
             SetCallTargetSettings(inlining.EnableCallTarget, inlining.EnableInlining);
@@ -170,7 +194,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public class InliningOptions
+        public class InliningOptions : IXunitSerializable
         {
             internal InliningOptions(
                 bool enableCallTarget,
@@ -180,15 +204,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 EnableInlining = enableInlining;
             }
 
-            internal bool EnableCallTarget { get; }
+            internal bool EnableCallTarget { get; private set; }
 
-            internal bool EnableInlining { get; }
+            internal bool EnableInlining { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                EnableCallTarget = info.GetValue<bool>(nameof(EnableCallTarget));
+                EnableInlining = info.GetValue<bool>(nameof(EnableInlining));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(EnableCallTarget), EnableCallTarget);
+                info.AddValue(nameof(EnableInlining), EnableInlining);
+            }
 
             public override string ToString() =>
                 $"EnableCallTarget={EnableCallTarget},EnableInlining={EnableInlining}";
         }
 
-        public class InstrumentationOptions
+        public class InstrumentationOptions : IXunitSerializable
         {
             internal InstrumentationOptions(
                 bool? instrumentSocketHandler,
@@ -198,9 +234,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 InstrumentWinHttpHandler = instrumentWinHttpHandler;
             }
 
-            internal bool? InstrumentSocketHandler { get; }
+            internal bool? InstrumentSocketHandler { get; private set; }
 
-            internal bool? InstrumentWinHttpHandler { get; }
+            internal bool? InstrumentWinHttpHandler { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                InstrumentSocketHandler = info.GetValue<bool?>(nameof(InstrumentSocketHandler));
+                InstrumentWinHttpHandler = info.GetValue<bool?>(nameof(InstrumentWinHttpHandler));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(InstrumentSocketHandler), InstrumentSocketHandler);
+                info.AddValue(nameof(InstrumentWinHttpHandler), InstrumentWinHttpHandler);
+            }
 
             public override string ToString() =>
                 $"InstrumentSocketHandler={InstrumentSocketHandler},InstrumentWinHttpHandler={InstrumentWinHttpHandler}";

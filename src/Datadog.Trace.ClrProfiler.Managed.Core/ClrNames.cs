@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string AsyncCallback = "System.AsyncCallback";
 
         public const string HttpRequestMessage = "System.Net.Http.HttpRequestMessage";
+        public const string HttpResponseMessage = "System.Net.Http.HttpResponseMessage";
         public const string HttpResponseMessageTask = "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>";
 
         public const string GenericTask = "System.Threading.Tasks.Task`1";

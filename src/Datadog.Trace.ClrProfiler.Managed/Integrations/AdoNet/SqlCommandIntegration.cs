@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string MicrosoftSqlCommandTypeName = MicrosoftSqlClientNamespace + "." + SqlCommandTypeName;
         private const string MicrosoftSqlDataReaderTypeName = MicrosoftSqlClientNamespace + "." + SqlDataReaderTypeName;
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(SqlCommandIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SqlCommandIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for System.Data.SqlCommand.ExecuteReader().

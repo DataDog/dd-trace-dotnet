@@ -7,7 +7,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace
 {
@@ -42,7 +41,7 @@ namespace Datadog.Trace
             DogStatsDMetadata
         };
 
-        private static readonly ILogger Log = DatadogLogging.For<TracingProcessManager>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracingProcessManager>();
 
         internal enum ProcessState
         {
@@ -78,7 +77,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error when attempting to initialize process manager.");
+                Log.Error(ex, "Error when attempting to initialize process manager.");
             }
         }
 
@@ -128,7 +127,7 @@ namespace Datadog.Trace
                         {
                             if (metadata.SequentialFailures >= MaxFailures)
                             {
-                                Log.Error("Maximum retries ({ErrorCount}) reached starting {Process}.", path, MaxFailures);
+                                Log.Error<string, int>("Maximum retries ({ErrorCount}) reached starting {Process}.", path, MaxFailures);
                                 metadata.ProcessState = ProcessState.Faulted;
                                 return;
                             }

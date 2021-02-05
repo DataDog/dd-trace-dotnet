@@ -10,7 +10,7 @@ namespace Datadog.Trace
 {
     internal partial class FrameworkDescription
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(FrameworkDescription));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FrameworkDescription));
 
         private static readonly Assembly RootAssembly = typeof(object).Assembly;
 
@@ -75,7 +75,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.SafeLogError(e, "Error getting framework version from [AssemblyInformationalVersion]");
+                Log.Error(e, "Error getting framework version from [AssemblyInformationalVersion]");
             }
 
             if (productVersion == null)
@@ -88,7 +88,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception e)
                 {
-                    Log.SafeLogError(e, "Error getting framework version from [AssemblyFileVersion]");
+                    Log.Error(e, "Error getting framework version from [AssemblyFileVersion]");
                 }
             }
 
