@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Headers;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler
 {
     internal readonly struct HttpHeadersCollection : IHeadersCollection
     {
