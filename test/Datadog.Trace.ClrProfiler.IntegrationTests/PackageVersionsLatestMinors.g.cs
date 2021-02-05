@@ -224,5 +224,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+        public static IEnumerable<object[]> OracleMDA =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "18.3.0" },
+                new object[] { "18.6.0" },
+                new object[] { "19.3.1" },
+                new object[] { "19.5.0" },
+                new object[] { "19.6.0" },
+                new object[] { "19.7.0" },
+                new object[] { "19.8.0" },
+                new object[] { "19.9.0" },
+                new object[] { "19.10.1" },
+#endif
+            };
+
+        public static IEnumerable<object[]> OracleMDACore =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "2.18.6" },
+                new object[] { "2.19.101" },
+#endif
+            };
+
     }
 }
