@@ -161,7 +161,7 @@ namespace Datadog.Trace
             {
                 if (Settings.StartupDiagnosticLogEnabled)
                 {
-                    _ = WriteDiagnosticLog();
+                    _ = Task.Run(WriteDiagnosticLog);
                 }
 
                 if (Settings.RuntimeMetricsEnabled)
