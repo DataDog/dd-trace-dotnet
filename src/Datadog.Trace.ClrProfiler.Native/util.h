@@ -2,8 +2,12 @@
 #define DD_CLR_PROFILER_UTIL_H_
 
 #include <algorithm>
+#include <condition_variable>
+#include <mutex>
+#include <queue>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "string.h"
@@ -62,6 +66,33 @@ class Singleton : public UnCopyable {
   static T *Instance() {
     static T instance_obj;
     return &instance_obj;
+  }
+};
+
+template <typename T>
+class BlockingQueue : public UnCopyable {
+ private:
+  std::queue<T> queue_;
+  std::mutex mutex_;
+  std::condition_variable condition_;
+
+ public:
+  BlockingQueue() = default;
+  T pop() {
+    std::unique_lock<std::mutex> mlock(mutex_);
+    while (queue_.empty()) {
+      condition_.wait(mlock);
+    }
+    T value = queue_.front();
+    queue_.pop();
+    mlock.unlock();
+    return value;
+  }
+  void push(const T &item) {
+    std::unique_lock<std::mutex> mlock(mutex_);
+    queue_.push(item);
+    mlock.unlock();
+    condition_.notify_one();
   }
 };
 

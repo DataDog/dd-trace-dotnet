@@ -14,6 +14,16 @@
 
 namespace trace {
 
+struct RejitItem {
+  const ModuleID moduleId_;
+  const mdMethodDef methodDef_;
+
+  RejitItem() : moduleId_(0), methodDef_(0) {}
+  RejitItem(ModuleID moduleId, mdMethodDef methodDef)
+      : moduleId_(moduleId), methodDef_(methodDef) {}
+  bool IsEmpty() { return moduleId_ == 0 && methodDef_ == 0; }
+};
+
 /// <summary>
 /// Rejit handler representation of a method
 /// </summary>
@@ -99,8 +109,10 @@ class RejitHandler {
   ICorProfilerInfo4* profilerInfo;
   std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback;
 
-  RejitHandlerModuleMethod* GetModuleMethodFromFunctionId(
-      FunctionID functionId);
+  BlockingQueue<RejitItem> rejit_queue_;
+  std::thread* rejit_queue_thread_;
+
+  RejitHandlerModuleMethod* GetModuleMethodFromFunctionId(FunctionID functionId);
 
  public:
   RejitHandler(ICorProfilerInfo4* pInfo,
@@ -108,6 +120,7 @@ class RejitHandler {
                                      RejitHandlerModuleMethod*)> rewriteCallback) {
     this->profilerInfo = pInfo;
     this->rewriteCallback = rewriteCallback;
+    this->rejit_queue_thread_ = new std::thread(enqueue_thread, this);
   }
   RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
 
@@ -119,6 +132,28 @@ class RejitHandler {
   HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
   void _addFunctionToSet(FunctionID functionId,
                          RejitHandlerModuleMethod* method);
+
+  void EnqueueForRejit(ModuleID moduleId, mdMethodDef methodDef) {
+    rejit_queue_.push(RejitItem(moduleId, methodDef));
+  }
+
+ private:
+  static void enqueue_thread(RejitHandler* handler) {
+    while (true) {
+      auto item = handler->rejit_queue_.pop();
+      if (item.IsEmpty()) {
+        break;
+      }
+      ModuleID modules[1] = { item.moduleId_ };
+      mdMethodDef methods[1] = { item.methodDef_ };
+      auto hr = handler->profilerInfo->RequestReJIT(1, modules, methods);
+      if (SUCCEEDED(hr)) {
+        Info("Request ReJIT done for [ModuleId=", item.moduleId_, ", MethodDef=", item.methodDef_ ,"]");
+      } else {
+        Warn("Error requesting ReJIT done for [ModuleId=", item.moduleId_, ", MethodDef=", item.methodDef_ ,"]");
+      }
+    }
+  }
 };
 
 }  // namespace trace
