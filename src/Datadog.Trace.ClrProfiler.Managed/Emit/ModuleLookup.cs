@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// </summary>
         private const int MaxFailures = 50;
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ModuleLookup));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ModuleLookup));
 
         private static ManualResetEventSlim _populationResetEvent = new ManualResetEventSlim(initialState: true);
         private static ConcurrentDictionary<Guid, Module> _modules = new ConcurrentDictionary<Guid, Module>();

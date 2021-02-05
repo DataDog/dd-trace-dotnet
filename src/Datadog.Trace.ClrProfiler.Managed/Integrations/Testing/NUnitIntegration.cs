@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string NUnitTestResultType = "NUnit.Framework.Internal.TestResult";
         private const string NUnitTestExecutionContextType = "NUnit.Framework.Internal.TestExecutionContext";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(NUnitIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
 
         static NUnitIntegration()
         {

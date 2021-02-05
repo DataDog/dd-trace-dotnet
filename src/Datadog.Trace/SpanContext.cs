@@ -9,7 +9,7 @@ namespace Datadog.Trace
     /// </summary>
     public class SpanContext : ISpanContext
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<SpanContext>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContext>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class

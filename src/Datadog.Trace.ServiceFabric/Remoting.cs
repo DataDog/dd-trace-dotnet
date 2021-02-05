@@ -20,7 +20,7 @@ namespace Datadog.Trace.ServiceFabric
 
         // ILogger and DatadogLogging are internal to Datadog.Trade.dll, so we use NuGet package IgnoresAccessChecksToGenerator
         // to generate [IgnoresAccessChecksToAttribute] and generate reference assemblies where they are public
-        private static readonly Datadog.Trace.Vendors.Serilog.ILogger Log = Datadog.Trace.Logging.DatadogLogging.GetLogger(typeof(Remoting));
+        private static readonly Datadog.Trace.Logging.IDatadogLogger Log = Datadog.Trace.Logging.DatadogLogging.GetLoggerFor(typeof(Remoting));
 
         private static int _firstInitialization = 1;
         private static bool _initialized;

@@ -8,7 +8,7 @@ namespace Datadog.Trace.RuntimeMetrics
 {
     internal class PerformanceCounterWrapper : IDisposable
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<PerformanceCounterWrapper>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PerformanceCounterWrapper>();
 
         private readonly string _categoryName;
         private readonly string _counterName;
@@ -60,7 +60,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
             catch (Exception ex)
             {
-                Log.Information(ex, "Error while renewing counter");
+                Log.Warning(ex, "Error while renewing counter");
             }
         }
     }

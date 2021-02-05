@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// Global dictionary for caching reflected delegates
         /// </summary>
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MethodBuilder<TDelegate>));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodBuilder<TDelegate>));
 
         /// <summary>
         /// Feature flag used primarily for forcing testing of the token lookup strategy.

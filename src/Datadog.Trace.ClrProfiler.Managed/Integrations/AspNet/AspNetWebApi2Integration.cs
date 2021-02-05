@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNetWebApi2));
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetWebApi2Integration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetWebApi2Integration));
 
         /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.

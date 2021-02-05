@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string RequestPipelineInterfaceTypeName = "Elasticsearch.Net.IRequestPipeline";
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ElasticsearchNet5));
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ElasticsearchNet5Integration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ElasticsearchNet5Integration));
         private static readonly Type ElasticsearchResponseType = Type.GetType("Elasticsearch.Net.ElasticsearchResponse`1, Elasticsearch.Net", throwOnError: false);
 
         /// <summary>

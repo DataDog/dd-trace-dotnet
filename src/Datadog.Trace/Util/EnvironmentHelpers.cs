@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Util
 {
@@ -11,7 +10,9 @@ namespace Datadog.Trace.Util
     /// </summary>
     internal static class EnvironmentHelpers
     {
-        private static readonly ILogger Logger = DatadogLogging.GetLogger(typeof(EnvironmentHelpers));
+        // EnvironmentHelpers is called when initialising DataDogLogging.SharedLogger
+        // Using Lazy<> here avoids setting the Logger field to the "null" logger, before initialization is complete
+        private static readonly Lazy<IDatadogLogger> Logger = new Lazy<IDatadogLogger>(() => DatadogLogging.GetLoggerFor(typeof(EnvironmentHelpers)));
 
         /// <summary>
         /// Safe wrapper around Environment.SetEnvironmentVariable
@@ -26,7 +27,7 @@ namespace Datadog.Trace.Util
             }
             catch (Exception ex)
             {
-                Logger.SafeLogError(ex, "Error setting environment variable {EnvironmentVariable}={Value}", key, value);
+                Logger.Value.Error(ex, "Error setting environment variable {EnvironmentVariable}={Value}", key, value);
             }
         }
 
@@ -44,7 +45,7 @@ namespace Datadog.Trace.Util
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Error while reading environment variable {EnvironmentVariable}", key);
+                Logger.Value.Warning(ex, "Error while reading environment variable {EnvironmentVariable}", key);
             }
 
             return defaultValue;
@@ -62,7 +63,7 @@ namespace Datadog.Trace.Util
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Error while reading environment variables");
+                Logger.Value.Warning(ex, "Error while reading environment variables");
             }
 
             return new Dictionary<object, object>();

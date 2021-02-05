@@ -17,7 +17,7 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable, ISpan
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private readonly object _lock = new object();
@@ -128,7 +128,7 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
-                Log.Debug("SetTag should not be called after the span was closed");
+                Log.Warning("SetTag should not be called after the span was closed");
                 return this;
             }
 
@@ -340,13 +340,7 @@ namespace Datadog.Trace
                 {
                     Log.Debug(
                         "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        SpanId,
-                        Context.ParentId,
-                        TraceId,
-                        ServiceName,
-                        ResourceName,
-                        OperationName,
-                        Tags);
+                        new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
                 }
             }
         }

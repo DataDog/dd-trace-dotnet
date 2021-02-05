@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string NpgsqlCommandTypeName = "Npgsql.NpgsqlCommand";
         private const string NpgsqlDataReaderTypeName = "Npgsql.NpgsqlDataReader";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(NpgsqlCommandIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NpgsqlCommandIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for NpgsqlCommand.ExecuteReader() />

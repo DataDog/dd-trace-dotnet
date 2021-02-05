@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string OperationName = "redis.command";
         private const string ServiceName = "redis";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RedisHelper));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RedisHelper));
 
         internal static Scope CreateScope(Tracer tracer, IntegrationInfo integrationId, string host, string port, string rawCommand)
         {

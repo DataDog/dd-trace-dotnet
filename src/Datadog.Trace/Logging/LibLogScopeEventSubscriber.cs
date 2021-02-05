@@ -13,7 +13,7 @@ namespace Datadog.Trace.Logging
     internal class LibLogScopeEventSubscriber : IDisposable
     {
         private const int _numPropertiesSetOnSpanEvent = 5;
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(LibLogScopeEventSubscriber));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LibLogScopeEventSubscriber));
 #if NETFRAMEWORK
         private static readonly string NamedSlotName = "Datadog_IISPreInitStart";
         private static bool _performAppDomainFlagChecks = false;
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Logging
                 }
                 catch (Exception ex)
                 {
-                    Log.SafeLogError(ex, "Error obtaining the process name for quickly validating IIS PreStartInit condition.");
+                    Log.Error(ex, "Error obtaining the process name for quickly validating IIS PreStartInit condition.");
                 }
             }
 
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Logging
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
+                Log.Error(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
             }
         }
 

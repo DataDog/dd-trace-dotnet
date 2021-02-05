@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static readonly Type RequestPipelineType = Type.GetType("Elasticsearch.Net.IRequestPipeline, Elasticsearch.Net");
         public static readonly Type RequestDataType = Type.GetType("Elasticsearch.Net.RequestData, Elasticsearch.Net");
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ElasticsearchNetCommon));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ElasticsearchNetCommon));
 
         public static Scope CreateScope(Tracer tracer, IntegrationInfo integrationId, object pipeline, object requestData)
         {

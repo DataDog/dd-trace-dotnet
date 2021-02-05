@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MongoDbIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MongoDbIntegration));
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.

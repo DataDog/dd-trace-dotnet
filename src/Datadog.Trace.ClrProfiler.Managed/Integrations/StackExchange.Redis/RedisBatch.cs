@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.StackExchangeRedis));
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RedisBatch));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RedisBatch));
 
         /// <summary>
         /// Execute an asynchronous redis operation.

@@ -10,7 +10,7 @@ namespace Datadog.Trace.Agent
 {
     internal class AgentWriter : IAgentWriter
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
         private readonly AgentWriterBuffer<Span[]> _tracesBuffer;
         private readonly IDogStatsd _statsd;
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Agent
 
             if (!success)
             {
-                Log.Debug("Trace buffer is full. Dropping a trace from the buffer.");
+                Log.Warning("Trace buffer is full. Dropping a trace from the buffer.");
             }
 
             if (_statsd != null)
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.SafeLogError(ex, "An unhandled error occurred during the flushing task");
+                    Log.Error(ex, "An unhandled error occurred during the flushing task");
                 }
             }
         }

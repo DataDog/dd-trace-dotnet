@@ -8,7 +8,7 @@ namespace Datadog.Trace.Sampling
 {
     internal class RateLimiter : IRateLimiter
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RateLimiter>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RateLimiter>();
 
         private readonly ConcurrentQueue<DateTime> _intervalQueue = new ConcurrentQueue<DateTime>();
 
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Sampling
 
                 if (count >= _maxTracesPerInterval)
                 {
-                    Log.Debug("Dropping trace id {TraceId} with count of {Count} for last {Interval}ms.", span.TraceId, count, _intervalMilliseconds);
+                    Log.Warning<ulong, int, int>("Dropping trace id {TraceId} with count of {Count} for last {Interval}ms.", span.TraceId, count, _intervalMilliseconds);
                     return false;
                 }
 

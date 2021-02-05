@@ -15,7 +15,7 @@ namespace Datadog.Trace.MSBuild
     /// </summary>
     public class DatadogLogger : INodeLogger
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(DatadogLogger));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogLogger));
 
         private Tracer _tracer = null;
         private Span _buildSpan = null;
@@ -30,7 +30,7 @@ namespace Datadog.Trace.MSBuild
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error initializing DatadogLogger type.");
+                Log.Error(ex, "Error initializing DatadogLogger type.");
             }
         }
 
@@ -78,7 +78,7 @@ namespace Datadog.Trace.MSBuild
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error initializing the logger.");
+                Log.Error(ex, "Error initializing the logger.");
             }
         }
 
@@ -115,7 +115,7 @@ namespace Datadog.Trace.MSBuild
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error in BuildStarted event");
+                Log.Error(ex, "Error in BuildStarted event");
             }
         }
 
@@ -140,7 +140,7 @@ namespace Datadog.Trace.MSBuild
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error in BuildFinished event");
+                Log.Error(ex, "Error in BuildFinished event");
             }
         }
 
@@ -185,7 +185,7 @@ namespace Datadog.Trace.MSBuild
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error in ProjectStarted event");
+                Log.Error(ex, "Error in ProjectStarted event");
             }
         }
 
@@ -210,7 +210,7 @@ namespace Datadog.Trace.MSBuild
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error in ProjectFinished event");
+                Log.Error(ex, "Error in ProjectFinished event");
             }
         }
 
@@ -282,7 +282,7 @@ namespace Datadog.Trace.MSBuild
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error in ErrorRaised event");
+                Log.Error(ex, "Error in ErrorRaised event");
             }
         }
 
@@ -329,7 +329,7 @@ namespace Datadog.Trace.MSBuild
             }
             catch (Exception ex)
             {
-                Log.SafeLogError(ex, "Error in WarningRaised event");
+                Log.Error(ex, "Error in WarningRaised event");
             }
         }
     }
