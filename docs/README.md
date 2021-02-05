@@ -112,7 +112,7 @@ docker-compose run IntegrationTests
 
 Datadog APM
 - [Datadog APM](https://docs.datadoghq.com/tracing/)
-- [Datadog APM - Tracing .NET Core Applications](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core)
+- [Datadog APM - Tracing .NET Core and .NET 5 Applications](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core)
 - [Datadog APM - Tracing .NET Framework Applications](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-framework)
 
 Microsoft .NET Profiling APIs
