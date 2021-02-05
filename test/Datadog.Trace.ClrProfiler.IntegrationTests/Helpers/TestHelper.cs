@@ -78,15 +78,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var process = StartSample(traceAgentPort, arguments, packageVersion, aspNetCorePort: 5000, statsdPort: statsdPort, framework: framework);
 
-            var standardOutput = process.StandardOutput.ReadToEnd();
-            var standardError = process.StandardError.ReadToEnd();
+            using var helper = new ProcessHelper(process);
+
             process.WaitForExit();
+            helper.Drain();
             var exitCode = process.ExitCode;
+
+            var standardOutput = helper.StandardOutput;
 
             if (!string.IsNullOrWhiteSpace(standardOutput))
             {
                 Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
             }
+
+            var standardError = helper.ErrorOutput;
 
             if (!string.IsNullOrWhiteSpace(standardError))
             {
