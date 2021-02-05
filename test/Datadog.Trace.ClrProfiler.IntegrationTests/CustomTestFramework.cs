@@ -96,7 +96,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             protected override async Task<RunSummary> RunTestCaseAsync(IXunitTestCase testCase)
             {
-                var parameters = string.Join(", ", testCase.TestMethodArguments.Select(a => a?.ToString() ?? "null"));
+                var parameters = string.Empty;
+
+                if (testCase.TestMethodArguments != null)
+                {
+                    parameters = string.Join(", ", testCase.TestMethodArguments.Select(a => a?.ToString() ?? "null"));
+                }
+
                 var test = $"{TestMethod.TestClass.Class.Name}.{TestMethod.Method.Name}({parameters})";
 
                 _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Starting execution of {test}"));
