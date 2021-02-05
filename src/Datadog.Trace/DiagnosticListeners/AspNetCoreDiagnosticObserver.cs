@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -11,8 +12,12 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
+#if NETCOREAPP
+using Microsoft.AspNetCore.Routing.Patterns;
+#endif
 using Microsoft.AspNetCore.Routing.Template;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -43,6 +48,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _hostingUnhandledExceptionEventKey;
         private string _diagnosticsUnhandledExceptionEventKey;
         private string _hostingHttpRequestInStopEventKey;
+#if NETCOREAPP
+        private string _routingEndpointMatchedKey;
+#endif
 
         public AspNetCoreDiagnosticObserver()
             : this(null)
@@ -121,6 +129,21 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     _hostingHttpRequestInStopEventKey = eventName;
                     OnHostingHttpRequestInStop(arg);
+                }
+
+                return;
+            }
+
+            if (lastChar == 'd')
+            {
+                if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
+                {
+                    OnRoutingEndpointMatched(arg);
+                }
+                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
+                {
+                    _routingEndpointMatchedKey = eventName;
+                    OnRoutingEndpointMatched(arg);
                 }
 
                 return;
@@ -310,6 +333,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
+                // if we've already set these tags, we can bail to avoid duplicating work
+                var tags = span.Tags as AspNetCoreTags;
+                if (!string.IsNullOrEmpty(tags?.AspNetEndpoint))
+                {
+                    return;
+                }
+
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
                 ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
@@ -361,8 +391,8 @@ namespace Datadog.Trace.DiagnosticListeners
                                 .Where(part => !part.IsOptional || routeValues.ContainsKey(part.Name))
                                 .Select(part =>
                                 {
-                                // Necessary to strip out the defaults from in-line templates
-                                if (part.IsParameter)
+                                    // Necessary to strip out the defaults from in-line templates
+                                    if (part.IsParameter)
                                     {
                                         return "{" + (part.IsCatchAll ? "*" : string.Empty) + part.Name + (part.IsOptional ? "?" : string.Empty) + "}";
                                     }
@@ -376,7 +406,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     var cleanedRouteTemplate = string.Join("/", routeSegments)?.ToLowerInvariant();
 
                     resourcePathName =
-                        cleanedRouteTemplate
+                        "/" + cleanedRouteTemplate
                             .Replace("{area}", areaName)
                             .Replace("{controller}", controllerName)
                             .Replace("{action}", actionName);
@@ -385,10 +415,86 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (string.IsNullOrEmpty(resourcePathName))
                 {
                     // fallback, if all else fails
+                    // NOTE: this includes the /prefix
                     resourcePathName = UriHelpers.GetRelativeUrl(request.Path, tryRemoveIds: true).ToLowerInvariant();
                 }
 
-                 string resourceName = $"{httpMethod} {request.PathBase}/{resourcePathName}";
+                string resourceName = $"{httpMethod} {request.PathBase}{resourcePathName}";
+
+                // override the parent's resource name with the MVC route template
+                span.ResourceName = resourceName;
+
+                if (tags is not null)
+                {
+                    tags.AspNetAction = actionName;
+                    tags.AspNetController = controllerName;
+                    tags.AspNetArea = areaName;
+                    tags.AspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
+                }
+            }
+        }
+
+#if NETCOREAPP
+        private void OnRoutingEndpointMatched(object arg)
+        {
+            var tracer = _tracer ?? Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                return;
+            }
+
+            Span span = tracer.ActiveScope?.Span;
+
+            if (span != null)
+            {
+                // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
+                //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
+                HttpContext httpContext = arg.As<HttpRequestInEndpointMatchedStruct>().HttpContext;
+                var endpoint = httpContext.Features.Get<IEndpointFeature>()?.Endpoint as RouteEndpoint;
+
+                if (endpoint is null)
+                {
+                    return;
+                }
+
+                HttpRequest request = httpContext.Request;
+                RouteValueDictionary routeValues = request.RouteValues;
+                var routePattern = endpoint.RoutePattern;
+
+                string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+
+                object raw;
+                string controllerName = routeValues.TryGetValue("controller", out raw)
+                                        ? raw?.ToString()?.ToLowerInvariant()
+                                        : null;
+                string actionName = routeValues.TryGetValue("action", out raw)
+                                        ? raw?.ToString()?.ToLowerInvariant()
+                                        : null;
+                string areaName = routeValues.TryGetValue("area", out raw)
+                                      ? raw?.ToString()?.ToLowerInvariant()
+                                      : null;
+
+                string resourcePathName = null;
+                if (routePattern is not null)
+                {
+                    var simplifiedRouteTemplate = SimplifyRoutePattern(routePattern, routeValues);
+
+                    resourcePathName =
+                        "/" + simplifiedRouteTemplate
+                            .Replace("{area}", areaName)
+                            .Replace("{controller}", controllerName)
+                            .Replace("{action}", actionName);
+                }
+
+                if (string.IsNullOrEmpty(resourcePathName))
+                {
+                    // fallback, if all else fails
+                    // NOTE: this includes the /prefix
+                    resourcePathName = UriHelpers.GetRelativeUrl(request.Path, tryRemoveIds: true).ToLowerInvariant();
+                }
+
+                string resourceName = $"{httpMethod} {request.PathBase}{resourcePathName}";
 
                 // override the parent's resource name with the MVC route template
                 span.ResourceName = resourceName;
@@ -399,10 +505,43 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetAction = actionName;
                     tags.AspNetController = controllerName;
                     tags.AspNetArea = areaName;
-                    tags.AspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
+                    tags.AspNetRoute = routePattern?.RawText?.ToLowerInvariant();
+                    tags.AspNetEndpoint = endpoint.DisplayName;
                 }
             }
         }
+
+        private string SimplifyRoutePattern(
+            RoutePattern routePattern,
+            RouteValueDictionary routeValueDictionary)
+        {
+            var allSegments =
+                routePattern
+                   .PathSegments
+                   .Select(segment => string.Join(string.Empty, segment.Parts.Select(x => SegmentToString(x, routeValueDictionary))))
+                   .Where(segment => !string.IsNullOrEmpty(segment));
+
+            return string.Join("/", allSegments)?.ToLowerInvariant();
+
+            static string SegmentToString(RoutePatternPart part, RouteValueDictionary values)
+            {
+                return part switch
+                {
+                    RoutePatternLiteralPart literal => literal.Content,
+                    RoutePatternSeparatorPart separator => separator.Content,
+                    RoutePatternParameterPart parameter => parameter.IsOptional && !values.ContainsKey(parameter.Name)
+                                                               ? string.Empty
+                                                               : "{" + (parameter.IsCatchAll
+                                                                            ? (parameter.EncodeSlashes ? "**" : "*")
+                                                                            : string.Empty)
+                                                                     + parameter.Name
+                                                                     + (parameter.IsOptional ? "?" : string.Empty)
+                                                                     + "}",
+                    _ => string.Empty,
+                };
+            }
+        }
+#endif
 
         private void OnHostingHttpRequestInStop(object arg)
         {
@@ -490,6 +629,13 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase | BindingFlags.NonPublic)]
             public int StatusCode;
+        }
+
+        [DuckCopy]
+        public struct HttpRequestInEndpointMatchedStruct
+        {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public HttpContext HttpContext;
         }
 
         private readonly struct HeadersCollectionAdapter : IHeadersCollection

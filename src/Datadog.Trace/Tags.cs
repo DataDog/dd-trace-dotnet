@@ -115,6 +115,11 @@ namespace Datadog.Trace
         public const string AspNetArea = "aspnet.area";
 
         /// <summary>
+        /// The Endpoint name in ASP.NET Core endpoint routing.
+        /// </summary>
+        public const string AspNetEndpoint = "aspnet.endpoint";
+
+        /// <summary>
         /// The hostname of a outgoing server connection.
         /// </summary>
         public const string OutHost = "out.host";

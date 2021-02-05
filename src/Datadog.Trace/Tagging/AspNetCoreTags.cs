@@ -12,6 +12,7 @@ namespace Datadog.Trace.Tagging
                 new Property<AspNetCoreTags, string>(Trace.Tags.AspNetRoute, t => t.AspNetRoute, (t, v) => t.AspNetRoute = v),
                 new Property<AspNetCoreTags, string>(Trace.Tags.AspNetArea, t => t.AspNetArea, (t, v) => t.AspNetArea = v),
                 new Property<AspNetCoreTags, string>(Trace.Tags.AspNetController, t => t.AspNetController, (t, v) => t.AspNetController = v),
+                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetEndpoint, t => t.AspNetEndpoint, (t, v) => t.AspNetController = v),
                 new Property<AspNetCoreTags, string>(Trace.Tags.AspNetAction, t => t.AspNetAction, (t, v) => t.AspNetAction = v));
 
         public string InstrumentationName => ComponentName;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.Tagging
         public string AspNetAction { get; set; }
 
         public string AspNetArea { get; set; }
+
+        public string AspNetEndpoint { get; set; }
 
         protected override IProperty<string>[] GetAdditionalTags() => AspNetCoreTagsProperties;
     }
