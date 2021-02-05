@@ -11,7 +11,7 @@ namespace WebApp.Controllers
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        private static readonly IWeatherService WeatherService = ServiceProxy.Create<IWeatherService>(new Uri("fabric:/SFTracingApplication/WeatherService"));
+        private static readonly IWeatherService WeatherService = ServiceProxy.Create<IWeatherService>(new Uri("fabric:/ServiceFabricApplication/WeatherService"));
 
         private readonly ILogger<WeatherForecastController> _logger;
 

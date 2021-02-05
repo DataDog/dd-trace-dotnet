@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30225.117
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{A07B5EB6-E848-4116-A8D0-A826331D98C6}") = "SFTracingApplication", "SFTracingApplication\SFTracingApplication.sfproj", "{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}"
+Project("{A07B5EB6-E848-4116-A8D0-A826331D98C6}") = "ServiceFabricApplication", "ServiceFabricApplication\ServiceFabricApplication.sfproj", "{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp", "WebApp\WebApp.csproj", "{35D2DD19-F76D-490D-9DF6-0B8CCB97018E}"
 EndProject
