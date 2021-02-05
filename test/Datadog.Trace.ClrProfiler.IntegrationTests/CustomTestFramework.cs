@@ -76,19 +76,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
             }
 
-            protected override async Task<RunSummary> RunTestMethodAsync(ITestMethod testMethod, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, object[] constructorArguments)
+            protected override Task<RunSummary> RunTestMethodAsync(ITestMethod testMethod, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, object[] constructorArguments)
             {
-                var test = $"{testMethod.TestClass.Class.Name}.{testMethod.Method.Name}";
+                return new CustomTestMethodRunner(testMethod, this.Class, method, testCases, this.DiagnosticMessageSink, this.MessageBus, new ExceptionAggregator(this.Aggregator), this.CancellationTokenSource, constructorArguments)
+                   .RunAsync();
+            }
+        }
 
-                DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"Starting execution of {test}"));
+        private class CustomTestMethodRunner : XunitTestMethodRunner
+        {
+            private readonly IMessageSink _diagnosticMessageSink;
+
+            public CustomTestMethodRunner(ITestMethod testMethod, IReflectionTypeInfo @class, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, object[] constructorArguments)
+                : base(testMethod, @class, method, testCases, diagnosticMessageSink, messageBus, aggregator, cancellationTokenSource, constructorArguments)
+            {
+                _diagnosticMessageSink = diagnosticMessageSink;
+            }
+
+            protected override async Task<RunSummary> RunTestCaseAsync(IXunitTestCase testCase)
+            {
+                var parameters = string.Join(", ", testCase.TestMethodArguments);
+                var test = $"{TestMethod.TestClass.Class.Name}.{TestMethod.Method.Name}({parameters})";
+
+                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Starting execution of {test}"));
 
                 try
                 {
-                    return await base.RunTestMethodAsync(testMethod, method, testCases, constructorArguments);
+                    return await base.RunTestCaseAsync(testCase);
                 }
                 finally
                 {
-                    DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"Finished execution of {test}"));
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Finished execution of {test}"));
                 }
             }
         }
