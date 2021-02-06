@@ -137,8 +137,14 @@ class RejitHandler {
     rejit_queue_.push(RejitItem(moduleId, methodDef));
   }
 
+  void Shutdown() {
+    rejit_queue_.push(RejitItem(0, 0));
+    rejit_queue_thread_->join();
+  }
+
  private:
   static void enqueue_thread(RejitHandler* handler) {
+    Debug("Initializing ReJIT request thread.");
     while (true) {
       auto item = handler->rejit_queue_.pop();
       if (item.IsEmpty()) {
@@ -150,9 +156,10 @@ class RejitHandler {
       if (SUCCEEDED(hr)) {
         Info("Request ReJIT done for [ModuleId=", item.moduleId_, ", MethodDef=", item.methodDef_ ,"]");
       } else {
-        Warn("Error requesting ReJIT done for [ModuleId=", item.moduleId_, ", MethodDef=", item.methodDef_ ,"]");
+        Warn("Error requesting ReJIT for [ModuleId=", item.moduleId_, ", MethodDef=", item.methodDef_ ,"]");
       }
     }
+    Debug("Exiting ReJIT request thread.");
   }
 };
 
