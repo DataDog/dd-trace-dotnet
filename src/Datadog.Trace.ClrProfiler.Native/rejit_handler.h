@@ -18,10 +18,10 @@ struct RejitItem {
   const ModuleID moduleId_;
   const mdMethodDef methodDef_;
 
-  RejitItem() : moduleId_(0), methodDef_(0) {}
+  RejitItem() : moduleId_(NULL), methodDef_(mdMethodDefNil) {}
   RejitItem(ModuleID moduleId, mdMethodDef methodDef)
       : moduleId_(moduleId), methodDef_(methodDef) {}
-  bool IsEmpty() { return moduleId_ == 0 && methodDef_ == 0; }
+  bool IsEmpty() { return moduleId_ == NULL && methodDef_ == mdMethodDefNil; }
 };
 
 /// <summary>
@@ -138,7 +138,7 @@ class RejitHandler {
   }
 
   void Shutdown() {
-    rejit_queue_.push(RejitItem(0, 0));
+    rejit_queue_.push(RejitItem());
     rejit_queue_thread_->join();
   }
 
