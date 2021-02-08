@@ -42,6 +42,7 @@ namespace trace {
     "Microsoft.CSharp"_W,
     "Microsoft.Extensions"_W,
     "Microsoft.Web.Compilation.Snapshots"_W,
+    "Serilog.Sinks.Datadog"_W,
     "Sigil"_W,
     "System.Core"_W,
     "System.Console"_W,
