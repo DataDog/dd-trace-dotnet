@@ -85,14 +85,15 @@ class BlockingQueue : public UnCopyable {
     }
     T value = queue_.front();
     queue_.pop();
-    mlock.unlock();
     return value;
   }
   void push(const T &item) {
-    std::unique_lock<std::mutex> mlock(mutex_);
+    std::lock_guard<std::mutex> mlock(mutex_);
+    bool wake = queue_.empty();
     queue_.push(item);
-    mlock.unlock();
-    condition_.notify_one();
+    if (wake) {
+      condition_.notify_one();
+    }
   }
 };
 

@@ -15,14 +15,14 @@
 namespace trace {
 
 struct RejitItem {
-  const ModuleID moduleId_;
-  const mdMethodDef methodDef_;
+  int length_ = 0;
+  ModuleID* moduleIds_ = nullptr;
+  mdMethodDef* methodDefs_ = nullptr;
 
-  RejitItem() : moduleId_(0), methodDef_(mdMethodDefNil) {}
-  RejitItem(ModuleID moduleId, mdMethodDef methodDef)
-      : moduleId_(moduleId), methodDef_(methodDef) {}
-  bool IsEmpty() { return moduleId_ == 0 && methodDef_ == mdMethodDefNil; }
+  RejitItem(int length, ModuleID* modulesId, mdMethodDef* methodDefs);
+  void DeleteArray();
 };
+
 
 /// <summary>
 /// Rejit handler representation of a method
@@ -109,8 +109,8 @@ class RejitHandler {
   ICorProfilerInfo4* profilerInfo;
   std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback;
 
-  BlockingQueue<RejitItem> rejit_queue_;
-  std::thread rejit_queue_thread_;
+  BlockingQueue<RejitItem>* rejit_queue_;
+  std::thread* rejit_queue_thread_;
 
   RejitHandlerModuleMethod* GetModuleMethodFromFunctionId(FunctionID functionId);
 
@@ -120,7 +120,8 @@ class RejitHandler {
                                      RejitHandlerModuleMethod*)> rewriteCallback) {
     this->profilerInfo = pInfo;
     this->rewriteCallback = rewriteCallback;
-    this->rejit_queue_thread_ = std::thread(enqueue_thread, this);
+    this->rejit_queue_ = new BlockingQueue<RejitItem>();
+    this->rejit_queue_thread_ = new std::thread(enqueue_thread, this);
   }
   RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
 
@@ -132,34 +133,44 @@ class RejitHandler {
   HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
   void _addFunctionToSet(FunctionID functionId,
                          RejitHandlerModuleMethod* method);
-
-  void EnqueueForRejit(ModuleID moduleId, mdMethodDef methodDef) {
-    rejit_queue_.push(RejitItem(moduleId, methodDef));
+  
+  void EnqueueForRejit(size_t length, ModuleID* moduleIds, mdMethodDef* methodDefs) {
+    rejit_queue_->push(RejitItem((int)length, moduleIds, methodDefs));
   }
 
   void Shutdown() {
-    rejit_queue_.push(RejitItem());
-    if (rejit_queue_thread_.joinable()) {
-      rejit_queue_thread_.join();
+    rejit_queue_->push(RejitItem(-1, nullptr, nullptr));
+    if (rejit_queue_thread_->joinable()) {
+      rejit_queue_thread_->join();
     }
   }
 
  private:
   static void enqueue_thread(RejitHandler* handler) {
+    auto queue = handler->rejit_queue_;
+    auto profilerInfo = handler->profilerInfo;
+
     Info("Initializing ReJIT request thread.");
+    HRESULT hr =profilerInfo->InitializeCurrentThread();
+    if (FAILED(hr)) {
+      Warn("Call to InitializeCurrentThread fail.");
+    }
+
     while (true) {
-      auto item = handler->rejit_queue_.pop();
-      if (item.IsEmpty()) {
+      RejitItem item = queue->pop();
+
+      if (item.length_ == -1) {
         break;
       }
-      ModuleID modules[1] = { item.moduleId_ };
-      mdMethodDef methods[1] = { item.methodDef_ };
-      auto hr = handler->profilerInfo->RequestReJIT(1, modules, methods);
+
+      hr = profilerInfo->RequestReJIT((ULONG)item.length_, item.moduleIds_, item.methodDefs_);
       if (SUCCEEDED(hr)) {
-        Info("Request ReJIT done for [ModuleId=", item.moduleId_, ", MethodDef=", item.methodDef_ ,"]");
+        Info("Request ReJIT done for ", item.length_, " methods");
       } else {
-        Warn("Error requesting ReJIT for [ModuleId=", item.moduleId_, ", MethodDef=", item.methodDef_ ,"]");
+        Warn("Error requesting ReJIT for ", item.length_, " methods");
       }
+      
+      item.DeleteArray();
     }
     Info("Exiting ReJIT request thread.");
   }
