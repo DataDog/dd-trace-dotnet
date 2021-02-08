@@ -115,6 +115,11 @@ namespace Datadog.Trace
         public const string AspNetArea = "aspnet.area";
 
         /// <summary>
+        /// The Razor Pages page name.
+        /// </summary>
+        public const string AspNetPage = "aspnet.page";
+
+        /// <summary>
         /// The Endpoint name in ASP.NET Core endpoint routing.
         /// </summary>
         public const string AspNetEndpoint = "aspnet.endpoint";
