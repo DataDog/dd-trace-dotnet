@@ -151,7 +151,7 @@ class RejitHandler {
     auto profilerInfo = handler->profilerInfo;
 
     Info("Initializing ReJIT request thread.");
-    HRESULT hr =profilerInfo->InitializeCurrentThread();
+    HRESULT hr = profilerInfo->InitializeCurrentThread();
     if (FAILED(hr)) {
       Warn("Call to InitializeCurrentThread fail.");
     }
