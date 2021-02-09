@@ -2,6 +2,30 @@
 
 namespace trace {
 
+RejitItem::RejitItem(int length, ModuleID* modulesId, mdMethodDef* methodDefs) {
+  length_ = length;
+  if (length > 0) {
+    ModuleID* myModulesIds = new ModuleID[length];
+    memcpy(myModulesIds, modulesId, length * sizeof(ModuleID));
+    moduleIds_ = myModulesIds;
+
+    mdMethodDef* myMethodDefs = new mdMethodDef[length];
+    memcpy(myMethodDefs, methodDefs, length * sizeof(mdMethodDef));
+    methodDefs_ = myMethodDefs;
+  }
+}
+
+void RejitItem::DeleteArray() {
+  if (moduleIds_ != nullptr) {
+    delete[] moduleIds_;
+    moduleIds_ = nullptr;
+  }
+  if (methodDefs_ != nullptr) {
+    delete[] methodDefs_;
+    methodDefs_ = nullptr;
+  }
+}
+
 void RejitHandlerModuleMethod::AddFunctionId(FunctionID functionId) {
   std::lock_guard<std::mutex> guard(functionsIds_lock);
   auto moduleHandler = (RejitHandlerModule*)module;

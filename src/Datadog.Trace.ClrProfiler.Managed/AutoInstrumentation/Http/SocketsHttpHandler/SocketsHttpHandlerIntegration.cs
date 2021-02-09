@@ -3,7 +3,7 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler
 {
     /// <summary>
     /// System.Net.Http.SocketsHttpHandler calltarget instrumentation
@@ -11,13 +11,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
     [InstrumentMethod(
         AssemblyName = "System.Net.Http",
         TypeName = "System.Net.Http.SocketsHttpHandler",
-        MethodName = "Send",
-        ReturnTypeName = ClrNames.HttpResponseMessage,
+        MethodName = "SendAsync",
+        ReturnTypeName = ClrNames.HttpResponseMessageTask,
         ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
-        MinimumVersion = "5.0.0",
+        MinimumVersion = "4.0.0",
         MaximumVersion = "5.*.*",
         IntegrationName = IntegrationName)]
-    public class SocketsHttpHandlerSyncIntegration
+    public class SocketsHttpHandlerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
 
@@ -46,11 +46,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, CallTargetState state)
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, CallTargetState state)
             where TResponse : IHttpResponseMessage
         {
-            var response = SocketsHttpHandlerCommon.OnMethodEnd(instance, responseMessage, exception, state);
-            return new CallTargetReturn<TResponse>(response);
+            return SocketsHttpHandlerCommon.OnMethodEnd(instance, responseMessage, exception, state);
         }
     }
 }

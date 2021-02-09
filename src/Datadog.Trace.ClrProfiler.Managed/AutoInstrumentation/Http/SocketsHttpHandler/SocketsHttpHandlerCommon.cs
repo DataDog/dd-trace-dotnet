@@ -6,12 +6,13 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler
 {
-    internal class HttpClientHandlerCommon
+    internal class SocketsHttpHandlerCommon
     {
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private static readonly IntegrationInfo SocketHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpSocketsHandler));
 
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
@@ -62,6 +63,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
 
         private static bool IsTracingEnabled(IRequestHeaders headers)
         {
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: false))
+            {
+                return false;
+            }
+
             if (headers.TryGetValues(HttpHeaderNames.TracingEnabled, out var headerValues))
             {
                 if (headerValues is string[] arrayValues)

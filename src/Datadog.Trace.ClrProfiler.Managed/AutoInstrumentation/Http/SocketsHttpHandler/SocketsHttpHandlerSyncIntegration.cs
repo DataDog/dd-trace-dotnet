@@ -3,21 +3,21 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler
 {
     /// <summary>
-    /// System.Net.Http.HttpClientHandler calltarget instrumentation
+    /// System.Net.Http.SocketsHttpHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Net.Http",
-        TypeName = "System.Net.Http.HttpClientHandler",
+        TypeName = "System.Net.Http.SocketsHttpHandler",
         MethodName = "Send",
         ReturnTypeName = ClrNames.HttpResponseMessage,
         ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
         MinimumVersion = "5.0.0",
         MaximumVersion = "5.*.*",
         IntegrationName = IntegrationName)]
-    public class HttpClientHandlerSyncIntegration
+    public class SocketsHttpHandlerSyncIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
 
@@ -33,14 +33,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
         {
-            return HttpClientHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken);
+            return SocketsHttpHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken);
         }
 
         /// <summary>
-        /// OnMethodEnd callback
+        /// OnAsyncMethodEnd callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TResponse">Type of the response</typeparam>
+        /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="responseMessage">HttpResponse message instance</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HttpClientHandler
         public static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, CallTargetState state)
             where TResponse : IHttpResponseMessage
         {
-            var response = HttpClientHandlerCommon.OnMethodEnd(instance, responseMessage, exception, state);
+            var response = SocketsHttpHandlerCommon.OnMethodEnd(instance, responseMessage, exception, state);
             return new CallTargetReturn<TResponse>(response);
         }
     }

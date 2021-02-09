@@ -113,7 +113,9 @@ jobs:
     artifact: macos-profiler
 
 - job: build_runner_tool_and_standalone
-  dependsOn: build_linux_profiler
+  dependsOn:
+  - build_linux_profiler
+  - macos_profiler
   condition: succeeded()
 
   pool:

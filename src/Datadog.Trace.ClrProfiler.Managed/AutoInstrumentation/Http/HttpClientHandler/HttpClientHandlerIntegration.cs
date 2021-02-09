@@ -3,21 +3,21 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClientHandler
 {
     /// <summary>
-    /// System.Net.Http.SocketsHttpHandler calltarget instrumentation
+    /// System.Net.Http.HttpClientHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Net.Http",
-        TypeName = "System.Net.Http.SocketsHttpHandler",
+        TypeName = "System.Net.Http.HttpClientHandler",
         MethodName = "SendAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
         ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
         MinimumVersion = "4.0.0",
         MaximumVersion = "5.*.*",
         IntegrationName = IntegrationName)]
-    public class SocketsHttpHandlerIntegration
+    public class HttpClientHandlerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
 
@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
         {
-            return SocketsHttpHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken);
+            return HttpClientHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken);
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.SocketsHttpHandler
         public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, CallTargetState state)
             where TResponse : IHttpResponseMessage
         {
-            return SocketsHttpHandlerCommon.OnMethodEnd(instance, responseMessage, exception, state);
+            return HttpClientHandlerCommon.OnMethodEnd(instance, responseMessage, exception, state);
         }
     }
 }
