@@ -592,6 +592,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
+  if (rejit_handler != nullptr) {
+    rejit_handler->Shutdown();
+  }
   Warn("Exiting.");
   is_attached_.store(false);
   Logger::Shutdown();
@@ -2840,15 +2843,13 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
            ", Method=", caller.name, 
            ", Signature=", caller.signature.str(),
            "]");
-      
       enumIterator = ++enumIterator;
     }
   }
 
   // Request the ReJIT for all integrations found in the module.
   if (!vtMethodDefs.empty()) {
-    Info("Requesting ReJIT for ", vtMethodDefs.size(), " methods.");
-    this->info_->RequestReJIT((ULONG)vtMethodDefs.size(), vtModules.data(), vtMethodDefs.data());
+    this->rejit_handler->EnqueueForRejit(vtMethodDefs.size(), vtModules.data(), vtMethodDefs.data());
   }
 
   // We return the number of ReJIT requests
