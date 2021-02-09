@@ -73,11 +73,10 @@ template <typename T>
 class BlockingQueue : public UnCopyable {
  private:
   std::queue<T> queue_;
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
   std::condition_variable condition_;
 
  public:
-  BlockingQueue() = default;
   T pop() {
     std::unique_lock<std::mutex> mlock(mutex_);
     while (queue_.empty()) {
@@ -88,12 +87,11 @@ class BlockingQueue : public UnCopyable {
     return value;
   }
   void push(const T &item) {
-    std::lock_guard<std::mutex> mlock(mutex_);
-    bool wake = queue_.empty();
-    queue_.push(item);
-    if (wake) {
-      condition_.notify_one();
+    {
+      std::lock_guard<std::mutex> guard(mutex_);
+      queue_.push(item);
     }
+    condition_.notify_one();
   }
 };
 

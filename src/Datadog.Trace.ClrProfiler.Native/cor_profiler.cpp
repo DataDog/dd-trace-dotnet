@@ -592,7 +592,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
-  // rejit_handler->Shutdown();
+  if (rejit_handler != nullptr) {
+    rejit_handler->Shutdown();
+  }
   Warn("Exiting.");
   is_attached_.store(false);
   Logger::Shutdown();
@@ -2841,7 +2843,6 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
            ", Method=", caller.name, 
            ", Signature=", caller.signature.str(),
            "]");
-
       enumIterator = ++enumIterator;
     }
   }
