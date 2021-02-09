@@ -6,7 +6,7 @@ using Datadog.Trace.ExtensionMethods;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
 {
     /// <summary>
-    /// CallTarget integration for WebRequest.GetResponse
+    /// CallTarget integration for HttpWebRequest.GetResponse
     /// </summary>
     [InstrumentMethod(
         AssemblyName = WebRequestCommon.NetFrameworkAssembly,
@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
         MethodName = MethodName,
         ReturnTypeName = WebRequestCommon.WebResponseTypeName,
         ParameterTypeNames = new string[0],
-        MinimumVersion = WebRequestCommon.Major2,
+        MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major4,
         IntegrationName = WebRequestCommon.IntegrationName)]
     [InstrumentMethod(
@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
         MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major5,
         IntegrationName = WebRequestCommon.IntegrationName)]
-    public class WebRequestGetResponseIntegration
+    public class HttpWebRequestGetResponseIntegration
     {
         private const string MethodName = "GetResponse";
 

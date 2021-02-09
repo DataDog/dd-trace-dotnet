@@ -7,6 +7,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
 {
     /// <summary>
     /// CallTarget integration for WebRequest.GetResponseAsync
+    /// We're actually instrumenting HttpWebRequest, but the GetResponseAsync method is declared in WebRequest (and not overriden)
+    /// So instead, we instrument WebRequest and check the actual type
     /// </summary>
     [InstrumentMethod(
         AssemblyName = WebRequestCommon.NetFrameworkAssembly,
@@ -14,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
         MethodName = MethodName,
         ReturnTypeName = WebRequestCommon.WebResponseTask,
         ParameterTypeNames = new string[0],
-        MinimumVersion = WebRequestCommon.Major2,
+        MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major4,
         IntegrationName = WebRequestCommon.IntegrationName)]
     [InstrumentMethod(

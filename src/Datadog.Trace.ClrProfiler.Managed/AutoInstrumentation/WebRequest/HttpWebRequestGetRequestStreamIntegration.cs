@@ -5,7 +5,7 @@ using Datadog.Trace.ExtensionMethods;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
 {
     /// <summary>
-    /// CallTarget integration for WebRequest.GetRequestStream
+    /// CallTarget integration for HttpWebRequest.GetRequestStream
     /// </summary>
     [InstrumentMethod(
         AssemblyName = WebRequestCommon.NetFrameworkAssembly,
@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
         MethodName = MethodName,
         ReturnTypeName = ClrNames.Stream,
         ParameterTypeNames = new string[0],
-        MinimumVersion = WebRequestCommon.Major2,
+        MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major4,
         IntegrationName = WebRequestCommon.IntegrationName)]
     [InstrumentMethod(
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
         MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major5,
         IntegrationName = WebRequestCommon.IntegrationName)]
-    public class WebRequestGetRequestStreamIntegration
+    public class HttpWebRequestGetRequestStreamIntegration
     {
         private const string MethodName = "GetRequestStream";
 
