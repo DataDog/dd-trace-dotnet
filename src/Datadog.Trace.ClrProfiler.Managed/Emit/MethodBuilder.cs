@@ -421,6 +421,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return null;
             }
 
+            if (!methodInfo.IsStatic && methodInfo.ReflectedType != _concreteType)
+            {
+                Log.Warning($"MethodInfo for instance method defined on type that does not match the input instance: {detailMessage}");
+                throw new Exception($"MethodInfo for instance method defined on type that does not match the input instance: {detailMessage}");
+                // return null;
+            }
+
             return methodInfo;
         }
 
