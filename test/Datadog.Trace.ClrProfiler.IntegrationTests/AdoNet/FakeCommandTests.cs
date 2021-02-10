@@ -56,5 +56,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 }
             }
         }
+
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        [Trait("Category", "EndToEnd")]
+        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
+        {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
+            var totalSpanCount = 21;
+
+            const string dbType = "fake";
+            const string expectedOperationName = dbType + ".query";
+
+            SetEnvironmentVariable(ConfigurationKeys.AdoNetExcludedTypes, "Samples.FakeDbCommand.FakeCommand;System.Data.Common.DbCommand;System.Data.SqlClient.SqlCommand;Microsoft.Data.SqlClient.SqlCommand;MySql.Data.MySqlClient.MySqlCommand;Npgsql.NpgsqlCommand");
+
+            string packageVersion = PackageVersions.Npgsql.First()[0] as string;
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
+
+                var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+                Assert.NotEmpty(spans);
+                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+            }
+        }
     }
 }
