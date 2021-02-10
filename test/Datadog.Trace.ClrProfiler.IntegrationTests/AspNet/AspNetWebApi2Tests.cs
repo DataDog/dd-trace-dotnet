@@ -1,4 +1,6 @@
 #if NET461
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
 
 using System.Collections.Generic;
 using System.Net;
@@ -9,14 +11,41 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetWebApi2Tests : TestHelper, IClassFixture<IisFixture>
+    public class AspNetWebApi2TestsCallsite : AspNetWebApi2Tests
+    {
+        public AspNetWebApi2TestsCallsite(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: false, enableInlining: false)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetWebApi2TestsCallTargetNoInlining : AspNetWebApi2Tests
+    {
+        public AspNetWebApi2TestsCallTargetNoInlining(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, enableInlining: false)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetWebApi2TestsCallTarget : AspNetWebApi2Tests
+    {
+        public AspNetWebApi2TestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, enableInlining: true)
+        {
+        }
+    }
+
+    public abstract class AspNetWebApi2Tests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
 
-        public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool enableInlining)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
+            SetCallTargetSettings(enableCallTarget, enableInlining);
 
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
