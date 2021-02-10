@@ -6,29 +6,31 @@ using Datadog.Trace.ExtensionMethods;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
 {
     /// <summary>
-    /// CallTarget integration for HttpWebRequest.GetResponse
+    /// CallTarget integration for WebRequest.GetResponseAsync
+    /// We're actually instrumenting HttpWebRequest, but the GetResponseAsync method is declared in WebRequest (and not overriden)
+    /// So instead, we instrument WebRequest and check the actual type
     /// </summary>
     [InstrumentMethod(
         AssemblyName = WebRequestCommon.NetFrameworkAssembly,
-        TypeName = WebRequestCommon.HttpWebRequestTypeName,
+        TypeName = WebRequestCommon.WebRequestTypeName,
         MethodName = MethodName,
-        ReturnTypeName = WebRequestCommon.WebResponseTypeName,
+        ReturnTypeName = WebRequestCommon.WebResponseTask,
         ParameterTypeNames = new string[0],
         MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major4,
         IntegrationName = WebRequestCommon.IntegrationName)]
     [InstrumentMethod(
         AssemblyName = WebRequestCommon.NetCoreAssembly,
-        TypeName = WebRequestCommon.HttpWebRequestTypeName,
+        TypeName = WebRequestCommon.WebRequestTypeName,
         MethodName = MethodName,
-        ReturnTypeName = WebRequestCommon.WebResponseTypeName,
+        ReturnTypeName = WebRequestCommon.WebResponseTask,
         ParameterTypeNames = new string[0],
         MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major5,
         IntegrationName = WebRequestCommon.IntegrationName)]
-    public class HttpWebRequestGetResponseIntegration
+    public class WebRequest_GetResponseAsync_Integration
     {
-        private const string MethodName = "GetResponse";
+        private const string MethodName = "GetResponseAsync";
 
         /// <summary>
         /// OnMethodBegin callback
@@ -51,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
             if (state.Scope != null)
             {
@@ -63,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
                 state.Scope.DisposeWithException(exception);
             }
 
-            return new CallTargetReturn<TReturn>(returnValue);
+            return returnValue;
         }
     }
 }

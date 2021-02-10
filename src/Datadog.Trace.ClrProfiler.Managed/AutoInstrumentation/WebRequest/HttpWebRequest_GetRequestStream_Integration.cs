@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
         MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major5,
         IntegrationName = WebRequestCommon.IntegrationName)]
-    public class HttpWebRequestGetRequestStreamIntegration
+    public class HttpWebRequest_GetRequestStream_Integration
     {
         private const string MethodName = "GetRequestStream";
 
