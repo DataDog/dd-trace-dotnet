@@ -551,10 +551,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
           module_metadata->invoke_pre_start_init_methodDef = methodDef;
           ModuleID moduleInfoArray[1] = {module_info.id};
           mdMethodDef methodDefArray[1] = {methodDef};
-          hr = this->info_->RequestReJIT(1, moduleInfoArray, methodDefArray);
-          if (FAILED(hr)) {
-            Warn("Can't enqueue rejit for: ", methodName, ", Type: ", typeName);
-          }
+          this->rejit_handler->EnqueueForRejit(1, moduleInfoArray, methodDefArray);
         } else {
           Warn("Can't load the MethodDef for: ", methodName, ", Type: ", typeName);
         }
