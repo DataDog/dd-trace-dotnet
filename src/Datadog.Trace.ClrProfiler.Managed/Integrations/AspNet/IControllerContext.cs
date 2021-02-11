@@ -2,7 +2,7 @@
 using System.Web;
 using System.Web.Routing;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
 {
     /// <summary>
     /// ControllerContext interface for ducktyping

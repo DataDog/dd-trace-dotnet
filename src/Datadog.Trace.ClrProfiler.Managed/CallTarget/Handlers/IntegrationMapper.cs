@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             MethodInfo onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodBeginMethodInfo is null)
             {
-                throw new NullReferenceException($"Couldn't find the method: {BeginMethodName} in type: {integrationType.FullName}");
+                return null;
             }
 
             if (onMethodBeginMethodInfo.ReturnType != typeof(CallTargetState))

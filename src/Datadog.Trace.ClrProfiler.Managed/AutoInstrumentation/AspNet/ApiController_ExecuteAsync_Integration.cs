@@ -7,6 +7,7 @@ using System.Web;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations;
+using Datadog.Trace.ClrProfiler.Integrations.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
@@ -22,8 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MethodName = "ExecuteAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
         ParameterTypeNames = new[] { HttpControllerContextTypeName, ClrNames.CancellationToken },
-        MinimumVersion = Major5,
-        MaximumVersion = Major5Minor1,
+        MinimumVersion = Major5Minor1,
+        MaximumVersion = Major5MinorX,
         IntegrationName = IntegrationName)]
     // ReSharper disable once InconsistentNaming
     public class ApiController_ExecuteAsync_Integration
@@ -31,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
         private const string Major5Minor1 = "5.1";
-        private const string Major5 = "5";
+        private const string Major5MinorX = "5";
 
         private const string IntegrationName = nameof(IntegrationIds.AspNetWebApi2);
 
@@ -39,11 +40,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TController">Type of the controller context</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="controllerContext">The context of the controller</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object controllerContext, CancellationToken cancellationToken)
+        public static CallTargetState OnMethodBegin<TTarget, TController>(TTarget instance, TController controllerContext, CancellationToken cancellationToken)
+            where TController : IHttpControllerContext
         {
             var scope = AspNetWebApi2Integration.CreateScope(controllerContext, out _);
 
@@ -74,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 return responseMessage;
             }
 
-            var controllerContext = state.State;
+            var controllerContext = (IHttpControllerContext)state.State;
 
             // some fields aren't set till after execution, so populate anything missing
             AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, (AspNetTags)scope.Span.Tags, Enumerable.Empty<KeyValuePair<string, string>>());

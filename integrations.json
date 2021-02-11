@@ -278,6 +278,35 @@
     ]
   },
   {
+    "name": "AspNetWebApi2",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Web.Http",
+          "type": "System.Web.Http.ApiController",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
+            "System.Web.Http.Controllers.HttpControllerContext",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 5,
+          "minimum_minor": 1,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ApiController_ExecuteAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "HttpMessageHandler",
     "method_replacements": [
       {
