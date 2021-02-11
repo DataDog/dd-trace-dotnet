@@ -42,15 +42,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // Once this is fully supported, this will add another 2 complete groups for all frameworks instead
             // of 4 extra spans on net461 and netcoreapp2.0+
 #if NET461
-            var expectedSpanCount = 133; // 7 queries * 11 groups
+            var expectedSpanCount = 77; // 7 queries * 11 groups
 #else
-            // Update to final value once tests pass
-            var expectedSpanCount = 137; // 7 queries * 11 groups + 4 spans from generic wrapper on .NET Core
+            var expectedSpanCount = 81; // 7 queries * 11 groups + 4 spans from generic wrapper on .NET Core
 #endif
 
             if (enableCallTarget)
             {
-                expectedSpanCount = 147; // CallTarget support instrumenting a constrained generic caller.
+                expectedSpanCount = 91; // CallTarget support instrumenting a constrained generic caller.
             }
 
             const string dbType = "sql-server";

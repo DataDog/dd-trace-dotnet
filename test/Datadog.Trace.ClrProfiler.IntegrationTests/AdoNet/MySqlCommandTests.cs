@@ -100,11 +100,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // Once this is implemented, this will add another 1 group for the direct assembly reference
             // and another 1 group for the netstandard assembly reference
 #if NET452
-            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
-#elif NET461
-            var expectedSpanCount = 134;
+            var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
 #else
-            var expectedSpanCount = 137; // 7 queries * 19 groups + 1 internal query
+            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
 #endif
 
             if (packageVersion == "6.8.8")
@@ -115,11 +113,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             if (enableCallTarget)
             {
 #if NET452
-                expectedSpanCount = 90;
-#elif NET461
-                expectedSpanCount = 153;
+                expectedSpanCount = 62;
 #else
-                expectedSpanCount = 158;
+                expectedSpanCount = 97;
 #endif
             }
 

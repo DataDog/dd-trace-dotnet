@@ -39,22 +39,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // 2 interfaces: IDbCommand and IDbCommand-netstandard).
             // Once this is fully supported, this will add another 2 complete groups instead.
 #if NET452
-            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
-#elif NET461
-            var expectedSpanCount = 134; // 7 queries * 11 groups + 1 internal query
+            var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
 #else
-            // Update to final value once tests pass
-            var expectedSpanCount = 135; // 7 queries * 11 groups + 1 internal query
+            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
 #endif
 
             if (enableCallTarget)
             {
 #if NET452
-                expectedSpanCount = 85;
-#elif NET461
-                expectedSpanCount = 148;
+                expectedSpanCount = 57;
 #else
-                expectedSpanCount = 149;
+                expectedSpanCount = 92;
 #endif
             }
 
@@ -82,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 }
                 else
                 {
-                    Assert.True(spans.Count == expectedSpanCount || spans.Count == expectedSpanCount + 4, $"expectedSpanCount={expectedSpanCount}, expectedSpanCount+4={expectedSpanCount + 4}, actualSpanCount={spans.Count}");
+                    Assert.True(spans.Count == expectedSpanCount || spans.Count == expectedSpanCount + 4);
                 }
 
                 foreach (var span in spans)

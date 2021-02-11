@@ -23,12 +23,14 @@ namespace Samples.Microsoft.Data.SqlClient
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
             // On .NET Core this results in a new assembly being loaded whose types are not considered the same
             // as the types loaded through the default loading mechanism, potentially causing type casting issues in CallSite instrumentation
+            /*
             var loadFileType = AssemblyHelpers.LoadFileAndRetrieveType(typeof(SqlConnection));
             using (var connection = OpenConnection(loadFileType))
             {
                 // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
                 await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
             }
+            */
 
             // allow time to flush
             await Task.Delay(2000, cts.Token);
