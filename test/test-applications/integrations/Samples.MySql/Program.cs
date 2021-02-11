@@ -53,7 +53,7 @@ namespace Samples.MySql
                 if (oldMySqlServer)
                 {
                     var host = Environment.GetEnvironmentVariable("MYSQL57_HOST") ?? "localhost";
-                    var port = Environment.GetEnvironmentVariable("MYSQL57_PORT") ?? "3307";
+                    var port = Environment.GetEnvironmentVariable("MYSQL57_PORT") ?? "3407";
                     connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world;SslMode=None";
                 }
                 else
