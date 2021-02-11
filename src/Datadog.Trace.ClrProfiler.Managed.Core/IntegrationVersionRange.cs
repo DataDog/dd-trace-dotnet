@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler
 
         /// <summary>
         /// Gets the MaximumMajor, MaximumMinor, and MaximumPatch properties.
-        /// Convenience property for setting target minimum version.
+        /// Convenience property for setting target maximum version.
         /// </summary>
         public string MaximumVersion
         {
