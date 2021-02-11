@@ -421,10 +421,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return null;
             }
 
-            if (!methodInfo.IsStatic && methodInfo.ReflectedType != _concreteType)
+            if (!methodInfo.IsStatic && !methodInfo.ReflectedType.IsAssignableFrom(_concreteType))
             {
-                Log.Warning($"MethodInfo for instance method defined on type that does not match the input instance: {detailMessage}");
-                throw new Exception($"MethodInfo for instance method defined on type that does not match the input instance: {detailMessage}");
+                Log.Warning($"_concreteType cannot be assigned to the type containing the MethodInfo representing the instance method: {detailMessage}");
+                throw new Exception($"_concreteType cannot be assigned to the type containing the MethodInfo representing the instance method: {detailMessage}");
                 // return null;
             }
 
