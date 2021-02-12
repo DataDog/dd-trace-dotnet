@@ -343,19 +343,17 @@ jobs:
     displayName: dotnet test
     inputs:
       command: test
-      configuration: $(buildConfiguration)
       projects: |
         test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
         test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
-      arguments: -p:Platform=$(buildPlatform)
+      arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
     inputs:
       command: test
-      configuration: $(buildConfiguration)
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
+      arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
 
   - task: DockerCompose@0
     displayName: docker-compose stop services
@@ -490,17 +488,15 @@ jobs:
     displayName: dotnet test --filter LoadFromGAC=True
     inputs:
       command: test
-      configuration: $(buildConfiguration)
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True&IIS!=True" -p:Platform=$(buildPlatform)
+      arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True&IIS!=True" -p:Platform=$(buildPlatform)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test IIS
     inputs:
       command: test
-      configuration: $(buildConfiguration)
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: --filter "(IIS=True)" -p:Platform=$(buildPlatform)
+      arguments: -c $(buildConfiguration) --filter "(IIS=True)" -p:Platform=$(buildPlatform)
 
   - task: DockerCompose@0
     displayName: docker-compose stop services
