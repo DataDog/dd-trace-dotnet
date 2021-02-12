@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
@@ -419,12 +418,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
             if (!ParametersAreViable(methodInfo))
             {
                 Log.Warning($"Parameters not viable: {detailMessage}");
-                return null;
-            }
-
-            if (!methodInfo.IsStatic && !methodInfo.ReflectedType.IsAssignableFrom(_concreteType))
-            {
-                Log.Warning($"_concreteType cannot be assigned to the type containing the MethodInfo representing the instance method: {detailMessage}");
                 return null;
             }
 
