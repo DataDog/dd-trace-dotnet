@@ -50,7 +50,7 @@ WSTRING ToWSTRING(const std::string& str) {
 }
 
 WSTRING ToWSTRING(const uint64_t i) {
-  return std::to_wstring(i);
+  return WSTRING(reinterpret_cast<const WCHAR*>(std::to_wstring(i).c_str()));
   // return ToWSTRING(std::to_string(i));
 }
 
