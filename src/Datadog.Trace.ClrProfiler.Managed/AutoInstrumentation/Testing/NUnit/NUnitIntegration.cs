@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             string testFramework = "NUnit " + targetType?.Assembly?.GetName().Version;
             string testSuite = testMethod.DeclaringType?.FullName;
-            string testName = testMethod.Name;
+            string testName = string.IsNullOrEmpty(currentTest.Name) ? testMethod.Name : currentTest.Name;
             string skipReason = null;
 
             Tracer tracer = Tracer.Instance;
@@ -127,18 +127,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 ex = ex.InnerException;
             }
 
-            switch (ex?.GetType().FullName)
+            if (ex != null)
             {
-                case "NUnit.Framework.SuccessException":
+                string exTypeName = ex.GetType().FullName;
+
+                if (exTypeName == "NUnit.Framework.SuccessException")
+                {
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
-                    break;
-                case "NUnit.Framework.IgnoreException":
+                }
+                else if (exTypeName == "NUnit.Framework.IgnoreException")
+                {
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                    break;
-                default:
+                    scope.Span.SetTag(TestTags.SkipReason, ex.Message);
+                }
+                else
+                {
                     scope.Span.SetException(ex);
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                    break;
+                }
             }
         }
     }

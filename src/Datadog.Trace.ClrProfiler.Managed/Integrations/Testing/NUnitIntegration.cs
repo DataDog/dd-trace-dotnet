@@ -137,6 +137,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     MethodInfo testMethod = null;
                     object[] testMethodArguments = null;
                     object properties = null;
+                    string testCaseName = null;
 
                     if (currentTest != null)
                     {
@@ -147,13 +148,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                         currentTest.TryGetPropertyValue<object[]>("Arguments", out testMethodArguments);
                         currentTest.TryGetPropertyValue<object>("Properties", out properties);
+
+                        currentTest.TryGetPropertyValue<string>("Name", out testCaseName);
                     }
 
                     if (testMethod != null)
                     {
                         string testFramework = "NUnit " + testMethodCommandType.Assembly.GetName().Version;
                         string testSuite = testMethod.DeclaringType?.FullName;
-                        string testName = testMethod.Name;
+                        string testName = string.IsNullOrEmpty(testCaseName) ? testMethod.Name : testCaseName;
                         string skipReason = null;
                         List<KeyValuePair<string, string>> testArguments = null;
                         List<KeyValuePair<string, string>> testTraits = null;
@@ -279,14 +282,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 ex = ex.InnerException;
             }
 
-            if (ex != null && ex.GetType().FullName != "NUnit.Framework.SuccessException")
+            if (ex != null)
             {
-                scope.Span.SetException(ex);
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-            }
-            else
-            {
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                string exTypeName = ex.GetType().FullName;
+
+                if (exTypeName == "NUnit.Framework.SuccessException")
+                {
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                }
+                else if (exTypeName == "NUnit.Framework.IgnoreException")
+                {
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                    scope.Span.SetTag(TestTags.SkipReason, ex.Message);
+                }
+                else
+                {
+                    scope.Span.SetException(ex);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                }
             }
         }
 
