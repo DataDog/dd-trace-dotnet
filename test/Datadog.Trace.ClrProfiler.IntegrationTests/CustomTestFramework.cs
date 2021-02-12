@@ -105,15 +105,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var test = $"{TestMethod.TestClass.Class.Name}.{TestMethod.Method.Name}({parameters})";
 
-                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Starting execution of {test}"));
+                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
 
                 try
                 {
-                    return await base.RunTestCaseAsync(testCase);
+                    var result = await base.RunTestCaseAsync(testCase);
+
+                    var status = result.Failed > 0 ? "FAILURE" : "SUCCESS";
+
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"{status}: {test} ({result.Time}s)"));
+
+                    return result;
                 }
-                finally
+                catch (Exception ex)
                 {
-                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Finished execution of {test}"));
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: {test} ({ex.Message})"));
+                    throw;
                 }
             }
         }
