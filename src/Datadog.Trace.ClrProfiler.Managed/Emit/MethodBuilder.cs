@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
@@ -424,8 +425,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             if (!methodInfo.IsStatic && !methodInfo.ReflectedType.IsAssignableFrom(_concreteType))
             {
                 Log.Warning($"_concreteType cannot be assigned to the type containing the MethodInfo representing the instance method: {detailMessage}");
-                throw new Exception($"_concreteType cannot be assigned to the type containing the MethodInfo representing the instance method: {detailMessage}");
-                // return null;
+                return null;
             }
 
             return methodInfo;
@@ -478,9 +478,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionModule?.FullyQualifiedName ?? "NULL"}, {_resolutionModule?.ModuleVersionId ?? _moduleVersionId}";
             Log.Warning($"Using fallback method matching ({logDetail})");
-            throw new Exception($"Using fallback method matching ({logDetail})");
-
-            /*
 
             var statsd = Tracer.Instance.Statsd;
 
@@ -575,7 +572,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
 
             return methodInfo;
-            */
         }
 
         private bool ParametersAreViable(MethodInfo mi)
