@@ -20,7 +20,7 @@ pool:
   vmImage: ubuntu-18.04
 
 variables:
-  buildConfiguration: Debug
+  buildConfiguration: Release
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
   dotnetCoreSdkVersion: 3.1.107
   dotnetCoreSdk5Version: 5.0.100
