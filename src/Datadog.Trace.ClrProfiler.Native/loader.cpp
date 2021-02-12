@@ -6,7 +6,7 @@
 #include "logging.h"
 #include "resource.h"
 
-#ifdef MACOS
+#ifdef MACOS    
 #include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
 #endif
@@ -35,10 +35,10 @@ namespace trace {
     extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
 #endif
 
-    const WSTRING managed_loader_assembly_name = "Datadog.Trace.ClrProfiler.Managed.Loader"_W;
+    const WSTRING managed_loader_assembly_name = L"Datadog.Trace.ClrProfiler.Managed.Loader";
     
 #ifdef _WIN32
-    const WSTRING native_profiler_file_win32 = "DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W;
+    const WSTRING native_profiler_file_win32 = L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL";
 #endif
 
 #if MACOS
@@ -48,9 +48,9 @@ namespace trace {
     Loader* loader = nullptr;
 
     const size_t stringMaxSize = 1024;
-    const WSTRING empty_string = ""_W;
+    const WSTRING empty_string = L"";
     
-    const WSTRING default_domain_name = "DefaultDomain"_W;
+    const WSTRING default_domain_name = L"DefaultDomain";
 
     const LPCWSTR managed_loader_startup_type = LorU("Datadog.Trace.ClrProfiler.Managed.Loader.Startup");
     const LPCWSTR module_type_name = LorU("<Module>");
@@ -71,26 +71,26 @@ namespace trace {
     // We exclude here the direct references of the loader to avoid a cyclic reference problem.
     // Also well-known assemblies we want to avoid.
     WSTRING assemblies_exclusion_list_[] = {
-            "mscorlib"_W,
-            "netstandard"_W,
-            "System.Private.CoreLib"_W,
-            "System"_W,
-            "System.Core"_W,
-            "System.Configuration"_W,
-            "System.Data"_W,
-            "System.EnterpriseServices"_W,
-            "System.Numerics"_W,
-            "System.Runtime.Caching"_W,
-            "System.Security"_W,
-            "System.Transactions"_W,
-            "System.Xml"_W,
-            "System.Web"_W,
-            "System.Web.ApplicationServices"_W,
+            L"mscorlib",
+            L"netstandard",
+            L"System.Private.CoreLib",
+            L"System",
+            L"System.Core",
+            L"System.Configuration",
+            L"System.Data",
+            L"System.EnterpriseServices",
+            L"System.Numerics",
+            L"System.Runtime.Caching",
+            L"System.Security",
+            L"System.Transactions",
+            L"System.Xml",
+            L"System.Web",
+            L"System.Web.ApplicationServices",
     };
 
-    WSTRING profiler_path_64 = GetEnvironmentValue("CORECLR_PROFILER_PATH_64"_W);
-    WSTRING profiler_path_32 = GetEnvironmentValue("CORECLR_PROFILER_PATH_32"_W);
-    WSTRING profiler_path = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
+    WSTRING profiler_path_64 = GetEnvironmentValue(L"CORECLR_PROFILER_PATH_64");
+    WSTRING profiler_path_32 = GetEnvironmentValue(L"CORECLR_PROFILER_PATH_32");
+    WSTRING profiler_path = GetEnvironmentValue(L"CORECLR_PROFILER_PATH");
 
     Loader::Loader(ICorProfilerInfo4* info, bool isIIS) {
         info_ = info;
@@ -145,7 +145,7 @@ namespace trace {
 
         // If we are in the IIS process we skip the default domain
         if (is_iis_ && app_domain_name_string == default_domain_name) {
-            Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, ". The module belongs to the DefaultDomain in IIS process.");
+            Info("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, ". The module belongs to the DefaultDomain in IIS process.");
             return E_FAIL;
         }
 
@@ -153,7 +153,7 @@ namespace trace {
         // check if the module is not the loader itself
         //
         if (assembly_name_string == managed_loader_assembly_name) {
-            Debug("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
+            Info("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
             return E_FAIL;
         }
 
@@ -169,12 +169,12 @@ namespace trace {
         //
         for (const auto asm_name : assemblies_exclusion_list_) {
             if (assembly_name_string == asm_name) {
-                Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
+                Info("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
                 return E_FAIL;
             }
         }
 
-        Debug("Loader::InjectLoaderToModuleInitializer: Analyzing ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
+        Info("Loader::InjectLoaderToModuleInitializer: Analyzing ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
 
         //
         // the loader is not loaded yet for this AppDomain
@@ -506,10 +506,7 @@ namespace trace {
         }
 
         // Create a string representing
-        // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup" Create OS-specific
-        // implementations because on Windows, creating the string via
-        // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str() does not
-        // create the proper string for CreateInstance to successfully call
+        // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup" 
         auto load_helper_str_size = LorULength(managed_loader_startup_type);
 
         mdString load_helper_token;
