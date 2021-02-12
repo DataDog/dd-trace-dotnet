@@ -72,7 +72,7 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run Profiler
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
     displayName: Uploading linux tracer home artifact
     artifact: linux-tracer-home
 
