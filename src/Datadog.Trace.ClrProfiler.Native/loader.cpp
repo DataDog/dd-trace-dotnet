@@ -11,6 +11,14 @@
 #include <mach-o/getsect.h>
 #endif
 
+#define CONCAT(x, y) x ## y
+
+#ifdef _WIN32
+#define LorU(value) CONCAT(L, value)
+#else
+#define LorU(value) CONCAT(u, value)
+#endif
+
 namespace trace {
 
 #ifdef LINUX
@@ -27,7 +35,7 @@ namespace trace {
     const WSTRING native_profiler_file_win32 = "DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W;
     const LPCWSTR managed_loader_startup_type = L"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
 #else
-    const char16_t managed_loader_startup_type = u"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
+    const char16_t* managed_loader_startup_type = u"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
 #endif
 
 #if MACOS
@@ -36,24 +44,24 @@ namespace trace {
 
     Loader* loader = nullptr;
 
-    const size_t nameMaxSize = 1024;
+    const size_t stringMaxSize = 1024;
     const WSTRING empty_string = ""_W;
     
     const WSTRING default_domain_name = "DefaultDomain"_W;
-    const LPCWSTR module_type_name = L"<Module>";
-    const LPCWSTR constructor_name = L".cctor";
-    const LPCWSTR get_assembly_and_symbols_bytes_name = L"GetAssemblyAndSymbolsBytes";
-    const LPCWSTR mscorlib_name = L"mscorlib";
-    const LPCWSTR system_byte_name = L"System.Byte";
-    const LPCWSTR system_runtime_interopservices_marshal_name = L"System.Runtime.InteropServices.Marshal";
-    const LPCWSTR copy_name = L"Copy";
-    const LPCWSTR system_reflection_assembly_name = L"System.Reflection.Assembly";
-    const LPCWSTR system_object_name = L"System.Object";
-    const LPCWSTR system_appdomain_name = L"System.AppDomain";
-    const LPCWSTR get_currentdomain_name = L"get_CurrentDomain";
-    const LPCWSTR load_name = L"Load";
-    const LPCWSTR createinstance_name = L"CreateInstance";
-    const LPCWSTR loader_method_name = L"__DDVoidMethodCall__";
+    const LPCWSTR module_type_name = LorU("<Module>");
+    const LPCWSTR constructor_name = LorU (".cctor");
+    const LPCWSTR get_assembly_and_symbols_bytes_name = LorU("GetAssemblyAndSymbolsBytes");
+    const LPCWSTR mscorlib_name = LorU("mscorlib");
+    const LPCWSTR system_byte_name = LorU("System.Byte");
+    const LPCWSTR system_runtime_interopservices_marshal_name = LorU("System.Runtime.InteropServices.Marshal");
+    const LPCWSTR copy_name = LorU("Copy");
+    const LPCWSTR system_reflection_assembly_name = LorU("System.Reflection.Assembly");
+    const LPCWSTR system_object_name = LorU("System.Object");
+    const LPCWSTR system_appdomain_name = LorU("System.AppDomain");
+    const LPCWSTR get_currentdomain_name = LorU("get_CurrentDomain");
+    const LPCWSTR load_name = LorU("Load");
+    const LPCWSTR createinstance_name = LorU("CreateInstance");
+    const LPCWSTR loader_method_name = LorU("__DDVoidMethodCall__");
 
     // We exclude here the direct references of the loader to avoid a cyclic reference problem.
     // Also well-known assemblies we want to avoid.
@@ -106,9 +114,9 @@ namespace trace {
         // retrieve AppDomainID from AssemblyID
         //
         AppDomainID app_domain_id = 0;
-        WCHAR assembly_name[nameMaxSize];
+        WCHAR assembly_name[stringMaxSize];
         DWORD assembly_name_len = 0;
-        hr = this->info_->GetAssemblyInfo(assembly_id, nameMaxSize, &assembly_name_len, assembly_name, &app_domain_id, NULL);
+        hr = this->info_->GetAssemblyInfo(assembly_id, stringMaxSize, &assembly_name_len, assembly_name, &app_domain_id, NULL);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AppDomainID for AssemblyID=", assembly_id);
             return hr;
@@ -120,10 +128,10 @@ namespace trace {
         // retrieve AppDomain Name
         //
 
-        WCHAR app_domain_name[nameMaxSize];
+        WCHAR app_domain_name[stringMaxSize];
         DWORD app_domain_name_len = 0;
 
-        hr = this->info_->GetAppDomainInfo(app_domain_id, nameMaxSize, &app_domain_name_len, app_domain_name, nullptr);
+        hr = this->info_->GetAppDomainInfo(app_domain_id, stringMaxSize, &app_domain_name_len, app_domain_name, nullptr);
 
         WSTRING app_domain_name_string = empty_string;
         if (SUCCEEDED(hr)) {
@@ -511,8 +519,8 @@ namespace trace {
         }
 
         ULONG string_len = 0;
-        WCHAR string_contents[1024]{};
-        hr = metadata_import->GetUserString(load_helper_token, string_contents, 1024, &string_len);
+        WCHAR string_contents[stringMaxSize]{};
+        hr = metadata_import->GetUserString(load_helper_token, string_contents, stringMaxSize, &string_len);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: GetUserString failed", module_id);
             return hr;
