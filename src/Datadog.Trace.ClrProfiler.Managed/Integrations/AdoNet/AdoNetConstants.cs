@@ -29,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             public const string DbDataReader = "System.Data.Common.DbDataReader";
             public const string DbCommand = "System.Data.Common.DbCommand";
             public const string CommandBehavior = "System.Data.CommandBehavior";
+
+            public const string DbDataReaderTask = "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>";
         }
 
         public static class MethodNames

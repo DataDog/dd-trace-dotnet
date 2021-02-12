@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                        .Start(moduleVersionPtr, mdToken, opCode, XUnitRunAsyncMethod)
                        .WithConcreteType(testInvokerType)
                        .WithDeclaringTypeGenerics(testInvokerType.BaseType.GenericTypeArguments)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask)
+                       .WithNamespaceAndNameFilters("System.Threading.Tasks.Task`1<System.Decimal>")
                        .Build();
             }
             catch (Exception ex)
@@ -162,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                        .Start(moduleVersionPtr, mdToken, opCode, XUnitRunAsyncMethod)
                        .WithConcreteType(testRunnerType)
                        .WithDeclaringTypeGenerics(testRunnerType.BaseType.GenericTypeArguments)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask)
+                       .WithNamespaceAndNameFilters("System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>")
                        .Build();
             }
             catch (Exception ex)
@@ -272,7 +272,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                        .Start(moduleVersionPtr, mdToken, opCode, XUnitRunTestCollectionAsyncMethod)
                        .WithConcreteType(xunitTestAssemblyRunnerType)
                        .WithParameters(messageBus, testCollection, testCases, cancellationTokenSource)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, "Xunit.Sdk.IMessageBus", "Xunit.Abstractions.ITestCollection", "System.Collections.Generic.IEnumerable`1<T>", "System.Threading.CancellationTokenSource")
+                       .WithNamespaceAndNameFilters("System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>", "Xunit.Sdk.IMessageBus", "Xunit.Abstractions.ITestCollection", "System.Collections.Generic.IEnumerable`1<T>", "System.Threading.CancellationTokenSource")
                        .Build();
             }
             catch (Exception ex)

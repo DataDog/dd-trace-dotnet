@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = ElasticsearchAssemblyName,
             TargetAssembly = ElasticsearchAssemblyName,
             TargetType = RequestPipelineInterfaceTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { ClrNames.GenericParameterTask, "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
         public static object CallElasticsearchAsync<TResponse>(
@@ -154,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithConcreteType(pipelineType)
                        .WithMethodGenerics(genericArgument)
                        .WithParameters(requestData, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, "Elasticsearch.Net.RequestData", ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericParameterTask, "Elasticsearch.Net.RequestData", ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
