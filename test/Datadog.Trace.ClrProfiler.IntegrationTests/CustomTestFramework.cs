@@ -8,6 +8,7 @@ using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
+[assembly: CollectionBehavior(MaxParallelThreads = 12)]
 [assembly: TestFramework("Datadog.Trace.ClrProfiler.IntegrationTests.CustomTestFramework", "Datadog.Trace.ClrProfiler.IntegrationTests")]
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
