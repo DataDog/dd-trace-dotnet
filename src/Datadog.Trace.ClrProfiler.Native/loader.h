@@ -17,6 +17,10 @@ namespace trace {
         std::mutex loaders_loaded_mutex_;
         std::unordered_set<AppDomainID> loaders_loaded_;
 
+        std::function<void(const std::string& str)> log_debug_ = nullptr;
+        std::function<void(const std::string& str)> log_info_ = nullptr;
+        std::function<void(const std::string& str)> log_error_ = nullptr;
+
     public:
         Loader(ICorProfilerInfo4* info, bool isIIS);
 
