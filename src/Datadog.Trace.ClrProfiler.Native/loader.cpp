@@ -55,7 +55,7 @@ namespace trace {
     const LPCWSTR get_currentdomain_name                        = _LU("get_CurrentDomain");
     const LPCWSTR load_name                                     = _LU("Load");
     const LPCWSTR createinstance_name                           = _LU("CreateInstance");
-    const LPCWSTR loader_method_name                            = _LU("__DDVoidMethodCall__");
+    const LPCWSTR loader_method_name                            = _LU("DD_LoadInitializationAssemblies");
     
     const WSTRING profiler_path_64                              = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH_64"));
     const WSTRING profiler_path_32                              = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH_32"));
@@ -121,13 +121,10 @@ namespace trace {
         //
         // retrieve AppDomain Name
         //
-
+        WSTRING app_domain_name_string = empty_string;
         WCHAR app_domain_name[stringMaxSize];
         ULONG app_domain_name_len = 0;
-
         hr = this->info_->GetAppDomainInfo(app_domain_id, stringMaxSize, &app_domain_name_len, app_domain_name, nullptr);
-
-        WSTRING app_domain_name_string = empty_string;
         if (SUCCEEDED(hr)) {
           app_domain_name_string = WSTRING(app_domain_name);
         }
