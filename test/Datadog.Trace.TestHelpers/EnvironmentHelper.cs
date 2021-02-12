@@ -189,6 +189,9 @@ namespace Datadog.Trace.TestHelpers
             environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 
+            // TODO: REMOVE
+            environmentVariables["DD_TRACE_DEBUG_LOOKUP_FALLBACK"] = "true";
+
             // for ASP.NET Core sample apps, set the server's port
             environmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{aspNetCorePort}/";
 
