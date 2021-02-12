@@ -35,10 +35,10 @@ namespace trace {
     extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
 #endif
 
-    const WSTRING managed_loader_assembly_name = L"Datadog.Trace.ClrProfiler.Managed.Loader";
+    const WSTRING managed_loader_assembly_name = LorU("Datadog.Trace.ClrProfiler.Managed.Loader");
     
 #ifdef _WIN32
-    const WSTRING native_profiler_file_win32 = L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL";
+    const WSTRING native_profiler_file_win32 = LorU("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
 #endif
 
 #if MACOS
@@ -48,9 +48,9 @@ namespace trace {
     Loader* loader = nullptr;
 
     const size_t stringMaxSize = 1024;
-    const WSTRING empty_string = L"";
+    const WSTRING empty_string = LorU("");
     
-    const WSTRING default_domain_name = L"DefaultDomain";
+    const WSTRING default_domain_name = LorU("DefaultDomain");
 
     const LPCWSTR managed_loader_startup_type = LorU("Datadog.Trace.ClrProfiler.Managed.Loader.Startup");
     const LPCWSTR module_type_name = LorU("<Module>");
@@ -71,26 +71,26 @@ namespace trace {
     // We exclude here the direct references of the loader to avoid a cyclic reference problem.
     // Also well-known assemblies we want to avoid.
     WSTRING assemblies_exclusion_list_[] = {
-            L"mscorlib",
-            L"netstandard",
-            L"System.Private.CoreLib",
-            L"System",
-            L"System.Core",
-            L"System.Configuration",
-            L"System.Data",
-            L"System.EnterpriseServices",
-            L"System.Numerics",
-            L"System.Runtime.Caching",
-            L"System.Security",
-            L"System.Transactions",
-            L"System.Xml",
-            L"System.Web",
-            L"System.Web.ApplicationServices",
+            LorU("mscorlib"),
+            LorU("netstandard"),
+            LorU("System.Private.CoreLib"),
+            LorU("System"),
+            LorU("System.Core"),
+            LorU("System.Configuration"),
+            LorU("System.Data"),
+            LorU("System.EnterpriseServices"),
+            LorU("System.Numerics"),
+            LorU("System.Runtime.Caching"),
+            LorU("System.Security"),
+            LorU("System.Transactions"),
+            LorU("System.Xml"),
+            LorU("System.Web"),
+            LorU("System.Web.ApplicationServices"),
     };
 
-    WSTRING profiler_path_64 = GetEnvironmentValue(L"CORECLR_PROFILER_PATH_64");
-    WSTRING profiler_path_32 = GetEnvironmentValue(L"CORECLR_PROFILER_PATH_32");
-    WSTRING profiler_path = GetEnvironmentValue(L"CORECLR_PROFILER_PATH");
+    WSTRING profiler_path_64 = GetEnvironmentValue(LorU("CORECLR_PROFILER_PATH_64"));
+    WSTRING profiler_path_32 = GetEnvironmentValue(LorU("CORECLR_PROFILER_PATH_32"));
+    WSTRING profiler_path = GetEnvironmentValue(LorU("CORECLR_PROFILER_PATH"));
 
     Loader::Loader(ICorProfilerInfo4* info, bool isIIS) {
         info_ = info;
