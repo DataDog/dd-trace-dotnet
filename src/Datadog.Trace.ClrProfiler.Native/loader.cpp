@@ -19,6 +19,12 @@
 #define LorU(value) CONCAT(u, value)
 #endif
 
+#ifdef _WIN32
+#define LorULength(value) (size_t)wcslen(value)
+#else
+#define LorULength(value) (size_t)std::char_traits<char16_t>::length(value)
+#endif
+
 namespace trace {
 
 #ifdef LINUX
@@ -33,9 +39,6 @@ namespace trace {
     
 #ifdef _WIN32
     const WSTRING native_profiler_file_win32 = "DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W;
-    const LPCWSTR managed_loader_startup_type = L"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
-#else
-    const char16_t* managed_loader_startup_type = u"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
 #endif
 
 #if MACOS
@@ -48,6 +51,8 @@ namespace trace {
     const WSTRING empty_string = ""_W;
     
     const WSTRING default_domain_name = "DefaultDomain"_W;
+
+    const LPCWSTR managed_loader_startup_type = LorU("Datadog.Trace.ClrProfiler.Managed.Loader.Startup");
     const LPCWSTR module_type_name = LorU("<Module>");
     const LPCWSTR constructor_name = LorU (".cctor");
     const LPCWSTR get_assembly_and_symbols_bytes_name = LorU("GetAssemblyAndSymbolsBytes");
@@ -505,11 +510,7 @@ namespace trace {
         // implementations because on Windows, creating the string via
         // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str() does not
         // create the proper string for CreateInstance to successfully call
-#ifdef _WIN32
-        auto load_helper_str_size = wcslen(managed_loader_startup_type);
-#else
-        auto load_helper_str_size = std::char_traits<char16_t>::length(managed_loader_startup_type);
-#endif
+        auto load_helper_str_size = LorULength(managed_loader_startup_type);
 
         mdString load_helper_token;
         hr = metadata_emit->DefineUserString(managed_loader_startup_type, (ULONG)load_helper_str_size, &load_helper_token);
