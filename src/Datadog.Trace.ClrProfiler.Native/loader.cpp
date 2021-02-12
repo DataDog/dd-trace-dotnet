@@ -11,86 +11,75 @@
 #include <mach-o/getsect.h>
 #endif
 
-#define CONCAT(x, y) x ## y
+#define stringMaxSize 1024
 
 #ifdef _WIN32
-#define LorU(value) CONCAT(L, value)
+    #define _LU(value) L##value
+    #define _LU_len(value) (size_t) wcslen(value)
 #else
-#define LorU(value) CONCAT(u, value)
-#endif
-
-#ifdef _WIN32
-#define LorULength(value) (size_t)wcslen(value)
-#else
-#define LorULength(value) (size_t)std::char_traits<char16_t>::length(value)
+    #define _LU(value) u##value
+    #define _LU_len(value) (size_t) std::char_traits<char16_t>::length(value)
 #endif
 
 namespace trace {
-
-#ifdef LINUX
-    extern uint8_t dll_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_start");
-    extern uint8_t dll_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_end");
-
-    extern uint8_t pdb_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_start");
-    extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
-#endif
-
-    const WSTRING managed_loader_assembly_name = LorU("Datadog.Trace.ClrProfiler.Managed.Loader");
     
-#ifdef _WIN32
-    const WSTRING native_profiler_file_win32 = LorU("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
-#endif
-
-#if MACOS
-    const std::string native_profiler_file_macos = "Datadog.Trace.ClrProfiler.Native.dylib";
-#endif
-
     Loader* loader = nullptr;
 
-    const size_t stringMaxSize = 1024;
-    const WSTRING empty_string = LorU("");
-    
-    const WSTRING default_domain_name = LorU("DefaultDomain");
+#ifdef _WIN32
+    const WSTRING native_profiler_file_win32                    = _LU("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
+#elif LINUX
+    extern uint8_t dll_start[]                                  asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_start");
+    extern uint8_t dll_end[]                                    asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_end");
 
-    const LPCWSTR managed_loader_startup_type = LorU("Datadog.Trace.ClrProfiler.Managed.Loader.Startup");
-    const LPCWSTR module_type_name = LorU("<Module>");
-    const LPCWSTR constructor_name = LorU (".cctor");
-    const LPCWSTR get_assembly_and_symbols_bytes_name = LorU("GetAssemblyAndSymbolsBytes");
-    const LPCWSTR mscorlib_name = LorU("mscorlib");
-    const LPCWSTR system_byte_name = LorU("System.Byte");
-    const LPCWSTR system_runtime_interopservices_marshal_name = LorU("System.Runtime.InteropServices.Marshal");
-    const LPCWSTR copy_name = LorU("Copy");
-    const LPCWSTR system_reflection_assembly_name = LorU("System.Reflection.Assembly");
-    const LPCWSTR system_object_name = LorU("System.Object");
-    const LPCWSTR system_appdomain_name = LorU("System.AppDomain");
-    const LPCWSTR get_currentdomain_name = LorU("get_CurrentDomain");
-    const LPCWSTR load_name = LorU("Load");
-    const LPCWSTR createinstance_name = LorU("CreateInstance");
-    const LPCWSTR loader_method_name = LorU("__DDVoidMethodCall__");
+    extern uint8_t pdb_start[]                                  asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_start");
+    extern uint8_t pdb_end[]                                    asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
+#elif MACOS
+    const std::string native_profiler_file_macos                = "Datadog.Trace.ClrProfiler.Native.dylib";
+#endif
+    
+    const WSTRING managed_loader_assembly_name                  = _LU("Datadog.Trace.ClrProfiler.Managed.Loader");
+    const WSTRING empty_string                                  = _LU("");
+    const WSTRING default_domain_name                           = _LU("DefaultDomain");
+
+    const LPCWSTR managed_loader_startup_type                   = _LU("Datadog.Trace.ClrProfiler.Managed.Loader.Startup");
+    const LPCWSTR module_type_name                              = _LU("<Module>");
+    const LPCWSTR constructor_name                              = _LU(".cctor");
+    const LPCWSTR get_assembly_and_symbols_bytes_name           = _LU("GetAssemblyAndSymbolsBytes");
+    const LPCWSTR mscorlib_name                                 = _LU("mscorlib");
+    const LPCWSTR system_byte_name                              = _LU("System.Byte");
+    const LPCWSTR system_runtime_interopservices_marshal_name   = _LU("System.Runtime.InteropServices.Marshal");
+    const LPCWSTR copy_name                                     = _LU("Copy");
+    const LPCWSTR system_reflection_assembly_name               = _LU("System.Reflection.Assembly");
+    const LPCWSTR system_object_name                            = _LU("System.Object");
+    const LPCWSTR system_appdomain_name                         = _LU("System.AppDomain");
+    const LPCWSTR get_currentdomain_name                        = _LU("get_CurrentDomain");
+    const LPCWSTR load_name                                     = _LU("Load");
+    const LPCWSTR createinstance_name                           = _LU("CreateInstance");
+    const LPCWSTR loader_method_name                            = _LU("__DDVoidMethodCall__");
+    
+    const WSTRING profiler_path_64                              = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH_64"));
+    const WSTRING profiler_path_32                              = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH_32"));
+    const WSTRING profiler_path                                 = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH"));
 
     // We exclude here the direct references of the loader to avoid a cyclic reference problem.
     // Also well-known assemblies we want to avoid.
-    WSTRING assemblies_exclusion_list_[] = {
-            LorU("mscorlib"),
-            LorU("netstandard"),
-            LorU("System.Private.CoreLib"),
-            LorU("System"),
-            LorU("System.Core"),
-            LorU("System.Configuration"),
-            LorU("System.Data"),
-            LorU("System.EnterpriseServices"),
-            LorU("System.Numerics"),
-            LorU("System.Runtime.Caching"),
-            LorU("System.Security"),
-            LorU("System.Transactions"),
-            LorU("System.Xml"),
-            LorU("System.Web"),
-            LorU("System.Web.ApplicationServices"),
+    const WSTRING assemblies_exclusion_list_[] = {
+            _LU("mscorlib"),
+            _LU("netstandard"),
+            _LU("System.Private.CoreLib"),
+            _LU("System"),
+            _LU("System.Core"),
+            _LU("System.Configuration"),
+            _LU("System.Data"),
+            _LU("System.EnterpriseServices"),
+            _LU("System.Numerics"),
+            _LU("System.Runtime.Caching"),
+            _LU("System.Security"),
+            _LU("System.Transactions"),
+            _LU("System.Xml"),
+            _LU("System.Web"),
+            _LU("System.Web.ApplicationServices"),
     };
-
-    WSTRING profiler_path_64 = GetEnvironmentValue(LorU("CORECLR_PROFILER_PATH_64"));
-    WSTRING profiler_path_32 = GetEnvironmentValue(LorU("CORECLR_PROFILER_PATH_32"));
-    WSTRING profiler_path = GetEnvironmentValue(LorU("CORECLR_PROFILER_PATH"));
 
     Loader::Loader(ICorProfilerInfo4* info, bool isIIS) {
         info_ = info;
@@ -120,7 +109,7 @@ namespace trace {
         //
         AppDomainID app_domain_id = 0;
         WCHAR assembly_name[stringMaxSize];
-        DWORD assembly_name_len = 0;
+        ULONG assembly_name_len = 0;
         hr = this->info_->GetAssemblyInfo(assembly_id, stringMaxSize, &assembly_name_len, assembly_name, &app_domain_id, NULL);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AppDomainID for AssemblyID=", assembly_id);
@@ -134,7 +123,7 @@ namespace trace {
         //
 
         WCHAR app_domain_name[stringMaxSize];
-        DWORD app_domain_name_len = 0;
+        ULONG app_domain_name_len = 0;
 
         hr = this->info_->GetAppDomainInfo(app_domain_id, stringMaxSize, &app_domain_name_len, app_domain_name, nullptr);
 
@@ -145,7 +134,7 @@ namespace trace {
 
         // If we are in the IIS process we skip the default domain
         if (is_iis_ && app_domain_name_string == default_domain_name) {
-            Info("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, ". The module belongs to the DefaultDomain in IIS process.");
+            Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, ". The module belongs to the DefaultDomain in IIS process.");
             return E_FAIL;
         }
 
@@ -153,7 +142,7 @@ namespace trace {
         // check if the module is not the loader itself
         //
         if (assembly_name_string == managed_loader_assembly_name) {
-            Info("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
+            Debug("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
             return E_FAIL;
         }
 
@@ -169,12 +158,12 @@ namespace trace {
         //
         for (const auto asm_name : assemblies_exclusion_list_) {
             if (assembly_name_string == asm_name) {
-                Info("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
+                Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
                 return E_FAIL;
             }
         }
 
-        Info("Loader::InjectLoaderToModuleInitializer: Analyzing ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
+        Debug("Loader::InjectLoaderToModuleInitializer: Analyzing ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
 
         //
         // the loader is not loaded yet for this AppDomain
@@ -305,20 +294,9 @@ namespace trace {
 #else  // _WIN32
 
 #ifdef BIT64
-        WSTRING native_profiler_file = profiler_path_64;
-        Debug("Loader::InjectLoaderToModuleInitializer: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
-
-        if (native_profiler_file == empty_string) {
-          native_profiler_file = profiler_path;
-          Debug("Loader::InjectLoaderToModuleInitializer: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
-        }
+        WSTRING native_profiler_file = profiler_path_64 == empty_string ? profiler_path : profiler_path_64;
 #else   // BIT64
-        WSTRING native_profiler_file = profiler_path_32;
-        Debug("Loader::InjectLoaderToModuleInitializer: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
-        if (native_profiler_file == empty_string) {
-          native_profiler_file = profiler_path;
-          Debug("Loader::InjectLoaderToModuleInitializer: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
-        }
+        WSTRING native_profiler_file = profiler_path_32 == empty_string ? profiler_path : profiler_path_32;
 #endif  // BIT64
         Debug("Loader::InjectLoaderToModuleInitializer: Setting the PInvoke native profiler library path to ", native_profiler_file);
 
@@ -507,7 +485,7 @@ namespace trace {
 
         // Create a string representing
         // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup" 
-        auto load_helper_str_size = LorULength(managed_loader_startup_type);
+        size_t load_helper_str_size = _LU_len(managed_loader_startup_type);
 
         mdString load_helper_token;
         hr = metadata_emit->DefineUserString(managed_loader_startup_type, (ULONG)load_helper_str_size, &load_helper_token);
