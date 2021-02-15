@@ -17,12 +17,31 @@ namespace trace {
         std::mutex loaders_loaded_mutex_;
         std::unordered_set<AppDomainID> loaders_loaded_;
 
-        std::function<void(const std::string& str)> log_debug_ = nullptr;
-        std::function<void(const std::string& str)> log_info_ = nullptr;
-        std::function<void(const std::string& str)> log_error_ = nullptr;
+        std::function<void(const std::string& str)> log_debug_callback_ = nullptr;
+        std::function<void(const std::string& str)> log_info_callback_ = nullptr;
+        std::function<void(const std::string& str)> log_warn_callback_ = nullptr;
+
+        void Debug(const std::string& str) {
+          if (log_debug_callback_ != nullptr) {
+            log_debug_callback_(str);
+          }
+        }
+        void Info(const std::string& str) {
+          if (log_info_callback_ != nullptr) {
+            log_info_callback_(str);
+          }
+        }
+        void Warn(const std::string& str) {
+          if (log_warn_callback_ != nullptr) {
+            log_warn_callback_(str);
+          }
+        }
 
     public:
-        Loader(ICorProfilerInfo4* info, bool isIIS);
+        Loader(ICorProfilerInfo4* info, bool isIIS,
+               std::function<void(const std::string& str)> log_debug_callback,
+               std::function<void(const std::string& str)> log_info_callback,
+               std::function<void(const std::string& str)> log_warn_callback_);
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
 

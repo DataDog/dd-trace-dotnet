@@ -3,7 +3,6 @@
 #include "dllmain.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
-#include "logging.h"
 #include "resource.h"
 
 #ifdef MACOS    
@@ -81,10 +80,17 @@ namespace trace {
             _LU("System.Web.ApplicationServices"),
     };
 
-    Loader::Loader(ICorProfilerInfo4* info, bool isIIS) {
+    Loader::Loader(
+        ICorProfilerInfo4* info, bool isIIS,
+        std::function<void(const std::string& str)> log_debug_callback,
+        std::function<void(const std::string& str)> log_info_callback,
+        std::function<void(const std::string& str)> log_warn_callback) {
         info_ = info;
         runtime_information_ = GetRuntimeInformation(info);
         is_iis_ = isIIS;
+        log_debug_callback_ = log_debug_callback;
+        log_info_callback_ = log_info_callback;
+        log_warn_callback_ = log_warn_callback;
         loader = this;
     }
 
@@ -100,7 +106,7 @@ namespace trace {
         AssemblyID assembly_id = 0;
         HRESULT hr = this->info_->GetModuleInfo2(module_id, NULL, 0, NULL, NULL, &assembly_id, NULL);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AssemblyID for ModuleID=", module_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AssemblyID for ModuleID=" + module_id);
             return hr;
         }
 
@@ -112,7 +118,7 @@ namespace trace {
         ULONG assembly_name_len = 0;
         hr = this->info_->GetAssemblyInfo(assembly_id, stringMaxSize, &assembly_name_len, assembly_name, &app_domain_id, NULL);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AppDomainID for AssemblyID=", assembly_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AppDomainID for AssemblyID=" + assembly_id);
             return hr;
         }
 
@@ -131,7 +137,7 @@ namespace trace {
 
         // If we are in the IIS process we skip the default domain
         if (is_iis_ && app_domain_name_string == default_domain_name) {
-            Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, ". The module belongs to the DefaultDomain in IIS process.");
+            Debug("Loader::InjectLoaderToModuleInitializer: Skipping " + ToString(assembly_name_string) + ". The module belongs to the DefaultDomain in IIS process.");
             return E_FAIL;
         }
 
@@ -155,12 +161,13 @@ namespace trace {
         //
         for (const auto asm_name : assemblies_exclusion_list_) {
             if (assembly_name_string == asm_name) {
-                Debug("Loader::InjectLoaderToModuleInitializer: Skipping ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
+                Debug("Loader::InjectLoaderToModuleInitializer: Skipping " + 
+                    ToString(assembly_name_string) + 
+                    " [AppDomain=" + ToString(app_domain_id) + 
+                    ", AppDomainName=" + ToString(app_domain_name_string) + "]");
                 return E_FAIL;
             }
         }
-
-        Debug("Loader::InjectLoaderToModuleInitializer: Analyzing ", assembly_name_string, " [AppDomain=", app_domain_id , ", AppDomainName=", app_domain_name_string, "]");
 
         //
         // the loader is not loaded yet for this AppDomain
@@ -173,7 +180,7 @@ namespace trace {
         ComPtr<IUnknown> metadata_interfaces;
         hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=", module_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=" + module_id);
             return hr;
         }
 
@@ -191,14 +198,14 @@ namespace trace {
         mdTypeDef module_type_def = mdTypeDefNil;
         hr = metadata_import->FindTypeDefByName(module_type_name, mdTokenNil, &module_type_def);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching ", module_type_name," (module type) typedef for ModuleID=", module_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching " + ToString(module_type_name) + " (module type) typedef for ModuleID=" + ToString(module_id));
             return hr;
         }
 
         //
         // Check if the <Module> type has already a ..ctor, if not we create an empty one.
         //
-        BYTE cctor_signature[] = {
+        COR_SIGNATURE cctor_signature[] = {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
                 0,                              // Number of parameters
                 ELEMENT_TYPE_VOID,              // Return type
@@ -208,7 +215,7 @@ namespace trace {
         mdMethodDef cctor_method_def = mdMethodDefNil;
         hr = metadata_import->FindMethod(module_type_def, constructor_name, cctor_signature, sizeof(cctor_signature), &cctor_method_def);
         if (FAILED(hr)) {
-            Debug("Loader::InjectLoaderToModuleInitializer: failed fetching <Module>..ctor methoddef for ModuleID=", module_id, ". Creating new .cctor");
+            Debug("Loader::InjectLoaderToModuleInitializer: failed fetching <Module>..ctor methoddef, creating new .ctor for ModuleID=" + ToString(module_id));
 
             //
             // Define a new ..ctor for the <Module> type
@@ -218,7 +225,7 @@ namespace trace {
                                              sizeof(cctor_signature), 0, 0, &cctor_method_def);
 
             if (FAILED(hr)) {
-                Warn("Loader::InjectLoaderToModuleInitializer: Error creating .cctor for <Module> ModuleID=", module_id);
+              Warn("Loader::InjectLoaderToModuleInitializer: Error creating .cctor for <Module> ModuleID=" + ToString(module_id));
                 return hr;
             }
 
@@ -236,7 +243,7 @@ namespace trace {
 
             hr = rewriter.Export();
             if (FAILED(hr)) {
-                Warn("Loader::InjectLoaderToModuleInitializer: ILRewriter.Export failed creating .cctor for <Module> ModuleID=", module_id);
+                Warn("Loader::InjectLoaderToModuleInitializer: ILRewriter.Export failed creating .cctor for <Module> ModuleID=" + ToString(module_id));
                 return hr;
             }
         }
@@ -295,14 +302,14 @@ namespace trace {
 #else   // BIT64
         WSTRING native_profiler_file = profiler_path_32 == empty_string ? profiler_path : profiler_path_32;
 #endif  // BIT64
-        Debug("Loader::InjectLoaderToModuleInitializer: Setting the PInvoke native profiler library path to ", native_profiler_file);
+        Debug("Loader::InjectLoaderToModuleInitializer: Setting the PInvoke native profiler library path to " + ToString(native_profiler_file));
 
 #endif  // _WIN32
 
         mdModuleRef profiler_ref;
         hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefineModuleRef for ", native_profiler_file, " failed.");
+            Warn("Loader::InjectLoaderToModuleInitializer: Failed! DefineModuleRef for " + ToString(native_profiler_file));
             return hr;
         }
 
@@ -317,7 +324,7 @@ namespace trace {
         //
         mdAssemblyRef mscorlib_ref = mdAssemblyRefNil;
         ASSEMBLYMETADATA metadata{ 4, 0, 0, 0};
-        BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
+        COR_SIGNATURE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
         hr = assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), mscorlib_name, &metadata, NULL, 0, 0, &mscorlib_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: Error creating assembly reference to mscorlib.");
@@ -402,9 +409,7 @@ namespace trace {
         ULONG system_appdomain_type_ref_compressed_token_length = 
             CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
 
-        COR_SIGNATURE* appdomain_get_current_domain_signature = 
-            new COR_SIGNATURE[3 + system_appdomain_type_ref_compressed_token_length];
-
+        COR_SIGNATURE appdomain_get_current_domain_signature[50];
         offset = 0;
         appdomain_get_current_domain_signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
         appdomain_get_current_domain_signature[offset++] = 0;
@@ -418,7 +423,6 @@ namespace trace {
         hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, get_currentdomain_name,
                                             appdomain_get_current_domain_signature, offset,
                                             &appdomain_get_current_domain_member_ref);
-        delete[] appdomain_get_current_domain_signature;
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
             return hr;
@@ -432,9 +436,7 @@ namespace trace {
                 CorSigCompressToken(system_reflection_assembly_type_ref,
                                     system_reflection_assembly_type_ref_compressed_token);
 
-        COR_SIGNATURE* appdomain_load_signature = new COR_SIGNATURE
-        [7 + system_reflection_assembly_type_ref_compressed_token_length];
-
+        COR_SIGNATURE appdomain_load_signature[50];
         offset = 0;
         appdomain_load_signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
         appdomain_load_signature[offset++] = 2;
@@ -452,8 +454,6 @@ namespace trace {
         hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref,
                                             load_name, appdomain_load_signature, 
                                             offset, &appdomain_load_member_ref);
-        delete[] appdomain_load_signature;
-
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
             return hr;
@@ -495,7 +495,7 @@ namespace trace {
         WCHAR string_contents[stringMaxSize]{};
         hr = metadata_import->GetUserString(load_helper_token, string_contents, stringMaxSize, &string_len);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: GetUserString failed", module_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: GetUserString failed" + ToString(module_id));
             return hr;
         }
 
@@ -549,7 +549,7 @@ namespace trace {
                             &locals_signature[11]);
         hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: Unable to generate locals signature. ModuleID=", module_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: Unable to generate locals signature. ModuleID=" + ToString(module_id));
             return hr;
         }
 
@@ -793,7 +793,7 @@ namespace trace {
 
         hr = rewriter_void.Export();
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=", module_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + ToString(module_id));
             return hr;
         }
 
@@ -805,9 +805,8 @@ namespace trace {
         ILRewriter rewriter(this->info_, nullptr, module_id, cctor_method_def);
         hr = rewriter.Import();
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: ",
-                 "Call to ILRewriter.Import() failed for ModuleID=", module_id,
-                 ", CCTORMethodDef", cctor_method_def);
+            Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Import() failed for ModuleID=" + ToString(module_id) +
+                 ", CCTORMethodDef" + ToString(cctor_method_def));
             return hr;
         }
         ILRewriterWrapper rewriter_wrapper(&rewriter);
@@ -816,18 +815,17 @@ namespace trace {
         rewriter_wrapper.CallMember(startup_method_def, false);
         hr = rewriter.Export();
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: ",
-                 "Call to ILRewriter.Export() failed for ModuleID=", module_id,
-                 ", CCTORMethodDef", cctor_method_def);
+            Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + ToString(module_id) +
+                 ", CCTORMethodDef" + ToString(cctor_method_def));
             return hr;
         }
 
-        Info("Loader::InjectLoaderToModuleInitializer [ModuleID=", module_id,
-              ", AssemblyID=", assembly_id,
-              ", AssemblyName=", assembly_name_string,
-              ", AppDomainID=", app_domain_id,
-              ", ModuleTypeDef=", module_type_def,
-              ", ModuleCCTORDef=", cctor_method_def, "]");
+        Info("Loader::InjectLoaderToModuleInitializer [ModuleID=" + ToString(module_id) +
+              ", AssemblyID=" + ToString(assembly_id) +
+              ", AssemblyName=" + ToString(assembly_name_string) +
+              ", AppDomainID=" + ToString(app_domain_id) +
+              ", ModuleTypeDef=" + ToString(module_type_def) +
+              ", ModuleCCTORDef=" + ToString(cctor_method_def) + "]");
         return S_OK;
     }
 
@@ -844,11 +842,11 @@ namespace trace {
         // check if the loader has been already loaded for this AppDomain
         //
         if (loaders_loaded_.find(appDomainId) != loaders_loaded_.end()) {
-            Warn("Loader::GetAssemblyAndSymbolsBytes the loader was already loaded for AppDomainID=", appDomainId);
+            Warn("Loader::GetAssemblyAndSymbolsBytes the loader was already loaded for AppDomainID=" + ToString(appDomainId));
             return false;
         }
 
-        Info("Loader::GetAssemblyAndSymbolsBytes Loading loader data for AppDomainID=", appDomainId);
+        Info("Loader::GetAssemblyAndSymbolsBytes Loading loader data for AppDomainID=" + ToString(appDomainId));
         loaders_loaded_.insert(appDomainId);
 
 #ifdef _WIN32
