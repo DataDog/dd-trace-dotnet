@@ -1,10 +1,11 @@
 #include "string.h"
 #ifdef _WIN32
 #include <Windows.h>
-#define tmp_buffer_size 512
+#define tmp_buffer_size 250
 #else
 #include "miniutf.hpp"
 #endif
+
 
 namespace trace {
 
@@ -51,7 +52,6 @@ WSTRING ToWSTRING(const std::string& str) {
 
 WSTRING ToWSTRING(const uint64_t i) {
   return WSTRING(reinterpret_cast<const WCHAR*>(std::to_wstring(i).c_str()));
-  // return ToWSTRING(std::to_string(i));
 }
 
 WCHAR operator"" _W(const char c) { return WCHAR(c); }
