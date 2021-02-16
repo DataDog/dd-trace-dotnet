@@ -24,28 +24,20 @@ class CallTargetTokens {
   void* module_metadata_ptr = nullptr;
 
   // CallTarget constants
-  WSTRING managed_profiler_calltarget_type =
-      "Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker"_W;
-  WSTRING managed_profiler_calltarget_beginmethod_name = "BeginMethod"_W;
-  WSTRING managed_profiler_calltarget_endmethod_name = "EndMethod"_W;
-  WSTRING managed_profiler_calltarget_logexception_name = "LogException"_W;
-  WSTRING managed_profiler_calltarget_getdefaultvalue_name =
-      "GetDefaultValue"_W;
+  WSTRING managed_profiler_calltarget_type = _LU("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
+  WSTRING managed_profiler_calltarget_beginmethod_name = _LU("BeginMethod");
+  WSTRING managed_profiler_calltarget_endmethod_name = _LU("EndMethod");
+  WSTRING managed_profiler_calltarget_logexception_name = _LU("LogException");
+  WSTRING managed_profiler_calltarget_getdefaultvalue_name = _LU("GetDefaultValue");
 
-  WSTRING managed_profiler_calltarget_statetype =
-      "Datadog.Trace.ClrProfiler.CallTarget.CallTargetState"_W;
-  WSTRING managed_profiler_calltarget_statetype_getdefault_name =
-      "GetDefault"_W;
+  WSTRING managed_profiler_calltarget_statetype = _LU("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
+  WSTRING managed_profiler_calltarget_statetype_getdefault_name =_LU("GetDefault");
 
-  WSTRING managed_profiler_calltarget_returntype =
-      "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn"_W;
-  WSTRING managed_profiler_calltarget_returntype_getdefault_name =
-      "GetDefault"_W;
+  WSTRING managed_profiler_calltarget_returntype = _LU("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
+  WSTRING managed_profiler_calltarget_returntype_getdefault_name = _LU("GetDefault");
 
-  WSTRING managed_profiler_calltarget_returntype_generics =
-      "Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1"_W;
-  WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name =
-      "GetReturnValue"_W;
+  WSTRING managed_profiler_calltarget_returntype_generics = _LU("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
+  WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = _LU("GetReturnValue");
 
   // CorLib tokens
   mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;

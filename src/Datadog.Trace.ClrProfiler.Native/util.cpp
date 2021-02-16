@@ -30,17 +30,17 @@ std::vector<WSTRING> Split(const WSTRING &s, wchar_t delim) {
 
 WSTRING Trim(const WSTRING &str) {
   if (str.length() == 0) {
-    return ""_W;
+    return _LU("");
   }
 
   WSTRING trimmed = str;
 
-  auto lpos = trimmed.find_first_not_of(" \t"_W);
+  auto lpos = trimmed.find_first_not_of(_LU(" \t"));
   if (lpos != WSTRING::npos && lpos > 0) {
     trimmed = trimmed.substr(lpos);
   }
 
-  auto rpos = trimmed.find_last_not_of(" \t"_W);
+  auto rpos = trimmed.find_last_not_of(_LU(" \t"));
   if (rpos != WSTRING::npos) {
     trimmed = trimmed.substr(0, rpos + 1);
   }

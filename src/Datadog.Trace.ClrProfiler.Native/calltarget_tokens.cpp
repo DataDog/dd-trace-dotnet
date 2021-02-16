@@ -34,7 +34,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
   // *** Ensure System.Object type ref
   if (objectTypeRef == mdTypeRefNil) {
     auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
-        corLibAssemblyRef, SystemObject.data(), &objectTypeRef);
+        corLibAssemblyRef, SystemObject, &objectTypeRef);
     if (FAILED(hr)) {
       Warn("Wrapper objectTypeRef could not be defined.");
       return hr;
@@ -44,7 +44,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
   // *** Ensure System.Exception type ref
   if (exTypeRef == mdTypeRefNil) {
     auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
-        corLibAssemblyRef, SystemException.data(), &exTypeRef);
+        corLibAssemblyRef, SystemException, &exTypeRef);
     if (FAILED(hr)) {
       Warn("Wrapper exTypeRef could not be defined.");
       return hr;
@@ -54,7 +54,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
   // *** Ensure System.Type type ref
   if (typeRef == mdTypeRefNil) {
     auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
-        corLibAssemblyRef, SystemTypeName.data(), &typeRef);
+        corLibAssemblyRef, SystemTypeName, &typeRef);
     if (FAILED(hr)) {
       Warn("Wrapper typeRef could not be defined.");
       return hr;
@@ -64,7 +64,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
   // *** Ensure System.RuntimeTypeHandle type ref
   if (runtimeTypeHandleRef == mdTypeRefNil) {
     auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
-        corLibAssemblyRef, RuntimeTypeHandleTypeName.data(),
+        corLibAssemblyRef, RuntimeTypeHandleTypeName,
         &runtimeTypeHandleRef);
     if (FAILED(hr)) {
       Warn("Wrapper runtimeTypeHandleRef could not be defined.");
@@ -94,7 +94,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
     offset += runtimeTypeHandle_size;
 
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        typeRef, GetTypeFromHandleMethodName.data(), signature, offset,
+        typeRef, GetTypeFromHandleMethodName, signature, offset,
         &getTypeFromHandleToken);
     if (FAILED(hr)) {
       Warn("Wrapper getTypeFromHandleToken could not be defined.");
@@ -105,7 +105,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
   // *** Ensure System.RuntimeMethodHandle type ref
   if (runtimeMethodHandleRef == mdTypeRefNil) {
     auto hr = module_metadata->metadata_emit->DefineTypeRefByName(
-        corLibAssemblyRef, RuntimeMethodHandleTypeName.data(),
+        corLibAssemblyRef, RuntimeMethodHandleTypeName,
         &runtimeMethodHandleRef);
     if (FAILED(hr)) {
       Warn("Wrapper runtimeMethodHandleRef could not be defined.");
@@ -134,8 +134,8 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
     assembly_metadata.usMinorVersion = assemblyReference.version.minor;
     assembly_metadata.usBuildNumber = assemblyReference.version.build;
     assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
-    if (assemblyReference.locale == "neutral"_W) {
-      assembly_metadata.szLocale = const_cast<WCHAR*>("\0"_W.c_str());
+    if (assemblyReference.locale == _LU("neutral")) {
+      assembly_metadata.szLocale = const_cast<WCHAR*>(_LU("\0"));
       assembly_metadata.cbLocale = 0;
     } else {
       assembly_metadata.szLocale =

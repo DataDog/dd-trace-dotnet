@@ -222,8 +222,8 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                                             &type_extends);
       if (type_extends != mdTokenNil) {
         extendsInfo = new TypeInfo(GetTypeInfo(metadata_import, type_extends));
-        type_valueType = extendsInfo->name == "System.ValueType"_W ||
-                         extendsInfo->name == "System.Enum"_W;
+        type_valueType = extendsInfo->name == _LU("System.ValueType") ||
+                         extendsInfo->name == _LU("System.Enum");
       }
       break;
     case mdtTypeRef:
@@ -265,7 +265,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   }
 
   const auto type_name_string = WSTRING(type_name);
-  const auto generic_token_index = type_name_string.rfind("`"_W);
+  const auto generic_token_index = type_name_string.rfind(_LU("`"));
   if (generic_token_index != std::string::npos) {
     const auto idxFromRight = type_name_string.length() - generic_token_index - 1;
     type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
@@ -434,8 +434,8 @@ bool DisableOptimizations() {
   const auto disable_optimizations =
       GetEnvironmentValue(environment::clr_disable_optimizations);
 
-  if (disable_optimizations == "1"_W ||
-      disable_optimizations == "true"_W) {
+  if (disable_optimizations == _LU("1") ||
+      disable_optimizations == _LU("true")) {
     return true;
   }
 
@@ -447,7 +447,7 @@ bool EnableInlining() {
   const auto enable_inlining =
       GetEnvironmentValue(environment::clr_enable_inlining);
 
-  if (enable_inlining == "1"_W || enable_inlining == "true"_W) {
+  if (enable_inlining == _LU("1") || enable_inlining == _LU("true")) {
     return true;
   }
 
@@ -459,7 +459,7 @@ bool IsCallTargetEnabled() {
   const auto calltarget_enabled =
       GetEnvironmentValue(environment::calltarget_enabled);
 
-  if (calltarget_enabled == "1"_W || calltarget_enabled == "true"_W) {
+  if (calltarget_enabled == _LU("1") || calltarget_enabled == _LU("true")) {
     return true;
   }
 
@@ -497,8 +497,8 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
     std::vector<WSTRING> type_names(expected_number_of_types);
 
     std::stack<int> generic_arg_stack;
-    WSTRING append_to_type = ""_W;
-    WSTRING current_type_name = ""_W;
+    WSTRING append_to_type = _LU("");
+    WSTRING current_type_name = _LU("");
 
     for (; current_index < signature_size; current_index++) {
       mdToken type_token;
@@ -508,77 +508,77 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
 
       switch (cor_element_type) {
         case ELEMENT_TYPE_VOID: {
-          current_type_name.append("System.Void"_W);
+          current_type_name.append(_LU("System.Void"));
           break;
         }
 
         case ELEMENT_TYPE_BOOLEAN: {
-          current_type_name.append("System.Boolean"_W);
+          current_type_name.append(_LU("System.Boolean"));
           break;
         }
 
         case ELEMENT_TYPE_CHAR: {
-          current_type_name.append("System.Char16"_W);
+          current_type_name.append(_LU("System.Char16"));
           break;
         }
 
         case ELEMENT_TYPE_I1: {
-          current_type_name.append("System.SByte"_W);
+          current_type_name.append(_LU("System.SByte"));
           break;
         }
 
         case ELEMENT_TYPE_U1: {
-          current_type_name.append("System.Byte"_W);
+          current_type_name.append(_LU("System.Byte"));
           break;
         }
 
         case ELEMENT_TYPE_I2: {
-          current_type_name.append("System.Int16"_W);
+          current_type_name.append(_LU("System.Int16"));
           break;
         }
 
         case ELEMENT_TYPE_U2: {
-          current_type_name.append("System.UInt16"_W);
+          current_type_name.append(_LU("System.UInt16"));
           break;
         }
 
         case ELEMENT_TYPE_I4: {
-          current_type_name.append("System.Int32"_W);
+          current_type_name.append(_LU("System.Int32"));
           break;
         }
 
         case ELEMENT_TYPE_U4: {
-          current_type_name.append("System.UInt32"_W);
+          current_type_name.append(_LU("System.UInt32"));
           break;
         }
 
         case ELEMENT_TYPE_I8: {
-          current_type_name.append("System.Int64"_W);
+          current_type_name.append(_LU("System.Int64"));
           break;
         }
 
         case ELEMENT_TYPE_U8: {
-          current_type_name.append("System.UInt64"_W);
+          current_type_name.append(_LU("System.UInt64"));
           break;
         }
 
         case ELEMENT_TYPE_R4: {
-          current_type_name.append("System.Single"_W);
+          current_type_name.append(_LU("System.Single"));
           break;
         }
 
         case ELEMENT_TYPE_R8: {
-          current_type_name.append("System.Double"_W);
+          current_type_name.append(_LU("System.Double"));
           break;
         }
 
         case ELEMENT_TYPE_STRING: {
-          current_type_name.append("System.String"_W);
+          current_type_name.append(_LU("System.String"));
           break;
         }
 
         case ELEMENT_TYPE_OBJECT: {
-          current_type_name.append("System.Object"_W);
+          current_type_name.append(_LU("System.Object"));
           break;
         }
 
@@ -593,7 +593,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
           auto ongoing_type_name = examined_type_name;
 
           // check for whether this may be a nested class
-          while (examined_type_name.find_first_of("."_W) == std::string::npos) {
+          while (examined_type_name.find_first_of(_LU(".")) == std::string::npos) {
             // This may possibly be a nested class, check for the parent
             mdToken potentialParentToken;
             metadata_import->GetNestedClassProps(examined_type_token,
@@ -609,7 +609,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
             examined_type_token = nesting_type.id;
             examined_type_name = nesting_type.name;
 
-            ongoing_type_name = examined_type_name + "+"_W + ongoing_type_name;
+            ongoing_type_name = examined_type_name + _LU("+") + ongoing_type_name;
           }
 
           // index will be moved up one on every loop
@@ -620,10 +620,10 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
         }
 
         case ELEMENT_TYPE_SZARRAY: {
-          append_to_type.append("[]"_W);
+          append_to_type.append(_LU("[]"));
           while (function_info.signature.data[(current_index + 1)] ==
                  ELEMENT_TYPE_SZARRAY) {
-            append_to_type.append("[]"_W);
+            append_to_type.append(_LU("[]"));
             current_index++;
           }
           // Next will be the type of the array(s)
@@ -635,7 +635,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
           token_length = CorSigUncompressToken(
               PCCOR_SIGNATURE(&function_info.signature.data[current_index]),
               &type_token);
-          current_type_name.append("T"_W);
+          current_type_name.append(_LU("T"));
           current_index += token_length;
           // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
           // current_type_name.append(std::to_wstring(type_token));
@@ -647,7 +647,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
           token_length = CorSigUncompressToken(
               PCCOR_SIGNATURE(&function_info.signature.data[current_index]),
               &type_token);
-          current_type_name.append("T"_W);
+          current_type_name.append(_LU("T"));
           current_index += token_length;
           // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
           // current_type_name.append(std::to_wstring(type_token));
@@ -663,7 +663,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
               metadata_import, function_info, current_index, token_length);
           auto type_name = generic_type_data.name;
           current_type_name.append(type_name);
-          current_type_name.append("<"_W);  // Begin generic args
+          current_type_name.append(_LU("<"));  // Begin generic args
 
           // Because we are starting a new generic, decrement any existing level
           if (!generic_arg_stack.empty()) {
@@ -682,7 +682,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
 
         case ELEMENT_TYPE_BYREF: {
           // TODO: This hasn't been encountered yet
-          current_type_name.append("ref"_W);
+          current_type_name.append(_LU("ref"));
           break;
         }
 
@@ -700,7 +700,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
 
       if (!append_to_type.empty()) {
         current_type_name.append(append_to_type);
-        append_to_type = ""_W;
+        append_to_type = _LU("");
       }
 
       if (!generic_arg_stack.empty()) {
@@ -709,18 +709,18 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
 
         if (generic_arg_stack.top() > 0) {
           // we're in the middle of generic type args
-          current_type_name.append(", "_W);
+          current_type_name.append(_LU(", "));
         }
       }
 
       while (!generic_arg_stack.empty() && generic_arg_stack.top() == 0) {
         // unwind the generics with no args left
         generic_arg_stack.pop();
-        current_type_name.append(">"_W);
+        current_type_name.append(_LU(">"));
 
         if (!generic_arg_stack.empty() && generic_arg_stack.top() > 0) {
           // We are in a nested generic and we need a comma to separate args
-          current_type_name.append(", "_W);
+          current_type_name.append(_LU(", "));
         }
       }
 
@@ -734,7 +734,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
       }
 
       type_names[current_type_index] = current_type_name;
-      current_type_name = ""_W;
+      current_type_name = _LU("");
       current_type_index++;
     }
 
@@ -759,7 +759,7 @@ HRESULT CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembl
   metadata.usRevisionNumber = 0;
   BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
   HRESULT hr = assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key),
-                                   "mscorlib"_W.c_str(), &metadata, NULL, 0, 0,
+                                   _LU("mscorlib"), &metadata, NULL, 0, 0,
                                    mscorlib_ref);
 
   return hr;
@@ -770,7 +770,7 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
                                             const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
                                             mdToken* ret_type_token) {
   const auto cor_element_type = CorElementType(*p_sig);
-  WSTRING managed_type_name = ""_W;
+  WSTRING managed_type_name = _LU("");
 
   switch (cor_element_type) {
     case ELEMENT_TYPE_VALUETYPE: {
@@ -785,52 +785,52 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
     }
 
     case ELEMENT_TYPE_VOID:     // 0x01  // System.Void (struct)
-      managed_type_name = "System.Void"_W;
+      managed_type_name = _LU("System.Void");
       break;
     case ELEMENT_TYPE_BOOLEAN:  // 0x02  // System.Boolean (struct)
-      managed_type_name = "System.Boolean"_W;
+      managed_type_name = _LU("System.Boolean");
       break;
     case ELEMENT_TYPE_CHAR:     // 0x03  // System.Char (struct)
-      managed_type_name = "System.Char"_W;
+      managed_type_name = _LU("System.Char");
       break;
     case ELEMENT_TYPE_I1:       // 0x04  // System.SByte (struct)
-      managed_type_name = "System.SByte"_W;
+      managed_type_name = _LU("System.SByte");
       break;
     case ELEMENT_TYPE_U1:       // 0x05  // System.Byte (struct)
-      managed_type_name = "System.Byte"_W;
+      managed_type_name = _LU("System.Byte");
       break;
     case ELEMENT_TYPE_I2:       // 0x06  // System.Int16 (struct)
-      managed_type_name = "System.Int16"_W;
+      managed_type_name = _LU("System.Int16");
       break;
     case ELEMENT_TYPE_U2:       // 0x07  // System.UInt16 (struct)
-      managed_type_name = "System.UInt16"_W;
+      managed_type_name = _LU("System.UInt16");
       break;
     case ELEMENT_TYPE_I4:       // 0x08  // System.Int32 (struct)
-      managed_type_name = "System.Int32"_W;
+      managed_type_name = _LU("System.Int32");
       break;
     case ELEMENT_TYPE_U4:       // 0x09  // System.UInt32 (struct)
-      managed_type_name = "System.UInt32"_W;
+      managed_type_name = _LU("System.UInt32");
       break;
     case ELEMENT_TYPE_I8:       // 0x0a  // System.Int64 (struct)
-      managed_type_name = "System.Int64"_W;
+      managed_type_name = _LU("System.Int64");
       break;
     case ELEMENT_TYPE_U8:       // 0x0b  // System.UInt64 (struct)
-      managed_type_name = "System.UInt64"_W;
+      managed_type_name = _LU("System.UInt64");
       break;
     case ELEMENT_TYPE_R4:       // 0x0c  // System.Single (struct)
-      managed_type_name = "System.Single"_W;
+      managed_type_name = _LU("System.Single");
       break;
     case ELEMENT_TYPE_R8:       // 0x0d  // System.Double (struct)
-      managed_type_name = "System.Double"_W;
+      managed_type_name = _LU("System.Double");
       break;
     case ELEMENT_TYPE_TYPEDBYREF:  // 0X16  // System.TypedReference (struct)
-      managed_type_name = "System.TypedReference"_W;
+      managed_type_name = _LU("System.TypedReference");
       break;
     case ELEMENT_TYPE_I:           // 0x18  // System.IntPtr (struct)
-      managed_type_name = "System.IntPtr"_W;
+      managed_type_name = _LU("System.IntPtr");
       break;
     case ELEMENT_TYPE_U:           // 0x19  // System.UIntPtr (struct)
-      managed_type_name = "System.UIntPtr"_W;
+      managed_type_name = _LU("System.UIntPtr");
       break;
     default:
       return false;
@@ -847,7 +847,7 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
   }
 
   // Create/Get TypeRef to the listed type
-  if (managed_type_name == ""_W) {
+  if (managed_type_name == _LU("")) {
     Warn("[trace::ReturnTypeTokenforElementType] no managed type name given");
     return false;
   }
@@ -1115,52 +1115,52 @@ mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAsse
 
   switch (*pbCur) {
     case ELEMENT_TYPE_BOOLEAN:
-      pEmit->DefineTypeRefByName(corLibRef, SystemBoolean.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemBoolean, &token);
       break;
     case ELEMENT_TYPE_CHAR:
-      pEmit->DefineTypeRefByName(corLibRef, SystemChar.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemChar, &token);
       break;
     case ELEMENT_TYPE_I1:
-      pEmit->DefineTypeRefByName(corLibRef, SystemByte.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemByte, &token);
       break;
     case ELEMENT_TYPE_U1:
-      pEmit->DefineTypeRefByName(corLibRef, SystemSByte.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemSByte, &token);
       break;
     case ELEMENT_TYPE_U2:
-      pEmit->DefineTypeRefByName(corLibRef, SystemUInt16.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemUInt16, &token);
       break;
     case ELEMENT_TYPE_I2:
-      pEmit->DefineTypeRefByName(corLibRef, SystemInt16.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemInt16, &token);
       break;
     case ELEMENT_TYPE_I4:
-      pEmit->DefineTypeRefByName(corLibRef, SystemInt32.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemInt32, &token);
       break;
     case ELEMENT_TYPE_U4:
-      pEmit->DefineTypeRefByName(corLibRef, SystemUInt32.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemUInt32, &token);
       break;
     case ELEMENT_TYPE_I8:
-      pEmit->DefineTypeRefByName(corLibRef, SystemInt64.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemInt64, &token);
       break;
     case ELEMENT_TYPE_U8:
-      pEmit->DefineTypeRefByName(corLibRef, SystemUInt64.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemUInt64, &token);
       break;
     case ELEMENT_TYPE_R4:
-      pEmit->DefineTypeRefByName(corLibRef, SystemSingle.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemSingle, &token);
       break;
     case ELEMENT_TYPE_R8:
-      pEmit->DefineTypeRefByName(corLibRef, SystemDouble.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemDouble, &token);
       break;
     case ELEMENT_TYPE_I:
-      pEmit->DefineTypeRefByName(corLibRef, SystemIntPtr.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemIntPtr, &token);
       break;
     case ELEMENT_TYPE_U:
-      pEmit->DefineTypeRefByName(corLibRef, SystemUIntPtr.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemUIntPtr, &token);
       break;
     case ELEMENT_TYPE_STRING:
-      pEmit->DefineTypeRefByName(corLibRef, SystemString.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemString, &token);
       break;
     case ELEMENT_TYPE_OBJECT:
-      pEmit->DefineTypeRefByName(corLibRef, SystemObject.data(), &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemObject, &token);
       break;
     case ELEMENT_TYPE_CLASS:
       pbCur++;
@@ -1184,7 +1184,7 @@ mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAsse
 }
 
 WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport) {
-  WSTRING tokenName = ""_W;
+  WSTRING tokenName = _LU("");
   bool ref_flag = false;
   if (*pbCur == ELEMENT_TYPE_BYREF) {
     pbCur++;
@@ -1266,36 +1266,36 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
     }
     case ELEMENT_TYPE_SZARRAY: {
       pbCur++;
-      tokenName = GetSigTypeTokName(pbCur, pImport) + "[]"_W;
+      tokenName = GetSigTypeTokName(pbCur, pImport) + _LU("[]");
       break;
     }
     case ELEMENT_TYPE_GENERICINST: {
       pbCur++;
       tokenName = GetSigTypeTokName(pbCur, pImport);
-      tokenName += "["_W;
+      tokenName += _LU("[");
       ULONG num = 0;
       pbCur += CorSigUncompressData(pbCur, &num);
       for (ULONG i = 0; i < num; i++) {
         tokenName += GetSigTypeTokName(pbCur, pImport);
         if (i != num - 1) {
-          tokenName += ","_W;
+          tokenName += _LU(",");
         }
       }
-      tokenName += "]"_W;
+      tokenName += _LU("]");
       break;
     }
     case ELEMENT_TYPE_MVAR: {
       pbCur++;
       ULONG num = 0;
       pbCur += CorSigUncompressData(pbCur, &num);
-      tokenName = "!!"_W + ToWSTRING(std::to_string(num));
+      tokenName = _LU("!!") + ToWSTRING(std::to_string(num));
       break;
     }
     case ELEMENT_TYPE_VAR: {
       pbCur++;
       ULONG num = 0;
       pbCur += CorSigUncompressData(pbCur, &num);
-      tokenName = "!"_W + ToWSTRING(std::to_string(num));
+      tokenName = _LU("!") + ToWSTRING(std::to_string(num));
       break;
     }
     default:
@@ -1303,7 +1303,7 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
   }
 
   if (ref_flag) {
-    tokenName += "&"_W;
+    tokenName += _LU("&");
   }
   return tokenName;
 }
