@@ -14,7 +14,7 @@ TEST_F(CLRHelperTypeCheckTest, SimpleNoSignatureMethodHasOnlyVoid) {
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      "Samples.ExampleLibrary.FakeClient.DogClient`2"_W, "Silence"_W);
+      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("Silence"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
@@ -38,7 +38,7 @@ TEST_F(CLRHelperTypeCheckTest, GetsVeryComplexNestedGenericTypeStrings) {
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      "Samples.ExampleLibrary.FakeClient.DogClient`2"_W, "Sit"_W);
+      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("Sit"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
@@ -55,7 +55,7 @@ TEST_F(CLRHelperTypeCheckTest, SimpleStringReturnWithNestedTypeParamsNoGenerics)
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      "Samples.ExampleLibrary.FakeClient.DogClient`2"_W, "TellMeIfTheCookieIsYummy"_W);
+      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("TellMeIfTheCookieIsYummy"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
@@ -72,7 +72,7 @@ TEST_F(CLRHelperTypeCheckTest, SimpleClassReturnWithSimpleParamsNoGenerics) {
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      "Samples.ExampleLibrary.FakeClient.DogClient`2"_W, "Rollover"_W);
+      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("Rollover"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
@@ -93,7 +93,7 @@ TEST_F(CLRHelperTypeCheckTest, GenericAsyncMethodWithNestedGenericTask) {
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      "Samples.ExampleLibrary.FakeClient.DogClient`2"_W, "StayAndLayDown"_W);
+      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("StayAndLayDown"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 

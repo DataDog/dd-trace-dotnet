@@ -1940,17 +1940,17 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 #else // _WIN32
 
 #ifdef BIT64
-  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH_64"_W);
+  WSTRING native_profiler_file = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH_64"));
   Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
-  if (native_profiler_file == ""_W) {
-    native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
+  if (native_profiler_file == _LU("")) {
+    native_profiler_file = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH"));
     Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
   }
 #else // BIT64
-  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH_32"_W);
+  WSTRING native_profiler_file = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH_32"));
   Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
-  if (native_profiler_file == ""_W) {
-    native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
+  if (native_profiler_file == _LU("")) {
+    native_profiler_file = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH"));
     Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
   }
 #endif // BIT64
