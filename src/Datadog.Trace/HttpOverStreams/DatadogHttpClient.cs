@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ namespace Datadog.Trace.HttpOverStreams
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
         {
             await SendRequestAsync(request, requestStream).ConfigureAwait(false);
-            return ReadResponse(responseStream);
+            return await ReadResponseAsync(responseStream);
         }
 
         private async Task SendRequestAsync(HttpRequest request, Stream requestStream)
@@ -44,10 +45,10 @@ namespace Datadog.Trace.HttpOverStreams
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
 
-        private HttpResponse ReadResponse(Stream responseStream)
+        private async Task<HttpResponse> ReadResponseAsync(Stream responseStream)
         {
             var headers = new HttpHeaders();
-            char currentChar;
+            char currentChar = char.MinValue;
             int streamPosition = 0;
 
             // https://tools.ietf.org/html/rfc2616#section-4.2
@@ -62,14 +63,15 @@ namespace Datadog.Trace.HttpOverStreams
             var stringBuilder = new StringBuilder();
 
             var chArray = new byte[1];
-            void GoNextChar()
+
+            async Task GoNextChar()
             {
-                streamPosition++;
-                chArray[0] = (byte)responseStream.ReadByte();
+                await responseStream.ReadAsync(chArray, offset: 0, count: 1);
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
+                streamPosition++;
             }
 
-            bool IsNewLine()
+            async Task<bool> IsNewLine()
             {
                 if (currentChar.Equals(DatadogHttpValues.CarriageReturn))
                 {
@@ -77,7 +79,7 @@ namespace Datadog.Trace.HttpOverStreams
                     if (DatadogHttpValues.CrLfLength > 1)
                     {
                         // Skip the newline indicator
-                        GoNextChar();
+                        await GoNextChar();
                     }
 
                     return true;
@@ -89,13 +91,13 @@ namespace Datadog.Trace.HttpOverStreams
             // Skip to status code
             while (streamPosition < statusCodeStart)
             {
-                GoNextChar();
+                await GoNextChar();
             }
 
             // Read status code
             while (streamPosition < statusCodeEnd)
             {
-                GoNextChar();
+                await GoNextChar();
                 stringBuilder.Append(currentChar);
             }
 
@@ -110,14 +112,14 @@ namespace Datadog.Trace.HttpOverStreams
             // Skip to reason
             while (streamPosition < startOfReasonPhrase)
             {
-                GoNextChar();
+                await GoNextChar();
             }
 
             // Read reason
             do
             {
-                GoNextChar();
-                if (IsNewLine())
+                await GoNextChar();
+                if (await IsNewLine())
                 {
                     break;
                 }
@@ -132,10 +134,10 @@ namespace Datadog.Trace.HttpOverStreams
             // Read headers
             do
             {
-                GoNextChar();
+                await GoNextChar();
 
                 // Check for end of headers
-                if (IsNewLine())
+                if (await IsNewLine())
                 {
                     // Empty line, content starts next
                     break;
@@ -151,7 +153,7 @@ namespace Datadog.Trace.HttpOverStreams
                     }
 
                     stringBuilder.Append(currentChar);
-                    GoNextChar();
+                    await GoNextChar();
                 }
                 while (true);
 
@@ -161,9 +163,9 @@ namespace Datadog.Trace.HttpOverStreams
                 // Read value
                 do
                 {
-                    GoNextChar();
+                    await GoNextChar();
 
-                    if (IsNewLine())
+                    if (await IsNewLine())
                     {
                         // Next header pair starts
                         break;

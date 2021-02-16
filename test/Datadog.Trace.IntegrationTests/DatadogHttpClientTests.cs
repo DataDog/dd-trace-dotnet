@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
 using Datadog.Trace.Agent;
@@ -19,7 +20,7 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
-        public void DatadogHttpClient_CanSendTracesToAgent()
+        public async Task DatadogHttpClient_CanSendTracesToAgent()
         {
             var agentPort = TcpPortProvider.GetOpenPort();
 
@@ -27,7 +28,9 @@ namespace Datadog.Trace.IntegrationTests
             {
                 agent.RequestDeserialized += (sender, args) =>
                 {
-                    _output.WriteLine($"Received {args.Value.Count} traces");
+                    var traces = args.Value.Select(
+                        trace => string.Join(", ", trace.Select(span => $"{span.Name}.{span.Resource}.{span.SpanId}")));
+                    _output.WriteLine($"Received {args.Value.Count} traces: {string.Join(";", traces)}");
                 };
 
                 var settings = new TracerSettings
@@ -43,7 +46,7 @@ namespace Datadog.Trace.IntegrationTests
                 }
 
                 // When this is added in, the test deadlocks! :scream:
-                // await tracer.FlushAsync();
+                await tracer.FlushAsync();
 
                 var spans = agent.WaitForSpans(1);
                 Assert.Equal(1, spans.Count);
