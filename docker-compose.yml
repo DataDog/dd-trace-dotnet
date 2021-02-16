@@ -67,6 +67,16 @@ services:
     - MYSQL_PASSWORD=mysqldb
     ports:
     - "127.0.0.1:3307:3306"
+    
+  mysql57:
+    image: mysql/mysql-server:5.7
+    environment:
+    - MYSQL_DATABASE=world
+    - MYSQL_ROOT_PASSWORD=mysqldb
+    - MYSQL_USER=mysqldb
+    - MYSQL_PASSWORD=mysqldb
+    ports:
+    - "127.0.0.1:3407:3306"
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest
@@ -305,6 +315,8 @@ services:
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
     - MYSQL_PORT=3306
+    - MYSQL57_HOST=mysql57
+    - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp2.1
@@ -317,6 +329,7 @@ services:
     - mongo
     - postgres
     - mysql
+    - mysql57
     - rabbitmq
 
   IntegrationTests.Alpine.Core30:
@@ -337,6 +350,8 @@ services:
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
     - MYSQL_PORT=3306
+    - MYSQL57_HOST=mysql57
+    - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.0
@@ -349,6 +364,7 @@ services:
     - mongo
     - postgres
     - mysql
+    - mysql57
     - rabbitmq
 
   IntegrationTests.Alpine.Core31:
@@ -369,6 +385,8 @@ services:
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
     - MYSQL_PORT=3306
+    - MYSQL57_HOST=mysql57
+    - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.1
@@ -381,6 +399,7 @@ services:
     - mongo
     - postgres
     - mysql
+    - mysql57
     - rabbitmq
 
   IntegrationTests.Alpine.Core50:
@@ -401,6 +420,8 @@ services:
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
     - MYSQL_PORT=3306
+    - MYSQL57_HOST=mysql57
+    - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=net5.0
@@ -413,6 +434,7 @@ services:
     - mongo
     - postgres
     - mysql
+    - mysql57
     - rabbitmq
 
   IntegrationTests:
@@ -433,6 +455,8 @@ services:
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
     - MYSQL_PORT=3306
+    - MYSQL57_HOST=mysql57
+    - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
@@ -445,6 +469,7 @@ services:
     - mongo
     - postgres
     - mysql
+    - mysql57
     - rabbitmq
 
   IntegrationTests.ARM64.Core50:

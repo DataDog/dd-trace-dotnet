@@ -42,5 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> StackExchangeRedis => IsComprehensive ? PackageVersionsComprehensive.StackExchangeRedis : PackageVersionsLatestMinors.StackExchangeRedis;
 
         public static IEnumerable<object[]> ServiceStackRedis => IsComprehensive ? PackageVersionsComprehensive.ServiceStackRedis : PackageVersionsLatestMinors.ServiceStackRedis;
+
+        public static IEnumerable<object[]> MySqlData => IsComprehensive ? PackageVersionsComprehensive.MySqlData : PackageVersionsLatestMinors.MySqlData;
     }
 }

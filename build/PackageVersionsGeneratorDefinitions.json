@@ -64,5 +64,12 @@
     "MinVersion": "4.0.48",
     "MinVersionNetCore": "5.0.0",
     "MaxVersionExclusive": "6.0.0"
+  },
+  {
+    "IntegrationName": "MySqlData",
+    "SampleProjectName": "Samples.MySql",
+    "NugetPackageSearchName": "MySql.Data",
+    "MinVersion": "6.7.9",
+    "MaxVersionExclusive": "9.0.0"
   }
 ]
