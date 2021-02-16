@@ -1470,7 +1470,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest.HttpWebRequest_GetRequestStream_Integration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_GetRequestStream_Integration",
           "action": "CallTargetModification"
         }
       },
@@ -1492,7 +1492,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest.HttpWebRequest_GetRequestStream_Integration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_GetRequestStream_Integration",
           "action": "CallTargetModification"
         }
       },
@@ -1514,7 +1514,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest.HttpWebRequest_GetResponse_Integration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_GetResponse_Integration",
           "action": "CallTargetModification"
         }
       },
@@ -1536,7 +1536,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest.HttpWebRequest_GetResponse_Integration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_GetResponse_Integration",
           "action": "CallTargetModification"
         }
       },
@@ -1558,7 +1558,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest.WebRequest_GetResponseAsync_Integration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.WebRequest_GetResponseAsync_Integration",
           "action": "CallTargetModification"
         }
       },
@@ -1580,7 +1580,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest.WebRequest_GetResponseAsync_Integration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.WebRequest_GetResponseAsync_Integration",
           "action": "CallTargetModification"
         }
       }
