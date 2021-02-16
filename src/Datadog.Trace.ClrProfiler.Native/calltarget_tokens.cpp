@@ -7,6 +7,8 @@
 
 namespace trace {
 
+const int signatureBufferSize = 50;
+
 /**
  * PRIVATE
  **/
@@ -79,7 +81,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
     unsigned type_buffer;
     auto type_size = CorSigCompressToken(typeRef, &type_buffer);
 
-    auto* signature = new COR_SIGNATURE[runtimeTypeHandle_size + type_size + 4];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
@@ -88,14 +90,12 @@ HRESULT CallTargetTokens::EnsureCorLibTokens() {
     memcpy(&signature[offset], &type_buffer, type_size);
     offset += type_size;
     signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &runtimeTypeHandle_buffer,
-           runtimeTypeHandle_size);
+    memcpy(&signature[offset], &runtimeTypeHandle_buffer, runtimeTypeHandle_size);
     offset += runtimeTypeHandle_size;
 
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        typeRef, GetTypeFromHandleMethodName.data(), signature,
-        sizeof(signature), &getTypeFromHandleToken);
-    delete[] signature;
+        typeRef, GetTypeFromHandleMethodName.data(), signature, offset,
+        &getTypeFromHandleToken);
     if (FAILED(hr)) {
       Warn("Wrapper getTypeFromHandleToken could not be defined.");
       return hr;
@@ -187,8 +187,8 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
     auto callTargetStateTypeSize =
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateTypeBuffer);
 
-    auto signatureLength = 3 + callTargetStateTypeSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    const ULONG signatureLength = 3 + callTargetStateTypeSize;
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
@@ -203,7 +203,6 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
         callTargetStateTypeRef,
         managed_profiler_calltarget_statetype_getdefault_name.data(), signature,
         signatureLength, &callTargetStateTypeGetDefault);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper callTargetStateTypeGetDefault could not be defined.");
       return hr;
