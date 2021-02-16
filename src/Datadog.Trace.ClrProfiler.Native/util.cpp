@@ -58,7 +58,7 @@ WSTRING GetEnvironmentValue(const WSTRING &name) {
 #else
   auto cstr = std::getenv(ToString(name).c_str());
   if (cstr == nullptr) {
-    return ""_W;
+    return _LU("");
   }
   std::string str(cstr);
   auto wstr = ToWSTRING(str);
