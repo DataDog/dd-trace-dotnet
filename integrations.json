@@ -874,28 +874,6 @@
       {
         "caller": {},
         "target": {
-          "assembly": "Oracle.DataAccess",
-          "type": "Oracle.DataAccess.Client.OracleCommand",
-          "method": "ExecuteNonQuery",
-          "signature_types": [
-            "System.Int32"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 122,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 122,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
           "assembly": "Npgsql",
           "type": "Npgsql.NpgsqlCommand",
           "method": "ExecuteDbDataReaderAsync",
@@ -942,28 +920,6 @@
       {
         "caller": {},
         "target": {
-          "assembly": "Oracle.DataAccess",
-          "type": "Oracle.DataAccess.Client.OracleCommand",
-          "method": "ExecuteReader",
-          "signature_types": [
-            "Oracle.DataAccess.Client.OracleDataReader"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 122,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 122,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
           "assembly": "Npgsql",
           "type": "Npgsql.NpgsqlCommand",
           "method": "ExecuteReader",
@@ -976,29 +932,6 @@
           "minimum_patch": 0,
           "maximum_major": 5,
           "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "Oracle.DataAccess",
-          "type": "Oracle.DataAccess.Client.OracleCommand",
-          "method": "ExecuteReader",
-          "signature_types": [
-            "Oracle.DataAccess.Client.OracleDataReader",
-            "System.Data.CommandBehavior"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 122,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 122,
           "maximum_patch": 65535
         },
         "wrapper": {
@@ -1108,10 +1041,9 @@
         "target": {
           "assembly": "Oracle.DataAccess",
           "type": "Oracle.DataAccess.Client.OracleCommand",
-          "method": "ExecuteDbDataReader",
+          "method": "ExecuteNonQuery",
           "signature_types": [
-            "System.Data.Common.DbDataReader",
-            "System.Data.CommandBehavior"
+            "System.Int32"
           ],
           "minimum_major": 4,
           "minimum_minor": 122,
@@ -1122,7 +1054,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1145,6 +1077,28 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAdapterUnloadIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Oracle.DataAccess",
+          "type": "Oracle.DataAccess.Client.OracleCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "Oracle.DataAccess.Client.OracleDataReader"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 122,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 122,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1201,6 +1155,29 @@
       {
         "caller": {},
         "target": {
+          "assembly": "Oracle.DataAccess",
+          "type": "Oracle.DataAccess.Client.OracleCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "Oracle.DataAccess.Client.OracleDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 122,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 122,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "Oracle.ManagedDataAccess",
           "type": "Oracle.ManagedDataAccess.Client.OracleCommand",
           "method": "ExecuteNonQuery",
@@ -1239,6 +1216,29 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Oracle.DataAccess",
+          "type": "Oracle.DataAccess.Client.OracleCommand",
+          "method": "ExecuteDbDataReader",
+          "signature_types": [
+            "System.Data.Common.DbDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 122,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 122,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.23.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration",
           "action": "CallTargetModification"
         }
       },
