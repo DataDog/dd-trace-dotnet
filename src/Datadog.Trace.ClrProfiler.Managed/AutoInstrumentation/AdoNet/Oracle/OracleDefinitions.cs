@@ -13,6 +13,9 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle.OracleC
 [assembly: CommandExecuteNonQuery(typeof(OracleClientData))]
 [assembly: CommandExecuteNonQuery(typeof(OracleCoreClientData))]
 
+// int Oracle.DataAccess.Client.OracleCommand.ExecuteNonQuery()
+[assembly: CommandExecuteNonQuery(typeof(OracleDataAccessClientData))]
+
 /********************************************************************************
  * Task<[*]DataReader> .ExecuteReaderAsync(CommandBehavior, CancellationToken)
  ********************************************************************************/
@@ -29,6 +32,9 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle.OracleC
 [assembly: CommandExecuteReader(typeof(OracleClientData))]
 [assembly: CommandExecuteReader(typeof(OracleCoreClientData))]
 
+// OracleDataReader Oracle.DataAccess.Client.OracleCommand.ExecuteReader()
+[assembly: CommandExecuteReader(typeof(OracleDataAccessClientData))]
+
 /********************************************************************************
  * [*]DataReader [Command].ExecuteReader(CommandBehavior)
  ********************************************************************************/
@@ -37,6 +43,9 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle.OracleC
 [assembly: CommandExecuteReaderWithBehavior(typeof(OracleClientData))]
 [assembly: CommandExecuteReaderWithBehavior(typeof(OracleCoreClientData))]
 
+// OracleDataReader Oracle.DataAccess.Client.OracleCommand.ExecuteReader(CommandBehavior)
+[assembly: CommandExecuteReaderWithBehavior(typeof(OracleDataAccessClientData))]
+
 /********************************************************************************
  * [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
  ********************************************************************************/
@@ -44,6 +53,9 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle.OracleC
 // DbDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
 [assembly: CommandExecuteDbDataReaderWithBehavior(typeof(OracleClientData))]
 [assembly: CommandExecuteDbDataReaderWithBehavior(typeof(OracleCoreClientData))]
+
+// DbDataReader Oracle.DataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
+[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(OracleDataAccessClientData))]
 
 /********************************************************************************
  * Task<object> .ExecuteScalarAsync(CancellationToken)
@@ -56,3 +68,6 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle.OracleC
 // object Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteScalar()
 [assembly: CommandExecuteScalar(typeof(OracleClientData))]
 [assembly: CommandExecuteScalar(typeof(OracleCoreClientData))]
+
+// object Oracle.DataAccess.Client.OracleCommand.ExecuteScalar()
+[assembly: CommandExecuteScalar(typeof(OracleDataAccessClientData))]

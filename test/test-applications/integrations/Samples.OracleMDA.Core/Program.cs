@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,15 +14,14 @@ namespace Samples.OracleMDA.Core
             var tableId = Guid.NewGuid().ToString("N").Substring(0, 10);
             var commandFactory = new OracleDbCommandFactory($@"oracletest{tableId}");
             var commandExecutor = new OracleCommandExecutor();
-            var cts = new CancellationTokenSource();
 
             using (var connection = OpenConnection())
             {
-                await RelationalDatabaseTestHarness.RunAllAsync<OracleCommand>(connection, commandFactory, commandExecutor, cts.Token);
+                await RelationalDatabaseTestHarness.RunAllAsync<OracleCommand>(connection, commandFactory, commandExecutor, CancellationToken.None);
             }
 
             // allow time to flush
-            await Task.Delay(2000, cts.Token);
+            await Task.Delay(2000);
         }
 
         private static OracleConnection OpenConnection()
