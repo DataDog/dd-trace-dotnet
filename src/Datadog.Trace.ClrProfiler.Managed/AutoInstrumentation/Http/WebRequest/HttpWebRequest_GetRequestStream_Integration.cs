@@ -2,7 +2,7 @@ using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ExtensionMethods;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
     /// <summary>
     /// CallTarget integration for HttpWebRequest.GetRequestStream
@@ -12,7 +12,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
         TypeName = WebRequestCommon.HttpWebRequestTypeName,
         MethodName = MethodName,
         ReturnTypeName = ClrNames.Stream,
-        ParameterTypeNames = new string[0],
         MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major4,
         IntegrationName = WebRequestCommon.IntegrationName)]
@@ -21,7 +20,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
         TypeName = WebRequestCommon.HttpWebRequestTypeName,
         MethodName = MethodName,
         ReturnTypeName = ClrNames.Stream,
-        ParameterTypeNames = new string[0],
         MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major5,
         IntegrationName = WebRequestCommon.IntegrationName)]

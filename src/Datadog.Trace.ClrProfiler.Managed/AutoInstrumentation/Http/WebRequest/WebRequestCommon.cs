@@ -4,7 +4,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.WebRequest
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
     internal class WebRequestCommon
     {
