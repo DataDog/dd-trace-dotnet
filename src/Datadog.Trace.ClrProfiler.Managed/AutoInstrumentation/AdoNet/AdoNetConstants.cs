@@ -8,6 +8,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         internal const string IntegrationName = nameof(IntegrationIds.AdoNet);
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
+        internal struct SystemDataClientData : IAdoNetClientData
+        {
+            public string IntegrationName => AdoNet.AdoNetConstants.IntegrationName;
+
+            public string AssemblyName => "System.Data";
+
+            public string SqlCommandType => "System.Data.Common.DbCommand";
+
+            public string MinimumVersion => "4.0.0";
+
+            public string MaximumVersion => "4.*.*";
+
+            public string DataReaderType => AdoNet.AdoNetConstants.TypeNames.DbDataReaderType;
+
+            public string DataReaderTaskType => AdoNet.AdoNetConstants.TypeNames.DbDataReaderTaskType;
+        }
+
+        internal struct SystemDataCommonClientData : IAdoNetClientData
+        {
+            public string IntegrationName => AdoNet.AdoNetConstants.IntegrationName;
+
+            public string AssemblyName => "System.Data.Common";
+
+            public string SqlCommandType => "System.Data.Common.DbCommand";
+
+            public string MinimumVersion => "4.0.0";
+
+            public string MaximumVersion => "5.*.*";
+
+            public string DataReaderType => AdoNet.AdoNetConstants.TypeNames.DbDataReaderType;
+
+            public string DataReaderTaskType => AdoNet.AdoNetConstants.TypeNames.DbDataReaderTaskType;
+        }
+
         public static class TypeNames
         {
             public const string CommandBehavior = "System.Data.CommandBehavior";
