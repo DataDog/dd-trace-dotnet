@@ -5,6 +5,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -43,7 +44,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <param name="state">The state of the method</param>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext controllerContext, string actionName, AsyncCallback callback, object state)
-            where TContext : IControllerContext
         {
             Scope scope = null;
 
@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 if (HttpContext.Current != null)
                 {
-                    scope = AspNetMvcIntegration.CreateScope(controllerContext);
+                    scope = AspNetMvcIntegration.CreateScope(controllerContext.As<ControllerContextStruct>());
                     HttpContext.Current.Items[AspNetMvcIntegration.HttpContextKey] = scope;
                 }
             }

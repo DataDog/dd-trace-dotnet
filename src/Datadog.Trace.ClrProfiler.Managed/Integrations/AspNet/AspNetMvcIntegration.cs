@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="controllerContext">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
         /// <returns>A new scope used to instrument an MVC action.</returns>
-        public static Scope CreateScope(IControllerContext controllerContext)
+        public static Scope CreateScope(ControllerContextStruct controllerContext)
         {
             Scope scope = null;
 
@@ -47,11 +47,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled, don't create a scope, skip this trace
-                    return null;
-                }
-
-                if (controllerContext == null)
-                {
                     return null;
                 }
 
@@ -204,7 +199,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (HttpContext.Current != null)
                 {
-                    scope = CreateScope(controllerContext.As<IControllerContext>());
+                    scope = CreateScope(controllerContext.As<ControllerContextStruct>());
                     HttpContext.Current.Items[HttpContextKey] = scope;
                 }
             }

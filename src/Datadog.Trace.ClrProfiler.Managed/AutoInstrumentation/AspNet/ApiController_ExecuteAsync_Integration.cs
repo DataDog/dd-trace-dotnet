@@ -9,6 +9,7 @@ using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
@@ -48,11 +49,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         public static CallTargetState OnMethodBegin<TTarget, TController>(TTarget instance, TController controllerContext, CancellationToken cancellationToken)
             where TController : IHttpControllerContext
         {
-            var scope = AspNetWebApi2Integration.CreateScope(controllerContext, out _);
+            // Make sure to box the controllerContext proxy only once
+            var boxedControllerContext = (IHttpControllerContext)controllerContext;
+
+            var scope = AspNetWebApi2Integration.CreateScope(boxedControllerContext, out _);
 
             if (scope != null)
             {
-                return new CallTargetState(scope, controllerContext);
+                return new CallTargetState(scope, boxedControllerContext);
             }
 
             return CallTargetState.GetDefault();
@@ -105,8 +109,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             else
             {
-                var statusCode = responseMessage.GetProperty("StatusCode");
-                scope.Span.SetHttpStatusCode((int)statusCode.Value, isServer: true);
+                var statusCode = responseMessage.As<HttpResponseMessageStruct>().StatusCode;
+                scope.Span.SetHttpStatusCode(statusCode, isServer: true);
                 scope.Dispose();
             }
 

@@ -1,23 +1,25 @@
 #if NETFRAMEWORK
 using System.Web;
 using System.Web.Routing;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
 {
     /// <summary>
-    /// ControllerContext interface for ducktyping
+    /// ControllerContext struct copy target for ducktyping
     /// </summary>
-    public interface IControllerContext
+    [DuckCopy]
+    public struct ControllerContextStruct
     {
         /// <summary>
         /// Gets the HttpContext
         /// </summary>
-        HttpContextBase HttpContext { get; }
+        public HttpContextBase HttpContext;
 
         /// <summary>
         /// Gets the RouteData
         /// </summary>
-        RouteData RouteData { get; }
+        public RouteData RouteData;
     }
 }
 #endif
