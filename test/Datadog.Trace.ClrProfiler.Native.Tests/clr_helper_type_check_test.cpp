@@ -14,7 +14,7 @@ TEST_F(CLRHelperTypeCheckTest, SimpleNoSignatureMethodHasOnlyVoid) {
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("Silence"));
+      WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"), WStr("Silence"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
@@ -38,7 +38,7 @@ TEST_F(CLRHelperTypeCheckTest, GetsVeryComplexNestedGenericTypeStrings) {
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("Sit"));
+      WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"), WStr("Sit"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
@@ -55,7 +55,7 @@ TEST_F(CLRHelperTypeCheckTest, SimpleStringReturnWithNestedTypeParamsNoGenerics)
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("TellMeIfTheCookieIsYummy"));
+      WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"), WStr("TellMeIfTheCookieIsYummy"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
@@ -72,7 +72,7 @@ TEST_F(CLRHelperTypeCheckTest, SimpleClassReturnWithSimpleParamsNoGenerics) {
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("Rollover"));
+      WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"), WStr("Rollover"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
@@ -93,7 +93,7 @@ TEST_F(CLRHelperTypeCheckTest, GenericAsyncMethodWithNestedGenericTask) {
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
-      _LU("Samples.ExampleLibrary.FakeClient.DogClient`2"), _LU("StayAndLayDown"));
+      WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"), WStr("StayAndLayDown"));
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
