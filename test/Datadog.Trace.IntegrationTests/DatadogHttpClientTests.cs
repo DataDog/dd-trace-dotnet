@@ -26,13 +26,6 @@ namespace Datadog.Trace.IntegrationTests
 
             using (var agent = new MockTracerAgent(agentPort))
             {
-                agent.RequestDeserialized += (sender, args) =>
-                {
-                    var traces = args.Value.Select(
-                        trace => string.Join(", ", trace.Select(span => $"{span.Name}.{span.Resource}.{span.SpanId}")));
-                    _output.WriteLine($"Received {args.Value.Count} traces: {string.Join(";", traces)}");
-                };
-
                 var settings = new TracerSettings
                 {
                     AgentUri = new Uri($"http://localhost:{agent.Port}"),
@@ -45,7 +38,6 @@ namespace Datadog.Trace.IntegrationTests
                     scope.Span.ResourceName = "resourceName";
                 }
 
-                // When this is added in, the test deadlocks! :scream:
                 await tracer.FlushAsync();
 
                 var spans = agent.WaitForSpans(1);
