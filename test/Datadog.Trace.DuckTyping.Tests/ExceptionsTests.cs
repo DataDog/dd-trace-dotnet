@@ -15,12 +15,12 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypePropertyCantBeReadException>(() =>
             {
-                target.As<IPropertyCantBeReadException>();
+                target.DuckCast<IPropertyCantBeReadException>();
             });
 
             Assert.Throws<DuckTypePropertyCantBeReadException>(() =>
             {
-                target.As<StructPropertyCantBeReadException>();
+                target.DuckCast<StructPropertyCantBeReadException>();
             });
         }
 
@@ -51,7 +51,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypePropertyCantBeWrittenException>(() =>
             {
-                target.As<IPropertyCantBeWrittenException>();
+                target.DuckCast<IPropertyCantBeWrittenException>();
             });
         }
 
@@ -74,17 +74,17 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypePropertyArgumentsLengthException>(() =>
             {
-                target.As<IPropertyArgumentsLengthException>();
+                target.DuckCast<IPropertyArgumentsLengthException>();
             });
 
             Assert.Throws<DuckTypePropertyArgumentsLengthException>(() =>
             {
-                target.As<StructPropertyArgumentsLengthException>();
+                target.DuckCast<StructPropertyArgumentsLengthException>();
             });
 
             Assert.Throws<DuckTypePropertyArgumentsLengthException>(() =>
             {
-                target.As<ISetPropertyArgumentsLengthException>();
+                target.DuckCast<ISetPropertyArgumentsLengthException>();
             });
         }
 
@@ -122,7 +122,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeFieldIsReadonlyException>(() =>
             {
-                target.As<IFieldIsReadonlyException>();
+                target.DuckCast<IFieldIsReadonlyException>();
             });
         }
 
@@ -154,27 +154,27 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 Assert.Throws<DuckTypePropertyOrFieldNotFoundException>(() =>
                 {
-                    target.As<IPropertyOrFieldNotFoundException>();
+                    target.DuckCast<IPropertyOrFieldNotFoundException>();
                 });
 
                 Assert.Throws<DuckTypePropertyOrFieldNotFoundException>(() =>
                 {
-                    target.As<IPropertyOrFieldNotFound2Exception>();
+                    target.DuckCast<IPropertyOrFieldNotFound2Exception>();
                 });
 
                 Assert.Throws<DuckTypePropertyOrFieldNotFoundException>(() =>
                 {
-                    target.As<IPropertyOrFieldNotFound3Exception>();
+                    target.DuckCast<IPropertyOrFieldNotFound3Exception>();
                 });
 
                 Assert.Throws<DuckTypePropertyOrFieldNotFoundException>(() =>
                 {
-                    target.As<PropertyOrFieldNotFoundExceptionStruct>();
+                    target.DuckCast<PropertyOrFieldNotFoundExceptionStruct>();
                 });
 
                 Assert.Throws<DuckTypePropertyOrFieldNotFoundException>(() =>
                 {
-                    target.As<PropertyOrFieldNotFound2ExceptionStruct>();
+                    target.DuckCast<PropertyOrFieldNotFound2ExceptionStruct>();
                 });
             }
         }
@@ -222,12 +222,12 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
             {
-                target.As<ITypeIsNotPublicException>();
+                target.DuckCast<ITypeIsNotPublicException>();
             });
 
             Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
             {
-                target.As(typeof(ITypeIsNotPublicException));
+                target.DuckCast(typeof(ITypeIsNotPublicException));
             });
         }
 
@@ -251,7 +251,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeStructMembersCannotBeChangedException>(() =>
             {
-                target.As<IStructMembersCannotBeChangedException>();
+                target.DuckCast<IStructMembersCannotBeChangedException>();
             });
         }
 
@@ -275,7 +275,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeStructMembersCannotBeChangedException>(() =>
             {
-                target.As<IStructMembersCannotBeChanged2Exception>();
+                target.DuckCast<IStructMembersCannotBeChanged2Exception>();
             });
         }
 
@@ -301,17 +301,17 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeTargetMethodNotFoundException>(() =>
             {
-                target.As<ITargetMethodNotFoundException>();
+                target.DuckCast<ITargetMethodNotFoundException>();
             });
 
             Assert.Throws<DuckTypeTargetMethodNotFoundException>(() =>
             {
-                target.As<ITargetMethodNotFound2Exception>();
+                target.DuckCast<ITargetMethodNotFound2Exception>();
             });
 
             Assert.Throws<DuckTypeTargetMethodNotFoundException>(() =>
             {
-                target.As<ITargetMethodNotFound3Exception>();
+                target.DuckCast<ITargetMethodNotFound3Exception>();
             });
         }
 
@@ -351,7 +351,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeProxyMethodParameterIsMissingException>(() =>
             {
-                target.As<IProxyMethodParameterIsMissingException>();
+                target.DuckCast<IProxyMethodParameterIsMissingException>();
             });
         }
 
@@ -377,12 +377,12 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeProxyAndTargetMethodParameterSignatureMismatchException>(() =>
             {
-                target.As<IProxyAndTargetMethodParameterSignatureMismatchException>();
+                target.DuckCast<IProxyAndTargetMethodParameterSignatureMismatchException>();
             });
 
             Assert.Throws<DuckTypeProxyAndTargetMethodParameterSignatureMismatchException>(() =>
             {
-                target.As<IProxyAndTargetMethodParameterSignatureMismatch2Exception>();
+                target.DuckCast<IProxyAndTargetMethodParameterSignatureMismatch2Exception>();
             });
         }
 
@@ -413,7 +413,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException>(() =>
             {
-                target.As<IProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException>();
+                target.DuckCast<IProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException>();
             });
         }
 
@@ -438,7 +438,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeTargetMethodAmbiguousMatchException>(() =>
             {
-                target.As<ITargetMethodAmbiguousMatchException>();
+                target.DuckCast<ITargetMethodAmbiguousMatchException>();
             });
         }
 
@@ -495,7 +495,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeInvalidTypeConversionException>(() =>
             {
-                target.As<IInvalidTypeConversionException>();
+                target.DuckCast<IInvalidTypeConversionException>();
             });
         }
 
@@ -521,7 +521,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeInvalidTypeConversionException>(() =>
             {
-                target.As<IObjectInvalidTypeConversionException>();
+                target.DuckCast<IObjectInvalidTypeConversionException>();
             });
         }
 
@@ -544,7 +544,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeInvalidTypeConversionException>(() =>
             {
-                target.As<IObjectInvalidTypeConversion2Exception>();
+                target.DuckCast<IObjectInvalidTypeConversion2Exception>();
             });
         }
 
@@ -567,7 +567,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.Throws<DuckTypeInvalidTypeConversionException>(() =>
             {
-                target.As<IObjectInvalidTypeConversion3Exception>();
+                target.DuckCast<IObjectInvalidTypeConversion3Exception>();
             });
         }
 

@@ -9,12 +9,12 @@ namespace Datadog.Trace.DuckTyping.Tests
     public class DuckTypeExtensionsTests
     {
         [Fact]
-        public void AsTest()
+        public void DuckCastTest()
         {
             Task task = (Task)Task.FromResult("Hello World");
 
-            var iTaskString = task.As<ITaskString>();
-            var objTaskString = task.As(typeof(ITaskString));
+            var iTaskString = task.DuckCast<ITaskString>();
+            var objTaskString = task.DuckCast(typeof(ITaskString));
 
             Assert.Equal("Hello World", iTaskString.Result);
             Assert.True(iTaskString.GetType() == objTaskString.GetType());
@@ -24,7 +24,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         public void NullCheck()
         {
             object obj = null;
-            var iTaskString = obj.As<ITaskString>();
+            var iTaskString = obj.DuckCast<ITaskString>();
 
             Assert.Null(iTaskString);
         }
