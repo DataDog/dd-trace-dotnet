@@ -4,21 +4,30 @@ namespace Samples.DatabaseHelper
 {
     public class DbCommandFactory
     {
-        private readonly string _quotedTableName;
+        private string _quotedTableName;
+
+        public string QuotedTableName
+        {
+            get => _quotedTableName;
+            set
+            {
+                _quotedTableName = value;
+            }
+        }
 
         public DbCommandFactory(string quotedTableName)
         {
             _quotedTableName = quotedTableName;
         }
 
-        public IDbCommand GetCreateTableCommand(IDbConnection connection)
+        public virtual IDbCommand GetCreateTableCommand(IDbConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $"DROP TABLE IF EXISTS {_quotedTableName}; CREATE TABLE {_quotedTableName} (Id int PRIMARY KEY, Name varchar(100));";
             return command;
         }
 
-        public IDbCommand GetInsertRowCommand(IDbConnection connection)
+        public virtual IDbCommand GetInsertRowCommand(IDbConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $"INSERT INTO {_quotedTableName} (Id, Name) VALUES (@Id, @Name);";
@@ -27,7 +36,7 @@ namespace Samples.DatabaseHelper
             return command;
         }
 
-        public IDbCommand GetUpdateRowCommand(IDbConnection connection)
+        public virtual IDbCommand GetUpdateRowCommand(IDbConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $"UPDATE {_quotedTableName} SET Name=@Name WHERE Id=@Id;";
@@ -36,7 +45,7 @@ namespace Samples.DatabaseHelper
             return command;
         }
 
-        public IDbCommand GetSelectScalarCommand(IDbConnection connection)
+        public virtual IDbCommand GetSelectScalarCommand(IDbConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $"SELECT Name FROM {_quotedTableName} WHERE Id=@Id;";
@@ -44,7 +53,7 @@ namespace Samples.DatabaseHelper
             return command;
         }
 
-        public IDbCommand GetSelectRowCommand(IDbConnection connection)
+        public virtual IDbCommand GetSelectRowCommand(IDbConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $"SELECT * FROM {_quotedTableName} WHERE Id=@Id;";
@@ -52,7 +61,7 @@ namespace Samples.DatabaseHelper
             return command;
         }
 
-        public IDbCommand GetDeleteRowCommand(IDbConnection connection)
+        public virtual IDbCommand GetDeleteRowCommand(IDbConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $"DELETE FROM {_quotedTableName} WHERE Id=@Id;";
