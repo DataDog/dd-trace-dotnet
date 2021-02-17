@@ -29,9 +29,52 @@ namespace Datadog.Trace.DuckTyping.Tests
             Assert.Null(iTaskString);
         }
 
+        [Fact]
+        public void TryDuckCastTest()
+        {
+            Task task = (Task)Task.FromResult("Hello World");
+
+            bool tskResultBool = task.TryDuckCast<ITaskString>(out var tskResult);
+            Assert.True(tskResultBool);
+            Assert.Equal("Hello World", tskResult.Result);
+
+            bool tskErrorBool = task.TryDuckCast<ITaskError>(out var tskResultError);
+            Assert.False(tskErrorBool);
+            Assert.Null(tskResultError);
+        }
+
+        [Fact]
+        public void DuckAsTest()
+        {
+            Task task = (Task)Task.FromResult("Hello World");
+
+            var tskResult = task.DuckAs<ITaskString>();
+            var tskResultError = task.DuckAs<ITaskError>();
+
+            Assert.Equal("Hello World", tskResult.Result);
+            Assert.Null(tskResultError);
+        }
+
+        [Fact]
+        public void DuckIsTest()
+        {
+            Task task = (Task)Task.FromResult("Hello World");
+
+            bool bOk = task.DuckIs<ITaskString>();
+            bool bError = task.DuckIs<ITaskError>();
+
+            Assert.True(bOk);
+            Assert.False(bError);
+        }
+
         public interface ITaskString
         {
             string Result { get; }
+        }
+
+        public interface ITaskError
+        {
+            string ResultWrong { get; }
         }
     }
 }
