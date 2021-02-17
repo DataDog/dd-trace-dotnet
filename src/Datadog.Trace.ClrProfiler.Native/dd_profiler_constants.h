@@ -34,43 +34,43 @@ namespace trace {
     environment::azure_app_services_cli_telemetry_profile_value};
 
   inline WSTRING skip_assembly_prefixes[]{
-    _LU("Datadog.Trace"),
-    _LU("MessagePack"),
-    _LU("Microsoft.AI"),
-    _LU("Microsoft.ApplicationInsights"),
-    _LU("Microsoft.Build"),
-    _LU("Microsoft.CSharp"),
-    _LU("Microsoft.Extensions"),
-    _LU("Microsoft.Web.Compilation.Snapshots"),
-    _LU("Sigil"),
-    _LU("System.Core"),
-    _LU("System.Console"),
-    _LU("System.Collections"),
-    _LU("System.ComponentModel"),
-    _LU("System.Diagnostics"),
-    _LU("System.Drawing"),
-    _LU("System.EnterpriseServices"),
-    _LU("System.IO"),
-    _LU("System.Runtime"),
-    _LU("System.Text"),
-    _LU("System.Threading"),
-    _LU("System.Xml"),
-    _LU("Newtonsoft"),
+    WStr("Datadog.Trace"),
+    WStr("MessagePack"),
+    WStr("Microsoft.AI"),
+    WStr("Microsoft.ApplicationInsights"),
+    WStr("Microsoft.Build"),
+    WStr("Microsoft.CSharp"),
+    WStr("Microsoft.Extensions"),
+    WStr("Microsoft.Web.Compilation.Snapshots"),
+    WStr("Sigil"),
+    WStr("System.Core"),
+    WStr("System.Console"),
+    WStr("System.Collections"),
+    WStr("System.ComponentModel"),
+    WStr("System.Diagnostics"),
+    WStr("System.Drawing"),
+    WStr("System.EnterpriseServices"),
+    WStr("System.IO"),
+    WStr("System.Runtime"),
+    WStr("System.Text"),
+    WStr("System.Threading"),
+    WStr("System.Xml"),
+    WStr("Newtonsoft"),
   };
 
   inline WSTRING skip_assemblies[]{
-      _LU("mscorlib"),
-      _LU("netstandard"),
-      _LU("System.Configuration"),
-      _LU("Microsoft.AspNetCore.Razor.Language"),
-      _LU("Microsoft.AspNetCore.Mvc.RazorPages"),
-      _LU("Anonymously Hosted DynamicMethods Assembly"),
-      _LU("ISymWrapper")
+      WStr("mscorlib"),
+      WStr("netstandard"),
+      WStr("System.Configuration"),
+      WStr("Microsoft.AspNetCore.Razor.Language"),
+      WStr("Microsoft.AspNetCore.Mvc.RazorPages"),
+      WStr("Anonymously Hosted DynamicMethods Assembly"),
+      WStr("ISymWrapper")
   };
 
-  inline WSTRING managed_profiler_full_assembly_version = _LU("Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+  inline WSTRING managed_profiler_full_assembly_version = WStr("Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
-  inline WSTRING calltarget_modification_action = _LU("CallTargetModification");
+  inline WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
 }  // namespace trace
 

@@ -113,8 +113,8 @@ struct AssemblyReference {
   }
 
   inline WSTRING str() const {
-    const auto ss = name + _LU(", Version=") + version.str() + _LU(", Culture=") + locale
-       + _LU(", PublicKeyToken=") + public_key.str();
+    const auto ss = name + WStr(", Version=") + version.str() + WStr(", Culture=") + locale
+       + WStr(", PublicKeyToken=") + public_key.str();
     return ss;
   }
 };
@@ -220,13 +220,13 @@ struct MethodReference {
         signature_types(signature_types) {}
 
   inline WSTRING get_type_cache_key() const {
-    return _LU("[") + assembly.name + _LU("]") + type_name + _LU("_vMin_") +
-           min_version.str() + _LU("_vMax_") + max_version.str();
+    return WStr("[") + assembly.name + WStr("]") + type_name + WStr("_vMin_") +
+           min_version.str() + WStr("_vMax_") + max_version.str();
   }
 
   inline WSTRING get_method_cache_key() const {
-    return _LU("[") + assembly.name + _LU("]") + type_name + _LU(".") + method_name +
-           _LU("_vMin_") + min_version.str() + _LU("_vMax_") + max_version.str();
+    return WStr("[") + assembly.name + WStr("]") + type_name + WStr(".") + method_name +
+           WStr("_vMin_") + min_version.str() + WStr("_vMax_") + max_version.str();
   }
 
   inline bool operator==(const MethodReference& other) const {
@@ -263,7 +263,7 @@ struct Integration {
   const WSTRING integration_name;
   std::vector<MethodReplacement> method_replacements;
 
-  Integration() : integration_name(_LU("")), method_replacements({}) {}
+  Integration() : integration_name(WStr("")), method_replacements({}) {}
 
   Integration(WSTRING integration_name,
               std::vector<MethodReplacement> method_replacements)
@@ -280,7 +280,7 @@ struct IntegrationMethod {
   const WSTRING integration_name;
   MethodReplacement replacement;
 
-  IntegrationMethod() : integration_name(_LU("")), replacement({}) {}
+  IntegrationMethod() : integration_name(WStr("")), replacement({}) {}
 
   IntegrationMethod(WSTRING integration_name, MethodReplacement replacement)
       : integration_name(integration_name), replacement(replacement) {}

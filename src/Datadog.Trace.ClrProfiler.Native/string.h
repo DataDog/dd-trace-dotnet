@@ -6,11 +6,11 @@
 #include <string>
 
 #ifdef _WIN32
-#define _LU(value) L##value
-#define _LU_len(value) (size_t) wcslen(value)
+#define WStr(value) L##value
+#define WStrLen(value) (size_t) wcslen(value)
 #else
-#define _LU(value) u##value
-#define _LU_len(value) (size_t) std::char_traits<char16_t>::length(value)
+#define WStr(value) u##value
+#define WStrLen(value) (size_t) std::char_traits<char16_t>::length(value)
 #endif
 
 namespace trace {

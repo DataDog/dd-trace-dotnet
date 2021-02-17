@@ -17,29 +17,29 @@ class ModuleMetadata;
 const size_t kNameMaxSize = 1024;
 const ULONG kEnumeratorMax = 256;
 
-const auto SystemBoolean = _LU("System.Boolean");
-const auto SystemChar = _LU("System.Char");
-const auto SystemByte = _LU("System.Byte");
-const auto SystemSByte = _LU("System.SByte");
-const auto SystemUInt16 = _LU("System.UInt16");
-const auto SystemInt16 = _LU("System.Int16");
-const auto SystemInt32 = _LU("System.Int32");
-const auto SystemUInt32 = _LU("System.UInt32");
-const auto SystemInt64 = _LU("System.Int64");
-const auto SystemUInt64 = _LU("System.UInt64");
-const auto SystemSingle = _LU("System.Single");
-const auto SystemDouble = _LU("System.Double");
-const auto SystemIntPtr = _LU("System.IntPtr");
-const auto SystemUIntPtr = _LU("System.UIntPtr");
-const auto SystemString = _LU("System.String");
-const auto SystemObject = _LU("System.Object");
-const auto SystemException = _LU("System.Exception");
-const auto SystemTypeName = _LU("System.Type");
-const auto GetTypeFromHandleMethodName = _LU("GetTypeFromHandle");
-const auto RuntimeTypeHandleTypeName = _LU("System.RuntimeTypeHandle");
-const auto SystemReflectionMethodBaseName = _LU("System.Reflection.MethodBase");
-const auto GetMethodFromHandleMethodName = _LU("GetMethodFromHandle");
-const auto RuntimeMethodHandleTypeName = _LU("System.RuntimeMethodHandle");
+const auto SystemBoolean = WStr("System.Boolean");
+const auto SystemChar = WStr("System.Char");
+const auto SystemByte = WStr("System.Byte");
+const auto SystemSByte = WStr("System.SByte");
+const auto SystemUInt16 = WStr("System.UInt16");
+const auto SystemInt16 = WStr("System.Int16");
+const auto SystemInt32 = WStr("System.Int32");
+const auto SystemUInt32 = WStr("System.UInt32");
+const auto SystemInt64 = WStr("System.Int64");
+const auto SystemUInt64 = WStr("System.UInt64");
+const auto SystemSingle = WStr("System.Single");
+const auto SystemDouble = WStr("System.Double");
+const auto SystemIntPtr = WStr("System.IntPtr");
+const auto SystemUIntPtr = WStr("System.UIntPtr");
+const auto SystemString = WStr("System.String");
+const auto SystemObject = WStr("System.Object");
+const auto SystemException = WStr("System.Exception");
+const auto SystemTypeName = WStr("System.Type");
+const auto GetTypeFromHandleMethodName = WStr("GetTypeFromHandle");
+const auto RuntimeTypeHandleTypeName = WStr("System.RuntimeTypeHandle");
+const auto SystemReflectionMethodBaseName = WStr("System.Reflection.MethodBase");
+const auto GetMethodFromHandleMethodName = WStr("GetMethodFromHandle");
+const auto RuntimeMethodHandleTypeName = WStr("System.RuntimeMethodHandle");
 
 template <typename T>
 class EnumeratorIterator;
@@ -229,7 +229,7 @@ struct AssemblyInfo {
   const AppDomainID app_domain_id;
   const WSTRING app_domain_name;
 
-  AssemblyInfo() : id(0), name(_LU("")), manifest_module_id(0), app_domain_id(0), app_domain_name(_LU("")) {}
+  AssemblyInfo() : id(0), name(WStr("")), manifest_module_id(0), app_domain_id(0), app_domain_name(WStr("")) {}
 
   AssemblyInfo(AssemblyID id, WSTRING name, ModuleID manifest_module_id, AppDomainID app_domain_id,
                WSTRING app_domain_name)
@@ -248,7 +248,7 @@ struct AssemblyMetadata {
   const mdAssembly assembly_token;
   const Version version;
 
-  AssemblyMetadata() : module_id(0), name(_LU("")), assembly_token(mdTokenNil) {}
+  AssemblyMetadata() : module_id(0), name(WStr("")), assembly_token(mdTokenNil) {}
 
   AssemblyMetadata(ModuleID module_id, WSTRING name, mdAssembly assembly_token,
                    USHORT major, USHORT minor, USHORT build, USHORT revision)
@@ -269,7 +269,7 @@ struct AssemblyProperty {
   DWORD assemblyFlags = 0;
 
   AssemblyProperty()
-      : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(_LU("")) {}
+      : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(WStr("")) {}
 };
 
 struct ModuleInfo {
@@ -278,7 +278,7 @@ struct ModuleInfo {
   const AssemblyInfo assembly;
   const DWORD flags;
 
-  ModuleInfo() : id(0), path(_LU("")), assembly({}), flags(0) {}
+  ModuleInfo() : id(0), path(WStr("")), assembly({}), flags(0) {}
   ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags)
       : id(id), path(path), assembly(assembly), flags(flags) {}
 
@@ -300,7 +300,7 @@ struct TypeInfo {
 
   TypeInfo()
       : id(0),
-        name(_LU("")),
+        name(WStr("")),
         type_spec(0),
         token_type(0),
         extend_from(nullptr),
@@ -378,7 +378,7 @@ struct FunctionInfo {
   FunctionMethodSignature method_signature;
 
   FunctionInfo()
-      : id(0), name(_LU("")), type({}), is_generic(false), method_def_id(0), method_signature({}) {}
+      : id(0), name(WStr("")), type({}), is_generic(false), method_def_id(0), method_signature({}) {}
 
   FunctionInfo(mdToken id, WSTRING name, TypeInfo type,
                MethodSignature signature,

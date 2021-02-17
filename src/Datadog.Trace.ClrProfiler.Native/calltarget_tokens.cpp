@@ -134,8 +134,8 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens() {
     assembly_metadata.usMinorVersion = assemblyReference.version.minor;
     assembly_metadata.usBuildNumber = assemblyReference.version.build;
     assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
-    if (assemblyReference.locale == _LU("neutral")) {
-      assembly_metadata.szLocale = const_cast<WCHAR*>(_LU("\0"));
+    if (assemblyReference.locale == WStr("neutral")) {
+      assembly_metadata.szLocale = const_cast<WCHAR*>(WStr("\0"));
       assembly_metadata.cbLocale = 0;
     } else {
       assembly_metadata.szLocale =

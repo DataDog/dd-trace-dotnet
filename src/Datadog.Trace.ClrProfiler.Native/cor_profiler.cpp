@@ -38,7 +38,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const auto debug_enabled_value =
       GetEnvironmentValue(environment::debug_enabled);
 
-  if (debug_enabled_value == _LU("1") || debug_enabled_value == _LU("true")) {
+  if (debug_enabled_value == WStr("1") || debug_enabled_value == WStr("true")) {
     debug_logging_enabled = true;
   }
 
@@ -46,8 +46,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const auto dump_il_rewrite_enabled_value = 
       GetEnvironmentValue(environment::dump_il_rewrite_enabled);
 
-  if (dump_il_rewrite_enabled_value == _LU("1") ||
-      dump_il_rewrite_enabled_value == _LU("true")) {
+  if (dump_il_rewrite_enabled_value == WStr("1") ||
+      dump_il_rewrite_enabled_value == WStr("true")) {
     dump_il_rewrite_enabled = true;
   }
 
@@ -57,7 +57,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const WSTRING tracing_enabled =
       GetEnvironmentValue(environment::tracing_enabled);
 
-  if (tracing_enabled == _LU("0") || tracing_enabled == _LU("false")) {
+  if (tracing_enabled == WStr("0") || tracing_enabled == WStr("false")) {
     Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled in ", environment::tracing_enabled);
     return E_FAIL;
   }
@@ -105,7 +105,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const WSTRING azure_app_services_value =
       GetEnvironmentValue(environment::azure_app_services);
 
-  if (azure_app_services_value == _LU("1")) {
+  if (azure_app_services_value == WStr("1")) {
     Info("Profiler is operating within Azure App Services context.");
     in_azure_app_services = true;
 
@@ -122,7 +122,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     const auto cli_telemetry_profile_value = GetEnvironmentValue(
         environment::azure_app_services_cli_telemetry_profile_value);
 
-    if (cli_telemetry_profile_value == _LU("AzureKudu")) {
+    if (cli_telemetry_profile_value == WStr("AzureKudu")) {
       Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", app_pool_id_value,
            " is recognized as Kudu, an Azure App Services reserved process.");
       return E_FAIL;
@@ -180,9 +180,9 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // https://github.com/DataDog/dd-trace-dotnet/pull/753.
   // users can opt-in to the additional instrumentation by setting environment
   // variable DD_TRACE_NETSTANDARD_ENABLED
-  if (netstandard_enabled != _LU("1") && netstandard_enabled != _LU("true")) {
+  if (netstandard_enabled != WStr("1") && netstandard_enabled != WStr("true")) {
     integration_methods_ = FilterIntegrationsByTargetAssemblyName(
-        integration_methods_, {_LU("netstandard")});
+        integration_methods_, {WStr("netstandard")});
   }
 
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
@@ -213,7 +213,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const WSTRING domain_neutral_instrumentation =
       GetEnvironmentValue(environment::domain_neutral_instrumentation);
 
-  if (domain_neutral_instrumentation == _LU("1") || domain_neutral_instrumentation == _LU("true")) {
+  if (domain_neutral_instrumentation == WStr("1") || domain_neutral_instrumentation == WStr("true")) {
     instrument_domain_neutral_assemblies = true;
   }
 
@@ -247,8 +247,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   runtime_information_ = GetRuntimeInformation(this->info_);
-  if (process_name == _LU("w3wp.exe")  ||
-      process_name == _LU("iisexpress.exe")) {
+  if (process_name == WStr("w3wp.exe")  ||
+      process_name == WStr("iisexpress.exe")) {
     is_desktop_iis = runtime_information_.is_desktop();
   }
 
@@ -319,7 +319,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name, " AssemblyVersion=", assembly_metadata.version.str());
   }
 
-  if (assembly_info.name == _LU("Datadog.Trace.ClrProfiler.Managed")) {
+  if (assembly_info.name == WStr("Datadog.Trace.ClrProfiler.Managed")) {
     // Configure a version string to compare with the profiler version
     std::stringstream ss;
     ss << assembly_metadata.version.major << '.'
@@ -390,8 +390,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // Identify the AppDomain ID of mscorlib which will be the Shared Domain
   // because mscorlib is always a domain-neutral assembly
   if (!corlib_module_loaded &&
-      (module_info.assembly.name == _LU("mscorlib") ||
-       module_info.assembly.name == _LU("System.Private.CoreLib"))) {
+      (module_info.assembly.name == WStr("mscorlib") ||
+       module_info.assembly.name == WStr("System.Private.CoreLib"))) {
     corlib_module_loaded = true;
     corlib_app_domain_id = app_domain_id;
     
@@ -427,7 +427,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // but the Datadog.Trace.ClrProfiler.Managed.Loader assembly that the startup hook loads from a
   // byte array will be loaded into a non-shared AppDomain.
   // In this case, do not insert another startup hook into that non-shared AppDomain
-  if (module_info.assembly.name == _LU("Datadog.Trace.ClrProfiler.Managed.Loader")) {
+  if (module_info.assembly.name == WStr("Datadog.Trace.ClrProfiler.Managed.Loader")) {
     Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ",
           app_domain_id, " ", module_info.assembly.app_domain_name);
     first_jit_compilation_app_domains.insert(app_domain_id);
@@ -492,8 +492,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // subscribe to DiagnosticSource events.
   // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
   // System.Data or System.Data.Common
-  if (module_info.assembly.name != _LU("Microsoft.AspNetCore.Hosting") &&
-      module_info.assembly.name != _LU("Dapper")) {
+  if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") &&
+      module_info.assembly.name != WStr("Dapper")) {
     filtered_integrations =
         FilterIntegrationsByTarget(filtered_integrations, assembly_import);
 
@@ -687,11 +687,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   auto valid_startup_hook_callsite = true;
   if (is_desktop_iis) {
       valid_startup_hook_callsite =
-            module_metadata->assemblyName == _LU("System.Web") &&
-            caller.type.name == _LU("System.Web.Compilation.BuildManager") &&
-            caller.name == _LU("InvokePreStartInitMethods");
-  } else if (module_metadata->assemblyName == _LU("System") ||
-             module_metadata->assemblyName == _LU("System.Net.Http")) {
+            module_metadata->assemblyName == WStr("System.Web") &&
+            caller.type.name == WStr("System.Web.Compilation.BuildManager") &&
+            caller.name == WStr("InvokePreStartInitMethods");
+  } else if (module_metadata->assemblyName == WStr("System") ||
+             module_metadata->assemblyName == WStr("System.Net.Http")) {
     valid_startup_hook_callsite = false;
   }
 
@@ -734,7 +734,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // we don't actually need to instrument anything in
   // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
   // hook is called for AspNetCore applications
-  if (module_metadata->assemblyName == _LU("Microsoft.AspNetCore.Hosting")) {
+  if (module_metadata->assemblyName == WStr("Microsoft.AspNetCore.Hosting")) {
     return S_OK;
   }
 
@@ -864,8 +864,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
   assembly_metadata.usMinorVersion = assemblyReference.version.minor;
   assembly_metadata.usBuildNumber = assemblyReference.version.build;
   assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
-  if (assemblyReference.locale == _LU("neutral")) {
-    assembly_metadata.szLocale = const_cast<WCHAR*>(_LU("\0"));
+  if (assemblyReference.locale == WStr("neutral")) {
+    assembly_metadata.szLocale = const_cast<WCHAR*>(WStr("\0"));
     assembly_metadata.cbLocale = 0;
   } else {
     assembly_metadata.szLocale =
@@ -934,7 +934,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
   // Perform method call replacements
   for (auto& method_replacement : method_replacements) {
     // Exit early if the method replacement isn't actually doing a replacement
-    if (method_replacement.wrapper_method.action != _LU("ReplaceTargetMethod")) {
+    if (method_replacement.wrapper_method.action != WStr("ReplaceTargetMethod")) {
       continue;
     }
 
@@ -1094,7 +1094,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
 
       auto is_match = true;
       for (size_t i = 0; i < expected_sig.size(); i++) {
-        if (expected_sig[i] == _LU("_")) {
+        if (expected_sig[i] == WStr("_")) {
           // We are supposed to ignore this index
           continue;
         }
@@ -1242,7 +1242,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
 
         // Currently, we only expect to see `System.Threading.CancellationToken` as a valuetype in this position
         // If we expand this to a general case, we would always perform the boxing regardless of type
-        if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name == _LU("System.Threading.CancellationToken")) {
+        if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name == WStr("System.Threading.CancellationToken")) {
           rewriter_wrapper.Box(valuetype_type_token);
         }
       }
@@ -1261,7 +1261,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
           // `System.ReadOnlyMemory<T>` as a valuetype in this
           // position If we expand this to a general case, we would always
           // perform the boxing regardless of type
-          if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name == _LU("System.ReadOnlyMemory`1")
+          if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name == WStr("System.ReadOnlyMemory`1")
               && ParseType(&p_end_byte)) {
             size_t length = p_end_byte - p_start_byte;
             mdTypeSpec type_token;
@@ -1369,7 +1369,7 @@ HRESULT CorProfiler::ProcessInsertionCalls(
   ILInstr* lastInstr = rewriter.GetILList()->m_pPrev; // Should be a 'ret' instruction
 
   for (auto& method_replacement : method_replacements) {
-    if (method_replacement.wrapper_method.action == _LU("ReplaceTargetMethod")) {
+    if (method_replacement.wrapper_method.action == WStr("ReplaceTargetMethod")) {
       continue;
     }
 
@@ -1399,7 +1399,7 @@ HRESULT CorProfiler::ProcessInsertionCalls(
     }
 
     // After successfully getting the method reference, insert a call to it
-    if (method_replacement.wrapper_method.action == _LU("InsertFirst")) {
+    if (method_replacement.wrapper_method.action == WStr("InsertFirst")) {
       // Get first instruction and set the rewriter to that location
       rewriter_wrapper.SetILPosition(firstInstr);
       rewriter_wrapper.CallMember(wrapper_method_ref, false);
@@ -1739,7 +1739,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   // Define a TypeRef for System.Object
   mdTypeRef object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, _LU("System.Object"), &object_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, WStr("System.Object"), &object_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
     return hr;
@@ -1747,7 +1747,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   // Define a new TypeDef __DDVoidMethodType__ that extends System.Object
   mdTypeDef new_type_def;
-  hr = metadata_emit->DefineTypeDef(_LU("__DDVoidMethodType__"), tdAbstract | tdSealed,
+  hr = metadata_emit->DefineTypeDef(WStr("__DDVoidMethodType__"), tdAbstract | tdSealed,
                                object_type_ref, NULL, &new_type_def);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeDef failed");
@@ -1762,7 +1762,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
     ELEMENT_TYPE_OBJECT            // List of parameter types
   };
   hr = metadata_emit->DefineMethod(new_type_def,
-                              _LU("__DDVoidMethodCall__"),
+                              WStr("__DDVoidMethodCall__"),
                               mdStatic,
                               initialize_signature,
                               sizeof(initialize_signature),
@@ -1782,7 +1782,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   };
   mdFieldDef isAssemblyLoadedFieldToken;
   hr = metadata_emit->DefineField(new_type_def, 
-                          _LU("_isAssemblyLoaded"),
+                          WStr("_isAssemblyLoaded"),
                           fdStatic | fdPrivate, 
                           field_signature, 
                           sizeof(field_signature),
@@ -1804,7 +1804,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   };
   mdMethodDef alreadyLoadedMethodToken;
   hr = metadata_emit->DefineMethod(
-      new_type_def, _LU("IsAlreadyLoaded"), mdStatic | mdPrivate,
+      new_type_def, WStr("IsAlreadyLoaded"), mdStatic | mdPrivate,
       already_loaded_signature, sizeof(already_loaded_signature), 0, 0,
       &alreadyLoadedMethodToken);
   if (FAILED(hr)) {
@@ -1814,7 +1814,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   // Get a TypeRef for System.Threading.Interlocked
   mdTypeRef interlocked_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, _LU("System.Threading.Interlocked"), &interlocked_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName interlocked_type_ref failed");
     return hr;
@@ -1833,7 +1833,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   mdMemberRef interlocked_compare_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      interlocked_type_ref, _LU("CompareExchange"),
+      interlocked_type_ref, WStr("CompareExchange"),
       interlocked_compare_exchange_signature,
       sizeof(interlocked_compare_exchange_signature),
       &interlocked_compare_member_ref);
@@ -1921,7 +1921,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       ELEMENT_TYPE_I4,
   };
   hr = metadata_emit->DefineMethod(
-      new_type_def, _LU("GetAssemblyAndSymbolsBytes"), mdStatic | mdPinvokeImpl | mdHideBySig,
+      new_type_def, WStr("GetAssemblyAndSymbolsBytes"), mdStatic | mdPinvokeImpl | mdHideBySig,
       get_assembly_bytes_signature, sizeof(get_assembly_bytes_signature), 0, 0,
       &pinvoke_method_def);
   if (FAILED(hr)) {
@@ -1936,21 +1936,21 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   }
 
 #ifdef _WIN32
-  WSTRING native_profiler_file = _LU("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
+  WSTRING native_profiler_file = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
 #else // _WIN32
 
 #ifdef BIT64
-  WSTRING native_profiler_file = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH_64"));
+  WSTRING native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
   Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
-  if (native_profiler_file == _LU("")) {
-    native_profiler_file = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH"));
+  if (native_profiler_file == WStr("")) {
+    native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
     Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
   }
 #else // BIT64
-  WSTRING native_profiler_file = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH_32"));
+  WSTRING native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
   Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
-  if (native_profiler_file == _LU("")) {
-    native_profiler_file = GetEnvironmentValue(_LU("CORECLR_PROFILER_PATH"));
+  if (native_profiler_file == WStr("")) {
+    native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
     Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
   }
 #endif // BIT64
@@ -1968,7 +1968,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def,
                                        0,
-                                       _LU("GetAssemblyAndSymbolsBytes"),
+                                       WStr("GetAssemblyAndSymbolsBytes"),
                                        profiler_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefinePinvokeMap failed");
@@ -1978,7 +1978,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   // Get a TypeRef for System.Byte
   mdTypeRef byte_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          _LU("System.Byte"),
+                                          WStr("System.Byte"),
                                           &byte_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -1988,7 +1988,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   // Get a TypeRef for System.Runtime.InteropServices.Marshal
   mdTypeRef marshal_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          _LU("System.Runtime.InteropServices.Marshal"),
+                                          WStr("System.Runtime.InteropServices.Marshal"),
                                           &marshal_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -2008,7 +2008,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
       ELEMENT_TYPE_I4
   };
   hr = metadata_emit->DefineMemberRef(
-      marshal_type_ref, _LU("Copy"), marshal_copy_signature,
+      marshal_type_ref, WStr("Copy"), marshal_copy_signature,
       sizeof(marshal_copy_signature), &marshal_copy_member_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
@@ -2018,7 +2018,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   // Get a TypeRef for System.Reflection.Assembly
   mdTypeRef system_reflection_assembly_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          _LU("System.Reflection.Assembly"),
+                                          WStr("System.Reflection.Assembly"),
                                           &system_reflection_assembly_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -2028,7 +2028,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   // Get a MemberRef for System.Object.ToString()
   mdTypeRef system_object_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          _LU("System.Object"),
+                                          WStr("System.Object"),
                                           &system_object_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -2038,7 +2038,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   // Get a TypeRef for System.AppDomain
   mdTypeRef system_appdomain_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          _LU("System.AppDomain"),
+                                          WStr("System.AppDomain"),
                                           &system_appdomain_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -2072,7 +2072,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   mdMemberRef appdomain_get_current_domain_member_ref;
   hr = metadata_emit->DefineMemberRef(
       system_appdomain_type_ref,
-      _LU("get_CurrentDomain"),
+      WStr("get_CurrentDomain"),
       appdomain_get_current_domain_signature,
       appdomain_get_current_domain_signature_length,
       &appdomain_get_current_domain_member_ref);
@@ -2114,7 +2114,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   mdMemberRef appdomain_load_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, _LU("Load"),
+      system_appdomain_type_ref, WStr("Load"),
       appdomain_load_signature,
       appdomain_load_signature_length,
       &appdomain_load_member_ref);
@@ -2133,7 +2133,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   mdMemberRef assembly_create_instance_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_reflection_assembly_type_ref, _LU("CreateInstance"),
+      system_reflection_assembly_type_ref, WStr("CreateInstance"),
       assembly_create_instance_signature,
       sizeof(assembly_create_instance_signature),
       &assembly_create_instance_member_ref);
@@ -2467,7 +2467,7 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
   // Get System.AppDomain type ref
   mdTypeRef system_appdomain_type_ref;
   hr = metadata_emit->DefineTypeRefByName(
-      mscorlib_ref, _LU("System.AppDomain"), &system_appdomain_type_ref);
+      mscorlib_ref, WStr("System.AppDomain"), &system_appdomain_type_ref);
   if (FAILED(hr)) {
     Warn("Wrapper objectTypeRef could not be defined.");
     return hr;
@@ -2495,7 +2495,7 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
 
   mdMemberRef appdomain_get_current_domain_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, _LU("get_CurrentDomain"),
+      system_appdomain_type_ref, WStr("get_CurrentDomain"),
       appdomain_get_current_domain_signature, 
       appdomain_get_current_domain_signature_length,
       &appdomain_get_current_domain_member_ref);
@@ -2510,7 +2510,7 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
   };
   mdMemberRef appdomain_set_data_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, _LU("SetData"),
+      system_appdomain_type_ref, WStr("SetData"),
       appdomain_set_data_signature,
       sizeof(appdomain_set_data_signature),
       &appdomain_set_data_member_ref);
@@ -2810,7 +2810,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
         const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadata_import);
         const auto integrationArgumentTypeName = integration.replacement.target_method.signature_types[i + 1];
         Debug("  -> ", argumentTypeName, " = ", integrationArgumentTypeName);
-        if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != _LU("_")) {
+        if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_")) {
           argumentsMismatch = true;
           break;
         }
