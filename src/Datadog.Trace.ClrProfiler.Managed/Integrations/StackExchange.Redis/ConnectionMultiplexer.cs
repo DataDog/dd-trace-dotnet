@@ -215,27 +215,35 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             object server,
             Func<object, object, object, object, object, Task<T>> originalMethod)
         {
-            using (var scope = CreateScope(multiplexer, message))
+            var scope = CreateScope(multiplexer, message);
+            try
             {
-                try
-                {
-                    return await originalMethod(multiplexer, message, processor, state, server).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    scope?.Span.SetException(ex);
-                    throw;
-                }
+                return await originalMethod(multiplexer, message, processor, state, server).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                scope?.Span.SetException(ex);
+                throw;
+            }
+            finally
+            {
+                scope?.Dispose();
             }
         }
 
         private static Scope CreateScope(object multiplexer, object message)
         {
-            var multiplexerData = multiplexer.As<MultiplexerData>();
-            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
-            var rawCommand = message.As<MessageData>().CommandAndKey ?? "COMMAND";
+            if (multiplexer.DuckIs<MultiplexerData>(out var multiplexerData))
+            {
+                var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
+                if (message.DuckIs<MessageData>(out var messageData))
+                {
+                    var rawCommand = messageData.CommandAndKey ?? "COMMAND";
+                    return RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
+                }
+            }
 
-            return RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            return null;
         }
 
         /*

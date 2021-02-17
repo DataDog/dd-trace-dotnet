@@ -130,16 +130,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
             if (thisType == batchType)
             {
-                using (var scope = CreateScope(redisBase, message))
+                Scope scope = CreateScope(redisBase, message);
+                if (scope != null)
                 {
-                    try
+                    using (scope)
                     {
-                        return await instrumentedMethod(redisBase, message, processor, server).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        scope?.Span.SetException(ex);
-                        throw;
+                        try
+                        {
+                            return await instrumentedMethod(redisBase, message, processor, server).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            scope?.Span.SetException(ex);
+                            throw;
+                        }
                     }
                 }
             }
@@ -149,11 +153,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static Scope CreateScope(object batch, object message)
         {
-            var multiplexerData = batch.As<BatchData>().Multiplexer;
-            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
-            var rawCommand = message.As<MessageData>().CommandAndKey ?? "COMMAND";
+            if (batch.DuckIs<BatchData>(out var batchData))
+            {
+                var multiplexerData = batchData.Multiplexer;
+                var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
+                if (message.DuckIs<MessageData>(out var messageData))
+                {
+                    var rawCommand = messageData.CommandAndKey ?? "COMMAND";
+                    return RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
+                }
+            }
 
-            return RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            return null;
         }
 
         /*

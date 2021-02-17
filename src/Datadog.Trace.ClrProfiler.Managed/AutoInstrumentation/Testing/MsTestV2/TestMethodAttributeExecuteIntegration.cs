@@ -56,17 +56,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                     if (returnValueArray.Length == 1)
                     {
                         object testResultObject = returnValueArray.GetValue(0);
-                        if (testResultObject != null)
+                        if (testResultObject != null &&
+                            testResultObject.DuckIs<TestResultStruct>(out var testResult) &&
+                            testResult.TestFailureException != null)
                         {
-                            TestResultStruct testResult = testResultObject.As<TestResultStruct>();
-                            if (testResult.TestFailureException != null)
+                            Exception testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
+                            string testExceptionName = testException.GetType().Name;
+                            if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
                             {
-                                Exception testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
-                                string testExceptionName = testException.GetType().Name;
-                                if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
-                                {
-                                    scope.Span.SetException(testException);
-                                }
+                                scope.Span.SetException(testException);
                             }
                         }
                     }

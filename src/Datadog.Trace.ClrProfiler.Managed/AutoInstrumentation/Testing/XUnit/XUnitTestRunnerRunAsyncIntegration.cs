@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         {
             if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                TestRunnerStruct runnerInstance = instance.As<TestRunnerStruct>();
+                TestRunnerStruct runnerInstance = instance.DuckCast<TestRunnerStruct>();
 
                 // Skip test support
                 if (runnerInstance.SkipReason != null)
