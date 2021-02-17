@@ -44,9 +44,20 @@ namespace Datadog.Trace.Agent.Transports
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
 
                 // buffer the entire contents for now
-                var responseContentStream = new MemoryStream();
-                await response.Content.CopyToAsync(responseContentStream, ResponseReadBufferSize).ConfigureAwait(false);
-                responseContentStream.Position = 0;
+                MemoryStream responseContentStream;
+                if (response.Content.Length.HasValue)
+                {
+                    var buffer = new byte[response.Content.Length.Value];
+                    responseContentStream = new MemoryStream(buffer);
+                    await response.Content.CopyToAsync(buffer).ConfigureAwait(false);
+                    responseContentStream.Position = 0;
+                }
+                else
+                {
+                    responseContentStream = new MemoryStream();
+                    await response.Content.CopyToAsync(responseContentStream, ResponseReadBufferSize).ConfigureAwait(false);
+                    responseContentStream.Position = 0;
+                }
 
                 var contentLength = response.ContentLength;
                 if (contentLength != null && contentLength != responseContentStream.Length)

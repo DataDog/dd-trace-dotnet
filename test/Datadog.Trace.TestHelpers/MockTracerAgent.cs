@@ -265,8 +265,6 @@ namespace Datadog.Trace.TestHelpers
 
                     // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
                     // (Setting content-length avoids that)
-                    // Also, without Keep-Alive: false, the stream is never closed and FlushAsync hangs
-                    ctx.Response.KeepAlive = false;
 
                     ctx.Response.ContentType = "application/json";
                     var buffer = Encoding.UTF8.GetBytes("{}");
