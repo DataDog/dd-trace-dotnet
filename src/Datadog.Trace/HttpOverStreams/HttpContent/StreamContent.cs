@@ -30,7 +30,12 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
         {
             if (!Length.HasValue)
             {
-                throw new InvalidOperationException("Unable to CopyToAsync with buffer when Length is unknown");
+                throw new InvalidOperationException("Unable to CopyToAsync with buffer when content Length is unknown");
+            }
+
+            if (Length > buffer.Length)
+            {
+                throw new ArgumentException($"Provided buffer was smaller {buffer.Length} than the content length {Length}");
             }
 
             var length = 0;
