@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            if (redisNativeClient.DuckIs<RedisNativeClientData>(out var clientData))
+            if (redisNativeClient.TryDuckCast<RedisNativeClientData>(out var clientData))
             {
                 using (var scope = RedisHelper.CreateScope(
                 Tracer.Instance,

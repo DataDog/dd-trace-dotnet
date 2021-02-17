@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                     {
                         object testResultObject = returnValueArray.GetValue(0);
                         if (testResultObject != null &&
-                            testResultObject.DuckIs<TestResultStruct>(out var testResult) &&
+                            testResultObject.TryDuckCast<TestResultStruct>(out var testResult) &&
                             testResult.TestFailureException != null)
                         {
                             Exception testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;

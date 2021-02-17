@@ -233,10 +233,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static Scope CreateScope(object multiplexer, object message)
         {
-            if (multiplexer.DuckIs<MultiplexerData>(out var multiplexerData))
+            if (multiplexer.TryDuckCast<MultiplexerData>(out var multiplexerData))
             {
                 var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
-                if (message.DuckIs<MessageData>(out var messageData))
+                if (message.TryDuckCast<MessageData>(out var messageData))
                 {
                     var rawCommand = messageData.CommandAndKey ?? "COMMAND";
                     return RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);

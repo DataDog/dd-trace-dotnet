@@ -38,7 +38,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="instance">Object instance</param>
         /// <param name="value">Ducktype instance</param>
         /// <returns>true if the object instance was ducktyped; otherwise, false.</returns>
-        public static bool DuckIs<T>(this object instance, out T value)
+        public static bool TryDuckCast<T>(this object instance, out T value)
         {
             try
             {
@@ -60,7 +60,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">Target type</param>
         /// <param name="value">Ducktype instance</param>
         /// <returns>true if the object instance was ducktyped; otherwise, false.</returns>
-        public static bool DuckIs(this object instance, Type targetType, out object value)
+        public static bool TryDuckCast(this object instance, Type targetType, out object value)
         {
             try
             {

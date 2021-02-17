@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             SpanContext propagatedContext = null;
-            if (basicProperties.DuckIs<IBasicProperties>(out var basicPropertiesValue))
+            if (basicProperties.TryDuckCast<IBasicProperties>(out var basicPropertiesValue))
             {
                 // try to extract propagated context values from headers
                 if (basicPropertiesValue.Headers != null)
@@ -221,7 +221,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             SpanContext propagatedContext = null;
-            if (basicProperties.DuckIs<IBasicProperties>(out var basicPropertiesValue))
+            if (basicProperties.TryDuckCast<IBasicProperties>(out var basicPropertiesValue))
             {
                 // try to extract propagated context values from headers
                 if (basicPropertiesValue.Headers != null)
@@ -238,7 +238,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
                 {
-                    if (tags != null && body != null && body.DuckIs<BodyStruct>(out var bodyStruct))
+                    if (tags != null && body != null && body.TryDuckCast<BodyStruct>(out var bodyStruct))
                     {
                         tags.MessageSize = bodyStruct.Length.ToString() ?? "0";
                     }
@@ -336,7 +336,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 SpanContext propagatedContext = null;
                 string messageSize = null;
 
-                if (result != null && result.DuckIs<BasicGetResultStruct>(out var basicGetResult))
+                if (result != null && result.TryDuckCast<BasicGetResultStruct>(out var basicGetResult))
                 {
                     messageSize = basicGetResult.Body.Length.ToString();
                     var basicPropertiesHeaders = basicGetResult.BasicProperties?.Headers;
@@ -451,7 +451,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         tags.MessageSize = body?.Length.ToString() ?? "0";
                     }
 
-                    if (basicProperties != null && basicProperties.DuckIs<IBasicProperties>(out var basicPropertiesValue))
+                    if (basicProperties != null && basicProperties.TryDuckCast<IBasicProperties>(out var basicPropertiesValue))
                     {
                         if (tags != null && basicPropertiesValue.IsDeliveryModePresent())
                         {
@@ -550,7 +550,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (tags != null)
                     {
-                        if (body != null && body.DuckIs<BodyStruct>(out var bodyStruct))
+                        if (body != null && body.TryDuckCast<BodyStruct>(out var bodyStruct))
                         {
                             tags.MessageSize = bodyStruct.Length.ToString();
                         }
@@ -560,7 +560,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         }
                     }
 
-                    if (basicProperties != null && basicProperties.DuckIs<IBasicProperties>(out var basicPropertiesValue))
+                    if (basicProperties != null && basicProperties.TryDuckCast<IBasicProperties>(out var basicPropertiesValue))
                     {
                         if (tags != null && basicPropertiesValue.IsDeliveryModePresent())
                         {

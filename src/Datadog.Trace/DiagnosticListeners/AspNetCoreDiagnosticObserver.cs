@@ -264,7 +264,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            if (arg.DuckIs<HttpRequestInStartStruct>(out var requestStruct))
+            if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
                 HttpRequest request = requestStruct.HttpContext.Request;
                 string host = request.Host.Value;
@@ -306,7 +306,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             Span span = tracer.ActiveScope?.Span;
 
-            if (span != null && arg.DuckIs<BeforeActionStruct>(out var typedArg))
+            if (span != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
@@ -343,7 +343,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                if (arg.DuckIs<HttpRequestInStopStruct>(out var httpRequest))
+                if (arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
@@ -364,7 +364,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var span = tracer.ActiveScope?.Span;
 
-            if (span != null && arg.DuckIs<UnhandledExceptionStruct>(out var unhandledStruct))
+            if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {
                 span.SetException(unhandledStruct.Exception);
             }

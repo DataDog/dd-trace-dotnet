@@ -153,11 +153,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static Scope CreateScope(object batch, object message)
         {
-            if (batch.DuckIs<BatchData>(out var batchData))
+            if (batch.TryDuckCast<BatchData>(out var batchData))
             {
                 var multiplexerData = batchData.Multiplexer;
                 var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(multiplexerData.Configuration);
-                if (message.DuckIs<MessageData>(out var messageData))
+                if (message.TryDuckCast<MessageData>(out var messageData))
                 {
                     var rawCommand = messageData.CommandAndKey ?? "COMMAND";
                     return RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
