@@ -103,6 +103,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.8.4" },
                 new object[] { "6.8.5" },
                 new object[] { "6.8.6" },
+                new object[] { "6.8.7" },
 #endif
             };
 
@@ -403,6 +404,51 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "8.0.21" },
                 new object[] { "8.0.22" },
                 new object[] { "8.0.23" },
+#endif
+            };
+
+        public static IEnumerable<object[]> MicrosoftDataSqlite =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "2.0.0" },
+                new object[] { "2.0.1" },
+                new object[] { "2.1.0" },
+                new object[] { "2.1.8" },
+                new object[] { "2.1.11" },
+                new object[] { "2.1.14" },
+                new object[] { "2.2.0" },
+                new object[] { "2.2.1" },
+                new object[] { "2.2.2" },
+                new object[] { "2.2.3" },
+                new object[] { "2.2.4" },
+                new object[] { "2.2.6" },
+                new object[] { "3.0.0" },
+                new object[] { "3.0.1" },
+                new object[] { "3.0.2" },
+                new object[] { "3.0.3" },
+                new object[] { "3.1.0" },
+                new object[] { "3.1.1" },
+                new object[] { "3.1.2" },
+                new object[] { "3.1.3" },
+                new object[] { "3.1.4" },
+                new object[] { "3.1.5" },
+                new object[] { "3.1.6" },
+                new object[] { "3.1.7" },
+                new object[] { "3.1.8" },
+                new object[] { "3.1.9" },
+                new object[] { "3.1.10" },
+                new object[] { "3.1.11" },
+                new object[] { "3.1.12" },
+                new object[] { "5.0.0" },
+                new object[] { "5.0.1" },
+                new object[] { "5.0.2" },
+                new object[] { "5.0.3" },
 #endif
             };
 

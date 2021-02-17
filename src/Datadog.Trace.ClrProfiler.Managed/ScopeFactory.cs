@@ -203,6 +203,9 @@ namespace Datadog.Trace.ClrProfiler
                     return "mysql";
                 case "OracleCommand":
                     return "oracle";
+                case "SqliteCommand":
+                case "SQLiteCommand":
+                    return "sqlite";
                 case "InterceptableDbCommand":
                 case "ProfiledDbCommand":
                     // don't create spans for these
