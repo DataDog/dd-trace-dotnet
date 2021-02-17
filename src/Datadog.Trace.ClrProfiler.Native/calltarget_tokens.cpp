@@ -7,7 +7,7 @@
 
 namespace trace {
 
-const int signatureBufferSize = 50;
+const int signatureBufferSize = 250;
 
 /**
  * PRIVATE
@@ -273,9 +273,8 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
   auto callTargetReturnTypeRefSize = CorSigCompressToken(
       callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
 
-  auto signatureLength =
-      3 + callTargetReturnTypeRefSize + returnSignatureLength;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  auto signatureLength = 3 + callTargetReturnTypeRefSize + returnSignatureLength;
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] = ELEMENT_TYPE_GENERICINST;
@@ -287,9 +286,7 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(
   memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
   offset += returnSignatureLength;
 
-  hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(
-      signature, signatureLength, &returnValueTypeSpec);
-  delete[] signature;
+  hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(signature, signatureLength, &returnValueTypeSpec);
   if (FAILED(hr)) {
     Warn("Error creating return value type spec");
     return mdTypeSpecNil;
@@ -321,7 +318,7 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnVoidDefaultMemberRef() {
         callTargetReturnVoidTypeRef, &callTargetReturnVoidTypeBuffer);
 
     auto signatureLength = 3 + callTargetReturnVoidTypeSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
@@ -336,7 +333,6 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnVoidDefaultMemberRef() {
         callTargetReturnVoidTypeRef,
         managed_profiler_calltarget_returntype_getdefault_name.data(),
         signature, signatureLength, &callTargetReturnVoidTypeGetDefault);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper callTargetReturnVoidTypeGetDefault could not be defined.");
       return mdMemberRefNil;
@@ -367,7 +363,7 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(
       callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
 
   auto signatureLength = 7 + callTargetReturnTypeRefSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
@@ -385,7 +381,6 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(
       callTargetReturnTypeSpec,
       managed_profiler_calltarget_returntype_getdefault_name.data(), signature,
       signatureLength, &callTargetReturnTypeGetDefault);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Wrapper callTargetReturnTypeGetDefault could not be defined.");
     return mdMemberRefNil;
@@ -407,7 +402,7 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
   // *** Ensure we have the CallTargetInvoker.GetDefaultValue<> memberRef
   if (getDefaultMemberRef == mdMemberRefNil) {
     auto signatureLength = 5;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -421,7 +416,6 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
         callTargetTypeRef,
         managed_profiler_calltarget_getdefaultvalue_name.data(), signature,
         signatureLength, &getDefaultMemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper getDefaultMemberRef could not be defined.");
       return hr;
@@ -437,7 +431,7 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
       methodArgument->GetSignature(methodArgumentSignature);
 
   auto signatureLength = 2 + methodArgumentSignatureSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
   signature[offset++] = 0x01;
@@ -448,7 +442,6 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       getDefaultMemberRef, signature, signatureLength, &getDefaultMethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating getDefaultMethodSpec.");
     return mdMethodSpecNil;
@@ -577,7 +570,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   }
 
   // New signature declaration
-  auto* newSignatureBuffer = new COR_SIGNATURE[newSignatureSize];
+  COR_SIGNATURE newSignatureBuffer[signatureBufferSize];
   newSignatureBuffer[newSignatureOffset++] = IMAGE_CEE_CS_CALLCONV_LOCAL_SIG;
 
   // Set the locals count
@@ -630,7 +623,6 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   mdToken newLocalVarSig;
   hr = module_metadata->metadata_emit->GetTokenFromSig(
       newSignatureBuffer, newSignatureSize, &newLocalVarSig);
-  delete[] newSignatureBuffer;
   if (FAILED(hr)) {
     Warn("Error creating new locals var signature.");
     return hr;
@@ -721,7 +713,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 6 + callTargetStateSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -738,7 +730,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
         signature, signatureLength, &beginP0MemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper beginP0MemberRef could not be defined.");
       return hr;
@@ -759,7 +750,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
 
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
   signature[offset++] = 0x02;
@@ -778,7 +769,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       beginP0MemberRef, signature, signatureLength, &beginP0MethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating begin method spec.");
     return hr;
@@ -806,7 +796,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 8 + callTargetStateSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -826,7 +816,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
         signature, signatureLength, &beginP1MemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper beginP1MemberRef could not be defined.");
       return hr;
@@ -851,7 +840,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
 
   auto signatureLength =
       4 + integrationTypeSize + currentTypeSize + arg1SignatureSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
@@ -874,7 +863,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       beginP1MemberRef, signature, signatureLength, &beginP1MethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating begin method spec.");
     return hr;
@@ -902,7 +890,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 10 + callTargetStateSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -925,7 +913,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
         signature, signatureLength, &beginP2MemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper beginP2MemberRef could not be defined.");
       return hr;
@@ -953,7 +940,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
 
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
                          arg1SignatureSize + arg2SignatureSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
@@ -979,7 +966,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       beginP2MemberRef, signature, signatureLength, &beginP2MethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating begin method spec.");
     return hr;
@@ -1008,7 +994,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 12 + callTargetStateSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -1034,7 +1020,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
         signature, signatureLength, &beginP3MemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper beginP3MemberRef could not be defined.");
       return hr;
@@ -1066,7 +1051,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
                          arg1SignatureSize + arg2SignatureSize +
                          arg3SignatureSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
@@ -1095,7 +1080,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       beginP3MemberRef, signature, signatureLength, &beginP3MethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating begin method spec.");
     return hr;
@@ -1124,7 +1108,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 14 + callTargetStateSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -1153,7 +1137,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
         signature, signatureLength, &beginP4MemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper beginP4MemberRef could not be defined.");
       return hr;
@@ -1188,7 +1171,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
                          arg1SignatureSize + arg2SignatureSize +
                          arg3SignatureSize + arg4SignatureSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
@@ -1220,7 +1203,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       beginP4MemberRef, signature, signatureLength, &beginP4MethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating begin method spec.");
     return hr;
@@ -1250,7 +1232,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 16 + callTargetStateSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -1282,7 +1264,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
         signature, signatureLength, &beginP5MemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper beginP5MemberRef could not be defined.");
       return hr;
@@ -1321,7 +1302,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
                          arg1SignatureSize + arg2SignatureSize +
                          arg3SignatureSize + arg4SignatureSize +
                          arg5SignatureSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
@@ -1356,7 +1337,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       beginP5MemberRef, signature, signatureLength, &beginP5MethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating begin method spec.");
     return hr;
@@ -1386,7 +1366,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 18 + callTargetStateSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -1421,7 +1401,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
         signature, signatureLength, &beginP6MemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper beginP6MemberRef could not be defined.");
       return hr;
@@ -1463,7 +1442,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
                          arg1SignatureSize + arg2SignatureSize +
                          arg3SignatureSize + arg4SignatureSize +
                          arg5SignatureSize + arg6SignatureSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
@@ -1501,7 +1480,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       beginP6MemberRef, signature, signatureLength, &beginP6MethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating begin method spec.");
     return hr;
@@ -1527,7 +1505,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
         CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 8 + callTargetStateSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -1547,7 +1525,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
         signature, signatureLength, &beginArrayMemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper beginArrayMemberRef could not be defined.");
       return hr;
@@ -1568,7 +1545,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
 
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
   signature[offset++] = 0x02;
@@ -1587,7 +1564,6 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       beginArrayMemberRef, signature, signatureLength, &beginArrayMethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating begin method spec.");
     return hr;
@@ -1621,7 +1597,7 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
 
     auto signatureLength =
         8 + callTargetReturnVoidSize + exTypeRefSize + callTargetStateSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -1647,7 +1623,6 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_endmethod_name.data(),
         signature, signatureLength, &endVoidMemberRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper endVoidMemberRef could not be defined.");
       return hr;
@@ -1668,7 +1643,7 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
 
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
   signature[offset++] = 0x02;
@@ -1687,7 +1662,6 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       endVoidMemberRef, signature, signatureLength, &endVoidMethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating end void method method spec.");
     return hr;
@@ -1726,7 +1700,7 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(
 
   auto signatureLength =
       14 + callTargetReturnTypeRefSize + exTypeRefSize + callTargetStateSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -1759,7 +1733,6 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(
   hr = module_metadata->metadata_emit->DefineMemberRef(
       callTargetTypeRef, managed_profiler_calltarget_endmethod_name.data(),
       signature, signatureLength, &endMethodMemberRef);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Wrapper endMethodMemberRef could not be defined.");
     return hr;
@@ -1786,7 +1759,6 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(
 
   signatureLength =
       4 + integrationTypeSize + currentTypeSize + returnSignatureLength;
-  signature = new COR_SIGNATURE[signatureLength];
   offset = 0;
 
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
@@ -1809,7 +1781,6 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       endMethodMemberRef, signature, signatureLength, &endMethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating end method member spec.");
     return hr;
@@ -1835,7 +1806,7 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
     auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
 
     auto signatureLength = 5 + exTypeRefSize;
-    auto* signature = new COR_SIGNATURE[signatureLength];
+    COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
@@ -1850,7 +1821,6 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
         callTargetTypeRef, managed_profiler_calltarget_logexception_name.data(),
         signature, signatureLength, &logExceptionRef);
-    delete[] signature;
     if (FAILED(hr)) {
       Warn("Wrapper logExceptionRef could not be defined.");
       return hr;
@@ -1871,7 +1841,7 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
       CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
 
   auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
   signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
   signature[offset++] = 0x02;
@@ -1890,7 +1860,6 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
 
   hr = module_metadata->metadata_emit->DefineMethodSpec(
       logExceptionRef, signature, signatureLength, &logExceptionMethodSpec);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Error creating log exception method spec.");
     return hr;
@@ -1914,7 +1883,7 @@ HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(
   mdMemberRef callTargetReturnGetValueMemberRef = mdMemberRefNil;
 
   auto signatureLength = 4;
-  auto* signature = new COR_SIGNATURE[signatureLength];
+  COR_SIGNATURE signature[signatureBufferSize];
   unsigned offset = 0;
 
   signature[offset++] =
@@ -1926,7 +1895,6 @@ HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(
       callTargetReturnTypeSpec,
       managed_profiler_calltarget_returntype_getreturnvalue_name.data(),
       signature, signatureLength, &callTargetReturnGetValueMemberRef);
-  delete[] signature;
   if (FAILED(hr)) {
     Warn("Wrapper callTargetReturnGetValueMemberRef could not be defined.");
     return mdMemberRefNil;
