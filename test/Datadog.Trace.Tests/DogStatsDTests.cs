@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tests
                     Thread.Sleep(5);
                 }
 
-                spans = agent.WaitForSpans(1, timeoutInMilliseconds: 1000000);
+                spans = agent.WaitForSpans(1);
             }
 
             return spans;
