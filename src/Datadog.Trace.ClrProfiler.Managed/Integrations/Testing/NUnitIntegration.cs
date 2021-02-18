@@ -137,6 +137,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     MethodInfo testMethod = null;
                     object[] testMethodArguments = null;
                     object properties = null;
+                    string testCaseName = null;
 
                     if (currentTest != null)
                     {
@@ -147,6 +148,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                         currentTest.TryGetPropertyValue<object[]>("Arguments", out testMethodArguments);
                         currentTest.TryGetPropertyValue<object>("Properties", out properties);
+
+                        currentTest.TryGetPropertyValue<string>("Name", out testCaseName);
                     }
 
                     if (testMethod != null)
@@ -155,24 +158,27 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                         string testSuite = testMethod.DeclaringType?.FullName;
                         string testName = testMethod.Name;
                         string skipReason = null;
-                        List<KeyValuePair<string, string>> testArguments = null;
                         List<KeyValuePair<string, string>> testTraits = null;
 
                         // Get test parameters
+                        TestParameters testParameters = null;
                         ParameterInfo[] methodParameters = testMethod.GetParameters();
                         if (methodParameters?.Length > 0)
                         {
-                            testArguments = new List<KeyValuePair<string, string>>();
+                            testParameters = new TestParameters();
+                            testParameters.Metadata = new Dictionary<string, object>();
+                            testParameters.Arguments = new Dictionary<string, object>();
+                            testParameters.Metadata[TestTags.MetadataTestName] = testCaseName;
 
                             for (int i = 0; i < methodParameters.Length; i++)
                             {
                                 if (testMethodArguments != null && i < testMethodArguments.Length)
                                 {
-                                    testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)"));
+                                    testParameters.Arguments[methodParameters[i].Name] = testMethodArguments[i]?.ToString() ?? "(null)";
                                 }
                                 else
                                 {
-                                    testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", "(default)"));
+                                    testParameters.Arguments[methodParameters[i].Name] = "(default)";
                                 }
                             }
                         }
@@ -236,12 +242,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                         span.SetTag(CommonTags.RuntimeProcessArchitecture, framework.ProcessArchitecture);
                         span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
 
-                        if (testArguments != null)
+                        if (testParameters != null)
                         {
-                            foreach (KeyValuePair<string, string> argument in testArguments)
-                            {
-                                span.SetTag(argument.Key, argument.Value);
-                            }
+                            span.SetTag(TestTags.Parameters, testParameters.ToJSON());
                         }
 
                         if (testTraits != null)
@@ -279,14 +282,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 ex = ex.InnerException;
             }
 
-            if (ex != null && ex.GetType().FullName != "NUnit.Framework.SuccessException")
+            if (ex != null)
             {
-                scope.Span.SetException(ex);
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-            }
-            else
-            {
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                string exTypeName = ex.GetType().FullName;
+
+                if (exTypeName == "NUnit.Framework.SuccessException")
+                {
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                }
+                else if (exTypeName == "NUnit.Framework.IgnoreException")
+                {
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                    scope.Span.SetTag(TestTags.SkipReason, ex.Message);
+                }
+                else
+                {
+                    scope.Span.SetException(ex);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                }
             }
         }
 

@@ -38,7 +38,7 @@ namespace Datadog.Trace.Ci
         /// <summary>
         /// Test parameters
         /// </summary>
-        public const string Arguments = "test.arguments";
+        public const string Parameters = "test.parameters";
 
         /// <summary>
         /// Test traits
@@ -69,5 +69,10 @@ namespace Datadog.Trace.Ci
         /// Test skip reason
         /// </summary>
         public const string SkipReason = "test.skip_reason";
+
+        /// <summary>
+        /// Parameters metadata TestName
+        /// </summary>
+        public const string MetadataTestName = "test_name";
     }
 }

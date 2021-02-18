@@ -6,6 +6,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
     public interface ITest
     {
         /// <summary>
+        /// Gets the test name
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
         /// Gets a MethodInfo for the method implementing this test.
         /// Returns null if the test is not implemented as a method.
         /// </summary>

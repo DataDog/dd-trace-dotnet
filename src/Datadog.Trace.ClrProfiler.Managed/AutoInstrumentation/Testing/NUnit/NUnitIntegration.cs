@@ -59,17 +59,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             ParameterInfo[] methodParameters = testMethod.GetParameters();
             if (methodParameters?.Length > 0)
             {
+                TestParameters testParameters = new TestParameters();
+                testParameters.Metadata = new Dictionary<string, object>();
+                testParameters.Arguments = new Dictionary<string, object>();
+                testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name;
+
                 for (int i = 0; i < methodParameters.Length; i++)
                 {
                     if (testMethodArguments != null && i < testMethodArguments.Length)
                     {
-                        span.SetTag($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)");
+                        testParameters.Arguments[methodParameters[i].Name] = testMethodArguments[i]?.ToString() ?? "(null)";
                     }
                     else
                     {
-                        span.SetTag($"{TestTags.Arguments}.{methodParameters[i].Name}", "(default)");
+                        testParameters.Arguments[methodParameters[i].Name] = "(default)";
                     }
                 }
+
+                span.SetTag(TestTags.Parameters, testParameters.ToJSON());
             }
 
             // Get traits
@@ -110,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
                 span.SetTag(TestTags.SkipReason, skipReason);
-                span.Finish(TimeSpan.Zero);
+                span.Finish(new TimeSpan(10));
                 scope.Dispose();
                 scope = null;
             }
@@ -127,18 +134,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 ex = ex.InnerException;
             }
 
-            switch (ex?.GetType().FullName)
+            if (ex != null)
             {
-                case "NUnit.Framework.SuccessException":
+                string exTypeName = ex.GetType().FullName;
+
+                if (exTypeName == "NUnit.Framework.SuccessException")
+                {
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
-                    break;
-                case "NUnit.Framework.IgnoreException":
+                }
+                else if (exTypeName == "NUnit.Framework.IgnoreException")
+                {
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                    break;
-                default:
+                    scope.Span.SetTag(TestTags.SkipReason, ex.Message);
+                }
+                else
+                {
                     scope.Span.SetException(ex);
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                    break;
+                }
             }
         }
     }
