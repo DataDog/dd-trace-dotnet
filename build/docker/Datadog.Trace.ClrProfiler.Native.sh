@@ -10,7 +10,7 @@ PUBLISH_OUTPUT_NET31="$( pwd )/src/bin/managed-publish/netcoreapp3.1"
 
 cd src/Datadog.Trace.ClrProfiler.Native
 mkdir -p build
-(cd build && cmake ../ && make)
+(cd build && cmake ../ -DCMAKE_BUILD_TYPE=Release && make)
 
 mkdir -p bin/Release/x64
 cp -f build/bin/Datadog.Trace.ClrProfiler.Native.so bin/Release/x64/Datadog.Trace.ClrProfiler.Native.so
