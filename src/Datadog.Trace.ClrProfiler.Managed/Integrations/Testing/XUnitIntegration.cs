@@ -339,7 +339,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 string testSuite = null;
                 string testName = null;
                 string skipReason = null;
-                List<KeyValuePair<string, string>> testArguments = null;
+                string displayName = null;
                 List<KeyValuePair<string, string>> testTraits = null;
 
                 // Get test type
@@ -379,6 +379,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                             }
                         }
                     }
+
+                    testCase.TryGetPropertyValue<string>("DisplayName", out displayName);
                 }
 
                 AssemblyName testInvokerAssemblyName = testSdk.GetType().Assembly.GetName();
@@ -388,21 +390,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                 // Get test parameters
                 ParameterInfo[] methodParameters = testMethod.GetParameters();
+                TestParameters testParameters = null;
                 if (methodParameters?.Length > 0)
                 {
                     if (testSdk.TryGetPropertyValue<object[]>("TestMethodArguments", out object[] testMethodArguments))
                     {
-                        testArguments = new List<KeyValuePair<string, string>>();
+                        testParameters = new TestParameters();
+                        testParameters.Metadata = new Dictionary<string, object>();
+                        testParameters.Arguments = new Dictionary<string, object>();
+                        testParameters.Metadata[TestTags.MetadataTestName] = displayName;
 
                         for (int i = 0; i < methodParameters.Length; i++)
                         {
                             if (i < testMethodArguments.Length)
                             {
-                                testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)"));
+                                testParameters.Arguments[methodParameters[i].Name] = testMethodArguments[i]?.ToString() ?? "(null)";
                             }
                             else
                             {
-                                testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", "(default)"));
+                                testParameters.Arguments[methodParameters[i].Name] = "(default)";
                             }
                         }
                     }
@@ -431,12 +437,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 span.SetTag(CommonTags.RuntimeProcessArchitecture, framework.ProcessArchitecture);
                 span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
 
-                if (testArguments != null)
+                if (testParameters != null)
                 {
-                    foreach (KeyValuePair<string, string> argument in testArguments)
-                    {
-                        span.SetTag(argument.Key, argument.Value);
-                    }
+                    span.SetTag(TestTags.ParameterizedTestName, displayName);
+                    span.SetTag(TestTags.Parameters, testParameters.ToJSON());
                 }
 
                 if (testTraits != null)

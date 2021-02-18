@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             string testFramework = "NUnit " + targetType?.Assembly?.GetName().Version;
             string testSuite = testMethod.DeclaringType?.FullName;
-            string testName = string.IsNullOrEmpty(currentTest.Name) ? testMethod.Name : currentTest.Name;
+            string testName = testMethod.Name;
             string skipReason = null;
 
             Tracer tracer = Tracer.Instance;
@@ -59,17 +59,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             ParameterInfo[] methodParameters = testMethod.GetParameters();
             if (methodParameters?.Length > 0)
             {
+                TestParameters testParameters = new TestParameters();
+                testParameters.Metadata = new Dictionary<string, object>();
+                testParameters.Arguments = new Dictionary<string, object>();
+                testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name;
+
                 for (int i = 0; i < methodParameters.Length; i++)
                 {
                     if (testMethodArguments != null && i < testMethodArguments.Length)
                     {
-                        span.SetTag($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)");
+                        testParameters.Arguments[methodParameters[i].Name] = testMethodArguments[i]?.ToString() ?? "(null)";
                     }
                     else
                     {
-                        span.SetTag($"{TestTags.Arguments}.{methodParameters[i].Name}", "(default)");
+                        testParameters.Arguments[methodParameters[i].Name] = "(default)";
                     }
                 }
+
+                span.SetTag(TestTags.ParameterizedTestName, currentTest.Name);
+                span.SetTag(TestTags.Parameters, testParameters.ToJSON());
             }
 
             // Get traits
@@ -110,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
                 span.SetTag(TestTags.SkipReason, skipReason);
-                span.Finish(TimeSpan.Zero);
+                span.Finish(new TimeSpan(10));
                 scope.Dispose();
                 scope = null;
             }

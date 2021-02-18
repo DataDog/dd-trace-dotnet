@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -49,17 +50,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             ParameterInfo[] methodParameters = runnerInstance.TestMethod.GetParameters();
             if (methodParameters?.Length > 0 && testMethodArguments?.Length > 0)
             {
+                TestParameters testParameters = new TestParameters();
+                testParameters.Metadata = new Dictionary<string, object>();
+                testParameters.Arguments = new Dictionary<string, object>();
+                testParameters.Metadata[TestTags.MetadataTestName] = runnerInstance.TestCase.DisplayName;
+
                 for (int i = 0; i < methodParameters.Length; i++)
                 {
                     if (i < testMethodArguments.Length)
                     {
-                        span.SetTag($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)");
+                        testParameters.Arguments[methodParameters[i].Name] = testMethodArguments[i]?.ToString() ?? "(null)";
                     }
                     else
                     {
-                        span.SetTag($"{TestTags.Arguments}.{methodParameters[i].Name}", "(default)");
+                        testParameters.Arguments[methodParameters[i].Name] = "(default)";
                     }
                 }
+
+                span.SetTag(TestTags.ParameterizedTestName, runnerInstance.TestCase.DisplayName);
+                span.SetTag(TestTags.Parameters, testParameters.ToJSON());
             }
 
             // Get traits
@@ -77,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
                 span.SetTag(TestTags.SkipReason, runnerInstance.SkipReason);
-                span.Finish(TimeSpan.Zero);
+                span.Finish(new TimeSpan(10));
                 scope.Dispose();
                 return null;
             }

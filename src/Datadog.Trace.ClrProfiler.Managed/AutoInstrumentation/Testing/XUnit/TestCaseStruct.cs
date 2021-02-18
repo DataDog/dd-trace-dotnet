@@ -10,6 +10,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
     public struct TestCaseStruct
     {
         /// <summary>
+        /// Display name
+        /// </summary>
+        public string DisplayName;
+
+        /// <summary>
         /// Traits dictionary
         /// </summary>
         public Dictionary<string, List<string>> Traits;
