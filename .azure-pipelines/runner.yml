@@ -104,7 +104,7 @@ jobs:
 
   - script: |
       cd ./src/Datadog.Trace.ClrProfiler.Native
-      cmake .
+      cmake . -DCMAKE_BUILD_TYPE=Release
       make
     displayName: build_profiler
 
