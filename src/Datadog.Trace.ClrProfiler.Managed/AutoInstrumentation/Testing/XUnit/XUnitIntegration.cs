@@ -74,10 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             Dictionary<string, List<string>> traits = runnerInstance.TestCase.Traits;
             if (traits.Count > 0)
             {
-                foreach (KeyValuePair<string, List<string>> traitValue in traits)
-                {
-                    span.SetTag($"{TestTags.Traits}.{traitValue.Key}", string.Join(", ", traitValue.Value) ?? "(null)");
-                }
+                span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
             }
 
             // Skip tests

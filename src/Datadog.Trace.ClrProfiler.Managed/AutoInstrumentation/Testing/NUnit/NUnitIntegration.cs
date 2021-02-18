@@ -82,6 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // Get traits
             if (testMethodProperties != null)
             {
+                Dictionary<string, List<string>> traits = new Dictionary<string, List<string>>();
                 skipReason = (string)testMethodProperties.Get("_SKIPREASON");
                 foreach (var key in testMethodProperties.Keys)
                 {
@@ -104,12 +105,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                             lstValues.Add(valObj.ToString());
                         }
 
-                        span.SetTag($"{TestTags.Traits}.{key}", string.Join(", ", lstValues));
+                        traits[key] = lstValues;
                     }
                     else
                     {
-                        span.SetTag($"{TestTags.Traits}.{key}", "(null)");
+                        traits[key] = null;
                     }
+                }
+
+                if (traits.Count > 0)
+                {
+                    span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
                 }
             }
 

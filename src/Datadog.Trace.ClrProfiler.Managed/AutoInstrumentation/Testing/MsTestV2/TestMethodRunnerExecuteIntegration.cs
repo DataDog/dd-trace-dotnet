@@ -100,12 +100,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 
             // Get traits
             Dictionary<string, List<string>> testTraits = GetTraits(testMethod);
-            if (testTraits != null)
+            if (testTraits != null && testTraits.Count > 0)
             {
-                foreach (KeyValuePair<string, List<string>> keyValuePair in testTraits)
-                {
-                    span.SetTag($"{TestTags.Traits}.{keyValuePair.Key}", string.Join(", ", keyValuePair.Value) ?? "(null)");
-                }
+                span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(testTraits));
             }
 
             span.ResetStartTime();
