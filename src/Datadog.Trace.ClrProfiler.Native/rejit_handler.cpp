@@ -41,8 +41,9 @@ bool RejitHandlerModuleMethod::ExistFunctionId(FunctionID functionId) {
 RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(mdMethodDef methodDef) {
   std::lock_guard<std::mutex> guard(methods_lock);
 
-  if (methods.count(methodDef) > 0) {
-    return methods[methodDef];
+  auto find_res = methods.find(methodDef);
+  if (find_res != methods.end()) {
+    return find_res->second;
   }
 
   RejitHandlerModuleMethod* methodHandler = new RejitHandlerModuleMethod(methodDef, this);
@@ -53,8 +54,9 @@ bool RejitHandlerModule::TryGetMethod(mdMethodDef methodDef,
                                       RejitHandlerModuleMethod** methodHandler) {
   std::lock_guard<std::mutex> guard(methods_lock);
 
-  if (methods.count(methodDef) > 0) {
-    *methodHandler = methods[methodDef];
+  auto find_res = methods.find(methodDef);
+  if (find_res != methods.end()) {
+    *methodHandler = find_res->second;
     return true;
   }
   *methodHandler = nullptr;
@@ -65,8 +67,9 @@ RejitHandlerModuleMethod* RejitHandler::GetModuleMethodFromFunctionId(
     FunctionID functionId) {
   {
     std::lock_guard<std::mutex> guard(methodByFunctionId_lock);
-    if (methodByFunctionId.count(functionId) > 0) {
-      return methodByFunctionId[functionId];
+    auto find_res = methodByFunctionId.find(functionId);
+    if (find_res != methodByFunctionId.end()) {
+      return find_res->second;
     }
   }
 
@@ -95,8 +98,9 @@ RejitHandlerModuleMethod* RejitHandler::GetModuleMethodFromFunctionId(
 RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId) {
   std::lock_guard<std::mutex> guard(modules_lock);
 
-  if (modules.count(moduleId) > 0) {
-    return modules[moduleId];
+  auto find_res = modules.find(moduleId);
+  if (find_res != modules.end()) {
+    return find_res->second;
   }
 
   RejitHandlerModule* moduleHandler = new RejitHandlerModule(moduleId, this);
@@ -107,8 +111,10 @@ RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId) {
 bool RejitHandler::TryGetModule(ModuleID moduleId,
                               RejitHandlerModule** moduleHandler) {
   std::lock_guard<std::mutex> guard(modules_lock);
-  if (modules.count(moduleId) > 0) {
-    *moduleHandler = modules[moduleId];
+
+  auto find_res = modules.find(moduleId);
+  if (find_res != modules.end()) {
+    *moduleHandler = find_res->second;
     return true;
   }
   *moduleHandler = nullptr;
