@@ -76,7 +76,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     }
                 }
 
-                span.SetTag(TestTags.ParameterizedTestName, currentTest.Name);
                 span.SetTag(TestTags.Parameters, testParameters.ToJSON());
             }
 

@@ -244,7 +244,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                         if (testParameters != null)
                         {
-                            span.SetTag(TestTags.ParameterizedTestName, testCaseName);
                             span.SetTag(TestTags.Parameters, testParameters.ToJSON());
                         }
 

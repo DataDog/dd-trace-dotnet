@@ -71,11 +71,6 @@ namespace Datadog.Trace.Ci
         public const string SkipReason = "test.skip_reason";
 
         /// <summary>
-        /// Parameterized Test Name
-        /// </summary>
-        public const string ParameterizedTestName = "test.metadata.parameterized_test_name";
-
-        /// <summary>
         /// Parameters metadata TestName
         /// </summary>
         public const string MetadataTestName = "test_name";
