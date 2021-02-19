@@ -158,7 +158,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                         string testSuite = testMethod.DeclaringType?.FullName;
                         string testName = testMethod.Name;
                         string skipReason = null;
-                        List<KeyValuePair<string, string>> testTraits = null;
+                        Dictionary<string, List<string>> testTraits = null;
 
                         // Get test parameters
                         TestParameters testParameters = null;
@@ -190,7 +190,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                             if (properties.TryGetFieldValue<Dictionary<string, IList>>("inner", out Dictionary<string, IList> traits) && traits.Count > 0)
                             {
-                                testTraits = new List<KeyValuePair<string, string>>();
+                                testTraits = new Dictionary<string, List<string>>();
 
                                 foreach (KeyValuePair<string, IList> traitValue in traits)
                                 {
@@ -199,10 +199,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                                         continue;
                                     }
 
-                                    IEnumerable<string> values = Enumerable.Empty<string>();
+                                    List<string> lstValues = new List<string>();
                                     if (traitValue.Value != null)
                                     {
-                                        List<string> lstValues = new List<string>();
                                         foreach (object valObj in traitValue.Value)
                                         {
                                             if (valObj is null)
@@ -212,11 +211,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                                             lstValues.Add(valObj.ToString());
                                         }
-
-                                        values = lstValues;
                                     }
 
-                                    testTraits.Add(new KeyValuePair<string, string>($"{TestTags.Traits}.{traitValue.Key}", string.Join(", ", values) ?? "(null)"));
+                                    testTraits[traitValue.Key] = lstValues;
                                 }
                             }
                         }
@@ -247,12 +244,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                             span.SetTag(TestTags.Parameters, testParameters.ToJSON());
                         }
 
-                        if (testTraits != null)
+                        if (testTraits != null && testTraits.Count > 0)
                         {
-                            foreach (KeyValuePair<string, string> trait in testTraits)
-                            {
-                                span.SetTag(trait.Key, trait.Value);
-                            }
+                            span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(testTraits));
                         }
 
                         if (skipReason != null)

@@ -340,7 +340,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 string testName = null;
                 string skipReason = null;
                 string displayName = null;
-                List<KeyValuePair<string, string>> testTraits = null;
+                Dictionary<string, List<string>> testTraits = null;
 
                 // Get test type
                 if (!testSdk.TryGetPropertyValue<Type>("TestClass", out Type testClassType))
@@ -367,20 +367,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 // Get traits
                 if (testSdk.TryGetPropertyValue("TestCase", out object testCase))
                 {
-                    if (testCase.TryGetPropertyValue<Dictionary<string, List<string>>>("Traits", out Dictionary<string, List<string>> traits) && traits != null)
-                    {
-                        if (traits.Count > 0)
-                        {
-                            testTraits = new List<KeyValuePair<string, string>>();
-
-                            foreach (KeyValuePair<string, List<string>> traitValue in traits)
-                            {
-                                testTraits.Add(new KeyValuePair<string, string>($"{TestTags.Traits}.{traitValue.Key}", string.Join(", ", traitValue.Value) ?? "(null)"));
-                            }
-                        }
-                    }
-
                     testCase.TryGetPropertyValue<string>("DisplayName", out displayName);
+                    testCase.TryGetPropertyValue<Dictionary<string, List<string>>>("Traits", out testTraits);
                 }
 
                 AssemblyName testInvokerAssemblyName = testSdk.GetType().Assembly.GetName();
@@ -442,12 +430,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     span.SetTag(TestTags.Parameters, testParameters.ToJSON());
                 }
 
-                if (testTraits != null)
+                if (testTraits != null && testTraits.Count > 0)
                 {
-                    foreach (KeyValuePair<string, string> trait in testTraits)
-                    {
-                        span.SetTag(trait.Key, trait.Value);
-                    }
+                    span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(testTraits));
                 }
 
                 if (skipReason != null)
