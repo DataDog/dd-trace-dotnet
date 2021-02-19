@@ -41,9 +41,9 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var metadata = new AzureAppServices(vars);
-            Assert.Equal(actual: AzureContext.AzureAppService, expected: metadata.AzureContext);
-            Assert.Equal(actual: AppServiceKind, expected: metadata.SiteKind);
-            Assert.Equal(actual: AppServiceType, expected: metadata.SiteType);
+            Assert.Equal(expected: AzureContext.AzureAppService, actual: metadata.AzureContext);
+            Assert.Equal(expected: AppServiceKind, actual: metadata.SiteKind);
+            Assert.Equal(expected: AppServiceType, actual: metadata.SiteType);
         }
 
         [Fact]
@@ -58,9 +58,9 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 functionsRuntime: FunctionsRuntime);
 
             var metadata = new AzureAppServices(vars);
-            Assert.Equal(actual: AzureContext.AzureFunction, expected: metadata.AzureContext);
-            Assert.Equal(actual: FunctionKind, expected: metadata.SiteKind);
-            Assert.Equal(actual: FunctionType, expected: metadata.SiteType);
+            Assert.Equal(expected: AzureContext.AzureFunction, actual: metadata.AzureContext);
+            Assert.Equal(expected: FunctionKind, actual: metadata.SiteKind);
+            Assert.Equal(expected: FunctionType, actual: metadata.SiteType);
         }
 
         [Fact]

@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tests
 
             Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
 
-            _writerMock.ResetCalls();
+            _writerMock.Invocations.Clear();
 
             var tracer = new Tracer(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("TestTracerDisabled");
