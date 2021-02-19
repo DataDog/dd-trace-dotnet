@@ -187,7 +187,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, Send)
                        .WithConcreteType(httpMessageHandler)
                        .WithParameters(request, cancellationToken)
-                       .WithNamespaceAndNameFilters(NamespaceAndNameFilters)
+                       .WithNamespaceAndNameFilters(ClrNames.HttpResponseMessage, ClrNames.HttpRequestMessage, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -368,7 +368,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, Send)
                        .WithConcreteType(httpClientHandler)
                        .WithParameters(request, cancellationToken)
-                       .WithNamespaceAndNameFilters(NamespaceAndNameFilters)
+                       .WithNamespaceAndNameFilters(ClrNames.HttpResponseMessage, ClrNames.HttpRequestMessage, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
