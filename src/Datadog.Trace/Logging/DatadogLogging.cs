@@ -91,8 +91,8 @@ namespace Datadog.Trace.Logging
                 SharedLogger = new DatadogSerilogLogger(InternalLogger, defaultRateLimiter);
 
                 var rate = GetRateLimit();
-                ILogRateLimiter rateLimiter = rate == 0
-                    ? new NullLogRateLimiter()
+                var rateLimiter = rate == 0
+                    ? (ILogRateLimiter)new NullLogRateLimiter()
                     : new LogRateLimiter(rate);
 
                 SharedLogger = new DatadogSerilogLogger(InternalLogger, rateLimiter);
