@@ -7,7 +7,7 @@ pr: none
 
 variables:
   buildConfiguration: release
-  dotnetCoreSdkVersion: 5.0.100
+  dotnetCoreSdkVersion: 5.0.103
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
 stages:
