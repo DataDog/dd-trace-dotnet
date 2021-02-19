@@ -76,11 +76,9 @@ namespace Datadog.Trace.HttpOverStreams
                 if (currentChar.Equals(DatadogHttpValues.CarriageReturn))
                 {
                     // end of headers
-                    if (DatadogHttpValues.CrLfLength > 1)
-                    {
-                        // Skip the newline indicator
-                        await GoNextChar();
-                    }
+                    // Next character should be a LineFeed, regardless of Linux/Windows
+                    // Skip the newline indicator
+                    await GoNextChar();
 
                     return true;
                 }
