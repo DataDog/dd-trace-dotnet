@@ -96,15 +96,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
 
-            // Note: The automatic instrumentation currently bails out on the generic wrappers.
-            // Once this is implemented, this will add another 1 group for the direct assembly reference
-            // and another 1 group for the netstandard assembly reference
+            // ALWAYS: 75 spans
+            // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
+            // - DbCommand:  42 spans (6 groups * 7 spans)
+            // - IDbCommand: 14 spans (2 groups * 7 spans)
+            //
+            // NETSTANDARD: +56 spans
+            // - DbCommand-netstandard:  42 spans (6 groups * 7 spans)
+            // - IDbCommand-netstandard: 14 spans (2 groups * 7 spans)
+            //
+            // CALLTARGET: +9 spans
+            // - MySqlCommand: 2 additional spans
+            // - IDbCommandGenericConstrant<MySqlCommand>: 7 spans (1 group * 7 spans)
+            //
+            // NETSTANDARD + CALLTARGET: +7 spans
+            // - IDbCommandGenericConstrant<MySqlCommand>-netstandard: 7 spans (1 group * 7 spans)
 #if NET452
-            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
-#elif NET461
-            var expectedSpanCount = 134;
+            var expectedSpanCount = 75;
 #else
-            var expectedSpanCount = 137; // 7 queries * 19 groups + 1 internal query
+            var expectedSpanCount = 131;
 #endif
 
             if (packageVersion == "6.8.8")
@@ -115,11 +125,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             if (enableCallTarget)
             {
 #if NET452
-                expectedSpanCount = 90;
-#elif NET461
-                expectedSpanCount = 153;
+                expectedSpanCount = 84;
 #else
-                expectedSpanCount = 158;
+                expectedSpanCount = 147;
 #endif
             }
 
@@ -138,7 +146,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                int actualSpanCount = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", System.StringComparison.OrdinalIgnoreCase)).Count(); // Remove unexpected DB spans from the calculation
+                Assert.Equal(expectedSpanCount, actualSpanCount);
 
                 foreach (var span in spans)
                 {
