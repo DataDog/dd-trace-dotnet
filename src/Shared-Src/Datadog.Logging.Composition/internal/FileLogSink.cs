@@ -17,6 +17,8 @@ namespace Datadog.Logging.Composition
     {
         public const int RotateLogFileWhenLargerBytesDefault = 1024 * 1024 * 128;  // 128 MB
 
+        private static readonly LoggingComponentName LogComponentMoniker = LoggingComponentName.Create(typeof(FileLogSink).FullName, null);
+
         private const string FilenameSeparatorForTimestamp = "-";
         private const string FilenameTimestampFormat = "yyyyMMdd";
         private const string FilenameSeparatorForIndex = "_";
@@ -27,7 +29,6 @@ namespace Datadog.Logging.Composition
 
         private static readonly Encoding LogTextEncoding = Encoding.UTF8;
 
-        private readonly object _rotationLock = new object();
         private readonly Guid _logSessionId;
         private readonly LogGroupMutex _logGroupMutex;
         private readonly string _logFileDir;
@@ -72,6 +73,8 @@ namespace Datadog.Logging.Composition
         /// </summary>
         public static bool TryCreateNew(string logFileDir, string logFileNameBase, Guid logGroupId, int rotateLogFileWhenLargerBytes, out FileLogSink newSink)
         {
+            // Bad usage - throw.
+
             if (logFileNameBase == null)
             {
                 throw new ArgumentNullException(nameof(logFileNameBase));
@@ -81,6 +84,8 @@ namespace Datadog.Logging.Composition
             {
                 throw new ArgumentException($"{nameof(logFileNameBase)} may not be white-space only.", nameof(logFileNameBase));
             }
+
+            // Ok usage, but bad state - do not throw and return false.
 
             newSink = null;
 
@@ -98,12 +103,6 @@ namespace Datadog.Logging.Composition
                 return false;
             }
 
-            var logGroupMutex = new LogGroupMutex(logGroupId);
-            if (!logGroupMutex.TryAcquire(out Mutex mutex))
-            {
-                return false;
-            }
-
             if (rotateLogFileWhenLargerBytes <= 0)
             {
                 rotateLogFileWhenLargerBytes = -1;
@@ -111,45 +110,52 @@ namespace Datadog.Logging.Composition
 
             try
             {
-                try
+                var logGroupMutex = new LogGroupMutex(logGroupId);
+                if (logGroupMutex.TryAcquire(out LogGroupMutex.Handle logGroupMutexHandle))
                 {
-                    DateTimeOffset now = DateTimeOffset.Now;
-                    int rotationIndex = FindLatestRotationIndex(logFileDirInfo, logFileNameBase, now);
+                    using (logGroupMutexHandle)
+                    {
+                        DateTimeOffset now = DateTimeOffset.Now;
+                        int rotationIndex = FindLatestRotationIndex(logFileDirInfo, logFileNameBase, now);
 
-                    string logFileName = ConstructFilename(logFileNameBase, now, rotationIndex);
-                    string logFilePath = Path.Combine(logFileDir, logFileName);
-                    FileStream logStream = new FileStream(logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+                        string logFileName = ConstructFilename(logFileNameBase, now, rotationIndex);
+                        string logFilePath = Path.Combine(logFileDir, logFileName);
+                        FileStream logStream = new FileStream(logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
 
-                    newSink = new FileLogSink(logGroupMutex, logFileDir, logFileNameBase, rotateLogFileWhenLargerBytes, logStream, rotationIndex);
+                        newSink = new FileLogSink(logGroupMutex, logFileDir, logFileNameBase, rotateLogFileWhenLargerBytes, logStream, rotationIndex);
+                    }
                 }
-                finally
+                else
                 {
-                    mutex.ReleaseMutex();
+                    return false;
                 }
 
-                newSink.Info(StringPair.Create(typeof(FileLogSink).FullName, null),
-                             "Logging session started",
-                             "LogGroupId",
-                             logGroupId,
-                             "LogSessionId",
-                             newSink.LogSessionId,
-                             "RotateLogFileWhenLargerBytes",
-                             rotateLogFileWhenLargerBytes);
+                if (newSink.TryLogInfo(LogComponentMoniker,
+                                       "Logging session started",
+                                       "LogGroupId",
+                                       logGroupId,
+                                       "LogSessionId",
+                                       newSink.LogSessionId,
+                                       "RotateLogFileWhenLargerBytes",
+                                       rotateLogFileWhenLargerBytes))
+                {
+                    return true;
+                }
             }
             catch
+            { }
+
+            // If we did not succeed, the sink may be still constructed (e.g. TryLogInfo(..) returned false).
+            // We need to disposed the sink before giving up, but be brepaed for it tobe null.
+            try
             {
-                try
-                {
-                    newSink.Dispose();
-                }
-                catch
-                { }
-
-                newSink = null;
-                return false;
+                newSink?.Dispose();
             }
+            catch
+            { }
 
-            return true;
+            newSink = null;
+            return false;
         }
 
         public static void ConstructAndAppendFilename(StringBuilder bufferWithFileameBase, DateTimeOffset timestamp)
@@ -186,75 +192,92 @@ namespace Datadog.Logging.Composition
         {
             if (_logStream != null && _logWriter != null)
             {
-                this.Info(StringPair.Create(typeof(FileLogSink).FullName, null), "Finishing logging session", "LogSessionId", LogSessionId);
+                this.TryLogInfo(LogComponentMoniker, "Finishing logging session", "LogSessionId", LogSessionId);
 
-                lock (_rotationLock)
+                // If we can acquire the file mutex, we will dispose while holding it, so that no concurrent log writes are affected.
+                // But eventually we will disposed regardless.
+                bool hasMutex = _logGroupMutex.TryAcquire(out LogGroupMutex.Handle logGroupMutexHandle);
+                try
                 {
-                    bool hasMutex = _logGroupMutex.TryAcquire(out Mutex mutex);
-                    try
+                    StreamWriter logWriter = _logWriter;
+                    if (logWriter != null)
                     {
-                        StreamWriter logWriter = _logWriter;
-                        if (logWriter != null)
-                        {
-                            _logWriter = null;
-                            logWriter.Dispose();
-                        }
-
-                        FileStream logStream = _logStream;
-                        if (logStream != null)
-                        {
-                            _logStream = null;
-                            logStream.Dispose();
-                        }
-                    }
-                    finally
-                    {
-                        if (hasMutex)
-                        {
-                            mutex.ReleaseMutex();
-                        }
+                        _logWriter = null;
+                        logWriter.Dispose();
                     }
 
-                    _logGroupMutex.Dispose();
+                    FileStream logStream = _logStream;
+                    if (logStream != null)
+                    {
+                        _logStream = null;
+                        logStream.Dispose();
+                    }
                 }
+                finally
+                {
+                    if (hasMutex)
+                    {
+                        logGroupMutexHandle.Dispose();
+                    }
+                }
+
+                _logGroupMutex.Dispose();
             }
         }
 
-        public void Error(StringPair componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, params object[] dataNamesAndValues)
         {
-            string errorMessage = DefaultFormat.ConstructErrorMessage(message, exception);
-            string logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Error,
-                                                             componentName.Item1,
-                                                             componentName.Item2,
-                                                             useUtcTimestamp: false,
-                                                             errorMessage,
-                                                             dataNamesAndValues)
-                                          .ToString();
-            WriteToFile(logLine);
+            try
+            {
+                string errorMessage = DefaultFormat.ConstructErrorMessage(message, exception);
+                StringBuilder logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Error,
+                                                                 componentName.Part1,
+                                                                 componentName.Part2,
+                                                                 useUtcTimestamp: false,
+                                                                 errorMessage,
+                                                                 dataNamesAndValues);
+                return TryWriteToFile(logLine.ToString());
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public void Info(StringPair componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogInfo(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
         {
-            string logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Info,
-                                                            componentName.Item1,
-                                                            componentName.Item2,
+            try
+            {
+                StringBuilder logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Info,
+                                                            componentName.Part1,
+                                                            componentName.Part2,
                                                             useUtcTimestamp: false,
                                                             message,
-                                                            dataNamesAndValues)
-                                          .ToString();
-            WriteToFile(logLine);
+                                                            dataNamesAndValues);
+                return TryWriteToFile(logLine.ToString());
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public void Debug(StringPair componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogDebug(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
         {
-            string logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Debug,
-                                                            componentName.Item1,
-                                                            componentName.Item2,
-                                                            useUtcTimestamp: false,
-                                                            message,
-                                                            dataNamesAndValues)
-                                          .ToString();
-            WriteToFile(logLine);
+            try
+            {
+                StringBuilder logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Debug,
+                                                        componentName.Part1,
+                                                        componentName.Part2,
+                                                        useUtcTimestamp: false,
+                                                        message,
+                                                        dataNamesAndValues);
+                return TryWriteToFile(logLine.ToString());
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static bool EnsureDirectoryExists(string dirName, out DirectoryInfo dirInfo)
@@ -284,7 +307,7 @@ namespace Datadog.Logging.Composition
                 return 0;
             }
 
-            Array.Sort(logFileInfos, (fi1, fi2) => -fi1.Name.CompareTo(fi2));
+            Array.Sort(logFileInfos, (fi1, fi2) => -fi1.Name.CompareTo(fi2.Name));
             string lastFile = logFileInfos[0].Name;
             lastFile = Path.GetFileNameWithoutExtension(lastFile);
 
@@ -309,95 +332,73 @@ namespace Datadog.Logging.Composition
             return filename.ToString();
         }
 
-        private bool WriteToFile(string logLine)
+        private bool TryWriteToFile(string logLine)
         {
-            bool logLineWritten = false;
-            while (!logLineWritten)
+            if (TryWriteToFile(logLine, rotateFileIfNecessary: false))
             {
-                if (!_logGroupMutex.TryAcquire(out Mutex mutex))
-                {
-                    return false;  // Disposed or error => give up.
-                }
-
-                try
-                {
-                    long pos = _logStream.Seek(0, SeekOrigin.End);
-                    if (_rotateLogFileWhenLargerBytes > 0 && pos <= _rotateLogFileWhenLargerBytes)
-                    {
-                        _logWriter.WriteLine(logLine);
-
-                        _logWriter.Flush();
-                        _logStream.Flush(flushToDisk: true);
-
-                        logLineWritten = true;
-                    }
-                }
-                finally
-                {
-                    mutex.ReleaseMutex();
-                }
-
-                if (!logLineWritten)
-                {
-                    if (!RotateLogFile())
-                    {
-                        return false;  // Cannot rotate => give up.
-                    }
-                }
+                return true;
             }
 
-            return true;
+            return TryWriteToFile(logLine, rotateFileIfNecessary: true);
         }
 
-        private bool RotateLogFile()
+        private bool TryWriteToFile(string logLine, bool rotateFileIfNecessary)
         {
-            try
+            if (_logGroupMutex.TryAcquire(out LogGroupMutex.Handle logGroupMutexHandle))
             {
-                if (!EnsureDirectoryExists(_logFileDir, out DirectoryInfo logFileDirInfo))
+                using (logGroupMutexHandle)
                 {
-                    return false;
-                }
-
-                lock (_rotationLock)
-                {
-                    int nextRotationIndex;
-                    FileStream logStream;
-                    StreamWriter logWriter;
-
-                    if (!_logGroupMutex.TryAcquire(out Mutex mutex))
+                    long pos = _logStream.Seek(0, SeekOrigin.End);
+                    if (_rotateLogFileWhenLargerBytes > 0 && pos > _rotateLogFileWhenLargerBytes)
                     {
-                        return false;  // Disposed or error => give up.
+                        // If rotating in not enabled OR if we try and fail rotating => give up.
+                        if (!rotateFileIfNecessary || !RotateLogFile(logGroupMutexHandle))
+                        {
+                            return false;
+                        }
                     }
 
-                    try
-                    {
-                        DateTimeOffset now = DateTimeOffset.Now;
-                        int lastRotationIndexOnDisk = FindLatestRotationIndex(logFileDirInfo, _logFileNameBase, now);
+                    _logWriter.WriteLine(logLine);
 
-                        nextRotationIndex = (lastRotationIndexOnDisk > _rotationIndex)
-                                                    ? lastRotationIndexOnDisk
-                                                    : _rotationIndex + 1;
+                    _logWriter.Flush();
+                    _logStream.Flush(flushToDisk: true);
 
-                        string logFileName = ConstructFilename(_logFileNameBase, now, nextRotationIndex);
-                        string logFilePath = Path.Combine(_logFileDir, logFileName);
-                        logStream = new FileStream(logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
-                        logWriter = new StreamWriter(_logStream, LogTextEncoding);
-                    }
-                    finally
-                    {
-                        mutex.ReleaseMutex();
-                    }
-
-                    _rotationIndex = nextRotationIndex;
-                    _logStream = logStream;
-                    _logWriter = logWriter;
                     return true;
                 }
             }
-            catch
+
+            return false;
+        }
+
+        private bool RotateLogFile(LogGroupMutex.Handle logGroupMutexHandle)
+        {
+            // Be defensive: Wiw we remember to take the locks:
+            if (logGroupMutexHandle.IsValid != true)
             {
                 return false;
             }
+
+            if (!EnsureDirectoryExists(_logFileDir, out DirectoryInfo logFileDirInfo))
+            {
+                return false;
+            }
+
+            DateTimeOffset now = DateTimeOffset.Now;
+            int lastRotationIndexOnDisk = FindLatestRotationIndex(logFileDirInfo, _logFileNameBase, now);
+
+            int nextRotationIndex = (lastRotationIndexOnDisk > _rotationIndex)
+                                        ? lastRotationIndexOnDisk
+                                        : _rotationIndex + 1;
+
+            string logFileName = ConstructFilename(_logFileNameBase, now, nextRotationIndex);
+            string logFilePath = Path.Combine(_logFileDir, logFileName);
+            FileStream logStream = new FileStream(logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+            StreamWriter logWriter = new StreamWriter(logStream, LogTextEncoding);
+
+            _rotationIndex = nextRotationIndex;
+            _logStream = logStream;
+            _logWriter = logWriter;
+            return true;
         }
     }
 }

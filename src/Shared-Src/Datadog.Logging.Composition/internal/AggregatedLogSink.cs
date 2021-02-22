@@ -39,31 +39,41 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public void Error(StringPair componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, params object[] dataNamesAndValues)
         {
-            InvokeForAllLogSinks((ls) => ls.Error(componentName, message, exception, dataNamesAndValues));
+            InvokeForAllLogSinks((ls) => ls.TryLogError(componentName, message, exception, dataNamesAndValues), out bool allSucceeded);
+            return allSucceeded;
         }
 
-        public void Info(StringPair componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogInfo(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
         {
-            InvokeForAllLogSinks((ls) => ls.Info(componentName, message, dataNamesAndValues));
+            InvokeForAllLogSinks((ls) => ls.TryLogInfo(componentName, message, dataNamesAndValues), out bool allSucceeded);
+            return allSucceeded;
         }
 
-        public void Debug(StringPair componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogDebug(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
         {
-            InvokeForAllLogSinks((ls) => ls.Debug(componentName, message, dataNamesAndValues));
+            InvokeForAllLogSinks((ls) => ls.TryLogDebug(componentName, message, dataNamesAndValues), out bool allSucceeded);
+            return allSucceeded;
         }
 
-        private void InvokeForAllLogSinks(Action<ILogSink> action)
+        /// <summary>
+        /// Exceptions thrown by any sink will be passed through. However, we will first try to invoke all sinks.
+        /// <c>allSucceeded</c> indicates whether all sinks the did NOT throw have succeeded.
+        /// </summary>
+        /// <param name="sinkFunction">log sink action to execute</param>
+        /// <param name="allSucceeded">indicates whether all sinks the did NOT throw have succeeded.</param>
+        private void InvokeForAllLogSinks(Func<ILogSink, bool> sinkFunction, out bool allSucceeded)
         {
             // It is not the business of the multiplexer to process errors. We pass them thorough. However, we do our best to invoke all sinks that worked.
             object errorHolder = null;
-
+            allSucceeded = true;
             for (int i = 0; i < _logSinks.Length; i++)
             {
                 try
                 {
-                    action(_logSinks[i]);
+                    bool thisSinkResult = sinkFunction(_logSinks[i]);
+                    allSucceeded = allSucceeded && thisSinkResult;
                 }
                 catch (Exception ex)
                 {

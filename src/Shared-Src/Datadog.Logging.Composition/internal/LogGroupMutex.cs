@@ -3,6 +3,13 @@ using System.Threading;
 
 namespace Datadog.Logging.Composition
 {
+    /// <summary>
+    /// We encapsulate an cross-process Mutext with the logis that it it takes too long to aquire it,
+    /// we assume that another process using it is hanging and give it. Instead, we construct another global Mutex
+    /// and use it instead. The benefit of this avoids hanging at the cost of possibe log corruption.
+    /// 
+    /// !!!! @ToDo: Testing Required !!!!
+    /// </summary>
     internal sealed class LogGroupMutex : IDisposable
     {
         private const int WaitMillis = 500;  // 0.5 sec
@@ -14,6 +21,32 @@ namespace Datadog.Logging.Composition
         private int _iteration;
         private string _mutexName;
         private Mutex _mutex;
+
+        public struct Handle : IDisposable
+        {
+            private Mutex _acquiredMutex;
+
+            internal Handle(Mutex acquiredMutex)
+            {
+                _acquiredMutex = acquiredMutex;
+            }
+
+            public bool IsValid { get { return (_acquiredMutex != null); } }
+
+            public void Dispose()
+            {
+                Mutex acquiredMutex = Interlocked.Exchange(ref _acquiredMutex, null);
+                if (acquiredMutex != null)
+                {
+                    try
+                    {
+                        acquiredMutex.ReleaseMutex();
+                    }
+                    catch (ObjectDisposedException)
+                    { }
+                }
+            }
+        }
 
         public LogGroupMutex(Guid groupId)
         {
@@ -33,7 +66,7 @@ namespace Datadog.Logging.Composition
             get { return _iteration; }
         }
 
-        public bool TryAcquire(out Mutex acquiredMutex)
+        public bool TryAcquire(out LogGroupMutex.Handle acquiredMutex)
         {
             try
             {
@@ -42,14 +75,13 @@ namespace Datadog.Logging.Composition
                 {
                     if (mutex.WaitOne(WaitMillis))
                     {
-                        acquiredMutex = mutex;
+                        acquiredMutex = new LogGroupMutex.Handle(mutex);
                         return true;
                     }
                 }
             }
             catch
-            {
-            }
+            { }
 
             // We timed out or there was an exception.
             return TryAcquireSlow(out acquiredMutex);
@@ -86,14 +118,14 @@ namespace Datadog.Logging.Composition
             return $"Global\\Datadog-FileLigSink-{groupId.ToString("D")}-{iteration}";
         }
 
-        private bool TryAcquireSlow(out Mutex acquiredMutex)
+        private bool TryAcquireSlow(out LogGroupMutex.Handle acquiredMutex)
         {
             lock (_iterationUpdateLock)
             {
                 if (_iteration < 0)
                 {
                     // Disposed!
-                    acquiredMutex = null;
+                    acquiredMutex = new LogGroupMutex.Handle(_mutex);
                     return false;
                 }
 
@@ -110,7 +142,7 @@ namespace Datadog.Logging.Composition
                             {
                                 if (_mutex.WaitOne(WaitMillis))
                                 {
-                                    acquiredMutex = _mutex;
+                                    acquiredMutex = new LogGroupMutex.Handle(_mutex);
                                     return true;
                                 }
 
@@ -121,7 +153,7 @@ namespace Datadog.Logging.Composition
                         catch
                         { }
 
-                        // Ok, sombody is holding the lock super long.
+                        // Ok, sombody in a different process is holding the lock super long.
                         // Perhaps they died. We can no longer block on them.
                         // Create a new mutex with a new name.
 
@@ -134,7 +166,7 @@ namespace Datadog.Logging.Composition
                 catch
                 { }
 
-                acquiredMutex = null;
+                acquiredMutex = new LogGroupMutex.Handle(_mutex);
                 return false;
             }
         }

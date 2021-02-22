@@ -14,6 +14,7 @@
 
     <!-- *** Cross-project-shared files needed by projects that want to do Log composition/redirection: ***                        -->
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\ILogSink.cs" />
+    <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\LoggingComponentName.cs" />
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\SimpleConsoleLogSink.cs" />
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\AggregatedLogSink.cs" />
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\FileLogSink.cs" />

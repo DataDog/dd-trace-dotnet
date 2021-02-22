@@ -97,9 +97,9 @@ namespace Datadog.Logging.Composition
                 }
                 else
                 {
-                    global::<#= logNamespace #>.Log.Configure.Error((component, msg, ex, data) => logSink.Error(StringPair.Create("<#= logComponentMoniker #>", component), msg, ex, data));
-                    global::<#= logNamespace #>.Log.Configure.Info((component, msg, data) => logSink.Info(StringPair.Create("<#= logComponentMoniker #>", component), msg, data));
-                    global::<#= logNamespace #>.Log.Configure.Debug((component, msg, data) => { if (IsDebugLoggingEnabled) { logSink.Debug(StringPair.Create("<#= logComponentMoniker #>", component), msg, data); } });
+                    global::<#= logNamespace #>.Log.Configure.Error((component, msg, ex, data) => TryLogError(logSink, "<#= logComponentMoniker #>", component, msg, ex, data));
+                    global::<#= logNamespace #>.Log.Configure.Info((component, msg, data) => TryLogInfo(logSink, "<#= logComponentMoniker #>", component, msg, data));
+                    global::<#= logNamespace #>.Log.Configure.Debug((component, msg, data) => TryLogDebug(logSink, "<#= logComponentMoniker #>", component, msg, data));
                 }
 <#
             }
@@ -130,6 +130,26 @@ namespace Datadog.Logging.Composition
             { }
             
             return true;
+        }
+
+        private static bool TryLogError(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, Exception error, object[] dataNamesAndValues)
+        {
+            return logSink.TryLogError(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, error, dataNamesAndValues);
+        }
+
+        private static bool TryLogInfo(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
+        {
+            return logSink.TryLogInfo(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, dataNamesAndValues);
+        }
+
+        private static bool TryLogDebug(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
+        {
+            if (IsDebugLoggingEnabled)
+            { 
+                return logSink.TryLogDebug(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, dataNamesAndValues);
+            }
+
+            return false;
         }
     }
 }

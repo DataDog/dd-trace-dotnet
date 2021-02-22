@@ -7,19 +7,44 @@ namespace Datadog.Logging.Composition
     {
         public static readonly SimpleConsoleLogSink SingeltonInstance = new SimpleConsoleLogSink();
 
-        public void Error(StringPair componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, params object[] dataNamesAndValues)
         {
-            SimpleConsoleSink.Error(componentName.Item1, componentName.Item2, message, exception, dataNamesAndValues);
+            try
+            {
+                SimpleConsoleSink.Error(componentName.Part1, componentName.Part2, message, exception, dataNamesAndValues);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+            
         }
 
-        public void Info(StringPair componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogInfo(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
         {
-            SimpleConsoleSink.Info(componentName.Item1, componentName.Item2, message, dataNamesAndValues);
+            try
+            {
+                SimpleConsoleSink.Info(componentName.Part1, componentName.Part2, message, dataNamesAndValues);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public void Debug(StringPair componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogDebug(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
         {
-            SimpleConsoleSink.Debug(componentName.Item1, componentName.Item2, message, dataNamesAndValues);
+                try
+                {
+                    SimpleConsoleSink.Debug(componentName.Part1, componentName.Part2, message, dataNamesAndValues);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

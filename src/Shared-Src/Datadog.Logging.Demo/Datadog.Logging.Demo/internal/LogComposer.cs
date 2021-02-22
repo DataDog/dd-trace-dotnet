@@ -15,8 +15,8 @@ namespace Datadog.Logging.Composition
     /// <summary>
     /// Collects data from many Log-sources and sends it to the specified Log Sink.
     /// This class has been generated using a T4 template. It covers the following logging components:
-    ///   1) Logger type:               "Datadog.AutoInstrumentation.ManagedLoader.Log"
-    ///      Logging component moniker: "ManagedLoader"
+    ///   1) Logger type:               "Datadog.Logging.Demo.Log"
+    ///      Logging component moniker: "LoggingDemo"
     ///
     /// TOTAL: 1 loggers.
     /// </summary>
@@ -37,7 +37,7 @@ namespace Datadog.Logging.Composition
             {
                 s_isDebugLoggingEnabled = value;
                 {
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.DebugLoggingEnabled(s_isDebugLoggingEnabled);
+                    global::Datadog.Logging.Demo.Log.Configure.DebugLoggingEnabled(s_isDebugLoggingEnabled);
                 }
             }
         }
@@ -51,19 +51,19 @@ namespace Datadog.Logging.Composition
         public static void RedirectLogs(ILogSink logSink)
         {
             {
-                Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
+                Datadog.Logging.Demo.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
 
                 if (logSink == null)
                 {
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Error(null);
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Info(null);
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Debug(null);
+                    global::Datadog.Logging.Demo.Log.Configure.Error(null);
+                    global::Datadog.Logging.Demo.Log.Configure.Info(null);
+                    global::Datadog.Logging.Demo.Log.Configure.Debug(null);
                 }
                 else
                 {
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Error((component, msg, ex, data) => TryLogError(logSink, "ManagedLoader", component, msg, ex, data));
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Info((component, msg, data) => TryLogInfo(logSink, "ManagedLoader", component, msg, data));
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Debug((component, msg, data) => TryLogDebug(logSink, "ManagedLoader", component, msg, data));
+                    global::Datadog.Logging.Demo.Log.Configure.Error((component, msg, ex, data) => TryLogError(logSink, "LoggingDemo", component, msg, ex, data));
+                    global::Datadog.Logging.Demo.Log.Configure.Info((component, msg, data) => TryLogInfo(logSink, "LoggingDemo", component, msg, data));
+                    global::Datadog.Logging.Demo.Log.Configure.Debug((component, msg, data) => TryLogDebug(logSink, "LoggingDemo", component, msg, data));
                 }
             }
         }
