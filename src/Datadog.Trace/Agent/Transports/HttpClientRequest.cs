@@ -1,8 +1,8 @@
 #if NETCOREAPP
 using System;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.MessagePack;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -27,6 +27,7 @@ namespace Datadog.Trace.Agent.Transports
             // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
             using (var content = new ByteArrayContent(traces.Array, traces.Offset, traces.Count))
             {
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/msgpack");
                 _request.Content = content;
 
                 var response = await _client.SendAsync(_request).ConfigureAwait(false);
