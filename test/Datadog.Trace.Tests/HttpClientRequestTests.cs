@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests
 
             var message = handler.Message;
 
-            Assert.IsAssignableFrom<BinaryTracesMessagePackContent>(message.Content);
+            Assert.IsAssignableFrom<ByteArrayContent>(message.Content);
         }
 
         private class CustomHandler : DelegatingHandler
