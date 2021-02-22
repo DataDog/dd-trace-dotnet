@@ -343,7 +343,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(sqlCommandType)
                        .WithParameters(commandBehavior, cancellationToken)
-                       .WithNamespaceAndNameFilters($"{ClrNames.GenericTask}<{sqlDataReaderType.FullName}>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters($"{ClrNames.GenericTask}<{sqlClientNamespace}.{SqlDataReaderTypeName}>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
