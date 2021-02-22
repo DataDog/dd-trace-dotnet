@@ -24,11 +24,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (object[] item in PackageVersions.StackExchangeRedis)
             {
-                if ((string)item[0] == string.Empty || !((string)item[0]).StartsWith("8"))
-                {
-                    continue;
-                }
-
                 yield return item.Concat(new object[] { false, false, }).ToArray();
                 yield return item.Concat(new object[] { true, false, }).ToArray();
                 yield return item.Concat(new object[] { true, true, }).ToArray();
