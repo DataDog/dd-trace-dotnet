@@ -19,9 +19,19 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     /// <summary>
     /// Leightweight Log stub for Logging-SDK-agnostic logging.
     /// Users of this library can use this class as a leighweight redirect to whatever log technology is used for output.
-    /// This allows to avoid creating complex logging abstractions (or taking dependencies on ILogger) for now.
-    /// We copy this simply class to each assembly once, becasue we need to change the namespace to avoid ambuguity.
+    /// An absolute minimum of dependencies is required: 3 small static classes that are included as source code (no library dependency).
+    /// The only namespaces importand by those 3 static classes are (see also <c>Datadog.Logging.Emission.props</c>):
+    ///  - System
+    ///  - System.Diagnostics (only to get Process.GetCurrentProcess().Id)
+    ///  - System.Runtime.CompilerServices (on;y for [MethodImpl(MethodImplOptions.AggressiveInlining)])
+    ///  - System.Text
     /// 
+    /// This allows to avoid creating complex logging abstractions (or taking dependencies on ILogger or other logging libraries).
+    /// This class is re-generated in each project wants to use it using T4. The only thing that T4 does is using a user-specified namespace.
+    /// Projects that wish to avoid using T4, can copy this file and hard-code the namespace (beware for source-forking).
+    /// 
+    /// <para>EMITTING LOGS.</para>
+    /// <para>
     /// For example:
     /// 
     /// Library "Datadog.AutoInstrumentation.Profiler.Managed.dll" gets a copy of this file with the adjusted namespace:
@@ -36,7 +46,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     ///   }
     /// </code>
     /// 
-    /// Library "Datadog.AutoInstrumentation.Tracer.Managed.dll" gets a copy of this file with the adjusted namespace:
+    /// Library "Datadog.AutoInstrumentation.Tracer.Managed.dll" also gets a copy of this file with the adjusted namespace:
     /// 
     /// <code>
     ///   namespace Datadog.AutoInstrumentation.Tracer.Managed
@@ -48,68 +58,79 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     ///   }
     /// </code>  
     /// 
-    /// Each librry can now make Log statements, for example:
+    /// Each library can now make Log statements, for example:
     /// 
     /// <code>
     ///   Log.Info("DataExporter", "Data transport started", "size", _size, "otherAttribute", _otherAttribute);
     /// </code>  
+    /// </para>
     /// 
-    /// Another composing library "Datadog.AutoInstrumentation.ProductComposer.dll" the uses the two above libraries uses some particular logging system.
-    /// It wants to redirect the logs of its components accordingly.
-    /// It creates a trivial adaper and configures the indirection:
+    /// <para>COMPOSING AND PERSISTING LOGS.</para>
+    /// <para>
+    /// To continue the above example, assume that the entrypoint of the application is another library "Datadog.AutoInstrumentation.TracerAndProfilerLoader.dll".
+    /// It uses the the two above libraries and it wants to direct the logs to some particular logging destnation (sink).
+    /// For that, the TracerAndProfilerLoader takes a dependencty on a few additional source files.
+    /// Those are also small, do not have any non-framework dependencies and run on Net Fx and Core Fx (see also <c>Datadog.Logging.Composition.props</c>).
+    /// It creates a trivial adaper and configures the indirection.
+    /// If short, the redirection happens as shown below.
+    /// A fully rubust example is in the <c>Datadog.Logging.Demo</c> project, and log sinks are included for
+    ///  - Console
+    ///  - Files (with optional rotation)
+    ///  - COmposing multiple sinks together
     /// 
     /// <code>
-    ///   namespace Datadog.AutoInstrumentation.ProductComposer
+    ///   namespace Datadog.AutoInstrumentation.TracerAndProfilerLoader
     ///   {
     ///       using ComposerLogAdapter = Datadog.AutoInstrumentation.ProductComposer.LogAdapter;
     ///       using ProfilerLog = Datadog.AutoInstrumentation.Profiler.Managed.Log;
     ///       using TracerLog = Datadog.AutoInstrumentation.Tracer.Managed.Log;
     ///       
-    ///       internal static class LogAdapter
+    ///       internal static class LogComposer
     ///       {
-    ///           static LogAdapter()
-    ///           {
-    ///               // Redirect the logs from the libraries being composed to the coposer's processors:
-    ///   
-    ///               ProfilerLog.Configure.Error((component, msg, ex, data) => ComposerLogAdapter.Error("Profiler", component, msg, ex, data));
-    ///               ProfilerLog.Configure.Info((component, msg, data) => ComposerLogAdapter.Info("Profiler", component, msg, data));
-    ///               ProfilerLog.Configure.Debug((component, msg, data) => ComposerLogAdapter.Debug("Profiler", component, msg, data));
-    ///               ProfilerLog.Configure.DebugLoggingEnabled(ComposerLogAdapter.IsDebugLoggingEnabled);
-    ///   
-    ///               TracerLog.Configure.Error((component, msg, rx, data) => ComposerLogAdapter.ErrorMessage("Tracer", component, msg, ex, data));
-    ///               TracerLog.Configure.Info((component, msg, data) => ComposerLogAdapter.Info("Tracer", component, msg, data));
-    ///               TracerLog.Configure.Debug((component, msg, data) => ComposerLogAdapter.Debug("Tracer", component, msg, data));
-    ///               TracerLog.Configure.DebugLoggingEnabled(ComposerLogAdapter.IsDebugLoggingEnabled);
-    ///           }
-    ///   
     ///           public const bool IsDebugLoggingEnabled = true;
     ///           
-    ///           public static void Error(string componentGroupName, string componentName, string message, Exception exception, params object[] dataNamesAndValues)
+    ///           static LogComposer()
     ///           {
-    ///               // Prepare a log line in any appropriate way. For example:
-    ///               StringBuilder logLine = ProfilerLog.DefaultFormat.ConstructLogLine(
-    ///                                               ProfilerLog.DefaultFormat.LogLevelMoniker_Error,
-    ///                                               componentGroupName,
-    ///                                               "::",
-    ///                                               componentName,
-    ///                                               useUtcTimestamp: false,
-    ///                                               Log.DefaultFormat.ConstructErrorMessage(message, exception),
-    ///                                               dataNamesAndValues);
-    ///               // Persist logLine to file...
+    ///               ProfilerLog.Log.Configure.Error((component, msg, ex, data) => LogError("Profiler", component, msg, ex, data));
+    ///               ProfilerLog.Log.Configure.Info((component, msg, data) => LogInfo("Profiler", component, msg, data));
+    ///               ProfilerLog.Log.Configure.Debug((component, msg, data) => LogDebug("Profiler", component, msg, data));
+    ///               ProfilerLog.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
+    ///               
+    ///               TracerLog.Log.Configure.Error((component, msg, ex, data) => LogError("Tracer", component, msg, ex, data));
+    ///               TracerLog.Log.Configure.Info((component, msg, data) => LogInfo("Tracer", component, msg, data));
+    ///               TracerLog.Log.Configure.Debug((component, msg, data) => LogDebug("Tracer", component, msg, data));
+    ///               TracerLog.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
     ///           }
     ///   
-    ///           public static void Info(string componentGroupName, string componentName, string message, params object[] dataNamesAndValues)
+    ///           private static void LogError(string logGroupMoniker, string logComponentMoniker, string message, Exception error, object[] dataNamesAndValues)
+    ///           {
+    ///               // Prepare a log line in any appropriate way. For example:
+    ///               string logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Error,
+    ///                                                               logGroupMoniker,
+    ///                                                               logComponentMoniker,
+    ///                                                               useUtcTimestamp: false,
+    ///                                                               DefaultFormat.ConstructErrorMessage(message, error),
+    ///                                                               dataNamesAndValues)
+    ///                                             .ToString());
+    ///               // Persist logLine to file...
+    ///           }
+    ///
+    ///           private static void LogInfo(string logGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
     ///           {
     ///               // Prepare a log line (e.g. like above) and persist it to file...
     ///           }
     ///
-    ///           public static void Debug(string componentGroupName, string componentName, string message, params object[] dataNamesAndValues)
+    ///           private static void LogDebug(string logGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
     ///           {
-    ///               // Prepare a log line (e.g. like above) and persist it to file...
+    ///               if (IsDebugLoggingEnabled)
+    ///               {
+    ///                   // Prepare a log line (e.g. like above) and persist it to file...
+    ///               }
     ///           }
     ///       }
     ///   }
     /// </code>
+    /// </para>
     /// </summary>
     internal static class Log
     {
