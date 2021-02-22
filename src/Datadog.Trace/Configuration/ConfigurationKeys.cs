@@ -140,12 +140,12 @@ namespace Datadog.Trace.Configuration
         public const string ServiceNameMappings = "DD_TRACE_SERVICE_MAPPING";
 
         /// <summary>
-        /// Configuration key for setting the size of the trace buffer
+        /// Configuration key for setting the size in bytes of the trace buffer
         /// </summary>
         public const string BufferSize = "DD_TRACE_BUFFER_SIZE";
 
         /// <summary>
-        /// Configuration key for setting the batch interval for the serialization queue
+        /// Configuration key for setting the batch interval in milliseconds for the serialization queue
         /// </summary>
         public const string SerializationBatchInterval = "DD_TRACE_BATCH_INTERVAL";
 

@@ -373,7 +373,7 @@ namespace Datadog.Trace.Configuration
         internal ServiceNames ServiceNameMappings { get; }
 
         /// <summary>
-        /// Gets a value indicating the size of the trace buffer
+        /// Gets a value indicating the size in bytes of the trace buffer
         /// </summary>
         internal int TraceBufferSize { get; }
 

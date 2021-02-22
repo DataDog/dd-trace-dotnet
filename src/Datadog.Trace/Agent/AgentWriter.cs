@@ -329,6 +329,8 @@ namespace Datadog.Trace.Agent
             }
 
             // All the buffers are full :( drop the trace
+            Log.Warning("Trace buffer is full. Dropping a trace.");
+
             if (_statsd != null)
             {
                 _statsd.Increment(TracerMetricNames.Queue.DroppedTraces);

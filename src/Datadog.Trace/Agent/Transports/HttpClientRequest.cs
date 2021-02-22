@@ -25,7 +25,7 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
         {
             // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-            using (var content = new BinaryTracesMessagePackContent(traces))
+            using (var content = new ByteArrayContent(traces.Array, traces.Offset, traces.Count))
             {
                 _request.Content = content;
 
