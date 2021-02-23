@@ -22,7 +22,7 @@ namespace Datadog.Trace.HttpOverStreams
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
         {
             await SendRequestAsync(request, requestStream).ConfigureAwait(false);
-            return await ReadResponseAsync(responseStream);
+            return await ReadResponseAsync(responseStream).ConfigureAwait(false);
         }
 
         private async Task SendRequestAsync(HttpRequest request, Stream requestStream)
@@ -66,7 +66,7 @@ namespace Datadog.Trace.HttpOverStreams
 
             async Task GoNextChar()
             {
-                await responseStream.ReadAsync(chArray, offset: 0, count: 1);
+                await responseStream.ReadAsync(chArray, offset: 0, count: 1).ConfigureAwait(false);
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
                 streamPosition++;
             }
@@ -78,7 +78,7 @@ namespace Datadog.Trace.HttpOverStreams
                     // end of headers
                     // Next character should be a LineFeed, regardless of Linux/Windows
                     // Skip the newline indicator
-                    await GoNextChar();
+                    await GoNextChar().ConfigureAwait(false);
 
                     return true;
                 }
@@ -89,13 +89,13 @@ namespace Datadog.Trace.HttpOverStreams
             // Skip to status code
             while (streamPosition < statusCodeStart)
             {
-                await GoNextChar();
+                await GoNextChar().ConfigureAwait(false);
             }
 
             // Read status code
             while (streamPosition < statusCodeEnd)
             {
-                await GoNextChar();
+                await GoNextChar().ConfigureAwait(false);
                 stringBuilder.Append(currentChar);
             }
 
@@ -110,14 +110,14 @@ namespace Datadog.Trace.HttpOverStreams
             // Skip to reason
             while (streamPosition < startOfReasonPhrase)
             {
-                await GoNextChar();
+                await GoNextChar().ConfigureAwait(false);
             }
 
             // Read reason
             do
             {
-                await GoNextChar();
-                if (await IsNewLine())
+                await GoNextChar().ConfigureAwait(false);
+                if (await IsNewLine().ConfigureAwait(false))
                 {
                     break;
                 }
@@ -132,10 +132,10 @@ namespace Datadog.Trace.HttpOverStreams
             // Read headers
             do
             {
-                await GoNextChar();
+                await GoNextChar().ConfigureAwait(false);
 
                 // Check for end of headers
-                if (await IsNewLine())
+                if (await IsNewLine().ConfigureAwait(false))
                 {
                     // Empty line, content starts next
                     break;
@@ -151,7 +151,7 @@ namespace Datadog.Trace.HttpOverStreams
                     }
 
                     stringBuilder.Append(currentChar);
-                    await GoNextChar();
+                    await GoNextChar().ConfigureAwait(false);
                 }
                 while (true);
 
@@ -161,9 +161,9 @@ namespace Datadog.Trace.HttpOverStreams
                 // Read value
                 do
                 {
-                    await GoNextChar();
+                    await GoNextChar().ConfigureAwait(false);
 
-                    if (await IsNewLine())
+                    if (await IsNewLine().ConfigureAwait(false))
                     {
                         // Next header pair starts
                         break;
