@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
                     s => s.Increment(MetricsNames.ExceptionsCount, 5, It.IsAny<double>(), new[] { "exception_type:CustomException2" }),
                     Times.Once);
 
-                statsd.ResetCalls();
+                statsd.Invocations.Clear();
 
                 // Make sure stats are reset when pushed
                 writer.PushEvents();

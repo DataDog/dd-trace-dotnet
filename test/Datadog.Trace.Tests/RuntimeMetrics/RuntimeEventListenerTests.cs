@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
             using var listener = new RuntimeEventListener(statsd.Object, TimeSpan.FromSeconds(10));
 
-            statsd.ResetCalls();
+            statsd.Invocations.Clear();
 
             for (int i = 0; i < 3; i++)
             {

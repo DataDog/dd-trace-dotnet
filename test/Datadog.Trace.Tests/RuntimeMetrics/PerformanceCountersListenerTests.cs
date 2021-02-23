@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.Verify(s => s.Gauge(MetricsNames.LohSize, It.IsAny<double>(), 1, null), Times.Once);
 
             statsd.VerifyNoOtherCalls();
-            statsd.ResetCalls();
+            statsd.Invocations.Clear();
 
             listener.Refresh();
 

@@ -196,6 +196,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public class InliningOptions : IXunitSerializable
         {
+            // ReSharper disable once UnusedMember.Global
+            public InliningOptions()
+            {
+            }
+
             internal InliningOptions(
                 bool enableCallTarget,
                 bool enableInlining)
@@ -226,6 +231,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public class InstrumentationOptions : IXunitSerializable
         {
+            // ReSharper disable once UnusedMember.Global
+            public InstrumentationOptions()
+            {
+            }
+
             internal InstrumentationOptions(
                 bool? instrumentSocketHandler,
                 bool? instrumentWinHttpHandler)
