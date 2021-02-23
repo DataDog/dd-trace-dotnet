@@ -122,8 +122,7 @@ namespace Datadog.Logging.Composition
                     using (logGroupMutexHandle)
                     {
                         DateTimeOffset now = DateTimeOffset.Now;
-                        //int rotationIndex = FindLatestRotationIndex(logFileDirInfo, logFileNameBase, now);
-                        int rotationIndex = 0;
+                        int rotationIndex = FindLatestRotationIndex(logFileDirInfo, logFileNameBase, now);
 
                         string logFileName = ConstructFilename(logFileNameBase, now, rotationIndex);
                         string logFilePath = Path.Combine(logFileDir, logFileName);
