@@ -162,7 +162,7 @@ Then, add the envrionment variables to opt into profiling.
       </ExeHost>
     </EntryPoint>
 +   <EnvironmentVariables>
-+     <EnvironmentVariable Name="CORE_CLR_ENABLE_PROFILING" Value="1" />
++     <EnvironmentVariable Name="CORECLR_ENABLE_PROFILING" Value="1" />
 +     <EnvironmentVariable Name="COR_ENABLE_PROFILING" Value="1" />
 +   </EnvironmentVariables>
   </CodePackage>
