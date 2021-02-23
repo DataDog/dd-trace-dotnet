@@ -7,30 +7,14 @@ using Datadog.Trace.Configuration;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
     /// <summary>
-    /// StackExchange.Redis.RedisBase.ExecuteAsync[T] calltarget instrumentation
+    /// StackExchange.Redis.[RedisBase/RedisBatch/RedisTransaction].ExecuteAsync[T] calltarget instrumentation
     /// </summary>
-    [InstrumentMethod(
-        AssemblyName = "StackExchange.Redis",
-        TypeName = "StackExchange.Redis.RedisBase",
-        MethodName = "ExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
-        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
-        MinimumVersion = "1.0.0",
-        MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
-    [InstrumentMethod(
-        AssemblyName = "StackExchange.Redis.StrongName",
-        TypeName = "StackExchange.Redis.RedisBase",
-        MethodName = "ExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
-        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
-        MinimumVersion = "1.0.0",
-        MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
-    public class RedisBaseExecuteAsyncIntegration
+    [RedisExecuteAsyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisBase")]
+    [RedisExecuteAsyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisBatch")]
+    [RedisExecuteAsyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisTransaction")]
+    public class RedisExecuteAsyncIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.StackExchangeRedis);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.StackExchangeRedis));
 
         /// <summary>
         /// OnMethodBegin callback

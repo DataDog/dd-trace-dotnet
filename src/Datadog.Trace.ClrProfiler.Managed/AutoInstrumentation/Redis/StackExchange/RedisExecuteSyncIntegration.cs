@@ -9,25 +9,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     /// <summary>
     /// StackExchange.Redis.RedisBase.ExecuteSync[T] calltarget instrumentation
     /// </summary>
-    [InstrumentMethod(
-        AssemblyName = "StackExchange.Redis",
-        TypeName = "StackExchange.Redis.RedisBase",
-        MethodName = "ExecuteSync",
-        ReturnTypeName = "T",
-        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
-        MinimumVersion = "1.0.0",
-        MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
-    [InstrumentMethod(
-        AssemblyName = "StackExchange.Redis.StrongName",
-        TypeName = "StackExchange.Redis.RedisBase",
-        MethodName = "ExecuteSync",
-        ReturnTypeName = "T",
-        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
-        MinimumVersion = "1.0.0",
-        MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
-    public class RedisBaseExecuteSyncIntegration
+    [RedisExecuteSyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisBase")]
+    public class RedisExecuteSyncIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.StackExchangeRedis);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
