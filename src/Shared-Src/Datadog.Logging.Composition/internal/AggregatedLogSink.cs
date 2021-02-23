@@ -39,19 +39,19 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, object[] dataNamesAndValues)
         {
             InvokeForAllLogSinks((ls) => ls.TryLogError(componentName, message, exception, dataNamesAndValues), out bool allSucceeded);
             return allSucceeded;
         }
 
-        public bool TryLogInfo(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogInfo(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
         {
             InvokeForAllLogSinks((ls) => ls.TryLogInfo(componentName, message, dataNamesAndValues), out bool allSucceeded);
             return allSucceeded;
         }
 
-        public bool TryLogDebug(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogDebug(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
         {
             InvokeForAllLogSinks((ls) => ls.TryLogDebug(componentName, message, dataNamesAndValues), out bool allSucceeded);
             return allSucceeded;

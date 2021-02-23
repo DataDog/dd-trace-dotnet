@@ -133,7 +133,7 @@ namespace Datadog.Logging.Emission
             }
         }
 
-        public static StringBuilder ConstructLogLine(string logLevelMoniker, string componentName, bool useUtcTimestamp, string message, params object[] dataNamesAndValues)
+        public static StringBuilder ConstructLogLine(string logLevelMoniker, string componentName, bool useUtcTimestamp, string message, object[] dataNamesAndValues)
         {
             return ConstructLogLine(logLevelMoniker, componentName, null, useUtcTimestamp, message, dataNamesAndValues);
         }
@@ -143,7 +143,7 @@ namespace Datadog.Logging.Emission
                                                      string componentNamePart2,
                                                      bool useUtcTimestamp,
                                                      string message,
-                                                     params object[] dataNamesAndValues)
+                                                     object[] dataNamesAndValues)
         {
             var logLine = new StringBuilder(capacity: 128);
             AppendLogLinePrefix(logLine, logLevelMoniker, useUtcTimestamp);
@@ -192,7 +192,7 @@ namespace Datadog.Logging.Emission
                                            string componentNamePart1,
                                            string componentNamePart2,
                                            string message,
-                                           params object[] dataNamesAndValues)
+                                           object[] dataNamesAndValues)
         {
             bool hasComponentNamePart1 = !string.IsNullOrWhiteSpace(componentNamePart1);
             bool hasComponentNamePart2 = !string.IsNullOrWhiteSpace(componentNamePart2);

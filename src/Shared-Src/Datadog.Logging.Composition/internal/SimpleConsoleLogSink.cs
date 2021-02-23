@@ -7,7 +7,7 @@ namespace Datadog.Logging.Composition
     {
         public static readonly SimpleConsoleLogSink SingeltonInstance = new SimpleConsoleLogSink();
 
-        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, object[] dataNamesAndValues)
         {
             try
             {
@@ -21,7 +21,7 @@ namespace Datadog.Logging.Composition
             
         }
 
-        public bool TryLogInfo(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogInfo(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
         {
             try
             {
@@ -34,7 +34,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogDebug(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogDebug(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
         {
                 try
                 {

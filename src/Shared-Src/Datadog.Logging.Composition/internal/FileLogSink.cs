@@ -138,12 +138,15 @@ namespace Datadog.Logging.Composition
 
                 if (newSink.TryLogInfo(LogComponentMoniker,
                                        "Logging session started",
-                                       "LogGroupId",
-                                       logGroupId,
-                                       "LogSessionId",
-                                       newSink.LogSessionId,
-                                       "RotateLogFileWhenLargerBytes",
-                                       newSink.RotateLogFileWhenLargerBytes))
+                                       new object[]
+                                           {
+                                               "LogGroupId",
+                                               logGroupId,
+                                               "LogSessionId",
+                                               newSink.LogSessionId,
+                                               "RotateLogFileWhenLargerBytes",
+                                               newSink.RotateLogFileWhenLargerBytes
+                                           }))
                 {
                     return true;
                 }
@@ -198,7 +201,7 @@ namespace Datadog.Logging.Composition
         {
             if (_logStream != null && _logWriter != null)
             {
-                this.TryLogInfo(LogComponentMoniker, "Finishing logging session", "LogSessionId", LogSessionId);
+                this.TryLogInfo(LogComponentMoniker, "Finishing logging session", new object[] { "LogSessionId", LogSessionId });
 
                 // If we can acquire the file mutex, we will dispose while holding it, so that no concurrent log writes are affected.
                 // But eventually we will disposed regardless.
@@ -231,7 +234,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, object[] dataNamesAndValues)
         {
             try
             {
@@ -250,7 +253,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogInfo(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogInfo(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
         {
             try
             {
@@ -268,7 +271,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogDebug(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogDebug(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
         {
             try
             {
