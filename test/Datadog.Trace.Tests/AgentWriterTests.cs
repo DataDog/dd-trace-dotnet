@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests
 
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1)), Times.Once);
 
-            _api.ResetCalls();
+            _api.Invocations.Clear();
 
             trace = new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) };
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
@@ -200,7 +200,7 @@ namespace Datadog.Trace.Tests
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null), Times.Exactly(2));
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedSpans, 1, 1, null), Times.Exactly(2));
             statsd.VerifyNoOtherCalls();
-            statsd.ResetCalls();
+            statsd.Invocations.Clear();
 
             // Both buffers are at capacity, write a new trace
             agent.WriteTrace(CreateTrace(2));
