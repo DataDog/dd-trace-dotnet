@@ -12,16 +12,19 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)loader.cpp">
       <Filter>ManagedLibraryLoader</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)clr_helpers.cpp">
-      <Filter>ManagedLibraryLoader-Dependencies</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)integration.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)string.cpp">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)util.cpp">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)string.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter.cpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.cpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)miniutf.cpp">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,19 +32,25 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)loader.h">
       <Filter>ManagedLibraryLoader</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)clr_helpers.h">
-      <Filter>ManagedLibraryLoader-Dependencies</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)com_ptr.h">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)integration.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)string.h">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)util.h">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)string.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)miniutf.hpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)miniutfdata.h">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClInclude>
   </ItemGroup>

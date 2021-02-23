@@ -1,11 +1,16 @@
 #ifndef DD_CLR_PROFILER_LOADER_H_
 #define DD_CLR_PROFILER_LOADER_H_
 
+#include <corhlpr.h>
+#include <corprof.h>
+#include <functional>
 #include <mutex>
 #include <unordered_set>
+#include <utility>
 
-#include "clr_helpers.h"
+#include "com_ptr.h"
 #include "il_rewriter.h"
+#include "string.h"
 
 #ifdef _WIN32
 #define WStr(value) L##value
@@ -15,111 +20,162 @@
 #define WStrLen(value) (size_t) std::char_traits<char16_t>::length(value)
 #endif
 
-namespace trace {
+namespace shared {
 
-    class Loader {
-    private:
-        RuntimeInformation runtime_information_;
-        ICorProfilerInfo4* info_;
+	struct RuntimeInfo {
+		COR_PRF_RUNTIME_TYPE runtime_type;
+		USHORT major_version;
+		USHORT minor_version;
+		USHORT build_version;
+		USHORT qfe_version;
 
-        std::mutex loaders_loaded_mutex_;
-        std::unordered_set<AppDomainID> loaders_loaded_;
+		RuntimeInfo()
+			: runtime_type((COR_PRF_RUNTIME_TYPE)0x0),
+			major_version(0),
+			minor_version(0),
+			build_version(0),
+			qfe_version(0) {}
 
-        std::vector<WSTRING> assembly_string_default_appdomain_vector_;
-        std::vector<WSTRING> assembly_string_nondefault_appdomain_vector_;
+		RuntimeInfo(COR_PRF_RUNTIME_TYPE runtime_type, USHORT major_version,
+			USHORT minor_version, USHORT build_version, USHORT qfe_version)
+			: runtime_type(runtime_type),
+			major_version(major_version),
+			minor_version(minor_version),
+			build_version(build_version),
+			qfe_version(qfe_version) {}
 
-        std::function<void(const std::string& str)> log_debug_callback_ = nullptr;
-        std::function<void(const std::string& str)> log_info_callback_ = nullptr;
-        std::function<void(const std::string& str)> log_warn_callback_ = nullptr;
+		RuntimeInfo& operator=(const RuntimeInfo& other) {
+			runtime_type = other.runtime_type;
+			major_version = other.major_version;
+			minor_version = other.minor_version;
+			build_version = other.build_version;
+			qfe_version = other.qfe_version;
+			return *this;
+		}
 
-        void Debug(const std::string& str) {
-          if (log_debug_callback_ != nullptr) {
-            log_debug_callback_(str);
-          }
-        }
-        void Info(const std::string& str) {
-          if (log_info_callback_ != nullptr) {
-            log_info_callback_(str);
-          }
-        }
-        void Warn(const std::string& str) {
-          if (log_warn_callback_ != nullptr) {
-            log_warn_callback_(str);
-          }
-        }
+		bool is_desktop() const { return runtime_type == COR_PRF_DESKTOP_CLR; }
+		bool is_core() const { return runtime_type == COR_PRF_CORE_CLR; }
+	};
 
-        HRESULT WriteAssembliesStringArray(
-            ILRewriter& rewriter, const ComPtr<IMetaDataEmit2> metadata_emit,
-            const std::vector<WSTRING>& assembly_string_vector,
-            ILInstr* pFirstInstr, mdTypeRef string_type_ref);
+	class Loader {
+	private:
+		RuntimeInfo runtime_information_;
+		ICorProfilerInfo4* info_;
 
-    public:
-        Loader(ICorProfilerInfo4* info,
-               WSTRING* assembly_string_default_appdomain_array,
-               ULONG assembly_string_default_appdomain_array_length,
-               WSTRING* assembly_string_nondefault_appdomain_array,
-               ULONG assembly_string_nondefault_appdomain_array_length,
-               std::function<void(const std::string& str)> log_debug_callback,
-               std::function<void(const std::string& str)> log_info_callback,
-               std::function<void(const std::string& str)> log_warn_callback);
+		std::mutex loaders_loaded_mutex_;
+		std::unordered_set<AppDomainID> loaders_loaded_;
 
-        Loader(ICorProfilerInfo4* info,
-               std::vector<WSTRING> assembly_string_default_appdomain_vector,
-               std::vector<WSTRING> assembly_string_nondefault_appdomain_vector,
-               std::function<void(const std::string& str)> log_debug_callback,
-               std::function<void(const std::string& str)> log_info_callback,
-               std::function<void(const std::string& str)> log_warn_callback);
+		std::vector<WSTRING> assembly_string_default_appdomain_vector_;
+		std::vector<WSTRING> assembly_string_nondefault_appdomain_vector_;
 
-        HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
+		std::function<void(const std::string& str)> log_debug_callback_ = nullptr;
+		std::function<void(const std::string& str)> log_info_callback_ = nullptr;
+		std::function<void(const std::string& str)> log_warn_callback_ = nullptr;
 
-        bool GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize,
-                                        BYTE** pSymbolsArray, int* symbolsSize, AppDomainID appDomainId);
+		void Debug(const std::string& str) {
+			if (log_debug_callback_ != nullptr) {
+				log_debug_callback_(str);
+			}
+		}
+		void Info(const std::string& str) {
+			if (log_info_callback_ != nullptr) {
+				log_info_callback_(str);
+			}
+		}
+		void Warn(const std::string& str) {
+			if (log_warn_callback_ != nullptr) {
+				log_warn_callback_(str);
+			}
+		}
 
-        static Loader* CreateLoader(
-            ICorProfilerInfo4* info, 
-            WSTRING process_name,
-            std::function<void(const std::string& str)> log_debug_callback,
-            std::function<void(const std::string& str)> log_info_callback,
-            std::function<void(const std::string& str)> log_warn_callback) {
+		HRESULT WriteAssembliesStringArray(
+			ILRewriter& rewriter, const ComPtr<IMetaDataEmit2> metadata_emit,
+			const std::vector<WSTRING>& assembly_string_vector,
+			ILInstr* pFirstInstr, mdTypeRef string_type_ref);
 
-          std::vector<WSTRING> assembly_string_default_appdomain_vector;
-          std::vector<WSTRING> assembly_string_nondefault_appdomain_vector;
-          const bool is_iis = process_name == WStr("w3wp.exe") ||
-                              process_name == WStr("iisexpress.exe");
+		RuntimeInfo GetRuntimeInformation() {
+			COR_PRF_RUNTIME_TYPE runtime_type;
+			USHORT major_version;
+			USHORT minor_version;
+			USHORT build_version;
+			USHORT qfe_version;
 
-          if (is_iis) {
+			auto hr = info_->GetRuntimeInformation(nullptr, &runtime_type, &major_version, &minor_version, &build_version, &qfe_version, 0, nullptr, nullptr);
+			if (FAILED(hr)) {
+				return {};
+			}
 
-            assembly_string_default_appdomain_vector = {
-                WStr("Datadog.Trace.ClrProfiler.Managed"),
-                WStr("AppDomain default IIS"),
-            };
-            assembly_string_nondefault_appdomain_vector = {
-                WStr("Datadog.Trace.ClrProfiler.Managed"),
-                WStr("AppDomain non default IIS"),
-            };
+			return { runtime_type, major_version, minor_version, build_version, qfe_version };
+		}
 
-          } else {
+	public:
+		Loader(ICorProfilerInfo4* info,
+			WSTRING* assembly_string_default_appdomain_array,
+			ULONG assembly_string_default_appdomain_array_length,
+			WSTRING* assembly_string_nondefault_appdomain_array,
+			ULONG assembly_string_nondefault_appdomain_array_length,
+			std::function<void(const std::string& str)> log_debug_callback,
+			std::function<void(const std::string& str)> log_info_callback,
+			std::function<void(const std::string& str)> log_warn_callback);
 
-            assembly_string_default_appdomain_vector = {
-                WStr("Datadog.Trace.ClrProfiler.Managed"),
-                WStr("AppDomain default normal process"),
-            };
-            assembly_string_nondefault_appdomain_vector = {
-                WStr("Datadog.Trace.ClrProfiler.Managed"),
-                WStr("AppDomain non default normal process"),
-            };
+		Loader(ICorProfilerInfo4* info,
+			std::vector<WSTRING> assembly_string_default_appdomain_vector,
+			std::vector<WSTRING> assembly_string_nondefault_appdomain_vector,
+			std::function<void(const std::string& str)> log_debug_callback,
+			std::function<void(const std::string& str)> log_info_callback,
+			std::function<void(const std::string& str)> log_warn_callback);
 
-          }
+		HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
 
-          return new Loader(info, assembly_string_default_appdomain_vector,
-                            assembly_string_nondefault_appdomain_vector,
-                            log_debug_callback, log_info_callback,
-                            log_warn_callback);
-        }
-    };
+		bool GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize,
+			BYTE** pSymbolsArray, int* symbolsSize, AppDomainID appDomainId);
 
-    extern Loader* loader;  // global reference to loader
+		static Loader* CreateLoader(
+			ICorProfilerInfo4* info,
+			WSTRING process_name,
+			std::function<void(const std::string& str)> log_debug_callback,
+			std::function<void(const std::string& str)> log_info_callback,
+			std::function<void(const std::string& str)> log_warn_callback) {
 
-}  // namespace trace
+			std::vector<WSTRING> assembly_string_default_appdomain_vector;
+			std::vector<WSTRING> assembly_string_nondefault_appdomain_vector;
+			const bool is_iis = process_name == WStr("w3wp.exe") ||
+				process_name == WStr("iisexpress.exe");
+
+			if (is_iis) {
+
+				assembly_string_default_appdomain_vector = {
+					WStr("Datadog.Trace.ClrProfiler.Managed"),
+					WStr("AppDomain default IIS"),
+				};
+				assembly_string_nondefault_appdomain_vector = {
+					WStr("Datadog.Trace.ClrProfiler.Managed"),
+					WStr("AppDomain non default IIS"),
+				};
+
+			}
+			else {
+
+				assembly_string_default_appdomain_vector = {
+					WStr("Datadog.Trace.ClrProfiler.Managed"),
+					WStr("AppDomain default normal process"),
+				};
+				assembly_string_nondefault_appdomain_vector = {
+					WStr("Datadog.Trace.ClrProfiler.Managed"),
+					WStr("AppDomain non default normal process"),
+				};
+
+			}
+
+			return new Loader(info, assembly_string_default_appdomain_vector,
+				assembly_string_nondefault_appdomain_vector,
+				log_debug_callback, log_info_callback,
+				log_warn_callback);
+		}
+	};
+
+	extern Loader* loader;  // global reference to loader
+
+}  // namespace shared
 
 #endif // DD_CLR_PROFILER_LOADER_H_
