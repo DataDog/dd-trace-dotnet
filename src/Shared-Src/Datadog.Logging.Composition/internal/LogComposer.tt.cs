@@ -112,7 +112,7 @@ namespace Datadog.Logging.Composition
             // Unless the debug log is explicitly disabled, we assume that it is enabled.
             try
             {
-                string IsDebugLoggingEnabledEnvVarValue = Environment.GetEnvironmentVariable(IsDebugLoggingEnabledEnvVarName);
+                string IsDebugLoggingEnabledEnvVarValue = ReadEnvironmentVariable(IsDebugLoggingEnabledEnvVarName);
 
                 if (IsDebugLoggingEnabledEnvVarValue != null)
                 {
@@ -150,6 +150,18 @@ namespace Datadog.Logging.Composition
             }
 
             return false;
+        }
+
+        private static string ReadEnvironmentVariable(string envVarName)
+        {
+            try
+            {
+                return Environment.GetEnvironmentVariable(envVarName);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

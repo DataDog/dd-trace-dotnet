@@ -116,7 +116,7 @@ namespace Datadog.Logging.Composition
 
             // If specified and accessible, use the Env Var for the log folder:
             {
-                string userSetDdTraceLogDir = Environment.GetEnvironmentVariable(DdTraceLogDirectoryEnvVarName);
+                string userSetDdTraceLogDir = ReadEnvironmentVariable(DdTraceLogDirectoryEnvVarName);
                 if (FileLogSink.TryCreateNew(userSetDdTraceLogDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, out newLogSink))
                 {
                     return true;
@@ -128,7 +128,7 @@ namespace Datadog.Logging.Composition
                 string defaultProductFamilyLogDir;
                 try
                 {
-                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    if (FileLogSink.IsWindowsFileSystem)
                     {
                         string commonAppDataDir = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                         defaultProductFamilyLogDir = Path.Combine(commonAppDataDir, WindowsDefaultLogDirectory, (productFamily ?? FilenameMissingComponentFallback).ToLower());
@@ -195,25 +195,37 @@ namespace Datadog.Logging.Composition
         {
             var filenameBase = new StringBuilder();
             filenameBase.Append(FilenamePrefix);
-            filenameBase.Append(productFamily ?? FilenameMissingComponentFallback);
+            AppendToFilenameBase(filenameBase, productFamily);
             filenameBase.Append(FilenameSeparator);
-            filenameBase.Append(product ?? FilenameMissingComponentFallback);
+            AppendToFilenameBase(filenameBase, product);
             filenameBase.Append(FilenameSeparator);
-            filenameBase.Append(componentGroup ?? FilenameMissingComponentFallback);
+            AppendToFilenameBase(filenameBase, componentGroup);
             filenameBase.Append(FilenameSeparator);
-            filenameBase.Append(processName ?? FilenameMissingComponentFallback);
-            filenameBase.Append(FilenameSeparator);
-
-            for (int p = 0; p < filenameBase.Length; p++)
-            {
-                char c = filenameBase[p];
-                if (char.IsWhiteSpace(c) || c == '-')
-                {
-                    filenameBase[p] = FilenameInvalidCharFallback;
-                }
-            }
+            AppendToFilenameBase(filenameBase, processName);
 
             return filenameBase;
+        }
+
+        private static void AppendToFilenameBase(StringBuilder filenameBase, string filenameComponent)
+        {
+            if (filenameComponent == null)
+            {
+                filenameBase.Append(FilenameMissingComponentFallback);
+                return;
+            }
+
+            for (int p = 0; p < filenameComponent.Length; p++)
+            {
+                char c = filenameComponent[p];
+                if (char.IsWhiteSpace(c) || c == '-')
+                {
+                    filenameBase.Append(FilenameInvalidCharFallback);
+                }
+                else
+                {
+                    filenameBase.Append(c);
+                }
+            }
         }
 
         private static string GetProcessName()

@@ -15,7 +15,7 @@ namespace Datadog.Logging.Emission
 
         public static void Error(string componentNamePart1, string componentNamePart2, string message, Exception exception, params object[] dataNamesAndValues)
         {
-            string errorMessage = DefaultFormat.ConstructErrorMessage(message, exception);
+            string errorMessage = DefaultFormat.ConstructErrorMessage(message, exception, useNewLines: true);
 
             Console.WriteLine();
             Console.WriteLine(DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Error,

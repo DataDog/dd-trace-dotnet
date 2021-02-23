@@ -18,22 +18,16 @@ namespace Datadog.Logging.Emission
         public const string LogLevelMoniker_Info = "INFO ";
         public const string LogLevelMoniker_Debug = "DEBUG";
 
+        private const string NewLineReplacement = "^->";
         private const string NullWord = "null";
         private const string DataValueNotSpecifiedWord = "unspecified";
         private static readonly string s_procIdInfo = GetProcIdInfoString();
 
-        public static string ConstructErrorMessage(string message, Exception exception)
+        public static string ConstructErrorMessage(string message, Exception exception, bool useNewLines)
         {
-            if (message != null && exception != null)
+            if (message == null && exception == null)
             {
-                if (message.Length > 0 && message[message.Length - 1] == '.')
-                {
-                    return message + " " + exception.ToString();
-                }
-                else
-                {
-                    return message + ". " + exception.ToString();
-                }
+                return null;
             }
             else if (message != null && exception == null)
             {
@@ -41,11 +35,101 @@ namespace Datadog.Logging.Emission
             }
             else if (message == null && exception != null)
             {
-                return exception.ToString();
+                var errorMsg = new StringBuilder();
+                DetectReplaceNewLines(exception.ToString(), errorMsg, useNewLines, out bool hasEncounteredNewLines);
+
+                if (useNewLines && hasEncounteredNewLines)
+                {
+                    errorMsg.Append(Environment.NewLine);
+                }
+
+                return errorMsg.ToString();
             }
             else
             {
-                return null;
+                // So we have (message != null && exception != null)
+
+                var errorMsg = new StringBuilder(message);
+                if (message.Length > 0 && message[message.Length - 1] != '.')
+                {
+                    errorMsg.Append('.');
+                }
+
+                int sepPos = errorMsg.Length;
+                DetectReplaceNewLines(exception.ToString(), errorMsg, useNewLines, out bool hasEncounteredNewLines);
+
+                if (useNewLines && hasEncounteredNewLines)
+                {
+                    errorMsg.Insert(sepPos, Environment.NewLine);
+                    errorMsg.Append(Environment.NewLine);
+                }
+                else
+                {
+                    errorMsg.Insert(sepPos, ' ');
+                }
+
+                return errorMsg.ToString();
+            }
+        }
+
+        private static void DetectReplaceNewLines(string srcText, StringBuilder destBuffer, bool useNewLines, out bool hasEncounteredNewLines)
+        {
+            hasEncounteredNewLines = false;
+            int p = 0;
+            while(p < srcText.Length)
+            {
+                char c = srcText[p];
+                if (c == '\n' || c == '\r')
+                {
+                    hasEncounteredNewLines = true;
+                    if (useNewLines)
+                    {
+                        destBuffer.Append(c);
+                        p++;
+                    }
+                    else
+                    {
+                        // Add space if the last char copied was not a white-space:
+                        int destBufferLen = destBuffer.Length;
+                        if (destBufferLen > 0 && !Char.IsWhiteSpace(destBuffer[destBufferLen - 1]))
+                        {
+                            destBuffer.Append(' ');
+                        }
+
+                        // Use the replacement and skip current char:
+                        destBuffer.Append(NewLineReplacement);
+                        p++;
+
+                        // Skip all immediately following NL chars:
+                        while (p < srcText.Length)
+                        {
+                            c = srcText[p];
+                            if (c == '\n' || c == '\r')
+                            {
+                                p++;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        // Next char is not NL. If it is not a white-space add a space now:
+                        if (p < srcText.Length )
+                        {
+                            c = srcText[p];
+                            if (!Char.IsWhiteSpace(c))
+                            {
+                                destBuffer.Append(' ');
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    destBuffer.Append(c);
+                    p++;
+                }
             }
         }
 
@@ -137,12 +221,24 @@ namespace Datadog.Logging.Emission
             {
                 targetBuffer.Append(message);
 
-                if (message.Length > 0 && message[message.Length - 1] == '.')
+                char lastMsgChar = '\0';
+                if (message.Length > 0)
                 {
+                    lastMsgChar = message[message.Length - 1];
+                }
+
+                if (lastMsgChar == '.')
+                {
+                    // Append space after '.':
                     targetBuffer.Append(' ');
+                }
+                else if (lastMsgChar == '\r' || lastMsgChar == '\n')
+                {
+                    // Append nothing after New Line:
                 }
                 else
                 {
+                    // Append ". " in all other cases.
                     targetBuffer.Append(". ");
                 }
             }

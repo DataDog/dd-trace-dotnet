@@ -9,7 +9,7 @@ namespace Datadog.Logging.Composition
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "Rule does not add redability")]
-    internal class AggregatedLogSink : ILogSink
+    internal class AggregatedLogSink : ILogSink, IDisposable
     {
         private readonly ILogSink[] _logSinks;
 
@@ -55,6 +55,21 @@ namespace Datadog.Logging.Composition
         {
             InvokeForAllLogSinks((ls) => ls.TryLogDebug(componentName, message, dataNamesAndValues), out bool allSucceeded);
             return allSucceeded;
+        }
+
+        public void Dispose()
+        {
+            InvokeForAllLogSinks((ls) => TryDisposeLogSink(ls), out bool allSucceeded);
+        }
+
+        private static bool TryDisposeLogSink(ILogSink logSink)
+        {
+            if (logSink is IDisposable disposableLogSink)
+            {
+                disposableLogSink.Dispose();
+            }
+
+            return true;
         }
 
         /// <summary>

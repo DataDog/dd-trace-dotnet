@@ -25,9 +25,13 @@ namespace Datadog.Logging.Composition
         private const string FilenameIndexFormat = "000";
         private const string FilenameExtension = "log";
 
+        private const bool UseNewLinesInErrorMessages = false;
+
         private const int FilenameTimestampAndIndexPartsLengthEstimate = 20;
 
         private static readonly Encoding LogTextEncoding = Encoding.UTF8;
+
+        private static readonly bool s_isWindowsFileSystem = GetIsWindowsFileSystem();
 
         private readonly Guid _logSessionId;
         private readonly LogGroupMutex _logGroupMutex;
@@ -50,7 +54,7 @@ namespace Datadog.Logging.Composition
             _logGroupMutex = logGroupMutex;
             _logFileDir = logFileDir;
             _logFileNameBase = logFileNameBase;
-            _rotateLogFileWhenLargerBytes = rotateLogFileWhenLargerBytes;
+            _rotateLogFileWhenLargerBytes = (rotateLogFileWhenLargerBytes <= 0) ? -1 : rotateLogFileWhenLargerBytes;
 
             _logStream = logStream;
             _logWriter = new StreamWriter(logStream, LogTextEncoding);
@@ -62,6 +66,13 @@ namespace Datadog.Logging.Composition
         {
             get { return _logSessionId; }
         }
+
+        public int RotateLogFileWhenLargerBytes
+        {
+            get { return _rotateLogFileWhenLargerBytes; }
+        }
+
+        public static bool IsWindowsFileSystem { get { return s_isWindowsFileSystem; } }
 
         public static bool TryCreateNew(string logFileDir, string logFileNameBase, Guid logGroupId, out FileLogSink newSink)
         {
@@ -103,11 +114,6 @@ namespace Datadog.Logging.Composition
                 return false;
             }
 
-            if (rotateLogFileWhenLargerBytes <= 0)
-            {
-                rotateLogFileWhenLargerBytes = -1;
-            }
-
             try
             {
                 var logGroupMutex = new LogGroupMutex(logGroupId);
@@ -116,7 +122,8 @@ namespace Datadog.Logging.Composition
                     using (logGroupMutexHandle)
                     {
                         DateTimeOffset now = DateTimeOffset.Now;
-                        int rotationIndex = FindLatestRotationIndex(logFileDirInfo, logFileNameBase, now);
+                        //int rotationIndex = FindLatestRotationIndex(logFileDirInfo, logFileNameBase, now);
+                        int rotationIndex = 0;
 
                         string logFileName = ConstructFilename(logFileNameBase, now, rotationIndex);
                         string logFilePath = Path.Combine(logFileDir, logFileName);
@@ -137,7 +144,7 @@ namespace Datadog.Logging.Composition
                                        "LogSessionId",
                                        newSink.LogSessionId,
                                        "RotateLogFileWhenLargerBytes",
-                                       rotateLogFileWhenLargerBytes))
+                                       newSink.RotateLogFileWhenLargerBytes))
                 {
                     return true;
                 }
@@ -229,7 +236,7 @@ namespace Datadog.Logging.Composition
         {
             try
             {
-                string errorMessage = DefaultFormat.ConstructErrorMessage(message, exception);
+                string errorMessage = DefaultFormat.ConstructErrorMessage(message, exception, UseNewLinesInErrorMessages);
                 StringBuilder logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Error,
                                                                  componentName.Part1,
                                                                  componentName.Part2,
@@ -299,21 +306,109 @@ namespace Datadog.Logging.Composition
 
         private static int FindLatestRotationIndex(DirectoryInfo logFileDirInfo, string logFileNameBase, DateTimeOffset timestamp)
         {
+            // The largest existing inde can be obtained by sorting the files that fit the pattern.
+            // However, we need to validate that the file not only matches the pattern, but is an exact filename structure match.
+            // E.g. "xyz-123.log" and "xyz-aa123.log" both fit the pattern, but only the former is an exact match.
+
+            // Search for files that fit the pattern:
             string filenamePattern = ConstructFilename(logFileNameBase, timestamp, "*");
 
+            // In none found, then 0 is the last index:
             FileInfo[] logFileInfos = logFileDirInfo.GetFiles("*", SearchOption.TopDirectoryOnly);
             if (logFileInfos == null || logFileInfos.Length == 0)
             {
                 return 0;
             }
 
-            Array.Sort(logFileInfos, (fi1, fi2) => -fi1.Name.CompareTo(fi2.Name));
-            string lastFile = logFileInfos[0].Name;
-            lastFile = Path.GetFileNameWithoutExtension(lastFile);
+            // Look at every filename found startng with the last in the alphabetical order:
+            Array.Sort(logFileInfos, (fi1, fi2) => fi1.Name.CompareTo(fi2.Name));
+            for (int f = logFileInfos.Length - 1; f >= 0; f--)
+            {
+                // COnsider the next file:
+                string existingFileName = logFileInfos[f].Name;
+                string existingFileNameNoExt = Path.GetFileNameWithoutExtension(existingFileName);
 
-            string rotationIndexStr = lastFile.Substring(lastFile.Length - 3);
-            int rotationIndex = int.Parse(rotationIndexStr);
-            return rotationIndex;
+                // Is it long-enough to even have the index in it (we matched the pattern, but be defensive)?
+                if (existingFileNameNoExt.Length >= FilenameIndexFormat.Length)
+                {
+                    // Find the "_" that separates the index.
+                    // (Remember that in some rare cases the actual index has more digits than given by the min length.)
+
+                    int rotationIndexSeparatorPos = existingFileNameNoExt.LastIndexOf(FilenameSeparatorForIndex);
+                    if (rotationIndexSeparatorPos >= 0
+                            && rotationIndexSeparatorPos < existingFileNameNoExt.Length
+                            && rotationIndexSeparatorPos <= existingFileNameNoExt.Length - FilenameIndexFormat.Length)
+                    {
+                        // If the "_" separator was found, get the index string that follows it and parse it.
+
+                        string rotationIndexStr = existingFileNameNoExt.Substring(rotationIndexSeparatorPos + 1);
+                        if (Int32.TryParse(rotationIndexStr, out int rotationIndex))
+                        {
+                            // If we can parse the index, compare the actual file name with the correct file name for that index.
+                            // If the match in not exact, then we ignore this file and keep searching.
+                            // Otherwise we fiund the index.
+
+                            string filenameForIndex = ConstructFilename(logFileNameBase, timestamp, rotationIndex);
+                            if (IsSameFilename(existingFileName, filenameForIndex))
+                            {
+                                return rotationIndex;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        private static bool IsSameFilename(string fileName1, string fileName2)
+        {
+            if (fileName1 == fileName2)
+            {
+                return true;
+            }
+
+            if (fileName1 == null || fileName2 == null)
+            {
+                return false;
+            }
+
+            if (IsWindowsFileSystem)
+            {
+                return fileName1.Equals(fileName2, StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                return fileName1.Equals(fileName2, StringComparison.Ordinal);
+            }
+        }
+
+        private static bool GetIsWindowsFileSystem()
+        {
+            try
+            {
+                PlatformID platformID = Environment.OSVersion.Platform;
+                switch (platformID)
+                {
+                    case PlatformID.Win32S:
+                    case PlatformID.Win32Windows:
+                    case PlatformID.Win32NT:
+                    case PlatformID.WinCE:
+                        return true;
+
+                    case PlatformID.Unix:
+                    case PlatformID.MacOSX:
+                        return false;
+
+                    default:
+                        throw new InvalidOperationException($"Unexpected OS PlatformID: \"{platformID}\" ({((int) platformID)})");
+                }
+            }
+            catch
+            {
+                // defaut to Windows.
+                return true;
+            }
         }
 
         private static string ConstructFilename(string nameBase, DateTimeOffset timestamp, int index)
@@ -349,13 +444,15 @@ namespace Datadog.Logging.Composition
                 using (logGroupMutexHandle)
                 {
                     long pos = _logStream.Seek(0, SeekOrigin.End);
-                    if (_rotateLogFileWhenLargerBytes > 0 && pos > _rotateLogFileWhenLargerBytes)
+                    while (_rotateLogFileWhenLargerBytes > 0 && pos > _rotateLogFileWhenLargerBytes)
                     {
                         // If rotating in not enabled OR if we try and fail rotating => give up.
                         if (!rotateFileIfNecessary || !RotateLogFile(logGroupMutexHandle))
                         {
                             return false;
                         }
+
+                        pos = _logStream.Seek(0, SeekOrigin.End);
                     }
 
                     _logWriter.WriteLine(logLine);
