@@ -569,8 +569,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
   }
 
   // remove module metadata from map
-  if (module_id_to_info_map_.count(module_id) > 0) {
-    ModuleMetadata* metadata = module_id_to_info_map_[module_id];
+  auto findRes = module_id_to_info_map_.find(module_id);
+  if (findRes != module_id_to_info_map_.end()) {
+    ModuleMetadata* metadata = findRes->second;
 
     // remove appdomain id from managed_profiler_loaded_app_domains set
     if (managed_profiler_loaded_app_domains.find(metadata->app_domain_id) !=
@@ -650,8 +651,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   // Verify that we have the metadata for this module
   ModuleMetadata* module_metadata = nullptr;
-  if (module_id_to_info_map_.count(module_id) > 0) {
-    module_metadata = module_id_to_info_map_[module_id];
+
+  auto findRes = module_id_to_info_map_.find(module_id);
+  if (findRes != module_id_to_info_map_.end()) {
+    module_metadata = findRes->second;
   }
 
   if (module_metadata == nullptr) {
@@ -2696,8 +2699,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
   ModuleMetadata* module_metadata = nullptr;
   {
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-    if (module_id_to_info_map_.count(moduleId) > 0) {
-      module_metadata = module_id_to_info_map_[moduleId];
+    auto findRes = module_id_to_info_map_.find(moduleId);
+    if (findRes != module_id_to_info_map_.end()) {
+      module_metadata = findRes->second;
     } else {
       return S_OK;
     }
