@@ -2061,7 +2061,8 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   BYTE system_appdomain_type_ref_compressed_token[4];
   ULONG token_length = CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
 
-  COR_SIGNATURE* appdomain_get_current_domain_signature = new COR_SIGNATURE[start_length + token_length];
+  const auto appdomain_get_current_domain_signature_length = start_length + token_length;
+  COR_SIGNATURE appdomain_get_current_domain_signature[250];
   memcpy(appdomain_get_current_domain_signature,
          appdomain_get_current_domain_signature_start,
          start_length);
@@ -2074,10 +2075,8 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
       system_appdomain_type_ref,
       "get_CurrentDomain"_W.c_str(),
       appdomain_get_current_domain_signature,
-      start_length + token_length,
+      appdomain_get_current_domain_signature_length,
       &appdomain_get_current_domain_member_ref);
-  delete[] appdomain_get_current_domain_signature;
-
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
     return hr;
@@ -2102,7 +2101,8 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   BYTE system_reflection_assembly_type_ref_compressed_token[4];
   token_length = CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
 
-  COR_SIGNATURE* appdomain_load_signature = new COR_SIGNATURE[start_length + token_length + end_length];
+  const auto appdomain_load_signature_length = start_length + token_length + end_length;
+  COR_SIGNATURE appdomain_load_signature[250];
   memcpy(appdomain_load_signature,
          appdomain_load_signature_start,
          start_length);
@@ -2117,10 +2117,8 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   hr = metadata_emit->DefineMemberRef(
       system_appdomain_type_ref, "Load"_W.c_str(),
       appdomain_load_signature,
-      start_length + token_length + end_length,
+      appdomain_load_signature_length,
       &appdomain_load_member_ref);
-  delete[] appdomain_load_signature;
-
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
     return hr;
@@ -2489,8 +2487,8 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
   ULONG token_length = CorSigCompressToken(
       system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
 
-  COR_SIGNATURE* appdomain_get_current_domain_signature =
-      new COR_SIGNATURE[start_length + token_length];
+  const auto appdomain_get_current_domain_signature_length = start_length + token_length;
+  COR_SIGNATURE appdomain_get_current_domain_signature[250];
   memcpy(appdomain_get_current_domain_signature,
          appdomain_get_current_domain_signature_start, start_length);
   memcpy(&appdomain_get_current_domain_signature[start_length],
@@ -2499,9 +2497,9 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
   mdMemberRef appdomain_get_current_domain_member_ref;
   hr = metadata_emit->DefineMemberRef(
       system_appdomain_type_ref, "get_CurrentDomain"_W.c_str(),
-      appdomain_get_current_domain_signature, start_length + token_length,
+      appdomain_get_current_domain_signature,
+      appdomain_get_current_domain_signature_length,
       &appdomain_get_current_domain_member_ref);
-  delete[] appdomain_get_current_domain_signature;
 
   // Get AppDomain.SetData
   COR_SIGNATURE appdomain_set_data_signature[] = {
