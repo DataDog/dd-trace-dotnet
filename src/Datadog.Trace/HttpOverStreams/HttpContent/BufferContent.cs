@@ -19,5 +19,22 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
         {
             return destination.WriteAsync(_buffer.Array, _buffer.Offset, _buffer.Count);
         }
+
+        public Task CopyToAsync(byte[] buffer)
+        {
+            if (_buffer.Count > buffer.Length)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(buffer),
+                    $"Buffer of size {buffer.Length} is not large enough to hold content of size {_buffer.Count}");
+            }
+
+            _buffer.Array?.CopyTo(buffer, _buffer.Offset);
+#if NET45
+            return Task.FromResult(false);
+#else
+            return Task.CompletedTask;
+#endif
+        }
     }
 }
