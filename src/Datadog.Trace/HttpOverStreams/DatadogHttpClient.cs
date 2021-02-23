@@ -80,6 +80,11 @@ namespace Datadog.Trace.HttpOverStreams
                     // Skip the newline indicator
                     await GoNextChar().ConfigureAwait(false);
 
+                    if (!currentChar.Equals(DatadogHttpValues.LineFeed))
+                    {
+                        throw new Exception($"Unexpected character {currentChar} in headers: CR must be followed by LF");
+                    }
+
                     return true;
                 }
 
