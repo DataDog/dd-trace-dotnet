@@ -1425,6 +1425,37 @@
     ]
   },
   {
+    "name": "ServiceStackRedis",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendReceive",
+          "signature_types": [
+            "T",
+            "System.Byte[][]",
+            "System.Func`1[!!0]",
+            "System.Action`1[System.Func`1[!!0]]",
+            "System.Boolean"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.RedisNativeClientSendReceiveIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "SqlCommand",
     "method_replacements": [
       {
