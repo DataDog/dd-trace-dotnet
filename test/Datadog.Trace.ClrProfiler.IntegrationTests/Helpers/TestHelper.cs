@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected TestHelper(EnvironmentHelper environmentHelper, ITestOutputHelper output)
         {
             EnvironmentHelper = environmentHelper;
+            EnvironmentHelper.TestId = TestId;
             Output = output;
 
             Output.WriteLine($"Platform: {EnvironmentTools.GetPlatform()}");
@@ -44,7 +45,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
         }
 
-        protected EnvironmentHelper EnvironmentHelper { get; }
+        public Guid TestId { get; } = Guid.NewGuid();
+
+        public EnvironmentHelper EnvironmentHelper { get; }
 
         protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
 

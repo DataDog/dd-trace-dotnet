@@ -19,8 +19,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 if (_iisExpress == null)
                 {
-                    var initialAgentPort = TcpPortProvider.GetOpenPort();
-                    Agent = new MockTracerAgent(initialAgentPort);
+                    if (helper.EnvironmentHelper.NamedPipesModeEnabled)
+                    {
+                        Agent = new MockTracerAgent(tracePipeName: $"traces-{helper.TestId}");
+                    }
+                    else
+                    {
+                        var initialAgentPort = TcpPortProvider.GetOpenPort();
+                        Agent = new MockTracerAgent(initialAgentPort);
+                    }
 
                     HttpPort = TcpPortProvider.GetOpenPort();
 

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -18,13 +20,16 @@ namespace Datadog.Trace.TestHelpers
     public class MockTracerAgent : IDisposable
     {
         private readonly HttpListener _listener;
+        private readonly string _tracesPipeName;
+        private readonly Thread _namedPipeThread;
         private readonly UdpClient _udpClient;
-        private readonly Thread _listenerThread;
+        private readonly Thread _httpListenerThread;
         private readonly Thread _statsdThread;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
-        public MockTracerAgent(int port = 8126, int retries = 5, bool useStatsd = false)
+        public MockTracerAgent(int port = 8126, int retries = 5, bool useStatsd = false, string tracePipeName = null)
         {
+            _tracesPipeName = tracePipeName;
             _cancellationTokenSource = new CancellationTokenSource();
 
             if (useStatsd)
@@ -54,38 +59,46 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
 
-            // try up to 5 consecutive ports before giving up
-            while (true)
+            if (tracePipeName != null)
             {
-                // seems like we can't reuse a listener if it fails to start,
-                // so create a new listener each time we retry
-                var listener = new HttpListener();
-                listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-                listener.Prefixes.Add($"http://localhost:{port}/");
-
-                try
+                _namedPipeThread = new Thread(NamedPipeServerThread) { IsBackground = true };
+                _namedPipeThread.Start();
+            }
+            else
+            {
+                // try up to 5 consecutive ports before giving up
+                while (true)
                 {
-                    listener.Start();
+                    // seems like we can't reuse a listener if it fails to start,
+                    // so create a new listener each time we retry
+                    var listener = new HttpListener();
+                    listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+                    listener.Prefixes.Add($"http://localhost:{port}/");
 
-                    // successfully listening
-                    Port = port;
-                    _listener = listener;
+                    try
+                    {
+                        listener.Start();
 
-                    _listenerThread = new Thread(HandleHttpRequests);
-                    _listenerThread.Start();
+                        // successfully listening
+                        Port = port;
+                        _listener = listener;
 
-                    return;
+                        _httpListenerThread = new Thread(HandleHttpRequests);
+                        _httpListenerThread.Start();
+
+                        return;
+                    }
+                    catch (HttpListenerException) when (retries > 0)
+                    {
+                        // only catch the exception if there are retries left
+                        port = TcpPortProvider.GetOpenPort();
+                        retries--;
+                    }
+
+                    // always close listener if exception is thrown,
+                    // whether it was caught or not
+                    listener.Close();
                 }
-                catch (HttpListenerException) when (retries > 0)
-                {
-                    // only catch the exception if there are retries left
-                    port = TcpPortProvider.GetOpenPort();
-                    retries--;
-                }
-
-                // always close listener if exception is thrown,
-                // whether it was caught or not
-                listener.Close();
             }
         }
 
@@ -290,6 +303,83 @@ namespace Datadog.Trace.TestHelpers
                 {
                     // we don't care about any exception when listener is stopped
                 }
+            }
+        }
+
+        private void NamedPipeServerThread()
+        {
+            using (var pipeServer =
+                new NamedPipeServerStream(_tracesPipeName, PipeDirection.InOut, 1))
+            {
+                int threadId = Thread.CurrentThread.ManagedThreadId;
+
+                while (_cancellationTokenSource.IsCancellationRequested == false)
+                {
+                    // Wait for a client to connect
+                    pipeServer.WaitForConnection();
+
+                    Console.WriteLine("Client connected on thread[{0}].", threadId);
+                    try
+                    {
+                        // Read the request from the client. Once the client has
+                        // written to the pipe its security token will be available.
+
+                        var ss = new StreamString(pipeServer);
+
+                        // Verify our identity to the connected client using a
+                        // string that the client anticipates.
+
+                        string traceRequest = ss.ReadString();
+                        var lines = traceRequest.Split(
+                            new[] { Environment.NewLine },
+                            StringSplitOptions.None);
+
+                        int index = 0;
+                        string currentLine = lines[index];
+
+                        var headers = new List<KeyValuePair<string, string>>();
+                        while (!string.IsNullOrWhiteSpace(currentLine))
+                        {
+                            var semicolonIndex = currentLine.IndexOf(":");
+                            var key = currentLine.Substring(0, semicolonIndex - 1);
+                            var value = currentLine.Substring(semicolonIndex, currentLine.Length - semicolonIndex);
+                            headers.Add(new KeyValuePair<string, string>(key, value));
+                            currentLine = lines[++index];
+                        }
+
+                        // now read all the content and serialize
+                        var content = string.Empty;
+                        while (++index < lines.Length)
+                        {
+                            content += lines[index];
+                        }
+
+                        var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(Encoding.UTF8.GetBytes(content));
+                        OnRequestDeserialized(spans);
+
+                        // Display the name of the user we are impersonating.
+                        // Console.WriteLine("Named pipe on thread[{0}] as user: {1}.", threadId, pipeServer.GetImpersonationUserName());
+
+                        // TODO: write back
+                        // ctx.Response.ContentType = "application/json";
+                        // var buffer = Encoding.UTF8.GetBytes("{}");
+                        // ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                        // ctx.Response.Close();
+                        var response =
+                            @"ContentType: application/json
+Content-Length: 0
+
+{}";
+                        var responseBytes = Encoding.UTF8.GetBytes(response);
+                        pipeServer.Write(responseBytes, 0, responseBytes.Length);
+                    }
+                    catch (IOException e)
+                    {
+                        Console.WriteLine("ERROR: {0}", e.Message);
+                    }
+                }
+
+                pipeServer.Close();
             }
         }
 

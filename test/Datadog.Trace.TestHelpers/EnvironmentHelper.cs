@@ -29,7 +29,7 @@ namespace Datadog.Trace.TestHelpers
         private readonly Assembly _anchorAssembly;
         private readonly TargetFrameworkAttribute _targetFramework;
 
-        private bool _requiresProfiling;
+        private readonly bool _requiresProfiling;
         private string _integrationsFileLocation;
         private string _profilerFileLocation;
 
@@ -68,6 +68,10 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public bool DebugModeEnabled { get; set; }
+
+        public bool NamedPipesModeEnabled { get; set; }
+
+        public Guid TestId { get; set; }
 
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
@@ -143,6 +147,31 @@ namespace Datadog.Trace.TestHelpers
             {
                 Environment.SetEnvironmentVariable(variable, null);
             }
+        }
+
+        public void EnableNamedPipes()
+        {
+            NamedPipesModeEnabled = true;
+            CustomEnvironmentVariables["DD_TRACE_TRANSPORT"] = "DATADOG-NAMED-PIPES";
+
+            var statsPipe = $"stats-{TestId}";
+            var tracePipe = $"traces-{TestId}";
+
+            CustomEnvironmentVariables["DD_APM_WINDOWS_PIPE_NAME"] = tracePipe;
+            CustomEnvironmentVariables["DD_TRACE_PIPE_NAME"] = tracePipe;
+
+            CustomEnvironmentVariables["DD_AGENT_PIPE_NAME"] = statsPipe;
+            CustomEnvironmentVariables["DD_DOGSTATSD_PIPE_NAME"] = statsPipe;
+            CustomEnvironmentVariables["DD_DOGSTATSD_WINDOWS_PIPE_NAME"] = statsPipe;
+
+            CustomEnvironmentVariables["DD_DOGSTATSD_PORT"] = "0";
+            CustomEnvironmentVariables["DD_APM_RECEIVER_PORT"] = "0";
+        }
+
+        public void DisableNamedPipes()
+        {
+            NamedPipesModeEnabled = false;
+            CustomEnvironmentVariables["DD_TRACE_TRANSPORT"] = null;
         }
 
         public void SetEnvironmentVariables(

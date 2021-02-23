@@ -1,0 +1,53 @@
+
+# docker network create -d "l2bridge" --subnet 10.244.0.0/24 --gateway 10.244.0.1 -o com.docker.network.windowsshim.vlanid=7 -o com.docker.network.windowsshim.dnsservers="10.244.0.7" ddwinl2bridge
+
+# docker build -f DockerfileIIS --build-arg SITE_DIR=./test/test-applications/aspnet/Samples.AspNetMvc4  --build-arg MSI_DIR=./src/WindowsInstaller/bin/Release/x64/en-us -t local-iis-test . --no-cache
+# docker run --name local-iis-test -p 8118:8118 --network ddwinl2bridge local-iis-test
+# docker run --name local-iis-test --network host local-iis-test
+# docker stop local-iis-test; docker rm local-iis-test
+
+# Default web server image
+ARG SERVER_IMG=mcr.microsoft.com/windows/servercore/iis:windowsservercore-1909
+
+# Default build server image (3.5 is needed for wix)
+ARG BUILD_IMG=mcr.microsoft.com/dotnet/framework/sdk:3.5-windowsservercore-1909
+
+FROM $BUILD_IMG AS build
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+ARG SITE_DIR=SITE_DIR_NOT_SPECIFIED
+ARG MSI_DIR=MSI_DIR_NOT_SPECIFIED
+
+COPY windows-container-scripts ./scripts
+COPY $MSI_DIR ./msi
+COPY $SITE_DIR ./site
+
+# Build the app
+RUN C:\scripts\build-proj.ps1
+
+FROM $SERVER_IMG AS final
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+ARG PORT=8118
+ENV IIS_PORT=$PORT
+
+COPY --from=build ./scripts ./scripts
+COPY --from=build ./msi ./msi
+COPY --from=build ./site ./site
+
+RUN Add-WindowsFeature NET-Framework-45-ASPNET; \
+    Add-WindowsFeature Web-Asp-Net45
+
+RUN Remove-WebSite -Name 'Default Web Site'; \
+    New-Website -Name 'test' -Port 8118 -PhysicalPath 'c:\site'
+
+# Used for debugging purposes
+# ENTRYPOINT powershell.exe
+
+RUN C:\scripts\install-tracer.ps1
+
+RUN C:\scripts\restart-iis.ps1
+
+ENTRYPOINT C:\scripts\iis-container-entrypoint.ps1
+
+EXPOSE 8118
