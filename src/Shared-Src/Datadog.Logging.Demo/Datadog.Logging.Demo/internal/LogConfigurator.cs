@@ -6,6 +6,7 @@ namespace Datadog.Logging.Demo
 {
     internal static class LogConfigurator
     {
+        private const bool UseConsoleLogInsteadOfFileLog = false;
         private const bool UseConsoleLogIfFileLogNotAvailable = true;
         private const int LogFileSizeBytes = 1024 * 50;
 
@@ -18,7 +19,47 @@ namespace Datadog.Logging.Demo
 
         private static ILogSink s_logSink = null;
 
+#pragma warning disable CS0162 // Unreachable code detected: Purposeful control using const bools.
         public static void SetupLogger()
+        {
+            if (UseConsoleLogInsteadOfFileLog)
+            {
+                if (TrySetupConsoleLogger())
+                {
+                    return;
+                }
+            }
+            else
+            {
+                if (TrySetupFileLogger())
+                {
+                    return;
+                }
+            }
+
+            if (UseConsoleLogIfFileLogNotAvailable)
+            {
+                if (TrySetupConsoleLogger())
+                {
+                    return;
+                }
+            }
+
+            Console.ReadLine();
+            Console.WriteLine($"Console-Message: PROBLEM! Could not setup logger.");
+        }
+#pragma warning restore CS0162 // Unreachable code detected
+
+        public static void DisposeLogSink()
+        {
+            ILogSink logSink = Interlocked.Exchange(ref s_logSink, null);
+            if (logSink != null && logSink is IDisposable disposableLogSink)
+            {
+                disposableLogSink.Dispose();
+            }
+        }
+
+        private static bool TrySetupFileLogger()
         {
             try
             {
@@ -32,27 +73,21 @@ namespace Datadog.Logging.Demo
                     LogComposer.RedirectLogs(fileLogSink);
                     LogComposer.SetDebugLoggingEnabledBasedOnEnvironment();
                     s_logSink = fileLogSink;
-                    return;
+                    return true;
                 }
             }
             catch
             { }
 
-            if (UseConsoleLogIfFileLogNotAvailable)
-            {
-                s_logSink = SimpleConsoleLogSink.SingeltonInstance;
-                LogComposer.RedirectLogs(s_logSink);
-                LogComposer.IsDebugLoggingEnabled = true;
-            }
+            return false;
         }
 
-        public static void DisposeLogSink()
+        private static bool TrySetupConsoleLogger()
         {
-            ILogSink logSink = Interlocked.Exchange(ref s_logSink, null);
-            if (logSink != null && logSink is IDisposable disposableLogSink)
-            {
-                disposableLogSink.Dispose();
-            }
+            s_logSink = SimpleConsoleLogSink.SingeltonInstance;
+            LogComposer.RedirectLogs(s_logSink);
+            LogComposer.IsDebugLoggingEnabled = true;
+            return true;
         }
     }
 }
