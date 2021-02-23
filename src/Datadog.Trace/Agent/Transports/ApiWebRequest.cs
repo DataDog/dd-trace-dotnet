@@ -1,6 +1,6 @@
+using System;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.MessagePack;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -25,14 +25,14 @@ namespace Datadog.Trace.Agent.Transports
             _request.Headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
         {
             _request.Method = "POST";
-
             _request.ContentType = "application/msgpack";
+
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                await CachedSerializer.Instance.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
+                await requestStream.WriteAsync(traces.Array, traces.Offset, traces.Count).ConfigureAwait(false);
             }
 
             try

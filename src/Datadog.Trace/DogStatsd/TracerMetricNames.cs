@@ -66,11 +66,6 @@ namespace Datadog.Trace.DogStatsd
             /// Count: Size in bytes of traces pulled from the queue for flushing
             /// </summary>
             public const string DequeuedBytes = "datadog.tracer.queue.dequeued_bytes";
-
-            /// <summary>
-            /// Gauge: The maximum number of traces buffered by the background writer (this is static at 1k for now)
-            /// </summary>
-            public const string MaxTraces = "datadog.tracer.queue.max_traces";
         }
 
         public static class Health

@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
 
@@ -34,17 +33,11 @@ namespace Datadog.Trace.Agent.Transports
             _headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver)
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
-                // buffer the entire contents for now so we can determine its size in bytes and avoid chunking.
-                // TODO: support chunked transfer encoding to avoid buffering the entire contents
-                var requestContentStream = new MemoryStream();
-                await CachedSerializer.Instance.SerializeAsync(requestContentStream, traces, formatterResolver).ConfigureAwait(false);
-                requestContentStream.Position = 0;
-
-                var content = new StreamContent(requestContentStream, requestContentStream.Length);
+                var content = new BufferContent(traces);
                 var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
 
                 // send request, get response

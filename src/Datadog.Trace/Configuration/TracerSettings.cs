@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -176,8 +175,11 @@ namespace Datadog.Trace.Configuration
                                         "400-499";
             HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
 
-            TraceQueueSize = source?.GetInt32(ConfigurationKeys.QueueSize)
-                        ?? 1000;
+            TraceBufferSize = source?.GetInt32(ConfigurationKeys.BufferSize)
+                ?? 1024 * 1024 * 10; // 10MB
+
+            TraceBatchInterval = source?.GetInt32(ConfigurationKeys.SerializationBatchInterval)
+                        ?? 100;
         }
 
         /// <summary>
@@ -366,14 +368,19 @@ namespace Datadog.Trace.Configuration
         internal bool[] HttpClientErrorStatusCodes { get; set; }
 
         /// <summary>
-        /// Gets a value indicating the size of the trace buffer
-        /// </summary>
-        internal int TraceQueueSize { get; }
-
-        /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
         internal ServiceNames ServiceNameMappings { get; }
+
+        /// <summary>
+        /// Gets a value indicating the size in bytes of the trace buffer
+        /// </summary>
+        internal int TraceBufferSize { get; }
+
+        /// <summary>
+        /// Gets a value indicating the batch interval for the serialization queue, in milliseconds
+        /// </summary>
+        internal int TraceBatchInterval { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

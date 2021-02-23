@@ -34,14 +34,14 @@ namespace Datadog.Trace.Agent
             _apiRequestFactory = apiRequestFactory ?? CreateRequestFactory();
         }
 
-        public async Task<bool> SendTracesAsync(Span[][] traces)
+        public async Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces)
         {
             // retry up to 5 times with exponential back-off
             var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
-            Log.Debug<int>("Sending {Count} traces to the DD agent", traces.Length);
+            Log.Debug<int>("Sending {Count} traces to the DD agent", numberOfTraces);
 
             while (true)
             {
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 // Set additional headers
-                request.AddHeader(AgentHttpHeaderNames.TraceCount, traces.Length.ToString());
+                request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
                 request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, FrameworkDescription.Instance.Name);
                 request.AddHeader(AgentHttpHeaderNames.LanguageVersion, FrameworkDescription.Instance.ProductVersion);
 
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    success = await SendTracesAsync(traces, request, isFinalTry).ConfigureAwait(false);
+                    success = await SendTracesAsync(traces, numberOfTraces, request, isFinalTry).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Agent
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
-                        Log.Error(ex, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", traces.Length, _apiRequestFactory.Info(_tracesEndpoint));
+                        Log.Error(ex, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(_tracesEndpoint));
                         return false;
                     }
 #endif
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Agent
                     if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error(exception, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", traces.Length, _apiRequestFactory.Info(_tracesEndpoint));
+                        Log.Error(exception, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(_tracesEndpoint));
                         return false;
                     }
 
@@ -114,8 +114,7 @@ namespace Datadog.Trace.Agent
 
                     if (isSocketException)
                     {
-                        // Somewhat expected, so just warn instead of error
-                        Log.Warning(exception, "Unable to communicate with the trace agent at {AgentEndpoint}", _apiRequestFactory.Info(_tracesEndpoint));
+                        Log.Debug(exception, "Unable to communicate with the trace agent at {AgentEndpoint}", _apiRequestFactory.Info(_tracesEndpoint));
                     }
 
                     // Execute retry delay
@@ -126,7 +125,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                Log.Debug<int>("Successfully sent {Count} traces to the DD agent", traces.Length);
+                Log.Debug<int>("Successfully sent {Count} traces to the DD agent", numberOfTraces);
                 return true;
             }
         }
@@ -142,7 +141,7 @@ namespace Datadog.Trace.Agent
 #endif
         }
 
-        private async Task<bool> SendTracesAsync(Span[][] traces, IApiRequest request, bool finalTry)
+        private async Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, IApiRequest request, bool finalTry)
         {
             IApiResponse response = null;
 
@@ -151,7 +150,7 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     _statsd?.Increment(TracerMetricNames.Api.Requests);
-                    response = await request.PostAsync(traces, _formatterResolver).ConfigureAwait(false);
+                    response = await request.PostAsync(traces).ConfigureAwait(false);
                 }
                 catch
                 {

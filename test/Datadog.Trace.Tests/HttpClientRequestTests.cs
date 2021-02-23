@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests
 
             request.AddHeader("Hello", "World");
 
-            await request.PostAsync(new Span[0][], new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+            await request.PostAsync(ArraySegment<byte>.Empty);
 
             var message = handler.Message;
 
@@ -41,11 +41,11 @@ namespace Datadog.Trace.Tests
             var factory = new HttpClientRequestFactory(handler);
             var request = factory.Create(new Uri("http://localhost/"));
 
-            await request.PostAsync(new Span[0][], new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+            await request.PostAsync(ArraySegment<byte>.Empty);
 
             var message = handler.Message;
 
-            Assert.IsAssignableFrom<TracesMessagePackContent>(message.Content);
+            Assert.IsAssignableFrom<ByteArrayContent>(message.Content);
         }
 
         private class CustomHandler : DelegatingHandler

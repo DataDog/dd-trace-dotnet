@@ -1,5 +1,5 @@
+using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.MessagePack;
 
 namespace Datadog.Trace.Agent
 {
@@ -7,6 +7,6 @@ namespace Datadog.Trace.Agent
     {
         void AddHeader(string name, string value);
 
-        Task<IApiResponse> PostAsync(Span[][] traces, FormatterResolverWrapper formatterResolver);
+        Task<IApiResponse> PostAsync(ArraySegment<byte> traces);
     }
 }
