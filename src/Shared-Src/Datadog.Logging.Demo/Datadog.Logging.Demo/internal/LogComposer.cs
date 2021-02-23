@@ -9,6 +9,7 @@
 // ----------- ----------- ----------- ----------- -----------
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Logging.Composition
 {
@@ -93,17 +94,17 @@ namespace Datadog.Logging.Composition
             return true;
         }
 
-        private static bool TryLogError(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, Exception error, object[] dataNamesAndValues)
+        private static bool TryLogError(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, Exception error, IEnumerable<object> dataNamesAndValues)
         {
             return logSink.TryLogError(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, error, dataNamesAndValues);
         }
 
-        private static bool TryLogInfo(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
+        private static bool TryLogInfo(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, IEnumerable<object> dataNamesAndValues)
         {
             return logSink.TryLogInfo(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, dataNamesAndValues);
         }
 
-        private static bool TryLogDebug(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
+        private static bool TryLogDebug(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, IEnumerable<object> dataNamesAndValues)
         {
             if (IsDebugLoggingEnabled)
             { 

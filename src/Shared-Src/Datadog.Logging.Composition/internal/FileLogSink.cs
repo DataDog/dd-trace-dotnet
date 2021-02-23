@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Threading;
 using Datadog.Logging.Emission;
 
 namespace Datadog.Logging.Composition
@@ -234,7 +234,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, object[] dataNamesAndValues)
+        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
@@ -253,7 +253,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogInfo(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
+        public bool TryLogInfo(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
@@ -271,7 +271,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogDebug(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
+        public bool TryLogDebug(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {

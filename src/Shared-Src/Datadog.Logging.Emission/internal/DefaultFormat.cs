@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
@@ -133,7 +134,7 @@ namespace Datadog.Logging.Emission
             }
         }
 
-        public static StringBuilder ConstructLogLine(string logLevelMoniker, string componentName, bool useUtcTimestamp, string message, object[] dataNamesAndValues)
+        public static StringBuilder ConstructLogLine(string logLevelMoniker, string componentName, bool useUtcTimestamp, string message, IEnumerable<object> dataNamesAndValues)
         {
             return ConstructLogLine(logLevelMoniker, componentName, null, useUtcTimestamp, message, dataNamesAndValues);
         }
@@ -143,7 +144,7 @@ namespace Datadog.Logging.Emission
                                                      string componentNamePart2,
                                                      bool useUtcTimestamp,
                                                      string message,
-                                                     object[] dataNamesAndValues)
+                                                     IEnumerable<object> dataNamesAndValues)
         {
             var logLine = new StringBuilder(capacity: 128);
             AppendLogLinePrefix(logLine, logLevelMoniker, useUtcTimestamp);
@@ -192,7 +193,7 @@ namespace Datadog.Logging.Emission
                                            string componentNamePart1,
                                            string componentNamePart2,
                                            string message,
-                                           object[] dataNamesAndValues)
+                                           IEnumerable<object> dataNamesAndValues)
         {
             bool hasComponentNamePart1 = !string.IsNullOrWhiteSpace(componentNamePart1);
             bool hasComponentNamePart2 = !string.IsNullOrWhiteSpace(componentNamePart2);
@@ -243,32 +244,92 @@ namespace Datadog.Logging.Emission
                 }
             }
 
-            if (dataNamesAndValues != null && dataNamesAndValues.Length > 0)
+            if (dataNamesAndValues != null)
             {
-                targetBuffer.Append("{");
-                for (int i = 0; i < dataNamesAndValues.Length; i += 2)
+                if (dataNamesAndValues is object[] dataNamesAndValuesArray)
                 {
-                    if (i > 0)
+                    AppenddataNamesAndValuesArr(targetBuffer, dataNamesAndValuesArray);
+                }
+                else
+                {
+                    AppenddataNamesAndValuesEnum(targetBuffer, dataNamesAndValues);
+                }
+            }
+        }
+
+        private static void AppenddataNamesAndValuesArr(StringBuilder targetBuffer, object[] dataNamesAndValues)
+        {
+            if (dataNamesAndValues.Length < 1)
+            {
+                return;
+            }
+
+            targetBuffer.Append("[]");
+            targetBuffer.Append('{');
+            for (int i = 0; i < dataNamesAndValues.Length; i += 2)
+            {
+                if (i > 0)
+                {
+                    targetBuffer.Append(", ");
+                }
+
+                targetBuffer.Append('[');
+                QuoteIfString(targetBuffer, dataNamesAndValues[i]);
+                targetBuffer.Append(']');
+                targetBuffer.Append('=');
+
+                if (i + 1 < dataNamesAndValues.Length)
+                {
+                    QuoteIfString(targetBuffer, dataNamesAndValues[i + 1]);
+                }
+                else
+                {
+                    targetBuffer.Append(DataValueNotSpecifiedWord);
+                }
+            }
+
+            targetBuffer.Append('}');
+        }
+
+        private static void AppenddataNamesAndValuesEnum(StringBuilder targetBuffer, IEnumerable<object> dataNamesAndValues)
+        {
+            int enumIndex = 0;
+            using (IEnumerator<object> enumerator = dataNamesAndValues.GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    if (enumIndex == 0)
+                    {
+                        targetBuffer.Append("<>");
+                        targetBuffer.Append('{');
+                    }
+                    else
                     {
                         targetBuffer.Append(", ");
                     }
 
                     targetBuffer.Append('[');
-                    QuoteIfString(targetBuffer, dataNamesAndValues[i]);
+                    QuoteIfString(targetBuffer, enumerator.Current);
                     targetBuffer.Append(']');
+                    enumIndex++;
+
                     targetBuffer.Append('=');
 
-                    if (i + 1 < dataNamesAndValues.Length)
+                    if (enumerator.MoveNext())
                     {
-                        QuoteIfString(targetBuffer, dataNamesAndValues[i + 1]);
+                        QuoteIfString(targetBuffer, enumerator.Current);
+                        enumIndex++;
                     }
                     else
                     {
                         targetBuffer.Append(DataValueNotSpecifiedWord);
                     }
                 }
+            }
 
-                targetBuffer.Append("}");
+            if (enumIndex > 0)
+            {
+                targetBuffer.Append('}');
             }
         }
 

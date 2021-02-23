@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Datadog.Logging.Emission;
 
 namespace Datadog.Logging.Composition
@@ -7,7 +8,7 @@ namespace Datadog.Logging.Composition
     {
         public static readonly SimpleConsoleLogSink SingeltonInstance = new SimpleConsoleLogSink();
 
-        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, object[] dataNamesAndValues)
+        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
@@ -21,7 +22,7 @@ namespace Datadog.Logging.Composition
             
         }
 
-        public bool TryLogInfo(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
+        public bool TryLogInfo(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
@@ -34,11 +35,11 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogDebug(LoggingComponentName componentName, string message, object[] dataNamesAndValues)
+        public bool TryLogDebug(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
         {
-                try
-                {
-                    SimpleConsoleSink.Debug(componentName.Part1, componentName.Part2, message, dataNamesAndValues);
+            try
+            {
+                SimpleConsoleSink.Debug(componentName.Part1, componentName.Part2, message, dataNamesAndValues);
                 return true;
             }
             catch

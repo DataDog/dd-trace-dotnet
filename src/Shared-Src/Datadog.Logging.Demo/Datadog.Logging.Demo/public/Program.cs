@@ -34,13 +34,18 @@ namespace Datadog.Logging.Demo
 
             Console.WriteLine($"Console-Message: Logger was configured. Starting workers...");
 
-            Task worker1 = Task.Run(() => DoWorkAsync(1));
-            Task worker2 = Task.Run(() => DoWorkAsync(2));
-            Task worker3 = Task.Run(() => DoWorkAsync(3));
+            const int WorkerCount = 1;
+
+            Task[] workers = new Task[WorkerCount];
+            for (int i = 0; i < WorkerCount; i++)
+            {
+                workers[i] = Task.Run(() => DoWorkAsync(i + 1));
+            }
 
             Console.WriteLine($"Console-Message: Workers started. Running tasks...");
 
-            Task.WaitAll(worker1, worker2, worker3);
+            Task.WaitAll(workers);
+            workers = null;
 
             Console.WriteLine($"Console-Message: Workers completed. Disposing log sink(s).");
 
@@ -112,7 +117,7 @@ namespace Datadog.Logging.Demo
                         break;
 
                     case DemoLogAction.Debug:
-                        Log.Debug(LogComponentMoniker, "A debug-relevant event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Debug(LogComponentMoniker, "A debug-relevant event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction, "<UnpairedTag />");
                         break;
 
                     default:
