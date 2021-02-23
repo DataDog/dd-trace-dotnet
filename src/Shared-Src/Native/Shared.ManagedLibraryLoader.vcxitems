@@ -5,26 +5,24 @@
     <HasSharedItems>true</HasSharedItems>
     <ItemsProjectGuid>{d6380925-f0a0-4da2-b6ab-9ffab35cd088}</ItemsProjectGuid>
   </PropertyGroup>
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
-    </ClCompile>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)clr_helpers.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)integration.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)loader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)miniutf.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)string.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)clr_helpers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)com_ptr.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)integration.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)loader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)miniutf.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)miniutfdata.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)string.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)util.h" />
   </ItemGroup>
