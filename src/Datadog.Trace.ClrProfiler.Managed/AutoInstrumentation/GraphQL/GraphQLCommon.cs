@@ -49,6 +49,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             return scope;
         }
 
+        internal static Scope CreateScopeFromExecuteAsync(Tracer tracer, IExecutionContext executionContext)
+        {
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope scope = null;
+
+            try
+            {
+                string source = executionContext.Document.OriginalQuery;
+                string operationName = executionContext.Operation.Name;
+                string operationType = executionContext.Operation.OperationType.ToString();
+
+                var tags = new GraphQLTags();
+                string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+                scope = tracer.StartActiveWithTags(ExecuteOperationName, serviceName: serviceName, tags: tags);
+
+                var span = scope.Span;
+                span.Type = SpanTypes.GraphQL;
+                span.ResourceName = $"{operationType} {operationName ?? "operation"}";
+
+                tags.Source = source;
+                tags.OperationName = operationName;
+                tags.OperationType = operationType;
+
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            return scope;
+        }
+
         internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IExecutionErrors executionErrors)
         {
             var errorCount = executionErrors.Count;
