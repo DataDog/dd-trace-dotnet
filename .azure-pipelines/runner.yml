@@ -11,8 +11,7 @@ trigger:
 
 variables:
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
-  dotnetCoreSdkVersion: 3.1.107
-  dotnetCoreSdk5Version: 5.0.100
+  dotnetCoreSdk5Version: 5.0.103
   ddApiKey: $(DD_API_KEY)
   DD_DOTNET_TRACER_MSBUILD:
 
@@ -82,10 +81,10 @@ jobs:
   steps:
 
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.1
+    displayName: install dotnet core runtime 3.1
     inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
+      packageType: runtime
+      version: 3.1.x
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 5.0
@@ -166,10 +165,10 @@ jobs:
       version: 3.0.x
 
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.1
+    displayName: install dotnet core runtime 3.1
     inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
+      packageType: runtime
+      version: 3.1.x
       
   - task: UseDotNet@2
     displayName: install dotnet core sdk 5.0

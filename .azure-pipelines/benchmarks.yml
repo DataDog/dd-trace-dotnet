@@ -6,7 +6,7 @@ trigger:
 
 variables:
   buildConfiguration: release
-  dotnetCoreSdkVersion: 5.0.100
+  dotnetCoreSdkVersion: 5.0.103
   ddApiKey: $(DD_API_KEY)
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
