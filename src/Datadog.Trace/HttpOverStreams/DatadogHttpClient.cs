@@ -84,6 +84,29 @@ namespace Datadog.Trace.HttpOverStreams
                 streamPosition += advanceCount;
             }
 
+            async Task ReadUntil(StringBuilder builder, char stopChar)
+            {
+                while (!currentChar.Equals(stopChar))
+                {
+                    builder.Append(currentChar);
+                    await GoNextChar().ConfigureAwait(false);
+                }
+            }
+
+            async Task ReadUntilNewLine(StringBuilder builder)
+            {
+                do
+                {
+                    if (await IsNewLine().ConfigureAwait(false))
+                    {
+                        break;
+                    }
+
+                    await ReadUntil(builder, DatadogHttpValues.CarriageReturn).ConfigureAwait(false);
+                }
+                while (true);
+            }
+
             async Task<bool> IsNewLine()
             {
                 if (currentChar.Equals(DatadogHttpValues.CarriageReturn))
@@ -126,17 +149,8 @@ namespace Datadog.Trace.HttpOverStreams
             await SkipUntil(startOfReasonPhrase).ConfigureAwait(false);
 
             // Read reason
-            do
-            {
-                await GoNextChar().ConfigureAwait(false);
-                if (await IsNewLine().ConfigureAwait(false))
-                {
-                    break;
-                }
-
-                stringBuilder.Append(currentChar);
-            }
-            while (true);
+            await GoNextChar().ConfigureAwait(false);
+            await ReadUntilNewLine(stringBuilder).ConfigureAwait(false);
 
             var reasonPhrase = stringBuilder.ToString();
             stringBuilder.Clear();
@@ -154,36 +168,16 @@ namespace Datadog.Trace.HttpOverStreams
                 }
 
                 // Read key
-                do
-                {
-                    if (currentChar.Equals(':'))
-                    {
-                        // Value portion starts
-                        break;
-                    }
-
-                    stringBuilder.Append(currentChar);
-                    await GoNextChar().ConfigureAwait(false);
-                }
-                while (true);
+                await ReadUntil(stringBuilder, stopChar: ':').ConfigureAwait(false);
 
                 var name = stringBuilder.ToString().Trim();
                 stringBuilder.Clear();
 
+                // skip separator
+                await GoNextChar().ConfigureAwait(false);
+
                 // Read value
-                do
-                {
-                    await GoNextChar().ConfigureAwait(false);
-
-                    if (await IsNewLine().ConfigureAwait(false))
-                    {
-                        // Next header pair starts
-                        break;
-                    }
-
-                    stringBuilder.Append(currentChar);
-                }
-                while (true);
+                await ReadUntilNewLine(stringBuilder).ConfigureAwait(false);
 
                 var value = stringBuilder.ToString().Trim();
                 stringBuilder.Clear();
