@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.Ci;
 using Newtonsoft.Json;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
@@ -34,17 +36,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 string name = Path.GetFileNameWithoutExtension(filePath);
                 string content = File.ReadAllText(filePath);
                 var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, string>[][]>(content);
-                yield return new object[] { name, jsonObject };
+                yield return new object[] { new JsonDataItem(name, jsonObject) };
             }
         }
 
         [Theory]
         [MemberData(nameof(GetJsonItems))]
-        public void CheckEnvironmentVariables(string name, Dictionary<string, string>[][] data)
+        public void CheckEnvironmentVariables(JsonDataItem jsonData)
         {
             SpanContext context = new SpanContext(null, null, null);
             DateTimeOffset time = DateTimeOffset.UtcNow;
-            foreach (Dictionary<string, string>[] testItem in data)
+            foreach (Dictionary<string, string>[] testItem in jsonData.Data)
             {
                 Dictionary<string, string> envData = testItem[0];
                 Dictionary<string, string> spanData = testItem[1];
@@ -63,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 }
 
                 string providerName = span.Tags.GetTag(CommonTags.CIProvider);
-                Assert.Equal(name, providerName);
+                Assert.Equal(jsonData.Name, providerName);
             }
         }
 
@@ -91,6 +93,49 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 Environment.SetEnvironmentVariable(item.Key.ToString(), item.Value.ToString());
             }
+        }
+
+        public class JsonDataItem : IXunitSerializable
+        {
+            public JsonDataItem()
+            {
+            }
+
+            internal JsonDataItem(string name, Dictionary<string, string>[][] data)
+            {
+                Name = name;
+                Data = data;
+            }
+
+            internal string Name { get; private set; }
+
+            internal Dictionary<string, string>[][] Data { get; private set; }
+
+            private string DataString
+            {
+                get => JsonConvert.SerializeObject(Data) ?? string.Empty;
+                set
+                {
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        Data = JsonConvert.DeserializeObject<Dictionary<string, string>[][]>(value);
+                    }
+                }
+            }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                Name = info.GetValue<string>(nameof(Name));
+                DataString = info.GetValue<string>(nameof(Data));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(Name), Name);
+                info.AddValue(nameof(Data), DataString);
+            }
+
+            public override string ToString() => $"Name={Name}";
         }
     }
 }
