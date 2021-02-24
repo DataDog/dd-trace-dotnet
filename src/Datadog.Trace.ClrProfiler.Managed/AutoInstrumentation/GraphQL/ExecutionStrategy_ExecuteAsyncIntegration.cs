@@ -16,6 +16,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         MinimumVersion = "2.3.0",
         MaximumVersion = "2.*.*",
         IntegrationName = IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = "GraphQL",
+        TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
+        MethodName = "ExecuteAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
+        ParameterTypeNames = new[] { "GraphQL.Execution.ExecutionContext" },
+        MinimumVersion = "2.3.0",
+        MaximumVersion = "2.*.*",
+        IntegrationName = IntegrationName)]
     public class ExecutionStrategy_ExecuteAsyncIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.GraphQL);
