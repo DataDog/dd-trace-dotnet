@@ -54,11 +54,4 @@ WSTRING ToWSTRING(const uint64_t i) {
   return WSTRING(reinterpret_cast<const WCHAR*>(std::to_wstring(i).c_str()));
 }
 
-WCHAR operator"" _W(const char c) { return WCHAR(c); }
-
-WSTRING operator"" _W(const char* arr, size_t size) {
-  std::string str(arr, size);
-  return ToWSTRING(str);
-}
-
 }  // namespace trace

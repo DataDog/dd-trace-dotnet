@@ -250,7 +250,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // Create the loader class
   loader_ = new Loader(
       this->info_, 
-      process_name == "w3wp.exe"_W || process_name == "iisexpress.exe"_W,
+      process_name == WStr("w3wp.exe") || process_name == WStr("iisexpress.exe"),
       [this](const std::string& str) { Debug(str); },
       [this](const std::string& str) { Info(str); },
       [this](const std::string& str) { Warn(str); }
@@ -544,14 +544,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (IsCallTargetEnabled()) {
 
     // Enqueue ReJIT for System.Web.Compilation.BuildManager.InvokePreStartInitMethods()
-    if (module_metadata->assemblyName == "System.Web"_W) {
+    if (module_metadata->assemblyName == WStr("System.Web")) {
       mdTypeDef typeDef = mdTypeDefNil;
-      auto typeName = "System.Web.Compilation.BuildManager"_W;
-      auto hr = metadata_import->FindTypeDefByName(typeName.c_str(), mdTokenNil, &typeDef);
+      auto typeName = WStr("System.Web.Compilation.BuildManager");
+      auto hr = metadata_import->FindTypeDefByName(typeName, mdTokenNil, &typeDef);
       if (SUCCEEDED(hr)) {
         mdMethodDef methodDef = mdMethodDefNil;
-        auto methodName = "InvokePreStartInitMethods"_W;
-        hr = metadata_import->FindMethod(typeDef, methodName.c_str(), nullptr, 0, &methodDef);
+        auto methodName = WStr("InvokePreStartInitMethods");
+        hr = metadata_import->FindMethod(typeDef, methodName, nullptr, 0, &methodDef);
         if (SUCCEEDED(hr)) {
           Info("InvokePreStartInitMethod was found and enqueued for rejit");
           module_metadata->invoke_pre_start_init_methodDef = methodDef;
