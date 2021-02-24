@@ -7,6 +7,7 @@
 <# Tuple<string, string>[] NamespacesAndMonikersToCompose = NamespacesAndMonikersOfLogsToCompose ?? new Tuple<string, string>[0]; #>
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Logging.Composition
 {
@@ -74,9 +75,10 @@ namespace Datadog.Logging.Composition
             IsDebugLoggingEnabled = envSetting;
         }
 
-        public static void RedirectLogs(ILogSink logSink)
+        public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirectionLogSinks)
         {
-            {
+            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>();
+
 <#
             for (int i = 0; i < NamespacesAndMonikersToCompose.Length; i++)
             {
@@ -87,24 +89,34 @@ namespace Datadog.Logging.Composition
                     continue;
                 }
 #>
-                <#= logNamespace #>.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
+            {
+                Type loggerType = typeof(global::<#= logNamespace #>.Log);
+                const string logComponentGroupMoniker = "<#= logComponentMoniker #>";
 
                 if (logSink == null)
                 {
+                    redirectionSinks[loggerType] = null;
                     global::<#= logNamespace #>.Log.Configure.Error(null);
                     global::<#= logNamespace #>.Log.Configure.Info(null);
                     global::<#= logNamespace #>.Log.Configure.Debug(null);
                 }
                 else
                 {
-                    global::<#= logNamespace #>.Log.Configure.Error((component, msg, ex, data) => TryLogError(logSink, "<#= logComponentMoniker #>", component, msg, ex, data));
-                    global::<#= logNamespace #>.Log.Configure.Info((component, msg, data) => TryLogInfo(logSink, "<#= logComponentMoniker #>", component, msg, data));
-                    global::<#= logNamespace #>.Log.Configure.Debug((component, msg, data) => TryLogDebug(logSink, "<#= logComponentMoniker #>", component, msg, data));
+                    var redirectionLogSink = new ComponentGroupCompositionLogSink(logComponentGroupMoniker, logSink);
+                    redirectionSinks[loggerType] = redirectionLogSink;
+                    global::<#= logNamespace #>.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
+                    global::<#= logNamespace #>.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
+                    global::<#= logNamespace #>.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
                 }
+
+                <#= logNamespace #>.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
+            }
 <#
             }
 #>
-            }
+
+            redirectionSinks.TrimExcess();
+            redirectionLogSinks = redirectionSinks;
         }
 
         private static bool GetDebugLoggingEnabledEnvironmentSetting()
@@ -130,26 +142,6 @@ namespace Datadog.Logging.Composition
             { }
             
             return true;
-        }
-
-        private static bool TryLogError(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, Exception error, object[] dataNamesAndValues)
-        {
-            return logSink.TryLogError(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, error, dataNamesAndValues);
-        }
-
-        private static bool TryLogInfo(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
-        {
-            return logSink.TryLogInfo(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, dataNamesAndValues);
-        }
-
-        private static bool TryLogDebug(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
-        {
-            if (IsDebugLoggingEnabled)
-            { 
-                return logSink.TryLogDebug(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, dataNamesAndValues);
-            }
-
-            return false;
         }
 
         private static string ReadEnvironmentVariable(string envVarName)

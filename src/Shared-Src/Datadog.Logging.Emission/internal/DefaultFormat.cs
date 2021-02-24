@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
@@ -18,10 +19,55 @@ namespace Datadog.Logging.Emission
         public const string LogLevelMoniker_Info = "INFO ";
         public const string LogLevelMoniker_Debug = "DEBUG";
 
+        private const string ComponentPartSeparator = "::";
         private const string NewLineReplacement = "^->";
         private const string NullWord = "null";
         private const string DataValueNotSpecifiedWord = "unspecified";
         private static readonly string s_procIdInfo = GetProcIdInfoString();
+
+        public static void ComposeComponentName(string inPart1, string inPart2, string inPart3, out string outPart1, out string outPart2)
+        {
+            if (inPart1 != null && string.IsNullOrWhiteSpace(inPart1))
+            {
+                inPart1 = null;
+            }
+
+            if (inPart2 != null && string.IsNullOrWhiteSpace(inPart2))
+            {
+                inPart2 = null;
+            }
+
+            if (inPart3 != null && string.IsNullOrWhiteSpace(inPart3))
+            {
+                inPart3 = null;
+            }
+
+            if (inPart2 == null && inPart3 == null)
+            {
+                outPart2 = inPart1;
+                outPart1 = null;
+                return;
+            }
+            else if (inPart2 == null && inPart3 != null)
+            {
+                outPart2 = inPart3;
+                outPart1 = inPart1;
+                return;
+            }
+            else if (inPart2 != null && inPart3 == null)
+            {
+                outPart2 = inPart2;
+                outPart1 = inPart1;
+                return;
+            }
+            else
+            {
+                // Must be (inPart2 != null && inPart3 != null)
+                outPart2 = inPart2 + ComponentPartSeparator + inPart3;
+                outPart1 = inPart1;
+                return;
+            }
+        }
 
         public static string ConstructErrorMessage(string message, Exception exception, bool useNewLines)
         {
@@ -133,7 +179,7 @@ namespace Datadog.Logging.Emission
             }
         }
 
-        public static StringBuilder ConstructLogLine(string logLevelMoniker, string componentName, bool useUtcTimestamp, string message, params object[] dataNamesAndValues)
+        public static StringBuilder ConstructLogLine(string logLevelMoniker, string componentName, bool useUtcTimestamp, string message, IEnumerable<object> dataNamesAndValues)
         {
             return ConstructLogLine(logLevelMoniker, componentName, null, useUtcTimestamp, message, dataNamesAndValues);
         }
@@ -143,7 +189,7 @@ namespace Datadog.Logging.Emission
                                                      string componentNamePart2,
                                                      bool useUtcTimestamp,
                                                      string message,
-                                                     params object[] dataNamesAndValues)
+                                                     IEnumerable<object> dataNamesAndValues)
         {
             var logLine = new StringBuilder(capacity: 128);
             AppendLogLinePrefix(logLine, logLevelMoniker, useUtcTimestamp);
@@ -192,7 +238,7 @@ namespace Datadog.Logging.Emission
                                            string componentNamePart1,
                                            string componentNamePart2,
                                            string message,
-                                           params object[] dataNamesAndValues)
+                                           IEnumerable<object> dataNamesAndValues)
         {
             bool hasComponentNamePart1 = !string.IsNullOrWhiteSpace(componentNamePart1);
             bool hasComponentNamePart2 = !string.IsNullOrWhiteSpace(componentNamePart2);
@@ -204,7 +250,7 @@ namespace Datadog.Logging.Emission
 
             if (hasComponentNamePart1 && hasComponentNamePart2)
             {
-                targetBuffer.Append("::");
+                targetBuffer.Append(ComponentPartSeparator);
             }
 
             if (hasComponentNamePart2)
@@ -243,32 +289,90 @@ namespace Datadog.Logging.Emission
                 }
             }
 
-            if (dataNamesAndValues != null && dataNamesAndValues.Length > 0)
+            if (dataNamesAndValues != null)
             {
-                targetBuffer.Append("{");
-                for (int i = 0; i < dataNamesAndValues.Length; i += 2)
+                if (dataNamesAndValues is object[] dataNamesAndValuesArray)
                 {
-                    if (i > 0)
+                    AppenddataNamesAndValuesArr(targetBuffer, dataNamesAndValuesArray);
+                }
+                else
+                {
+                    AppenddataNamesAndValuesEnum(targetBuffer, dataNamesAndValues);
+                }
+            }
+        }
+
+        private static void AppenddataNamesAndValuesArr(StringBuilder targetBuffer, object[] dataNamesAndValues)
+        {
+            if (dataNamesAndValues.Length < 1)
+            {
+                return;
+            }
+
+            targetBuffer.Append('{');
+            for (int i = 0; i < dataNamesAndValues.Length; i += 2)
+            {
+                if (i > 0)
+                {
+                    targetBuffer.Append(", ");
+                }
+
+                targetBuffer.Append('[');
+                QuoteIfString(targetBuffer, dataNamesAndValues[i]);
+                targetBuffer.Append(']');
+                targetBuffer.Append('=');
+
+                if (i + 1 < dataNamesAndValues.Length)
+                {
+                    QuoteIfString(targetBuffer, dataNamesAndValues[i + 1]);
+                }
+                else
+                {
+                    targetBuffer.Append(DataValueNotSpecifiedWord);
+                }
+            }
+
+            targetBuffer.Append('}');
+        }
+
+        private static void AppenddataNamesAndValuesEnum(StringBuilder targetBuffer, IEnumerable<object> dataNamesAndValues)
+        {
+            int enumIndex = 0;
+            using (IEnumerator<object> enumerator = dataNamesAndValues.GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    if (enumIndex == 0)
+                    {
+                        targetBuffer.Append('{');
+                    }
+                    else
                     {
                         targetBuffer.Append(", ");
                     }
 
                     targetBuffer.Append('[');
-                    QuoteIfString(targetBuffer, dataNamesAndValues[i]);
+                    QuoteIfString(targetBuffer, enumerator.Current);
                     targetBuffer.Append(']');
+                    enumIndex++;
+
                     targetBuffer.Append('=');
 
-                    if (i + 1 < dataNamesAndValues.Length)
+                    if (enumerator.MoveNext())
                     {
-                        QuoteIfString(targetBuffer, dataNamesAndValues[i + 1]);
+                        QuoteIfString(targetBuffer, enumerator.Current);
+                        enumIndex++;
                     }
                     else
                     {
                         targetBuffer.Append(DataValueNotSpecifiedWord);
                     }
                 }
+            }
 
-                targetBuffer.Append("}");
+            if (enumIndex > 0)
+            {
+                targetBuffer.Append('}');
             }
         }
 

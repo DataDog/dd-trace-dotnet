@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Logging.Emission
 {
@@ -8,12 +9,12 @@ namespace Datadog.Logging.Emission
     {
         public const bool IsDebugLoggingEnabled = true;
 
-        public static void Error(string componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        public static void Error(string componentName, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
         {
             Error(componentNamePart1: componentName, componentNamePart2: null, message, exception, dataNamesAndValues);
         }
 
-        public static void Error(string componentNamePart1, string componentNamePart2, string message, Exception exception, params object[] dataNamesAndValues)
+        public static void Error(string componentNamePart1, string componentNamePart2, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
         {
             string errorMessage = DefaultFormat.ConstructErrorMessage(message, exception, useNewLines: true);
 
@@ -27,12 +28,12 @@ namespace Datadog.Logging.Emission
                                            .ToString());
         }
 
-        public static void Info(string componentName, string message, params object[] dataNamesAndValues)
+        public static void Info(string componentName, string message, IEnumerable<object> dataNamesAndValues)
         {
             Info(componentNamePart1: componentName, componentNamePart2: null, message, dataNamesAndValues);
         }
 
-        public static void Info(string componentNamePart1, string componentNamePart2, string message, params object[] dataNamesAndValues)
+        public static void Info(string componentNamePart1, string componentNamePart2, string message, IEnumerable<object> dataNamesAndValues)
         {
             Console.WriteLine();
             Console.WriteLine(DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Info,
@@ -44,15 +45,15 @@ namespace Datadog.Logging.Emission
                                            .ToString());
         }
 
-        public static void Debug(string componentName, string message, params object[] dataNamesAndValues)
+        public static void Debug(string componentName, string message, IEnumerable<object> dataNamesAndValues)
         {
             Info(componentNamePart1: componentName, componentNamePart2: null, message, dataNamesAndValues);
         }
 
-        public static void Debug(string componentNamePart1, string componentNamePart2, string message, params object[] dataNamesAndValues)
+        public static void Debug(string componentNamePart1, string componentNamePart2, string message, IEnumerable<object> dataNamesAndValues)
         {
             Console.WriteLine();
-            Console.WriteLine(DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Info,
+            Console.WriteLine(DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Debug,
                                                              componentNamePart1,
                                                              componentNamePart2,
                                                              useUtcTimestamp: false,

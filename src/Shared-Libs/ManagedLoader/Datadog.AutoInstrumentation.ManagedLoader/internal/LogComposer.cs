@@ -9,6 +9,7 @@
 // ----------- ----------- ----------- ----------- -----------
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Logging.Composition
 {
@@ -48,24 +49,35 @@ namespace Datadog.Logging.Composition
             IsDebugLoggingEnabled = envSetting;
         }
 
-        public static void RedirectLogs(ILogSink logSink)
+        public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirectionLogSinks)
         {
+            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>();
+
             {
-                Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
+                Type loggerType = typeof(global::Datadog.AutoInstrumentation.ManagedLoader.Log);
+                const string logComponentGroupMoniker = "ManagedLoader";
 
                 if (logSink == null)
                 {
+                    redirectionSinks[loggerType] = null;
                     global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Error(null);
                     global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Info(null);
                     global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Debug(null);
                 }
                 else
                 {
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Error((component, msg, ex, data) => TryLogError(logSink, "ManagedLoader", component, msg, ex, data));
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Info((component, msg, data) => TryLogInfo(logSink, "ManagedLoader", component, msg, data));
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Debug((component, msg, data) => TryLogDebug(logSink, "ManagedLoader", component, msg, data));
+                    var redirectionLogSink = new ComponentGroupCompositionLogSink(logComponentGroupMoniker, logSink);
+                    redirectionSinks[loggerType] = redirectionLogSink;
+                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
+                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
+                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
                 }
+
+                Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
             }
+
+            redirectionSinks.TrimExcess();
+            redirectionLogSinks = redirectionSinks;
         }
 
         private static bool GetDebugLoggingEnabledEnvironmentSetting()
@@ -91,26 +103,6 @@ namespace Datadog.Logging.Composition
             { }
             
             return true;
-        }
-
-        private static bool TryLogError(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, Exception error, object[] dataNamesAndValues)
-        {
-            return logSink.TryLogError(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, error, dataNamesAndValues);
-        }
-
-        private static bool TryLogInfo(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
-        {
-            return logSink.TryLogInfo(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, dataNamesAndValues);
-        }
-
-        private static bool TryLogDebug(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
-        {
-            if (IsDebugLoggingEnabled)
-            { 
-                return logSink.TryLogDebug(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, dataNamesAndValues);
-            }
-
-            return false;
         }
 
         private static string ReadEnvironmentVariable(string envVarName)

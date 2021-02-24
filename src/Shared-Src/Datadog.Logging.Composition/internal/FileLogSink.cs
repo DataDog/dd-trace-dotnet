@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -67,9 +68,19 @@ namespace Datadog.Logging.Composition
             get { return _logSessionId; }
         }
 
+        public Guid LogGroupId
+        {
+            get { return _logGroupMutex.LogGroupId; }
+        }
+
         public int RotateLogFileWhenLargerBytes
         {
             get { return _rotateLogFileWhenLargerBytes; }
+        }
+
+        public bool IsRotateLogFileBasedOnSizeEnabled
+        {
+            get { return (_rotateLogFileWhenLargerBytes > 0); }
         }
 
         public static bool IsWindowsFileSystem { get { return s_isWindowsFileSystem; } }
@@ -114,36 +125,39 @@ namespace Datadog.Logging.Composition
                 return false;
             }
 
+            LogGroupMutex logGroupMutex = null;
             try
             {
-                var logGroupMutex = new LogGroupMutex(logGroupId);
-                if (logGroupMutex.TryAcquire(out LogGroupMutex.Handle logGroupMutexHandle))
+                logGroupMutex = new LogGroupMutex(logGroupId);
+                if (!logGroupMutex.TryAcquire(out LogGroupMutex.Handle logGroupMutexHandle))
                 {
-                    using (logGroupMutexHandle)
-                    {
-                        DateTimeOffset now = DateTimeOffset.Now;
-                        int rotationIndex = FindLatestRotationIndex(logFileDirInfo, logFileNameBase, now);
-
-                        string logFileName = ConstructFilename(logFileNameBase, now, rotationIndex);
-                        string logFilePath = Path.Combine(logFileDir, logFileName);
-                        FileStream logStream = new FileStream(logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
-
-                        newSink = new FileLogSink(logGroupMutex, logFileDir, logFileNameBase, rotateLogFileWhenLargerBytes, logStream, rotationIndex);
-                    }
-                }
-                else
-                {
+                    logGroupMutex.Dispose();
                     return false;
+                }
+
+                using (logGroupMutexHandle)
+                {
+                    DateTimeOffset now = DateTimeOffset.Now;
+                    int rotationIndex = FindLatestRotationIndex(logFileDirInfo, logFileNameBase, now);
+
+                    string logFileName = ConstructFilename(logFileNameBase, now, rotationIndex);
+                    string logFilePath = Path.Combine(logFileDir, logFileName);
+                    FileStream logStream = new FileStream(logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+
+                    newSink = new FileLogSink(logGroupMutex, logFileDir, logFileNameBase, rotateLogFileWhenLargerBytes, logStream, rotationIndex);
                 }
 
                 if (newSink.TryLogInfo(LogComponentMoniker,
                                        "Logging session started",
-                                       "LogGroupId",
-                                       logGroupId,
-                                       "LogSessionId",
-                                       newSink.LogSessionId,
-                                       "RotateLogFileWhenLargerBytes",
-                                       newSink.RotateLogFileWhenLargerBytes))
+                                       new object[]
+                                           {
+                                               "LogGroupId",
+                                               newSink.LogGroupId,
+                                               "LogSessionId",
+                                               newSink.LogSessionId,
+                                               "RotateLogFileWhenLargerBytes",
+                                               newSink.RotateLogFileWhenLargerBytes
+                                           }))
                 {
                     return true;
                 }
@@ -152,10 +166,17 @@ namespace Datadog.Logging.Composition
             { }
 
             // If we did not succeed, the sink may be still constructed (e.g. TryLogInfo(..) returned false).
-            // We need to disposed the sink before giving up, but be brepaed for it tobe null.
+            // We need to dispose the sink before giving up, but be brepaed for it to sbe null.
             try
             {
-                newSink?.Dispose();
+                if (newSink != null)
+                {
+                    newSink.Dispose();  // This will also dispose the logGroupMutex owned by the newSink.
+                }
+                else
+                {
+                    logGroupMutex.Dispose();
+                }
             }
             catch
             { }
@@ -196,42 +217,35 @@ namespace Datadog.Logging.Composition
 
         public void Dispose()
         {
-            if (_logStream != null && _logWriter != null)
+            if (_logStream == null && _logWriter == null)
             {
-                this.TryLogInfo(LogComponentMoniker, "Finishing logging session", "LogSessionId", LogSessionId);
-
-                // If we can acquire the file mutex, we will dispose while holding it, so that no concurrent log writes are affected.
-                // But eventually we will disposed regardless.
-                bool hasMutex = _logGroupMutex.TryAcquire(out LogGroupMutex.Handle logGroupMutexHandle);
-                try
-                {
-                    StreamWriter logWriter = _logWriter;
-                    if (logWriter != null)
-                    {
-                        _logWriter = null;
-                        logWriter.Dispose();
-                    }
-
-                    FileStream logStream = _logStream;
-                    if (logStream != null)
-                    {
-                        _logStream = null;
-                        logStream.Dispose();
-                    }
-                }
-                finally
-                {
-                    if (hasMutex)
-                    {
-                        logGroupMutexHandle.Dispose();
-                    }
-                }
-
-                _logGroupMutex.Dispose();
+                // Already disposed.
+                return;
             }
+
+            // If this sink is already disposed, then TryLogInfo(..) will fail to aquire the _logGroupMutex and will gracefully return false.
+            this.TryLogInfo(LogComponentMoniker, "Finishing logging session", new object[] { "LogSessionId", LogSessionId });
+
+            // If we can acquire the file mutex, we will dispose while holding it, so that concurrent log writes are not affected.
+            // But eventually we will dispose regardless.
+            bool hasMutex = _logGroupMutex.TryAcquire(out LogGroupMutex.Handle logGroupMutexHandle);
+            try
+            {
+                SafeDisposeAndSetToNull(ref _logWriter);
+                SafeDisposeAndSetToNull(ref _logStream);
+            }
+            finally
+            {
+                if (hasMutex)
+                {
+                    logGroupMutexHandle.Dispose();
+                }
+            }
+
+            _logGroupMutex.Dispose();
         }
 
-        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
@@ -250,7 +264,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogInfo(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogInfo(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
@@ -268,7 +282,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogDebug(LoggingComponentName componentName, string message, params object[] dataNamesAndValues)
+        public bool TryLogDebug(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
@@ -426,27 +440,34 @@ namespace Datadog.Logging.Composition
             return filename.ToString();
         }
 
-        private bool TryWriteToFile(string logLine)
+        private static bool SafeDisposeAndSetToNull<T>(ref T reference) where T : class, IDisposable
         {
-            if (TryWriteToFile(logLine, rotateFileIfNecessary: false))
+            T referencedItem = Interlocked.Exchange(ref reference, null);
+            if (referencedItem != null)
             {
-                return true;
+                try
+                {
+                    referencedItem.Dispose();
+                    return true;
+                }
+                catch
+                { }
             }
-
-            return TryWriteToFile(logLine, rotateFileIfNecessary: true);
+            
+            return false;
         }
 
-        private bool TryWriteToFile(string logLine, bool rotateFileIfNecessary)
+        private bool TryWriteToFile(string logLine)
         {
             if (_logGroupMutex.TryAcquire(out LogGroupMutex.Handle logGroupMutexHandle))
             {
                 using (logGroupMutexHandle)
                 {
                     long pos = _logStream.Seek(0, SeekOrigin.End);
-                    while (_rotateLogFileWhenLargerBytes > 0 && pos > _rotateLogFileWhenLargerBytes)
+                    while (IsRotateLogFileBasedOnSizeEnabled && pos > _rotateLogFileWhenLargerBytes)
                     {
-                        // If rotating in not enabled OR if we try and fail rotating => give up.
-                        if (!rotateFileIfNecessary || !RotateLogFile(logGroupMutexHandle))
+                        // Ff we try and fail rotating => give up.
+                        if (!RotateLogFile(logGroupMutexHandle))
                         {
                             return false;
                         }
@@ -468,7 +489,7 @@ namespace Datadog.Logging.Composition
 
         private bool RotateLogFile(LogGroupMutex.Handle logGroupMutexHandle)
         {
-            // Be defensive: Wiw we remember to take the locks:
+            // Be defensive: Did we remember to take the locks?
             if (logGroupMutexHandle.IsValid != true)
             {
                 return false;
