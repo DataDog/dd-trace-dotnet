@@ -58,17 +58,30 @@ namespace Datadog.Trace.HttpOverStreams
             const int statusCodeStart = 9;
             const int statusCodeEnd = 12;
             const int startOfReasonPhrase = 13;
+            const int bufferSize = 10;
 
             // TODO: Get this from StringBuilderCache after we determine safe maximum capacity
             var stringBuilder = new StringBuilder();
 
-            var chArray = new byte[1];
+            var chArray = new byte[bufferSize];
 
             async Task GoNextChar()
             {
                 await responseStream.ReadAsync(chArray, offset: 0, count: 1).ConfigureAwait(false);
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
                 streamPosition++;
+            }
+
+            async Task SkipUntil(int requiredStreamPosition)
+            {
+                var advanceCount = requiredStreamPosition - streamPosition;
+                // Not required in release mode, as should only arise from programming error
+                System.Diagnostics.Debug.Assert(advanceCount > 0, "RequiredStreamPosition should be greater than 0");
+                System.Diagnostics.Debug.Assert(advanceCount <= bufferSize, "RequiredStreamPosition should be less than buffer size");
+
+                await responseStream.ReadAsync(chArray, offset: 0, count: advanceCount).ConfigureAwait(false);
+                currentChar = Encoding.ASCII.GetChars(chArray)[advanceCount - 1];
+                streamPosition += advanceCount;
             }
 
             async Task<bool> IsNewLine()
@@ -92,10 +105,7 @@ namespace Datadog.Trace.HttpOverStreams
             }
 
             // Skip to status code
-            while (streamPosition < statusCodeStart)
-            {
-                await GoNextChar().ConfigureAwait(false);
-            }
+            await SkipUntil(statusCodeStart).ConfigureAwait(false);
 
             // Read status code
             while (streamPosition < statusCodeEnd)
@@ -113,10 +123,7 @@ namespace Datadog.Trace.HttpOverStreams
             }
 
             // Skip to reason
-            while (streamPosition < startOfReasonPhrase)
-            {
-                await GoNextChar().ConfigureAwait(false);
-            }
+            await SkipUntil(startOfReasonPhrase).ConfigureAwait(false);
 
             // Read reason
             do
