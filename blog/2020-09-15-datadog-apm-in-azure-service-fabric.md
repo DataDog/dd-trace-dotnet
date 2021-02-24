@@ -25,12 +25,11 @@ More info on Azure Service Fabric:
 ### Optional quick start:
 **If you don't have an application and don't want to set one up, you can use the repository this article is based on.
 Change the API Key as in [step 2](#2-set-up-the-datadog-agent) and deploy this sample to an Azure Service Fabric cluster to get started right away. 
-https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample
-**
+https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample**
 
-## 1. Create a service fabric application
+## 1. Create a Service Fabric application
 
-(*If you already have a service fabric application, you can skip ahead to [Set up the Datadog Agent](#2-set-up-the-datadog-agent)*).
+(*If you already have a Service Fabric application, you can skip ahead to [Set up the Datadog Agent](#2-set-up-the-datadog-agent)*).
 
 One way to setup a Azure Service Fabric application is by starting a new project in Visual Studio:
 
