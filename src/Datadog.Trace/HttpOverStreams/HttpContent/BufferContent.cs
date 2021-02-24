@@ -29,7 +29,12 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
                     $"Buffer of size {buffer.Length} is not large enough to hold content of size {_buffer.Count}");
             }
 
-            _buffer.Array?.CopyTo(buffer, _buffer.Offset);
+            Buffer.BlockCopy(
+                src: _buffer.Array,
+                srcOffset: _buffer.Offset,
+                dst: buffer,
+                dstOffset: 0,
+                count: _buffer.Count);
 #if NET45
             return Task.FromResult(false);
 #else
