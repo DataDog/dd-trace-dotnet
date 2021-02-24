@@ -48,7 +48,7 @@ namespace Datadog.Trace.Ci
 
         public static void DecorateSpan(Span span)
         {
-            if (span == null || !IsCI)
+            if (span == null)
             {
                 return;
             }
@@ -89,6 +89,8 @@ namespace Datadog.Trace.Ci
             Branch = null;
             Tag = null;
             SourceRoot = null;
+
+            GitInfo gitInfo = GitInfo.GetCurrent();
 
             if (EnvironmentHelpers.GetEnvironmentVariable("TRAVIS") != null)
             {
@@ -133,6 +135,14 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable("BITRISE_BUILD_SLUG") != null)
             {
                 SetupBitriseEnvironment();
+            }
+            else
+            {
+                Branch = gitInfo.Branch;
+                Commit = gitInfo.Commit;
+                Repository = gitInfo.Repository;
+                SourceRoot = gitInfo.SourceRoot;
+                WorkspacePath = gitInfo.SourceRoot;
             }
 
             // **********
