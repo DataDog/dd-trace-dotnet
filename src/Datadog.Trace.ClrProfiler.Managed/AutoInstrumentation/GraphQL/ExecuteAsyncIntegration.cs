@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         MinimumVersion = "2.3.0",
         MaximumVersion = "2.*.*",
         IntegrationName = IntegrationName)]
-    public class ExecutionStrategy_ExecuteAsyncIntegration
+    public class ExecuteAsyncIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.GraphQL);
         private const string ErrorType = "GraphQL.ExecutionError";
