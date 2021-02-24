@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 return CallTargetState.GetDefault();
             }
 
-            TestInvokerStruct invokerInstance = instance.As<TestInvokerStruct>();
+            TestInvokerStruct invokerInstance = instance.DuckCast<TestInvokerStruct>();
             TestRunnerStruct runnerInstance = new TestRunnerStruct
             {
                 Aggregator = invokerInstance.Aggregator,
@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             Scope scope = state.Scope;
             if (scope != null)
             {
-                TestInvokerStruct invokerInstance = instance.As<TestInvokerStruct>();
+                TestInvokerStruct invokerInstance = instance.DuckCast<TestInvokerStruct>();
                 XUnitIntegration.FinishScope(scope, invokerInstance.Aggregator);
             }
 

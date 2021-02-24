@@ -129,10 +129,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                 if (returnValueArray.Length == 1)
                 {
                     object unitTestResultObject = returnValueArray.GetValue(0);
-                    if (unitTestResultObject != null)
+                    if (unitTestResultObject != null && unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
                     {
-                        UnitTestResultStruct unitTestResult = unitTestResultObject.As<UnitTestResultStruct>();
-
                         switch (unitTestResult.Outcome)
                         {
                             case UnitTestResultOutcome.Error:
@@ -181,7 +179,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                     testProperties["Category"] = categoryList;
                 }
 
-                categoryList.AddRange(tattr.As<TestCategoryAttributeStruct>().TestCategories);
+                if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
+                {
+                    categoryList.AddRange(tattrStruct.TestCategories);
+                }
             }
 
             var classCategories = methodInfo.DeclaringType?.GetCustomAttributes(true);
@@ -201,7 +202,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                         testProperties["Category"] = categoryList;
                     }
 
-                    categoryList.AddRange(tattr.As<TestCategoryAttributeStruct>().TestCategories);
+                    if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
+                    {
+                        categoryList.AddRange(tattrStruct.TestCategories);
+                    }
                 }
             }
 

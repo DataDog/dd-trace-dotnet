@@ -23,7 +23,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         {
             Assert.Throws<DuckTypePropertyCantBeWrittenException>(() =>
             {
-                obscureObject.As<IObscureStaticErrorDuckType>();
+                obscureObject.DuckCast<IObscureStaticErrorDuckType>();
             });
         }
 
@@ -33,7 +33,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         {
             Assert.Throws<DuckTypePropertyCantBeWrittenException>(() =>
             {
-                obscureObject.As<IObscureErrorDuckType>();
+                obscureObject.DuckCast<IObscureErrorDuckType>();
             });
         }
 
@@ -41,9 +41,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         [MemberData(nameof(Data))]
         public void StaticGetOnlyProperties(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             // *
             Assert.Equal(10, duckInterface.PublicStaticGetValueType);
@@ -70,9 +70,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         [MemberData(nameof(Data))]
         public void StaticProperties(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             Assert.Equal(20, duckInterface.PublicStaticGetSetValueType);
             Assert.Equal(20, duckAbstract.PublicStaticGetSetValueType);
@@ -169,9 +169,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         [MemberData(nameof(Data))]
         public void GetOnlyProperties(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             // *
             Assert.Equal(30, duckInterface.PublicGetValueType);
@@ -198,9 +198,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         [MemberData(nameof(Data))]
         public void Properties(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             Assert.Equal(40, duckInterface.PublicGetSetValueType);
             Assert.Equal(40, duckAbstract.PublicGetSetValueType);
@@ -297,9 +297,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         [MemberData(nameof(Data))]
         public void Indexer(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             duckInterface[1] = 100;
             Assert.Equal(100, duckInterface[1]);
@@ -321,9 +321,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         [MemberData(nameof(Data))]
         public void NullableOfKnown(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             Assert.Null(duckInterface.PublicStaticNullableInt);
             Assert.Null(duckAbstract.PublicStaticNullableInt);
@@ -412,9 +412,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         [MemberData(nameof(Data))]
         public void KnownEnum(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             Assert.Equal(TaskStatus.RanToCompletion, duckInterface.Status);
             Assert.Equal(TaskStatus.RanToCompletion, duckAbstract.Status);
@@ -443,7 +443,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
         [MemberData(nameof(Data))]
         public void StructCopy(object obscureObject)
         {
-            var duckStructCopy = obscureObject.As<ObscureDuckTypeStruct>();
+            var duckStructCopy = obscureObject.DuckCast<ObscureDuckTypeStruct>();
 
             Assert.Equal(10, duckStructCopy.PublicStaticGetValueType);
             Assert.Equal(11, duckStructCopy.InternalStaticGetValueType);
@@ -472,7 +472,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             ObscureObject.PublicStruct source = default;
             source.PublicGetSetValueType = 42;
 
-            var dest = source.As<IStructDuckType>();
+            var dest = source.DuckCast<IStructDuckType>();
             Assert.Equal(source.PublicGetSetValueType, dest.PublicGetSetValueType);
         }
     }

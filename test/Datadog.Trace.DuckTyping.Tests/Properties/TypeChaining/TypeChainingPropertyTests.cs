@@ -22,7 +22,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
         {
             Assert.Throws<DuckTypePropertyCantBeWrittenException>(() =>
             {
-                obscureObject.As<IObscureStaticErrorDuckType>();
+                obscureObject.DuckCast<IObscureStaticErrorDuckType>();
             });
         }
 
@@ -32,7 +32,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
         {
             Assert.Throws<DuckTypePropertyCantBeWrittenException>(() =>
             {
-                obscureObject.As<IObscureErrorDuckType>();
+                obscureObject.DuckCast<IObscureErrorDuckType>();
             });
         }
 
@@ -40,9 +40,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
         [MemberData(nameof(Data))]
         public void StaticGetOnlyProperties(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             // *
 
@@ -89,14 +89,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
         [MemberData(nameof(Data))]
         public void StaticProperties(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             IDummyFieldObject newDummy = null;
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckInterface.PublicStaticGetSetSelfType = newDummy;
 
             Assert.Equal(42, duckInterface.PublicStaticGetSetSelfType.MagicNumber);
@@ -104,36 +104,36 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
             Assert.Equal(42, duckVirtual.PublicStaticGetSetSelfType.MagicNumber);
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).DuckCast<IDummyFieldObject>();
             duckInterface.InternalStaticGetSetSelfType = newDummy;
 
             Assert.Equal(52, duckInterface.InternalStaticGetSetSelfType.MagicNumber);
             Assert.Equal(52, duckAbstract.InternalStaticGetSetSelfType.MagicNumber);
             Assert.Equal(52, duckVirtual.InternalStaticGetSetSelfType.MagicNumber);
 
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckInterface.InternalStaticGetSetSelfType = newDummy;
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 62 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 62 }).DuckCast<IDummyFieldObject>();
             duckAbstract.ProtectedStaticGetSetSelfType = newDummy;
 
             Assert.Equal(62, duckInterface.ProtectedStaticGetSetSelfType.MagicNumber);
             Assert.Equal(62, duckAbstract.ProtectedStaticGetSetSelfType.MagicNumber);
             Assert.Equal(62, duckVirtual.ProtectedStaticGetSetSelfType.MagicNumber);
 
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckAbstract.ProtectedStaticGetSetSelfType = newDummy;
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 72 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 72 }).DuckCast<IDummyFieldObject>();
             duckAbstract.PrivateStaticGetSetSelfType = newDummy;
 
             Assert.Equal(72, duckInterface.PrivateStaticGetSetSelfType.MagicNumber);
             Assert.Equal(72, duckAbstract.PrivateStaticGetSetSelfType.MagicNumber);
             Assert.Equal(72, duckVirtual.PrivateStaticGetSetSelfType.MagicNumber);
 
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckAbstract.PrivateStaticGetSetSelfType = newDummy;
         }
 
@@ -141,9 +141,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
         [MemberData(nameof(Data))]
         public void GetOnlyProperties(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             // *
 
@@ -190,14 +190,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
         [MemberData(nameof(Data))]
         public void Properties(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             IDummyFieldObject newDummy = null;
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckInterface.PublicGetSetSelfType = newDummy;
 
             Assert.Equal(42, duckInterface.PublicGetSetSelfType.MagicNumber);
@@ -205,36 +205,36 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
             Assert.Equal(42, duckVirtual.PublicGetSetSelfType.MagicNumber);
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).DuckCast<IDummyFieldObject>();
             duckInterface.InternalGetSetSelfType = newDummy;
 
             Assert.Equal(52, duckInterface.InternalGetSetSelfType.MagicNumber);
             Assert.Equal(52, duckAbstract.InternalGetSetSelfType.MagicNumber);
             Assert.Equal(52, duckVirtual.InternalGetSetSelfType.MagicNumber);
 
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckInterface.InternalGetSetSelfType = newDummy;
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 62 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 62 }).DuckCast<IDummyFieldObject>();
             duckInterface.ProtectedGetSetSelfType = newDummy;
 
             Assert.Equal(62, duckInterface.ProtectedGetSetSelfType.MagicNumber);
             Assert.Equal(62, duckAbstract.ProtectedGetSetSelfType.MagicNumber);
             Assert.Equal(62, duckVirtual.ProtectedGetSetSelfType.MagicNumber);
 
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckInterface.ProtectedGetSetSelfType = newDummy;
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 72 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 72 }).DuckCast<IDummyFieldObject>();
             duckInterface.PrivateGetSetSelfType = newDummy;
 
             Assert.Equal(72, duckInterface.PrivateGetSetSelfType.MagicNumber);
             Assert.Equal(72, duckAbstract.PrivateGetSetSelfType.MagicNumber);
             Assert.Equal(72, duckVirtual.PrivateGetSetSelfType.MagicNumber);
 
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckInterface.PrivateGetSetSelfType = newDummy;
         }
 
@@ -242,7 +242,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
         [MemberData(nameof(Data))]
         public void StructCopy(object obscureObject)
         {
-            var duckStructCopy = obscureObject.As<ObscureDuckTypeStruct>();
+            var duckStructCopy = obscureObject.DuckCast<ObscureDuckTypeStruct>();
 
             Assert.Equal(42, duckStructCopy.PublicStaticGetSelfType.MagicNumber);
             Assert.Equal(42, duckStructCopy.InternalStaticGetSelfType.MagicNumber);

@@ -53,6 +53,37 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Gets if a proxy can be created
+        /// </summary>
+        /// <param name="instance">Instance object</param>
+        /// <typeparam name="T">Duck type</typeparam>
+        /// <returns>true if the proxy can be created; otherwise, false</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool CanCreate<T>(object instance)
+        {
+            return CreateCache<T>.CanCreate(instance);
+        }
+
+        /// <summary>
+        /// Gets if a proxy can be created
+        /// </summary>
+        /// <param name="proxyType">Duck type</param>
+        /// <param name="instance">Instance object</param>
+        /// <returns>true if the proxy can be created; otherwise, false</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool CanCreate(Type proxyType, object instance)
+        {
+            // Validate arguments
+            EnsureArguments(proxyType, instance);
+
+            // Create Type
+            CreateTypeResult result = GetOrCreateProxyType(proxyType, instance.GetType());
+
+            // Create instance
+            return result.CanCreate();
+        }
+
+        /// <summary>
         /// Gets or create a new proxy type for ducktyping
         /// </summary>
         /// <param name="proxyType">ProxyType interface</param>
@@ -569,6 +600,7 @@ namespace Datadog.Trace.DuckTyping
             /// </summary>
             public Type ProxyType
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     _exceptionInfo?.Throw();
@@ -582,16 +614,29 @@ namespace Datadog.Trace.DuckTyping
             /// <typeparam name="T">Type of the return value</typeparam>
             /// <param name="instance">Target instance value</param>
             /// <returns>Proxy instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public T CreateInstance<T>(object instance)
             {
                 return ((CreateProxyInstance<T>)_activator)(instance);
             }
 
+            /// <summary>
+            /// Get if the proxy instance can be created
+            /// </summary>
+            /// <returns>true if the proxy can be created; otherwise, false.</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool CanCreate()
+            {
+                return _exceptionInfo == null;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal IDuckType CreateInstance(object instance)
             {
                 return (IDuckType)_activator.DynamicInvoke(instance);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private T ThrowOnError<T>(object instance)
             {
                 _exceptionInfo.Throw();
@@ -612,6 +657,7 @@ namespace Datadog.Trace.DuckTyping
             /// </summary>
             /// <param name="targetType">Target type</param>
             /// <returns>CreateTypeResult instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static CreateTypeResult GetProxy(Type targetType)
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
@@ -648,6 +694,23 @@ namespace Datadog.Trace.DuckTyping
                 return GetProxy(instance.GetType()).CreateInstance<T>(instance);
             }
 
+            /// <summary>
+            /// Get if the proxy instance can be created
+            /// </summary>
+            /// <param name="instance">Object instance</param>
+            /// <returns>true if a proxy can be created; otherwise, false.</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static bool CanCreate(object instance)
+            {
+                if (instance is null)
+                {
+                    return false;
+                }
+
+                return GetProxy(instance.GetType()).CanCreate();
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static CreateTypeResult GetProxySlow(Type targetType)
             {
                 Type proxyTypeDefinition = typeof(T);

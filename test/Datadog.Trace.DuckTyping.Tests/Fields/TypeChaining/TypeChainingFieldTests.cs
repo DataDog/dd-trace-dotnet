@@ -24,7 +24,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
         {
             Assert.Throws<DuckTypeFieldIsReadonlyException>(() =>
             {
-                obscureObject.As<IObscureStaticReadonlyErrorDuckType>();
+                obscureObject.DuckCast<IObscureStaticReadonlyErrorDuckType>();
             });
         }
 
@@ -34,7 +34,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
         {
             Assert.Throws<DuckTypeFieldIsReadonlyException>(() =>
             {
-                obscureObject.As<IObscureReadonlyErrorDuckType>();
+                obscureObject.DuckCast<IObscureReadonlyErrorDuckType>();
             });
         }
 
@@ -42,9 +42,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
         [MemberData(nameof(Data))]
         public void StaticReadonlyFields(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             // *
 
@@ -91,14 +91,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
         [MemberData(nameof(Data))]
         public void StaticFields(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             IDummyFieldObject newDummy = null;
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckInterface.PublicStaticSelfTypeField = newDummy;
 
             Assert.Equal(42, duckInterface.PublicStaticSelfTypeField.MagicNumber);
@@ -106,7 +106,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
             Assert.Equal(42, duckVirtual.PublicStaticSelfTypeField.MagicNumber);
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).DuckCast<IDummyFieldObject>();
             duckInterface.InternalStaticSelfTypeField = newDummy;
 
             Assert.Equal(52, duckInterface.InternalStaticSelfTypeField.MagicNumber);
@@ -114,7 +114,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
             Assert.Equal(52, duckVirtual.InternalStaticSelfTypeField.MagicNumber);
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 62 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 62 }).DuckCast<IDummyFieldObject>();
             duckAbstract.ProtectedStaticSelfTypeField = newDummy;
 
             Assert.Equal(62, duckInterface.ProtectedStaticSelfTypeField.MagicNumber);
@@ -122,7 +122,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
             Assert.Equal(62, duckVirtual.ProtectedStaticSelfTypeField.MagicNumber);
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 72 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 72 }).DuckCast<IDummyFieldObject>();
             duckAbstract.PrivateStaticSelfTypeField = newDummy;
 
             Assert.Equal(72, duckInterface.PrivateStaticSelfTypeField.MagicNumber);
@@ -134,9 +134,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
         [MemberData(nameof(Data))]
         public void ReadonlyFields(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             // *
 
@@ -183,14 +183,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
         [MemberData(nameof(Data))]
         public void Fields(object obscureObject)
         {
-            var duckInterface = obscureObject.As<IObscureDuckType>();
-            var duckAbstract = obscureObject.As<ObscureDuckTypeAbstractClass>();
-            var duckVirtual = obscureObject.As<ObscureDuckTypeVirtualClass>();
+            var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
+            var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
+            var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
 
             IDummyFieldObject newDummy = null;
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
             duckInterface.PublicSelfTypeField = newDummy;
 
             Assert.Equal(42, duckInterface.PublicSelfTypeField.MagicNumber);
@@ -198,7 +198,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
             Assert.Equal(42, duckVirtual.PublicSelfTypeField.MagicNumber);
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).DuckCast<IDummyFieldObject>();
             duckInterface.InternalSelfTypeField = newDummy;
 
             Assert.Equal(52, duckInterface.InternalSelfTypeField.MagicNumber);
@@ -206,7 +206,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
             Assert.Equal(52, duckVirtual.InternalSelfTypeField.MagicNumber);
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 62 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 62 }).DuckCast<IDummyFieldObject>();
             duckInterface.ProtectedSelfTypeField = newDummy;
 
             Assert.Equal(62, duckInterface.ProtectedSelfTypeField.MagicNumber);
@@ -214,7 +214,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
             Assert.Equal(62, duckVirtual.ProtectedSelfTypeField.MagicNumber);
 
             // *
-            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 72 }).As<IDummyFieldObject>();
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 72 }).DuckCast<IDummyFieldObject>();
             duckInterface.PrivateSelfTypeField = newDummy;
 
             Assert.Equal(72, duckInterface.PrivateSelfTypeField.MagicNumber);

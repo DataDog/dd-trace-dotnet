@@ -117,37 +117,42 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             SpanContext propagatedContext = null;
-            var basicPropertiesValue = basicProperties.As<IBasicProperties>();
-
-            // try to extract propagated context values from headers
-            if (basicPropertiesValue?.Headers != null)
+            if (basicProperties.TryDuckCast<IBasicProperties>(out var basicPropertiesValue))
             {
-                try
+                // try to extract propagated context values from headers
+                if (basicPropertiesValue.Headers != null)
                 {
-                    propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesValue.Headers, headersGetter);
+                    try
+                    {
+                        propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesValue.Headers, headersGetter);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error extracting propagated headers.");
+                    }
                 }
-                catch (Exception ex)
+
+                using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
                 {
-                    Log.Error(ex, "Error extracting propagated headers.");
+                    if (tags != null)
+                    {
+                        tags.MessageSize = body?.Length.ToString() ?? "0";
+                    }
+
+                    try
+                    {
+                        instrumentedMethod(model, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
+                    }
+                    catch (Exception ex)
+                    {
+                        scope?.Span.SetException(ex);
+                        throw;
+                    }
                 }
             }
-
-            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
+            else
             {
-                if (tags != null)
-                {
-                    tags.MessageSize = body?.Length.ToString() ?? "0";
-                }
-
-                try
-                {
-                    instrumentedMethod(model, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
-                }
-                catch (Exception ex)
-                {
-                    scope?.Span.SetException(ex);
-                    throw;
-                }
+                instrumentedMethod(model, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
             }
         }
 
@@ -216,37 +221,42 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             SpanContext propagatedContext = null;
-            var basicPropertiesValue = basicProperties.As<IBasicProperties>();
-
-            // try to extract propagated context values from headers
-            if (basicPropertiesValue?.Headers != null)
+            if (basicProperties.TryDuckCast<IBasicProperties>(out var basicPropertiesValue))
             {
-                try
+                // try to extract propagated context values from headers
+                if (basicPropertiesValue.Headers != null)
                 {
-                    propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesValue.Headers, headersGetter);
+                    try
+                    {
+                        propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesValue.Headers, headersGetter);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error extracting propagated headers.");
+                    }
                 }
-                catch (Exception ex)
+
+                using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
                 {
-                    Log.Error(ex, "Error extracting propagated headers.");
+                    if (tags != null && body != null && body.TryDuckCast<BodyStruct>(out var bodyStruct))
+                    {
+                        tags.MessageSize = bodyStruct.Length.ToString() ?? "0";
+                    }
+
+                    try
+                    {
+                        instrumentedMethod(model, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
+                    }
+                    catch (Exception ex)
+                    {
+                        scope?.Span.SetException(ex);
+                        throw;
+                    }
                 }
             }
-
-            using (var scope = CreateScope(Tracer.Instance, out RabbitMQTags tags, command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey))
+            else
             {
-                if (tags != null)
-                {
-                    tags.MessageSize = body?.As<BodyStruct>().Length.ToString() ?? "0";
-                }
-
-                try
-                {
-                    instrumentedMethod(model, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
-                }
-                catch (Exception ex)
-                {
-                    scope?.Span.SetException(ex);
-                    throw;
-                }
+                instrumentedMethod(model, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
             }
         }
 
@@ -326,9 +336,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 SpanContext propagatedContext = null;
                 string messageSize = null;
 
-                if (result != null)
+                if (result != null && result.TryDuckCast<BasicGetResultStruct>(out var basicGetResult))
                 {
-                    var basicGetResult = result.As<BasicGetResultStruct>();
                     messageSize = basicGetResult.Body.Length.ToString();
                     var basicPropertiesHeaders = basicGetResult.BasicProperties?.Headers;
 
@@ -442,10 +451,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         tags.MessageSize = body?.Length.ToString() ?? "0";
                     }
 
-                    if (basicProperties != null)
+                    if (basicProperties != null && basicProperties.TryDuckCast<IBasicProperties>(out var basicPropertiesValue))
                     {
-                        var basicPropertiesValue = basicProperties.As<IBasicProperties>();
-
                         if (tags != null && basicPropertiesValue.IsDeliveryModePresent())
                         {
                             tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];
@@ -543,13 +550,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (tags != null)
                     {
-                        tags.MessageSize = body?.As<BodyStruct>().Length.ToString() ?? "0";
+                        if (body != null && body.TryDuckCast<BodyStruct>(out var bodyStruct))
+                        {
+                            tags.MessageSize = bodyStruct.Length.ToString();
+                        }
+                        else
+                        {
+                            tags.MessageSize = "0";
+                        }
                     }
 
-                    if (basicProperties != null)
+                    if (basicProperties != null && basicProperties.TryDuckCast<IBasicProperties>(out var basicPropertiesValue))
                     {
-                        var basicPropertiesValue = basicProperties.As<IBasicProperties>();
-
                         if (tags != null && basicPropertiesValue.IsDeliveryModePresent())
                         {
                             tags.DeliveryMode = DeliveryModeStrings[0x3 & basicPropertiesValue.DeliveryMode];

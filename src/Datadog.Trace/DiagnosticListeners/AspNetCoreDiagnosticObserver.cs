@@ -264,32 +264,35 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            HttpRequest request = arg.As<HttpRequestInStartStruct>().HttpContext.Request;
-            string host = request.Host.Value;
-            string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string url = GetUrl(request);
-
-            string absolutePath = request.Path.Value;
-
-            if (request.PathBase.HasValue)
+            if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
-                absolutePath = request.PathBase.Value + absolutePath;
+                HttpRequest request = requestStruct.HttpContext.Request;
+                string host = request.Host.Value;
+                string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                string url = GetUrl(request);
+
+                string absolutePath = request.Path.Value;
+
+                if (request.PathBase.HasValue)
+                {
+                    absolutePath = request.PathBase.Value + absolutePath;
+                }
+
+                string resourceUrl = UriHelpers.GetRelativeUrl(absolutePath, tryRemoveIds: true)
+                                               .ToLowerInvariant();
+
+                string resourceName = $"{httpMethod} {resourceUrl}";
+
+                SpanContext propagatedContext = ExtractPropagatedContext(request);
+                var tagsFromHeaders = ExtractHeaderTags(request, tracer);
+
+                var tags = new AspNetCoreTags();
+                var scope = tracer.StartActiveWithTags(HttpRequestInOperationName, propagatedContext, tags: tags);
+
+                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
+
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
             }
-
-            string resourceUrl = UriHelpers.GetRelativeUrl(absolutePath, tryRemoveIds: true)
-                                           .ToLowerInvariant();
-
-            string resourceName = $"{httpMethod} {resourceUrl}";
-
-            SpanContext propagatedContext = ExtractPropagatedContext(request);
-            var tagsFromHeaders = ExtractHeaderTags(request, tracer);
-
-            var tags = new AspNetCoreTags();
-            var scope = tracer.StartActiveWithTags(HttpRequestInOperationName, propagatedContext, tags: tags);
-
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
-
-            tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
         }
 
         private void OnMvcBeforeAction(object arg)
@@ -303,11 +306,10 @@ namespace Datadog.Trace.DiagnosticListeners
 
             Span span = tracer.ActiveScope?.Span;
 
-            if (span != null)
+            if (span != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
-                BeforeActionStruct typedArg = arg.As<BeforeActionStruct>();
                 ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
                 HttpRequest request = typedArg.HttpContext.Request;
 
@@ -341,9 +343,12 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                HttpContext httpContext = arg.As<HttpRequestInStopStruct>().HttpContext;
+                if (arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
+                {
+                    HttpContext httpContext = httpRequest.HttpContext;
+                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
+                }
 
-                scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
                 scope.Dispose();
             }
         }
@@ -359,9 +364,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var span = tracer.ActiveScope?.Span;
 
-            if (span != null)
+            if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {
-                span.SetException(arg.As<UnhandledExceptionStruct>().Exception);
+                span.SetException(unhandledStruct.Exception);
             }
         }
 
