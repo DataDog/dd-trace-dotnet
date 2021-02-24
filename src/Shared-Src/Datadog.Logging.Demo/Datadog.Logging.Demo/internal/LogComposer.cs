@@ -49,24 +49,35 @@ namespace Datadog.Logging.Composition
             IsDebugLoggingEnabled = envSetting;
         }
 
-        public static void RedirectLogs(ILogSink logSink)
+        public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirectionLogSinks)
         {
+            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>();
+
             {
-                Datadog.Logging.Demo.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
+                Type loggerType = typeof(global::Datadog.Logging.Demo.Log);
+                const string logComponentGroupMoniker = "LoggingDemo";
 
                 if (logSink == null)
                 {
+                    redirectionSinks[loggerType] = null;
                     global::Datadog.Logging.Demo.Log.Configure.Error(null);
                     global::Datadog.Logging.Demo.Log.Configure.Info(null);
                     global::Datadog.Logging.Demo.Log.Configure.Debug(null);
                 }
                 else
                 {
-                    global::Datadog.Logging.Demo.Log.Configure.Error((component, msg, ex, data) => TryLogError(logSink, "LoggingDemo", component, msg, ex, data));
-                    global::Datadog.Logging.Demo.Log.Configure.Info((component, msg, data) => TryLogInfo(logSink, "LoggingDemo", component, msg, data));
-                    global::Datadog.Logging.Demo.Log.Configure.Debug((component, msg, data) => TryLogDebug(logSink, "LoggingDemo", component, msg, data));
+                    var redirectionLogSink = new ComponentGroupCompositionLogSink(logComponentGroupMoniker, logSink);
+                    redirectionSinks[loggerType] = redirectionLogSink;
+                    global::Datadog.Logging.Demo.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
+                    global::Datadog.Logging.Demo.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
+                    global::Datadog.Logging.Demo.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
                 }
+
+                Datadog.Logging.Demo.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
             }
+
+            redirectionSinks.TrimExcess();
+            redirectionLogSinks = redirectionSinks;
         }
 
         private static bool GetDebugLoggingEnabledEnvironmentSetting()
@@ -92,26 +103,6 @@ namespace Datadog.Logging.Composition
             { }
             
             return true;
-        }
-
-        private static bool TryLogError(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, Exception error, IEnumerable<object> dataNamesAndValues)
-        {
-            return logSink.TryLogError(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, error, dataNamesAndValues);
-        }
-
-        private static bool TryLogInfo(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, IEnumerable<object> dataNamesAndValues)
-        {
-            return logSink.TryLogInfo(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, dataNamesAndValues);
-        }
-
-        private static bool TryLogDebug(ILogSink logSink, string logComponentGroupMoniker, string logComponentMoniker, string message, IEnumerable<object> dataNamesAndValues)
-        {
-            if (IsDebugLoggingEnabled)
-            { 
-                return logSink.TryLogDebug(LoggingComponentName.Create(logComponentGroupMoniker, logComponentMoniker), message, dataNamesAndValues);
-            }
-
-            return false;
         }
 
         private static string ReadEnvironmentVariable(string envVarName)

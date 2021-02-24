@@ -19,10 +19,55 @@ namespace Datadog.Logging.Emission
         public const string LogLevelMoniker_Info = "INFO ";
         public const string LogLevelMoniker_Debug = "DEBUG";
 
+        private const string ComponentPartSeparator = "::";
         private const string NewLineReplacement = "^->";
         private const string NullWord = "null";
         private const string DataValueNotSpecifiedWord = "unspecified";
         private static readonly string s_procIdInfo = GetProcIdInfoString();
+
+        public static void ComposeComponentName(string inPart1, string inPart2, string inPart3, out string outPart1, out string outPart2)
+        {
+            if (inPart1 != null && string.IsNullOrWhiteSpace(inPart1))
+            {
+                inPart1 = null;
+            }
+
+            if (inPart2 != null && string.IsNullOrWhiteSpace(inPart2))
+            {
+                inPart2 = null;
+            }
+
+            if (inPart3 != null && string.IsNullOrWhiteSpace(inPart3))
+            {
+                inPart3 = null;
+            }
+
+            if (inPart2 == null && inPart3 == null)
+            {
+                outPart2 = inPart1;
+                outPart1 = null;
+                return;
+            }
+            else if (inPart2 == null && inPart3 != null)
+            {
+                outPart2 = inPart3;
+                outPart1 = inPart1;
+                return;
+            }
+            else if (inPart2 != null && inPart3 == null)
+            {
+                outPart2 = inPart2;
+                outPart1 = inPart1;
+                return;
+            }
+            else
+            {
+                // Must be (inPart2 != null && inPart3 != null)
+                outPart2 = inPart2 + ComponentPartSeparator + inPart3;
+                outPart1 = inPart1;
+                return;
+            }
+        }
 
         public static string ConstructErrorMessage(string message, Exception exception, bool useNewLines)
         {
@@ -205,7 +250,7 @@ namespace Datadog.Logging.Emission
 
             if (hasComponentNamePart1 && hasComponentNamePart2)
             {
-                targetBuffer.Append("::");
+                targetBuffer.Append(ComponentPartSeparator);
             }
 
             if (hasComponentNamePart2)
@@ -264,7 +309,6 @@ namespace Datadog.Logging.Emission
                 return;
             }
 
-            targetBuffer.Append("[]");
             targetBuffer.Append('{');
             for (int i = 0; i < dataNamesAndValues.Length; i += 2)
             {
@@ -300,7 +344,6 @@ namespace Datadog.Logging.Emission
                 {
                     if (enumIndex == 0)
                     {
-                        targetBuffer.Append("<>");
                         targetBuffer.Append('{');
                     }
                     else

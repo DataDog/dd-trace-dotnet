@@ -27,33 +27,34 @@ namespace Datadog.Logging.Demo
 
         public void Run()
         {
-            Console.WriteLine();
-            Console.WriteLine($"Console-Message: {typeof(Program).FullName} started.");
+            ConsoleWriteLine();
+            ConsoleWriteLine($"{typeof(Program).FullName} started.");
 
             LogConfigurator.SetupLogger();
 
-            Console.WriteLine($"Console-Message: Logger was configured. Starting workers...");
+            ConsoleWriteLine($"Logger was configured. Starting workers...");
 
-            const int WorkerCount = 1;
+            const int WorkerCount = 4;
 
             Task[] workers = new Task[WorkerCount];
             for (int i = 0; i < WorkerCount; i++)
             {
-                workers[i] = Task.Run(() => DoWorkAsync(i + 1));
+                int workerId = i + 1;
+                workers[i] = Task.Run(() => DoWorkAsync(workerId));
             }
 
-            Console.WriteLine($"Console-Message: Workers started. Running tasks...");
+            ConsoleWriteLine($"Workers started. Running tasks...");
 
             Task.WaitAll(workers);
             workers = null;
 
-            Console.WriteLine($"Console-Message: Workers completed. Disposing log sink(s).");
+            ConsoleWriteLine($"Workers completed. Disposing log sink(s).");
 
-            LogConfigurator.DisposeLogSink();
-            Console.WriteLine($"Console-Message: Log sink(s) disposed. Press Enter to end program.");
+            LogConfigurator.DisposeLogSinks();
+            ConsoleWriteLine($"Log sink(s) disposed. Press Enter to end program.");
 
             Console.ReadLine();
-            Console.WriteLine($"Console-Message: Good bye.");
+            ConsoleWriteLine($"Good bye.");
         }
 
         private static async Task DoWorkAsync(int workerIdNum)
@@ -128,7 +129,8 @@ namespace Datadog.Logging.Demo
 
                 if (iteration % 500 == 0)
                 {
-                    Console.WriteLine($"{Environment.NewLine}Console-Message: Worker {workerId} has been running for {runtime} and completed {iteration} iterations.");
+                    ConsoleWriteLine();
+                    ConsoleWriteLine($"Worker {workerId} has been running for {runtime} and completed {iteration} iterations.");
                 }
 
                 int delaymillis;
@@ -147,6 +149,23 @@ namespace Datadog.Logging.Demo
         private static void ThrowException()
         {
             throw new Exception("An exceptional condition has occurred.");
+        }
+
+        private static void ConsoleWriteLine()
+        {
+            ConsoleWriteLine(null);
+        }
+
+        private static void ConsoleWriteLine(string line)
+        {
+            if (line == null)
+            {
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.WriteLine("Console-Message: " + line);
+            }
         }
     }
 }

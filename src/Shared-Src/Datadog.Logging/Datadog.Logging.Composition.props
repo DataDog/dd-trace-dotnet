@@ -17,6 +17,7 @@
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\LoggingComponentName.cs" />
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\SimpleConsoleLogSink.cs" />
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\AggregatedLogSink.cs" />
+    <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\ComponentGroupCompositionLogSink.cs" />
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\FileLogSink.cs" />
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\LogGroupMutex.cs" />
     <IncludedSharedLogCompositionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Composition\internal\DatadogEnvironmentFileLogSinkFactory.cs" />

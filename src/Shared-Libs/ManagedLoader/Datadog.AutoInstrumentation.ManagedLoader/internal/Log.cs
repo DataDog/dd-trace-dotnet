@@ -13,6 +13,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 
 namespace Datadog.AutoInstrumentation.ManagedLoader
 {
@@ -22,6 +23,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     /// An absolute minimum of dependencies is required: 3 small static classes that are included as source code (no library dependency).
     /// The only namespaces importand by those 3 static classes are (see also <c>Datadog.Logging.Emission.props</c>):
     ///  - System
+    ///  - System.Collections.Generic
     ///  - System.Diagnostics (only to get Process.GetCurrentProcess().Id)
     ///  - System.Runtime.CompilerServices (on;y for [MethodImpl(MethodImplOptions.AggressiveInlining)])
     ///  - System.Text
@@ -102,7 +104,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     ///               TracerLog.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
     ///           }
     ///   
-    ///           private static void LogError(string logGroupMoniker, string logComponentMoniker, string message, Exception error, object[] dataNamesAndValues)
+    ///           private static void LogError(string logGroupMoniker, string logComponentMoniker, string message, Exception error, IEnumerable<object> dataNamesAndValues)
     ///           {
     ///               // Prepare a log line in any appropriate way. For example:
     ///               string logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Error,
@@ -115,12 +117,12 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     ///               // Persist logLine to file...
     ///           }
     ///
-    ///           private static void LogInfo(string logGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
+    ///           private static void LogInfo(string logGroupMoniker, string logComponentMoniker, string message, IEnumerable<object> dataNamesAndValues)
     ///           {
     ///               // Prepare a log line (e.g. like above) and persist it to file...
     ///           }
     ///
-    ///           private static void LogDebug(string logGroupMoniker, string logComponentMoniker, string message, object[] dataNamesAndValues)
+    ///           private static void LogDebug(string logGroupMoniker, string logComponentMoniker, string message, IEnumerable<object> dataNamesAndValues)
     ///           {
     ///               if (IsDebugLoggingEnabled)
     ///               {
@@ -143,7 +145,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             /// Sets the handler delegate for processing Error log events.
             /// If <c>null</c> is specified, then Error log events will be ignored.
             /// </summary>
-            public static void Error(Action<string, string, Exception, object[]> logEventHandler)
+            public static void Error(Action<string, string, Exception, IEnumerable<object>> logEventHandler)
             {
                 s_errorLogEventHandler = logEventHandler;
             }
@@ -152,7 +154,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             /// Sets the handler delegate for processing Info log events.
             /// If <c>null</c> is specified, then Error log events will be ignored.
             /// </summary>
-            public static void Info(Action<string, string, object[]> logEventHandler)
+            public static void Info(Action<string, string, IEnumerable<object>> logEventHandler)
             {
                 s_infoLogEventHandler = logEventHandler;
             }
@@ -161,7 +163,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             /// Sets the handler delegate for processing Debug log events.
             /// If <c>null</c> is specified, then Error log events will be ignored.
             /// </summary>
-            public static void Debug(Action<string, string, object[]> logEventHandler)
+            public static void Debug(Action<string, string, IEnumerable<object>> logEventHandler)
             {
                 s_debugLogEventHandler = logEventHandler;
             }
@@ -175,9 +177,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
         }  // class Log.Configure
 
-        private static Action<string, string, Exception, object[]> s_errorLogEventHandler = global::Datadog.Logging.Emission.SimpleConsoleSink.Error;
-        private static Action<string, string, object[]> s_infoLogEventHandler = global::Datadog.Logging.Emission.SimpleConsoleSink.Info;
-        private static Action<string, string, object[]> s_debugLogEventHandler = global::Datadog.Logging.Emission.SimpleConsoleSink.Debug;
+        private static Action<string, string, Exception, IEnumerable<object>> s_errorLogEventHandler = global::Datadog.Logging.Emission.SimpleConsoleSink.Error;
+        private static Action<string, string, IEnumerable<object>> s_infoLogEventHandler = global::Datadog.Logging.Emission.SimpleConsoleSink.Info;
+        private static Action<string, string, IEnumerable<object>> s_debugLogEventHandler = global::Datadog.Logging.Emission.SimpleConsoleSink.Debug;
         private static bool s_isDebugLoggingEnabled = global::Datadog.Logging.Emission.SimpleConsoleSink.IsDebugLoggingEnabled;
 
         /// <summary>
