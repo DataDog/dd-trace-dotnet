@@ -148,7 +148,7 @@ MethodReference MethodReferenceFromJson(const json::value_type& src,
   USHORT max_minor = USHRT_MAX;
   USHORT max_patch = USHRT_MAX;
   std::vector<WSTRING> signature_type_array;
-  WSTRING action = ""_W;
+  WSTRING action = WStr("");
 
   if (is_target_method) {
     // these fields only exist in the target definition

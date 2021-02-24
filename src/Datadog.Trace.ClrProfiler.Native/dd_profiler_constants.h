@@ -34,41 +34,43 @@ namespace trace {
     environment::azure_app_services_cli_telemetry_profile_value};
 
   inline WSTRING skip_assembly_prefixes[]{
-    "Datadog.Trace"_W,
-    "MessagePack"_W,
-    "Microsoft.AI"_W,
-    "Microsoft.ApplicationInsights"_W,
-    "Microsoft.Build"_W,
-    "Microsoft.CSharp"_W,
-    "Microsoft.Extensions"_W,
-    "Microsoft.Web.Compilation.Snapshots"_W,
-    "Sigil"_W,
-    "System.Core"_W,
-    "System.Console"_W,
-    "System.Collections"_W,
-    "System.ComponentModel"_W,
-    "System.Diagnostics"_W,
-    "System.Drawing"_W,
-    "System.EnterpriseServices"_W,
-    "System.IO"_W,
-    "System.Runtime"_W,
-    "System.Text"_W,
-    "System.Threading"_W,
-    "System.Xml"_W,
-    "Newtonsoft"_W,};
+    WStr("Datadog.Trace"),
+    WStr("MessagePack"),
+    WStr("Microsoft.AI"),
+    WStr("Microsoft.ApplicationInsights"),
+    WStr("Microsoft.Build"),
+    WStr("Microsoft.CSharp"),
+    WStr("Microsoft.Extensions"),
+    WStr("Microsoft.Web.Compilation.Snapshots"),
+    WStr("Sigil"),
+    WStr("System.Core"),
+    WStr("System.Console"),
+    WStr("System.Collections"),
+    WStr("System.ComponentModel"),
+    WStr("System.Diagnostics"),
+    WStr("System.Drawing"),
+    WStr("System.EnterpriseServices"),
+    WStr("System.IO"),
+    WStr("System.Runtime"),
+    WStr("System.Text"),
+    WStr("System.Threading"),
+    WStr("System.Xml"),
+    WStr("Newtonsoft"),
+  };
 
   inline WSTRING skip_assemblies[]{
-      "mscorlib"_W,
-      "netstandard"_W,
-      "System.Configuration"_W,
-      "Microsoft.AspNetCore.Razor.Language"_W,
-      "Microsoft.AspNetCore.Mvc.RazorPages"_W,
-      "Anonymously Hosted DynamicMethods Assembly"_W,
-      "ISymWrapper"_W};
+      WStr("mscorlib"),
+      WStr("netstandard"),
+      WStr("System.Configuration"),
+      WStr("Microsoft.AspNetCore.Razor.Language"),
+      WStr("Microsoft.AspNetCore.Mvc.RazorPages"),
+      WStr("Anonymously Hosted DynamicMethods Assembly"),
+      WStr("ISymWrapper")
+  };
 
-  inline WSTRING managed_profiler_full_assembly_version = "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W;
+  inline WSTRING managed_profiler_full_assembly_version = WStr("Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
-  inline WSTRING calltarget_modification_action = "CallTargetModification"_W;
+  inline WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
 }  // namespace trace
 

@@ -82,7 +82,7 @@ TEST_F(CLRHelperTest, FiltersEnabledIntegrations) {
       {{{}, {L"System.Runtime", L"", L"", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_}, {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
-  std::vector<WSTRING> disabled_integrations = {"integration-2"_W};
+  std::vector<WSTRING> disabled_integrations = {WStr("integration-2")};
   auto actual = FilterIntegrationsByName(all, disabled_integrations);
   EXPECT_EQ(actual, expected);
 }

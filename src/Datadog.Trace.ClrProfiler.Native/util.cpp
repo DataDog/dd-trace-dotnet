@@ -30,17 +30,17 @@ std::vector<WSTRING> Split(const WSTRING &s, wchar_t delim) {
 
 WSTRING Trim(const WSTRING &str) {
   if (str.length() == 0) {
-    return ""_W;
+    return WStr("");
   }
 
   WSTRING trimmed = str;
 
-  auto lpos = trimmed.find_first_not_of(" \t"_W);
+  auto lpos = trimmed.find_first_not_of(WStr(" \t"));
   if (lpos != WSTRING::npos && lpos > 0) {
     trimmed = trimmed.substr(lpos);
   }
 
-  auto rpos = trimmed.find_last_not_of(" \t"_W);
+  auto rpos = trimmed.find_last_not_of(WStr(" \t"));
   if (rpos != WSTRING::npos) {
     trimmed = trimmed.substr(0, rpos + 1);
   }
@@ -58,7 +58,7 @@ WSTRING GetEnvironmentValue(const WSTRING &name) {
 #else
   auto cstr = std::getenv(ToString(name).c_str());
   if (cstr == nullptr) {
-    return ""_W;
+    return WStr("");
   }
   std::string str(cstr);
   auto wstr = ToWSTRING(str);

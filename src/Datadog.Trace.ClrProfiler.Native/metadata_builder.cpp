@@ -15,7 +15,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   assembly_metadata.usMinorVersion = assembly_ref.version.minor;
   assembly_metadata.usBuildNumber = assembly_ref.version.build;
   assembly_metadata.usRevisionNumber = assembly_ref.version.revision;
-  if (assembly_ref.locale == "neutral"_W) {
+  if (assembly_ref.locale == WStr("neutral")) {
     assembly_metadata.szLocale = nullptr;
     assembly_metadata.cbLocale = 0;
   } else {

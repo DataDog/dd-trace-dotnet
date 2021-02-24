@@ -25,7 +25,7 @@ class ModuleMetadata {
   const ComPtr<IMetaDataEmit2> metadata_emit{};
   const ComPtr<IMetaDataAssemblyImport> assembly_import{};
   const ComPtr<IMetaDataAssemblyEmit> assembly_emit{};
-  WSTRING assemblyName = ""_W;
+  WSTRING assemblyName = WStr("");
   AppDomainID app_domain_id;
   GUID module_version_id;
   std::vector<IntegrationMethod> integrations = {};
