@@ -15,7 +15,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
 
         public long? Length => _buffer.Count;
 
-        public Task CopyToAsync(Stream destination, int? bufferSize)
+        public Task CopyToAsync(Stream destination)
         {
             return destination.WriteAsync(_buffer.Array, _buffer.Offset, _buffer.Count);
         }

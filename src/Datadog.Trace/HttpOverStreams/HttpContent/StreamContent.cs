@@ -16,14 +16,9 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
 
         public long? Length { get; }
 
-        public Task CopyToAsync(Stream destination, int? bufferSize)
+        public Task CopyToAsync(Stream destination)
         {
-            if (bufferSize == null)
-            {
-                return Stream.CopyToAsync(destination);
-            }
-
-            return Stream.CopyToAsync(destination, bufferSize.Value);
+            return Stream.CopyToAsync(destination);
         }
 
         public async Task CopyToAsync(byte[] buffer)
