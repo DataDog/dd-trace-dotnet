@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Play a trick with the VS Solution Explorer:                                                            -->
+    <!-- We want all these files to be grouped under a key that is:                                             -->
+    <!-- the name of the immediate subfolder within the "Shared " sources folder.                               -->
+    <!-- For that, we need to create an item group rooted in "Shared" and then exclude all except these files.  -->
+    <IncludedSharedItem Include="..\Shared\Datadog.Util\internal\ArrayExtensions.cs" />
+    <IncludedSharedItem Include="..\Shared\Datadog.Util\internal\Concurrent.cs" />
+    <IncludedSharedItem Include="..\Shared\Datadog.Util\internal\Format.cs" />
+    <IncludedSharedItem Include="..\Shared\Datadog.Util\internal\Validate.cs" />
+
+    <ExcludedSharedItems Include="..\Shared\**\*.cs" Exclude="@(IncludedSharedItem)" />
+    <Compile Include="..\Shared\**\*.cs" Exclude="@(ExcludedSharedItems)" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <NoWarn>1591</NoWarn>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+ 
+  <PropertyGroup>
+    <VendoredPath Condition="$(VendoredPath) == ''">VendoredLibs/</VendoredPath>
+  </PropertyGroup>
+   
+  <ItemGroup>
+      <Compile Remove="$(VendoredPath)**/*" />
+      <None Remove="$(VendoredPath)**/*" />
+      <EmbeddedResource Remove="$(VendoredPath)**/*.resx" />
+  </ItemGroup>
+
+  <Import Project="VendoredLibs.DiagnosticSource.props" />
+
+</Project> 
