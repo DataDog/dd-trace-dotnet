@@ -1,6 +1,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
@@ -41,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         public static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
             where TContext : IExecutionContext
         {
-            return new CallTargetState(GraphQLCommon.CreateScopeFromExecuteAsync(Tracer.Instance, context));
+            return new CallTargetState(scope: GraphQLCommon.CreateScopeFromExecuteAsync(Tracer.Instance, context), state: context);
         }
 
         /// <summary>
@@ -55,7 +56,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception exception, CallTargetState state)
-            where TExecutionResult : IExecutionResult
         {
             Scope scope = state.Scope;
             if (state.Scope is null)
@@ -71,7 +71,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 }
                 else
                 {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, executionResult.Errors);
+                    if (state.State.TryDuckCast<IExecutionContext>(out var context))
+                    {
+                        GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, context.Errors);
+                    }
                 }
             }
             finally

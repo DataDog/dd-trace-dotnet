@@ -14,5 +14,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// Gets the operation associated with the execution context
         /// </summary>
         IOperation Operation { get; }
+
+        /// <summary>
+        /// Gets the execution errors
+        /// </summary>
+        IExecutionErrors Errors { get; }
     }
 }
