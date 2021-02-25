@@ -51,7 +51,7 @@ namespace Datadog.Logging.Composition
 
         public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirectionLogSinks)
         {
-            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>();
+            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>(capacity: 2);
 
             {
                 Type loggerType = typeof(global::Datadog.AutoInstrumentation.ManagedLoader.Log);
@@ -76,7 +76,6 @@ namespace Datadog.Logging.Composition
                 Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
             }
 
-            redirectionSinks.TrimExcess();
             redirectionLogSinks = redirectionSinks;
         }
 
