@@ -199,7 +199,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (HttpContext.Current != null)
                 {
-                    scope = CreateScope(controllerContext.As<ControllerContextStruct>());
+                    scope = CreateScope(controllerContext.DuckCast<ControllerContextStruct>());
                     HttpContext.Current.Items[HttpContextKey] = scope;
                 }
             }

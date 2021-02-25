@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             else
             {
-                var statusCode = responseMessage.As<HttpResponseMessageStruct>().StatusCode;
+                var statusCode = responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode;
                 scope.Span.SetHttpStatusCode(statusCode, isServer: true);
                 scope.Dispose();
             }

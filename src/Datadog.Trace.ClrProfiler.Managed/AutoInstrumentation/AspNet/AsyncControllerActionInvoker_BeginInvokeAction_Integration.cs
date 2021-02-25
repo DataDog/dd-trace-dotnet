@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 if (HttpContext.Current != null)
                 {
-                    scope = AspNetMvcIntegration.CreateScope(controllerContext.As<ControllerContextStruct>());
+                    scope = AspNetMvcIntegration.CreateScope(controllerContext.DuckCast<ControllerContextStruct>());
                     HttpContext.Current.Items[AspNetMvcIntegration.HttpContextKey] = scope;
                 }
             }

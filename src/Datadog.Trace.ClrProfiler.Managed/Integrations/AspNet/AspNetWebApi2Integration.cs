@@ -149,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object context,
             CancellationToken cancellationToken)
         {
-            var controllerContext = context.As<IHttpControllerContext>();
+            var controllerContext = context.DuckCast<IHttpControllerContext>();
 
             Scope scope = CreateScope(controllerContext, out var tags);
 
