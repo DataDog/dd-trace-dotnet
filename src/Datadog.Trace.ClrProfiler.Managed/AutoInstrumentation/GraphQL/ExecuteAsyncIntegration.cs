@@ -8,27 +8,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     /// <summary>
     /// GraphQL.Execution.ExecutionStrategy calltarget instrumentation
     /// </summary>
-    [InstrumentMethod(
-        AssemblyName = "GraphQL",
+    [GraphQLExecuteAsync(
+        AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Execution.ExecutionStrategy",
-        MethodName = "ExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
-        ParameterTypeNames = new[] { "GraphQL.Execution.ExecutionContext" },
-        MinimumVersion = "2.3.0",
-        MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
-    [InstrumentMethod(
-        AssemblyName = "GraphQL",
+        MinimumVersion = GraphQLCommon.Major2Minor3,
+        MaximumVersion = GraphQLCommon.Major2)]
+    [GraphQLExecuteAsync(
+        AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
-        MethodName = "ExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
-        ParameterTypeNames = new[] { "GraphQL.Execution.ExecutionContext" },
-        MinimumVersion = "2.3.0",
-        MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
+        MinimumVersion = GraphQLCommon.Major2Minor3,
+        MaximumVersion = GraphQLCommon.Major2)]
     public class ExecuteAsyncIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.GraphQL);
         private const string ErrorType = "GraphQL.ExecutionError";
 
         /// <summary>

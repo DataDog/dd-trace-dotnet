@@ -9,14 +9,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     internal class GraphQLCommon
     {
+        internal const string GraphQLAssembly = "GraphQL";
+        internal const string Major2 = "2";
+        internal const string Major2Minor3 = "2.3";
+
+        internal const string IntegrationName = nameof(IntegrationIds.GraphQL);
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+
         private const string ServiceName = "graphql";
         private const string ParseOperationName = "graphql.parse"; // Instrumentation not yet implemented
         private const string ValidateOperationName = "graphql.validate";
         private const string ExecuteOperationName = "graphql.execute";
         private const string ResolveOperationName = "graphql.resolve"; // Instrumentation not yet implemented
-
-        internal const string IntegrationName = nameof(IntegrationIds.GraphQL);
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GraphQLCommon));
 

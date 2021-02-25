@@ -8,17 +8,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     /// GraphQL.Validation.DocumentValidator calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = "GraphQL",
+        AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Validation.DocumentValidator",
         MethodName = "Validate",
         ReturnTypeName = "GraphQL.Validation.IValidationResult",
         ParameterTypeNames = new[] { ClrNames.String, "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", ClrNames.Ignore, "GraphQL.Inputs" },
-        MinimumVersion = "2.3.0",
-        MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
+        MinimumVersion = GraphQLCommon.Major2Minor3,
+        MaximumVersion = GraphQLCommon.Major2,
+        IntegrationName = GraphQLCommon.IntegrationName)]
     public class ValidateIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.GraphQL);
         private const string ErrorType = "GraphQL.Validation.ValidationError";
 
         /// <summary>
