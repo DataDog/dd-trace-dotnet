@@ -6,7 +6,7 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\src\Shared-Src\</SharedSrcBaseDir>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\src\Shared-Src</SharedSrcBaseDir>
   </PropertyGroup>
 
   <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
@@ -17,7 +17,7 @@
 
   <ItemGroup>
   	<!-- This "service" is required for T4-templating.                                                                                   -->
-	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+	  <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   
   	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
     <T4ParameterValues Include="SharedSrcBaseDir">

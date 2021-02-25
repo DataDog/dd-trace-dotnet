@@ -38,8 +38,15 @@
     <Compile Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
   </ItemGroup>
 	
-	
   <ItemGroup>
+	<!-- This "service" is required for T4-templating.                                                                                   -->
+	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  
+  	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
+    <T4ParameterValues Include="SharedSrcBaseDir">
+      <Value>$(SharedSrcBaseDir)</Value>
+    </T4ParameterValues>
+    
     <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                     -->
     <!-- It ensures that the Log Emission API is correctly generated.                                                                    -->
     <None Update="Datadog.DynamicDiagnosticSourceBindings\public\Log.tt">
@@ -61,10 +68,6 @@
       <Compile Remove="$(VendoredPath)**/*" />
       <None Remove="$(VendoredPath)**/*" />
       <EmbeddedResource Remove="$(VendoredPath)**/*.resx" />
-  </ItemGroup>
-   
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
   <Import Project="VendoredLibs.DiagnosticSource.props" />

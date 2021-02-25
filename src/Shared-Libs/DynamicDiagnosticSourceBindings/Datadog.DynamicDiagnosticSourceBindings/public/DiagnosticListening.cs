@@ -1,5 +1,6 @@
 using System;
 using StaticSystemDiagnostics = System.Diagnostics;
+using Datadog.Util;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {

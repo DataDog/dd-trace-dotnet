@@ -5,6 +5,8 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class EventObserverAdapter : IObserver<KeyValuePair<string, object>>
     {
+        private const string LogComonentMoniker = nameof(EventObserverAdapter);
+
         private readonly Action<string, object> _eventObserver;
 
         public EventObserverAdapter(Action<string, object> eventObserver)
@@ -23,12 +25,12 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
         public void OnError(Exception error)
         {
-            // This should never be invoked in practice. Log error so that we can debug.
+            Log.Error(LogComonentMoniker, $"An exception was passed to the {nameof(OnError)}(..)-handler.", error);
         }
 
         public void OnCompleted()
         {
-            // This should never be invoked in practice. Log error so that we can debug.
+            Log.Error(LogComonentMoniker, $"The {nameof(OnCompleted)}(..)-handler was invoked. This was not expected and should be investogated");
         }
     }
 }

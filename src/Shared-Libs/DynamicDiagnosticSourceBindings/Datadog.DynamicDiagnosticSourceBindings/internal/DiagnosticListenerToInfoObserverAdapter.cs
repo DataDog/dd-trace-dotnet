@@ -4,6 +4,8 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class DiagnosticListenerToInfoObserverAdapter : IObserver<object>
     {
+        private const string LogComonentMoniker = nameof(DiagnosticListenerToInfoObserverAdapter);
+
         private readonly Action<DiagnosticListenerStub> _diagnosticListenerObserver;
 
         public DiagnosticListenerToInfoObserverAdapter(Action<DiagnosticListenerStub> diagnosticListenerObserver)
@@ -18,9 +20,14 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             {
                 if (!DiagnosticListenerStub.TryWrap(diagnosticListener, out DiagnosticListenerStub diagnosticListenerStub))
                 {
-                    // diagnosticListener must have the wrong type.
-                    // This should never happen, as we slotted an IObserver<object> where an IObserver<DiagnosticListener> was expected.
-                    // There must be a bug. Log an error and bail out.
+                    Log.Error(LogComonentMoniker,
+                             $"Could not create a {nameof(DiagnosticListenerStub)} for the {nameof(diagnosticListener)}"
+                           + $" instance passed into {nameof(OnNext)}(..). It must have the wrong runtime type."
+                           + $" This should never happen becasue we use IObserver<object> where an IObserver<DiagnosticListener>"
+                           + $" was expected, so the passed instance should always be of type 'DiagnosticListener'."
+                           + $" {diagnosticListenerObserver} will not be invoked.",
+                              "Actual Type",
+                              diagnosticListener?.GetType()?.FullName);
                 }
                 else
                 {
@@ -31,12 +38,12 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
         public void OnError(Exception error)
         {
-            // This should never be invoked in practice. Log error so that we can debug.
+            Log.Error(LogComonentMoniker, $"An exception was passed to the {nameof(OnError)}(..)-handler.", error);
         }
 
         public void OnCompleted()
         {
-            // This should never be invoked in practice. Log error so that we can debug.
+            Log.Error(LogComonentMoniker, $"The {nameof(OnCompleted)}(..)-handler was invoked. This was not expected and should be investogated");
         }
     }
 }

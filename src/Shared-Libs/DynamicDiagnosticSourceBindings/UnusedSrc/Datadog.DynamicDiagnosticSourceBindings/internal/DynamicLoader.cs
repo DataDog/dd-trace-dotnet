@@ -19,6 +19,8 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal static class DynamicLoader
     {
+        private const string LogComonentMoniker = "DynamicAssemblyLoader-DiagnosticSource";
+
         public const string DiagnosticSourceAssembly_Name = "System.Diagnostics.DiagnosticSource";
         public const string DiagnosticSourceAssembly_Culture = "Culture=neutral";
         public const string DiagnosticSourceAssembly_PublicKeyToken = "PublicKeyToken=cc7b13ffcd2ddd51";
@@ -113,21 +115,21 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             try
             {
-                Log.Debug($"Initializing {nameof(DynamicLoader)}.");
-                Log.Debug($"Runtime version:        {Environment.Version}.");
-                Log.Debug($"BCL version:            {typeof(object).Assembly.FullName}.");
-                Log.Debug("");
+                Log.Debug(LogComonentMoniker, $"Initializing {nameof(DynamicLoader)}.");
+                Log.Debug(LogComonentMoniker, $"Runtime version:        {Environment.Version}.");
+                Log.Debug(LogComonentMoniker, $"BCL version:            {typeof(object).Assembly.FullName}.");
+                Log.Debug(LogComonentMoniker, "");
 
                 bool success = PerformInitialization();
 
-                Log.Debug($"Initialization success: {success}.");
+                Log.Debug(LogComonentMoniker, $"Initialization success: {success}.");
 
                 Interlocked.Exchange(ref s_InilializationState, success ? (int) InitState.Initialized : (int) InitState.Error);
                 return success;
             }
             catch (Exception ex)
             {
-                Log.Error(ex);
+                Log.Error(LogComonentMoniker, ex);
                 Interlocked.Exchange(ref s_InilializationState, (int) InitState.Error);
                 return false;
             }
@@ -171,7 +173,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return diagnosticSourceAssembly;
             }
 
-            Log.Info($"Looking for the \"{DiagnosticSourceAssembly_Name}\" assembly.");
+            Log.Info(LogComonentMoniker, $"Looking for the \"{DiagnosticSourceAssembly_Name}\" assembly.");
 
             // Perhaps DiagnosticSource.dll is not yet known to this loader, but it has already been loaded by the application.
             // Let's look for it:
@@ -238,7 +240,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 AssemblyName asmName = diagnosticSourceAssembly.GetName();
                 if (asmName.Version < DiagnosticSourceAssembly_MinReqVersion)
                 {
-                    Log.Error($"The \"{DiagnosticSourceAssembly_Name}\" assembly is already loaded by the application and the version is too old:"
+                    Log.Error(LogComonentMoniker, $"The \"{DiagnosticSourceAssembly_Name}\" assembly is already loaded by the application and the version is too old:"
                        + $" Minimum required version: \"{DiagnosticSourceAssembly_MinReqVersion}\";"
                        + $" Actually loaded assembly: {{Version=\"{asmName.Version}\", Location=\"{diagnosticSourceAssembly.Location}\"}}."
                        +  " Replacing a readily loaded assembly is not supported. Activity-based auto-instrumentation cannot be performed.");
@@ -247,8 +249,8 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 }
                 else
                 {
-                    Log.Info($"The \"{DiagnosticSourceAssembly_Name}\" assembly is already loaded by the application and will be used:"
-                           + $" FullName=\"{diagnosticSourceAssembly.FullName}\", Location=\"{diagnosticSourceAssembly.Location}\".");
+                    Log.Info(LogComonentMoniker, $"The \"{DiagnosticSourceAssembly_Name}\" assembly is already loaded by the application and will be used:"
+                                               + $" FullName=\"{diagnosticSourceAssembly.FullName}\", Location=\"{diagnosticSourceAssembly.Location}\".");
                 }
 
                 s_diagnosticSourceAssembly = diagnosticSourceAssembly;
@@ -271,8 +273,8 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             string diagnosticSourceNameString_NoVersion = $"{DiagnosticSourceAssembly_Name}, {DiagnosticSourceAssembly_Culture}, {DiagnosticSourceAssembly_PublicKeyToken}";
             AssemblyName diagnosticSourceAssemblyName_NoVersion = new AssemblyName(diagnosticSourceNameString_NoVersion);
 
-            Log.Info($"The \"{DiagnosticSourceAssembly_Name}\" assembly is not yet loaded by the application."
-                   + $" Performing explicit load by FullName=\"{diagnosticSourceAssemblyName_NoVersion.FullName}\"");
+            Log.Info(LogComonentMoniker, $"The \"{DiagnosticSourceAssembly_Name}\" assembly is not yet loaded by the application."
+                                       + $" Performing explicit load by FullName=\"{diagnosticSourceAssemblyName_NoVersion.FullName}\"");
 
 #if NETCOREAPP
             diagnosticSourceAssembly = AssemblyLoadContext.Default.LoadFromAssemblyName(diagnosticSourceAssemblyName_NoVersion);
@@ -281,7 +283,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 #endif
             if (diagnosticSourceAssembly == null)
             {
-                Log.Error($"Could not load the \"{DiagnosticSourceAssembly_Name}\" assembly even after advanced assembly resolution logic.");
+                Log.Error(LogComonentMoniker, $"Could not load the \"{DiagnosticSourceAssembly_Name}\" assembly even after advanced assembly resolution logic.");
             }
             else
             {
@@ -294,22 +296,22 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     // than whether or not the assembly is ALREADY loaded is, essentially, a race condition. For some applications it may result
                     // in different outcomes each time. We do not want to engage in such flaky behaviour also ALWAYS bail out.
 
-                    Log.Error($"The \"{DiagnosticSourceAssembly_Name}\" assembly was loaded, but its version too old."
-                            +  " This happens when an old version of the assembly is located in the default assembly probing paths."
-                            +  " A newer version of the assembly is distributed with this library,"
-                            +  " however, the presence of the old assembly version implies that this application requires that partilar version."
-                            + $" Upgrade your application to use a newer version of the \"{DiagnosticSourceAssembly_Name}\" assembly or delete"
-                            +  " the assembly binaries from any assembly probing paths in order to allow this library to inject a newer version."
-                            + $" Minimum required version: \"{DiagnosticSourceAssembly_MinReqVersion}\";"
-                            + $" Actually loaded assembly: {{Version=\"{asmName.Version}\", Location=\"{diagnosticSourceAssembly.Location}\"}}."
-                            +  " Activity-based auto-instrumentation cannot be performed.");
+                    Log.Error(LogComonentMoniker, $"The \"{DiagnosticSourceAssembly_Name}\" assembly was loaded, but its version too old."
+                                                +  " This happens when an old version of the assembly is located in the default assembly probing paths."
+                                                +  " A newer version of the assembly is distributed with this library,"
+                                                +  " however, the presence of the old assembly version implies that this application requires that partilar version."
+                                                + $" Upgrade your application to use a newer version of the \"{DiagnosticSourceAssembly_Name}\" assembly or delete"
+                                                +  " the assembly binaries from any assembly probing paths in order to allow this library to inject a newer version."
+                                                + $" Minimum required version: \"{DiagnosticSourceAssembly_MinReqVersion}\";"
+                                                + $" Actually loaded assembly: {{Version=\"{asmName.Version}\", Location=\"{diagnosticSourceAssembly.Location}\"}}."
+                                                +  " Activity-based auto-instrumentation cannot be performed.");
 
                     diagnosticSourceAssembly = null;
                 }
                 else
                 {
-                    Log.Info($"The \"{DiagnosticSourceAssembly_Name}\" was loaded:"
-                           + $" FullName=\"{diagnosticSourceAssembly.FullName}\", Location=\"{diagnosticSourceAssembly.Location}\".");
+                    Log.Info(LogComonentMoniker, $"The \"{DiagnosticSourceAssembly_Name}\" was loaded:"
+                                               + $" FullName=\"{diagnosticSourceAssembly.FullName}\", Location=\"{diagnosticSourceAssembly.Location}\".");
                 }
             }
 
@@ -340,17 +342,17 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             if (packagedAssemblyInfo.IsProcessedFromPackage)
             {
-                Log.Error($"The assembly \"{args.Name}\" was not found using the normal assembly resolution method."
-                        + $" A fallback assembly binary is included in file \"{packagedAssemblyInfo.AssemblyFilePath}\"."
-                        + $" Copying that file into this application's base directory was attempted, but the assembly still cannot be resolved."
-                        + $" Giving up.");
+                Log.Error(LogComonentMoniker, $"The assembly \"{args.Name}\" was not found using the normal assembly resolution method."
+                                            + $" A fallback assembly binary is included in file \"{packagedAssemblyInfo.AssemblyFilePath}\"."
+                                            + $" Copying that file into this application's base directory was attempted, but the assembly still cannot be resolved."
+                                            + $" Giving up.");
 
                 return null;
             }
 
-            Log.Info($"The assembly \"{args.Name}\" was not found using the normal assembly resolution method."
-                   + $" A fallback assembly binary is included in file \"{packagedAssemblyInfo.AssemblyFilePath}\"."
-                   + $" That file will be now copied into this application's base directory and the loading will be retried.");
+            Log.Info(LogComonentMoniker, $"The assembly \"{args.Name}\" was not found using the normal assembly resolution method."
+                                       + $" A fallback assembly binary is included in file \"{packagedAssemblyInfo.AssemblyFilePath}\"."
+                                       + $" That file will be now copied into this application's base directory and the loading will be retried.");
 
             // Validate AppDomain parameter:
 
@@ -365,7 +367,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             CopyFileToBaseDirectory(packagedAssemblyInfo.AssemblyFilePath, senderAppDomain);
             packagedAssemblyInfo.IsProcessedFromPackage = true;
 
-            Log.Info($"Assembly binary copied into this application's base directory. Requesting to load assembly \"{packagedAssemblyInfo.AssemblyName}\".");
+            Log.Info(LogComonentMoniker, $"Assembly binary copied into this application's base directory. Requesting to load assembly \"{packagedAssemblyInfo.AssemblyName}\".");
 
 #if NETCOREAPP
             Assembly resolvedAssembly = AssemblyLoadContext.Default.LoadFromAssemblyName(packagedAssemblyInfo.AssemblyName);
@@ -381,14 +383,14 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             string fileName = Path.GetFileName(srcFilePath);
             string dstFilePath = Path.Combine(baseDirectory, fileName);
 
-            Log.Info($"Copying file \"{srcFilePath}\" to \"{ dstFilePath}\".");
+            Log.Info(LogComonentMoniker, $"Copying file \"{srcFilePath}\" to \"{ dstFilePath}\".");
             try
             {
                 File.Copy(srcFilePath, dstFilePath, overwrite: false);
             }
             catch (Exception ex)
             {
-                Log.Info($"Failed to copy file. Assembly loading will likely fail again. Details: \"{ex.ToString()}\".");
+                Log.Info(LogComonentMoniker, $"Failed to copy file. Assembly loading will likely fail again. Details: \"{ex.ToString()}\".");
             }
         }
 
@@ -411,7 +413,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             if (!Directory.Exists(packagedAssembliesDirectory))
             {
-                Log.Error($"Could not read any packaged assemblies from disk becasue the directory \"{packagedAssembliesDirectory}\" does not exist.");
+                Log.Error(LogComonentMoniker, $"Could not read any packaged assemblies from disk becasue the directory \"{packagedAssembliesDirectory}\" does not exist.");
                 return packagedAssemblies;
             }
 
@@ -424,7 +426,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 }
             }
 
-            Log.Info($"Read {packagedAssemblies.Count} packaged assemblies from \"{packagedAssembliesDirectory}\".");
+            Log.Info(LogComonentMoniker, $"Read {packagedAssemblies.Count} packaged assemblies from \"{packagedAssembliesDirectory}\".");
             return packagedAssemblies;
         }
 
