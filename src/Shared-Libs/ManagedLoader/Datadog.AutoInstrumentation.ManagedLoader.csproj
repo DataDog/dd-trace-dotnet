@@ -9,12 +9,16 @@
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
+	
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\Shared-Src</SharedSrcBaseDir>
+  </PropertyGroup>
 
   <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
-  <Import Project="..\..\Shared-Src\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
 
   <!-- Datadog.Logging.Composition.props is required for composing logs and chosing a log sink: -->
-  <Import Project="..\..\Shared-Src\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
 
 
   <ItemGroup>
@@ -38,6 +42,14 @@
   </ItemGroup>
   
   <ItemGroup>
+	<!-- This "service" is required for T4-templating.                                                                                   -->
+	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  
+  	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
+    <T4ParameterValues Include="SharedSrcBaseDir">
+      <Value>$(SharedSrcBaseDir)</Value>
+    </T4ParameterValues>
+	  
     <!-- LogComposer.tt is a T4 template that refers to the LogComposer.tt.cs templete referenced in Datadog.Logging.Composition.props.  -->
     <!-- It ensures that the Log Composition API is correctly generated.                                                                 -->
     <None Update="Datadog.AutoInstrumentation.ManagedLoader\internal\LogComposer.tt">

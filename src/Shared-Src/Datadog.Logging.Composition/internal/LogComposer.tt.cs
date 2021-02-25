@@ -77,7 +77,7 @@ namespace Datadog.Logging.Composition
 
         public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirectionLogSinks)
         {
-            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>();
+            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>(capacity: <#= (NamespacesAndMonikersToCompose.Length + 1) #>);
 
 <#
             for (int i = 0; i < NamespacesAndMonikersToCompose.Length; i++)
@@ -115,7 +115,6 @@ namespace Datadog.Logging.Composition
             }
 #>
 
-            redirectionSinks.TrimExcess();
             redirectionLogSinks = redirectionSinks;
         }
 
