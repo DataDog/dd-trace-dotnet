@@ -80,16 +80,16 @@ namespace DemoNetFx45
             Console.WriteLine("Starting setting up DiagnosticSource listening.");
 
             IDisposable listenerSubscription = DiagnosticListening.SubscribeToAllSources(
-                    (DiagnosticSourceInfo srcInfo) =>
+                    (DiagnosticListenerStub diagnosticListener) =>
                     {
                         // This lambda looks at ALL Diagnostic Listeners (aka Sources),
                         // picks the one it is inderested in and subscibes to that particular Source.
 
-                        Console.WriteLine($"Subscriber called: diagnosticSourceObserver(srcInfo.Name: \"{srcInfo.Name}\")");
+                        Console.WriteLine($"Subscriber called: diagnosticSourceObserver(diagnosticListener.Name: \"{diagnosticListener.Name}\")");
 
-                        if (srcInfo.Name.Equals("DemoXxx.UseDiagnosticSource.Name1", StringComparison.Ordinal))
+                        if (diagnosticListener.Name.Equals("DemoXxx.UseDiagnosticSource.Name1", StringComparison.Ordinal))
                         {
-                            IDisposable eventSubscription = srcInfo.SubscribeToEvents(
+                            IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(
                                     (string eventName, object payloadValue) =>
                                     {
                                         Console.WriteLine($"Event Handler called: eventObserver(eventName: \"{eventName}\", payloadValue: {(payloadValue ?? "<null>")})");
