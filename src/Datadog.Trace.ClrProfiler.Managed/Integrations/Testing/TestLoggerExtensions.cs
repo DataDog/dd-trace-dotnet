@@ -10,11 +10,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     {
         public static void TestMethodNotFound(this IDatadogLogger logger, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
         {
+            // ReSharper disable twice ExplicitCallerInfoArgument
             logger.Error("Error: the test method can't be retrieved.", sourceLine, sourceFile);
         }
 
         public static void TestClassTypeNotFound(this IDatadogLogger logger, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
         {
+            // ReSharper disable twice ExplicitCallerInfoArgument
             logger.Error("Error: the test class type can't be retrieved.", sourceLine, sourceFile);
         }
     }
