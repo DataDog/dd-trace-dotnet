@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         MinimumVersion = "2.3.0",
         MaximumVersion = "2.*.*",
         IntegrationName = IntegrationName)]
-    public class DocumentValidatorValidateIntegration
+    public class ValidateIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.GraphQL);
         private const string ErrorType = "GraphQL.Validation.ValidationError";
