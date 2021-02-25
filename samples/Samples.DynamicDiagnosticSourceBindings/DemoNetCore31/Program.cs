@@ -1,4 +1,4 @@
-using OpenTelemetry.DynamicActivityBinding;
+using Datadog.DynamicDiagnosticSourceBindings;
 using System;
 
 namespace DemoNetCore31

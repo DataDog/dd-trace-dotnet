@@ -1,6 +1,6 @@
 using System;
 
-namespace OpenTelemetry.DynamicActivityBinding
+namespace Datadog.DynamicDiagnosticSourceBindings
 {
     public class SupportedFeatures
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Util;
 
-namespace OpenTelemetry.DynamicActivityBinding
+namespace Datadog.DynamicDiagnosticSourceBindings
 {
     public struct ActivityStub : IDisposable
     {

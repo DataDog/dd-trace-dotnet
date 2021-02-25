@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 
 using Datadog.Util;
 
-namespace OpenTelemetry.DynamicActivityBinding
+namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class DynamicInvoker
     {

@@ -15,7 +15,7 @@ using System.IO;
 
 using Datadog.Util;
 
-namespace OpenTelemetry.DynamicActivityBinding
+namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal static class DynamicLoader
     {

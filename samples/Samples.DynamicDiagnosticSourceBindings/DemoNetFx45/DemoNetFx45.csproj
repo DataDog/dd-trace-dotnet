@@ -31,9 +31,15 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\..\src\Shared-Src\</SharedSrcBaseDir>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Diagnostics.DiagnosticSource, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\..\..\src\Shared-Libs\DynamicDiagnosticSourceBindings\packages\System.Diagnostics.DiagnosticSource.4.4.0\lib\net45\System.Diagnostics.DiagnosticSource.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -42,16 +48,40 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="ApiSpec.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="UseDiagnosticSourceStub.cs" />
+    <Compile Include="UseDiagnosticSource.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The two following items trick the Solution Explorer in VS to display a folder  -->
+    <!-- structure like 'Datadog.Util/internal'                                         -->
+    <None Include="$(SharedSrcBaseDir)Datadog.Util\_Datadog.Util_.files">
+      <CustomToolNamespace>Virtual Folder</CustomToolNamespace>
+    </None>
+    <None Include="$(SharedSrcBaseDir)Datadog.Util\internal\_internal_.files">
+      <CustomToolNamespace>Virtual Folder</CustomToolNamespace>
+      <DependentUpon>_Datadog.Util_.files</DependentUpon>
+    </None>
+    <!-- The actual CS files to include for compilation.                                -->
+    <!-- VS will show them in the above virtual folders.                                -->
+    <Compile Include="$(SharedSrcBaseDir)Datadog.Util\internal\ObserverAdapter.cs">
+      <DependentUpon>_internal_.files</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(SharedSrcBaseDir)Datadog.Util\internal\Validate.cs">
+      <DependentUpon>_internal_.files</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Shared-Libs\DynamicDiagnosticSourceBindings\Datadog.DynamicDiagnosticSourceBindings.csproj">
       <Project>{61d77bdf-18d8-4d0a-8f46-6008fdaed785}</Project>
-      <Name>OpenTelemetry.DynamicActivityBinding</Name>
+      <Name>Datadog.DynamicDiagnosticSourceBindings</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,4 +1,4 @@
-﻿namespace OpenTelemetry.DynamicActivityBinding
+﻿namespace Datadog.DynamicDiagnosticSourceBindings
 {
     /// <summary>
     /// This MUST have a 1-to-1 value mapping to 

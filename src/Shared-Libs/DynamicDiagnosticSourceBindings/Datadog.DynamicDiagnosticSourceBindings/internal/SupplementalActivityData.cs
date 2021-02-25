@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace OpenTelemetry.DynamicActivityBinding
+namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class SupplementalActivityData
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Util;
 
-namespace OpenTelemetry.DynamicActivityBinding
+namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class PackagedAssemblyLookup
     {

@@ -4,7 +4,7 @@
 
 namespace Vendored.System.Diagnostics
 {
-    internal class SR : OpenTelemetry.DynamicActivityBinding.VendoredLibs.DiagnosticSource.System_Diagnostics_Resources_Strings
+    internal class SR : Datadog.DynamicDiagnosticSourceBindings.VendoredLibs.DiagnosticSource.System_Diagnostics_Resources_Strings
     {
         internal static string Format(string format, object? obj)
         {

@@ -1,7 +1,7 @@
 using System;
 using Datadog.Util;
 
-namespace OpenTelemetry.DynamicActivityBinding
+namespace Datadog.DynamicDiagnosticSourceBindings
 {
     public class ActivityListenerStub : IDisposable
     {

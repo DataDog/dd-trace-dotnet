@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace OpenTelemetry.DynamicActivityBinding.VendoredLibs.DiagnosticSource {
+namespace Datadog.DynamicDiagnosticSourceBindings.VendoredLibs.DiagnosticSource {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace OpenTelemetry.DynamicActivityBinding.VendoredLibs.DiagnosticSource {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("OpenTelemetry.DynamicActivityBinding.VendoredLibs.DiagnosticSource.System.Diagnos" +
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Datadog.DynamicDiagnosticSourceBindings.VendoredLibs.DiagnosticSource.System.Diagnos" +
                             "tics.Resources.Strings", typeof(System_Diagnostics_Resources_Strings).Assembly);
                     resourceMan = temp;
                 }

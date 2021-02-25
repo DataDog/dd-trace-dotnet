@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Datadog.Util;
 
-namespace OpenTelemetry.DynamicActivityBinding
+namespace Datadog.DynamicDiagnosticSourceBindings
 {
     /// <summary>
     /// Vendors using this library can change the implementaton of the APIs in this class to plug in whatevcer loging solution they wish.

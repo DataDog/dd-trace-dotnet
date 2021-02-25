@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using OpenTelemetry.DynamicActivityBinding;
+using Datadog.DynamicDiagnosticSourceBindings;
 
-namespace OpenTelemetry.DynamicActivityBinding.Vendors.Datadog
+namespace Datadog.DynamicDiagnosticSourceBindings.Vendors.Datadog
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class ActivityStub_DatadogExtensions

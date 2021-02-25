@@ -7,23 +7,23 @@
 
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\Shared-Resources\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <DelaySign>false</DelaySign>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Play a trick with the VS Solution Explorer:                                                            -->
-    <!-- We want all these files to be grouped under a key that is:                                             -->
-    <!-- the name of the immediate subfolder within the "Shared " sources folder.                               -->
-    <!-- For that, we need to create an item group rooted in "Shared" and then exclude all except these files.  -->
-    <IncludedSharedItem Include="..\Shared\Datadog.Util\internal\ArrayExtensions.cs" />
-    <IncludedSharedItem Include="..\Shared\Datadog.Util\internal\Concurrent.cs" />
-    <IncludedSharedItem Include="..\Shared\Datadog.Util\internal\Format.cs" />
-    <IncludedSharedItem Include="..\Shared\Datadog.Util\internal\Validate.cs" />
+    <!-- Play a trick with the VS Solution Explorer:                                                               -->
+    <!-- We want all these files to be grouped under a key that is:                                                -->
+    <!-- the name of the immediate subfolder within the "Shared-Src" sources folder.                               -->
+    <!-- For that, we need to create an item group rooted in "Shared-Src" and then exclude all except these files. -->
+    <IncludedSharedCompileItem Include="..\..\Shared-Src\Datadog.Util\internal\ArrayExtensions.cs" />
+    <IncludedSharedCompileItem Include="..\..\Shared-Src\Datadog.Util\internal\Concurrent.cs" />
+    <IncludedSharedCompileItem Include="..\..\Shared-Src\Datadog.Util\internal\Format.cs" />
+    <IncludedSharedCompileItem Include="..\..\Shared-Src\Datadog.Util\internal\Validate.cs" />
 
-    <ExcludedSharedItems Include="..\Shared\**\*.cs" Exclude="@(IncludedSharedItem)" />
-    <Compile Include="..\Shared\**\*.cs" Exclude="@(ExcludedSharedItems)" />
+    <ExcludedSharedCompileItems Include="..\..\Shared-Src\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
+    <Compile Include="..\..\Shared-Src\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
   </ItemGroup>
 
   <PropertyGroup>

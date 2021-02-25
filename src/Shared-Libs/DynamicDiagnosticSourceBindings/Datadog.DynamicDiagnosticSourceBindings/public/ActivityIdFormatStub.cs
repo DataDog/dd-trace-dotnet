@@ -1,4 +1,4 @@
-﻿namespace OpenTelemetry.DynamicActivityBinding
+﻿namespace Datadog.DynamicDiagnosticSourceBindings
 {
     /// <summary>
     /// The possibilities for the format of the Activity ID.

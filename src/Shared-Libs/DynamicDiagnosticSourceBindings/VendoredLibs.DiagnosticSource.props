@@ -4,7 +4,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CLSCompliant>false</CLSCompliant>
     <NoWarn>$(NoWarn);SA1205</NoWarn>
+	<!--
     <Nullable>enable</Nullable>
+	-->
     <NetCoreAppCurrent Condition="$(TargetFramework.StartsWith('netcoreapp'))">$(TargetFramework)</NetCoreAppCurrent>
     <AvoidRestoreCycleOnSelfReference>true</AvoidRestoreCycleOnSelfReference>
     <LangVersion>8.0</LangVersion>
