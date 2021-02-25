@@ -295,6 +295,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                 }
             }
+            else
+            {
+                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+            }
         }
 
         /// <summary>
