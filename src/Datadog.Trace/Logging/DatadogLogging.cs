@@ -156,7 +156,8 @@ namespace Datadog.Trace.Logging
                 return rate;
             }
 
-            return DefaultLogMessageRateLimit;
+            // We don't want to rate limit messages by default when in debug mode
+            return GlobalSettings.Source.DebugEnabled ? 0 : DefaultLogMessageRateLimit;
         }
 
         private static string GetLogDirectory()
