@@ -23,13 +23,13 @@ namespace Datadog.Trace.Logging
         static DatadogLogging()
         {
             // No-op for if we fail to construct the file logger
-            var defaultRateLimiter = new LogRateLimiter(DefaultLogMessageRateLimit);
+            var nullRateLimiter = new NullLogRateLimiter();
             InternalLogger =
                 new LoggerConfiguration()
                    .WriteTo.Sink<NullSink>()
                    .CreateLogger();
 
-            SharedLogger = new DatadogSerilogLogger(InternalLogger, defaultRateLimiter);
+            SharedLogger = new DatadogSerilogLogger(InternalLogger, nullRateLimiter);
 
             try
             {
@@ -88,11 +88,11 @@ namespace Datadog.Trace.Logging
                 }
 
                 InternalLogger = loggerConfiguration.CreateLogger();
-                SharedLogger = new DatadogSerilogLogger(InternalLogger, defaultRateLimiter);
+                SharedLogger = new DatadogSerilogLogger(InternalLogger, nullRateLimiter);
 
                 var rate = GetRateLimit();
                 ILogRateLimiter rateLimiter = rate == 0
-                    ? new NullLogRateLimiter()
+                    ? nullRateLimiter
                     : new LogRateLimiter(rate);
 
                 SharedLogger = new DatadogSerilogLogger(InternalLogger, rateLimiter);
