@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
@@ -89,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IExecutionErrors executionErrors)
         {
-            var errorCount = executionErrors.Count;
+            var errorCount = executionErrors?.Count ?? 0;
 
             if (errorCount > 0)
             {
@@ -97,8 +98,77 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
                 span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
                 span.SetTag(Trace.Tags.ErrorType, errorType);
-                // span.SetTag(Trace.Tags.ErrorStack, ConstructErrorMessage(executionErrors)); // TODO: Implement. Hold off on creating the error message for now, I just want to see it work!
+                span.SetTag(Trace.Tags.ErrorStack, ConstructErrorMessage(executionErrors));
             }
+        }
+
+        private static string ConstructErrorMessage(IExecutionErrors executionErrors)
+        {
+            if (executionErrors == null)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+
+            try
+            {
+                var tab = "    ";
+                builder.AppendLine("errors: [");
+
+                for (int i = 0; i < executionErrors.Count; i++)
+                {
+                    var executionError = executionErrors[i];
+
+                    builder.AppendLine($"{tab}{{");
+
+                    var message = executionError.Message;
+                    if (message != null)
+                    {
+                        builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
+                    }
+
+                    var path = executionError.Path;
+                    if (path != null)
+                    {
+                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", path)}\",");
+                    }
+
+                    var code = executionError.Code;
+                    if (code != null)
+                    {
+                        builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
+                    }
+
+                    builder.AppendLine($"{tab + tab}\"locations\": [");
+                    var locations = executionError.Locations;
+                    if (locations != null)
+                    {
+                        foreach (var location in locations)
+                        {
+                            if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
+                            {
+                                builder.AppendLine($"{tab + tab + tab}{{");
+                                builder.AppendLine($"{tab + tab + tab + tab}\"line\": {locationProxy.Line},");
+                                builder.AppendLine($"{tab + tab + tab + tab}\"column\": {locationProxy.Column}");
+                                builder.AppendLine($"{tab + tab + tab}}},");
+                            }
+                        }
+                    }
+
+                    builder.AppendLine($"{tab + tab}]");
+                    builder.AppendLine($"{tab}}},");
+                }
+
+                builder.AppendLine("]");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating GraphQL error message.");
+                return "errors: []";
+            }
+
+            return builder.ToString();
         }
     }
 }
