@@ -11,25 +11,47 @@
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <DelaySign>false</DelaySign>
   </PropertyGroup>
+	
+  <PropertyGroup>
+    <NoWarn>1591</NoWarn>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+	
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\Shared-Src</SharedSrcBaseDir>
+  </PropertyGroup>
+	
+  <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
 
   <ItemGroup>
     <!-- Play a trick with the VS Solution Explorer:                                                               -->
     <!-- We want all these files to be grouped under a key that is:                                                -->
     <!-- the name of the immediate subfolder within the "Shared-Src" sources folder.                               -->
     <!-- For that, we need to create an item group rooted in "Shared-Src" and then exclude all except these files. -->
-    <IncludedSharedCompileItem Include="..\..\Shared-Src\Datadog.Util\internal\ArrayExtensions.cs" />
-    <IncludedSharedCompileItem Include="..\..\Shared-Src\Datadog.Util\internal\Concurrent.cs" />
-    <IncludedSharedCompileItem Include="..\..\Shared-Src\Datadog.Util\internal\Format.cs" />
-    <IncludedSharedCompileItem Include="..\..\Shared-Src\Datadog.Util\internal\Validate.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\ArrayExtensions.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Concurrent.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Format.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
 
-    <ExcludedSharedCompileItems Include="..\..\Shared-Src\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
-    <Compile Include="..\..\Shared-Src\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
+    <ExcludedSharedCompileItems Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
+    <Compile Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <NoWarn>1591</NoWarn>
-    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
-  </PropertyGroup>
+	
+	
+  <ItemGroup>
+    <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                     -->
+    <!-- It ensures that the Log Emission API is correctly generated.                                                                    -->
+    <None Update="Datadog.DynamicDiagnosticSourceBindings\public\Log.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Log.cs</LastGenOutput>
+    </None>
+    <Compile Update="Datadog.DynamicDiagnosticSourceBindings\public\Log.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Log.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
  
   <PropertyGroup>
     <VendoredPath Condition="$(VendoredPath) == ''">VendoredLibs/</VendoredPath>
@@ -39,6 +61,10 @@
       <Compile Remove="$(VendoredPath)**/*" />
       <None Remove="$(VendoredPath)**/*" />
       <EmbeddedResource Remove="$(VendoredPath)**/*.resx" />
+  </ItemGroup>
+   
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
   <Import Project="VendoredLibs.DiagnosticSource.props" />
