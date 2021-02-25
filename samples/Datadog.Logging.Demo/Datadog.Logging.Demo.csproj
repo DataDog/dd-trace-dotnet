@@ -4,20 +4,26 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\src\Shared-Src\</SharedSrcBaseDir>
+  </PropertyGroup>
 
   <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
-  <Import Project="..\..\Shared-Src\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
 
   <!-- Datadog.Logging.Composition.props is required for composing logs and chosing a log sink: -->
-  <Import Project="..\..\Shared-Src\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
-	
-  <ItemGroup>
-	<!-- This "service" is required for T4-templating.                                                                                   -->
-	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-	<T4ServiceGuidIncluded Include="true" />
-  </ItemGroup>
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
 
   <ItemGroup>
+  	<!-- This "service" is required for T4-templating.                                                                                   -->
+	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  
+  	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
+    <T4ParameterValues Include="SharedSrcBaseDir">
+      <Value>$(SharedSrcBaseDir)</Value>
+    </T4ParameterValues>
+    
     <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                     -->
     <!-- It ensures that the Log Emission API is correctly generated.                                                                    -->
     <None Update="Datadog.Logging.Demo\public\Log.tt">
