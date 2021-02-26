@@ -205,6 +205,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoad.FileNotFoundEx
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD006-E206-488E-ACA1-1AA73F9B5146}"
 	ProjectSection(SolutionItems) = preProject
+		build\docker\build.arm64.sh = build\docker\build.arm64.sh
 		build\docker\build.sh = build\docker\build.sh
 		build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
 		build\docker\Datadog.Trace.ClrProfiler.Native.sh = build\docker\Datadog.Trace.ClrProfiler.Native.sh
@@ -215,7 +216,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD0
 		build\docker\package.sh = build\docker\package.sh
 		build\docker\with-profiler-logs.bash = build\docker\with-profiler-logs.bash
 		build\docker\with-profiler.bash = build\docker\with-profiler.bash
-		build\docker\build.arm64.sh = build\docker\build.arm64.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-pipelines", "{C52D6695-4E05-4930-88F8-0EFF8056A967}"
