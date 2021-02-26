@@ -26,6 +26,41 @@ namespace Datadog.Trace.Ci
         public const string GitTag = "git.tag";
 
         /// <summary>
+        /// GIT Commit Author name
+        /// </summary>
+        public const string GitCommitAuthorName = "git.commit.author.name";
+
+        /// <summary>
+        /// GIT Commit Author email
+        /// </summary>
+        public const string GitCommitAuthorEmail = "git.commit.author.email";
+
+        /// <summary>
+        /// GIT Commit Author date
+        /// </summary>
+        public const string GitCommitAuthorDate = "git.commit.author.date";
+
+        /// <summary>
+        /// GIT Commit Committer name
+        /// </summary>
+        public const string GitCommitCommitterName = "git.commit.committer.name";
+
+        /// <summary>
+        /// GIT Commit Committer email
+        /// </summary>
+        public const string GitCommitCommitterEmail = "git.commit.committer.email";
+
+        /// <summary>
+        /// GIT Commit Committer date
+        /// </summary>
+        public const string GitCommitCommitterDate = "git.commit.committer.date";
+
+        /// <summary>
+        /// GIT Commit message
+        /// </summary>
+        public const string GitCommitMessage = "git.commit.message";
+
+        /// <summary>
         /// Build Source root
         /// </summary>
         public const string BuildSourceRoot = "build.source_root";
