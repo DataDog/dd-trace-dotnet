@@ -14,11 +14,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion)
+        public static System.Collections.Generic.IEnumerable<object[]> GetMongoDb()
         {
+            foreach (var item in PackageVersions.MongoDB)
+            {
+                yield return item.Concat(false, false);
+                yield return item.Concat(true, false);
+                yield return item.Concat(true, true);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetMongoDb))]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitsTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
             using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
