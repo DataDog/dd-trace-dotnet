@@ -1121,10 +1121,10 @@ mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAsse
       pEmit->DefineTypeRefByName(corLibRef, SystemChar, &token);
       break;
     case ELEMENT_TYPE_I1:
-      pEmit->DefineTypeRefByName(corLibRef, SystemByte, &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemSByte, &token);
       break;
     case ELEMENT_TYPE_U1:
-      pEmit->DefineTypeRefByName(corLibRef, SystemSByte, &token);
+      pEmit->DefineTypeRefByName(corLibRef, SystemByte, &token);
       break;
     case ELEMENT_TYPE_U2:
       pEmit->DefineTypeRefByName(corLibRef, SystemUInt16, &token);
@@ -1201,11 +1201,11 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
       pbCur++;
       break;
     case ELEMENT_TYPE_I1:
-      tokenName = SystemByte;
+      tokenName = SystemSByte;
       pbCur++;
       break;
     case ELEMENT_TYPE_U1:
-      tokenName = SystemSByte;
+      tokenName = SystemByte;
       pbCur++;
       break;
     case ELEMENT_TYPE_U2:

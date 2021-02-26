@@ -20,6 +20,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return null;
             }
 
+            var parent = tracer.ActiveScope?.Span;
+            if (parent != null &&
+                parent.Type == SpanTypes.Redis &&
+                parent.GetTag(Tags.InstrumentationName) != null)
+            {
+                return null;
+            }
+
             string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
             Scope scope = null;
 
