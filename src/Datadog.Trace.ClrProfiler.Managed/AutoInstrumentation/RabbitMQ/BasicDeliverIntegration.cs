@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     public class BasicDeliverIntegration
     {
         private const string Command = "basic.deliver";
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(BasicPublishIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BasicDeliverIntegration));
 
         /// <summary>
         /// OnMethodBegin callback

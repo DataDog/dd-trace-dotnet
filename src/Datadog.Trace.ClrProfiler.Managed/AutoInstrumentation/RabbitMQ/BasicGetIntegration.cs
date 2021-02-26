@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     {
         private const string Command = "basic.get";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(BasicGetIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BasicGetIntegration));
 
         /// <summary>
         /// OnMethodBegin callback

@@ -25,8 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
         private static readonly string[] DeliveryModeStrings = { null, "1", "2" };
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(BasicPublishIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
