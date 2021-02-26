@@ -9,7 +9,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             AssemblyName = MongoDbIntegration.MongoDbClientAssembly;
             TypeName = typeName;
             IntegrationName = MongoDbIntegration.IntegrationName;
-            ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken };
         }
     }
 }

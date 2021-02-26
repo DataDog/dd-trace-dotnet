@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             MinimumVersion = MongoDbIntegration.Major2Minor1;
             MaximumVersion = MongoDbIntegration.Major2;
             MethodName = "ExecuteAsync";
+            ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken };
 
             if (isGeneric)
             {
