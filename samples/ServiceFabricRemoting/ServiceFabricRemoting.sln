@@ -1,0 +1,73 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30225.117
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{A07B5EB6-E848-4116-A8D0-A826331D98C6}") = "ServiceFabricApplication", "ServiceFabricApplication\ServiceFabricApplication.sfproj", "{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp", "WebApp\WebApp.csproj", "{35D2DD19-F76D-490D-9DF6-0B8CCB97018E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherService", "WeatherService\WeatherService.csproj", "{62A2C141-DD29-44BA-88BA-99CE709D1F6C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherService.Abstractions", "WeatherService.Abstractions\WeatherService.Abstractions.csproj", "{5B19C92B-70F3-4944-82E2-778F6DA25D37}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace", "..\..\src\Datadog.Trace\Datadog.Trace.csproj", "{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ServiceFabric", "..\..\src\Datadog.Trace.ServiceFabric\Datadog.Trace.ServiceFabric.csproj", "{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}.Debug|x64.ActiveCfg = Debug|x64
+		{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}.Debug|x64.Build.0 = Debug|x64
+		{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}.Debug|x64.Deploy.0 = Debug|x64
+		{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}.Release|Any CPU.ActiveCfg = Release|x64
+		{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}.Release|x64.ActiveCfg = Release|x64
+		{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}.Release|x64.Build.0 = Release|x64
+		{013DA2CD-0FDA-4747-B3FC-1726BDE4FD00}.Release|x64.Deploy.0 = Release|x64
+		{35D2DD19-F76D-490D-9DF6-0B8CCB97018E}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{35D2DD19-F76D-490D-9DF6-0B8CCB97018E}.Debug|x64.ActiveCfg = Debug|x64
+		{35D2DD19-F76D-490D-9DF6-0B8CCB97018E}.Debug|x64.Build.0 = Debug|x64
+		{35D2DD19-F76D-490D-9DF6-0B8CCB97018E}.Release|Any CPU.ActiveCfg = Release|x64
+		{35D2DD19-F76D-490D-9DF6-0B8CCB97018E}.Release|x64.ActiveCfg = Release|x64
+		{35D2DD19-F76D-490D-9DF6-0B8CCB97018E}.Release|x64.Build.0 = Release|x64
+		{62A2C141-DD29-44BA-88BA-99CE709D1F6C}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{62A2C141-DD29-44BA-88BA-99CE709D1F6C}.Debug|x64.ActiveCfg = Debug|x64
+		{62A2C141-DD29-44BA-88BA-99CE709D1F6C}.Debug|x64.Build.0 = Debug|x64
+		{62A2C141-DD29-44BA-88BA-99CE709D1F6C}.Release|Any CPU.ActiveCfg = Release|x64
+		{62A2C141-DD29-44BA-88BA-99CE709D1F6C}.Release|x64.ActiveCfg = Release|x64
+		{62A2C141-DD29-44BA-88BA-99CE709D1F6C}.Release|x64.Build.0 = Release|x64
+		{5B19C92B-70F3-4944-82E2-778F6DA25D37}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{5B19C92B-70F3-4944-82E2-778F6DA25D37}.Debug|x64.ActiveCfg = Debug|x64
+		{5B19C92B-70F3-4944-82E2-778F6DA25D37}.Debug|x64.Build.0 = Debug|x64
+		{5B19C92B-70F3-4944-82E2-778F6DA25D37}.Release|Any CPU.ActiveCfg = Release|x64
+		{5B19C92B-70F3-4944-82E2-778F6DA25D37}.Release|x64.ActiveCfg = Release|x64
+		{5B19C92B-70F3-4944-82E2-778F6DA25D37}.Release|x64.Build.0 = Release|x64
+		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Debug|x64.Build.0 = Debug|Any CPU
+		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Release|x64.ActiveCfg = Release|Any CPU
+		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Release|x64.Build.0 = Release|Any CPU
+		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Debug|x64.ActiveCfg = Debug|x64
+		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Debug|x64.Build.0 = Debug|x64
+		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Release|Any CPU.ActiveCfg = Release|x64
+		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Release|x64.ActiveCfg = Release|x64
+		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {92BAE943-75F4-4682-8E29-F801A89BAEC0}
+	EndGlobalSection
+EndGlobal

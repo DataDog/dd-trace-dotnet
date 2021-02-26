@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <IsServiceFabricServiceProject>True</IsServiceFabricServiceProject>
+    <ServerGarbageCollection>True</ServerGarbageCollection>
+    <Platforms>x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ServiceFabric.AspNetCore.Kestrel" Version="4.0.470" />
+    <PackageReference Include="Microsoft.ServiceFabric.Services" Version="4.0.470" />
+    <PackageReference Include="Microsoft.ServiceFabric.Services.Remoting" Version="4.0.470" />
+
+    <!-- <PackageReference Include="Datadog.Trace.ServiceFabric" Version="1.23.0-alpha1" /> -->
+    <ProjectReference Include="..\..\..\src\Datadog.Trace.ServiceFabric\Datadog.Trace.ServiceFabric.csproj" />
+
+    <ProjectReference Include="..\WeatherService.Abstractions\WeatherService.Abstractions.csproj" />
+  </ItemGroup>
+
+
+</Project>
