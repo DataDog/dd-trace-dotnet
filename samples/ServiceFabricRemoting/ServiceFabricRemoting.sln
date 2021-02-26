@@ -11,10 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherService", "WeatherSe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherService.Abstractions", "WeatherService.Abstractions\WeatherService.Abstractions.csproj", "{5B19C92B-70F3-4944-82E2-778F6DA25D37}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace", "..\..\src\Datadog.Trace\Datadog.Trace.csproj", "{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ServiceFabric", "..\..\src\Datadog.Trace.ServiceFabric\Datadog.Trace.ServiceFabric.csproj", "{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,20 +45,6 @@ Global
 		{5B19C92B-70F3-4944-82E2-778F6DA25D37}.Release|Any CPU.ActiveCfg = Release|x64
 		{5B19C92B-70F3-4944-82E2-778F6DA25D37}.Release|x64.ActiveCfg = Release|x64
 		{5B19C92B-70F3-4944-82E2-778F6DA25D37}.Release|x64.Build.0 = Release|x64
-		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Debug|x64.Build.0 = Debug|Any CPU
-		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Release|x64.ActiveCfg = Release|Any CPU
-		{17E1718D-4F1A-43BC-8B4A-CBF5322819A5}.Release|x64.Build.0 = Release|Any CPU
-		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Debug|x64.ActiveCfg = Debug|x64
-		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Debug|x64.Build.0 = Debug|x64
-		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Release|Any CPU.ActiveCfg = Release|x64
-		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Release|x64.ActiveCfg = Release|x64
-		{CDD153A5-243C-4CEB-8E9B-9E1640447EE9}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -10,8 +10,6 @@ namespace WeatherService
         /// </summary>
         private static async Task Main()
         {
-            Datadog.Trace.ServiceFabric.Remoting.StartTracing();
-
             // The ServiceManifest.XML file defines one or more service type names.
             // Registering a service maps a service type name to a .NET type.
             // When Service Fabric creates an instance of this service type,
