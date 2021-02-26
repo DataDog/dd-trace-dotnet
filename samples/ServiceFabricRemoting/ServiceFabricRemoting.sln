@@ -11,6 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherService", "WeatherSe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherService.Abstractions", "WeatherService.Abstractions\WeatherService.Abstractions.csproj", "{5B19C92B-70F3-4944-82E2-778F6DA25D37}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{10D3D75A-E5B7-43B4-9937-C7AE7723E34F}"
+	ProjectSection(SolutionItems) = preProject
+		DatadogInstall.bat = DatadogInstall.bat
+		DatadogInstall.ps1 = DatadogInstall.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

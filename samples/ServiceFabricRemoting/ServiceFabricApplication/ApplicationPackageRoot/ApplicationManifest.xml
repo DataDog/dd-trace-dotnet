@@ -11,6 +11,10 @@
   <ServiceManifestImport>
     <ServiceManifestRef ServiceManifestName="WeatherService" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
+    <Policies>
+      <!-- Use admin user to install Datadog .NET Tracer -->
+      <RunAsPolicy CodePackageRef="Code" UserRef="SetupAdminUser" EntryPointType="Setup" />
+    </Policies>
   </ServiceManifestImport>
   <ServiceManifestImport>
     <ServiceManifestRef ServiceManifestName="WebApp" ServiceManifestVersion="1.0.0" />
@@ -18,6 +22,10 @@
     <EnvironmentOverrides CodePackageRef="code">
       <EnvironmentVariable Name="ASPNETCORE_ENVIRONMENT" Value="[WebApp_ASPNETCORE_ENVIRONMENT]" />
     </EnvironmentOverrides>
+    <Policies>
+      <!-- Use admin user to install Datadog .NET Tracer -->
+      <RunAsPolicy CodePackageRef="Code" UserRef="SetupAdminUser" EntryPointType="Setup" />
+    </Policies>
   </ServiceManifestImport>
   <DefaultServices>
     <!-- The section below creates instances of service types, when an instance of this
@@ -36,4 +44,14 @@
       </StatelessService>
     </Service>
   </DefaultServices>
+  <!-- Add admin user to install Datadog .NET Tracer -->
+  <Principals>
+    <Users>
+      <User Name="SetupAdminUser">
+        <MemberOf>
+          <SystemGroup Name="Administrators" />
+        </MemberOf>
+      </User>
+    </Users>
+  </Principals>
 </ApplicationManifest>

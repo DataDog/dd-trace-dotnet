@@ -8,6 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\DatadogInstall.bat" Link="DatadogInstall.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\DatadogInstall.ps1" Link="DatadogInstall.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.ServiceFabric.AspNetCore.Kestrel" Version="4.0.470" />
     <PackageReference Include="Microsoft.ServiceFabric.Services" Version="4.0.470" />
     <PackageReference Include="Microsoft.ServiceFabric.Services.Remoting" Version="4.0.470" />

@@ -12,6 +12,13 @@
 
   <!-- Code package is your service executable. -->
   <CodePackage Name="Code" Version="1.0.0">
+    <!-- Install Datadog .NET Tracer -->
+    <SetupEntryPoint>
+      <ExeHost>
+        <Program>DatadogInstall.bat</Program>
+        <WorkingFolder>CodePackage</WorkingFolder>
+      </ExeHost>
+    </SetupEntryPoint>
     <EntryPoint>
       <ExeHost>
         <Program>WebApp.exe</Program>
@@ -20,6 +27,9 @@
     </EntryPoint>
     <EnvironmentVariables>
       <EnvironmentVariable Name="ASPNETCORE_ENVIRONMENT" Value=""/>
+      <!-- Enable Datadog .NET Tracer -->
+      <EnvironmentVariable Name="CORECLR_ENABLE_PROFILING" Value="1" />
+      <EnvironmentVariable Name="COR_ENABLE_PROFILING" Value="1" />
     </EnvironmentVariables>
   </CodePackage>
 
