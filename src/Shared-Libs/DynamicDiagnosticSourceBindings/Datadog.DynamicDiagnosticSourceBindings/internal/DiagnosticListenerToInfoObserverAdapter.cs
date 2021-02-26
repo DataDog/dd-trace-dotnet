@@ -1,49 +1,96 @@
 using System;
+using System.Runtime.ExceptionServices;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class DiagnosticListenerToInfoObserverAdapter : IObserver<object>
     {
-        private const string LogComonentMoniker = nameof(DiagnosticListenerToInfoObserverAdapter);
+        private readonly IObserver<DiagnosticListenerStub> _diagnosticListenerObserver;
 
-        private readonly Action<DiagnosticListenerStub> _diagnosticListenerObserver;
-
-        public DiagnosticListenerToInfoObserverAdapter(Action<DiagnosticListenerStub> diagnosticListenerObserver)
+        public DiagnosticListenerToInfoObserverAdapter(IObserver<DiagnosticListenerStub> diagnosticListenerObserver)
         {
             _diagnosticListenerObserver = diagnosticListenerObserver;
         }
 
-        public void OnNext(object diagnosticListener)
+        public void OnNext(object diagnosticListenerInstance)
         {
-            Action<DiagnosticListenerStub> diagnosticListenerObserver = _diagnosticListenerObserver;
-            if (diagnosticListenerObserver != null)
+            if (_diagnosticListenerObserver == null)
             {
-                if (!DiagnosticListenerStub.TryWrap(diagnosticListener, out DiagnosticListenerStub diagnosticListenerStub))
-                {
-                    Log.Error(LogComonentMoniker,
-                             $"Could not create a {nameof(DiagnosticListenerStub)} for the {nameof(diagnosticListener)}"
-                           + $" instance passed into {nameof(OnNext)}(..). It must have the wrong runtime type."
-                           + $" This should never happen becasue we use IObserver<object> where an IObserver<DiagnosticListener>"
-                           + $" was expected, so the passed instance should always be of type 'DiagnosticListener'."
-                           + $" {diagnosticListenerObserver} will not be invoked.",
-                              "Actual Type",
-                              diagnosticListener?.GetType()?.FullName);
-                }
-                else
-                {
-                    diagnosticListenerObserver(diagnosticListenerStub);
-                }
+                return;
+            }
+
+            DiagnosticListenerStub diagnosticListenerStub;
+            try
+            {
+                diagnosticListenerStub = DiagnosticListenerStub.Wrap(diagnosticListenerInstance);
+            }
+            catch(Exception ex)
+            {
+                Log.Error(ErrorUtil.DynamicInvokerLogComponentMoniker,
+                         $" {nameof(_diagnosticListenerObserver)}.{nameof(OnNext)}(..) cannot be invoked:"
+                       + $" Could not create a {nameof(DiagnosticListenerStub)} for the {nameof(diagnosticListenerInstance)}"
+                       + $" instance passed into {nameof(OnNext)}(..). Does it have the wrong runtime type?"
+                       + $" Such a type mismatch should never happen becasue we use IObserver<object> where an"
+                       + $" IObserver<DiagnosticListener> was expected, so the passed instance should always be of type"
+                       + $" 'DiagnosticListener'. See earlier logged error for detailed type info.",
+                          ex);
+                return;
+            }
+
+            try
+            {
+                _diagnosticListenerObserver.OnNext(diagnosticListenerStub);
+            }
+            catch (Exception ex)
+            {
+                throw LogAndRethrowEscapedError(ex, nameof(OnNext));
             }
         }
 
         public void OnError(Exception error)
         {
-            Log.Error(LogComonentMoniker, $"An exception was passed to the {nameof(OnError)}(..)-handler.", error);
+            if (_diagnosticListenerObserver != null)
+            {
+                try
+                {
+                    _diagnosticListenerObserver.OnError(error);
+                }
+                catch (Exception ex)
+                {
+                    throw LogAndRethrowEscapedError(ex, nameof(OnError));
+                }
+            }
         }
 
         public void OnCompleted()
         {
-            Log.Error(LogComonentMoniker, $"The {nameof(OnCompleted)}(..)-handler was invoked. This was not expected and should be investogated");
+            if (_diagnosticListenerObserver != null)
+            {
+                try
+                {
+                    _diagnosticListenerObserver.OnCompleted();
+                }
+                catch (Exception ex)
+                {
+                    throw LogAndRethrowEscapedError(ex, nameof(OnCompleted));
+                }
+            }
+        }
+
+        private Exception LogAndRethrowEscapedError(Exception error, string observerMethodName)
+        {
+            Log.Error(ErrorUtil.DynamicInvokerLogComponentMoniker,
+                    $"Exception escaped from the wrapped {nameof(_diagnosticListenerObserver)}."
+                  + $" This {nameof(DiagnosticListenerToInfoObserverAdapter)} will pass the exception through."
+                  + $" This kind of error must be dealt with within the actual underlying observer.",
+                     error,
+                     "ObserverMethod",
+                     observerMethodName,
+                     "ObserverType",
+                     _diagnosticListenerObserver.GetType().AssemblyQualifiedName);
+
+            ExceptionDispatchInfo.Capture(error).Throw();
+            return error;  // line never reached
         }
     }
 }

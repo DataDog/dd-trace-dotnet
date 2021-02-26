@@ -31,11 +31,11 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             }
             catch (Exception ex)
             {
-                throw Util.LogAndRethrowStubInvocationError(Util.CannotCreateStub,
-                                                            ex,
-                                                            typeof(DynamicInvoker_DiagnosticSource),
-                                                            invoker?.TargetType,
-                                                            diagnosticSourceInstance);
+                throw ErrorUtil.LogAndRethrowStubInvocationError(ErrorUtil.CannotCreateStubMsg,
+                                                                 ex,
+                                                                 typeof(DynamicInvoker_DiagnosticSource),
+                                                                 invoker?.TargetType,
+                                                                 diagnosticSourceInstance);
             }
         }
 
@@ -47,29 +47,18 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return true;
             }
 
-            DynamicInvoker_DiagnosticSource invoker = null;
-            try
+            DynamicInvoker_DiagnosticSource invoker = DynamicInvoker.DiagnosticSource;
+            if (invoker != null && invoker.TryGetInvokerHandleForInstance(diagnosticSourceInstance, out DynamicInvokerHandle<DynamicInvoker_DiagnosticSource> handle))
             {
-                invoker = DynamicInvoker.DiagnosticSource;
-                if (invoker.TryGetInvokerHandleForInstance(diagnosticSourceInstance, out DynamicInvokerHandle<DynamicInvoker_DiagnosticSource> handle))
-                {
-                    diagnosticSourceStub = new DiagnosticSourceStub(diagnosticSourceInstance, handle);
-                    return true;
-                }
-                else
-                {
-                    diagnosticSourceStub = NoOpSingeltons.DiagnosticSourceStub;
-                    return false;
-                }
+                diagnosticSourceStub = new DiagnosticSourceStub(diagnosticSourceInstance, handle);
+                return true;
             }
-            catch (Exception ex)
+            else
             {
-                throw Util.LogAndRethrowStubInvocationError(Util.CannotCreateStub,
-                                                            ex,
-                                                            typeof(DynamicInvoker_DiagnosticSource),
-                                                            invoker?.TargetType,
-                                                            diagnosticSourceInstance);
+                diagnosticSourceStub = NoOpSingeltons.DiagnosticSourceStub;
+                return false;
             }
+            
         }
         #endregion Static APIs
 
@@ -86,7 +75,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             _dynamicInvokerHandle = dynamicInvokerHandle;
         }
 
-        public object DiagnosticListenerInstance
+        public object DiagnosticSourceInstance
         {
             get { return _diagnosticSourceInstance; }
         }
@@ -166,13 +155,13 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
         private Exception LogAndRethrowStubInvocationError(Exception error, string invokedApiName, bool isStaticApi, Type invokerTargetType)
         {
-            return Util.LogAndRethrowStubInvocationError(Util.ErrorInvokingStubbedApi,
-                                                         error,
-                                                         typeof(DynamicInvoker_DiagnosticSource),
-                                                         invokedApiName,
-                                                         isStaticApi,
-                                                         invokerTargetType,
-                                                         _diagnosticSourceInstance);
+            return ErrorUtil.LogAndRethrowStubInvocationError(ErrorUtil.ErrorInvokingStubbedApiMsg,
+                                                              error,
+                                                              typeof(DynamicInvoker_DiagnosticSource),
+                                                              invokedApiName,
+                                                              isStaticApi,
+                                                              invokerTargetType,
+                                                              _diagnosticSourceInstance);
         }
     }
 }

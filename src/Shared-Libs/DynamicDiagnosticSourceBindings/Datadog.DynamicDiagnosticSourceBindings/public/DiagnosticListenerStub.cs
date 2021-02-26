@@ -7,8 +7,6 @@ namespace Datadog.DynamicDiagnosticSourceBindings
     public struct DiagnosticListenerStub
     {
 #region Static APIs
-        private const string LogComponentMoniker = nameof(DiagnosticListenerStub);
-
         private static class NoOpSingeltons
         {
             internal static readonly string Name = String.Empty;
@@ -32,11 +30,11 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             }
             catch(Exception ex)
             {
-                throw Util.LogAndRethrowStubInvocationError(Util.CannotCreateStub,
-                                                            ex,
-                                                            typeof(DynamicInvoker_DiagnosticListener),
-                                                            invoker?.TargetType,
-                                                            diagnosticListenerInstance);
+                throw ErrorUtil.LogAndRethrowStubInvocationError(ErrorUtil.CannotCreateStubMsg,
+                                                                 ex,
+                                                                 typeof(DynamicInvoker_DiagnosticListener),
+                                                                 invoker?.TargetType,
+                                                                 diagnosticListenerInstance);
             }
         }
 
@@ -48,28 +46,16 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return true;
             }
 
-            DynamicInvoker_DiagnosticListener invoker = null;
-            try
+            DynamicInvoker_DiagnosticListener invoker = DynamicInvoker.DiagnosticListener;
+            if (invoker != null && invoker.TryGetInvokerHandleForInstance(diagnosticListenerInstance, out DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> handle))
             {
-                invoker = DynamicInvoker.DiagnosticListener;
-                if (invoker.TryGetInvokerHandleForInstance(diagnosticListenerInstance, out DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> handle))
-                {
-                    diagnosticListenerStub = new DiagnosticListenerStub(diagnosticListenerInstance, handle);
-                    return true;
-                }
-                else
-                {
-                    diagnosticListenerStub = NoOpSingeltons.DiagnosticListenerStub;
-                    return false;
-                }
+                diagnosticListenerStub = new DiagnosticListenerStub(diagnosticListenerInstance, handle);
+                return true;
             }
-            catch (Exception ex)
+            else
             {
-                throw Util.LogAndRethrowStubInvocationError(Util.CannotCreateStub,
-                                                            ex,
-                                                            typeof(DynamicInvoker_DiagnosticListener),
-                                                            invoker?.TargetType,
-                                                            diagnosticListenerInstance);
+                diagnosticListenerStub = NoOpSingeltons.DiagnosticListenerStub;
+                return false;
             }
         }
 #endregion Static APIs
@@ -118,10 +104,10 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         /// the <c>eventObserver</c>'s <c>OnCompleted()</c> handler will be called if the DiagnosticSource-assembly is unloaded
         /// or dynamically swapped for another version. This allows subscribers to know that no more events are coming.
         /// To handle such case, it is recommended to give up on the existing subscription and to schedule a from-scratch
-        /// re-subscription on a timer after a short time period. Such delay ensures that the new assembly version is loaded by them.
+        /// re-subscription on a timer after a short time period. Such delay ensures that the new assembly version is loaded by then.
         /// Notably, a few events will be lost. This is an explicit design decision in the context of the fact that assembly
         /// unloads are extremely rare.
-        /// If the IDisposable returned by this method is disposed, then this notification will not be delivered.
+        /// If the IDisposable returned by this method is disposed, then the above-described notification will not be delivered.
         /// <br />
         /// Consider using <c>Datadog.Util.ObserverAdapter</c> in shared sources to conveniently create observers suitable for this API.
         /// </summary>
@@ -139,25 +125,26 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             try
             {
                 invoker = _dynamicInvokerHandle.GetInvoker();
-                IDisposable result = invoker.Call.Subscribe(_diagnosticListenerInstance, eventObserver, isEventEnabledFilter);
+                IDisposable eventsSubscription = invoker.Call.Subscribe(_diagnosticListenerInstance, eventObserver, isEventEnabledFilter);
                 
                 Action<DynamicInvoker_DiagnosticListener> invokerInvalidatedAction = (invkr) => eventObserver.OnCompleted();
-                _dynamicInvokerHandle.AddInvalidationListener(invokerInvalidatedAction);
 
-                DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> dynamicInvokerHandleForCapture = _dynamicInvokerHandle;
-                IDisposable resultWrapper = new Disposables.Action(() =>
+                DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> invokerHandle = _dynamicInvokerHandle;
+                invokerHandle.AddInvalidationListener(invokerInvalidatedAction);
+
+                IDisposable eventsSubscriptionWrapper = new Disposables.Action(() =>
                     {
                         try
                         {
-                            result?.Dispose();
+                            eventsSubscription?.Dispose();
                         }
                         finally
                         {
-                            dynamicInvokerHandleForCapture.RemoveInvalidationListener(invokerInvalidatedAction);
+                            invokerHandle.RemoveInvalidationListener(invokerInvalidatedAction);
                         }
                     });
 
-                return resultWrapper;
+                return eventsSubscriptionWrapper;
             }
             catch(Exception ex)
             {
@@ -167,13 +154,13 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
         private Exception LogAndRethrowStubInvocationError(Exception error, string invokedApiName, bool isStaticApi, Type invokerTargetType)
         {
-            return Util.LogAndRethrowStubInvocationError(Util.ErrorInvokingStubbedApi,
-                                                         error,
-                                                         typeof(DynamicInvoker_DiagnosticListener),
-                                                         invokedApiName,
-                                                         isStaticApi,
-                                                         invokerTargetType,
-                                                         _diagnosticListenerInstance);
+            return ErrorUtil.LogAndRethrowStubInvocationError(ErrorUtil.ErrorInvokingStubbedApiMsg,
+                                                              error,
+                                                              typeof(DynamicInvoker_DiagnosticListener),
+                                                              invokedApiName,
+                                                              isStaticApi,
+                                                              invokerTargetType,
+                                                              _diagnosticListenerInstance);
         }
     }
 }

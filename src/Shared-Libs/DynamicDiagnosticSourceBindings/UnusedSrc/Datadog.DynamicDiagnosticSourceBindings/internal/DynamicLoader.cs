@@ -48,11 +48,11 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         private static PackagedAssemblyLookup s_packagedAssemblies = null;
         private static Assembly s_diagnosticSourceAssembly = null;
 
-        private static DynamicInvoker s_invoker = null;
+        private static DynamicInvokerOld s_invoker = null;
 
         public static InitState InitializationState { get { return (InitState) s_InilializationState; } }
 
-        public static DynamicInvoker Invoker
+        public static DynamicInvokerOld Invoker
         {
             get
             {
@@ -61,7 +61,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     throw new InvalidOperationException($"Cannot obtain a dynamic invoker because the {nameof(DynamicLoader)} is not initialized.");
                 }
 
-                DynamicInvoker invoker = s_invoker;
+                DynamicInvokerOld invoker = s_invoker;
                 if (invoker == null)
                 {
                     throw new InvalidOperationException($"Cannot obtain a dynamic invoker. The {nameof(DynamicLoader)} was initialized, but the loader is null.");
@@ -159,7 +159,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             };
 
-            s_invoker = new DynamicInvoker(supportedFeatures, activityType, null, null);
+            s_invoker = new DynamicInvokerOld(supportedFeatures, activityType, null, null);
             return true;
         }
 

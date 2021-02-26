@@ -8,8 +8,6 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class DynamicInvoker_DiagnosticListener
     {
-        private const string LogComponentMoniker = nameof(DynamicInvoker_DiagnosticListener);
-
         private readonly StubbedApis _stubbedApis;
         private readonly Type _diagnosticListenerType;
         private readonly DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> _handle;
@@ -26,6 +24,11 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         public Type TargetType
         {
             get { return _diagnosticListenerType; }
+        }
+
+        public DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> Handle
+        {
+            get { return _handle; }
         }
 
         public StubbedApis Call
@@ -81,6 +84,11 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 _thisInvoker = thisInvoker;
             }
 
+            public object Ctor(string diagnosticSourceName)
+            {
+                return new StaticSystemDiagnostics.DiagnosticListener(diagnosticSourceName);
+            }
+
             public string get_Name(object diagnosticListenerInstance)
             {
                 return ((StaticSystemDiagnostics.DiagnosticListener) diagnosticListenerInstance).Name;
@@ -91,6 +99,11 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                                          Func<string, object, object, bool> isEventEnabledFilter)
             {
                 return ((StaticSystemDiagnostics.DiagnosticListener) diagnosticListenerInstance).Subscribe(eventObserver, isEventEnabledFilter);
+            }
+
+            public IObservable<object> get_AllListeners()
+            {
+                return StaticSystemDiagnostics.DiagnosticListener.AllListeners;
             }
         }
     }

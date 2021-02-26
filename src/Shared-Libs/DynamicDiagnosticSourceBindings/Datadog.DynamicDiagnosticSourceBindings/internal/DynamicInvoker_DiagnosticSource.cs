@@ -8,8 +8,6 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class DynamicInvoker_DiagnosticSource
     {
-        private const string LogComponentMoniker = nameof(DynamicInvoker_DiagnosticSource);
-
         private readonly StubbedApis _stubbedApis;
         private readonly Type _diagnosticSourceType;
         private readonly DynamicInvokerHandle<DynamicInvoker_DiagnosticSource> _handle;
@@ -26,6 +24,11 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         public Type TargetType
         {
             get { return _diagnosticSourceType; }
+        }
+
+        public DynamicInvokerHandle<DynamicInvoker_DiagnosticSource> Handle
+        {
+            get { return _handle; }
         }
 
         public StubbedApis Call

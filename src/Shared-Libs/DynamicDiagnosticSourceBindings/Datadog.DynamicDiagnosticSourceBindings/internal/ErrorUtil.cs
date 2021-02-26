@@ -3,12 +3,13 @@ using System.Runtime.ExceptionServices;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {
-    internal static class Util
-    {
-        private const string DynamicInvokerLogComponentMoniker = "DynamicInvoker";
+    internal static class ErrorUtil
 
-        public const string ErrorInvokingStubbedApi = "Error dynamically invoking stubbed API";
-        public const string CannotCreateStub = "Cannot create stub for specified instance";
+    {
+        public const string DynamicInvokerLogComponentMoniker = "DynamicInvoker";
+
+        public const string ErrorInvokingStubbedApiMsg = "Error dynamically invoking stubbed API";
+        public const string CannotCreateStubMsg = "Cannot create stub for specified instance";
 
         public static Exception LogAndRethrowStubInvocationError(string message,
                                                                  Exception error,
