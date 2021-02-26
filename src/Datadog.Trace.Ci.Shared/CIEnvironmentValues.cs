@@ -33,13 +33,13 @@ namespace Datadog.Trace.Ci
 
         public static string AuthorEmail { get; private set; }
 
-        public static DateTimeOffset AuthorDate { get; private set; }
+        public static DateTimeOffset? AuthorDate { get; private set; }
 
         public static string CommitterName { get; private set; }
 
         public static string CommitterEmail { get; private set; }
 
-        public static DateTimeOffset CommitterDate { get; private set; }
+        public static DateTimeOffset? CommitterDate { get; private set; }
 
         public static string Message { get; private set; }
 
@@ -83,18 +83,10 @@ namespace Datadog.Trace.Ci
             span.SetTagIfNotNullOrEmpty(CommonTags.GitTag, Tag);
             span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorName, AuthorName);
             span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorEmail, AuthorEmail);
-            if (AuthorDate != DateTimeOffset.MinValue)
-            {
-                span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorDate, AuthorDate.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
-            }
-
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorDate, AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
             span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterName, CommitterName);
             span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterEmail, CommitterEmail);
-            if (CommitterDate != DateTimeOffset.MinValue)
-            {
-                span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterDate, CommitterDate.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
-            }
-
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterDate, CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
             span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitMessage, Message);
             span.SetTagIfNotNullOrEmpty(CommonTags.BuildSourceRoot, SourceRoot);
         }
@@ -120,10 +112,10 @@ namespace Datadog.Trace.Ci
             Tag = null;
             AuthorName = null;
             AuthorEmail = null;
-            AuthorDate = DateTimeOffset.MinValue;
+            AuthorDate = null;
             CommitterName = null;
             CommitterEmail = null;
-            CommitterDate = DateTimeOffset.MinValue;
+            CommitterDate = null;
             Message = null;
             SourceRoot = null;
 

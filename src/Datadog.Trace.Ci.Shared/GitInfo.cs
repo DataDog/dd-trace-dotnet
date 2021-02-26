@@ -50,7 +50,7 @@ namespace Datadog.Trace.Ci
         /// <summary>
         /// Gets Author Date
         /// </summary>
-        public DateTimeOffset AuthorDate { get; private set; }
+        public DateTimeOffset? AuthorDate { get; private set; }
 
         /// <summary>
         /// Gets Committer Name
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Ci
         /// <summary>
         /// Gets Committer Date
         /// </summary>
-        public DateTimeOffset CommitterDate { get; private set; }
+        public DateTimeOffset? CommitterDate { get; private set; }
 
         /// <summary>
         /// Gets PGP Signature
@@ -310,10 +310,10 @@ namespace Datadog.Trace.Ci
             public readonly string Parent;
             public readonly string AuthorName;
             public readonly string AuthorEmail;
-            public readonly DateTimeOffset AuthorDate;
+            public readonly DateTimeOffset? AuthorDate;
             public readonly string CommitterName;
             public readonly string CommitterEmail;
-            public readonly DateTimeOffset CommitterDate;
+            public readonly DateTimeOffset? CommitterDate;
             public readonly string PgpSignature;
             public readonly string Message;
 
@@ -332,10 +332,10 @@ namespace Datadog.Trace.Ci
                 Parent = null;
                 AuthorName = null;
                 AuthorEmail = null;
-                AuthorDate = DateTimeOffset.MinValue;
+                AuthorDate = null;
                 CommitterName = null;
                 CommitterEmail = null;
-                CommitterDate = DateTimeOffset.MinValue;
+                CommitterDate = null;
                 PgpSignature = null;
                 Message = null;
 
