@@ -145,6 +145,85 @@
     ]
   },
   {
+    "name": "GraphQL",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "GraphQL",
+          "type": "GraphQL.Execution.ExecutionStrategy",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
+            "GraphQL.Execution.ExecutionContext"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 3,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "GraphQL",
+          "type": "GraphQL.Execution.SubscriptionExecutionStrategy",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
+            "GraphQL.Execution.ExecutionContext"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 3,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "GraphQL",
+          "type": "GraphQL.Validation.DocumentValidator",
+          "method": "Validate",
+          "signature_types": [
+            "GraphQL.Validation.IValidationResult",
+            "System.String",
+            "GraphQL.Types.ISchema",
+            "GraphQL.Language.AST.Document",
+            "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]",
+            "_",
+            "GraphQL.Inputs"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 3,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "HttpMessageHandler",
     "method_replacements": [
       {
@@ -264,6 +343,347 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClientHandler.HttpClientHandlerSyncIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
+    "name": "MongoDb",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 1,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 1,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 1,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 1,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 1,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 1,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.KillCursorsWireProtocol",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 1,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.KillCursorsWireProtocol",
+          "method": "Execute",
+          "signature_types": [
+            "System.Void",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Execute_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+          "method": "Execute",
+          "signature_types": [
+            "T",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+          "method": "Execute",
+          "signature_types": [
+            "T",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+          "method": "Execute",
+          "signature_types": [
+            "T",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
+          "method": "Execute",
+          "signature_types": [
+            "T",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
+          "method": "Execute",
+          "signature_types": [
+            "T",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
+          "method": "Execute",
+          "signature_types": [
+            "T",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
           "action": "CallTargetModification"
         }
       }
@@ -1425,6 +1845,37 @@
     ]
   },
   {
+    "name": "ServiceStackRedis",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendReceive",
+          "signature_types": [
+            "T",
+            "System.Byte[][]",
+            "System.Func`1[!!0]",
+            "System.Action`1[System.Func`1[!!0]]",
+            "System.Boolean"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.RedisNativeClientSendReceiveIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "SqlCommand",
     "method_replacements": [
       {
@@ -2365,6 +2816,313 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryWithBehaviorIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
+    "name": "StackExchangeRedis",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis",
+          "type": "StackExchange.Redis.ConnectionMultiplexer",
+          "method": "ExecuteAsyncImpl",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "System.Object",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.ConnectionMultiplexerExecuteAsyncImplIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis.StrongName",
+          "type": "StackExchange.Redis.ConnectionMultiplexer",
+          "method": "ExecuteAsyncImpl",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "System.Object",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.ConnectionMultiplexerExecuteAsyncImplIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis",
+          "type": "StackExchange.Redis.ConnectionMultiplexer",
+          "method": "ExecuteSyncImpl",
+          "signature_types": [
+            "T",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.ConnectionMultiplexerExecuteSyncImplIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis.StrongName",
+          "type": "StackExchange.Redis.ConnectionMultiplexer",
+          "method": "ExecuteSyncImpl",
+          "signature_types": [
+            "T",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.ConnectionMultiplexerExecuteSyncImplIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis",
+          "type": "StackExchange.Redis.RedisBase",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis.StrongName",
+          "type": "StackExchange.Redis.RedisBase",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis",
+          "type": "StackExchange.Redis.RedisBatch",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis.StrongName",
+          "type": "StackExchange.Redis.RedisBatch",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis",
+          "type": "StackExchange.Redis.RedisTransaction",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis.StrongName",
+          "type": "StackExchange.Redis.RedisTransaction",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis",
+          "type": "StackExchange.Redis.RedisBase",
+          "method": "ExecuteSync",
+          "signature_types": [
+            "T",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "StackExchange.Redis.StrongName",
+          "type": "StackExchange.Redis.RedisBase",
+          "method": "ExecuteSync",
+          "signature_types": [
+            "T",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncIntegration",
           "action": "CallTargetModification"
         }
       }

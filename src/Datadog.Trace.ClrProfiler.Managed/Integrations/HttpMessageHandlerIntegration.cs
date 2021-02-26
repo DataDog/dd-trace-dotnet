@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly IntegrationInfo SocketHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpSocketsHandler));
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpMessageHandlerIntegration));
-        private static readonly string[] NamespaceAndNameFilters = { ClrNames.GenericTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken };
+        private static readonly string[] NamespaceAndNameFilters = { ClrNames.HttpResponseMessageTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken };
 
         private static Type _httpMessageHandlerResultType;
         private static Type _httpClientHandlerResultType;
@@ -188,7 +188,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, Send)
                        .WithConcreteType(httpMessageHandler)
                        .WithParameters(request, cancellationToken)
-                       .WithNamespaceAndNameFilters(NamespaceAndNameFilters)
+                       .WithNamespaceAndNameFilters(ClrNames.HttpResponseMessage, ClrNames.HttpRequestMessage, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -369,7 +369,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, Send)
                        .WithConcreteType(httpClientHandler)
                        .WithParameters(request, cancellationToken)
-                       .WithNamespaceAndNameFilters(NamespaceAndNameFilters)
+                       .WithNamespaceAndNameFilters(ClrNames.HttpResponseMessage, ClrNames.HttpRequestMessage, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)

@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NLog45Example", "AutomaticT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NLog46Example", "AutomaticTraceIdInjection\NLog46Example\NLog46Example.csproj", "{82DD704F-20C9-4F77-B3ED-7E555E8077C8}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NLog40Example", "AutomaticTraceIdInjection\NLog40Example\NLog40Example.csproj", "{13CA2EF4-EF35-4473-BA59-F0F6C35ED147}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{82DD704F-20C9-4F77-B3ED-7E555E8077C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82DD704F-20C9-4F77-B3ED-7E555E8077C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{82DD704F-20C9-4F77-B3ED-7E555E8077C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13CA2EF4-EF35-4473-BA59-F0F6C35ED147}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13CA2EF4-EF35-4473-BA59-F0F6C35ED147}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13CA2EF4-EF35-4473-BA59-F0F6C35ED147}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13CA2EF4-EF35-4473-BA59-F0F6C35ED147}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,6 +58,7 @@ Global
 		{51F8B356-6F95-460A-9549-52534B85042D} = {8AD58831-2198-4661-AC87-EFA754EDC4E9}
 		{B987A36C-111D-41B7-9DA0-35DF790DD450} = {8AD58831-2198-4661-AC87-EFA754EDC4E9}
 		{82DD704F-20C9-4F77-B3ED-7E555E8077C8} = {8AD58831-2198-4661-AC87-EFA754EDC4E9}
+		{13CA2EF4-EF35-4473-BA59-F0F6C35ED147} = {8AD58831-2198-4661-AC87-EFA754EDC4E9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1C64C3C7-7F87-46D4-88F8-1DB81303FBAC}

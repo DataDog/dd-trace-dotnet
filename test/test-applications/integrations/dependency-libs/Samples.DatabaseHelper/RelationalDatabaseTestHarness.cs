@@ -54,7 +54,45 @@ namespace Samples.DatabaseHelper
 #endif
                             };
 
-            using (var root = Tracer.Instance.StartActive("root"))
+            using (var root = Tracer.Instance.StartActive("RunAllAsync<TCommand>"))
+            {
+                foreach (var executor in executors)
+                {
+                    await RunAsync(connection, commandFactory, executor, cancellationToken);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method that runs ADO.NET test suite for the built-in implementations.
+        /// </summary>
+        /// <param name="connection">The <see cref="IDbConnection"/> to use to connect to the database.</param>
+        /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
+        /// <param name="cancellationToken">A cancellation token passed into downstream async methods.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public static async Task RunBaseClassesAsync(
+            IDbConnection connection,
+            DbCommandFactory commandFactory,
+            CancellationToken cancellationToken)
+        {
+            var executors = new List<IDbCommandExecutor>
+                            {
+                                // call methods through DbCommand reference
+                                new DbCommandClassExecutor(),
+
+                                // call methods through IDbCommand reference
+                                new DbCommandInterfaceExecutor(),
+
+#if !NET45
+                                // call methods through DbCommand reference (referencing netstandard.dll)
+                                new DbCommandNetStandardClassExecutor(),
+
+                                // call methods through IDbCommand reference (referencing netstandard.dll)
+                                new DbCommandNetStandardInterfaceExecutor(),
+#endif
+                            };
+
+            using (var root = Tracer.Instance.StartActive("RunBaseClassesAsync"))
             {
                 foreach (var executor in executors)
                 {
@@ -74,7 +112,7 @@ namespace Samples.DatabaseHelper
                                 providerSpecificCommandExecutor
                             };
 
-            using (var root = Tracer.Instance.StartActive("root"))
+            using (var root = Tracer.Instance.StartActive("RunSingleAsync"))
             {
                 foreach (var executor in executors)
                 {
@@ -98,7 +136,7 @@ namespace Samples.DatabaseHelper
             CancellationToken cancellationToken,
             params IDbCommandExecutor[] providerSpecificCommandExecutors)
         {
-            using (var root = Tracer.Instance.StartActive("root"))
+            using (var root = Tracer.Instance.StartActive("RunAllAsync"))
             {
                 foreach (var executor in providerSpecificCommandExecutors)
                 {

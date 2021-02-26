@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = RedisAssembly,
             TargetAssembly = RedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, ClrNames.Object, StackExchangeRedisServerEndPoint },
+            TargetSignatureTypes = new[] { ClrNames.GenericParameterTask, StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, ClrNames.Object, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         [InterceptMethod(
@@ -142,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = StrongNameRedisAssembly,
             TargetAssembly = StrongNameRedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, ClrNames.Object, StackExchangeRedisServerEndPoint },
+            TargetSignatureTypes = new[] { ClrNames.GenericParameterTask, StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, ClrNames.Object, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static object ExecuteAsyncImpl<T>(
@@ -173,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                         .WithParameters(message, processor, state, server)
                         .WithMethodGenerics(genericType)
                         .WithNamespaceAndNameFilters(
-                            ClrNames.GenericTask,
+                            ClrNames.GenericParameterTask,
                             StackExchangeRedisMessage,
                             StackExchangeRedisResultProcessor,
                             ClrNames.Object,

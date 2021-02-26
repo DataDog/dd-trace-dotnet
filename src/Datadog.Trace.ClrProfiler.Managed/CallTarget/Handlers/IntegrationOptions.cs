@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void LogException(Exception exception, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
         {
+            // ReSharper disable twice ExplicitCallerInfoArgument
             Log.Error(exception, exception?.Message, sourceLine, sourceFile);
             if (exception is DuckTypeException)
             {

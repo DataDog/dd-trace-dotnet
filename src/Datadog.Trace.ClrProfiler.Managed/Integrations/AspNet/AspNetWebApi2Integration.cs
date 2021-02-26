@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                     .WithConcreteType(httpControllerType)
                                     .WithParameters(controllerContext, cancellationToken)
                                     .WithNamespaceAndNameFilters(
-                                         ClrNames.GenericTask,
+                                         ClrNames.HttpResponseMessageTask,
                                          HttpControllerContextTypeName,
                                          ClrNames.CancellationToken)
                                     .Build();

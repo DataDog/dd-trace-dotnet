@@ -34,6 +34,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             var moduleVersionId = PointerHelpers.GetGuidFromNativePointer(moduleVersionPointer);
+
+            // ReSharper disable twice ExplicitCallerInfoArgument
             logger.Error(
                 exception,
                 $"Error (MVID: {moduleVersionId}, mdToken: {mdToken}, opCode: {opCode}) could not retrieve: {instrumentedMethod}",

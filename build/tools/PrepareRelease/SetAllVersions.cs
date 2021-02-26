@@ -12,6 +12,23 @@ namespace PrepareRelease
         {
             Console.WriteLine($"Updating version instances to {VersionString()}");
 
+            // Sample application package updates
+            SynchronizeVersion(
+                "samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
+                DatadogTraceNugetDependencyVersionReplace);
+            SynchronizeVersion(
+                "samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",
+                DatadogTraceNugetDependencyVersionReplace);
+            SynchronizeVersion(
+                "samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj",
+                DatadogTraceNugetDependencyVersionReplace);
+            SynchronizeVersion(
+                "samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj",
+                DatadogTraceNugetDependencyVersionReplace);
+            SynchronizeVersion(
+                "samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
+                DatadogTraceNugetDependencyVersionReplace);
+
             // Dockerfile updates
             SynchronizeVersion(
                 "samples/ConsoleApp/Alpine3.9.dockerfile",
@@ -141,6 +158,11 @@ namespace PrepareRelease
         private static string MajorAssemblyVersionReplace(string text, string split)
         {
             return Regex.Replace(text, VersionPattern(fourPartVersion: true), MajorVersionString(split), RegexOptions.Singleline);
+        }
+
+        private static string DatadogTraceNugetDependencyVersionReplace(string text)
+        {
+            return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace\" Version=\"{VersionPattern(withPrereleasePostfix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace\" Version=\"{VersionString(withPrereleasePostfix: true)}\" />", RegexOptions.Singleline);
         }
 
         private static string NugetVersionReplace(string text)

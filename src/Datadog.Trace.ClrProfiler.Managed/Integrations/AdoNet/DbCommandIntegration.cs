@@ -194,13 +194,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReaderTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.DbDataReaderTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static object ExecuteReaderAsync(
@@ -242,7 +242,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(commandBehavior, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.DbDataReaderTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -362,13 +362,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { ClrNames.Int32Task, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { ClrNames.Int32Task, ClrNames.CancellationToken },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static object ExecuteNonQueryAsync(
@@ -407,7 +407,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.Int32Task, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -527,13 +527,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { ClrNames.ObjectTask, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major5)]
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { ClrNames.ObjectTask, ClrNames.CancellationToken },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static object ExecuteScalarAsync(
@@ -572,7 +572,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.ObjectTask, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="1.8.0" />
+    <PackageReference Include="Datadog.Trace" Version="1.23.0" />
     <PackageReference Include="NLog" Version="4.6.7" />
   </ItemGroup>
 

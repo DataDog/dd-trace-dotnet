@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.ExtensionMethods;
@@ -16,11 +17,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.ServiceStackRedis), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion)
+        public static IEnumerable<object[]> GetServiceStackRedisData()
         {
+            foreach (object[] item in PackageVersions.ServiceStackRedis)
+            {
+                yield return item.Concat(new object[] { false, false, }).ToArray();
+                yield return item.Concat(new object[] { true, false, }).ToArray();
+                yield return item.Concat(new object[] { true, true, }).ToArray();
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetServiceStackRedisData))]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitsTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
@@ -43,8 +56,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("redis.command", span.Name);
                     Assert.Equal("Samples.ServiceStack.Redis-redis", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
-                    Assert.Equal(host, span.Tags.GetValueOrDefault("out.host"));
-                    Assert.Equal(port, span.Tags.GetValueOrDefault("out.port"));
+                    Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
+                    Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
@@ -71,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  ? spans[i].Resource
                                  : string.Empty;
                     var a2 = i < spans.Count
-                                 ? spans[i].Tags.GetValueOrDefault("redis.raw_command")
+                                 ? DictionaryExtensions.GetValueOrDefault(spans[i].Tags, "redis.raw_command")
                                  : string.Empty;
 
                     Assert.True(e1 == a1, $@"invalid resource name for span #{i}, expected ""{e1}"", actual ""{a1}""");

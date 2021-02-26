@@ -33,23 +33,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
 
-            // Note: The automatic instrumentation currently does not instrument on the generic wrappers
-            // due to an issue with constrained virtual method calls. This leads to an inconsistency where
-            // a newer library version may have 4 more spans than an older one (2 ExecuteReader calls *
-            // 2 interfaces: IDbCommand and IDbCommand-netstandard).
-            // Once this is fully supported, this will add another 2 complete groups instead.
+            // ALWAYS: 77 spans
+            // - NpgsqlCommand: 21 spans (3 groups * 7 spans)
+            // - DbCommand:  42 spans (6 groups * 7 spans)
+            // - IDbCommand: 14 spans (2 groups * 7 spans)
+            //
+            // NETSTANDARD: +56 spans
+            // - DbCommand-netstandard:  42 spans (6 groups * 7 spans)
+            // - IDbCommand-netstandard: 14 spans (2 groups * 7 spans)
+            //
+            // CALLTARGET: +7 spans
+            // - IDbCommandGenericConstrant<NpgsqlCommand>: 7 spans (1 group * 7 spans)
+            //
+            // NETSTANDARD + CALLTARGET: +7 spans
+            // - IDbCommandGenericConstrant<NpgsqlCommand>-netstandard: 7 spans (1 group * 7 spans)
 #if NET452
-            var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
+            var expectedSpanCount = 77;
 #else
-            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
+            var expectedSpanCount = 133;
 #endif
 
             if (enableCallTarget)
             {
 #if NET452
-                expectedSpanCount = 57;
+                expectedSpanCount = 84;
 #else
-                expectedSpanCount = 92;
+                expectedSpanCount = 147;
 #endif
             }
 
@@ -69,15 +78,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                int actualSpanCount = spans.Where(s => s.ParentId.HasValue).Count(); // Remove unexpected DB spans from the calculation
                 // Assert.Equal(expectedSpanCount, spans.Count); // Assert an exact match once we can correctly instrument the generic constraint case
 
                 if (enableCallTarget)
                 {
-                    Assert.Equal(expectedSpanCount, spans.Count);
+                    Assert.Equal(expectedSpanCount, actualSpanCount);
                 }
                 else
                 {
-                    Assert.True(spans.Count == expectedSpanCount || spans.Count == expectedSpanCount + 4);
+                    Assert.True(actualSpanCount == expectedSpanCount || actualSpanCount == expectedSpanCount + 4, $"expectedSpanCount={expectedSpanCount}, expectedSpanCount+4={expectedSpanCount + 4}, actualSpanCount={actualSpanCount}");
                 }
 
                 foreach (var span in spans)

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             foreach (object[] item in PackageVersions.MySqlData)
             {
-                if ((string)item[0] == string.Empty || !((string)item[0]).StartsWith("8"))
+                if (!((string)item[0]).StartsWith("8"))
                 {
                     continue;
                 }
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             foreach (object[] item in PackageVersions.MySqlData)
             {
-                if ((string)item[0] == string.Empty || ((string)item[0]).StartsWith("8"))
+                if (((string)item[0]).StartsWith("8"))
                 {
                     continue;
                 }
@@ -96,25 +96,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
 
-            // Note: The automatic instrumentation currently bails out on the generic wrappers.
-            // Once this is implemented, this will add another 1 group for the direct assembly reference
-            // and another 1 group for the netstandard assembly reference
+            // ALWAYS: 75 spans
+            // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
+            // - DbCommand:  42 spans (6 groups * 7 spans)
+            // - IDbCommand: 14 spans (2 groups * 7 spans)
+            //
+            // NETSTANDARD: +56 spans
+            // - DbCommand-netstandard:  42 spans (6 groups * 7 spans)
+            // - IDbCommand-netstandard: 14 spans (2 groups * 7 spans)
+            //
+            // CALLTARGET: +9 spans
+            // - MySqlCommand: 2 additional spans
+            // - IDbCommandGenericConstrant<MySqlCommand>: 7 spans (1 group * 7 spans)
+            //
+            // NETSTANDARD + CALLTARGET: +7 spans
+            // - IDbCommandGenericConstrant<MySqlCommand>-netstandard: 7 spans (1 group * 7 spans)
 #if NET452
-            var expectedSpanCount = 50; // 7 queries * 7 groups + 1 internal query
+            var expectedSpanCount = 75;
 #else
-            var expectedSpanCount = 78; // 7 queries * 11 groups + 1 internal query
+            var expectedSpanCount = 131;
+#endif
+
             if (packageVersion == "6.8.8")
             {
-                expectedSpanCount = 76; // For this version the callsite instrumentation returns 2 spans less.
+                expectedSpanCount -= 2; // For this version the callsite instrumentation returns 2 spans less.
             }
-#endif
 
             if (enableCallTarget)
             {
 #if NET452
-                expectedSpanCount = 62;
+                expectedSpanCount = 84;
 #else
-                expectedSpanCount = 97;
+                expectedSpanCount = 147;
 #endif
             }
 
@@ -133,7 +146,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                int actualSpanCount = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", System.StringComparison.OrdinalIgnoreCase)).Count(); // Remove unexpected DB spans from the calculation
+                Assert.Equal(expectedSpanCount, actualSpanCount);
 
                 foreach (var span in spans)
                 {

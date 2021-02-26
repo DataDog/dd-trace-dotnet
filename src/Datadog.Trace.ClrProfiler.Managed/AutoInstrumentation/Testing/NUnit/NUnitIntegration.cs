@@ -159,6 +159,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                 }
             }
+            else
+            {
+                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+            }
         }
     }
 }

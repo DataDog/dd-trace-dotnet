@@ -127,6 +127,13 @@ namespace Samples.MongoDB
                 var channel = server.GetChannel(CancellationToken.None);
                 channel.KillCursors(new long[] { 0, 1, 2 }, new global::MongoDB.Driver.Core.WireProtocol.Messages.Encoders.MessageEncoderSettings(), CancellationToken.None);
             }
+
+            using (var asyncScope = Tracer.Instance.StartActive("async-calls-execute", serviceName: "Samples.MongoDB"))
+            {
+                var server = client.Cluster.SelectServer(new ServerSelector(), CancellationToken.None);
+                var channel = server.GetChannel(CancellationToken.None);
+                channel.KillCursorsAsync(new long[] { 0, 1, 2 }, new global::MongoDB.Driver.Core.WireProtocol.Messages.Encoders.MessageEncoderSettings(), CancellationToken.None).Wait();
+            }
         }
 
         internal class ServerSelector : global::MongoDB.Driver.Core.Clusters.ServerSelectors.IServerSelector
