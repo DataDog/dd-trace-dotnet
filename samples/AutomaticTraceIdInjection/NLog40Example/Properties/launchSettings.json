@@ -1,11 +1,11 @@
 {
   "profiles": {
-    "SerilogExample": {
+    "NLog40Example": {
       "commandName": "Project",
       "environmentVariables": {
         "DD_LOGS_INJECTION": "true",
         "DD_ENV": "dev",
-        "DD_SERVICE": "SerilogExample",
+        "DD_SERVICE": "NLog40Example",
         "DD_VERSION": "1.0.0"
       }
     }

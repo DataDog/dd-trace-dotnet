@@ -9,7 +9,7 @@ namespace NLog45Example
 
         static void Main(string[] args)
         {
-            using (MappedDiagnosticsLogicalContext.SetScoped("order-number", 1024))
+            using (MappedDiagnosticsContext.SetScoped("order-number", 1024))
             {
                 Logger.Info("Message before a trace.");
 
