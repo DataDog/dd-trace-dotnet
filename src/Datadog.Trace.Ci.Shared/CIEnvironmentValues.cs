@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
@@ -27,6 +28,20 @@ namespace Datadog.Trace.Ci
         public static string Branch { get; private set; }
 
         public static string Tag { get; private set; }
+
+        public static string AuthorName { get; private set; }
+
+        public static string AuthorEmail { get; private set; }
+
+        public static DateTimeOffset AuthorDate { get; private set; }
+
+        public static string CommitterName { get; private set; }
+
+        public static string CommitterEmail { get; private set; }
+
+        public static DateTimeOffset CommitterDate { get; private set; }
+
+        public static string Message { get; private set; }
 
         public static string SourceRoot { get; private set; }
 
@@ -66,6 +81,21 @@ namespace Datadog.Trace.Ci
             span.SetTagIfNotNullOrEmpty(CommonTags.GitCommit, Commit);
             span.SetTagIfNotNullOrEmpty(CommonTags.GitBranch, Branch);
             span.SetTagIfNotNullOrEmpty(CommonTags.GitTag, Tag);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorName, AuthorName);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorEmail, AuthorEmail);
+            if (AuthorDate != DateTimeOffset.MinValue)
+            {
+                span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorDate, AuthorDate.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
+            }
+
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterName, CommitterName);
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterEmail, CommitterEmail);
+            if (CommitterDate != DateTimeOffset.MinValue)
+            {
+                span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterDate, CommitterDate.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
+            }
+
+            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitMessage, Message);
             span.SetTagIfNotNullOrEmpty(CommonTags.BuildSourceRoot, SourceRoot);
         }
 
@@ -88,6 +118,13 @@ namespace Datadog.Trace.Ci
             Commit = null;
             Branch = null;
             Tag = null;
+            AuthorName = null;
+            AuthorEmail = null;
+            AuthorDate = DateTimeOffset.MinValue;
+            CommitterName = null;
+            CommitterEmail = null;
+            CommitterDate = DateTimeOffset.MinValue;
+            Message = null;
             SourceRoot = null;
 
             GitInfo gitInfo = GitInfo.GetCurrent();
@@ -144,6 +181,17 @@ namespace Datadog.Trace.Ci
                 SourceRoot = gitInfo.SourceRoot;
                 WorkspacePath = gitInfo.SourceRoot;
             }
+
+            // **********
+            // Add Author, Committer and Message from git
+            // **********
+            AuthorName = gitInfo.AuthorName;
+            AuthorEmail = gitInfo.AuthorEmail;
+            AuthorDate = gitInfo.AuthorDate;
+            CommitterName = gitInfo.CommitterName;
+            CommitterEmail = gitInfo.CommitterEmail;
+            CommitterDate = gitInfo.CommitterDate;
+            Message = gitInfo.Message;
 
             // **********
             // Remove sensitive info from repository url
