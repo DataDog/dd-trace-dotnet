@@ -25,9 +25,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
     {
         private const string IntegrationName = nameof(IntegrationIds.MsTestV2);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private static readonly Tracer TestTracer;
+        private static readonly string ServiceName;
 
         static TestMethodRunnerExecuteIntegration()
         {
+            TestTracer = Tracer.Instance;
+            ServiceName = TestTracer.DefaultServiceName;
+
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
         }
@@ -54,8 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             string testSuite = testMethodInfo.TestClassName;
             string testName = testMethodInfo.TestMethodName;
 
-            Tracer tracer = Tracer.Instance;
-            Scope scope = tracer.StartActive("mstest.test");
+            Scope scope = TestTracer.StartActive("mstest.test", serviceName: ServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;

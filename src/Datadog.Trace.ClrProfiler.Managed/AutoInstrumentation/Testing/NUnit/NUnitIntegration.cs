@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ExtensionMethods;
@@ -10,8 +9,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
+        private static readonly Tracer TestTracer;
+        private static readonly string ServiceName;
+
         static NUnitIntegration()
         {
+            TestTracer = Tracer.Instance;
+            ServiceName = TestTracer.DefaultServiceName;
+
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
         }
@@ -34,8 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             string testName = testMethod.Name;
             string skipReason = null;
 
-            Tracer tracer = Tracer.Instance;
-            Scope scope = tracer.StartActive("nunit.test");
+            Scope scope = TestTracer.StartActive("nunit.test", serviceName: ServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;

@@ -31,9 +31,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.XUnit));
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(XUnitIntegration));
+        private static readonly Tracer TestTracer;
+        private static readonly string ServiceName;
 
         static XUnitIntegration()
         {
+            TestTracer = Tracer.Instance;
+            ServiceName = TestTracer.DefaultServiceName;
+
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
         }
@@ -402,10 +407,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     }
                 }
 
-                Tracer tracer = Tracer.Instance;
                 string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
-                scope = tracer.StartActive("xunit.test");
+                scope = TestTracer.StartActive("xunit.test", serviceName: ServiceName);
                 Span span = scope.Span;
 
                 span.Type = SpanTypes.Test;

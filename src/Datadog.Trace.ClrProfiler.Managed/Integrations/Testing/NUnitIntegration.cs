@@ -34,9 +34,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string NUnitTestExecutionContextType = "NUnit.Framework.Internal.TestExecutionContext";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
+        private static readonly Tracer TestTracer;
+        private static readonly string ServiceName;
 
         static NUnitIntegration()
         {
+            TestTracer = Tracer.Instance;
+            ServiceName = TestTracer.DefaultServiceName;
+
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
         }
@@ -218,8 +223,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                             }
                         }
 
-                        Tracer tracer = Tracer.Instance;
-                        scope = tracer.StartActive("nunit.test");
+                        scope = TestTracer.StartActive("nunit.test", serviceName: ServiceName);
                         Span span = scope.Span;
 
                         span.Type = SpanTypes.Test;
