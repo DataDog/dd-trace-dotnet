@@ -69,6 +69,14 @@
       <None Remove="$(VendoredPath)**/*" />
       <EmbeddedResource Remove="$(VendoredPath)**/*.resx" />
   </ItemGroup>
+   
+  <ItemGroup>
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\Disposables.cs" />
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DynamicInvoker.cs" />
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DynamicInvoker_DiagnosticSource.cs" />
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\Util.cs" />
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\public\DynamicInvocationException.cs" />
+  </ItemGroup>
 
   <Import Project="VendoredLibs.DiagnosticSource.props" />
 

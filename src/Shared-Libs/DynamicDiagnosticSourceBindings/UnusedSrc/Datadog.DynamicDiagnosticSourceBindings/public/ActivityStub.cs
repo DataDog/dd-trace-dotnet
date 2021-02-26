@@ -26,7 +26,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             throw new NotImplementedException();
         }
 
-        private static string FormatNotSupportedErrorMessage(string apiName, string minRequiredFeatureSet, DynamicInvoker invoker)
+        private static string FormatNotSupportedErrorMessage(string apiName, string minRequiredFeatureSet, DynamicInvokerOld invoker)
         {
             string errMsg = $"{nameof(ActivityStub)}.{apiName} is not supported."
                                   + $" Status: {{{nameof(DynamicLoader)}.{nameof(DynamicLoader.InitializationState)}={DynamicLoader.InitializationState.ToString()};"
@@ -111,7 +111,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return NoOpSingeltons.ActivityStub;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
                 {
@@ -136,7 +136,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return ActivityIdFormatStub.Unknown;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000)
                 {
@@ -203,7 +203,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return NoOpSingeltons.ActivityStub;
             }
 
-            DynamicInvoker invoker = DynamicLoader.Invoker;
+            DynamicInvokerOld invoker = DynamicLoader.Invoker;
             if (invoker.SupportedFeatures.FeatureSet_5000)
             {
                 object activityInstance = invoker.ActivitySource.StartActivity(operationName, activityKind, parentContext, tags);
@@ -261,7 +261,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         {
             get
             {
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000)
                 {
@@ -280,7 +280,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             set
             {
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000)
                 {
@@ -309,7 +309,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return;
             }
 
-            DynamicInvoker invoker = DynamicLoader.Invoker;
+            DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
             if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
             {
@@ -329,7 +329,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return null;
             }
 
-            DynamicInvoker invoker = DynamicLoader.Invoker;
+            DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
             if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
             {
@@ -349,7 +349,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return;
             }
 
-            DynamicInvoker invoker = DynamicLoader.Invoker;
+            DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
             if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
             {
@@ -371,7 +371,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return NoOpSingeltons.KvpEnumerable;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
                 {
@@ -410,7 +410,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return NoOpSingeltons.TimeSpan;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
                 {
@@ -433,7 +433,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             Validate.NotNull(propertyName, nameof(propertyName));
 
-            DynamicInvoker invoker = DynamicLoader.Invoker;
+            DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
             if (invoker.SupportedFeatures.FeatureSet_5000)
             {
@@ -464,7 +464,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return String.Empty;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
                 {
@@ -487,7 +487,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return NoOpSingeltons.ActivityIdFormat;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000)
                 {
@@ -515,7 +515,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return NoOpSingeltons.ActivityKind;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000)
                 {
@@ -547,7 +547,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return String.Empty;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
                 {
@@ -569,7 +569,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return false;
             }
 
-            DynamicInvoker invoker = DynamicLoader.Invoker;
+            DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
             if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
             {
@@ -601,7 +601,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return null;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
                 {
@@ -624,7 +624,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             Validate.NotNull(propertyName, nameof(propertyName));
 
-            DynamicInvoker invoker = DynamicLoader.Invoker;
+            DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
             if (invoker.SupportedFeatures.FeatureSet_5000)
             {
@@ -662,7 +662,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return;
             }
 
-            DynamicInvoker invoker = DynamicLoader.Invoker;
+            DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
             if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
             {
@@ -684,7 +684,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return NoOpSingeltons.DateTimeUtc;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
                 {
@@ -705,7 +705,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return;
             }
 
-            DynamicInvoker invoker = DynamicLoader.Invoker;
+            DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
             if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
             {
@@ -727,7 +727,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     return NoOpSingeltons.KvpEnumerable;
                 }
 
-                DynamicInvoker invoker = DynamicLoader.Invoker;
+                DynamicInvokerOld invoker = DynamicLoader.Invoker;
 
                 if (invoker.SupportedFeatures.FeatureSet_5000 || invoker.SupportedFeatures.FeatureSet_4020)
                 {

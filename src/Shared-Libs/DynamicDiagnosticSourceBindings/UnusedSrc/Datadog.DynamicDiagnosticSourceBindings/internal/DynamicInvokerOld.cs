@@ -6,7 +6,7 @@ using Datadog.Util;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {
-    internal class DynamicInvoker
+    internal class DynamicInvokerOld
     {
         public readonly DynamicActivityInvoker Activity;
         public readonly DynamicDiagnosticListenerInvoker DiagnosticListener;
@@ -14,7 +14,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         
         private readonly SupportedFeatures _supportedFeatures;
 
-        internal DynamicInvoker(
+        internal DynamicInvokerOld(
                             SupportedFeatures supportedFeatures,
                             Type activityType,
                             Type activityListenerType,
