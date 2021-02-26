@@ -170,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
                         .WithConcreteType(executionStrategyInstanceType)
                         .WithParameters(context)
-                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, "GraphQL.Execution.ExecutionContext")
+                        .WithNamespaceAndNameFilters(TaskOfGraphQLExecutionResult, "GraphQL.Execution.ExecutionContext")
                         .Build();
             }
             catch (Exception ex)

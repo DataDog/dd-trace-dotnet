@@ -220,7 +220,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, Task<WebResponse>>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
                         .WithConcreteType(instrumentedType)
-                        .WithNamespaceAndNameFilters(ClrNames.GenericTask)
+                        .WithNamespaceAndNameFilters("System.Threading.Tasks.Task`1<System.Net.WebResponse>")
                         .Build();
             }
             catch (Exception ex)

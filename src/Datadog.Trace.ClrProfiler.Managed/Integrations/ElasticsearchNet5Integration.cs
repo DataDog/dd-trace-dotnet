@@ -139,7 +139,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithConcreteType(pipeline.GetType())
                        .WithMethodGenerics(genericArgument)
                        .WithParameters(requestData, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, "Elasticsearch.Net.RequestData", ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters("System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken)
                        .ForceMethodDefinitionResolution()
                        .Build();
             }

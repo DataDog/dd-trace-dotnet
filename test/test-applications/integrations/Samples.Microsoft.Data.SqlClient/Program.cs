@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
@@ -14,16 +15,26 @@ namespace Samples.Microsoft.Data.SqlClient
             var commandExecutor = new MicrosoftSqlCommandExecutor();
             var cts = new CancellationTokenSource();
 
-            using (var connection = OpenConnection())
+            using (var connection = OpenConnection(typeof(SqlConnection)))
             {
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+            }
+
+            // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
+            // On .NET Core this results in a new assembly being loaded whose types are not considered the same
+            // as the types loaded through the default loading mechanism, potentially causing type casting issues in CallSite instrumentation
+            var loadFileType = AssemblyHelpers.LoadFileAndRetrieveType(typeof(SqlConnection));
+            using (var connection = OpenConnection(loadFileType))
+            {
+                // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
+                await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
             }
 
             // allow time to flush
             await Task.Delay(2000, cts.Token);
         }
 
-        private static SqlConnection OpenConnection()
+        private static DbConnection OpenConnection(Type connectionType)
         {
             int numAttempts = 3;
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
@@ -31,11 +42,11 @@ namespace Samples.Microsoft.Data.SqlClient
 
             for (int i = 0; i < numAttempts; i++)
             {
-                SqlConnection connection = null;
+                DbConnection connection = null;
 
                 try
                 {
-                    connection = new SqlConnection(connectionString);
+                    connection = Activator.CreateInstance(connectionType, connectionString) as DbConnection;
                     connection.Open();
                     return connection;
                 }

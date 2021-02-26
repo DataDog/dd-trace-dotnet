@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = RedisAssembly,
             TargetAssembly = RedisAssembly,
             TargetType = RedisBaseTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
+            TargetSignatureTypes = new[] { ClrNames.GenericParameterTask, "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         [InterceptMethod(
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = StrongNameRedisAssembly,
             TargetAssembly = StrongNameRedisAssembly,
             TargetType = RedisBaseTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
+            TargetSignatureTypes = new[] { ClrNames.GenericParameterTask, "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static object ExecuteAsync<T>(
@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                                         .WithMethodGenerics(typeof(T))
                                         .WithParameters(message, processor, server)
                                         .WithNamespaceAndNameFilters(
-                                             ClrNames.GenericTask,
+                                             ClrNames.GenericParameterTask,
                                              "StackExchange.Redis.Message",
                                              "StackExchange.Redis.ResultProcessor`1",
                                              "StackExchange.Redis.ServerEndPoint")

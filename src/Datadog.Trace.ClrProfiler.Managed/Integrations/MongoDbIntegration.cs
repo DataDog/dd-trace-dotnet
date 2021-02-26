@@ -274,7 +274,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithConcreteType(wireProtocolType)
                        .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
                        .WithParameters(connection, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.IgnoreGenericTask, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)

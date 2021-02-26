@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
@@ -421,6 +422,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return null;
             }
 
+            if (!methodInfo.IsStatic && !methodInfo.ReflectedType.IsAssignableFrom(_concreteType))
+            {
+                Log.Warning($"_concreteType cannot be assigned to the type containing the MethodInfo representing the instance method: {detailMessage}");
+                return null;
+            }
+
             return methodInfo;
         }
 
@@ -511,7 +518,27 @@ namespace Datadog.Trace.ClrProfiler.Emit
                             continue;
                         }
 
-                        if ($"{typesToCheck[i].Namespace}.{typesToCheck[i].Name}" != _namespaceAndNameFilter[i])
+                        // If return type is Task<>, perform a stronger check to ensure we find the correct generic type
+                        if (i == 0 && m.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(m.ReturnType))
+                        {
+                            if (_namespaceAndNameFilter[i] == ClrNames.IgnoreGenericTask)
+                            {
+                                // Allow for not specifying
+                                continue;
+                            }
+
+                            // If the type argument of Task is T (some generic), do this
+                            var typeArgument = m.ReturnType.GenericTypeArguments[0];
+                            if (typeArgument.IsGenericParameter && ClrNames.GenericParameterTask != _namespaceAndNameFilter[i])
+                            {
+                                return false;
+                            }
+                            else if (!typeArgument.IsGenericParameter && $"{ClrNames.GenericTask}<{typeArgument.Namespace}.{typeArgument.Name}>" != _namespaceAndNameFilter[i])
+                            {
+                                return false;
+                            }
+                        }
+                        else if ($"{typesToCheck[i].Namespace}.{typesToCheck[i].Name}" != _namespaceAndNameFilter[i])
                         {
                             return false;
                         }

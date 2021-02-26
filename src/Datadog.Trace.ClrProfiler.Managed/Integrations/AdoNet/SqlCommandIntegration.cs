@@ -343,7 +343,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(sqlCommandType)
                        .WithParameters(commandBehavior, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters($"{ClrNames.GenericTask}<{sqlClientNamespace}.{SqlDataReaderTypeName}>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -550,7 +550,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { ClrNames.Int32Task, ClrNames.CancellationToken },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static object MicrosoftSqlClientExecuteNonQueryAsync(
@@ -589,7 +589,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.Int32Task, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -769,7 +769,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetAssemblies = new[] { MicrosoftSqlClientAssemblyName },
             TargetType = MicrosoftSqlCommandTypeName,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteScalarAsync,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { ClrNames.ObjectTask, ClrNames.CancellationToken },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static object MicrosoftSqlClientExecuteScalarAsync(
@@ -808,7 +808,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.ObjectTask, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
