@@ -55,5 +55,11 @@ namespace Samples.AspNetMvc4.Controllers
             ViewBag.Message = "Identifier set to " + id;
             return View("About");
         }
+
+        public ActionResult OptionalIdentifier(int? id)
+        {
+            ViewBag.Message = "Identifier set to " + id;
+            return View("About");
+        }
     }
 }

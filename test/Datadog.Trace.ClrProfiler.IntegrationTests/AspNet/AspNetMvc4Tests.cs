@@ -2,7 +2,6 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Xunit;
@@ -10,6 +9,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [CollectionDefinition("IisTests", DisableParallelization = true)]
     [Collection("IisTests")]
     public class AspNetMvc4TestsCallsite : AspNetMvc4Tests
     {
@@ -51,15 +51,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this);
         }
 
-        public static TheoryData<string, string, HttpStatusCode, bool, string, string, Dictionary<string, string>> Data =>
-            new()
-            {
-                { "/Admin/Home/Index", "GET /admin/home/index", HttpStatusCode.OK, false, null, null, AdminHomeIndexTags() },
-                { "/Home/Index", "GET /home/index", HttpStatusCode.OK, false, null, null, HomeIndexTags() },
-                { "/Home/BadRequest", "GET /home/badrequest", HttpStatusCode.InternalServerError, true, null, null, BadRequestTags() },
-                { "/Home/StatusCode?value=201", "GET /home/statuscode", HttpStatusCode.Created, false, null, null, StatusCodeTags() },
-                { "/Home/StatusCode?value=503", "GET /home/statuscode", HttpStatusCode.ServiceUnavailable, true, null, "The HTTP response has status code 503.", StatusCodeTags() },
-            };
+        public static TheoryData<string, string, HttpStatusCode, bool, string, string, SerializableDictionary> Data => new()
+        {
+            { "/Admin/Home/Index", "GET /admin/home/index", HttpStatusCode.OK, false, null, null, AdminHomeIndexTags() },
+            { "/", "GET /", HttpStatusCode.OK, false, null, null, HomeIndexTags() },
+            { "/Home", "GET /home", HttpStatusCode.OK, false, null, null, HomeIndexTags() },
+            { "/Home/Index", "GET /home/index", HttpStatusCode.OK, false, null, null, HomeIndexTags() },
+            { "/Home/BadRequest", "GET /home/badrequest", HttpStatusCode.InternalServerError, true, "System.Exception", "Oops, it broke.", BadRequestTags() },
+            { "/Home/identifier", "GET /home/identifier", HttpStatusCode.InternalServerError, true, "System.ArgumentException", MissingParameterError(), IdentifierTags() },
+            { "/Home/identifier/123", "GET /home/identifier/?", HttpStatusCode.OK, false, null, null, IdentifierTags() },
+            { "/Home/identifier/BadValue", "GET /home/identifier/badvalue", HttpStatusCode.InternalServerError, true, "System.ArgumentException", MissingParameterError(), IdentifierTags() },
+            { "/Home/OptionalIdentifier", "GET /home/optionalidentifier", HttpStatusCode.OK, false, null, null, OptionalIdentifierTags() },
+            { "/Home/OptionalIdentifier/123", "GET /home/optionalidentifier/?", HttpStatusCode.OK, false, null, null, OptionalIdentifierTags() },
+            { "/Home/OptionalIdentifier/BadValue", "GET /home/optionalidentifier/badvalue", HttpStatusCode.OK, false, null, null, OptionalIdentifierTags() },
+            { "/Home/StatusCode?value=201", "GET /home/statuscode", HttpStatusCode.Created, false, null, null, StatusCodeTags() },
+            { "/Home/StatusCode?value=503", "GET /home/statuscode", HttpStatusCode.ServiceUnavailable, true, null, "The HTTP response has status code 503.", StatusCodeTags() },
+        };
 
         [Theory]
         [Trait("Category", "EndToEnd")]
@@ -72,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             bool isError,
             string expectedErrorType,
             string expectedErrorMessage,
-            Dictionary<string, string> tags)
+            SerializableDictionary tags)
         {
             await AssertWebServerSpan(
                 path,
@@ -89,41 +96,53 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 tags);
         }
 
-        private static Dictionary<string, string> AdminHomeIndexTags() =>
-            new Dictionary<string, string>
-            {
-                { Tags.AspNetRoute, "Admin/{controller}/{action}/{id}" },
-                { Tags.AspNetController, "home" },
-                { Tags.AspNetAction, "index" },
-                { Tags.AspNetArea, "admin" }
-            };
+        private static SerializableDictionary AdminHomeIndexTags() => new()
+        {
+            { Tags.AspNetRoute, "Admin/{controller}/{action}/{id}" },
+            { Tags.AspNetController, "home" },
+            { Tags.AspNetAction, "index" },
+            { Tags.AspNetArea, "admin" }
+        };
 
         private static string DefaultRoute() => "{controller}/{action}/{id}";
 
-        private static Dictionary<string, string> HomeIndexTags() =>
-            new Dictionary<string, string>
-            {
-                { Tags.AspNetRoute, DefaultRoute() },
-                { Tags.AspNetController, "home" },
-                { Tags.AspNetAction, "index" }
-            };
+        private static SerializableDictionary HomeIndexTags() => new()
+        {
+            { Tags.AspNetRoute, DefaultRoute() },
+            { Tags.AspNetController, "home" },
+            { Tags.AspNetAction, "index" }
+        };
 
-        private static Dictionary<string, string> BadRequestTags() =>
-            new Dictionary<string, string>
-            {
-                { Tags.AspNetRoute, DefaultRoute() },
-                { Tags.AspNetController, "home" },
-                { Tags.AspNetAction, "badrequest" }
-            };
+        private static SerializableDictionary BadRequestTags() => new()
+        {
+            { Tags.AspNetRoute, DefaultRoute() },
+            { Tags.AspNetController, "home" },
+            { Tags.AspNetAction, "badrequest" }
+        };
 
-        private static Dictionary<string, string> StatusCodeTags() =>
-            new Dictionary<string, string>
-            {
-                { Tags.AspNetRoute, DefaultRoute() },
-                { Tags.AspNetController, "home" },
-                { Tags.AspNetAction, "statuscode" }
-            };
+        private static SerializableDictionary StatusCodeTags() => new()
+        {
+            { Tags.AspNetRoute, DefaultRoute() },
+            { Tags.AspNetController, "home" },
+            { Tags.AspNetAction, "statuscode" }
+        };
+
+        private static SerializableDictionary IdentifierTags() => new()
+        {
+            { Tags.AspNetRoute, DefaultRoute() },
+            { Tags.AspNetController, "home" },
+            { Tags.AspNetAction, "identifier" }
+        };
+
+        private static SerializableDictionary OptionalIdentifierTags() => new()
+        {
+            { Tags.AspNetRoute, DefaultRoute() },
+            { Tags.AspNetController, "home" },
+            { Tags.AspNetAction, "optionalidentifier" }
+        };
+
+        private static string MissingParameterError() => @"The parameters dictionary contains a null entry for parameter 'id' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult Identifier(Int32)' in 'Samples.AspNetMvc4.Controllers.HomeController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
+Parameter name: parameters";
     }
 }
-
 #endif
