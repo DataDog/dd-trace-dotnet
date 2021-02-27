@@ -67,7 +67,12 @@ namespace Datadog.Trace.HttpOverStreams
 
             async Task GoNextChar()
             {
-                await responseStream.ReadAsync(chArray, offset: 0, count: 1).ConfigureAwait(false);
+                var bytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: 1).ConfigureAwait(false);
+                if (bytesRead == 0)
+                {
+                    throw new InvalidOperationException($"Unexpected end of stream at position {streamPosition}");
+                }
+
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
                 streamPosition++;
             }
@@ -78,8 +83,19 @@ namespace Datadog.Trace.HttpOverStreams
                 // Not required in release mode, as should only arise from programming error
                 System.Diagnostics.Debug.Assert(advanceCount > 0, "RequiredStreamPosition should be greater than 0");
                 System.Diagnostics.Debug.Assert(advanceCount <= bufferSize, "RequiredStreamPosition should be less than buffer size");
+                var totalBytesRead = 0;
 
-                await responseStream.ReadAsync(chArray, offset: 0, count: advanceCount).ConfigureAwait(false);
+                while (totalBytesRead < advanceCount)
+                {
+                    var bytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: advanceCount).ConfigureAwait(false);
+                    if (bytesRead == 0)
+                    {
+                        throw new InvalidOperationException($"Unexpected end of stream at position {streamPosition}");
+                    }
+
+                    totalBytesRead += bytesRead;
+                }
+
                 currentChar = Encoding.ASCII.GetChars(chArray)[advanceCount - 1];
                 streamPosition += advanceCount;
             }
