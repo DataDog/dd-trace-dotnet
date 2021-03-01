@@ -34,7 +34,7 @@ namespace Datadog.Trace.ServiceFabric
         {
             try
             {
-                Type? type = Type.GetType(typeName, throwOnError: false);
+                Type? type = Type.GetType($"{typeName}, {AssemblyName}", throwOnError: false);
 
                 if (type == null)
                 {
