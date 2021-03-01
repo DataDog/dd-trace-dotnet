@@ -25,17 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
     {
         private const string IntegrationName = nameof(IntegrationIds.MsTestV2);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-        private static readonly Tracer TestTracer;
-        private static readonly string ServiceName;
-
-        static TestMethodRunnerExecuteIntegration()
-        {
-            TestTracer = Tracer.Instance;
-            ServiceName = TestTracer.DefaultServiceName;
-
-            // Preload environment variables.
-            CIEnvironmentValues.DecorateSpan(null);
-        }
 
         /// <summary>
         /// OnMethodBegin callback
@@ -46,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : ITestMethodRunner, IDuckType
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return CallTargetState.GetDefault();
             }
@@ -59,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             string testSuite = testMethodInfo.TestClassName;
             string testName = testMethodInfo.TestMethodName;
 
-            Scope scope = TestTracer.StartActive("mstest.test", serviceName: ServiceName);
+            Scope scope = Common.TestTracer.StartActive("mstest.test", serviceName: Common.ServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;

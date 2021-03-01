@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// <returns>Return value of the method</returns>
         public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 SynchronizationContext context = SynchronizationContext.Current;
                 try
@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     // So the last spans in buffer aren't send to the agent.
                     // Other times we reach the 500 items of the buffer in a sec and the tracer start to drop spans.
                     // In a test scenario we must keep all spans.
-                    Tracer.Instance.FlushAsync().GetAwaiter().GetResult();
+                    Common.TestTracer.FlushAsync().GetAwaiter().GetResult();
                 }
                 finally
                 {

@@ -47,9 +47,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                Scope scope = Tracer.Instance.ActiveScope;
+                Scope scope = Common.TestTracer.ActiveScope;
                 if (scope != null)
                 {
                     Array returnValueArray = returnValue as Array;

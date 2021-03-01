@@ -9,18 +9,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
-        private static readonly Tracer TestTracer;
-        private static readonly string ServiceName;
-
-        static NUnitIntegration()
-        {
-            TestTracer = Tracer.Instance;
-            ServiceName = TestTracer.DefaultServiceName;
-
-            // Preload environment variables.
-            CIEnvironmentValues.DecorateSpan(null);
-        }
-
         internal static Scope CreateScope<TContext>(TContext executionContext, Type targetType)
             where TContext : ITestExecutionContext
         {
@@ -39,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             string testName = testMethod.Name;
             string skipReason = null;
 
-            Scope scope = TestTracer.StartActive("nunit.test", serviceName: ServiceName);
+            Scope scope = Common.TestTracer.StartActive("nunit.test", serviceName: Common.ServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;

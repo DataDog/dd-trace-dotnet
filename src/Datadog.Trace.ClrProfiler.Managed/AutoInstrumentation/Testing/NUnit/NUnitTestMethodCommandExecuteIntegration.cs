@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         public static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext executionContext)
             where TContext : ITestExecutionContext
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return CallTargetState.GetDefault();
             }

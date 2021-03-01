@@ -31,17 +31,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.XUnit));
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(XUnitIntegration));
-        private static readonly Tracer TestTracer;
-        private static readonly string ServiceName;
-
-        static XUnitIntegration()
-        {
-            TestTracer = Tracer.Instance;
-            ServiceName = TestTracer.DefaultServiceName;
-
-            // Preload environment variables.
-            CIEnvironmentValues.DecorateSpan(null);
-        }
 
         /// <summary>
         /// Wrap the original Xunit.Sdk.TestInvoker`1.RunAsync method by adding instrumentation code around it.
@@ -122,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             {
                 if (aggregator.TryCallMethod<Exception>("ToException", out Exception testException))
                 {
-                    Span span = Tracer.Instance?.ActiveScope?.Span;
+                    Span span = Common.TestTracer.ActiveScope?.Span;
                     if (span != null && testException != null)
                     {
                         span.SetException(testException);
@@ -322,7 +311,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                         // So the last spans in buffer aren't send to the agent.
                         // Other times we reach the 500 items of the buffer in a sec and the tracer start to drop spans.
                         // In a test scenario we must keep all spans.
-                        await Tracer.Instance.FlushAsync().ConfigureAwait(false);
+                        await Common.TestTracer.FlushAsync().ConfigureAwait(false);
                         return r;
                     });
             }
@@ -332,7 +321,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         private static Scope CreateScope(object testSdk)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -409,7 +398,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                 string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
-                scope = TestTracer.StartActive("xunit.test", serviceName: ServiceName);
+                scope = Common.TestTracer.StartActive("xunit.test", serviceName: Common.ServiceName);
                 Span span = scope.Span;
 
                 span.Type = SpanTypes.Test;
