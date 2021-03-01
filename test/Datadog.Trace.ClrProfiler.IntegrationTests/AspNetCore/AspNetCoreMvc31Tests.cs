@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             : base("AspNetCoreMvc31", output, serviceVersion: "1.0.0")
         {
             // EnableDebugMode();
+            EnvironmentHelper.EnableNamedPipes();
         }
 
         [Fact]

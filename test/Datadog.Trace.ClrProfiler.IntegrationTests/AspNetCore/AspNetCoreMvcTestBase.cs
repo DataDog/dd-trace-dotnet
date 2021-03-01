@@ -141,7 +141,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var agentPort = TcpPortProvider.GetOpenPort();
             var aspNetCorePort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            MockTracerAgent agent;
+
+            if (EnvironmentHelper.NamedPipesModeEnabled)
+            {
+                agent = new MockTracerAgent(tracePipeName: $"traces-{EnvironmentHelper.TestId}");
+            }
+            else
+            {
+                var initialAgentPort = TcpPortProvider.GetOpenPort();
+                agent = new MockTracerAgent(initialAgentPort);
+            }
+
+            using (agent)
             using (var process = StartSample(agent.Port, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
             {
                 agent.SpanFilters.Add(IsNotServerLifeCheck);
