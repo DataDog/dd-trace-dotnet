@@ -16,6 +16,8 @@ namespace Datadog.Trace.ServiceFabric
 
         public const string ServiceEventsTypeName = "Microsoft.ServiceFabric.Services.Remoting.V2.Runtime.ServiceRemotingServiceEvents";
 
+        public const string RequestEventArgsTypeName = "Microsoft.ServiceFabric.Services.Remoting.V2.ServiceRemotingRequestEventArgs";
+
         public const string SpanNamePrefix = "service-remoting";
 
         public static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ServiceRemoting));
@@ -38,7 +40,7 @@ namespace Datadog.Trace.ServiceFabric
 
                 if (eventInfo == null)
                 {
-                    Log.Warning("Could not get event {typeName}.{eventName} via reflection.", typeName, eventName);
+                    Log.Warning("Could not get event {eventName} via reflection.", $"{typeName}.{eventName}");
                     return false;
                 }
 
@@ -48,7 +50,7 @@ namespace Datadog.Trace.ServiceFabric
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error adding event handler to {typeName}.{eventName}.", typeName, eventName);
+                Log.Error(ex, "Error adding event handler to {eventName}.", $"{typeName}.{eventName}");
                 return false;
             }
         }
@@ -61,14 +63,6 @@ namespace Datadog.Trace.ServiceFabric
             if (eventArgs == null)
             {
                 Log.Warning("Unexpected null EventArgs.");
-                return;
-            }
-
-            string? eventArgsTypeName = eventArgs.GetType().FullName;
-
-            if (eventArgsTypeName != "Microsoft.ServiceFabric.Services.Remoting.V2.ServiceRemotingRequestEventArgs")
-            {
-                Log.Warning("Unexpected eventArgs type: {type}.", eventArgsTypeName ?? "null");
                 return;
             }
 
@@ -129,7 +123,7 @@ namespace Datadog.Trace.ServiceFabric
                 tags.InvocationId = messageHeader.InvocationId;
             }
 
-            Span span = tracer.StartSpan(ServiceRemotingHelpers.GetSpanName(spanKind), tags, context);
+            Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
             span.ResourceName = resourceName ?? "unknown";
 
             switch (spanKind)
