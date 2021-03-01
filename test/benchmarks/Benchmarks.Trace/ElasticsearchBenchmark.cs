@@ -8,7 +8,6 @@ using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
 using Elasticsearch.Net;
-using ServiceStack.Redis;
 
 namespace Benchmarks.Trace
 {
@@ -37,7 +36,7 @@ namespace Benchmarks.Trace
             var methodInfo = typeof(RequestPipeline).GetMethod("CallElasticsearchAsync", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
 
             MdToken = methodInfo.MetadataToken;
-            var guid = typeof(RedisNativeClient).Module.ModuleVersionId;
+            var guid = typeof(RequestPipeline).Module.ModuleVersionId;
 
             GuidPtr = Marshal.AllocHGlobal(Marshal.SizeOf(guid));
 
