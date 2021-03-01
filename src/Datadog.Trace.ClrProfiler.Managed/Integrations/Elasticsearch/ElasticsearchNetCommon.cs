@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -19,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ElasticsearchNetCommon));
 
-        public static Scope CreateScope<T>(Tracer tracer, IntegrationInfo integrationId, object pipeline, T requestData)
+        public static Scope CreateScope<T>(Tracer tracer, IntegrationInfo integrationId, RequestPipelineStruct pipeline, T requestData)
             where T : IRequestData
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -28,11 +27,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return null;
             }
 
-            string requestName = pipeline.GetProperty("RequestParameters")
-                                         .GetValueOrDefault()
-                                        ?.GetType()
-                                         .Name
-                                         .Replace("RequestParameters", string.Empty);
+            var requestParameters = pipeline.RequestParameters;
+            string requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
 
             var pathAndQuery = requestData.Path;
 

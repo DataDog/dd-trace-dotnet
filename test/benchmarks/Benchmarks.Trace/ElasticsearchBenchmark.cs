@@ -76,6 +76,8 @@ namespace Elasticsearch.Net
 {
     public class RequestPipeline
     {
+        private object RequestParameters { get; } = "Parameters";
+
         public T CallElasticsearch<T>(RequestData requestData)
         {
             return default;

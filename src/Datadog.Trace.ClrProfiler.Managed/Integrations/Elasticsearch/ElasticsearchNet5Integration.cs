@@ -1,10 +1,12 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -80,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, new RequestDataV5(requestData)))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline.DuckCast<RequestPipelineStruct>(), new RequestDataV5(requestData)))
             {
                 try
                 {
@@ -183,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CancellationToken cancellationToken,
             Func<object, object, CancellationToken, object> originalMethod)
         {
-            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, new RequestDataV5(requestData)))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline.DuckCast<RequestPipelineStruct>(), new RequestDataV5(requestData)))
             {
                 try
                 {
