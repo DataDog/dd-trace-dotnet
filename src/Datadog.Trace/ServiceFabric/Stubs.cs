@@ -3,18 +3,20 @@
 using System;
 
 #pragma warning disable SA1649 // File name must match first type name
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable SA1600 // Elements should be documented
 namespace Datadog.Trace.ServiceFabric
 {
-    internal interface IServiceRemotingResponseMessageHeader
+    public interface IServiceRemotingResponseMessageHeader
     {
     }
 
-    internal interface IServiceRemotingResponseMessage
+    public interface IServiceRemotingResponseMessage
     {
         IServiceRemotingResponseMessageHeader GetHeader();
     }
 
-    internal interface IServiceRemotingRequestMessageHeader
+    public interface IServiceRemotingRequestMessageHeader
     {
         int MethodId { get; set; }
 
@@ -29,12 +31,12 @@ namespace Datadog.Trace.ServiceFabric
         bool TryGetHeaderValue(string headerName, out byte[]? headerValue);
     }
 
-    internal interface IServiceRemotingRequestMessage
+    public interface IServiceRemotingRequestMessage
     {
         IServiceRemotingRequestMessageHeader GetHeader();
     }
 
-    internal interface IServiceRemotingRequestEventArgs
+    public interface IServiceRemotingRequestEventArgs
     {
         public IServiceRemotingRequestMessage? Request { get; }
 
@@ -43,18 +45,20 @@ namespace Datadog.Trace.ServiceFabric
         public string? MethodName { get; }
     }
 
-    internal interface IServiceRemotingResponseEventArgs
+    public interface IServiceRemotingResponseEventArgs
     {
         public IServiceRemotingResponseMessage Response { get; }
 
         public IServiceRemotingRequestMessage Request { get; }
     }
 
-    internal interface IServiceRemotingFailedResponseEventArgs
+    public interface IServiceRemotingFailedResponseEventArgs
     {
         public Exception? Error { get; }
 
         public IServiceRemotingRequestMessage Request { get; }
     }
 }
+#pragma warning restore SA1600 // Elements should be documented
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning restore SA1649 // File name must match first type name
