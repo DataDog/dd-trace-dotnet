@@ -13,10 +13,10 @@ class SWStat {
  public:
   SWStat(std::chrono::nanoseconds *value) { 
       _value = value;
-      _startTime = std::chrono::high_resolution_clock::now();
+      _startTime = std::chrono::steady_clock::now();
   }
   ~SWStat() { 
-    *_value += std::chrono::high_resolution_clock::now() - _startTime;
+    *_value += std::chrono::steady_clock::now() - _startTime;
   }
 };
 

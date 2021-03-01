@@ -4,7 +4,7 @@
 #include "stats.h"
 
 #include <spdlog/spdlog.h>
-
+#include <iomanip>
 #include <iostream>
 #include <memory>
 
@@ -41,7 +41,11 @@ template <typename... Args>
 std::string LogToString(Args const&... args) {
   std::ostringstream oss;
   int a[] = {0, ((void)(oss << LogToString(args)), 0)...};
-  oss << "\t\t";
+  auto dWith = 400 - oss.tellp();
+  if (dWith < 0) {
+    dWith = 0;
+  }
+  oss << std::right << std::setw(dWith);
   oss << Stats::Instance()->ToString();
   return oss.str();
 }
