@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Datadog.Trace.Ci;
 using Xunit;
@@ -112,12 +113,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var gitInfo = GitInfo.GetFrom(testItem.GitFolderPath);
 
-            Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.ToString());
+            Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString(new CultureInfo("en-us")));
             Assert.Equal(testItem.AuthorEmail, gitInfo.AuthorEmail);
             Assert.Equal(testItem.AuthorName, gitInfo.AuthorName);
             Assert.Equal(testItem.Branch, gitInfo.Branch);
             Assert.Equal(testItem.Commit, gitInfo.Commit);
-            Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.ToString());
+            Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString(new CultureInfo("en-us")));
             Assert.Equal(testItem.CommitterEmail, gitInfo.CommitterEmail);
             Assert.Equal(testItem.CommitterName, gitInfo.CommitterName);
             Assert.NotNull(gitInfo.Message);
