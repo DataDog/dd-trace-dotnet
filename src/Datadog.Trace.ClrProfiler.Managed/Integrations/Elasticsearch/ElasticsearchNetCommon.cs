@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -15,11 +16,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public static readonly Type CancellationTokenType = typeof(CancellationToken);
         public static readonly Type RequestPipelineType = Type.GetType("Elasticsearch.Net.IRequestPipeline, Elasticsearch.Net");
-        public static readonly Type RequestDataType = Type.GetType("Elasticsearch.Net.RequestData, Elasticsearch.Net");
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ElasticsearchNetCommon));
 
-        public static Scope CreateScope(Tracer tracer, IntegrationInfo integrationId, object pipeline, object requestData)
+        public static Scope CreateScope<T>(Tracer tracer, IntegrationInfo integrationId, object pipeline, T requestData)
+            where T : IRequestData
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {
@@ -33,11 +34,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                          .Name
                                          .Replace("RequestParameters", string.Empty);
 
-            var pathAndQuery = requestData.GetProperty<string>("PathAndQuery").GetValueOrDefault() ??
-                               requestData.GetProperty<string>("Path").GetValueOrDefault();
+            var pathAndQuery = requestData.Path;
 
-            string method = requestData.GetProperty("Method").GetValueOrDefault()?.ToString();
-            var url = requestData.GetProperty("Uri").GetValueOrDefault()?.ToString();
+            string method = requestData.Method;
+            var url = requestData.Uri?.ToString();
 
             string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
 

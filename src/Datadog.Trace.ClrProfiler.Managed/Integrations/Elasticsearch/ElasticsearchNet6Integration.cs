@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -78,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, requestData))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, new RequestDataV6(requestData)))
             {
                 try
                 {
@@ -170,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, requestData))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationId, pipeline, new RequestDataV6(requestData)))
             {
                 try
                 {
