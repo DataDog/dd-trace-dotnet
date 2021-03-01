@@ -1,6 +1,7 @@
 #ifndef DD_CLR_PROFILER_LOGGING_H_
 #define DD_CLR_PROFILER_LOGGING_H_
 #include "util.h"
+#include "stats.h"
 
 #include <spdlog/spdlog.h>
 
@@ -40,6 +41,8 @@ template <typename... Args>
 std::string LogToString(Args const&... args) {
   std::ostringstream oss;
   int a[] = {0, ((void)(oss << LogToString(args)), 0)...};
+  oss << "\t\t";
+  oss << Stats::Instance()->ToString();
   return oss.str();
 }
 

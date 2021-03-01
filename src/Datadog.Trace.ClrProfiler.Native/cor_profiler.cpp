@@ -20,6 +20,8 @@
 #include "resource.h"
 #include "util.h"
 
+#include "stats.h"
+
 #ifdef MACOS
 #include <mach-o/getsect.h>
 #include <mach-o/dyld.h>
@@ -270,6 +272,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
 HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_id,
     HRESULT hr_status) {
+  auto measure = trace::Stats::Instance()->AssemblyLoadFinishedMeasure();
+
   if (FAILED(hr_status)) {
     // if assembly failed to load, skip it entirely,
     // otherwise we can crash the process if module is not valid
@@ -354,6 +358,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hr_status) {
+  auto measure = trace::Stats::Instance()->ModuleLoadFinishedMeasure();
+
   if (FAILED(hr_status)) {
     // if module failed to load, skip it entirely,
     // otherwise we can crash the process if module is not valid
@@ -543,6 +549,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
+  auto measure = trace::Stats::Instance()->ModuleUnloadStartedMeasure();
+
   if (!is_attached_) {
     return S_OK;
   }
@@ -597,6 +605,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
     rejit_handler->Shutdown();
   }
   Warn("Exiting.");
+  Warn(Stats::Instance()->ToString());
   is_attached_.store(false);
   Logger::Shutdown();
   return S_OK;
@@ -625,6 +634,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded() {
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     FunctionID function_id, BOOL is_safe_to_block) {
+  auto measure = trace::Stats::Instance()->JITCompilationStartedMeasure();
+
   if (!is_attached_ || !is_safe_to_block) {
     return S_OK;
   }
@@ -776,6 +787,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, 
     FunctionID calleeId, BOOL* pfShouldInline) {
+  auto measure = trace::Stats::Instance()->JITInliningMeasure();
+
   if (!is_attached_) {
     return S_OK;
   }
