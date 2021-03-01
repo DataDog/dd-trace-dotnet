@@ -23,10 +23,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="requestData">The request data</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin(object instance, object requestData)
+        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object requestData)
         {
             var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, ElasticsearchV5Constants.IntegrationId, instance.DuckCast<RequestPipelineStruct>(), new RequestDataV5(requestData));
 
