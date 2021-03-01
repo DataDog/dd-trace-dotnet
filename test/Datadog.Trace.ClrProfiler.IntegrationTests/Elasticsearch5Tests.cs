@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,11 +18,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.ElasticSearch5), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion)
+        public static System.Collections.Generic.IEnumerable<object[]> GetElasticsearch()
         {
+            foreach (var item in PackageVersions.ElasticSearch6)
+            {
+                yield return item.Concat(false, false);
+                yield return item.Concat(true, false);
+                yield return item.Concat(true, true);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetElasticsearch))]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitsTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
