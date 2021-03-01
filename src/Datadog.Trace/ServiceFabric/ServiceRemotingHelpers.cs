@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ServiceFabric
 {
@@ -24,11 +25,23 @@ namespace Datadog.Trace.ServiceFabric
 
         public const string SendResponseEventName = "SendResponse";
 
-        public const string SpanNamePrefix = "service-remoting";
-
         public static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ServiceRemoting));
 
+        private const string SpanNamePrefix = "service_remoting";
+
         private static readonly Logging.IDatadogLogger Log = Logging.DatadogLogging.GetLoggerFor(typeof(ServiceRemotingHelpers));
+
+        private static readonly string ServiceFabricServiceName = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.ServiceName);
+
+        private static readonly string ApplicationId = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.ApplicationId);
+
+        private static readonly string ApplicationName = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.ApplicationName);
+
+        private static readonly string PartitionId = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.PartitionId);
+
+        private static readonly string NodeId = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.NodeId);
+
+        private static readonly string NodeName = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.NodeName);
 
         public static bool AddEventHandler(string typeName, string eventName, EventHandler eventHandler)
         {
@@ -108,6 +121,8 @@ namespace Datadog.Trace.ServiceFabric
             string? resourceName = null;
             string? serviceUrl = null;
 
+            string serviceFabricServiceName = ServiceFabricServiceName;
+
             if (eventArgs != null)
             {
                 methodName = eventArgs.MethodName ??
@@ -115,25 +130,31 @@ namespace Datadog.Trace.ServiceFabric
                              messageHeader?.MethodId.ToString(CultureInfo.InvariantCulture) ??
                              "unknown_method";
 
-                serviceUrl = eventArgs.ServiceUri?.AbsoluteUri ?? "unknown_url";
-                resourceName = $"{serviceUrl}/{methodName}";
+                serviceUrl = eventArgs.ServiceUri?.AbsoluteUri;
+                resourceName = serviceUrl == null ? methodName : $"{serviceUrl}/{methodName}";
             }
 
             var tags = new ServiceRemotingTags(spanKind)
-                       {
-                           Uri = serviceUrl,
-                           MethodName = methodName
-                       };
+            {
+                ApplicationId = ApplicationId,
+                ApplicationName = ApplicationName,
+                PartitionId = PartitionId,
+                NodeId = NodeId,
+                NodeName = NodeName,
+                ServiceName = serviceFabricServiceName,
+                RemotingUri = serviceUrl,
+                RemotingMethodName = methodName
+            };
 
             if (messageHeader != null)
             {
-                tags.MethodId = messageHeader.MethodId.ToString(CultureInfo.InvariantCulture);
-                tags.InterfaceId = messageHeader.InterfaceId.ToString(CultureInfo.InvariantCulture);
-                tags.InvocationId = messageHeader.InvocationId;
+                tags.RemotingMethodId = messageHeader.MethodId.ToString(CultureInfo.InvariantCulture);
+                tags.RemotingInterfaceId = messageHeader.InterfaceId.ToString(CultureInfo.InvariantCulture);
+                tags.RemotingInvocationId = messageHeader.InvocationId;
             }
 
             Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
-            span.ResourceName = resourceName ?? "unknown";
+            span.ResourceName = resourceName;
 
             switch (spanKind)
             {
