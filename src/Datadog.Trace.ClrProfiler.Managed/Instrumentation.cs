@@ -4,6 +4,7 @@ using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
+using Datadog.Trace.ServiceFabric;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -58,11 +59,34 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                // ensure global instance is created if it's not already
                 _ = Tracer.Instance;
             }
             catch
             {
                 // ignore
+            }
+
+            // check if Service Fabric's type ServiceRemotingClientEvents is available before trying to use it
+            if (Type.GetType($"{ServiceRemotingHelpers.ClientEventsTypeName}, {ServiceRemotingHelpers.AssemblyName}", throwOnError: false) == null)
+            {
+                Log.Information($"Type {ServiceRemotingHelpers.ClientEventsTypeName} not found. Service Fabric Service Remoting client integration disabled.");
+            }
+            else
+            {
+                Log.Information($"Type {ServiceRemotingHelpers.ClientEventsTypeName} loaded. Subscribing to events.");
+                ServiceRemotingClient.StartTracing();
+            }
+
+            // check if Service Fabric's type ServiceRemotingServiceEvents is available before trying to use it
+            if (Type.GetType($"{ServiceRemotingHelpers.ServiceEventsTypeName}, {ServiceRemotingHelpers.AssemblyName}", throwOnError: false) == null)
+            {
+                Log.Information($"Type {ServiceRemotingHelpers.ServiceEventsTypeName} not found. Service Fabric Service Remoting service integration disabled.");
+            }
+            else
+            {
+                Log.Information($"Type {ServiceRemotingHelpers.ServiceEventsTypeName} loaded. Subscribing to events.");
+                ServiceRemotingService.StartTracing();
             }
 
 #if !NETFRAMEWORK

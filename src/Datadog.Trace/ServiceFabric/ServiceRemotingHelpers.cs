@@ -10,6 +10,8 @@ namespace Datadog.Trace.ServiceFabric
 {
     internal static class ServiceRemotingHelpers
     {
+        public const string AssemblyName = "Microsoft.ServiceFabric.Services.Remoting";
+
         public const string ClientEventsTypeName = "Microsoft.ServiceFabric.Services.Remoting.V2.Client.ServiceRemotingClientEvents";
 
         public const string ServiceEventsTypeName = "Microsoft.ServiceFabric.Services.Remoting.V2.Runtime.ServiceRemotingServiceEvents";
