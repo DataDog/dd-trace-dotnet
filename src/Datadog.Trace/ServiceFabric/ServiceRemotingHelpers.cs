@@ -32,13 +32,15 @@ namespace Datadog.Trace.ServiceFabric
 
         public static bool AddEventHandler(string typeName, string eventName, EventHandler eventHandler)
         {
+            string fullEventName = $"{typeName}.{eventName}";
+
             try
             {
                 Type? type = Type.GetType($"{typeName}, {AssemblyName}", throwOnError: false);
 
                 if (type == null)
                 {
-                    Log.Warning("Could not get type {typeName} via reflection.", typeName);
+                    Log.Warning("Could not get type {typeName}.", typeName);
                     return false;
                 }
 
@@ -46,17 +48,18 @@ namespace Datadog.Trace.ServiceFabric
 
                 if (eventInfo == null)
                 {
-                    Log.Warning("Could not get event {eventName} via reflection.", $"{typeName}.{eventName}");
+                    Log.Warning("Could not get event {eventName}.", fullEventName);
                     return false;
                 }
 
                 // use null target because event is static
                 eventInfo.AddEventHandler(target: null, eventHandler);
+                Log.Debug("Subscribed to event {eventName}.", fullEventName);
                 return true;
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error adding event handler to {eventName}.", $"{typeName}.{eventName}");
+                Log.Error(ex, "Error adding event handler to {eventName}.", fullEventName);
                 return false;
             }
         }

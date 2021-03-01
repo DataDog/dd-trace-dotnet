@@ -29,6 +29,7 @@ namespace Datadog.Trace.ServiceFabric
                 {
                     // don't handle any service events until we have subscribed to both of them
                     _initialized = true;
+                    Log.Debug($"Subscribed to {ServiceRemotingHelpers.ServiceEventsTypeName} events.");
                 }
             }
         }
@@ -64,7 +65,7 @@ namespace Datadog.Trace.ServiceFabric
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error using propagation context to initialize span context.");
+                Log.Error(ex, "Error using propagation context to initialize Service Fabric Service Remoting span context.");
             }
 
             try
@@ -83,14 +84,14 @@ namespace Datadog.Trace.ServiceFabric
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error setting origin tag on span.");
+                    Log.Error(ex, "Error setting origin tag on Service Fabric Service Remoting span.");
                 }
 
                 tracer.ActivateSpan(span);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating or activating new span.");
+                Log.Error(ex, "Error creating or activating new Service Fabric Service Remoting span.");
             }
         }
 
@@ -134,7 +135,7 @@ namespace Datadog.Trace.ServiceFabric
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error extracting message headers.");
+                Log.Error(ex, "Error extracting Service Fabric Service Remoting message headers.");
                 return default;
             }
         }

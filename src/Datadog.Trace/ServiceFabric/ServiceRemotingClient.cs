@@ -30,6 +30,7 @@ namespace Datadog.Trace.ServiceFabric
                 {
                     // don't handle any client events until we have subscribed to both of them
                     _initialized = true;
+                    Log.Debug($"Subscribed to {ServiceRemotingHelpers.ClientEventsTypeName} events.");
                 }
             }
         }
@@ -67,14 +68,14 @@ namespace Datadog.Trace.ServiceFabric
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error injecting message headers.");
+                    Log.Error(ex, "Error injecting Service Fabric Service Remoting message headers.");
                 }
 
                 tracer.ActivateSpan(span);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating or activating span.");
+                Log.Error(ex, "Error creating or activating Service Fabric Service Remoting span.");
             }
         }
 
@@ -120,7 +121,7 @@ namespace Datadog.Trace.ServiceFabric
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error injecting message headers.");
+                Log.Error(ex, "Error injecting Service Fabric Service Remoting message headers.");
             }
         }
     }
