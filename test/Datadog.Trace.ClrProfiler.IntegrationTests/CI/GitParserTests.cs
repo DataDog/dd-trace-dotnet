@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using Datadog.Trace.Ci;
 using Xunit;
@@ -19,12 +18,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 new TestItem(Path.Combine(dataFolder, "gitdata-01"))
                 {
-                    AuthorDate = "2/26/2021 6:32:13 PM +00:00",
+                    AuthorDate = "2021-02-26 18:32:13Z",
                     AuthorEmail = "tony.redondo@datadoghq.com",
                     AuthorName = "Tony Redondo",
                     Branch = "refs/heads/master",
                     Commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08",
-                    CommitterDate = "2/26/2021 6:32:13 PM +00:00",
+                    CommitterDate = "2021-02-26 18:32:13Z",
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
@@ -37,12 +36,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 new TestItem(Path.Combine(dataFolder, "gitdata-02"))
                 {
-                    AuthorDate = "2/26/2021 6:32:13 PM +00:00",
+                    AuthorDate = "2021-02-26 18:32:13Z",
                     AuthorEmail = "tony.redondo@datadoghq.com",
                     AuthorName = "Tony Redondo",
                     Branch = "refs/heads/master",
                     Commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08",
-                    CommitterDate = "2/26/2021 6:32:13 PM +00:00",
+                    CommitterDate = "2021-02-26 18:32:13Z",
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
@@ -55,12 +54,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 new TestItem(Path.Combine(dataFolder, "gitdata-03"))
                 {
-                    AuthorDate = "2/26/2021 6:32:13 PM +00:00",
+                    AuthorDate = "2021-02-26 18:32:13Z",
                     AuthorEmail = "tony.redondo@datadoghq.com",
                     AuthorName = "Tony Redondo",
                     Branch = null,
                     Commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08",
-                    CommitterDate = "2/26/2021 6:32:13 PM +00:00",
+                    CommitterDate = "2021-02-26 18:32:13Z",
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
@@ -73,12 +72,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 new TestItem(Path.Combine(dataFolder, "gitdata-04"))
                 {
-                    AuthorDate = "2/26/2021 6:32:13 PM +00:00",
+                    AuthorDate = "2021-02-26 18:32:13Z",
                     AuthorEmail = "tony.redondo@datadoghq.com",
                     AuthorName = "Tony Redondo",
                     Branch = null,
                     Commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08",
-                    CommitterDate = "2/26/2021 6:32:13 PM +00:00",
+                    CommitterDate = "2021-02-26 18:32:13Z",
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
@@ -91,12 +90,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 new TestItem(Path.Combine(dataFolder, "gitdata-05"))
                 {
-                    AuthorDate = "2/19/2021 12:59:01 PM +00:00",
+                    AuthorDate = "2021-02-19 12:59:01Z",
                     AuthorEmail = "andrew.lock@datadoghq.com",
                     AuthorName = "Andrew Lock",
                     Branch = null,
                     Commit = "b667f427df9f9b0521b1b25ee0967896aa510012",
-                    CommitterDate = "2/19/2021 12:59:01 PM +00:00",
+                    CommitterDate = "2021-02-19 12:59:01Z",
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
@@ -113,12 +112,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var gitInfo = GitInfo.GetFrom(testItem.GitFolderPath);
 
-            Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString(new CultureInfo("en-us")));
+            Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString("u"));
             Assert.Equal(testItem.AuthorEmail, gitInfo.AuthorEmail);
             Assert.Equal(testItem.AuthorName, gitInfo.AuthorName);
             Assert.Equal(testItem.Branch, gitInfo.Branch);
             Assert.Equal(testItem.Commit, gitInfo.Commit);
-            Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString(new CultureInfo("en-us")));
+            Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString("u"));
             Assert.Equal(testItem.CommitterEmail, gitInfo.CommitterEmail);
             Assert.Equal(testItem.CommitterName, gitInfo.CommitterName);
             Assert.NotNull(gitInfo.Message);
