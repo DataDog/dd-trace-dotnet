@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static System.Collections.Generic.IEnumerable<object[]> GetElasticsearch()
         {
-            foreach (var item in PackageVersions.ElasticSearch6)
+            foreach (var item in PackageVersions.ElasticSearch5)
             {
                 yield return item.Concat(false, false);
                 yield return item.Concat(true, false);
