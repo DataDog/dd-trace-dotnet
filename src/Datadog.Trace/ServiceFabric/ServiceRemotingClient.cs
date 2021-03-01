@@ -25,8 +25,8 @@ namespace Datadog.Trace.ServiceFabric
             if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
             {
                 // try to subscribe to client events
-                if (ServiceRemotingHelpers.AddEventHandler("Microsoft.ServiceFabric.Services.Remoting.V2.Client.ServiceRemotingClientEvents", "SendRequest", ServiceRemotingClientEvents_SendRequest) &&
-                    ServiceRemotingHelpers.AddEventHandler("Microsoft.ServiceFabric.Services.Remoting.V2.Client.ServiceRemotingClientEvents", "ReceiveResponse", ServiceRemotingClientEvents_ReceiveResponse))
+                if (ServiceRemotingHelpers.AddEventHandler(ServiceRemotingHelpers.ClientEventsTypeName, ServiceRemotingHelpers.SendRequestEventName, ServiceRemotingClientEvents_SendRequest) &&
+                    ServiceRemotingHelpers.AddEventHandler(ServiceRemotingHelpers.ClientEventsTypeName, ServiceRemotingHelpers.ReceiveResponseEventName, ServiceRemotingClientEvents_ReceiveResponse))
                 {
                     // don't handle any client events until we have subscribed to both of them
                     _initialized = true;

@@ -16,7 +16,13 @@ namespace Datadog.Trace.ServiceFabric
 
         public const string ServiceEventsTypeName = "Microsoft.ServiceFabric.Services.Remoting.V2.Runtime.ServiceRemotingServiceEvents";
 
-        public const string RequestEventArgsTypeName = "Microsoft.ServiceFabric.Services.Remoting.V2.ServiceRemotingRequestEventArgs";
+        public const string SendRequestEventName = "SendRequest";
+
+        public const string ReceiveResponseEventName = "ReceiveResponse";
+
+        public const string ReceiveRequestEventName = "ReceiveRequest";
+
+        public const string SendResponseEventName = "SendResponse";
 
         public const string SpanNamePrefix = "service-remoting";
 
