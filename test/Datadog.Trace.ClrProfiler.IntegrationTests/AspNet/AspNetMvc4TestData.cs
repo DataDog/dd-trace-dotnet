@@ -5,7 +5,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public static class AspNetMvc4TestData
     {
-        public static TheoryData<string, string, int, bool, string, string, SerializableDictionary> Data => new()
+        public static TheoryData<string, string, int, bool, string, string, SerializableDictionary> WithoutFeatureFlag => new()
         {
             { "/Admin", "GET /admin", 200, false, null, null, AdminHomeIndexTags },
             { "/Admin/Home", "GET /admin/home", 200, false, null, null, AdminHomeIndexTags },
@@ -20,6 +20,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/Home/OptionalIdentifier", "GET /home/optionalidentifier", 200, false, null, null, OptionalIdentifierTags },
             { "/Home/OptionalIdentifier/123", "GET /home/optionalidentifier/?", 200, false, null, null, OptionalIdentifierTags },
             { "/Home/OptionalIdentifier/BadValue", "GET /home/optionalidentifier/badvalue", 200, false, null, null, OptionalIdentifierTags },
+            { "/Home/StatusCode?value=201", "GET /home/statuscode", 201, false, null, null, StatusCodeTags },
+            { "/Home/StatusCode?value=503", "GET /home/statuscode", 503, true, null, "The HTTP response has status code 503.", StatusCodeTags },
+        };
+
+        public static TheoryData<string, string, int, bool, string, string, SerializableDictionary> WithFeatureFlag => new()
+        {
+            { "/Admin", "GET /admin/home/index", 200, false, null, null, AdminHomeIndexTags },
+            { "/Admin/Home", "GET /admin/home/index", 200, false, null, null, AdminHomeIndexTags },
+            { "/Admin/Home/Index", "GET /admin/home/index", 200, false, null, null, AdminHomeIndexTags },
+            { "/", "GET /home/index", 200, false, null, null, HomeIndexTags },
+            { "/Home", "GET /home/index", 200, false, null, null, HomeIndexTags },
+            { "/Home/Index", "GET /home/index", 200, false, null, null, HomeIndexTags },
+            { "/Home/BadRequest", "GET /home/badrequest", 500, true, "System.Exception", "Oops, it broke.", BadRequestTags },
+            { "/Home/identifier", "GET /home/identifier", 500, true, "System.ArgumentException", MissingParameterError, IdentifierTags },
+            { "/Home/identifier/123", "GET /home/identifier/{id}", 200, false, null, null, IdentifierTags },
+            { "/Home/identifier/BadValue", "GET /home/identifier/{id}", 500, true, "System.ArgumentException", MissingParameterError, IdentifierTags },
+            { "/Home/OptionalIdentifier/", "GET /home/optionalidentifier", 200, false, null, null, OptionalIdentifierTags },
+            { "/Home/OptionalIdentifier/123", "GET /home/optionalidentifier/{id}", 200, false, null, null, OptionalIdentifierTags },
+            { "/Home/OptionalIdentifier/BadValue", "GET /home/optionalidentifier/{id}", 200, false, null, null, OptionalIdentifierTags },
             { "/Home/StatusCode?value=201", "GET /home/statuscode", 201, false, null, null, StatusCodeTags },
             { "/Home/StatusCode?value=503", "GET /home/statuscode", 503, true, null, "The HTTP response has status code 503.", StatusCodeTags },
         };
