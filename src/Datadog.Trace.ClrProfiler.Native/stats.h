@@ -29,6 +29,12 @@ class Stats : public Singleton<Stats> {
   std::chrono::nanoseconds moduleUnloadStarted;
   std::chrono::nanoseconds moduleLoadFinished;
   std::chrono::nanoseconds assemblyLoadFinished;
+  //
+  unsigned int jitInliningCount;
+  unsigned int jitCompilationStartedCount;
+  unsigned int moduleUnloadStartedCount;
+  unsigned int moduleLoadFinishedCount;
+  unsigned int assemblyLoadFinishedCount;
 
  public:
   Stats() { 
@@ -37,24 +43,45 @@ class Stats : public Singleton<Stats> {
     moduleUnloadStarted = std::chrono::nanoseconds(0);
     moduleLoadFinished = std::chrono::nanoseconds(0);
     assemblyLoadFinished = std::chrono::nanoseconds(0);
+
+    jitInliningCount = 0;
+    jitCompilationStartedCount = 0;
+    moduleUnloadStartedCount = 0;
+    moduleLoadFinishedCount = 0;
+    assemblyLoadFinishedCount = 0;
   }
-  SWStat JITInliningMeasure() { return SWStat(&jitInlining); }
-  SWStat JITCompilationStartedMeasure() { return SWStat(&jitCompilationStarted); }
-  SWStat ModuleUnloadStartedMeasure() { return SWStat(&moduleUnloadStarted); }
-  SWStat ModuleLoadFinishedMeasure() { return SWStat(&moduleLoadFinished); }
-  SWStat AssemblyLoadFinishedMeasure() { return SWStat(&assemblyLoadFinished); }
+  SWStat JITInliningMeasure() {
+    jitInliningCount++;
+    return SWStat(&jitInlining);
+  }
+  SWStat JITCompilationStartedMeasure() {
+    jitCompilationStartedCount++;
+    return SWStat(&jitCompilationStarted);
+  }
+  SWStat ModuleUnloadStartedMeasure() {
+    moduleUnloadStartedCount++;
+    return SWStat(&moduleUnloadStarted);
+  }
+  SWStat ModuleLoadFinishedMeasure() {
+    moduleLoadFinishedCount++;
+    return SWStat(&moduleLoadFinished);
+  }
+  SWStat AssemblyLoadFinishedMeasure() {
+    assemblyLoadFinishedCount++;
+    return SWStat(&assemblyLoadFinished);
+  }
   std::string ToString() {
     std::stringstream ss;
     ss << "[ModuleLoadFinished=";
-    ss << moduleLoadFinished.count() / 1000000 << "ms";
+    ss << moduleLoadFinished.count() / 1000000 << "ms" << "/" << moduleLoadFinishedCount;
     ss << ", AssemblyLoadFinished=";
-    ss << assemblyLoadFinished.count() / 1000000 << "ms";
+    ss << assemblyLoadFinished.count() / 1000000 << "ms" << "/" << assemblyLoadFinishedCount;
     ss << ", ModuleUnloadStarted=";
-    ss << moduleUnloadStarted.count() / 1000000 << "ms";
+    ss << moduleUnloadStarted.count() / 1000000 << "ms" << "/" << moduleUnloadStartedCount;
     ss << ", JitCompilationStarted=";
-    ss << jitCompilationStarted.count() / 1000000 << "ms";
+    ss << jitCompilationStarted.count() / 1000000 << "ms" << "/" << jitCompilationStartedCount;
     ss << ", JitInlining=";
-    ss << jitInlining.count() / 1000000 << "ms";
+    ss << jitInlining.count() / 1000000 << "ms" << "/" << jitInliningCount;
     ss << "]";
     return ss.str();
   }
