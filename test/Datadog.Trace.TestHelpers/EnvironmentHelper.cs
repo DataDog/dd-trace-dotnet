@@ -73,6 +73,10 @@ namespace Datadog.Trace.TestHelpers
 
         public Guid TestId { get; set; }
 
+        public string TracePipeName { get; set; }
+
+        public string StatsPipeName { get; set; }
+
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
         public string SampleName { get; }
@@ -154,15 +158,15 @@ namespace Datadog.Trace.TestHelpers
             NamedPipesModeEnabled = true;
             CustomEnvironmentVariables["DD_TRACE_TRANSPORT"] = "DATADOG-NAMED-PIPES";
 
-            var statsPipe = $"stats-{TestId}";
-            var tracePipe = $"traces-{TestId}";
+            StatsPipeName = $"stats-{TestId}";
+            TracePipeName = $"traces-{TestId}";
 
-            CustomEnvironmentVariables["DD_APM_WINDOWS_PIPE_NAME"] = tracePipe;
-            CustomEnvironmentVariables["DD_TRACE_PIPE_NAME"] = tracePipe;
+            CustomEnvironmentVariables["DD_APM_WINDOWS_PIPE_NAME"] = TracePipeName;
+            CustomEnvironmentVariables["DD_TRACE_PIPE_NAME"] = TracePipeName;
 
-            CustomEnvironmentVariables["DD_AGENT_PIPE_NAME"] = statsPipe;
-            CustomEnvironmentVariables["DD_DOGSTATSD_PIPE_NAME"] = statsPipe;
-            CustomEnvironmentVariables["DD_DOGSTATSD_WINDOWS_PIPE_NAME"] = statsPipe;
+            CustomEnvironmentVariables["DD_AGENT_PIPE_NAME"] = StatsPipeName;
+            CustomEnvironmentVariables["DD_DOGSTATSD_PIPE_NAME"] = StatsPipeName;
+            CustomEnvironmentVariables["DD_DOGSTATSD_WINDOWS_PIPE_NAME"] = StatsPipeName;
 
             CustomEnvironmentVariables["DD_DOGSTATSD_PORT"] = "0";
             CustomEnvironmentVariables["DD_APM_RECEIVER_PORT"] = "0";
@@ -444,6 +448,17 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
+        }
+
+        public MockTracerAgent CreateMockAgent()
+        {
+            if (NamedPipesModeEnabled)
+            {
+                return new MockTracerAgent(tracePipeName: TracePipeName);
+            }
+
+            var agentPort = TcpPortProvider.GetOpenPort();
+            return new MockTracerAgent(agentPort);
         }
 
         private string GetProfilerProjectBin()

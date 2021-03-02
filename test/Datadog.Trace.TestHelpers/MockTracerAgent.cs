@@ -308,10 +308,9 @@ namespace Datadog.Trace.TestHelpers
 
         private void NamedPipeServerThread()
         {
-            using (var pipeServer =
-                new NamedPipeServerStream(_tracesPipeName, PipeDirection.InOut, 1))
+            using (var pipeServer = new NamedPipeServerStream(_tracesPipeName, PipeDirection.InOut, 1))
             {
-                int threadId = Thread.CurrentThread.ManagedThreadId;
+                var threadId = Thread.CurrentThread.ManagedThreadId;
 
                 while (_cancellationTokenSource.IsCancellationRequested == false)
                 {
@@ -321,66 +320,139 @@ namespace Datadog.Trace.TestHelpers
                     Console.WriteLine("Client connected on thread[{0}].", threadId);
                     try
                     {
-                        // Read the request from the client. Once the client has
-                        // written to the pipe its security token will be available.
+                        var request = ReadRequest(pipeServer);
 
-                        var ss = new StreamString(pipeServer);
-
-                        // Verify our identity to the connected client using a
-                        // string that the client anticipates.
-
-                        string traceRequest = ss.ReadString();
-                        var lines = traceRequest.Split(
-                            new[] { Environment.NewLine },
-                            StringSplitOptions.None);
-
-                        int index = 0;
-                        string currentLine = lines[index];
-
-                        var headers = new List<KeyValuePair<string, string>>();
-                        while (!string.IsNullOrWhiteSpace(currentLine))
-                        {
-                            var semicolonIndex = currentLine.IndexOf(":");
-                            var key = currentLine.Substring(0, semicolonIndex - 1);
-                            var value = currentLine.Substring(semicolonIndex, currentLine.Length - semicolonIndex);
-                            headers.Add(new KeyValuePair<string, string>(key, value));
-                            currentLine = lines[++index];
-                        }
-
-                        // now read all the content and serialize
-                        var content = string.Empty;
-                        while (++index < lines.Length)
-                        {
-                            content += lines[index];
-                        }
-
-                        var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(Encoding.UTF8.GetBytes(content));
-                        OnRequestDeserialized(spans);
-
-                        // Display the name of the user we are impersonating.
-                        // Console.WriteLine("Named pipe on thread[{0}] as user: {1}.", threadId, pipeServer.GetImpersonationUserName());
-
-                        // TODO: write back
-                        // ctx.Response.ContentType = "application/json";
-                        // var buffer = Encoding.UTF8.GetBytes("{}");
-                        // ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
-                        // ctx.Response.Close();
                         var response =
-                            @"ContentType: application/json
+                            @"HTTP/1.1 200 OK
+ContentType: application/json
 Content-Length: 0
 
-{}";
+";
                         var responseBytes = Encoding.UTF8.GetBytes(response);
                         pipeServer.Write(responseBytes, 0, responseBytes.Length);
+
+                        if (request.Body != null && request.Body.Length > 1)
+                        {
+                            var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(request.Body);
+                            OnRequestDeserialized(spans);
+                        }
                     }
                     catch (IOException e)
                     {
                         Console.WriteLine("ERROR: {0}", e.Message);
                     }
+                    finally
+                    {
+                        pipeServer.Disconnect();
+                    }
+                }
+            }
+        }
+
+        private MockRequest ReadRequest(NamedPipeServerStream pipeServer)
+        {
+            var batchRead = new byte[0x350];
+            var headerIndex = 0;
+            var headerBuffer = new byte[0x1000];
+
+            // byte nullByte = 0x0;
+            var carriageReturn = (byte)'\r';
+            var lineFeed = (byte)'\n';
+
+            bool EndOfHeaders()
+            {
+                if (headerIndex < 3) { return false; }
+
+                if (headerBuffer[headerIndex] != lineFeed) { return false; }
+
+                if (headerBuffer[headerIndex - 1] != carriageReturn) { return false; }
+
+                if (headerBuffer[headerIndex - 2] != lineFeed) { return false; }
+
+                if (headerBuffer[headerIndex - 3] != carriageReturn) { return false; }
+
+                return true;
+            }
+
+            string headerString;
+            var leftoverIndex = 0;
+            var leftoverBytes = new byte[0x350];
+
+            var endOfStream = false;
+            do
+            {
+                pipeServer.Read(batchRead, 0, batchRead.Length);
+
+                foreach (var t in batchRead)
+                {
+                    if (endOfStream)
+                    {
+                        leftoverBytes[leftoverIndex++] = t;
+                    }
+                    else
+                    {
+                        headerBuffer[headerIndex] = t;
+                    }
+
+                    if (EndOfHeaders())
+                    {
+                        endOfStream = true;
+                        continue;
+                    }
+
+                    headerIndex++;
+                }
+            }
+            while (!endOfStream);
+
+            Array.Resize(ref headerBuffer, headerIndex + 1);
+
+            headerString = Encoding.UTF8.GetString(headerBuffer);
+            var headerLines = headerString.Split(
+                new[] { Environment.NewLine },
+                StringSplitOptions.None);
+
+            var index = 0;
+            var currentLine = headerLines[index];
+
+            var mockRequest = new MockRequest();
+
+            var contentLength = 0;
+            while (!string.IsNullOrWhiteSpace(currentLine))
+            {
+                var semicolonIndex = currentLine.IndexOf(":");
+                if (semicolonIndex > -1)
+                {
+                    var key = currentLine.Substring(0, semicolonIndex);
+                    var value = currentLine.Substring(semicolonIndex + 1, currentLine.Length - semicolonIndex - 1);
+
+                    if (key.Equals("content-length", StringComparison.OrdinalIgnoreCase))
+                    {
+                        contentLength = int.Parse(value);
+                    }
+
+                    mockRequest.Headers.Add(new KeyValuePair<string, string>(key, value));
                 }
 
-                pipeServer.Close();
+                currentLine = headerLines[++index];
             }
+
+            var body = new byte[contentLength];
+
+            if (contentLength < leftoverIndex)
+            {
+                Array.Copy(leftoverBytes, body, contentLength);
+            }
+            else
+            {
+                var bodyRemainder = contentLength - leftoverIndex;
+                Array.Copy(leftoverBytes, body, leftoverIndex);
+                pipeServer.Read(body, leftoverIndex, bodyRemainder);
+            }
+
+            mockRequest.Body = body;
+
+            return mockRequest;
         }
 
         [MessagePackObject]
@@ -427,6 +499,13 @@ Content-Length: 0
             {
                 return $"TraceId={TraceId}, SpanId={SpanId}, Service={Service}, Name={Name}, Resource={Resource}, Type={Type}";
             }
+        }
+
+        public class MockRequest
+        {
+            public List<KeyValuePair<string, string>> Headers { get; set; } = new List<KeyValuePair<string, string>>();
+
+            public byte[] Body { get; set; }
         }
     }
 }
