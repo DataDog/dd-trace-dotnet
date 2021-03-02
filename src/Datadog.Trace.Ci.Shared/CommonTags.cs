@@ -116,19 +116,24 @@ namespace Datadog.Trace.Ci
         public const string RuntimeName = "runtime.name";
 
         /// <summary>
-        /// Runtime os architecture
+        /// OS architecture
         /// </summary>
-        public const string RuntimeOSArchitecture = "runtime.os_architecture";
+        public const string OSArchitecture = "os.architecture";
 
         /// <summary>
-        /// Runtime os platform
+        /// OS platform
         /// </summary>
-        public const string RuntimeOSPlatform = "runtime.os_platform";
+        public const string OSPlatform = "os.platform";
 
         /// <summary>
-        /// Runtime process architecture
+        /// OS version
         /// </summary>
-        public const string RuntimeProcessArchitecture = "runtime.process_architecture";
+        public const string OSVersion = "os.version";
+
+        /// <summary>
+        /// Runtime architecture
+        /// </summary>
+        public const string RuntimeArchitecture = "runtime.architecture";
 
         /// <summary>
         /// Runtime version
