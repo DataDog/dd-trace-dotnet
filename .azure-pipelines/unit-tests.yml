@@ -41,6 +41,83 @@ jobs:
     displayName: install dotnet core sdk 3.1
     inputs:
       packageType: sdk
+      version: $(dotnetCoreSdk5Version)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      projects: |
+        src/**/*.csproj
+        test/**/*.Tests.csproj
+        test/benchmarks/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/**/*.Tests.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
+
+- job: managed_linux_arm64
+  pool: Arm64
+  workspace:
+    clean: all
+
+  steps:
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      arguments: /nowarn:netsdk1138
+      projects: |
+        src/**/*.csproj
+        test/**/*.Tests.csproj
+        benchmarks/**/*.csproj
+        !src/Datadog.Trace.Tools.Runner/*.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/**/*.Tests.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
+
+- job: managed_macos
+  pool:
+    vmImage: macOS-10.15
+
+  steps:
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 2.1
+    inputs:
+      packageType: runtime
+      version: 2.1.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 3.0
+    inputs:
+      packageType: runtime
+      version: 3.0.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 3.1
+    inputs:
+      packageType: runtime
       version: 3.1.x
 
   - task: DotNetCoreCLI@2
@@ -58,6 +135,8 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
 
 - job: native_windows
   strategy:
