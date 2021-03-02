@@ -5,14 +5,16 @@ VisualStudioVersion = 16.0.30309.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.DynamicDiagnosticSourceBindings", "Datadog.DynamicDiagnosticSourceBindings.csproj", "{61D77BDF-18D8-4D0A-8F46-6008FDAED785}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoNetFx45", "..\..\..\samples\Samples.DynamicDiagnosticSourceBindings\DemoNetFx45\DemoNetFx45.csproj", "{DA320DF7-CA49-4229-960D-49E4263CAD04}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.DynamicDiagnosticSourceBindings.Demo.Simple.NetFx45", "..\..\..\samples\Datadog.DynamicDiagnosticSourceBindings.Demo\Simple.NetFx45\Datadog.DynamicDiagnosticSourceBindings.Demo.Simple.NetFx45.csproj", "{DA320DF7-CA49-4229-960D-49E4263CAD04}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoNetCore31", "..\..\..\samples\Samples.DynamicDiagnosticSourceBindings\DemoNetCore31\DemoNetCore31.csproj", "{4E27E6E6-0344-43A2-827E-C2D5EB1E1413}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.DynamicDiagnosticSourceBindings.Demo.Simple.NetCore31", "..\..\..\samples\Datadog.DynamicDiagnosticSourceBindings.Demo\Simple.NetCore31\Datadog.DynamicDiagnosticSourceBindings.Demo.Simple.NetCore31.csproj", "{4E27E6E6-0344-43A2-827E-C2D5EB1E1413}"
 	ProjectSection(ProjectDependencies) = postProject
 		{61D77BDF-18D8-4D0A-8F46-6008FDAED785} = {61D77BDF-18D8-4D0A-8F46-6008FDAED785}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vendored.System.Diagnostics.DiagnosticSource.Tests", "..\..\..\test\Vendored.System.Diagnostics.DiagnosticSource.Tests\Vendored.System.Diagnostics.DiagnosticSource.Tests.csproj", "{74BEBAEB-626C-4865-9E32-EB9D4A9C37C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicDiagnosticSourceBindings.Demo.LateLoadDS.NetFx", "..\..\..\samples\Datadog.DynamicDiagnosticSourceBindings.Demo\LateLoadDS.NetFx\Datadog.DynamicDiagnosticSourceBindings.Demo.LateLoadDS.NetFx.csproj", "{59695C82-1219-4D8C-AF56-7731E2F562EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,6 +74,18 @@ Global
 		{74BEBAEB-626C-4865-9E32-EB9D4A9C37C7}.Release|x64.Build.0 = Release|Any CPU
 		{74BEBAEB-626C-4865-9E32-EB9D4A9C37C7}.Release|x86.ActiveCfg = Release|Any CPU
 		{74BEBAEB-626C-4865-9E32-EB9D4A9C37C7}.Release|x86.Build.0 = Release|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Debug|x64.Build.0 = Debug|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Debug|x86.Build.0 = Debug|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Release|x64.ActiveCfg = Release|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Release|x64.Build.0 = Release|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Release|x86.ActiveCfg = Release|Any CPU
+		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

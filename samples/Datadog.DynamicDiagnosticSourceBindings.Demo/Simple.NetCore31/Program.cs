@@ -1,6 +1,6 @@
 using System;
 
-namespace DemoNetCore31
+namespace Demo.Slimple.NetCore31
 {
     class Program
     {

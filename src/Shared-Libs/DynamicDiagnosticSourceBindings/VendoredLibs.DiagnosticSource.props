@@ -22,13 +22,16 @@
          we also have a separate complilation of this DLL that works for V4.5
          (which is netstandard1.1).  Again we duplicate in a portable-* folder
          to work with older NuGet clients -->
-    <PackageTargetFramework Condition="'$(TargetFramework)' == 'netstandard1.1'">netstandard1.1;portable-net45+win8+wpa81</PackageTargetFramework>
+    
     <DefineConstants Condition="'$(TargetFramework)' == 'netstandard1.1' or '$(TargetFramework)' == 'net45'">$(DefineConstants);NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT</DefineConstants>
     <DefineConstants Condition="'$(TargetFramework)' != 'netstandard1.1'">$(DefineConstants);EVENTSOURCE_ACTIVITY_SUPPORT</DefineConstants>
     <DefineConstants Condition="'$(TargetFramework)' != 'netstandard1.1' and '$(TargetFramework)' != 'netstandard1.3'">$(DefineConstants);EVENTSOURCE_ENUMERATE_SUPPORT</DefineConstants>
     <DefineConstants Condition="$(TargetFramework.StartsWith('net4'))">$(DefineConstants);ALLOW_PARTIALLY_TRUSTED_CALLERS;ENABLE_HTTP_HANDLER</DefineConstants>
-    <ExcludeFromPackage Condition="'$(TargetFramework)' == 'netstandard2.0'">true</ExcludeFromPackage>
     <DefineConstants Condition="'$(TargetFramework)' == '$(NetCoreAppCurrent)'">$(DefineConstants);W3C_DEFAULT_ID_FORMAT</DefineConstants>
+    <!--
+    <ExcludeFromPackage Condition="'$(TargetFramework)' == 'netstandard2.0'">true</ExcludeFromPackage>
+    <PackageTargetFramework Condition="'$(TargetFramework)' == 'netstandard1.1'">netstandard1.1;portable-net45+win8+wpa81</PackageTargetFramework>
+    -->
   </PropertyGroup>
 
   <ItemGroup>

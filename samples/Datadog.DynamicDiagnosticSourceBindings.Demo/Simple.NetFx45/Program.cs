@@ -1,7 +1,6 @@
 ﻿using System;
-using Datadog.DynamicDiagnosticSourceBindings;
 
-namespace DemoNetFx45
+namespace Demo.Slimple.NetFx45
 {
     class Program
     {

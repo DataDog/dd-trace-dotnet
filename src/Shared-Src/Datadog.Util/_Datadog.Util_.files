@@ -32,6 +32,7 @@
 //     </Compile>
 //     <Compile Include="$(SharedSrcBaseDir)Datadog.Util\internal\Validate.cs">
 //       <DependentUpon>_internal_.files</DependentUpon>
+//       <SubType>Code</SubType>
 //     </Compile>
 //     
 //   </ItemGroup>

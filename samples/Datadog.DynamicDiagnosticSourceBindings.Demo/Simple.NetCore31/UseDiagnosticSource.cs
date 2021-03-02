@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 using Datadog.Util;
 
-namespace DemoNetCore31
+namespace Demo.Slimple.NetCore31
 {
     internal static class UseDiagnosticSource
     {

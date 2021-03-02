@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Datadog.DynamicDiagnosticSourceBindings;
 using Datadog.Util;
 
-namespace DemoNetFx45
+namespace Demo.Slimple.NetCore31
 {
     internal static class UseDiagnosticSourceStub
     {
@@ -78,24 +78,17 @@ namespace DemoNetFx45
             Console.WriteLine();
             Console.WriteLine("Starting setting up DiagnosticSource listening.");
 
-            IDisposable listenerSubscription = DiagnosticListening.SubscribeToAllSources(ObserverAdapter.OnAllHandlers(
+            IDisposable listenerSubscription = DiagnosticListening.SubscribeToAllSources(ObserverAdapter.OnNextHandler(
                     (DiagnosticListenerStub diagnosticListener) =>
                     {
                         Console.WriteLine($"Subscriber called: diagnosticSourceObserver(diagnosticListener.Name: \"{diagnosticListener.Name}\")");
 
                         if (diagnosticListener.Name.Equals("DemoXxx.UseDiagnosticSource.Name1", StringComparison.Ordinal))
                         {
-                            IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(ObserverAdapter.OnAllHandlers(
+                            IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(ObserverAdapter.OnNextHandler(
                                             (KeyValuePair<string, object> eventInfo) =>
                                             {
                                                 Console.WriteLine($"Event Handler called: eventObserver(eventName: \"{eventInfo.Key}\", payloadValue: {(eventInfo.Value ?? "<null>")})");
-                                            },
-                                            (Exception error) =>
-                                            {
-                                                Console.WriteLine($"Error passed to the observer subscribed the \"{diagnosticListener.Name}\"-event source: {error?.ToString() ?? "<null>"}");
-                                            },
-                                            () =>
-                                            {
                                             }),
                                     (string eventName, object arg1, object arg2) =>
                                     {
@@ -107,42 +100,7 @@ namespace DemoNetFx45
                                         return res;
                                     });
                         }
-                    },
-                    (Exception error) =>
-                    {
-                        Console.WriteLine($"Error passed to the observer subscribed to all event sources: {error?.ToString() ?? "<null>"}");
-                    },
-                    () =>
-                    {
                     }));
-
-
-            //IDisposable listenerSubscription = DiagnosticListening.SubscribeToAllSources(
-            //        (DiagnosticListenerStub diagnosticListener) =>
-            //        {
-            //            // This lambda looks at ALL Diagnostic Listeners (aka Sources),
-            //            // picks the one it is inderested in and subscibes to that particular Source.
-
-            //            Console.WriteLine($"Subscriber called: diagnosticSourceObserver(diagnosticListener.Name: \"{diagnosticListener.Name}\")");
-
-            //            if (diagnosticListener.Name.Equals("DemoXxx.UseDiagnosticSource.Name1", StringComparison.Ordinal))
-            //            {
-            //                IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(
-            //                        (string eventName, object payloadValue) =>
-            //                        {
-            //                            Console.WriteLine($"Event Handler called: eventObserver(eventName: \"{eventName}\", payloadValue: {(payloadValue ?? "<null>")})");
-            //                        },
-            //                        (string eventName, object arg1, object arg2) =>
-            //                        {
-            //                            Validate.NotNull(eventName, nameof(eventName));
-            //                            bool res = eventName.StartsWith("EventXyzName", StringComparison.OrdinalIgnoreCase)
-            //                                            && (arg1 == null || !(arg1 is Int32 arg1Val) || arg1Val >= 0);
-            //                            Console.WriteLine($"Filter called: isEventEnabledFilter(eventName: \"{eventName}\", arg1: {(arg1 ?? "<null>")}, arg2: {(arg2 ?? "<null>")})."
-            //                                            + $" Returning: {res}.");
-            //                            return res;
-            //                        });
-            //            }
-            //        });
 
             Console.WriteLine("Finished setting up DiagnosticSource listening.");
         }
