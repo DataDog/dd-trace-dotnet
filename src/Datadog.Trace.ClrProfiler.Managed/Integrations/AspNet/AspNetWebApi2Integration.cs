@@ -318,6 +318,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.AspNetController = controller;
                 tags.AspNetArea = area;
                 tags.AspNetRoute = route;
+
+                if (Tracer.Instance.Settings.AspnetRouteTemplateResourceNamesEnabled)
+                {
+                    // set the resource name in the HttpContext so TracingHttpModule can update root span
+                    var httpContext = System.Web.HttpContext.Current;
+                    if (httpContext is not null)
+                    {
+                        httpContext.Items["__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename"] = resourceName;
+                    }
+                }
             }
             catch (Exception ex)
             {
