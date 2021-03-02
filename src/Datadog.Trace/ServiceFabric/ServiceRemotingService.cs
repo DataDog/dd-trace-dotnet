@@ -41,7 +41,9 @@ namespace Datadog.Trace.ServiceFabric
         /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingServiceEvents_ReceiveRequest(object? sender, EventArgs? e)
         {
-            if (!_initialized || !Tracer.Instance.Settings.IsIntegrationEnabled(ServiceRemotingHelpers.IntegrationId))
+            var tracer = Tracer.Instance;
+
+            if (!_initialized || !tracer.Settings.IsIntegrationEnabled(ServiceRemotingHelpers.IntegrationId))
             {
                 return;
             }
@@ -70,7 +72,6 @@ namespace Datadog.Trace.ServiceFabric
 
             try
             {
-                var tracer = Tracer.Instance;
                 var span = ServiceRemotingHelpers.CreateSpan(tracer, spanContext, SpanKinds.Server, eventArgs, messageHeaders);
 
                 try
