@@ -21,6 +21,10 @@ namespace Datadog.Trace.ServiceFabric
                 new Property<ServiceRemotingTags, string?>(TagNames.RemotingInterfaceId, t => t.RemotingInterfaceId, (t, v) => t.RemotingInterfaceId = v),
                 new Property<ServiceRemotingTags, string?>(TagNames.RemotingInvocationId, t => t.RemotingInvocationId, (t, v) => t.RemotingInvocationId = v));
 
+        public ServiceRemotingTags()
+        {
+        }
+
         public ServiceRemotingTags(string spanKind)
         {
             SpanKind = spanKind;
