@@ -32,10 +32,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         internal static IEnumerable<InstrumentationOptions> InstrumentationOptionsValues =>
             new List<InstrumentationOptions>
             {
-                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpHandler: false),
-                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpHandler: true),
-                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpHandler: false),
-                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpHandler: true),
+                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
+                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
+                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
+                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
             };
 
         public static IEnumerable<object[]> IntegrationConfig() =>
@@ -139,7 +139,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
 #if !NET452
             // WinHttpHandler instrumentation is off by default, and only available on Windows
-            if (enableCallTarget && isWindows && (instrumentation.InstrumentWinHttpHandler ?? false))
+            if (enableCallTarget && isWindows && (instrumentation.InstrumentWinHttpOrCurlHandler ?? false))
             {
                 expectedSpanCount += spansPerHttpClient;
             }
@@ -150,6 +150,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 expectedSpanCount += spansPerHttpClient;
             }
+
+#if NETCOREAPP2_1 || NETCOREAPP3_0 || NETCOREAPP3_1
+            if (enableCallTarget && instrumentation.InstrumentWinHttpOrCurlHandler == true)
+            {
+                // Add 1 span for internal WinHttpHandler and CurlHandler using the HttpMessageInvoker
+                expectedSpanCount++;
+            }
+#endif
 
             return expectedSpanCount;
         }
@@ -188,9 +196,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", instrumentation.InstrumentSocketHandler.Value ? "true" : "false");
             }
 
-            if (instrumentation.InstrumentWinHttpHandler.HasValue)
+            if (instrumentation.InstrumentWinHttpOrCurlHandler.HasValue)
             {
-                SetEnvironmentVariable("DD_WinHttpHandler_ENABLED", instrumentation.InstrumentWinHttpHandler.Value ? "true" : "false");
+                SetEnvironmentVariable("DD_WinHttpHandler_ENABLED", instrumentation.InstrumentWinHttpOrCurlHandler.Value ? "true" : "false");
+                SetEnvironmentVariable("DD_CurlHandler_ENABLED", instrumentation.InstrumentWinHttpOrCurlHandler.Value ? "true" : "false");
             }
         }
 
@@ -238,30 +247,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             internal InstrumentationOptions(
                 bool? instrumentSocketHandler,
-                bool? instrumentWinHttpHandler)
+                bool? instrumentWinHttpOrCurlHandler)
             {
                 InstrumentSocketHandler = instrumentSocketHandler;
-                InstrumentWinHttpHandler = instrumentWinHttpHandler;
+                InstrumentWinHttpOrCurlHandler = instrumentWinHttpOrCurlHandler;
             }
 
             internal bool? InstrumentSocketHandler { get; private set; }
 
-            internal bool? InstrumentWinHttpHandler { get; private set; }
+            internal bool? InstrumentWinHttpOrCurlHandler { get; private set; }
 
             public void Deserialize(IXunitSerializationInfo info)
             {
                 InstrumentSocketHandler = info.GetValue<bool?>(nameof(InstrumentSocketHandler));
-                InstrumentWinHttpHandler = info.GetValue<bool?>(nameof(InstrumentWinHttpHandler));
+                InstrumentWinHttpOrCurlHandler = info.GetValue<bool?>(nameof(InstrumentWinHttpOrCurlHandler));
             }
 
             public void Serialize(IXunitSerializationInfo info)
             {
                 info.AddValue(nameof(InstrumentSocketHandler), InstrumentSocketHandler);
-                info.AddValue(nameof(InstrumentWinHttpHandler), InstrumentWinHttpHandler);
+                info.AddValue(nameof(InstrumentWinHttpOrCurlHandler), InstrumentWinHttpOrCurlHandler);
             }
 
             public override string ToString() =>
-                $"InstrumentSocketHandler={InstrumentSocketHandler},InstrumentWinHttpHandler={InstrumentWinHttpHandler}";
+                $"InstrumentSocketHandler={InstrumentSocketHandler},InstrumentWinHttpOrCurlHandler={InstrumentWinHttpOrCurlHandler}";
         }
     }
 }

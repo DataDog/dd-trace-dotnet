@@ -107,7 +107,7 @@ namespace Samples.HttpMessageHandler
                     Console.WriteLine("Sending sync request with WinHttpHandler.");
                     Type winHttpHandler = typeof(System.Net.Http.HttpMessageHandler).Assembly.GetTypes().FirstOrDefault(t => t.Name == "WinHttpHandler");
                     System.Net.Http.HttpMessageHandler handler = (System.Net.Http.HttpMessageHandler)Activator.CreateInstance(winHttpHandler);
-                    using (var invoker = new HttpMessageInvoker(handler))
+                    using (var invoker = new HttpMessageInvoker(handler, false))
                     {
                         await RequestHelpers.SendHttpMessageInvokerRequestsAsync(invoker, tracingDisabled, Url);
                     }
@@ -118,7 +118,7 @@ namespace Samples.HttpMessageHandler
                     Console.WriteLine("Sending sync request with CurlHandler.");
                     Type curlHandlerType = typeof(System.Net.Http.HttpMessageHandler).Assembly.GetTypes().FirstOrDefault(t => t.Name == "CurlHandler");
                     System.Net.Http.HttpMessageHandler handler = (System.Net.Http.HttpMessageHandler)Activator.CreateInstance(curlHandlerType);
-                    using (var invoker = new HttpMessageInvoker(handler))
+                    using (var invoker = new HttpMessageInvoker(handler, false))
                     {
                         await RequestHelpers.SendHttpMessageInvokerRequestsAsync(invoker, tracingDisabled, Url);
                     }

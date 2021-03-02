@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WinHttpHandler
     /// System.Net.Http.WinHttpHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = "System.Net.Http.WinHttpHandler",
+        AssemblyNames = new[] { "System.Net.Http", "System.Net.Http.WinHttpHandler" },
         TypeName = "System.Net.Http.WinHttpHandler",
         MethodName = "SendAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
