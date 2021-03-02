@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(IisFixture))]
+    [Collection("IisTests")]
     public class AspNetMvc5TestsCallsite : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallsite(IisFixture iisFixture, ITestOutputHelper output)
@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
-    [Collection(nameof(IisFixture))]
+    [Collection("IisTests")]
     public class AspNetMvc5TestsCallTargetNoInlining : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetNoInlining(IisFixture iisFixture, ITestOutputHelper output)
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
-    [Collection(nameof(IisFixture))]
+    [Collection("IisTests")]
     public class AspNetMvc5TestsCallTarget : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)
