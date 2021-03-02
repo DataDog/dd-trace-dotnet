@@ -79,25 +79,28 @@ namespace Datadog.Trace.HttpOverStreams
 
             async Task SkipUntil(int requiredStreamPosition)
             {
-                var advanceCount = requiredStreamPosition - streamPosition;
-                // Not required in release mode, as should only arise from programming error
-                System.Diagnostics.Debug.Assert(advanceCount > 0, "RequiredStreamPosition should be greater than 0");
-                System.Diagnostics.Debug.Assert(advanceCount <= bufferSize, "RequiredStreamPosition should be less than buffer size");
-                var totalBytesRead = 0;
-
-                while (totalBytesRead < advanceCount)
+                var requiredBytes = requiredStreamPosition - streamPosition;
+                if (requiredBytes < 0)
                 {
-                    var bytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: advanceCount).ConfigureAwait(false);
-                    if (bytesRead == 0)
+                    throw new ArgumentOutOfRangeException(nameof(requiredStreamPosition), "StreamPosition already exceeds requiredStreamPosition");
+                }
+
+                var bytesRemaining = requiredBytes;
+                var lastBytesRead = 0;
+                while (bytesRemaining > 0)
+                {
+                    var bytesToRead = Math.Min(bytesRemaining, bufferSize);
+                    lastBytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: bytesToRead).ConfigureAwait(false);
+                    if (lastBytesRead == 0)
                     {
                         throw new InvalidOperationException($"Unexpected end of stream at position {streamPosition}");
                     }
 
-                    totalBytesRead += bytesRead;
+                    bytesRemaining -= lastBytesRead;
                 }
 
-                currentChar = Encoding.ASCII.GetChars(chArray)[advanceCount - 1];
-                streamPosition += advanceCount;
+                currentChar = Encoding.ASCII.GetChars(chArray)[lastBytesRead - 1];
+                streamPosition += requiredBytes;
             }
 
             async Task ReadUntil(StringBuilder builder, char stopChar)
