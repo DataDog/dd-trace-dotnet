@@ -47,7 +47,7 @@ namespace Datadog.Logging.Emission
 
         public static void Debug(string componentName, string message, IEnumerable<object> dataNamesAndValues)
         {
-            Info(componentNamePart1: componentName, componentNamePart2: null, message, dataNamesAndValues);
+            Debug(componentNamePart1: componentName, componentNamePart2: null, message, dataNamesAndValues);
         }
 
         public static void Debug(string componentNamePart1, string componentNamePart2, string message, IEnumerable<object> dataNamesAndValues)

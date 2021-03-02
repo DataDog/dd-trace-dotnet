@@ -4,9 +4,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CLSCompliant>false</CLSCompliant>
     <NoWarn>$(NoWarn);SA1205</NoWarn>
-	<!--
-    <Nullable>enable</Nullable>
-	-->
+	<!-- The .NET sources use Nullable, ut we do not want to in the product code for now. -->
+	<!-- <Nullable>enable</Nullable> -->
     <NetCoreAppCurrent Condition="$(TargetFramework.StartsWith('netcoreapp'))">$(TargetFramework)</NetCoreAppCurrent>
     <AvoidRestoreCycleOnSelfReference>true</AvoidRestoreCycleOnSelfReference>
     <LangVersion>8.0</LangVersion>

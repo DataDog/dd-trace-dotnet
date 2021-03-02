@@ -285,20 +285,40 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     }
 
                     // The subsequent assembly Load will cause AssemblyLoadEventHandler to be invoked.
-                    // As a result, we will re-enter this SetupDynamicInvokersUnderLock(..) method indirectly, so isRecursiveCall will still
-                    // be False.
+                    // As a result, we will re-enter this SetupDynamicInvokersUnderLock(..) method indirectly,
+                    // so isRecursiveCall will still be False.
                     //  * If the Load will be successful, we will find DS and initialize the invokers when we re-enter.
                     //    So when we eventually return from the Load call below there will be nothing left to do.
                     //  * However, if the Load call will not be successful, then AssemblyLoadEventHandler will not be invoked and we will not re-enter.
-                    //    So we need the subsequent SetupDynamicInvokersUnderLock(isRecursiveCall: true) call below to make sure we fall back the the
+                    //    So we need the subsequent SetupDynamicInvokersUnderLock(isRecursiveCall: true) call below to make sure we fall back to the
                     //    vendored version as expected.
-                    // Note that the recursive re-entrancy is not causing any issue beyong a one-off re-scan of the loaded assemblies. The 
+                    // Note that the recursive re-entrancy is not causing any issues beyond a one-off re-scan of the loaded assemblies. The 
                     // UseAssemblyForDynamicInvokers makes sure that invokers are not reset if the assembly instance did not actually change.
+
+                    try
+                    {
 #if NETCOREAPP
-                    AssemblyLoadContext.Default.LoadFromAssemblyName(diagnosticSourceAssemblyName_NoVersion);
+                        AssemblyLoadContext.Default.LoadFromAssemblyName(diagnosticSourceAssemblyName_NoVersion);
 #else
-                    Assembly.Load(diagnosticSourceAssemblyName_NoVersion);
+                        Assembly.Load(diagnosticSourceAssemblyName_NoVersion);
 #endif
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log as Debug, not as Error, becasue this is an expected condition if the DS assembly is not present.
+                        if (Log.IsDebugLoggingEnabled)
+                        {
+                            Log.Debug(LogComonentMoniker,
+                                     $"An exception was thrown while trying to dynamically load the \"{DiagnosticSourceAssembly.Name}\"-assembly (DS)."
+                                    + " This is expected in cases where DS is not present in the resolution paths. The error is loged only in debug mode."
+                                    + " A fallback DS will be used.",
+                                      "Exception", ex,
+                                      "Requested DS Name", diagnosticSourceAssemblyName_NoVersion?.FullName,
+                                      "CurrentAppDomain.Id", AppDomain.CurrentDomain.Id,
+                                      "CurrentAppDomain.FriendlyName", AppDomain.CurrentDomain.FriendlyName,
+                                      "CurrentAppDomain.IsDefault", AppDomain.CurrentDomain.IsDefaultAppDomain());
+                        }
+                    }
 
                     SetupDynamicInvokersUnderLock(isRecursiveCall: true);
                 }

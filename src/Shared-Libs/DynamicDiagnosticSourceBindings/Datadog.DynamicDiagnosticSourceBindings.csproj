@@ -59,6 +59,11 @@
       <DependentUpon>Log.tt</DependentUpon>
     </Compile>
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Remove="UnusedSrc\**\*.cs" />
+    <None Include="UnusedSrc\**\*.cs" />
+  </ItemGroup>
  
   <PropertyGroup>
     <VendoredPath Condition="$(VendoredPath) == ''">VendoredLibs/</VendoredPath>
@@ -68,43 +73,6 @@
       <Compile Remove="$(VendoredPath)**/*" />
       <None Remove="$(VendoredPath)**/*" />
       <EmbeddedResource Remove="$(VendoredPath)**/*.resx" />
-  </ItemGroup>
-   
-  <ItemGroup>
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings.Vendors.Datadog\public\ActivityStub_DatadogExtensions.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\internal\DynamicInvokerOld.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\internal\DynamicLoader.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\internal\PackagedAssemblyLookup.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\internal\SupplementalActivityData.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityContextStub.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityIdFormatStub.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityKindStub.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityListenerStub.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityStub.cs" />
-    <Compile Remove="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\SupportedFeatures.cs" />
-  </ItemGroup>
-   
-  <ItemGroup>
-    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\Disposables.cs" />
-    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DynamicInvoker.cs" />
-    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DynamicInvoker_DiagnosticSource.cs" />
-    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DynamicLoader.cs" />
-    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\ErrorUtil.cs" />
-    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\public\DynamicInvocationException.cs" />
-  </ItemGroup>
-   
-  <ItemGroup>
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings.Vendors.Datadog\public\ActivityStub_DatadogExtensions.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\internal\DynamicInvokerOld.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\internal\DynamicLoader.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\internal\PackagedAssemblyLookup.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\internal\SupplementalActivityData.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityContextStub.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityIdFormatStub.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityKindStub.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityListenerStub.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\ActivityStub.cs" />
-    <None Include="UnusedSrc\Datadog.DynamicDiagnosticSourceBindings\public\SupportedFeatures.cs" />
   </ItemGroup>
 
   <Import Project="VendoredLibs.DiagnosticSource.props" />

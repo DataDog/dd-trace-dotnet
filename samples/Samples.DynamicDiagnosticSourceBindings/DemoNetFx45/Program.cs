@@ -9,12 +9,7 @@ namespace DemoNetFx45
         {
             Console.WriteLine("DemoNetFx45");
 
-            //UseDiagnosticSource.Run();
             UseDiagnosticSourceStub.Run();
-
-            //var a = new System.Diagnostics.Activity("a");
-
-            //ActivityStub activity = ActivityStub.StartNewActivity("a");
 
             Console.WriteLine("Done. Press enter.");
             Console.ReadLine();

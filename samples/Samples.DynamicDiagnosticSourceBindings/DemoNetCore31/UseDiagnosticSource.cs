@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 using Datadog.Util;
 
-namespace DemoNetFx45
+namespace DemoNetCore31
 {
     internal static class UseDiagnosticSource
     {

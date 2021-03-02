@@ -1,4 +1,3 @@
-using Datadog.DynamicDiagnosticSourceBindings;
 using System;
 
 namespace DemoNetCore31
@@ -9,10 +8,8 @@ namespace DemoNetCore31
         {
             Console.WriteLine("DemoNetCore31");
 
-            // ActivityStub activity = ActivityStub.StartNewActivity("a");
-
-            //var a = new System.Diagnostics.Activity("a2");
-            //Console.WriteLine($"a.IdFormat: {a.IdFormat}");
+            //UseDiagnosticSource.Run();
+            UseDiagnosticSourceStub.Run();
 
             Console.WriteLine("Done. Press enter.");
             Console.ReadLine();
