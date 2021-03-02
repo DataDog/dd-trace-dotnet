@@ -73,6 +73,7 @@ stages:
         projects: '$(System.DefaultWorkingDirectory)/test/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
         arguments: '-c Release -f netcoreapp3.1 -- -r net472 netcoreapp3.1 -m -f * --iterationTime 2000'
       env:
+        DD_ENV: CI
         DD_SERVICE: dd-trace-dotnet
 
     - task: PowerShell@2
