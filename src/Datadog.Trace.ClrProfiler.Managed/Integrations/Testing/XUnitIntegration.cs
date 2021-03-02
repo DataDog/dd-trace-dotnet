@@ -420,10 +420,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 var framework = FrameworkDescription.Instance;
 
                 span.SetTag(CommonTags.RuntimeName, framework.Name);
-                span.SetTag(CommonTags.RuntimeOSArchitecture, framework.OSArchitecture);
-                span.SetTag(CommonTags.RuntimeOSPlatform, framework.OSPlatform);
-                span.SetTag(CommonTags.RuntimeProcessArchitecture, framework.ProcessArchitecture);
                 span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
+                span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
+                span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
+                span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
+                span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
 
                 if (testParameters != null)
                 {
