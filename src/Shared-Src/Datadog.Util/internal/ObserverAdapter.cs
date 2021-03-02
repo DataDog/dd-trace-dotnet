@@ -5,7 +5,7 @@ namespace Datadog.Util
     /// <summary>
     /// Convenience APIs for creating instances of <c>ObserverAdapter{T}</c>
     /// </summary>
-    public static class ObserverAdapter
+    internal static class ObserverAdapter
     {
         public static ObserverAdapter<T> OnNextHandler<T>(Action<T> onNextHandler)
         {

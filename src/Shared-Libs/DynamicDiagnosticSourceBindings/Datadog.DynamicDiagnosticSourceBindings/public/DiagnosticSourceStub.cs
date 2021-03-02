@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Threading;
-using StaticSystemDiagnostics = System.Diagnostics;
-
 using Datadog.Util;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {
-    public class DiagnosticSourceStub : IDisposable
+    public struct DiagnosticSourceStub : IDisposable
     {
 #region Static APIs
         private static class NoOpSingeltons
@@ -25,7 +22,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             DynamicInvoker_DiagnosticSource invoker = null;
             try
             {
-                invoker = DynamicInvoker.DiagnosticSource;
+                invoker = DynamicInvoker.Current.DiagnosticSource;
                 DynamicInvokerHandle<DynamicInvoker_DiagnosticSource> handle = invoker.GetInvokerHandleForInstance(diagnosticSourceInstance);
                 return new DiagnosticSourceStub(diagnosticSourceInstance, handle);
             }
@@ -47,7 +44,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return true;
             }
 
-            DynamicInvoker_DiagnosticSource invoker = DynamicInvoker.DiagnosticSource;
+            DynamicInvoker_DiagnosticSource invoker = DynamicInvoker.Current.DiagnosticSource;
             if (invoker != null && invoker.TryGetInvokerHandleForInstance(diagnosticSourceInstance, out DynamicInvokerHandle<DynamicInvoker_DiagnosticSource> handle))
             {
                 diagnosticSourceStub = new DiagnosticSourceStub(diagnosticSourceInstance, handle);
@@ -64,8 +61,6 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
         private readonly object _diagnosticSourceInstance;
         private readonly DynamicInvokerHandle<DynamicInvoker_DiagnosticSource> _dynamicInvokerHandle;
-
-        private int _isDisposed = 0;
 
         private DiagnosticSourceStub(object diagnosticSourceInstance, DynamicInvokerHandle<DynamicInvoker_DiagnosticSource> dynamicInvokerHandle)
         {
@@ -87,8 +82,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return;
             }
 
-            int wasDisposed = Interlocked.Exchange(ref _isDisposed, 1);
-            if (wasDisposed == 0 && _diagnosticSourceInstance is IDisposable disposableDiagnosticSourceInstance)
+            if (_diagnosticSourceInstance is IDisposable disposableDiagnosticSourceInstance)
             {
                 disposableDiagnosticSourceInstance.Dispose();
             }

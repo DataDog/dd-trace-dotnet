@@ -1,36 +1,72 @@
 ﻿using System;
+using System.Threading;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {
-    internal static class DynamicInvoker
+    internal class DynamicInvoker
     {
-        private static DynamicInvoker_DiagnosticListener s_diagnosticListenerInvoker = null;
-        private static DynamicInvoker_DiagnosticSource s_diagnosticSourceInvoker = null;
+#region Static API
+        private static DynamicInvoker s_currentInvoker = null;
 
-        public static DynamicInvoker_DiagnosticListener DiagnosticListener
+        public static DynamicInvoker Current
         {
             get
             {
-                return s_diagnosticListenerInvoker;
+                DynamicInvoker invoker = Volatile.Read(ref s_currentInvoker);
+                if (invoker == null)
+                {
+                    if (!DynamicLoader.EnsureInitialized())
+                    {
+                        throw new InvalidOperationException($"Cannot obtain a {nameof(Current)} {nameof(DynamicInvoker)}:"
+                                                          + $" The {nameof(DynamicLoader)} cannot initialize.");
+                    }
+
+                    invoker = Volatile.Read(ref s_currentInvoker);
+                    if (invoker == null)
+                    {
+                        throw new InvalidOperationException($"Cannot obtain a {nameof(Current)} {nameof(DynamicInvoker)}:"
+                                                          + $" The {nameof(DynamicLoader)} was initialized, but the invoker is still null.");
+                    }
+                }
+
+                return invoker;
             }
 
             internal set
             {
-                s_diagnosticListenerInvoker = value;
+                DynamicInvoker prevInvoker = Interlocked.Exchange(ref s_currentInvoker, value);
+
+                if (prevInvoker != null && !Object.ReferenceEquals(prevInvoker, value))
+                {
+                    prevInvoker.Invalidate();
+                }
             }
         }
+#endregion Static API
 
-        public static DynamicInvoker_DiagnosticSource DiagnosticSource
+        private readonly DynamicInvoker_DiagnosticSource _diagnosticSourceInvoker;
+        private readonly DynamicInvoker_DiagnosticListener _diagnosticListenerInvoker;
+
+        public DynamicInvoker(Type diagnosticSourceType, Type diagnosticListenerType)
         {
-            get
-            {
-                return s_diagnosticSourceInvoker;
-            }
+            _diagnosticSourceInvoker = new DynamicInvoker_DiagnosticSource(diagnosticSourceType);
+            _diagnosticListenerInvoker = new DynamicInvoker_DiagnosticListener(diagnosticListenerType);
+        }
 
-            internal set
-            {
-                s_diagnosticSourceInvoker = value;
-            }
+        public DynamicInvoker_DiagnosticSource DiagnosticSource
+        {
+            get { return _diagnosticSourceInvoker; }
+        }
+
+        public DynamicInvoker_DiagnosticListener DiagnosticListener
+        {
+            get { return _diagnosticListenerInvoker; }
+        }
+
+        private void Invalidate()
+        {
+            _diagnosticSourceInvoker.Handle.Invalidate();
+            _diagnosticListenerInvoker.Handle.Invalidate();
         }
     }
 }

@@ -1,13 +1,21 @@
-﻿using Datadog.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Runtime.ExceptionServices;
-using StaticSystemDiagnostics = System.Diagnostics;
+using System.Linq.Expressions;
+using System.Reflection;
+using Datadog.Util;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class DynamicInvoker_DiagnosticListener
     {
+        private class CashedDelegates
+        {
+            public Func<string, object> Ctor;
+            public Func<IObservable<object>> get_AllListeners;
+            public Func<object, string> get_Name;
+            public Func<object, IObserver<KeyValuePair<string, object>>, Func<string, object, object, bool>, IDisposable> Subscribe;
+        }
+
         private readonly StubbedApis _stubbedApis;
         private readonly Type _diagnosticListenerType;
         private readonly DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> _handle;
@@ -78,32 +86,159 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         public class StubbedApis
         {
             private readonly DynamicInvoker_DiagnosticListener _thisInvoker;
+            private readonly CashedDelegates _cashedDelegates;
 
             internal StubbedApis(DynamicInvoker_DiagnosticListener thisInvoker)
             {
                 _thisInvoker = thisInvoker;
+                _cashedDelegates = new CashedDelegates();
             }
 
             public object Ctor(string diagnosticSourceName)
             {
-                return new StaticSystemDiagnostics.DiagnosticListener(diagnosticSourceName);
+                Func<string, object> invokerDelegate = _cashedDelegates.Ctor;
+                if (invokerDelegate == null)
+                {
+                    try
+                    {
+                        // invokerDelegate = (diagnosticSourceName) => new DiagnosticListener(diagnosticSourceName);
+
+                        ParameterExpression exprDiagnosticSourceNameParam = Expression.Parameter(typeof(string), "diagnosticSourceName");
+
+                        ConstructorInfo ctorInfo = _thisInvoker._diagnosticListenerType.GetConstructor(new Type[] { typeof(string) });
+
+                        var exprInvoker = Expression.Lambda<Func<string, object>>(
+                                Expression.New(
+                                        ctorInfo,
+                                        exprDiagnosticSourceNameParam),
+                                exprDiagnosticSourceNameParam);
+
+                        invokerDelegate = exprInvoker.Compile();
+                        invokerDelegate = Concurrent.TrySetOrGetValue(ref _cashedDelegates.Ctor, invokerDelegate);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new DynamicInvocationException(typeof(DynamicInvoker_DiagnosticListener),
+                                                            $"Error while building the invocation delegate for the API \"{nameof(Ctor)}\".",
+                                                             ex);
+                    }
+                }
+
+                object result = invokerDelegate(diagnosticSourceName);
+                return result;
+            }
+
+            public IObservable<object> get_AllListeners()
+            {
+                Func<IObservable<object>> invokerDelegate = _cashedDelegates.get_AllListeners;
+                if (invokerDelegate == null)
+                {
+                    try
+                    {
+                        // invokerDelegate = () => DiagnosticListener.AllListeners;
+
+                        PropertyInfo propertyInfo = _thisInvoker._diagnosticListenerType.GetProperty("AllListeners", BindingFlags.Static | BindingFlags.Public);
+
+                        var exprInvoker = Expression.Lambda<Func<IObservable<object>>>(
+                                Expression.Property(
+                                        null,
+                                        propertyInfo));
+
+                        invokerDelegate = exprInvoker.Compile();
+                        invokerDelegate = Concurrent.TrySetOrGetValue(ref _cashedDelegates.get_AllListeners, invokerDelegate);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new DynamicInvocationException(typeof(DynamicInvoker_DiagnosticListener),
+                                                            $"Error while building the invocation delegate for the API \"{nameof(get_AllListeners)}\".",
+                                                             ex);
+                    }
+                }
+
+                IObservable<object> result = invokerDelegate();
+                return result;
             }
 
             public string get_Name(object diagnosticListenerInstance)
             {
-                return ((StaticSystemDiagnostics.DiagnosticListener) diagnosticListenerInstance).Name;
+                Func<object, string> invokerDelegate = _cashedDelegates.get_Name;
+                if (invokerDelegate == null)
+                {
+                    try
+                    {
+                        // invokerDelegate = (diagnosticListenerInstance) => ((DiagnosticListener) diagnosticListenerInstance).Name;
+
+                        ParameterExpression exprDiagnosticListenerInstanceParam = Expression.Parameter(typeof(object), "diagnosticListenerInstance");
+
+                        PropertyInfo propertyInfo = _thisInvoker._diagnosticListenerType.GetProperty("Name", BindingFlags.Instance | BindingFlags.Public);
+
+                        var exprInvoker = Expression.Lambda<Func<object, string>>(
+                                Expression.Property(
+                                        Expression.Convert(exprDiagnosticListenerInstanceParam, _thisInvoker._diagnosticListenerType),
+                                        propertyInfo),
+                                exprDiagnosticListenerInstanceParam);
+
+                        invokerDelegate = exprInvoker.Compile();
+                        invokerDelegate = Concurrent.TrySetOrGetValue(ref _cashedDelegates.get_Name, invokerDelegate);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new DynamicInvocationException(typeof(DynamicInvoker_DiagnosticListener),
+                                                            $"Error while building the invocation delegate for the API \"{nameof(get_Name)}\".",
+                                                             ex);
+                    }
+                }
+
+                string result = invokerDelegate(diagnosticListenerInstance);
+                return result;
             }
 
             public IDisposable Subscribe(object diagnosticListenerInstance,
                                          IObserver<KeyValuePair<string, object>> eventObserver,
                                          Func<string, object, object, bool> isEventEnabledFilter)
             {
-                return ((StaticSystemDiagnostics.DiagnosticListener) diagnosticListenerInstance).Subscribe(eventObserver, isEventEnabledFilter);
-            }
+                Func<object, IObserver<KeyValuePair<string, object>>, Func<string, object, object, bool>, IDisposable> invokerDelegate = _cashedDelegates.Subscribe;
+                if (invokerDelegate == null)
+                {
+                    try
+                    {
+                        // invokerDelegate = (diagnosticListenerInstance, eventObserver, isEventEnabledFilter) => 
+                        //                              ((DiagnosticListener) diagnosticListenerInstance).Subscribe(eventObserver, isEventEnabledFilter);
 
-            public IObservable<object> get_AllListeners()
-            {
-                return StaticSystemDiagnostics.DiagnosticListener.AllListeners;
+                        ParameterExpression exprDiagnosticListenerInstanceParam = Expression.Parameter(typeof(object), "diagnosticListenerInstance");
+                        ParameterExpression exprEventObserverParam = Expression.Parameter(typeof(IObserver<KeyValuePair<string, object>>), "eventObserver");
+                        ParameterExpression exprIsEventEnabledFilterParam = Expression.Parameter(typeof(Func<string, object, object, bool>), "isEventEnabledFilter");
+
+                        MethodInfo methodInfo = _thisInvoker._diagnosticListenerType.GetMethod("Subscribe",
+                                                                                               BindingFlags.Instance | BindingFlags.Public,
+                                                                                               binder: null,
+                                                                                               new Type[] { typeof(IObserver<KeyValuePair<string, object>>), 
+                                                                                                            typeof(Func<string, object, object, bool>) },
+                                                                                               modifiers: null);
+
+                        var exprInvoker = Expression.Lambda<Func<object, IObserver<KeyValuePair<string, object>>, Func<string, object, object, bool>, IDisposable>>(
+                                Expression.Call(
+                                        Expression.Convert(exprDiagnosticListenerInstanceParam, _thisInvoker._diagnosticListenerType),
+                                        methodInfo,
+                                        exprEventObserverParam,
+                                        exprIsEventEnabledFilterParam),
+                                exprDiagnosticListenerInstanceParam,
+                                exprEventObserverParam,
+                                exprIsEventEnabledFilterParam);
+
+                        invokerDelegate = exprInvoker.Compile();
+                        invokerDelegate = Concurrent.TrySetOrGetValue(ref _cashedDelegates.Subscribe, invokerDelegate);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new DynamicInvocationException(typeof(DynamicInvoker_DiagnosticListener),
+                                                            $"Error while building the invocation delegate for the API \"{nameof(Subscribe)}\".",
+                                                             ex);
+                    }
+                }
+
+                IDisposable result = invokerDelegate(diagnosticListenerInstance, eventObserver, isEventEnabledFilter);
+                return result;
             }
         }
     }

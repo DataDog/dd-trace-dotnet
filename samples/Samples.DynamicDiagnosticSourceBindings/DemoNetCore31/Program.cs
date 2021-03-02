@@ -9,7 +9,7 @@ namespace DemoNetCore31
         {
             Console.WriteLine("DemoNetCore31");
 
-            ActivityStub activity = ActivityStub.StartNewActivity("a");
+            // ActivityStub activity = ActivityStub.StartNewActivity("a");
 
             //var a = new System.Diagnostics.Activity("a2");
             //Console.WriteLine($"a.IdFormat: {a.IdFormat}");

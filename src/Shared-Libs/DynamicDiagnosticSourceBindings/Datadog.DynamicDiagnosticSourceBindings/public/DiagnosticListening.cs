@@ -12,13 +12,13 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             DynamicInvoker_DiagnosticListener invoker = null;
             try
             {
-                invoker = DynamicInvoker.DiagnosticListener;
+                invoker = DynamicInvoker.Current.DiagnosticListener;
                 object diagnosticListenerInstance = invoker.Call.Ctor(diagnosticSourceName);
                 return DiagnosticSourceStub.Wrap(diagnosticListenerInstance);
             }
             catch (Exception ex)
             {
-                throw LogAndRethrowStubInvocationError(ex, invoker.GetType(), nameof(DynamicInvoker_DiagnosticListener.StubbedApis.Ctor), invoker?.TargetType);
+                throw LogAndRethrowStubInvocationError(ex, invoker?.GetType(), nameof(DynamicInvoker_DiagnosticListener.StubbedApis.Ctor), invoker?.TargetType);
             }
         }
 
@@ -31,9 +31,8 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         /// Notably, a few events will be lost. This is an explicit design decision in the context of the fact that assembly
         /// unloads are extremely rare.
         /// If the IDisposable returned by this method is disposed, then the above-described notification will not be delivered.
-        /// <br />
-        /// Consider using <c>Datadog.Util.ObserverAdapter</c> in shared sources to conveniently create observers suitable for this API.
         /// </summary>
+        /// <remarks>Consider using <c>Datadog.Util.ObserverAdapter</c> in shared sources to conveniently create observers suitable for this API.</remarks>
         public static IDisposable SubscribeToAllSources(IObserver<DiagnosticListenerStub> diagnosticSourcesObserver)
         {
             Validate.NotNull(diagnosticSourcesObserver, nameof(diagnosticSourcesObserver));
@@ -41,7 +40,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             DynamicInvoker_DiagnosticListener invoker = null;
             try
             {
-                invoker = DynamicInvoker.DiagnosticListener;
+                invoker = DynamicInvoker.Current.DiagnosticListener;
                 IObservable<object> allSourcesObservable = invoker.Call.get_AllListeners();
 
                 IObserver<object> observerAdapter = new DiagnosticListenerToInfoObserverAdapter(diagnosticSourcesObserver);
@@ -68,7 +67,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             }
             catch (Exception ex)
             {
-                throw LogAndRethrowStubInvocationError(ex, invoker.GetType(), nameof(DynamicInvoker_DiagnosticListener.StubbedApis.get_AllListeners), invoker?.TargetType);
+                throw LogAndRethrowStubInvocationError(ex, invoker?.GetType(), nameof(DynamicInvoker_DiagnosticListener.StubbedApis.get_AllListeners), invoker?.TargetType);
             }
         }
 

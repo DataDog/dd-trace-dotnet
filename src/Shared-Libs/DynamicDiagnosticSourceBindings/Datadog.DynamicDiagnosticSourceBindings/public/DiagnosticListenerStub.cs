@@ -24,7 +24,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             DynamicInvoker_DiagnosticListener invoker = null;
             try
             {
-                invoker = DynamicInvoker.DiagnosticListener;
+                invoker = DynamicInvoker.Current.DiagnosticListener;
                 DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> handle = invoker.GetInvokerHandleForInstance(diagnosticListenerInstance);
                 return new DiagnosticListenerStub(diagnosticListenerInstance, handle);
             }
@@ -46,7 +46,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 return true;
             }
 
-            DynamicInvoker_DiagnosticListener invoker = DynamicInvoker.DiagnosticListener;
+            DynamicInvoker_DiagnosticListener invoker = DynamicInvoker.Current.DiagnosticListener;
             if (invoker != null && invoker.TryGetInvokerHandleForInstance(diagnosticListenerInstance, out DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> handle))
             {
                 diagnosticListenerStub = new DiagnosticListenerStub(diagnosticListenerInstance, handle);
@@ -108,9 +108,10 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         /// Notably, a few events will be lost. This is an explicit design decision in the context of the fact that assembly
         /// unloads are extremely rare.
         /// If the IDisposable returned by this method is disposed, then the above-described notification will not be delivered.
-        /// <br />
-        /// Consider using <c>Datadog.Util.ObserverAdapter</c> in shared sources to conveniently create observers suitable for this API.
         /// </summary>
+        /// <remarks>
+        /// Consider using <c>Datadog.Util.ObserverAdapter</c> in shared sources to conveniently create observers suitable for this API.
+        /// </remarks>
         public IDisposable SubscribeToEvents(IObserver<KeyValuePair<string, object>> eventObserver, Func<string, object, object, bool> isEventEnabledFilter)
         {
             if (_diagnosticListenerInstance == null)

@@ -7,7 +7,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 {
     internal class PackagedAssemblyLookup
     {
-        // The sie of this is expected to on the order of 1 to a dozen. For lookups we will just scropp though this.
+        // The size of this is expected to on the order of 1 to a dozen. For lookups we will just scroll though this.
         private List<Entry> _assemblies = null;
 
         public int Count { get { return _assemblies?.Count ?? 0; } }
