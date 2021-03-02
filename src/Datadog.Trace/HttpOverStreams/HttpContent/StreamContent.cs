@@ -34,7 +34,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
             }
 
             var length = 0;
-            var remaining = Length.Value;
+            long remaining = Length.Value;
             while (true)
             {
                 var bytesToRead = (int)Math.Min(remaining, int.MaxValue);
