@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 TestRunnerStruct runnerInstance = instance.DuckCast<TestRunnerStruct>();
 

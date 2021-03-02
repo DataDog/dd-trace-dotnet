@@ -35,12 +35,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
 
-        static NUnitIntegration()
-        {
-            // Preload environment variables.
-            CIEnvironmentValues.DecorateSpan(null);
-        }
-
         /// <summary>
         /// Wrap the original NUnit.Framework.Internal.Commands.TestMethodCommand.Execute method by adding instrumentation code around it
         /// </summary>
@@ -218,8 +212,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                             }
                         }
 
-                        Tracer tracer = Tracer.Instance;
-                        scope = tracer.StartActive("nunit.test");
+                        scope = Common.TestTracer.StartActive("nunit.test", serviceName: Common.ServiceName);
                         Span span = scope.Span;
 
                         span.Type = SpanTypes.Test;
@@ -358,7 +351,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 // So the last spans in buffer aren't send to the agent.
                 // Other times we reach the 500 items of the buffer in a sec and the tracer start to drop spans.
                 // In a test scenario we must keep all spans.
-                Tracer.Instance.FlushAsync().GetAwaiter().GetResult();
+                Common.TestTracer.FlushAsync().GetAwaiter().GetResult();
             }
             finally
             {

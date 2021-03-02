@@ -87,7 +87,7 @@ jobs:
         test/benchmarks/**/*.csproj
         !src/Datadog.Trace.Tools.Runner/*.csproj
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet
+      DD_SERVICE: dd-trace-dotnet
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -96,7 +96,7 @@ jobs:
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet
+      DD_SERVICE: dd-trace-dotnet
 
 - job: managed_linux_arm64
   pool: Arm64
@@ -116,6 +116,8 @@ jobs:
         test/**/*.Tests.csproj
         benchmarks/**/*.csproj
         !src/Datadog.Trace.Tools.Runner/*.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -123,6 +125,8 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
 
 - job: managed_macos
   pool:
@@ -172,6 +176,8 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
 
 
 - job: windows_profiler

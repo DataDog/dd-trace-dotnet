@@ -8,12 +8,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     internal static class XUnitIntegration
     {
-        static XUnitIntegration()
-        {
-            // Preload environment variables.
-            CIEnvironmentValues.DecorateSpan(null);
-        }
-
         internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
         {
             string testSuite = runnerInstance.TestClass.ToString();
@@ -21,10 +15,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
             AssemblyName testInvokerAssemblyName = targetType.Assembly.GetName();
 
-            Tracer tracer = Tracer.Instance;
             string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
-            Scope scope = tracer.StartActive("xunit.test");
+            Scope scope = Common.TestTracer.StartActive("xunit.test", serviceName: Common.ServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;

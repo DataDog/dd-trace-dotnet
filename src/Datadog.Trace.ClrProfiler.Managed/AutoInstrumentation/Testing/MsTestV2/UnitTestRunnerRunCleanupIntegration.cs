@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // We have to ensure the flush of the buffer after we finish the tests of an assembly.
                 // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                 try
                 {
                     SynchronizationContext.SetSynchronizationContext(null);
-                    Tracer.Instance.FlushAsync().GetAwaiter().GetResult();
+                    Common.TestTracer.FlushAsync().GetAwaiter().GetResult();
                 }
                 finally
                 {

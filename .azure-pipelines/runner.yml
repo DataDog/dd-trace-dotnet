@@ -189,7 +189,7 @@ jobs:
         benchmarks/**/*.csproj
         !src/Datadog.Trace.Tools.Runner/*.csproj
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet
+      DD_SERVICE: dd-trace-dotnet
       
   - task: NuGetToolInstaller@1
     displayName: install nuget
@@ -207,7 +207,7 @@ jobs:
       msbuildArguments: /t:BuildTool /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       maximumCpuCount: true
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet-runner-tool
+      DD_SERVICE: dd-trace-dotnet-runner-tool
 
   - task: MSBuild@1
     displayName: standalone build
@@ -216,7 +216,7 @@ jobs:
       msbuildArguments: /t:BuildStandalone /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       maximumCpuCount: true
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet-runner-tool
+      DD_SERVICE: dd-trace-dotnet-runner-tool
 
   - task: DeleteFiles@1
     displayName: 'Remove unneeded files'
