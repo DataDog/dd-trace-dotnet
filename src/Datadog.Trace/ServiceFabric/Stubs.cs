@@ -18,13 +18,13 @@ namespace Datadog.Trace.ServiceFabric
 
     public interface IServiceRemotingRequestMessageHeader
     {
-        int MethodId { get; set; }
+        int MethodId { get; }
 
-        int InterfaceId { get; set; }
+        int InterfaceId { get; }
 
-        string? InvocationId { get; set; }
+        string? InvocationId { get; }
 
-        string? MethodName { get; set; }
+        string? MethodName { get; }
 
         void AddHeader(string headerName, byte[] headerValue);
 
