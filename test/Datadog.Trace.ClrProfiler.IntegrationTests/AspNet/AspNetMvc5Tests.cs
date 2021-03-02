@@ -51,22 +51,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this);
         }
 
-        public static TheoryData<string, string, HttpStatusCode, bool, string, string, SerializableDictionary> Data => new()
+        public static TheoryData<string, string, int, bool, string, string, SerializableDictionary> Data => new()
         {
-            { "/DataDog/DogHouse", "GET /datadog/doghouse", HttpStatusCode.OK, false, null, null, DatadogAreaTags() },
-            { "/DataDog/DogHouse/Woof", "GET /datadog/doghouse/woof", HttpStatusCode.OK, false, null, null, DatadogAreaWoofTags() },
-            { "/", "GET /", HttpStatusCode.OK, false, null, null, HomeIndexTags() },
-            { "/Home", "GET /home", HttpStatusCode.OK, false, null, null, HomeIndexTags() },
-            { "/Home/Index", "GET /home/index", HttpStatusCode.OK, false, null, null, HomeIndexTags() },
-            { "/Home/Get", "GET /home/get", HttpStatusCode.InternalServerError, true, "System.ArgumentException", MissingParameterError(), HomeGetTags() },
-            { "/Home/Get/3", "GET /home/get/?", HttpStatusCode.OK, false, null, null, HomeGetTags() },
-            { "/delay/0", "GET /delay/{seconds}", HttpStatusCode.OK, false, null, null, DelayTags() },
-            { "/delay-async/0", "GET /delay-async/{seconds}", HttpStatusCode.OK, false, null, null, DelayAsyncTags() },
-            { "/delay-optional", "GET /delay-optional/{seconds}", HttpStatusCode.OK, false, null, null, DelayOptionalTags() },
-            { "/delay-optional/1", "GET /delay-optional/{seconds}", HttpStatusCode.OK, false, null, null, DelayOptionalTags() },
-            { "/badrequest", "GET /badrequest", HttpStatusCode.InternalServerError, true, "System.Exception", "Oops, it broke.", BadRequestTags() },
-            { "/statuscode/201", "GET /statuscode/{value}", HttpStatusCode.Created, false, null, null, StatusCodeTags() },
-            { "/statuscode/503", "GET /statuscode/{value}", HttpStatusCode.ServiceUnavailable, true, null, "The HTTP response has status code 503.", StatusCodeTags() },
+            { "/DataDog/DogHouse", "GET /datadog/doghouse", 200, false, null, null, DatadogAreaTags() },
+            { "/DataDog/DogHouse/Woof", "GET /datadog/doghouse/woof", 200, false, null, null, DatadogAreaWoofTags() },
+            { "/", "GET /", 200, false, null, null, HomeIndexTags() },
+            { "/Home", "GET /home", 200, false, null, null, HomeIndexTags() },
+            { "/Home/Index", "GET /home/index", 200, false, null, null, HomeIndexTags() },
+            { "/Home/Get", "GET /home/get", 500, true, "System.ArgumentException", MissingParameterError(), HomeGetTags() },
+            { "/Home/Get/3", "GET /home/get/?", 200, false, null, null, HomeGetTags() },
+            { "/delay/0", "GET /delay/{seconds}", 200, false, null, null, DelayTags() },
+            { "/delay-async/0", "GET /delay-async/{seconds}", 200, false, null, null, DelayAsyncTags() },
+            { "/delay-optional", "GET /delay-optional/{seconds}", 200, false, null, null, DelayOptionalTags() },
+            { "/delay-optional/1", "GET /delay-optional/{seconds}", 200, false, null, null, DelayOptionalTags() },
+            { "/badrequest", "GET /badrequest", 500, true, "System.Exception", "Oops, it broke.", BadRequestTags() },
+            { "/statuscode/201", "GET /statuscode/{value}", 201, false, null, null, StatusCodeTags() },
+            { "/statuscode/503", "GET /statuscode/{value}", 503, true, null, "The HTTP response has status code 503.", StatusCodeTags() },
         };
 
         [Theory]

@@ -51,18 +51,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this);
         }
 
-        public static TheoryData<string, string, HttpStatusCode, bool, string, string, SerializableDictionary> Data => new()
+        public static TheoryData<string, string, int, bool, string, string, SerializableDictionary> Data => new()
         {
-            { "/api/environment", "GET api/environment", HttpStatusCode.OK, false, null, null, EnvironmentTags() },
-            { "/api/absolute-route", "GET api/absolute-route", HttpStatusCode.OK, false, null, null, AbsoluteRouteTags() },
-            { "/api/delay/0", "GET api/delay/{seconds}", HttpStatusCode.OK, false, null, null, DelayTags() },
-            { "/api/delay-optional", "GET api/delay-optional/{seconds}", HttpStatusCode.OK, false, null, null, DelayOptionalTags() },
-            { "/api/delay-optional/1", "GET api/delay-optional/{seconds}", HttpStatusCode.OK, false, null, null, DelayOptionalTags() },
-            { "/api/delay-async/0", "GET api/delay-async/{seconds}", HttpStatusCode.OK, false, null, null, DelayAsyncTags() },
-            { "/api/transient-failure/true", "GET api/transient-failure/{value}", HttpStatusCode.OK, false, null, null, TransientFailureTags() },
-            { "/api/transient-failure/false", "GET api/transient-failure/{value}", HttpStatusCode.InternalServerError, true, "System.ArgumentException", "Passed in value was not 'true': false", TransientFailureTags() },
-            { "/api/statuscode/201", "GET api/statuscode/{value}", HttpStatusCode.Created, false, null, null, StatusCodeTags() },
-            { "/api/statuscode/503", "GET api/statuscode/{value}", HttpStatusCode.ServiceUnavailable, true, null, "The HTTP response has status code 503.", StatusCodeTags() },
+            { "/api/environment", "GET api/environment", 200, false, null, null, EnvironmentTags() },
+            { "/api/absolute-route", "GET api/absolute-route", 200, false, null, null, AbsoluteRouteTags() },
+            { "/api/delay/0", "GET api/delay/{seconds}", 200, false, null, null, DelayTags() },
+            { "/api/delay-optional", "GET api/delay-optional/{seconds}", 200, false, null, null, DelayOptionalTags() },
+            { "/api/delay-optional/1", "GET api/delay-optional/{seconds}", 200, false, null, null, DelayOptionalTags() },
+            { "/api/delay-async/0", "GET api/delay-async/{seconds}", 200, false, null, null, DelayAsyncTags() },
+            { "/api/transient-failure/true", "GET api/transient-failure/{value}", 200, false, null, null, TransientFailureTags() },
+            { "/api/transient-failure/false", "GET api/transient-failure/{value}", 500, true, "System.ArgumentException", "Passed in value was not 'true': false", TransientFailureTags() },
+            { "/api/statuscode/201", "GET api/statuscode/{value}", 201, false, null, null, StatusCodeTags() },
+            { "/api/statuscode/503", "GET api/statuscode/{value}", 503, true, null, "The HTTP response has status code 503.", StatusCodeTags() },
         };
 
         [Theory]
