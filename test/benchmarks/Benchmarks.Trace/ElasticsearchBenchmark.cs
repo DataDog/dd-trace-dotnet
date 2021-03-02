@@ -42,6 +42,7 @@ namespace Benchmarks.Trace
 
             Marshal.StructureToPtr(guid, GuidPtr, false);
 
+            new ElasticsearchBenchmark().CallElasticsearch();
             new ElasticsearchBenchmark().CallElasticsearchAsync();
         }
 
