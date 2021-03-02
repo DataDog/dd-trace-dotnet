@@ -260,5 +260,24 @@ namespace Samples.HttpMessageHandler
             }
         }
 #endif
+
+        public static async Task SendHttpMessageInvokerRequestsAsync(HttpMessageInvoker invoker, bool tracingDisabled, string url)
+        {
+            // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
+            Console.WriteLine($"[HttpMessageInvoker] sending requests to {url}");
+
+            var httpRequest = new HttpRequestMessage();
+
+            if (tracingDisabled)
+            {
+                httpRequest.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+            }
+
+            httpRequest.Method = HttpMethod.Get;
+            httpRequest.RequestUri = new Uri(url);
+
+            Console.WriteLine("Received response for HttpMessageInvoker.SendAsync");
+            await invoker.SendAsync(httpRequest, CancellationToken.None);
+        }
     }
 }
