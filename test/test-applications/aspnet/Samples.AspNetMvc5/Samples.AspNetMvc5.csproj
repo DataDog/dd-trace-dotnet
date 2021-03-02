@@ -103,6 +103,7 @@
     <Compile Include="Areas\Datadog\DatadogAreaRegistration.cs" />
     <Compile Include="Controllers\ContactsController.cs" />
     <Compile Include="Controllers\ApiController.cs" />
+    <Compile Include="Controllers\ConventionsController.cs" />
     <Compile Include="Controllers\DistributedTracingApiController.cs" />
     <Compile Include="Controllers\DistributedTracingMvcController.cs" />
     <Compile Include="Controllers\HomeController.cs" />

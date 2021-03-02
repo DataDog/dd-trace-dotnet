@@ -16,6 +16,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/api/transient-failure/false", "GET api/transient-failure/{value}", 500, true, "System.ArgumentException", "Passed in value was not 'true': false", TransientFailureTags },
             { "/api/statuscode/201", "GET api/statuscode/{value}", 201, false, null, null, StatusCodeTags },
             { "/api/statuscode/503", "GET api/statuscode/{value}", 503, true, null, "The HTTP response has status code 503.", StatusCodeTags },
+            { "/api2/delay/0", "GET api2/delay/{value}", 200, false, null, null, ConventionDelayTags },
+            { "/api2/optional", "GET api2/optional/{value}", 200, false, null, null, ConventionDelayOptionalTags },
+            { "/api2/optional/1", "GET api2/optional/{value}", 200, false, null, null, ConventionDelayOptionalTags },
+            { "/api2/delayAsync/0", "GET api2/delayasync/{value}", 200, false, null, null, ConventionDelayAsyncTags },
+            { "/api2/transientfailure/true", "GET api2/transientfailure/{value}", 200, false, null, null, ConventionTransientFailureTags },
+            { "/api2/transientfailure/false", "GET api2/transientfailure/{value}", 500, true, "System.ArgumentException", "Passed in value was not 'true': false", ConventionTransientFailureTags },
+            { "/api2/statuscode/201", "GET api2/statuscode/{value}", 201, false, null, null, ConventionStatusCodeTags },
+            { "/api2/statuscode/503", "GET api2/statuscode/{value}", 503, true, null, "The HTTP response has status code 503.", ConventionStatusCodeTags },
         };
 
         private static SerializableDictionary EnvironmentTags => new()
@@ -31,11 +39,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static SerializableDictionary TransientFailureTags => new()
         {
             { Tags.AspNetRoute, "api/transient-failure/{value}" },
-        };
-
-        private static SerializableDictionary DelayHomeTags => new()
-        {
-            { Tags.AspNetRoute, "delay/{seconds}" },
         };
 
         private static SerializableDictionary DelayTags => new()
@@ -56,6 +59,43 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static SerializableDictionary StatusCodeTags => new()
         {
             { Tags.AspNetRoute, "api/statuscode/{value}" },
+        };
+
+        private static string DefaultApiRoute => "api2/{action}/{value}";
+
+        private static SerializableDictionary ConventionDelayTags => new()
+        {
+            { Tags.AspNetRoute, DefaultApiRoute },
+            { Tags.AspNetController, "conventions" },
+            { Tags.AspNetAction, "delay" },
+        };
+
+        private static SerializableDictionary ConventionDelayOptionalTags => new()
+        {
+            { Tags.AspNetRoute, DefaultApiRoute },
+            { Tags.AspNetController, "conventions" },
+            { Tags.AspNetAction, "optional" },
+        };
+
+        private static SerializableDictionary ConventionDelayAsyncTags => new()
+        {
+            { Tags.AspNetRoute, DefaultApiRoute },
+            { Tags.AspNetController, "conventions" },
+            { Tags.AspNetAction, "delayasync" },
+        };
+
+        private static SerializableDictionary ConventionTransientFailureTags => new()
+        {
+            { Tags.AspNetRoute, DefaultApiRoute },
+            { Tags.AspNetController, "conventions" },
+            { Tags.AspNetAction, "transientfailure" },
+        };
+
+        private static SerializableDictionary ConventionStatusCodeTags => new()
+        {
+            { Tags.AspNetRoute, DefaultApiRoute },
+            { Tags.AspNetController, "conventions" },
+            { Tags.AspNetAction, "statuscode" },
         };
     }
 }

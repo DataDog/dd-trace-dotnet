@@ -19,10 +19,13 @@ namespace Samples.AspNetMvc5
             config.MapHttpAttributeRoutes();
 
             config.Routes.MapHttpRoute(
-                                       name: "DefaultApi",
-                                       routeTemplate: "api/{controller}/{id}",
-                                       defaults: new { id = RouteParameter.Optional }
-                                      );
+                name: "ApiConventions",
+                routeTemplate: "api2/{action}/{value}",
+                defaults: new
+                {
+                    controller = "Conventions", 
+                    value = RouteParameter.Optional
+                });
         }
     }
 }
