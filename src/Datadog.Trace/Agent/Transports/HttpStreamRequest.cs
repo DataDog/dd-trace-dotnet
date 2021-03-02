@@ -43,16 +43,18 @@ namespace Datadog.Trace.Agent.Transports
                 // send request, get response
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
 
-                // buffer the entire contents for now
-                var responseContentStream = new MemoryStream();
-                await response.Content.CopyToAsync(responseContentStream, ResponseReadBufferSize).ConfigureAwait(false);
-                responseContentStream.Position = 0;
-
-                var contentLength = response.ContentLength;
-                if (contentLength != null && contentLength != responseContentStream.Length)
+                // Content-Length is required as we don't support chunked transfer
+                var contentLength = response.Content.Length;
+                if (!contentLength.HasValue)
                 {
-                    throw new Exception("Content length from http headers does not match content's actual length.");
+                    throw new Exception("Content-Length is required but was not provided");
                 }
+
+                // buffer the entire contents for now
+                var buffer = new byte[contentLength.Value];
+                var responseContentStream = new MemoryStream(buffer);
+                await response.Content.CopyToAsync(buffer).ConfigureAwait(false);
+                responseContentStream.Position = 0;
 
                 return new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream);
             }

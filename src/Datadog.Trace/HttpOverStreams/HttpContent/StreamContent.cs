@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -15,14 +16,38 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
 
         public long? Length { get; }
 
-        public Task CopyToAsync(Stream destination, int? bufferSize)
+        public Task CopyToAsync(Stream destination)
         {
-            if (bufferSize == null)
+            return Stream.CopyToAsync(destination);
+        }
+
+        public async Task CopyToAsync(byte[] buffer)
+        {
+            if (!Length.HasValue)
             {
-                return Stream.CopyToAsync(destination);
+                throw new InvalidOperationException("Unable to CopyToAsync with buffer when content Length is unknown");
             }
 
-            return Stream.CopyToAsync(destination, bufferSize.Value);
+            if (Length > buffer.Length)
+            {
+                throw new ArgumentException($"Provided buffer was smaller {buffer.Length} than the content length {Length}");
+            }
+
+            var length = 0;
+            long remaining = Length.Value;
+            while (true)
+            {
+                var bytesToRead = (int)Math.Min(remaining, int.MaxValue);
+                var bytesRead = await Stream.ReadAsync(buffer, offset: length, count: bytesToRead);
+
+                length += bytesRead;
+                remaining -= bytesRead;
+
+                if (bytesRead == 0 || remaining <= 0)
+                {
+                    return;
+                }
+            }
         }
     }
 }

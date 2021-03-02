@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ namespace Datadog.Trace.HttpOverStreams
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
         {
             await SendRequestAsync(request, requestStream).ConfigureAwait(false);
-            return ReadResponse(responseStream);
+            return await ReadResponseAsync(responseStream).ConfigureAwait(false);
         }
 
         private async Task SendRequestAsync(HttpRequest request, Stream requestStream)
@@ -39,15 +40,15 @@ namespace Datadog.Trace.HttpOverStreams
                 await DatadogHttpHeaderHelper.WriteEndOfHeaders(writer).ConfigureAwait(false);
             }
 
-            await request.Content.CopyToAsync(requestStream, null).ConfigureAwait(false);
+            await request.Content.CopyToAsync(requestStream).ConfigureAwait(false);
             Logger.Debug("Datadog HTTP: Flushing stream.");
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
 
-        private HttpResponse ReadResponse(Stream responseStream)
+        private async Task<HttpResponse> ReadResponseAsync(Stream responseStream)
         {
             var headers = new HttpHeaders();
-            char currentChar;
+            char currentChar = char.MinValue;
             int streamPosition = 0;
 
             // https://tools.ietf.org/html/rfc2616#section-4.2
@@ -57,27 +58,86 @@ namespace Datadog.Trace.HttpOverStreams
             const int statusCodeStart = 9;
             const int statusCodeEnd = 12;
             const int startOfReasonPhrase = 13;
+            const int bufferSize = 10;
 
             // TODO: Get this from StringBuilderCache after we determine safe maximum capacity
             var stringBuilder = new StringBuilder();
 
-            var chArray = new byte[1];
-            void GoNextChar()
+            var chArray = new byte[bufferSize];
+
+            async Task GoNextChar()
             {
-                streamPosition++;
-                chArray[0] = (byte)responseStream.ReadByte();
+                var bytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: 1).ConfigureAwait(false);
+                if (bytesRead == 0)
+                {
+                    throw new InvalidOperationException($"Unexpected end of stream at position {streamPosition}");
+                }
+
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
+                streamPosition++;
             }
 
-            bool IsNewLine()
+            async Task SkipUntil(int requiredStreamPosition)
+            {
+                var requiredBytes = requiredStreamPosition - streamPosition;
+                if (requiredBytes < 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(requiredStreamPosition), "StreamPosition already exceeds requiredStreamPosition");
+                }
+
+                var bytesRemaining = requiredBytes;
+                var lastBytesRead = 0;
+                while (bytesRemaining > 0)
+                {
+                    var bytesToRead = Math.Min(bytesRemaining, bufferSize);
+                    lastBytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: bytesToRead).ConfigureAwait(false);
+                    if (lastBytesRead == 0)
+                    {
+                        throw new InvalidOperationException($"Unexpected end of stream at position {streamPosition}");
+                    }
+
+                    bytesRemaining -= lastBytesRead;
+                }
+
+                currentChar = Encoding.ASCII.GetChars(chArray)[lastBytesRead - 1];
+                streamPosition += requiredBytes;
+            }
+
+            async Task ReadUntil(StringBuilder builder, char stopChar)
+            {
+                while (!currentChar.Equals(stopChar))
+                {
+                    builder.Append(currentChar);
+                    await GoNextChar().ConfigureAwait(false);
+                }
+            }
+
+            async Task ReadUntilNewLine(StringBuilder builder)
+            {
+                do
+                {
+                    if (await IsNewLine().ConfigureAwait(false))
+                    {
+                        break;
+                    }
+
+                    await ReadUntil(builder, DatadogHttpValues.CarriageReturn).ConfigureAwait(false);
+                }
+                while (true);
+            }
+
+            async Task<bool> IsNewLine()
             {
                 if (currentChar.Equals(DatadogHttpValues.CarriageReturn))
                 {
                     // end of headers
-                    if (DatadogHttpValues.CrLfLength > 1)
+                    // Next character should be a LineFeed, regardless of Linux/Windows
+                    // Skip the newline indicator
+                    await GoNextChar().ConfigureAwait(false);
+
+                    if (!currentChar.Equals(DatadogHttpValues.LineFeed))
                     {
-                        // Skip the newline indicator
-                        GoNextChar();
+                        throw new Exception($"Unexpected character {currentChar} in headers: CR must be followed by LF");
                     }
 
                     return true;
@@ -87,15 +147,12 @@ namespace Datadog.Trace.HttpOverStreams
             }
 
             // Skip to status code
-            while (streamPosition < statusCodeStart)
-            {
-                GoNextChar();
-            }
+            await SkipUntil(statusCodeStart).ConfigureAwait(false);
 
             // Read status code
             while (streamPosition < statusCodeEnd)
             {
-                GoNextChar();
+                await GoNextChar().ConfigureAwait(false);
                 stringBuilder.Append(currentChar);
             }
 
@@ -108,23 +165,11 @@ namespace Datadog.Trace.HttpOverStreams
             }
 
             // Skip to reason
-            while (streamPosition < startOfReasonPhrase)
-            {
-                GoNextChar();
-            }
+            await SkipUntil(startOfReasonPhrase).ConfigureAwait(false);
 
             // Read reason
-            do
-            {
-                GoNextChar();
-                if (IsNewLine())
-                {
-                    break;
-                }
-
-                stringBuilder.Append(currentChar);
-            }
-            while (true);
+            await GoNextChar().ConfigureAwait(false);
+            await ReadUntilNewLine(stringBuilder).ConfigureAwait(false);
 
             var reasonPhrase = stringBuilder.ToString();
             stringBuilder.Clear();
@@ -132,46 +177,26 @@ namespace Datadog.Trace.HttpOverStreams
             // Read headers
             do
             {
-                GoNextChar();
+                await GoNextChar().ConfigureAwait(false);
 
                 // Check for end of headers
-                if (IsNewLine())
+                if (await IsNewLine().ConfigureAwait(false))
                 {
                     // Empty line, content starts next
                     break;
                 }
 
                 // Read key
-                do
-                {
-                    if (currentChar.Equals(':'))
-                    {
-                        // Value portion starts
-                        break;
-                    }
-
-                    stringBuilder.Append(currentChar);
-                    GoNextChar();
-                }
-                while (true);
+                await ReadUntil(stringBuilder, stopChar: ':').ConfigureAwait(false);
 
                 var name = stringBuilder.ToString().Trim();
                 stringBuilder.Clear();
 
+                // skip separator
+                await GoNextChar().ConfigureAwait(false);
+
                 // Read value
-                do
-                {
-                    GoNextChar();
-
-                    if (IsNewLine())
-                    {
-                        // Next header pair starts
-                        break;
-                    }
-
-                    stringBuilder.Append(currentChar);
-                }
-                while (true);
+                await ReadUntilNewLine(stringBuilder).ConfigureAwait(false);
 
                 var value = stringBuilder.ToString().Trim();
                 stringBuilder.Clear();
