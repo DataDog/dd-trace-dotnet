@@ -104,7 +104,7 @@ namespace Samples.HttpMessageHandler
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     Console.WriteLine();
-                    Console.WriteLine("Sending sync request with WinHttpHandler.");
+                    Console.WriteLine("Sending async request with WinHttpHandler.");
                     Type winHttpHandler = typeof(System.Net.Http.HttpMessageHandler).Assembly.GetTypes().FirstOrDefault(t => t.Name == "WinHttpHandler");
                     System.Net.Http.HttpMessageHandler handler = (System.Net.Http.HttpMessageHandler)Activator.CreateInstance(winHttpHandler);
                     using (var invoker = new HttpMessageInvoker(handler, false))
@@ -115,7 +115,7 @@ namespace Samples.HttpMessageHandler
                 else
                 {
                     Console.WriteLine();
-                    Console.WriteLine("Sending sync request with CurlHandler.");
+                    Console.WriteLine("Sending async request with CurlHandler.");
                     Type curlHandlerType = typeof(System.Net.Http.HttpMessageHandler).Assembly.GetTypes().FirstOrDefault(t => t.Name == "CurlHandler");
                     System.Net.Http.HttpMessageHandler handler = (System.Net.Http.HttpMessageHandler)Activator.CreateInstance(curlHandlerType);
                     using (var invoker = new HttpMessageInvoker(handler, false))

@@ -9,7 +9,7 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.CurlHandler
 {
     /// <summary>
-    /// System.Net.Http.WinHttpHandler calltarget instrumentation
+    /// System.Net.Http.CurlHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Net.Http",
