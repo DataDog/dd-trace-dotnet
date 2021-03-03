@@ -300,24 +300,15 @@ namespace Datadog.Trace.TestHelpers
                 if (!File.Exists(_profilerFileLocation))
                 {
                     _output?.WriteLine($"Attempt 2: Unable to find profiler at {_profilerFileLocation}.");
-                    // Let's try the actual native project directory on Windows structure
+                    // One last attempt at the actual native project directory
                     _profilerFileLocation = Path.Combine(
-                        GetProfilerProjectWindowsBin(),
+                        GetProfilerProjectBin(),
                         fileName);
                 }
 
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    _output?.WriteLine($"Attempt 3: Unable to find profiler at {_profilerFileLocation}");
-                    // One last attempt at the actual native project directory on Non Windows structure
-                    _profilerFileLocation = Path.Combine(
-                        GetProfilerProjectNonWindowsBin(),
-                        fileName);
-                }
-
-                if (!File.Exists(_profilerFileLocation))
-                {
-                    throw new Exception($"Attempt 4: Unable to find profiler at {_profilerFileLocation}");
+                    throw new Exception($"Attempt 3: Unable to find profiler at {_profilerFileLocation}");
                 }
 
                 _output?.WriteLine($"Found profiler at {_profilerFileLocation}.");
@@ -426,7 +417,7 @@ namespace Datadog.Trace.TestHelpers
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
         }
 
-        private string GetProfilerProjectWindowsBin()
+        private string GetProfilerProjectBin()
         {
             return Path.Combine(
                 GetSolutionDirectory(),
@@ -435,16 +426,6 @@ namespace Datadog.Trace.TestHelpers
                 "bin",
                 EnvironmentTools.GetBuildConfiguration(),
                 EnvironmentTools.GetPlatform().ToLower());
-        }
-
-        private string GetProfilerProjectNonWindowsBin()
-        {
-            return Path.Combine(
-                GetSolutionDirectory(),
-                "src",
-                "Datadog.Trace.ClrProfiler.Native",
-                "build",
-                "bin");
         }
 
         private string GetExecutingProjectBin()
