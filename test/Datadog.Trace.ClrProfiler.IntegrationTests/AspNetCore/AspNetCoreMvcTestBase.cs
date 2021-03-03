@@ -18,8 +18,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         protected const string HeaderName1 = "datadog-header-name";
         protected const string HeaderName1Upper = "DATADOG-HEADER-NAME";
-        protected const string HeaderValue1 = "asp-net-core";
         protected const string HeaderTagName1 = "datadog-header-tag";
+        protected const string HeaderValue1 = "asp-net-core";
+        protected const string HeaderName2 = "server";
+        protected const string HeaderTagName2 = "header-tag-server";
+        protected const string HeaderValue2 = "Kestrel";
 
         protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output, string serviceVersion)
             : base(sampleAppName, output)
@@ -27,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             ServiceVersion = serviceVersion;
             HttpClient = new HttpClient();
             HttpClient.DefaultRequestHeaders.Add(HeaderName1, HeaderValue1);
-            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1Upper}:{HeaderTagName1}");
+            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1Upper}:{HeaderTagName1}, {HeaderName2}:{HeaderTagName2}");
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-501-234, s342, 500");
 
             SetServiceVersion(ServiceVersion);
@@ -243,6 +246,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             expectation.RegisterDelegateExpectation(additionalCheck);
             expectation.RegisterTagExpectation(HeaderTagName1, HeaderValue1);
+            expectation.RegisterTagExpectation(HeaderTagName2, HeaderValue2);
 
             Expectations.Add(expectation);
         }
