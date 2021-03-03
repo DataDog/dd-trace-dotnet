@@ -1,14 +1,10 @@
 using System;
 using DynamicDiagnosticSourceBindings.Demo;
 
-namespace Demo.Slimple.NetCore31
+namespace Demo.LoadUnloadPlugin.NetCore31
 {
     class Program
     {
-        // This demo shows one of several possible ways for dealing with dynamic invocation exceptions.
-        // The corresponding Net Fx demo shows how to use the APIs directly.
-        // Other demos show other approaches for dealing with these exceptions.
-
         static void Main(string[] args)
         {
             ConsoleWrite.Line(typeof(Program).FullName);

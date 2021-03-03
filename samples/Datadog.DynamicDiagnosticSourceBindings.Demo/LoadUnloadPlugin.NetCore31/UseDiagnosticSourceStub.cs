@@ -4,7 +4,7 @@ using Datadog.DynamicDiagnosticSourceBindings;
 using Datadog.Util;
 using DynamicDiagnosticSourceBindings.Demo;
 
-namespace Demo.Slimple.NetFx45
+namespace Demo.LoadUnloadPlugin.NetCore31
 {
     internal static class UseDiagnosticSourceStub
     {
@@ -31,10 +31,6 @@ namespace Demo.Slimple.NetFx45
 
         public static void Run()
         {
-            // This demo shows how to use the stub APIs directly, without protecting against dynamic invocation exceptions.
-            // The corresponding Net Core demo shows one of several possible ways for dealing with such exceptions.
-            // Other demos show other approaches for dealing with these exceptions.
-
             ConsoleWrite.LineLine($"STARTING DEMO '{nameof(UseDiagnosticSourceStub)}'.");
 
             SetupListening();
@@ -85,11 +81,11 @@ namespace Demo.Slimple.NetFx45
 
                         if (diagnosticListener.Name.Equals("DemoXxx.UseDiagnosticSource.Name1", StringComparison.Ordinal))
                         {
-                            IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(
-                                    ObserverAdapter.OnNextHandler((KeyValuePair<string, object> eventInfo) =>
-                                    {
-                                        ConsoleWrite.Line($"Event Handler called: eventObserver(eventName: \"{eventInfo.Key}\", payloadValue: {(eventInfo.Value ?? "<null>")})");
-                                    }),
+                            IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(ObserverAdapter.OnNextHandler(
+                                            (KeyValuePair<string, object> eventInfo) =>
+                                            {
+                                                ConsoleWrite.Line($"Event Handler called: eventObserver(eventName: \"{eventInfo.Key}\", payloadValue: {(eventInfo.Value ?? "<null>")})");
+                                            }),
                                     (string eventName, object arg1, object arg2) =>
                                     {
                                         Validate.NotNull(eventName, nameof(eventName));

@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using Datadog.DynamicDiagnosticSourceBindings;
+using System.Diagnostics;
+
 using Datadog.Util;
 using DynamicDiagnosticSourceBindings.Demo;
 
-namespace Demo.Slimple.NetFx45
+namespace Demo.LoadUnloadPlugin.NetCore31
 {
-    internal static class UseDiagnosticSourceStub
+    internal static class UseDiagnosticSource
     {
         private class EventXyzNamePayload
         {
@@ -31,18 +32,14 @@ namespace Demo.Slimple.NetFx45
 
         public static void Run()
         {
-            // This demo shows how to use the stub APIs directly, without protecting against dynamic invocation exceptions.
-            // The corresponding Net Core demo shows one of several possible ways for dealing with such exceptions.
-            // Other demos show other approaches for dealing with these exceptions.
-
-            ConsoleWrite.LineLine($"STARTING DEMO '{nameof(UseDiagnosticSourceStub)}'.");
+            ConsoleWrite.LineLine($"STARTING DEMO '{nameof(UseDiagnosticSource)}'.");
 
             SetupListening();
 
             ConsoleWrite.LineLine("Starting to create new Diagnostic Sources.");
 
-            DiagnosticSourceStub diagnosticSource1 = DiagnosticListening.CreateNewSource("DemoXxx.UseDiagnosticSource.Name1");
-            DiagnosticSourceStub diagnosticSource2 = DiagnosticListening.CreateNewSource("DemoXxx.UseDiagnosticSource.Name2");
+            DiagnosticSource diagnosticSource1 = new DiagnosticListener("DemoXxx.UseDiagnosticSource.Name1");
+            DiagnosticSource diagnosticSource2 = new DiagnosticListener("DemoXxx.UseDiagnosticSource.Name2");
 
             ConsoleWrite.Line("Finished creating new Diagnostic Sources.");
 
@@ -71,31 +68,34 @@ namespace Demo.Slimple.NetFx45
 
             ConsoleWrite.Line("Finished to emit DiagnosticSource events.");
 
-            ConsoleWrite.LineLine($"FINISHED DEMO '{nameof(UseDiagnosticSourceStub)}'.");
+            ConsoleWrite.LineLine($"FINISHED DEMO '{nameof(UseDiagnosticSource)}'.");
         }
 
         private static void SetupListening()
         {
             ConsoleWrite.LineLine("Starting setting up DiagnosticSource listening.");
 
-            IDisposable listenerSubscription = DiagnosticListening.SubscribeToAllSources(ObserverAdapter.OnNextHandler(
-                    (DiagnosticListenerStub diagnosticListener) =>
+            IDisposable listenerSubscription = DiagnosticListener.AllListeners.Subscribe(ObserverAdapter.OnNextHandler(
+                    (DiagnosticListener diagLstnr) =>
                     {
-                        ConsoleWrite.Line($"Subscriber called: diagnosticSourceObserver(diagnosticListener.Name: \"{diagnosticListener.Name}\")");
+                        // This lambda looks at ALL Diagnostic Listeners (aka Sources),
+                        // picks the one it is inderested in and subscibes to that particular Source.
 
-                        if (diagnosticListener.Name.Equals("DemoXxx.UseDiagnosticSource.Name1", StringComparison.Ordinal))
+                        ConsoleWrite.Line($"Subscriber called: OnNext(diagLstnr.Name: \"{diagLstnr.Name}\")");
+
+                        if (diagLstnr.Name.Equals("DemoXxx.UseDiagnosticSource.Name1", StringComparison.Ordinal))
                         {
-                            IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(
-                                    ObserverAdapter.OnNextHandler((KeyValuePair<string, object> eventInfo) =>
+                            IDisposable eventSubscription = diagLstnr.Subscribe(ObserverAdapter.OnNextHandler(
+                                    (KeyValuePair<string, object> eventInfo) =>
                                     {
-                                        ConsoleWrite.Line($"Event Handler called: eventObserver(eventName: \"{eventInfo.Key}\", payloadValue: {(eventInfo.Value ?? "<null>")})");
+                                        ConsoleWrite.Line($"Event Handler called: OnNext(eventInfo.Key: \"{eventInfo.Key}\", eventInfo.Value: {(eventInfo.Value ?? "<null>")})");
                                     }),
-                                    (string eventName, object arg1, object arg2) =>
+                                    (name, arg1, arg2) =>
                                     {
-                                        Validate.NotNull(eventName, nameof(eventName));
-                                        bool res = eventName.StartsWith("EventXyzName", StringComparison.OrdinalIgnoreCase)
+                                        Validate.NotNull(name, nameof(name));
+                                        bool res = name.StartsWith("EventXyzName", StringComparison.OrdinalIgnoreCase)
                                                         && (arg1 == null || !(arg1 is Int32 arg1Val) || arg1Val >= 0);
-                                        ConsoleWrite.Line($"Filter called: isEventEnabledFilter(eventName: \"{eventName}\", arg1: {(arg1 ?? "<null>")}, arg2: {(arg2 ?? "<null>")})."
+                                        ConsoleWrite.Line($"Filter called: IsEnabled(name: \"{name}\", arg1: {(arg1 ?? "<null>")}, arg2: {(arg2 ?? "<null>")})."
                                                         + $" Returning: {res}.");
                                         return res;
                                     });

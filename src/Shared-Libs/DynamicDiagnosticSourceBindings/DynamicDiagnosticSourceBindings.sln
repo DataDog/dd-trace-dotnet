@@ -14,7 +14,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.DynamicDiagnosticSo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vendored.System.Diagnostics.DiagnosticSource.Tests", "..\..\..\test\Vendored.System.Diagnostics.DiagnosticSource.Tests\Vendored.System.Diagnostics.DiagnosticSource.Tests.csproj", "{74BEBAEB-626C-4865-9E32-EB9D4A9C37C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicDiagnosticSourceBindings.Demo.LateLoadDS.NetFx", "..\..\..\samples\Datadog.DynamicDiagnosticSourceBindings.Demo\LateLoadDS.NetFx\Datadog.DynamicDiagnosticSourceBindings.Demo.LateLoadDS.NetFx.csproj", "{59695C82-1219-4D8C-AF56-7731E2F562EC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.DynamicDiagnosticSourceBindings.Demo.LateLoadDS.NetFx", "..\..\..\samples\Datadog.DynamicDiagnosticSourceBindings.Demo\LateLoadDS.NetFx\Datadog.DynamicDiagnosticSourceBindings.Demo.LateLoadDS.NetFx.csproj", "{59695C82-1219-4D8C-AF56-7731E2F562EC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.DynamicDiagnosticSourceBindings.Demo.LoadUnloadPlugin.NetCore31", "..\..\..\samples\Datadog.DynamicDiagnosticSourceBindings.Demo\LoadUnloadPlugin.NetCore31\Datadog.DynamicDiagnosticSourceBindings.Demo.LoadUnloadPlugin.NetCore31.csproj", "{EABF213A-9879-4B0B-855C-DA0DD728406C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,6 +88,18 @@ Global
 		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Release|x64.Build.0 = Release|Any CPU
 		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Release|x86.ActiveCfg = Release|Any CPU
 		{59695C82-1219-4D8C-AF56-7731E2F562EC}.Release|x86.Build.0 = Release|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Debug|x64.Build.0 = Debug|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Debug|x86.Build.0 = Debug|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Release|x64.ActiveCfg = Release|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Release|x64.Build.0 = Release|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Release|x86.ActiveCfg = Release|Any CPU
+		{EABF213A-9879-4B0B-855C-DA0DD728406C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

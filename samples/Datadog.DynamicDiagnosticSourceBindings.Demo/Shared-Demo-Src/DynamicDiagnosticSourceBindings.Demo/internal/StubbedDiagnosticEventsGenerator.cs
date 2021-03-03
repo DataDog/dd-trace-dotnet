@@ -113,7 +113,6 @@ namespace DynamicDiagnosticSourceBindings.Demo
 
                 // If there was some business logic required to handle such errors, it would go here.
                 ConsoleWrite.Exception(ex);
-                
             }
         }
 
