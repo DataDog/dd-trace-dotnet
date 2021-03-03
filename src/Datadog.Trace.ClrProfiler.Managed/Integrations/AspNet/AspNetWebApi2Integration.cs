@@ -254,6 +254,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
+                var newResourceNamesEnabled = Tracer.Instance.Settings.AspnetRouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;
                 Uri requestUri = request.RequestUri;
 
@@ -270,16 +271,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
-                string resourceName = $"{method} {absoluteUri.ToLowerInvariant()}";
+                string resourceName;
 
                 if (route != null)
                 {
-                    resourceName = $"{method} {route.ToLowerInvariant()}";
+                    resourceName = $"{method} {(newResourceNamesEnabled ? "/" : string.Empty)}{route.ToLowerInvariant()}";
                 }
                 else if (requestUri != null)
                 {
                     var cleanUri = UriHelpers.GetRelativeUrl(requestUri, tryRemoveIds: true);
                     resourceName = $"{method} {cleanUri.ToLowerInvariant()}";
+                }
+                else
+                {
+                    resourceName = $"{method} {absoluteUri.ToLowerInvariant()}";
                 }
 
                 string controller = string.Empty;
@@ -319,7 +324,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.AspNetArea = area;
                 tags.AspNetRoute = route;
 
-                if (Tracer.Instance.Settings.AspnetRouteTemplateResourceNamesEnabled)
+                if (newResourceNamesEnabled)
                 {
                     // set the resource name in the HttpContext so TracingHttpModule can update root span
                     var httpContext = System.Web.HttpContext.Current;
