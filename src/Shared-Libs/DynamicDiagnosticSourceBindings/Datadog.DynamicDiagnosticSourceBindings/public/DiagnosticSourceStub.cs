@@ -12,6 +12,11 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             internal static readonly DiagnosticSourceStub DiagnosticSourceStub = new DiagnosticSourceStub(null, new DynamicInvokerHandle<DynamicInvoker_DiagnosticSource>(null));
         }
 
+        public static DiagnosticSourceStub NoOpStub
+        {
+            get { return NoOpSingeltons.DiagnosticSourceStub; }
+        }
+
         public static DiagnosticSourceStub Wrap(object diagnosticSourceInstance)
         {
             if (diagnosticSourceInstance == null)
@@ -73,6 +78,16 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         public object DiagnosticSourceInstance
         {
             get { return _diagnosticSourceInstance; }
+        }
+
+        public IDynamicInvokerHandle DynamicInvokerHandle
+        {
+            get { return _dynamicInvokerHandle; }
+        }
+
+        public bool IsNoOpStub
+        {
+            get { return (_diagnosticSourceInstance == null); }
         }
 
         public void Dispose()

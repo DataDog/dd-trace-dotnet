@@ -74,6 +74,10 @@
       <None Remove="$(VendoredPath)**/*" />
       <EmbeddedResource Remove="$(VendoredPath)**/*.resx" />
   </ItemGroup>
+   
+  <ItemGroup>
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DiagnosticListenerToStubObserverAdapter.cs" />
+  </ItemGroup>
 
   <Import Project="VendoredLibs.DiagnosticSource.props" />
 

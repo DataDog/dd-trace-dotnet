@@ -1,4 +1,5 @@
 ﻿using System;
+using DynamicDiagnosticSourceBindings.Demo;
 
 namespace Demo.Slimple.NetFx45
 {
@@ -6,11 +7,11 @@ namespace Demo.Slimple.NetFx45
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("DemoNetFx45");
+            ConsoleWrite.Line(typeof(Program).FullName);
 
             UseDiagnosticSourceStub.Run();
 
-            Console.WriteLine("Done. Press enter.");
+            ConsoleWrite.Line("Done. Press enter.");
             Console.ReadLine();
         }
     }

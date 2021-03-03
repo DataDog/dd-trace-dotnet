@@ -12,6 +12,7 @@ namespace DynamicDiagnosticSourceBindings.Demo
         private readonly int _maxInterations;
         private readonly int _phaseOneIterations;
         private int _currentIteration;
+        private DiagnosticSourceStub _diagnosticSource;
 
         public ManualResetEventSlim PhaseOneCompletedEvent { get; }
 
@@ -28,20 +29,43 @@ namespace DynamicDiagnosticSourceBindings.Demo
 
         public async Task Run()
         {
-            Console.WriteLine();
-            Console.WriteLine($"Starting {this.GetType().Name}.{nameof(Run)}.");
+            ConsoleWrite.LineLine($"Starting {this.GetType().Name}.{nameof(Run)}.");
 
-            string srcName = DiagnosticEventsSpecification.StubbedSourceName;
-            DiagnosticSourceStub diagnosticSource = DiagnosticListening.CreateNewSource(srcName);
+            ConsoleWrite.LineLine($"Initializing new Diagnostic Source.");
+            CreateNewSource();
+            ConsoleWrite.LineLine($"Finsihed initializing new Diagnostic Source.");
 
             Random rnd = new Random();
 
             int currIteration = CurrentIteration;
             while (currIteration < _maxInterations)
             {
-                if (diagnosticSource.IsEnabled(DiagnosticEventsSpecification.StubbedSourceEventName))
+                DiagnosticSourceStub diagnosticSource = _diagnosticSource;
+                if (!diagnosticSource.IsNoOpStub)
                 {
-                    diagnosticSource.Write(DiagnosticEventsSpecification.DirectSourceEventName, new DiagnosticEventsSpecification.EventPayload(currIteration, srcName));
+                    try
+                    {
+                        if (diagnosticSource.IsEnabled(DiagnosticEventsSpecification.StubbedSourceEventName))
+                        {
+                            diagnosticSource.Write(DiagnosticEventsSpecification.StubbedSourceEventName,
+                                                   new DiagnosticEventsSpecification.EventPayload(currIteration, DiagnosticEventsSpecification.StubbedSourceName));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ConsoleWrite.Exception(ex);
+                        _diagnosticSource = DiagnosticSourceStub.NoOpStub;
+
+                        ConsoleWrite.LineLine($"Writing to Diagnostic Source failed. Scheduling a re-initialization.");
+                        Task _ = Task.Run(async () =>
+                            {
+                                await Task.Delay(100);
+
+                                ConsoleWrite.LineLine($"Re-initializing Diagnostic Source.");
+                                CreateNewSource();
+                                ConsoleWrite.LineLine($"Finished re-initializing Diagnostic Source.");
+                            });
+                    }
                 }
 
                 if (currIteration == _phaseOneIterations)
@@ -58,15 +82,39 @@ namespace DynamicDiagnosticSourceBindings.Demo
                 currIteration = Interlocked.Increment(ref _currentIteration);
             }
 
-            Console.WriteLine();
-            Console.WriteLine($"Finishing {this.GetType().Name}.{nameof(Run)}.");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Finishing {this.GetType().Name}.{nameof(Run)}.");
 
-            if (diagnosticSource is IDisposable disposableSource)
             {
-                disposableSource.Dispose();
+                DiagnosticSourceStub diagnosticSource = _diagnosticSource;
+                if (diagnosticSource is IDisposable disposableSource)
+                {
+                    try
+                    {
+                        disposableSource.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        ConsoleWrite.Exception(ex);
+                    }
+                }
             }
 
-            Console.WriteLine($"Finished {this.GetType().Name}.{nameof(Run)}.");
+            ConsoleWrite.Line($"Finished {this.GetType().Name}.{nameof(Run)}.");
+        }
+
+        private void CreateNewSource()
+        {
+            try
+            {
+                DiagnosticSourceStub newDiagSrc = DiagnosticListening.CreateNewSource(DiagnosticEventsSpecification.StubbedSourceName);
+                _diagnosticSource = newDiagSrc;
+            }
+            catch(Exception ex)
+            {
+                ConsoleWrite.Exception(ex);
+                _diagnosticSource = DiagnosticSourceStub.NoOpStub;
+            }
         }
     }
 }

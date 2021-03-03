@@ -23,7 +23,7 @@ namespace DynamicDiagnosticSourceBindings.Demo
 
         public double ReceivedProportion
         {
-            get { return (_receivedCount == 0) ? 0 : (_expectedMaxIteration / (double) _receivedCount); }
+            get { return _receivedCount / (double) _expectedMaxIteration; }
         }
 
         public int ReceivedCount

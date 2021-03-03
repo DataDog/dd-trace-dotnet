@@ -21,103 +21,122 @@ namespace DynamicDiagnosticSourceBindings.Demo
 
         private void SetupListening()
         {
-            Console.WriteLine();
-            Console.WriteLine($"Settng up {this.GetType().Name} listening.");
-
-            StatefulObserverAdapter<DiagnosticListenerStub, IDisposable> allDiagnosticSourcesObserver = ObserverAdapter.OnAllHandlers(
-                    (DiagnosticListenerStub dl, IDisposable _) => OnEventSourceObservered(dl, _),
-                    (Exception err, IDisposable _) => Console.WriteLine($"Error passed to the All-EventSources-Observer (this should never happen): {err?.ToString() ?? "<null>"}"),
-                    (IDisposable allDsSub) => OnAllEventSourcesSubscriptionCompleted(allDsSub));
-
-            IDisposable allDiagnosticSourcesSubscription = DiagnosticListening.SubscribeToAllSources(allDiagnosticSourcesObserver);
-            allDiagnosticSourcesObserver.State = allDiagnosticSourcesSubscription;
-
-            Console.WriteLine();
-            Console.WriteLine($"Finished settng up {this.GetType().Name} listening.");
+            ConsoleWrite.LineLine($"Settng up {this.GetType().Name} listening.");
+            SubscribeToAllSources();
+            ConsoleWrite.LineLine($"Finished settng up {this.GetType().Name} listening.");
         }
 
-        private void OnEventSourceObservered(DiagnosticListenerStub diagnosticListener, IDisposable ____)
+        private void OnAllEventSourcesSubscriptionCompleted()
         {
-            if (diagnosticListener.Name.Equals(DiagnosticEventsSpecification.DirectSourceName, StringComparison.Ordinal))
-            {
-                StatefulObserverAdapter<KeyValuePair<string, object>, IDisposable> eventsObserver = ObserverAdapter.OnAllHandlers(
-                        (KeyValuePair<string, object> eventInfo, IDisposable ___) => OnEventObservered(eventInfo),
-                        null,
-                        (IDisposable evntsSub) => evntsSub?.Dispose());
-
-                IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(
-                        eventsObserver,
-                        (string eventName, object __, object _) =>
-                                (eventName != null) && eventName.StartsWith(DiagnosticEventsSpecification.DirectSourceEventName, StringComparison.Ordinal));
-
-                eventsObserver.State = eventSubscription;
-            }
-
-            if (diagnosticListener.Name.Equals(DiagnosticEventsSpecification.StubbedSourceName, StringComparison.Ordinal))
-            {
-                StatefulObserverAdapter<KeyValuePair<string, object>, IDisposable> eventsObserver = ObserverAdapter.OnAllHandlers(
-                        (KeyValuePair<string, object> eventInfo, IDisposable ___) => OnEventObservered(eventInfo),
-                        null,
-                        (IDisposable evntsSub) => evntsSub?.Dispose());
-
-                IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(
-                        eventsObserver,
-                        (string eventName, object __, object _) =>
-                                (eventName != null) && eventName.StartsWith(DiagnosticEventsSpecification.StubbedSourceEventName, StringComparison.Ordinal));
-
-                eventsObserver.State = eventSubscription;
-            }
-        }
-
-        private void OnAllEventSourcesSubscriptionCompleted(IDisposable completedAllDiagnosticSourcesSubscription)
-        {
-            Console.WriteLine();
-            Console.WriteLine("All-EventSources-Subscription Completed. Scheduling a re-subscription.");
-
-            if (completedAllDiagnosticSourcesSubscription != null)
-            {
-                completedAllDiagnosticSourcesSubscription.Dispose();
-            }
-
+            ConsoleWrite.LineLine($"All-EventSources-Subscription Completed. Scheduling a re-subscription.");
             Task.Run(async () =>
+                {
+                    await Task.Delay(100);
+
+                    ConsoleWrite.LineLine($"Renewing top-level {this.GetType().Name} subscriptions.");
+                    SubscribeToAllSources();
+                    ConsoleWrite.LineLine($"Finished renewing top-level {this.GetType().Name} subscriptions.");
+                });
+        }
+
+        private IDisposable SubscribeToAllSources()
+        {
+            try
             {
-                await Task.Delay(100);
+                return DiagnosticListening.SubscribeToAllSources(ObserverAdapter.OnAllHandlers(
+                            (DiagnosticListenerStub dl) => OnEventSourceObservered(dl),
+                            null,
+                            () => OnAllEventSourcesSubscriptionCompleted()));
+            }
+            catch (Exception ex)
+            {
+                ConsoleWrite.Exception(ex);
+                return null;
+            }
+        }
 
-                Console.WriteLine($"Renewing top-level {this.GetType().Name} subscriptions.");
+        private void OnEventSourceObservered(DiagnosticListenerStub diagnosticListener)
+        {
+            string diagnosticListenerName = GetName(diagnosticListener);
+            if (diagnosticListenerName == null)
+            {
+                return;
+            }
 
-                StatefulObserverAdapter<DiagnosticListenerStub, IDisposable> newAllDiagnosticSourcesObserver = ObserverAdapter.OnAllHandlers(
-                    (DiagnosticListenerStub dl, IDisposable _) => OnEventSourceObservered(dl, _),
-                    (Exception err, IDisposable _) => Console.WriteLine($"Error passed to the All-EventSources-Observer (this should never happen): {err?.ToString() ?? "<null>"}"),
-                    (IDisposable allDsSub) => OnAllEventSourcesSubscriptionCompleted(allDsSub));
+            if (diagnosticListenerName.Equals(DiagnosticEventsSpecification.DirectSourceName, StringComparison.Ordinal))
+            {
+                SubscribeToEvents(diagnosticListener, DiagnosticEventsSpecification.DirectSourceEventName, OnEventObservered);
+            }
 
-                IDisposable newAllDiagnosticSourcesSubscription = DiagnosticListening.SubscribeToAllSources(newAllDiagnosticSourcesObserver);
-                newAllDiagnosticSourcesObserver.State = newAllDiagnosticSourcesSubscription;
+            if (diagnosticListenerName.Equals(DiagnosticEventsSpecification.StubbedSourceName, StringComparison.Ordinal))
+            {
+                SubscribeToEvents(diagnosticListener, DiagnosticEventsSpecification.StubbedSourceEventName, OnEventObservered);
+            }
+        }
 
-                Console.WriteLine();
-                Console.WriteLine($"Finished renewing top-level {this.GetType().Name} subscriptions.");
-            });
+        private string GetName(DiagnosticListenerStub diagnosticListener)
+        {
+            try
+            {
+                return diagnosticListener.Name;
+            }
+            catch (Exception ex)
+            {
+                ConsoleWrite.Exception(ex);
+                return null;
+            }
+        }
+
+        private IDisposable SubscribeToEvents(DiagnosticListenerStub diagnosticListener, string eventNamePrefix, Action<KeyValuePair<string, object>> eventHandler)
+        {
+            try
+            {
+                if (eventNamePrefix == null)
+                {
+                    return diagnosticListener.SubscribeToEvents(ObserverAdapter.OnNextHandler(eventHandler), null);
+                }
+                else
+                {
+                    return diagnosticListener.SubscribeToEvents(
+                            ObserverAdapter.OnNextHandler(eventHandler),
+                            (string eventName, object _, object __) => (eventName != null) && eventName.StartsWith(eventNamePrefix, StringComparison.Ordinal));
+                }
+            }
+            catch (Exception ex)
+            {
+                ConsoleWrite.Exception(ex);
+                return null;
+            }
         }
 
         private void OnEventObservered(KeyValuePair<string, object> eventInfo)
         {
-            if (eventInfo.Value == null || ! (eventInfo.Value is DiagnosticEventsSpecification.EventPayload eventPayload))
+            if (eventInfo.Key != null
+                    && eventInfo.Value != null
+                    && eventInfo.Value is DiagnosticEventsSpecification.EventPayload eventPayload)
             {
-                Console.WriteLine($"{Environment.NewLine}Unexpected event payload type: {eventInfo.Value?.GetType()?.FullName ?? "<null>"}");
-                return;
+                if (eventInfo.Key.Equals(DiagnosticEventsSpecification.DirectSourceEventName, StringComparison.Ordinal)
+                        && eventPayload.SourceName != null
+                        && eventPayload.SourceName.Equals(DiagnosticEventsSpecification.DirectSourceName, StringComparison.Ordinal))
+                {
+                    _directSourceResultAccumulator.SetReceived(eventPayload.Iteration);
+                    return;
+                }
+
+                if (eventInfo.Key.Equals(DiagnosticEventsSpecification.StubbedSourceEventName, StringComparison.Ordinal)
+                        && eventPayload.SourceName != null
+                        && eventPayload.SourceName.Equals(DiagnosticEventsSpecification.StubbedSourceName, StringComparison.Ordinal))
+                {
+                    _stubbedSourceResultAccumulator.SetReceived(eventPayload.Iteration);
+                    return;
+                }
             }
 
-            if (eventPayload.SourceName.Equals(DiagnosticEventsSpecification.DirectSourceName, StringComparison.Ordinal))
-            {
-                _directSourceResultAccumulator.SetReceived(eventPayload.Iteration);
-            }
-            else if (eventPayload.SourceName.Equals(DiagnosticEventsSpecification.StubbedSourceName, StringComparison.Ordinal))
-            {
-                _stubbedSourceResultAccumulator.SetReceived(eventPayload.Iteration);
-            }
-            else
-            {
-                Console.WriteLine($"{Environment.NewLine}Unexpected source name in an event: {eventPayload.ToString()}");
-            }
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Unexpected event info:");
+            ConsoleWrite.Line($"    Name:          \"{eventInfo.Key ?? "<null>"}\"");
+            ConsoleWrite.Line($"    Payload type:  \"{eventInfo.Value?.GetType()?.FullName ?? "<null>"}\"");
+            ConsoleWrite.Line($"    Payload value: \"{eventInfo.Value?.ToString() ?? "<null>"}\"");
         }
     }
 }

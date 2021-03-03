@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Datadog.DynamicDiagnosticSourceBindings;
 using Datadog.Util;
+using DynamicDiagnosticSourceBindings.Demo;
 
 namespace Demo.Slimple.NetFx45
 {
@@ -30,21 +31,18 @@ namespace Demo.Slimple.NetFx45
 
         public static void Run()
         {
-            Console.WriteLine();
-            Console.WriteLine($"STARTING DEMO '{nameof(UseDiagnosticSourceStub)}'.");
+            ConsoleWrite.LineLine($"STARTING DEMO '{nameof(UseDiagnosticSourceStub)}'.");
 
             SetupListening();
 
-            Console.WriteLine();
-            Console.WriteLine("Starting to create new Diagnostic Sources.");
+            ConsoleWrite.LineLine("Starting to create new Diagnostic Sources.");
 
             DiagnosticSourceStub diagnosticSource1 = DiagnosticListening.CreateNewSource("DemoXxx.UseDiagnosticSource.Name1");
             DiagnosticSourceStub diagnosticSource2 = DiagnosticListening.CreateNewSource("DemoXxx.UseDiagnosticSource.Name2");
 
-            Console.WriteLine("Finished creating new Diagnostic Sources.");
+            ConsoleWrite.Line("Finished creating new Diagnostic Sources.");
 
-            Console.WriteLine();
-            Console.WriteLine("Starting to emit DiagnosticSource events.");
+            ConsoleWrite.LineLine("Starting to emit DiagnosticSource events.");
             for (int i = 0; i < 1000; i++)
             {
                 if (diagnosticSource1.IsEnabled("EventXyzName.A"))
@@ -64,45 +62,43 @@ namespace Demo.Slimple.NetFx45
 
                 diagnosticSource2.Write("EventAbcName", new { Value="Something", IterationNr = i });
 
-                Console.WriteLine($"{Environment.NewLine}-----------{i}-----------");
+                ConsoleWrite.LineLine($"-----------{i}-----------");
             }
 
-            Console.WriteLine("Finished to emit DiagnosticSource events.");
+            ConsoleWrite.Line("Finished to emit DiagnosticSource events.");
 
-            Console.WriteLine();
-            Console.WriteLine($"FINISHED DEMO '{nameof(UseDiagnosticSourceStub)}'.");
+            ConsoleWrite.LineLine($"FINISHED DEMO '{nameof(UseDiagnosticSourceStub)}'.");
         }
 
         private static void SetupListening()
         {
-            Console.WriteLine();
-            Console.WriteLine("Starting setting up DiagnosticSource listening.");
+            ConsoleWrite.LineLine("Starting setting up DiagnosticSource listening.");
 
             IDisposable listenerSubscription = DiagnosticListening.SubscribeToAllSources(ObserverAdapter.OnNextHandler(
                     (DiagnosticListenerStub diagnosticListener) =>
                     {
-                        Console.WriteLine($"Subscriber called: diagnosticSourceObserver(diagnosticListener.Name: \"{diagnosticListener.Name}\")");
+                        ConsoleWrite.Line($"Subscriber called: diagnosticSourceObserver(diagnosticListener.Name: \"{diagnosticListener.Name}\")");
 
                         if (diagnosticListener.Name.Equals("DemoXxx.UseDiagnosticSource.Name1", StringComparison.Ordinal))
                         {
                             IDisposable eventSubscription = diagnosticListener.SubscribeToEvents(ObserverAdapter.OnNextHandler(
                                             (KeyValuePair<string, object> eventInfo) =>
                                             {
-                                                Console.WriteLine($"Event Handler called: eventObserver(eventName: \"{eventInfo.Key}\", payloadValue: {(eventInfo.Value ?? "<null>")})");
+                                                ConsoleWrite.Line($"Event Handler called: eventObserver(eventName: \"{eventInfo.Key}\", payloadValue: {(eventInfo.Value ?? "<null>")})");
                                             }),
                                     (string eventName, object arg1, object arg2) =>
                                     {
                                         Validate.NotNull(eventName, nameof(eventName));
                                         bool res = eventName.StartsWith("EventXyzName", StringComparison.OrdinalIgnoreCase)
                                                         && (arg1 == null || !(arg1 is Int32 arg1Val) || arg1Val >= 0);
-                                        Console.WriteLine($"Filter called: isEventEnabledFilter(eventName: \"{eventName}\", arg1: {(arg1 ?? "<null>")}, arg2: {(arg2 ?? "<null>")})."
+                                        ConsoleWrite.Line($"Filter called: isEventEnabledFilter(eventName: \"{eventName}\", arg1: {(arg1 ?? "<null>")}, arg2: {(arg2 ?? "<null>")})."
                                                         + $" Returning: {res}.");
                                         return res;
                                     });
                         }
                     }));
 
-            Console.WriteLine("Finished setting up DiagnosticSource listening.");
+            ConsoleWrite.Line("Finished setting up DiagnosticSource listening.");
         }
     }
 }

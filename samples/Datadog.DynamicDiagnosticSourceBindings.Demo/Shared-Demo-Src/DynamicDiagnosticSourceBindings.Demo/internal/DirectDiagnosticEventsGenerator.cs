@@ -28,8 +28,8 @@ namespace DynamicDiagnosticSourceBindings.Demo
 
         public async Task Run()
         {
-            Console.WriteLine();
-            Console.WriteLine($"Starting {this.GetType().Name}.{nameof(Run)}.");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Starting {this.GetType().Name}.{nameof(Run)}.");
 
             string srcName = DiagnosticEventsSpecification.DirectSourceName;
             DiagnosticSource diagnosticSource = new DiagnosticListener(srcName);
@@ -58,15 +58,15 @@ namespace DynamicDiagnosticSourceBindings.Demo
                 currIteration = Interlocked.Increment(ref _currentIteration);
             }
 
-            Console.WriteLine();
-            Console.WriteLine($"Finishing {this.GetType().Name}.{nameof(Run)}.");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Finishing {this.GetType().Name}.{nameof(Run)}.");
 
             if (diagnosticSource is IDisposable disposableSource)
             {
                 disposableSource.Dispose();
             }
 
-            Console.WriteLine($"Finished {this.GetType().Name}.{nameof(Run)}.");
+            ConsoleWrite.Line($"Finished {this.GetType().Name}.{nameof(Run)}.");
         }
     }
 }

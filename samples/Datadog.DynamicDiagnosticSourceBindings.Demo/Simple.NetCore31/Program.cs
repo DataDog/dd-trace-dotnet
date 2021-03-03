@@ -1,4 +1,5 @@
 using System;
+using DynamicDiagnosticSourceBindings.Demo;
 
 namespace Demo.Slimple.NetCore31
 {
@@ -6,12 +7,12 @@ namespace Demo.Slimple.NetCore31
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("DemoNetCore31");
+            ConsoleWrite.Line(typeof(Program).FullName);
 
             //UseDiagnosticSource.Run();
             UseDiagnosticSourceStub.Run();
 
-            Console.WriteLine("Done. Press enter.");
+            ConsoleWrite.Line("Done. Press enter.");
             Console.ReadLine();
         }
     }

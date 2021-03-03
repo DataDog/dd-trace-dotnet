@@ -12,6 +12,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Shared-Libs\DynamicDiagnosticSourceBindings\Datadog.DynamicDiagnosticSourceBindings.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\Shared-Demo-Src\DynamicDiagnosticSourceBindings.Demo\internal\ConsoleWrite.cs" />
+  </ItemGroup>
 	
   <ItemGroup>
     <!-- The two following items trick the Solution Explorer in VS to display a folder  -->

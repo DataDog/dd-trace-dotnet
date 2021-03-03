@@ -14,6 +14,11 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             internal static readonly DiagnosticListenerStub DiagnosticListenerStub = new DiagnosticListenerStub(null, new DynamicInvokerHandle<DynamicInvoker_DiagnosticListener>(null));
         }
 
+        public static DiagnosticListenerStub NoOpStub
+        {
+            get { return NoOpSingeltons.DiagnosticListenerStub; }
+        }
+
         public static DiagnosticListenerStub Wrap(object diagnosticListenerInstance)
         {
             if (diagnosticListenerInstance == null)
@@ -71,11 +76,20 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             _dynamicInvokerHandle = dynamicInvokerHandle;
         }
 
-        public object DiagnosticListenerInstance { get { return _diagnosticListenerInstance; } }
+        public object DiagnosticListenerInstance
+        {
+            get { return _diagnosticListenerInstance; }
+        }
 
-        public IDynamicInvokerHandle DynamicInvokerHandle { get { return _dynamicInvokerHandle; } }
+        public IDynamicInvokerHandle DynamicInvokerHandle
+        {
+            get { return _dynamicInvokerHandle; }
+        }
 
-        public bool IsNoOpStub { get { return (_diagnosticListenerInstance == null); } }
+        public bool IsNoOpStub
+        {
+            get { return (_diagnosticListenerInstance == null); }
+        }
 
         public string Name
         {
@@ -128,21 +142,20 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 invoker = _dynamicInvokerHandle.GetInvoker();
                 IDisposable eventsSubscription = invoker.Call.Subscribe(_diagnosticListenerInstance, eventObserver, isEventEnabledFilter);
                 
-                Action<DynamicInvoker_DiagnosticListener> invokerInvalidatedAction = (invkr) => eventObserver.OnCompleted();
+                Action<DynamicInvoker_DiagnosticListener> invokerInvalidatedAction = (invkr) =>
+                    {
+                        // DiagnosticListener does NOT call OnCompleted when the subscription is disposed. So we DO need to call it here:
+                        eventObserver.OnCompleted();
+                        eventsSubscription.Dispose();
+                    };
 
                 DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> invokerHandle = _dynamicInvokerHandle;
                 invokerHandle.AddInvalidationListener(invokerInvalidatedAction);
 
                 IDisposable eventsSubscriptionWrapper = new Disposables.Action(() =>
                     {
-                        try
-                        {
-                            eventsSubscription?.Dispose();
-                        }
-                        finally
-                        {
-                            invokerHandle.RemoveInvalidationListener(invokerInvalidatedAction);
-                        }
+                        invokerHandle.RemoveInvalidationListener(invokerInvalidatedAction);
+                        eventsSubscription.Dispose();
                     });
 
                 return eventsSubscriptionWrapper;

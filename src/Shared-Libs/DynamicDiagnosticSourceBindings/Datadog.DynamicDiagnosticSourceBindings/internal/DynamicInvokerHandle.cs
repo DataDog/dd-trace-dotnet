@@ -9,7 +9,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         where T : class
     {
         private T _dynamicInvoker;
-        private readonly IList<Action<T>> _invalidationListeners;
+        private readonly List<Action<T>> _invalidationListeners;
 
         internal DynamicInvokerHandle(T dynamicInvoker)
         {
@@ -25,20 +25,23 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             {
                 if (invalidatedInvoker != null)  // call listeners no more than once.
                 {
-                    foreach (Action<T> action in _invalidationListeners)
+                    while(_invalidationListeners.Count > 0)
                     {
-                        try
+                        Action<T> invokerInvalidationListenerAction = _invalidationListeners[_invalidationListeners.Count - 1];
+                        _invalidationListeners.RemoveAt(_invalidationListeners.Count - 1);
+                        if (invokerInvalidationListenerAction != null)
                         {
-                            action(invalidatedInvoker);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(this.GetType().Name, "Error calling a dynamic invoker invalidation listener", ex);
+                            try
+                            {
+                                invokerInvalidationListenerAction(invalidatedInvoker);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(this.GetType().Name, "Error calling a dynamic invoker invalidation listener", ex);
+                            }
                         }
                     }
                 }
-
-                _invalidationListeners.Clear();
             }
         }
 

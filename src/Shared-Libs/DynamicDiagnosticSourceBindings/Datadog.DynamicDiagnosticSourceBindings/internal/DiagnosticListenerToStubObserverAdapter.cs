@@ -3,11 +3,11 @@ using System.Runtime.ExceptionServices;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {
-    internal class DiagnosticListenerToInfoObserverAdapter : IObserver<object>
+    internal class DiagnosticListenerToStubObserverAdapter : IObserver<object>
     {
         private readonly IObserver<DiagnosticListenerStub> _diagnosticListenerObserver;
 
-        public DiagnosticListenerToInfoObserverAdapter(IObserver<DiagnosticListenerStub> diagnosticListenerObserver)
+        public DiagnosticListenerToStubObserverAdapter(IObserver<DiagnosticListenerStub> diagnosticListenerObserver)
         {
             _diagnosticListenerObserver = diagnosticListenerObserver;
         }
@@ -81,7 +81,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         {
             Log.Error(ErrorUtil.DynamicInvokerLogComponentMoniker,
                     $"Exception escaped from the wrapped {nameof(_diagnosticListenerObserver)}."
-                  + $" This {nameof(DiagnosticListenerToInfoObserverAdapter)} will pass the exception through."
+                  + $" This {nameof(DiagnosticListenerToStubObserverAdapter)} will pass the exception through."
                   + $" This kind of error must be dealt with within the actual underlying observer.",
                      error,
                      "ObserverMethod",

@@ -43,27 +43,26 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 invoker = DynamicInvoker.Current.DiagnosticListener;
                 IObservable<object> allSourcesObservable = invoker.Call.get_AllListeners();
 
-                IObserver<object> observerAdapter = new DiagnosticListenerToInfoObserverAdapter(diagnosticSourcesObserver);
+                IObserver<object> observerAdapter = new DiagnosticListenerToStubObserverAdapter(diagnosticSourcesObserver);
                 IDisposable dsSubscription = allSourcesObservable.Subscribe(observerAdapter);
 
-                Action<DynamicInvoker_DiagnosticListener> invokerInvalidatedAction = (invkr) => observerAdapter.OnCompleted();
+                Action<DynamicInvoker_DiagnosticListener> invokerInvalidatedAction = (invkr) =>
+                    {
+                        // DiagnosticListener calls OnCompleted when the subscription is disposed. So we do NOT need to call it here:
+                        // observerAdapter.OnCompleted();
+                        dsSubscription.Dispose();
+                    };
 
                 DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> invokerHandle = invoker.Handle;
                 invokerHandle.AddInvalidationListener(invokerInvalidatedAction);
 
-                IDisposable dsSubscriptionnWrapper = new Disposables.Action(() =>
-                {
-                    try
-                    {
-                        dsSubscription?.Dispose();
-                    }
-                    finally
+                IDisposable dsSubscriptionWrapper = new Disposables.Action(() =>
                     {
                         invokerHandle.RemoveInvalidationListener(invokerInvalidatedAction);
-                    }
-                });
+                        dsSubscription.Dispose();
+                    });
 
-                return dsSubscriptionnWrapper;
+                return dsSubscriptionWrapper;
             }
             catch (Exception ex)
             {

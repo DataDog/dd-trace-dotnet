@@ -65,6 +65,7 @@
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\StubbedDiagnosticEventsGenerator.cs" />
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\ReceivedEventsAccumulator.cs" />
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\StubbedDiagnosticEventsCollector.cs" />
+    <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\ConsoleWrite.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

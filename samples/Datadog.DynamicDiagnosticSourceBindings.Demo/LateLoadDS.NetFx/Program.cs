@@ -34,16 +34,16 @@ namespace Demo.LateLoadDS.NetFx
 
         public void Run()
         {
-            const int MaxIterations = 1000;
-            const int PhaseOneIterations = 300;
+            const int MaxIterations = 2000;
+            const int PhaseOneIterations = 500;
 
             const int ReceivedEventsVisualWidth = 100;
 
-            Console.WriteLine();
-            Console.WriteLine($"Welcome to {this.GetType().FullName} in {Process.GetCurrentProcess().ProcessName}");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Welcome to {this.GetType().FullName} in {Process.GetCurrentProcess().ProcessName}");
 
-            Console.WriteLine();
-            Console.WriteLine($"{nameof(HideDiagnosticSourceAssembly)} = {HideDiagnosticSourceAssembly}");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"{nameof(HideDiagnosticSourceAssembly)} = {HideDiagnosticSourceAssembly}");
 
 #pragma warning disable CS0162 // Unreachable code detected: intentional controll via a const bool.
             if (HideDiagnosticSourceAssembly)
@@ -63,28 +63,28 @@ namespace Demo.LateLoadDS.NetFx
 
                 File.Move(DiagnosticSourceAssemblyFilename, destination);
 
-                Console.WriteLine($"Moved \"{DiagnosticSourceAssemblyFilename}\" to \"{destination}\".");
+                ConsoleWrite.Line($"Moved \"{DiagnosticSourceAssemblyFilename}\" to \"{destination}\".");
 
-                Console.WriteLine();
-                Console.WriteLine($"Setting up the AssemblyResolve handler for the current AppDomain.");
+                ConsoleWrite.Line();
+                ConsoleWrite.Line($"Setting up the AssemblyResolve handler for the current AppDomain.");
 
                 AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolveEventHandler;
             }
             else
             {
-                Console.WriteLine("Did not hide the DS assembly.");
+                ConsoleWrite.Line("Did not hide the DS assembly.");
             }
 #pragma warning restore CS0162 // Unreachable code detected
 
-            Console.WriteLine();
-            Console.WriteLine($"Setting up {nameof(StubbedDiagnosticEventsCollector)}.");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Setting up {nameof(StubbedDiagnosticEventsCollector)}.");
 
             var directResultsAccumulator = new ReceivedEventsAccumulator(MaxIterations);
             var stubbedResultsAccumulator = new ReceivedEventsAccumulator(MaxIterations);
             var stubbedCollector = new StubbedDiagnosticEventsCollector(directResultsAccumulator, stubbedResultsAccumulator);
 
-            Console.WriteLine();
-            Console.WriteLine($"Starting {nameof(StubbedDiagnosticEventsGenerator)}.");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Starting {nameof(StubbedDiagnosticEventsGenerator)}.");
 
             SetPhaseOneCompleted(false);
             var stubbedGenerator = new StubbedDiagnosticEventsGenerator(MaxIterations, PhaseOneIterations);
@@ -92,35 +92,35 @@ namespace Demo.LateLoadDS.NetFx
 
             stubbedGenerator.PhaseOneCompletedEvent.Wait();
 
-            Console.WriteLine();
-            Console.WriteLine($"Phase one of {nameof(StubbedDiagnosticEventsGenerator)} completed.");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Phase one of {nameof(StubbedDiagnosticEventsGenerator)} completed.");
             SetPhaseOneCompleted(true);
 
-            Console.WriteLine($"Starting {nameof(DirectDiagnosticEventsGenerator)}.");
+            ConsoleWrite.Line($"Starting {nameof(DirectDiagnosticEventsGenerator)}.");
 
             var directGenerator = new DirectDiagnosticEventsGenerator(MaxIterations, PhaseOneIterations);
             Task directGeneratorTask = Task.Run(directGenerator.Run);
 
             Task.WaitAll(stubbedGeneratorTask, directGeneratorTask);
 
-            Console.WriteLine();
-            Console.WriteLine($"Both, {nameof(StubbedDiagnosticEventsGenerator)} and {nameof(DirectDiagnosticEventsGenerator)} finished.");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Both, {nameof(StubbedDiagnosticEventsGenerator)} and {nameof(DirectDiagnosticEventsGenerator)} finished.");
 
-            Console.WriteLine();
-            Console.WriteLine($"Summary of {nameof(stubbedResultsAccumulator)}:"
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Summary of {nameof(stubbedResultsAccumulator)}:"
                             + $" Received events: {stubbedResultsAccumulator.ReceivedCount}; Proportion: {stubbedResultsAccumulator.ReceivedProportion}.");
-            Console.WriteLine(stubbedResultsAccumulator.GetReceivedVisual(ReceivedEventsVisualWidth));
+            ConsoleWrite.Line(Environment.NewLine + stubbedResultsAccumulator.GetReceivedVisual(ReceivedEventsVisualWidth));
 
-            Console.WriteLine();
-            Console.WriteLine($"Summary of {nameof(directResultsAccumulator)}:"
+            ConsoleWrite.Line();
+            ConsoleWrite.Line($"Summary of {nameof(directResultsAccumulator)}:"
                             + $" Received events: {directResultsAccumulator.ReceivedCount}; Proportion: {directResultsAccumulator.ReceivedProportion}.");
-            Console.WriteLine(directResultsAccumulator.GetReceivedVisual(ReceivedEventsVisualWidth));
+            ConsoleWrite.Line(Environment.NewLine + directResultsAccumulator.GetReceivedVisual(ReceivedEventsVisualWidth));
 
-            Console.WriteLine();
-            Console.WriteLine("All done. Press enter to exit.");
+            ConsoleWrite.Line();
+            ConsoleWrite.Line("All done. Press enter to exit.");
 
             Console.ReadLine();
-            Console.WriteLine("Good bye.");
+            ConsoleWrite.Line("Good bye.");
         }
 
         private void SetPhaseOneCompleted(bool isCompleted)
@@ -145,14 +145,14 @@ namespace Demo.LateLoadDS.NetFx
         {
             if (!GetPhaseOneCompleted())
             {
-                Console.WriteLine($"AssemblyResolveEventHandler: Phase One not completed => doing nothing.");
+                ConsoleWrite.Line($"AssemblyResolveEventHandler: Phase One not completed => doing nothing.");
                 return null;
             }
 
             string asmNameRequestedStr = args?.Name;
             if (asmNameRequestedStr == null)
             {
-                Console.WriteLine($"AssemblyResolveEventHandler: No good arguments => doing nothing.");
+                ConsoleWrite.Line($"AssemblyResolveEventHandler: No good arguments => doing nothing.");
                 return null;
             }
 
@@ -160,7 +160,7 @@ namespace Demo.LateLoadDS.NetFx
             AssemblyName asmNameAtPath = GetAssemblyNameFromPath(dsAsmFilePath);
             if (asmNameAtPath == null)
             {
-                Console.WriteLine($"AssemblyResolveEventHandler: Cannot extract assembly name from \"{dsAsmFilePath}\". Doing nothing.");
+                ConsoleWrite.Line($"AssemblyResolveEventHandler: Cannot extract assembly name from \"{dsAsmFilePath}\". Doing nothing.");
                 return null;
             }
             else
@@ -168,14 +168,14 @@ namespace Demo.LateLoadDS.NetFx
                 AssemblyName asmNameRequested = new AssemblyName(asmNameRequestedStr);
                 if (AreEqual(asmNameAtPath, asmNameRequested))
                 {
-                    Console.WriteLine($"AssemblyResolveEventHandler: Match. Loading DS from special location.");
+                    ConsoleWrite.Line($"AssemblyResolveEventHandler: Match. Loading DS from special location.");
                     return Assembly.Load(asmNameAtPath);
                 }
                 else
                 {
-                    Console.WriteLine($"AssemblyResolveEventHandler: No Match. Doing nothing.");
-                    Console.WriteLine($"    Requested assembly: \"{asmNameRequested.FullName}\";");
-                    Console.WriteLine($"    Present assembly:   \"{asmNameAtPath.FullName}\".");
+                    ConsoleWrite.Line($"AssemblyResolveEventHandler: No Match. Doing nothing.");
+                    ConsoleWrite.Line($"    Requested assembly: \"{asmNameRequested.FullName}\";");
+                    ConsoleWrite.Line($"    Present assembly:   \"{asmNameAtPath.FullName}\".");
                     return null;
                 }
             }
@@ -209,7 +209,7 @@ namespace Demo.LateLoadDS.NetFx
             }
             catch(Exception ex)
             {
-                Console.WriteLine(ex);
+                ConsoleWrite.Exception(ex);
                 return null;
             }
         }
