@@ -123,12 +123,11 @@ namespace Datadog.Trace.AspNet
                 string host = httpRequest.Headers.Get("Host");
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
                 string url = httpRequest.RawUrl.ToLowerInvariant();
-                string path = UriHelpers.GetRelativeUrl(httpRequest.Url, tryRemoveIds: true);
-                string resourceName = $"{httpMethod} {path.ToLowerInvariant()}";
 
                 var tags = new WebTags();
                 scope = tracer.StartActiveWithTags(_requestOperationName, propagatedContext, tags: tags);
-                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
+                // Leave resourceName blank for now - we'll update it in OnEndRequest
+                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, tags, tagsFromHeaders);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
@@ -166,6 +165,11 @@ namespace Datadog.Trace.AspNet
                         && !string.IsNullOrEmpty(resourceName))
                     {
                         scope.Span.ResourceName = resourceName;
+                    }
+                    else
+                    {
+                        string path = UriHelpers.GetRelativeUrl(app.Request.Url, tryRemoveIds: true);
+                        scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                     }
 
                     scope.Dispose();
