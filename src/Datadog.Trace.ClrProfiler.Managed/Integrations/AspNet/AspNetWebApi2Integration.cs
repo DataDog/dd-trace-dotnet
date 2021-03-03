@@ -164,8 +164,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // some fields aren't set till after execution, so populate anything missing
                     UpdateSpan(controllerContext, scope.Span, tags, Enumerable.Empty<KeyValuePair<string, string>>());
 
-                    var statusCode = responseMessage.GetProperty("StatusCode");
-                    scope.Span.SetHttpStatusCode((int)statusCode.Value, isServer: true);
+                    var httpResponseMessage = responseMessage.DuckCast<HttpResponseMessageStruct>();
+
+                    // Add header tags, even though the headers appear to always be empty when accessing them here
+                    scope.Span.ApplyHeaderTags(new HttpResponseHeadersCollection(httpResponseMessage.Headers), Tracer.Instance.Settings.HeaderTags);
+                    scope.Span.SetHttpStatusCode(httpResponseMessage.StatusCode, isServer: true);
                     scope.Dispose();
                 }
 
@@ -225,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // extract propagated http headers
                         var headers = request.Headers;
-                        var headersCollection = new HttpHeadersCollection(headers);
+                        var headersCollection = new HttpRequestHeadersCollection(headers);
 
                         propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
                         tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headersCollection, tracer.Settings.HeaderTags);
@@ -327,6 +330,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(System.Web.HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
+            // Add header tags, even though the headers appear to always be empty when accessing them here
+            scope.Span.ApplyHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();

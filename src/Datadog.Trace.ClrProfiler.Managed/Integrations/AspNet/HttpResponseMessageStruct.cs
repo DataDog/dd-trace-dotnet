@@ -11,6 +11,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
     internal struct HttpResponseMessageStruct
     {
         public int StatusCode;
+
+        public IResponseHeaders Headers;
     }
 }
 #endif

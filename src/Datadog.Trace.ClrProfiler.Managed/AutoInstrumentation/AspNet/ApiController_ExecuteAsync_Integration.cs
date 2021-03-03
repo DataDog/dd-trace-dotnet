@@ -109,8 +109,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             else
             {
-                var statusCode = responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode;
-                scope.Span.SetHttpStatusCode(statusCode, isServer: true);
+                var httpResponseMessage = responseMessage.DuckCast<HttpResponseMessageStruct>();
+
+                // Add header tags, even though the headers appear to always be empty when accessing them here
+                scope.Span.ApplyHeaderTags(new HttpResponseHeadersCollection(httpResponseMessage.Headers), Tracer.Instance.Settings.HeaderTags);
+                scope.Span.SetHttpStatusCode(httpResponseMessage.StatusCode, isServer: true);
                 scope.Dispose();
             }
 
@@ -119,6 +122,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
+            // Add header tags, even though the headers appear to always be empty when accessing them here
+            scope.Span.ApplyHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();

@@ -6,11 +6,11 @@ using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
 {
-    internal readonly struct HttpHeadersCollection : IHeadersCollection
+    internal readonly struct HttpResponseHeadersCollection : IHeadersCollection
     {
-        private readonly IRequestHeaders _headers;
+        private readonly IResponseHeaders _headers;
 
-        public HttpHeadersCollection(IRequestHeaders headers)
+        public HttpResponseHeadersCollection(IResponseHeaders headers)
         {
             _headers = headers ?? throw new ArgumentNullException(nameof(headers));
         }
