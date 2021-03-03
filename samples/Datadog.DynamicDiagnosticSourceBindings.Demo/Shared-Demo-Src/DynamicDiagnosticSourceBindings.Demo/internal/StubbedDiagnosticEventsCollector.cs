@@ -16,27 +16,29 @@ namespace DynamicDiagnosticSourceBindings.Demo
             _directSourceResultAccumulator = directSourceResultAccumulator;
             _stubbedSourceResultAccumulator = stubbedSourceResultAccumulator;
 
-            SetupListening();
+            DiagnosticSourceAssembly.SubscribeDynamicInvokerInitializedListener(OnDynamicDiagnosticSourceInvokerInitialized);
         }
 
-        private void SetupListening()
+        private void OnDynamicDiagnosticSourceInvokerInitialized(DiagnosticSourceAssembly.IDynamicInvoker dynamicInvoker)
         {
-            ConsoleWrite.LineLine($"Settng up {this.GetType().Name} listening.");
+            ConsoleWrite.LineLine($"This {this.GetType().Name} noticed that an"
+                                + $" {nameof(DiagnosticSourceAssembly)}.{nameof(DiagnosticSourceAssembly.IDynamicInvoker)} became available."
+                                + $" DiagnosticSourceAssemblyName: \"{dynamicInvoker.DiagnosticSourceAssemblyName}\".");
+
+            Guid sessionId = Guid.NewGuid();
+            ConsoleWrite.LineLine($"Settng up {this.GetType().Name} listening session \"{sessionId}\".");
             SubscribeToAllSources();
-            ConsoleWrite.LineLine($"Finished settng up {this.GetType().Name} listening.");
+            ConsoleWrite.LineLine($"Finished settng up {this.GetType().Name} listening session \"{sessionId}\".");
+
+            dynamicInvoker.SubscribeInvalidatedListener(OnDynamicDiagnosticSourceInvokerInvalidated, sessionId);
         }
 
-        private void OnAllEventSourcesSubscriptionCompleted()
+        private void OnDynamicDiagnosticSourceInvokerInvalidated(DiagnosticSourceAssembly.IDynamicInvoker dynamicInvoker, object state)
         {
-            ConsoleWrite.LineLine($"All-EventSources-Subscription Completed. Scheduling a re-subscription.");
-            Task.Run(async () =>
-                {
-                    await Task.Delay(100);
-
-                    ConsoleWrite.LineLine($"Renewing top-level {this.GetType().Name} subscriptions.");
-                    SubscribeToAllSources();
-                    ConsoleWrite.LineLine($"Finished renewing top-level {this.GetType().Name} subscriptions.");
-                });
+            // This listener method is just here for demo purposes. It does not perform any business logic (but it could).
+            Guid sessionId = (state is Guid stateGuid) ? stateGuid : Guid.Empty;
+            ConsoleWrite.LineLine($"This {this.GetType().Name} noticed that a dynamic DiagnosticSource invoker was invalidated (session {sessionId})."
+                                + $" Some errors may be temporarily observed until stubs are re-initialized.");
         }
 
         private IDisposable SubscribeToAllSources()
@@ -45,11 +47,12 @@ namespace DynamicDiagnosticSourceBindings.Demo
             {
                 return DiagnosticListening.SubscribeToAllSources(ObserverAdapter.OnAllHandlers(
                             (DiagnosticListenerStub dl) => OnEventSourceObservered(dl),
-                            null,
-                            () => OnAllEventSourcesSubscriptionCompleted()));
+                            (Exception err) => ConsoleWrite.Exception(err),                              // Just for demo. Error handler is not actually necessary.
+                            () => ConsoleWrite.LineLine($"All-EventSources-Subscription Completed.")));  // Just for demo. Completion handler is not actually necessary.
             }
             catch (Exception ex)
             {
+                // If there was some business logic required to handle such errors, it would go here.
                 ConsoleWrite.Exception(ex);
                 return null;
             }
@@ -82,6 +85,7 @@ namespace DynamicDiagnosticSourceBindings.Demo
             }
             catch (Exception ex)
             {
+                // If there was some business logic required to handle such errors, it would go here.
                 ConsoleWrite.Exception(ex);
                 return null;
             }
@@ -104,6 +108,7 @@ namespace DynamicDiagnosticSourceBindings.Demo
             }
             catch (Exception ex)
             {
+                // If there was some business logic required to handle such errors, it would go here.
                 ConsoleWrite.Exception(ex);
                 return null;
             }

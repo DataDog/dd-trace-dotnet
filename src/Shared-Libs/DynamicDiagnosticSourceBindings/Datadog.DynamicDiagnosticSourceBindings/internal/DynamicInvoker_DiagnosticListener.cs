@@ -6,7 +6,7 @@ using Datadog.Util;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {
-    internal class DynamicInvoker_DiagnosticListener
+    internal class DynamicInvoker_DiagnosticListener : DiagnosticSourceAssembly.IDynamicInvoker
     {
         private class CashedDelegates
         {
@@ -39,9 +39,29 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             get { return _handle; }
         }
 
+        public bool IsValid
+        {
+            get { return _handle.IsValid; }
+        }
+
+        public string DiagnosticSourceAssemblyName
+        {
+            get { return _diagnosticListenerType?.Assembly?.FullName; }
+        }
+
         public StubbedApis Call
         {
             get { return _stubbedApis; }
+        }
+
+        public IDisposable SubscribeInvalidatedListener(Action<DiagnosticSourceAssembly.IDynamicInvoker> invokerInvalidatedAction)
+        {
+            return _handle.SubscribeInvalidatedListener(invokerInvalidatedAction);
+        }
+
+        public IDisposable SubscribeInvalidatedListener(Action<DiagnosticSourceAssembly.IDynamicInvoker, object> invokerInvalidatedAction, object state)
+        {
+            return _handle.SubscribeInvalidatedListener(invokerInvalidatedAction, state);
         }
 
         public bool TryGetInvokerHandleForInstance(object diagnosticListenerInstance, out DynamicInvokerHandle<DynamicInvoker_DiagnosticListener> handle)

@@ -42,5 +42,10 @@ namespace DynamicDiagnosticSourceBindings.Demo
                 Console.WriteLine(Environment.NewLine + " ### Demo says: " + line);
             }
         }
+
+        internal static void LineLine(object p)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

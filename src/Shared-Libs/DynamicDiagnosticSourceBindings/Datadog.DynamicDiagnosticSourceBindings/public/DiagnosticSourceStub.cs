@@ -80,7 +80,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             get { return _diagnosticSourceInstance; }
         }
 
-        public IDynamicInvokerHandle DynamicInvokerHandle
+        public DiagnosticSourceAssembly.IDynamicInvoker DynamicInvokerHandle
         {
             get { return _dynamicInvokerHandle; }
         }

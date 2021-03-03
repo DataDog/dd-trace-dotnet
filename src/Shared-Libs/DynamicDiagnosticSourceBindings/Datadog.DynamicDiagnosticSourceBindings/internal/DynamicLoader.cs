@@ -180,6 +180,8 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     try
                     {
                         SetupDynamicInvokers();
+
+                        Interlocked.Exchange(ref s_inilializationState, (int) InitState.Initialized);
                     }
                     catch (Exception ex)
                     {
@@ -196,6 +198,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                                   "CurrentAppDomain.IsDefault", AppDomain.CurrentDomain.IsDefaultAppDomain());
 
                         DynamicInvoker.Current = null;
+                        Interlocked.Exchange(ref s_inilializationState, (int) InitState.Error);
                     }
                 }
             }
@@ -368,7 +371,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                      "CurrentAppDomain.FriendlyName", AppDomain.CurrentDomain.FriendlyName,
                      "CurrentAppDomain.IsDefault", AppDomain.CurrentDomain.IsDefaultAppDomain());
 
-            var newInvoker = new DynamicInvoker(diagnosticSourceType, diagnosticListenerType);
+            var newInvoker = new DynamicInvoker(diagnosticSourceAssembly.FullName, diagnosticSourceType, diagnosticListenerType);
             DynamicInvoker.Current = newInvoker;
 
             s_diagnosticSourceAssemblyInCurrentUse = diagnosticSourceAssembly;

@@ -7,7 +7,7 @@ namespace DynamicDiagnosticSourceBindings.Demo
 {
     internal class DirectDiagnosticEventsGenerator
     {
-        private const int MaxSleepMillis = 10;
+        private const int MaxSleepMillis = 4;
 
         private readonly int _maxInterations;
         private readonly int _phaseOneIterations;
@@ -50,7 +50,15 @@ namespace DynamicDiagnosticSourceBindings.Demo
                 }
 
                 int sleepMillis = rnd.Next(MaxSleepMillis);
-                if (sleepMillis > 0)
+                if (sleepMillis == 0)
+                {
+                    ;
+                }
+                if (sleepMillis == 1)
+                {
+                    Thread.Yield();
+                }
+                else
                 {
                     await Task.Delay(sleepMillis);
                 }

@@ -5,43 +5,44 @@ using System.Threading;
 
 namespace Datadog.DynamicDiagnosticSourceBindings
 {
-    internal class DynamicInvokerHandle<T> : IDynamicInvokerHandle
-        where T : class
+    internal class DynamicInvokerHandle<T> : DiagnosticSourceAssembly.IDynamicInvoker
+        where T : class, DiagnosticSourceAssembly.IDynamicInvoker
     {
         private T _dynamicInvoker;
-        private readonly List<Action<T>> _invalidationListeners;
+        private readonly DynamicInvokerInvalidationListenersCollection _invalidationListeners;
 
         internal DynamicInvokerHandle(T dynamicInvoker)
         {
             Volatile.Write(ref _dynamicInvoker, dynamicInvoker);
-            _invalidationListeners = new List<Action<T>>(capacity: 0);
+            _invalidationListeners = new DynamicInvokerInvalidationListenersCollection($"{nameof(DynamicInvokerHandle<T>)}<{typeof(T).Name}>",
+                                                                                       this);
+        }
+
+        public bool IsValid
+        {
+            get { return (Volatile.Read(ref _dynamicInvoker) != null); }
+        }
+
+        public string DiagnosticSourceAssemblyName
+        {
+            get
+            {
+                if (TryGetInvoker(out T invoker))
+                {
+                    return invoker.DiagnosticSourceAssemblyName;
+                }
+                
+                return null;
+            }
         }
 
         internal void Invalidate()
         { 
             T invalidatedInvoker = Interlocked.Exchange(ref _dynamicInvoker, null);
 
-            lock (_invalidationListeners)
+            if (invalidatedInvoker != null)  // call listeners no more than once.
             {
-                if (invalidatedInvoker != null)  // call listeners no more than once.
-                {
-                    while(_invalidationListeners.Count > 0)
-                    {
-                        Action<T> invokerInvalidationListenerAction = _invalidationListeners[_invalidationListeners.Count - 1];
-                        _invalidationListeners.RemoveAt(_invalidationListeners.Count - 1);
-                        if (invokerInvalidationListenerAction != null)
-                        {
-                            try
-                            {
-                                invokerInvalidationListenerAction(invalidatedInvoker);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(this.GetType().Name, "Error calling a dynamic invoker invalidation listener", ex);
-                            }
-                        }
-                    }
-                }
+                _invalidationListeners.InvokeAndClearAll(this);
             }
         }
 
@@ -63,36 +64,18 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                                                + " Was the underlying assembly unloaded or reloaded?");
         }
 
-        public bool IsValid
-        {
-            get { return (Volatile.Read(ref _dynamicInvoker) != null); }
-        }
-
-        public void AddInvalidationListener(Action<T> invokerInvalidatedAction)
+        public IDisposable SubscribeInvalidatedListener(Action<DiagnosticSourceAssembly.IDynamicInvoker> invokerInvalidatedAction)
         {
             Validate.NotNull(invokerInvalidatedAction, nameof(invokerInvalidatedAction));
 
-            lock (_invalidationListeners)
-            {
-                if (! IsValid)
-                {
-                    invokerInvalidatedAction(null);
-                }
-                else
-                {
-                    _invalidationListeners.Add(invokerInvalidatedAction);
-                }
-            }
+            return SubscribeInvalidatedListener((invoker, _) => invokerInvalidatedAction(invoker), state: null);
         }
 
-        public void RemoveInvalidationListener(Action<T> invokerInvalidatedAction)
+        public IDisposable SubscribeInvalidatedListener(Action<DiagnosticSourceAssembly.IDynamicInvoker, object> invokerInvalidatedAction, object state)
         {
             Validate.NotNull(invokerInvalidatedAction, nameof(invokerInvalidatedAction));
 
-            lock (_invalidationListeners)
-            {
-                _invalidationListeners.Remove(invokerInvalidatedAction);
-            }
+            return _invalidationListeners.SubscribeListener(invokerInvalidatedAction, state);
         }
     }
 }
