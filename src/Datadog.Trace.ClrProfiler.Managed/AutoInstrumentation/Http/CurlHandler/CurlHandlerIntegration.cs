@@ -6,25 +6,25 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WinHttpHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.CurlHandler
 {
     /// <summary>
-    /// System.Net.Http.WinHttpHandler calltarget instrumentation
+    /// System.Net.Http.CurlHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        AssemblyNames = new[] { "System.Net.Http", "System.Net.Http.WinHttpHandler" },
-        TypeName = "System.Net.Http.WinHttpHandler",
+        AssemblyName = "System.Net.Http",
+        TypeName = "System.Net.Http.CurlHandler",
         MethodName = "SendAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
         ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
         MinimumVersion = "4.0.0",
-        MaximumVersion = "5.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = IntegrationName)]
-    public class WinHttpHandlerIntegration
+    public class CurlHandlerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-        private static readonly IntegrationInfo WinHttpHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.WinHttpHandler));
+        private static readonly IntegrationInfo CurlHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.CurlHandler));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WinHttpHandler
 
         private static bool IsTracingEnabled(IRequestHeaders headers)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(WinHttpHandlerIntegrationId, defaultValue: false))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(CurlHandlerIntegrationId, defaultValue: false))
             {
                 return false;
             }
