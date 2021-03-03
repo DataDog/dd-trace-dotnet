@@ -22,18 +22,33 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                List<MethodInfo> newMethods = imInterface.GetMethods()
-                    .Where(iMethod =>
+                foreach (MethodInfo intMethod in imInterface.GetMethods())
+                {
+                    if (intMethod.IsSpecialName)
                     {
-                        if (iMethod.IsSpecialName)
-                        {
-                            return false;
-                        }
+                        continue;
+                    }
 
-                        string iMethodString = iMethod.ToString();
-                        return selectedMethods.All(i => i.ToString() != iMethodString);
-                    }).ToList();
-                selectedMethods.AddRange(newMethods);
+                    string intMethodName = intMethod.ToString();
+                    bool found = false;
+                    foreach (MethodInfo currentMethod in selectedMethods)
+                    {
+                        if (currentMethod.ToString() == intMethodName)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        MethodInfo prevMethod = baseType.GetMethod(intMethod.Name, DuckAttribute.DefaultFlags, null, intMethod.GetParameters().Select(p => p.ParameterType).ToArray(), null);
+                        if (prevMethod == null || prevMethod.GetCustomAttribute<DuckIgnoreAttribute>() is null)
+                        {
+                            selectedMethods.Add(intMethod);
+                        }
+                    }
+                }
             }
 
             return selectedMethods;
@@ -68,6 +83,12 @@ namespace Datadog.Trace.DuckTyping
             List<MethodInfo> proxyMethodsDefinitions = GetMethods(proxyType);
             foreach (MethodInfo proxyMethodDefinition in proxyMethodsDefinitions)
             {
+                // Ignore the method marked with `DuckIgnore` attribute
+                if (proxyMethodDefinition.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                {
+                    continue;
+                }
+
                 // Extract the method parameters types
                 ParameterInfo[] proxyMethodDefinitionParameters = proxyMethodDefinition.GetParameters();
                 Type[] proxyMethodDefinitionParametersTypes = proxyMethodDefinitionParameters.Select(p => p.ParameterType).ToArray();
