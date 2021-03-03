@@ -346,6 +346,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
+                    scope.Span.ApplyHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), Tracer.Instance.Settings.HeaderTags);
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
                 }
 
