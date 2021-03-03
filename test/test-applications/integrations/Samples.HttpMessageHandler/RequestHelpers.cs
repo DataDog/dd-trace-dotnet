@@ -263,7 +263,6 @@ namespace Samples.HttpMessageHandler
 
         public static async Task SendHttpMessageInvokerRequestsAsync(HttpMessageInvoker invoker, bool tracingDisabled, string url)
         {
-            // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
             Console.WriteLine($"[HttpMessageInvoker] sending requests to {url}");
 
             var httpRequest = new HttpRequestMessage();
