@@ -104,7 +104,7 @@ namespace Samples.HttpMessageHandler
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     Console.WriteLine();
-                    Console.WriteLine("Sending async request with WinHttpHandler.");
+                    Console.WriteLine("Sending async request with internal WinHttpHandler.");
                     Type winHttpHandler = typeof(System.Net.Http.HttpMessageHandler).Assembly.GetTypes().FirstOrDefault(t => t.Name == "WinHttpHandler");
                     System.Net.Http.HttpMessageHandler handler = (System.Net.Http.HttpMessageHandler)Activator.CreateInstance(winHttpHandler);
                     using (var invoker = new HttpMessageInvoker(handler, false))
