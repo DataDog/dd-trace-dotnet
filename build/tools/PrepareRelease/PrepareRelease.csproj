@@ -2,17 +2,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net461</TargetFramework>
+    <TargetFramework Condition="'$(OS)' == 'Windows_NT'">net461</TargetFramework>
+    <TargetFramework Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
     <ProjectReference Include="..\..\..\test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- reference assemblies let us target .NET Framework without the SDK (for example, on non-Windows) -->
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
