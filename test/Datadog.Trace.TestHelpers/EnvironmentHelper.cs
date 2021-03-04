@@ -266,9 +266,13 @@ namespace Datadog.Trace.TestHelpers
         {
             if (_profilerFileLocation == null)
             {
-                string extension = EnvironmentTools.IsWindows()
-                                       ? "dll"
-                                       : "so";
+                string extension = EnvironmentTools.GetOS() switch
+                {
+                    "win" => "dll",
+                    "linux" => "so",
+                    "osx" => "dylib",
+                    _ => throw new PlatformNotSupportedException()
+                };
 
                 string fileName = $"Datadog.Trace.ClrProfiler.Native.{extension}";
 

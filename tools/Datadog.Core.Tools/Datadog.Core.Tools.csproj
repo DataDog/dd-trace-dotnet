@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net452;net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
     <TargetFrameworks Condition="$(MSBuildVersion) >= 16.8.0">$(TargetFrameworks);net5.0</TargetFrameworks>
   </PropertyGroup>
 
@@ -11,4 +10,9 @@
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- reference assemblies let us target .NET Framework without the SDK (for example, on non-Windows) -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
+  </ItemGroup>
+  
 </Project>
