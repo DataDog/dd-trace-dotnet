@@ -145,89 +145,6 @@
     ]
   },
   {
-    "name": "AspNetMvc",
-    "method_replacements": [
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Web.Mvc",
-          "type": "System.Web.Mvc.Async.AsyncControllerActionInvoker",
-          "method": "BeginInvokeAction",
-          "signature_types": [
-            "System.IAsyncResult",
-            "System.Web.Mvc.ControllerContext",
-            "System.String",
-            "System.AsyncCallback",
-            "System.Object"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 5,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Web.Mvc",
-          "type": "System.Web.Mvc.Async.AsyncControllerActionInvoker",
-          "method": "EndInvokeAction",
-          "signature_types": [
-            "System.Boolean",
-            "System.IAsyncResult"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 5,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration",
-          "action": "CallTargetModification"
-        }
-      }
-    ]
-  },
-  {
-    "name": "AspNetWebApi2",
-    "method_replacements": [
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Web.Http",
-          "type": "System.Web.Http.ApiController",
-          "method": "ExecuteAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
-            "System.Web.Http.Controllers.HttpControllerContext",
-            "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 5,
-          "minimum_minor": 1,
-          "minimum_patch": 0,
-          "maximum_major": 5,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ApiController_ExecuteAsync_Integration",
-          "action": "CallTargetModification"
-        }
-      }
-    ]
-  },
-  {
     "name": "GraphQL",
     "method_replacements": [
       {
@@ -329,7 +246,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WinHttpHandler.WinHttpHandlerIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpHandler.WinHttpHandlerIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -353,7 +270,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WinHttpHandler.WinHttpHandlerIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpHandler.WinHttpHandlerIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -377,7 +294,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler.SocketsHttpHandlerIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.SocketsHttpHandlerIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -401,7 +318,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler.SocketsHttpHandlerSyncIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.SocketsHttpHandlerSyncIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -425,7 +342,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClientHandler.HttpClientHandlerIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -449,7 +366,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClientHandler.HttpClientHandlerSyncIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -473,7 +390,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.CurlHandler.CurlHandlerIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration",
           "action": "CallTargetModification"
         }
       }
@@ -3542,99 +3459,6 @@
     ]
   },
   {
-    "name": "AspNetMvc",
-    "method_replacements": [
-      {
-        "caller": {
-          "assembly": "System.Web.Mvc"
-        },
-        "target": {
-          "assembly": "System.Web.Mvc",
-          "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
-          "method": "BeginInvokeAction",
-          "signature_types": [
-            "System.IAsyncResult",
-            "System.Web.Mvc.ControllerContext",
-            "System.String",
-            "System.AsyncCallback",
-            "System.Object"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 5,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
-          "method": "BeginInvokeAction",
-          "signature": "00 08 1C 1C 1C 1C 1C 1C 08 08 0A",
-          "action": "ReplaceTargetMethod"
-        }
-      },
-      {
-        "caller": {
-          "assembly": "System.Web.Mvc"
-        },
-        "target": {
-          "assembly": "System.Web.Mvc",
-          "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
-          "method": "EndInvokeAction",
-          "signature_types": [
-            "System.Boolean",
-            "System.IAsyncResult"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 5,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
-          "method": "EndInvokeAction",
-          "signature": "00 05 02 1C 1C 08 08 0A",
-          "action": "ReplaceTargetMethod"
-        }
-      }
-    ]
-  },
-  {
-    "name": "AspNetWebApi2",
-    "method_replacements": [
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Web.Http",
-          "type": "System.Web.Http.Controllers.IHttpController",
-          "method": "ExecuteAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
-            "System.Web.Http.Controllers.HttpControllerContext",
-            "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 5,
-          "minimum_minor": 1,
-          "minimum_patch": 0,
-          "maximum_major": 5,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration",
-          "method": "ExecuteAsync",
-          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
-          "action": "ReplaceTargetMethod"
-        }
-      }
-    ]
-  },
-  {
     "name": "DbCommand",
     "method_replacements": [
       {
@@ -6087,37 +5911,6 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch",
           "method": "ExecuteAsync",
           "signature": "10 01 07 1C 1C 1C 1C 1C 08 08 0A",
-          "action": "ReplaceTargetMethod"
-        }
-      }
-    ]
-  },
-  {
-    "name": "Wcf",
-    "method_replacements": [
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.ServiceModel",
-          "type": "System.ServiceModel.Dispatcher.ChannelHandler",
-          "method": "HandleRequest",
-          "signature_types": [
-            "System.Boolean",
-            "System.ServiceModel.Channels.RequestContext",
-            "System.ServiceModel.OperationContext"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.WcfIntegration",
-          "method": "HandleRequest",
-          "signature": "00 06 02 1C 1C 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
       }

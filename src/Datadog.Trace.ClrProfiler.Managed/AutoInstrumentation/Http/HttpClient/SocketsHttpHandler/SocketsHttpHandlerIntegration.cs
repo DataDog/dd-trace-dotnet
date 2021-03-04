@@ -3,23 +3,26 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClientHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler
 {
     /// <summary>
-    /// System.Net.Http.HttpClientHandler calltarget instrumentation
+    /// System.Net.Http.SocketsHttpHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Net.Http",
-        TypeName = "System.Net.Http.HttpClientHandler",
+        TypeName = "System.Net.Http.SocketsHttpHandler",
         MethodName = "SendAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
         ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
         MinimumVersion = "4.0.0",
         MaximumVersion = "5.*.*",
         IntegrationName = IntegrationName)]
-    public class HttpClientHandlerIntegration
+    public class SocketsHttpHandlerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private static readonly IntegrationInfo SocketHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpSocketsHandler));
+        private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: false);
 
         /// <summary>
         /// OnMethodBegin callback
@@ -33,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClientHandler
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
         {
-            return HttpClientHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken);
+            return HttpMessageHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken, IntegrationId, IsIntegrationEnabledFunc);
         }
 
         /// <summary>
@@ -49,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClientHandler
         public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, CallTargetState state)
             where TResponse : IHttpResponseMessage
         {
-            return HttpClientHandlerCommon.OnMethodEnd(instance, responseMessage, exception, state);
+            return HttpMessageHandlerCommon.OnMethodEnd(instance, responseMessage, exception, state);
         }
     }
 }

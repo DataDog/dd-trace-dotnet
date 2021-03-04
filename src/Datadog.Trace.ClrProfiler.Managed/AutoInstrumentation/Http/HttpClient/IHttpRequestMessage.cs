@@ -1,11 +1,12 @@
 using System;
+using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WinHttpHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     /// <summary>
     /// HttpRequestMessage interface for ducktyping
     /// </summary>
-    public interface IHttpRequestMessage
+    public interface IHttpRequestMessage : IDuckType
     {
         /// <summary>
         /// Gets the Http Method
