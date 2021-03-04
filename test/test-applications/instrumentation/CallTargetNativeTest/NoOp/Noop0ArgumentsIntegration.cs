@@ -12,7 +12,7 @@ namespace CallTargetNativeTest.NoOp
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : IInstance, IDuckType
         {
-            CallTargetState returnValue = new CallTargetState(instance.Instance);
+            CallTargetState returnValue = new CallTargetState(null, instance.Instance);
             string msg = $"{returnValue} {nameof(Noop0ArgumentsIntegration)}.OnMethodBegin<{typeof(TTarget).FullName}>({instance})";
             Console.WriteLine(msg);
             return returnValue;

@@ -13,7 +13,7 @@ namespace CallTargetNativeTest.NoOp
             where TTarget : IInstance, IDuckType
             where TArg3 : IArg, IDuckType
         {
-            CallTargetState returnValue = new CallTargetState(instance.Instance);
+            CallTargetState returnValue = new CallTargetState(null, instance.Instance);
             string msg = $"{returnValue} {nameof(Noop6ArgumentsIntegration)}.OnMethodBegin<{typeof(TTarget).FullName}, {typeof(TArg1).FullName}, {typeof(TArg2).FullName}, {typeof(TArg3).FullName}, {typeof(TArg4).FullName}, {typeof(TArg5).FullName}, {typeof(TArg6).FullName}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6})";
             Console.WriteLine(msg);
             return returnValue;
