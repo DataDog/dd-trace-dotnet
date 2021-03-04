@@ -2,7 +2,6 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Xunit;
@@ -10,6 +9,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [CollectionDefinition("IisTests", DisableParallelization = true)]
     [Collection("IisTests")]
     public class AspNetMvc4TestsCallsite : AspNetMvc4Tests
     {
@@ -51,20 +51,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this);
         }
 
-        public static TheoryData<string, string, HttpStatusCode, bool, string, string, Dictionary<string, string>> Data =>
-            new()
-            {
-                { "/Admin/Home/Index", "GET /admin/home/index", HttpStatusCode.OK, false, null, null, AdminHomeIndexTags() },
-                { "/Home/Index", "GET /home/index", HttpStatusCode.OK, false, null, null, HomeIndexTags() },
-                { "/Home/BadRequest", "GET /home/badrequest", HttpStatusCode.InternalServerError, true, null, null, BadRequestTags() },
-                { "/Home/StatusCode?value=201", "GET /home/statuscode", HttpStatusCode.Created, false, null, null, StatusCodeTags() },
-                { "/Home/StatusCode?value=503", "GET /home/statuscode", HttpStatusCode.ServiceUnavailable, true, null, "The HTTP response has status code 503.", StatusCodeTags() },
-            };
-
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [MemberData(nameof(Data))]
+        [MemberData(nameof(AspNetMvc4TestData.Data), MemberType = typeof(AspNetMvc4TestData))]
         public async Task SubmitsTraces(
             string path,
             string expectedResourceName,
@@ -72,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             bool isError,
             string expectedErrorType,
             string expectedErrorMessage,
-            Dictionary<string, string> tags)
+            SerializableDictionary tags)
         {
             await AssertWebServerSpan(
                 path,
@@ -88,42 +78,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "1.0.0",
                 tags);
         }
-
-        private static Dictionary<string, string> AdminHomeIndexTags() =>
-            new Dictionary<string, string>
-            {
-                { Tags.AspNetRoute, "Admin/{controller}/{action}/{id}" },
-                { Tags.AspNetController, "home" },
-                { Tags.AspNetAction, "index" },
-                { Tags.AspNetArea, "admin" }
-            };
-
-        private static string DefaultRoute() => "{controller}/{action}/{id}";
-
-        private static Dictionary<string, string> HomeIndexTags() =>
-            new Dictionary<string, string>
-            {
-                { Tags.AspNetRoute, DefaultRoute() },
-                { Tags.AspNetController, "home" },
-                { Tags.AspNetAction, "index" }
-            };
-
-        private static Dictionary<string, string> BadRequestTags() =>
-            new Dictionary<string, string>
-            {
-                { Tags.AspNetRoute, DefaultRoute() },
-                { Tags.AspNetController, "home" },
-                { Tags.AspNetAction, "badrequest" }
-            };
-
-        private static Dictionary<string, string> StatusCodeTags() =>
-            new Dictionary<string, string>
-            {
-                { Tags.AspNetRoute, DefaultRoute() },
-                { Tags.AspNetController, "home" },
-                { Tags.AspNetAction, "statuscode" }
-            };
     }
 }
-
 #endif

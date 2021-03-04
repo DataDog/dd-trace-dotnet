@@ -252,7 +252,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string expectedOperationName,
             string expectedResourceName,
             string expectedServiceVersion,
-            IDictionary<string, string> expectedTags = null)
+            SerializableDictionary expectedTags = null)
         {
             IImmutableList<MockTracerAgent.Span> spans;
 
@@ -271,7 +271,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     minDateTime: testStart,
                     operationName: expectedOperationName);
 
-                Assert.True(spans.Count == 1, "expected one span");
+                Assert.True(spans.Count == 1, $"expected one span, saw {spans.Count}");
             }
 
             MockTracerAgent.Span span = spans[0];
@@ -290,7 +290,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
 
-            if (expectedTags is not null)
+            if (expectedTags?.Values is not null)
             {
                 foreach (var expectedTag in expectedTags)
                 {
