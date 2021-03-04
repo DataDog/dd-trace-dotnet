@@ -15,6 +15,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
+using Datadog.Logging.Emission;
 
 namespace Datadog.Logging.Demo
 {
@@ -178,10 +179,24 @@ namespace Datadog.Logging.Demo
             }
         }  // class Log.Configure
 
-        private static Action<string, string, Exception, IEnumerable<object>> s_errorLogEventHandler = global::Datadog.Logging.Emission.SimpleConsoleSink.Error;
-        private static Action<string, string, IEnumerable<object>> s_infoLogEventHandler = global::Datadog.Logging.Emission.SimpleConsoleSink.Info;
-        private static Action<string, string, IEnumerable<object>> s_debugLogEventHandler = global::Datadog.Logging.Emission.SimpleConsoleSink.Debug;
-        private static bool s_isDebugLoggingEnabled = global::Datadog.Logging.Emission.SimpleConsoleSink.IsDebugLoggingEnabled;
+        private static Action<string, string, Exception, IEnumerable<object>> s_errorLogEventHandler = SimpleConsoleSink.Error;
+        private static Action<string, string, IEnumerable<object>> s_infoLogEventHandler = SimpleConsoleSink.Info;
+        private static Action<string, string, IEnumerable<object>> s_debugLogEventHandler = SimpleConsoleSink.Debug;
+        private static bool s_isDebugLoggingEnabled = SimpleConsoleSink.IsDebugLoggingEnabled;
+
+        internal static LogSourceInfo WithCallInfo(string logSourceName,
+                                                   [CallerLineNumber] int callLineNumber = 0,
+                                                   [CallerMemberName] string callMemberName = null)
+        {
+            return new LogSourceInfo(namePart1: null, namePart2: logSourceName, callLineNumber, callMemberName, callFileName: null);
+        }
+
+        internal static LogSourceInfo WithCallInfo(LogSourceInfo logSourceInfo,
+                                                   [CallerLineNumber] int callLineNumber = 0,
+                                                   [CallerMemberName] string callMemberName = null)
+        {
+            return logSourceInfo.WithCallInfo(callLineNumber, callMemberName);
+        }
 
         /// <summary>
         /// Gets whether debug log messages should be processed or ignored.

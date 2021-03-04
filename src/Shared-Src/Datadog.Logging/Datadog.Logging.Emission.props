@@ -17,7 +17,8 @@
     
     <IncludedSharedLogEmissionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Emission\internal\DefaultFormat.cs" />
     <IncludedSharedLogEmissionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Emission\internal\SimpleConsoleSink.cs" />
-
+    <IncludedSharedLogEmissionCompileItem Include="$(MSBuildThisFileDirectory)..\Datadog.Logging.Emission\internal\LogSourceInfo.cs" />
+    
     <ExcludedSharedLogEmissionCompileItems Include="$(MSBuildThisFileDirectory)..\**\*.cs" Exclude="@(IncludedSharedLogEmissionCompileItem)" />
     <Compile Include="$(MSBuildThisFileDirectory)..\**\*.cs" Exclude="@(ExcludedSharedLogEmissionCompileItems)" />
   </ItemGroup>

@@ -25,6 +25,26 @@ namespace Datadog.Logging.Emission
         private const string DataValueNotSpecifiedWord = "unspecified";
         private static readonly string s_procIdInfo = GetProcIdInfoString();
 
+        public static string MergeLogSourceName(string part1, string part2)
+        {
+            if (part1 == null && part2 == null)
+            {
+                return null;
+            }
+            else if (part1 == null && part2 != null)
+            {
+                return part2;
+            }
+            else if (part1 != null && part2 == null)
+            {
+                return part1;
+            }
+            else // MUST BE (part1 != null && part2 != null)
+            {
+                return part1 + ComponentPartSeparator + part1;
+            }
+        }
+
         public static void ComposeComponentName(string inPart1, string inPart2, string inPart3, out string outPart1, out string outPart2)
         {
             if (inPart1 != null && string.IsNullOrWhiteSpace(inPart1))
