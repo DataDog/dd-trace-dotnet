@@ -9,36 +9,42 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         /// Gets data for MVC tests with the feature flags disabled
         /// (URL, isError, Resource, Tags)
         /// </summary>
-        public static TheoryData<string, bool, string, SerializableDictionary> WithoutFeatureFlag => new()
+        public static TheoryData<string, int, bool, string, SerializableDictionary> WithoutFeatureFlag => new()
         {
-            { "/", false, "GET Home/Index", EmptyTags() },
-            { "/Home", false, "GET Home/Index", EmptyTags() },
-            { "/Home/Index", false, "GET Home/Index", EmptyTags() },
-            { "/Home/Error", true, "GET Home/Error", EmptyTags() },
-            { "/MyTest", false, "GET MyTest/Index", EmptyTags() },
-            { "/MyTest/index", false, "GET MyTest/Index", EmptyTags() },
-            { "/statuscode", false, "GET statuscode/{value=200}", EmptyTags() },
-            { "/statuscode/100", false, "GET statuscode/{value=200}", EmptyTags() },
-            { "/statuscode/Oops", false, "GET statuscode/{value=200}", EmptyTags() },
-            { "/statuscode/200", false, "GET statuscode/{value=200}", EmptyTags() },
+#if NETCOREAPP2_1
+            { "/", 200, false, "GET Home/Index", EmptyTags() },
+#else
+            { "/", 200, false, "GET ", EmptyTags() },
+#endif
+            { "/Home", 200, false, "GET Home/Index", EmptyTags() },
+            { "/Home/Index", 200, false, "GET Home/Index", EmptyTags() },
+            { "/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
+            { "/MyTest", 200, false, "GET MyTest/Index", EmptyTags() },
+            { "/MyTest/index", 200, false, "GET MyTest/Index", EmptyTags() },
+            { "/statuscode", 200, false, "GET statuscode/{value=200}", EmptyTags() },
+            { "/statuscode/100", 200, false, "GET statuscode/{value=200}", EmptyTags() },
+            { "/statuscode/Oops", 200, false, "GET statuscode/{value=200}", EmptyTags() },
+            { "/statuscode/200", 200, false, "GET statuscode/{value=200}", EmptyTags() },
+            { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
         };
 
         /// <summary>
         /// Gets data for MVC tests with the feature flags enabled
         /// (URL, isError, Resource, Tags)
         /// </summary>
-        public static TheoryData<string, bool, string, SerializableDictionary> WithFeatureFlag => new()
+        public static TheoryData<string, int, bool, string, SerializableDictionary> WithFeatureFlag => new()
         {
-            { "/", false, "GET /home/index", ConventionalRouteTags() },
-            { "/Home", false, "GET /home/index", ConventionalRouteTags() },
-            { "/Home/Index", false, "GET /home/index", ConventionalRouteTags() },
-            { "/Home/Error", true, "GET /home/error", ConventionalRouteTags(action: "error") },
-            { "/MyTest", false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest") },
-            { "/MyTest/index", false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest") },
-            { "/statuscode", false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/statuscode/100", false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/statuscode/Oops", false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/statuscode/200", false, "GET /statuscode/{value}", StatusCodeTags() },
+            { "/", 200, false, "GET /home/index", ConventionalRouteTags() },
+            { "/Home", 200, false, "GET /home/index", ConventionalRouteTags() },
+            { "/Home/Index", 200, false, "GET /home/index", ConventionalRouteTags() },
+            { "/Home/Error", 500, true, "GET /home/error", ConventionalRouteTags(action: "error") },
+            { "/MyTest", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest") },
+            { "/MyTest/index", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest") },
+            { "/statuscode", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
+            { "/statuscode/100", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
+            { "/statuscode/Oops", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
+            { "/statuscode/200", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
+            { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
         };
 
         private static SerializableDictionary EmptyTags() => new()

@@ -1,6 +1,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -19,21 +20,26 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
     {
         [Theory]
         [MemberData(nameof(AspNetCoreMvcTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]
-        public async Task DiagnosticObserver_ForMvcEndpoints_SubmitsSpans(string path, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForMvcEndpoints_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(path, isError, resourceName, expectedTags);
+            await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
 #if !NETCOREAPP2_1
         [Theory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(path, isError, resourceName, expectedTags);
+            await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 #endif
 
-        private static async Task AssertDiagnosticObserverSubmitsSpans<T>(string path, bool isError, string resourceName, SerializableDictionary expectedTags)
+        private static async Task AssertDiagnosticObserverSubmitsSpans<T>(
+            string path,
+            HttpStatusCode statusCode,
+            bool isError,
+            string resourceName,
+            SerializableDictionary expectedTags)
             where T : class
         {
             var writer = new AgentWriterStub();
@@ -51,7 +57,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 diagnosticManager.Start();
                 try
                 {
-                    await client.GetStringAsync(path);
+                    var response = await client.GetAsync(path);
+                    Assert.Equal(statusCode, response.StatusCode);
                 }
                 catch (Exception ex)
                 {
@@ -82,6 +89,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Assert.Equal(resourceName, span.ResourceName);
             Assert.Equal(SpanKinds.Server, span.GetTag(Tags.SpanKind));
             Assert.Equal(TracerConstants.Language, span.GetTag(Tags.Language));
+            Assert.Equal(((int)statusCode).ToString(), span.GetTag(Tags.HttpStatusCode));
+            Assert.Equal(isError, span.Error);
 
             if (expectedTags is not null)
             {
@@ -89,7 +98,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 {
                     Assert.Equal(expectedTag.Value, span.Tags.GetTag(expectedTag.Key));
                 }
-            }        
+            }
         }
 
         private static Tracer GetTracer(IAgentWriter writer = null)

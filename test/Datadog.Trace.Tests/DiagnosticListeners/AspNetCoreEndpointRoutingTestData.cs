@@ -14,44 +14,46 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         /// Gets data for Endpoint Routing tests with the feature flags disabled
         /// (URL, isError, Resource, Tags)
         /// </summary>
-        public static TheoryData<string, bool, string, SerializableDictionary> WithoutFeatureFlag => new()
+        public static TheoryData<string, int, bool, string, SerializableDictionary> WithoutFeatureFlag => new()
         {
-            { "/", false, "GET Home/Index", EmptyTags() },
-            { "/Home", false, "GET Home/Index", EmptyTags() },
-            { "/Home/Index", false, "GET Home/Index", EmptyTags() },
-            { "/Home/Error", true, "GET Home/Error", EmptyTags() },
-            { "/MyTest", false, "GET MyTest/Index", EmptyTags() },
-            { "/MyTest/index", false, "GET MyTest/Index", EmptyTags() },
-            { "/statuscode", false, "GET statuscode/{value=200}", EmptyTags() },
-            { "/statuscode/100", false, "GET statuscode/{value=200}", EmptyTags() },
-            { "/statuscode/Oops", false, "GET statuscode/{value=200}", EmptyTags() },
-            { "/statuscode/200", false, "GET statuscode/{value=200}", EmptyTags() },
-            { "/healthz", false, "GET /healthz", EmptyTags() },
-            { "/echo", false, "GET /echo", EmptyTags() },
-            { "/echo/123", false, "GET /echo/?", EmptyTags() },
-            { "/echo/false", true, "GET /echo/false", EmptyTags() },
+            { "/", 200, false, "GET Home/Index", EmptyTags() },
+            { "/Home", 200, false, "GET Home/Index", EmptyTags() },
+            { "/Home/Index", 200, false, "GET Home/Index", EmptyTags() },
+            { "/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
+            { "/MyTest", 200, false, "GET MyTest/Index", EmptyTags() },
+            { "/MyTest/index", 200, false, "GET MyTest/Index", EmptyTags() },
+            { "/statuscode", 200, false, "GET statuscode/{value=200}", EmptyTags() },
+            { "/statuscode/100", 200, false, "GET statuscode/{value=200}", EmptyTags() },
+            { "/statuscode/Oops", 200, false, "GET statuscode/{value=200}", EmptyTags() },
+            { "/statuscode/200", 200, false, "GET statuscode/{value=200}", EmptyTags() },
+            { "/healthz", 200, false, "GET /healthz", EmptyTags() },
+            { "/echo", 200, false, "GET /echo", EmptyTags() },
+            { "/echo/123", 200, false, "GET /echo/?", EmptyTags() },
+            { "/echo/false", 404, false, "GET /echo/false", EmptyTags() },
+            { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
         };
 
         /// <summary>
         /// Gets data for Endpoint Routing tests with the feature flags enabled
         /// (URL, isError, Resource, Tags)
         /// </summary>
-        public static TheoryData<string, bool, string, SerializableDictionary> WithFeatureFlag => new()
+        public static TheoryData<string, int, bool, string, SerializableDictionary> WithFeatureFlag => new()
         {
-            { "/", false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
-            { "/Home", false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
-            { "/Home/Index", false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
-            { "/Home/Error", true, "GET /home/error", ConventionalRouteTags(action: "error", endpoint: ErrorEndpointName) },
-            { "/MyTest", false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: MyTestEndpointName) },
-            { "/MyTest/index", false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: MyTestEndpointName) },
-            { "/statuscode", false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/statuscode/100", false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/statuscode/Oops", false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/statuscode/200", false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/healthz", false, "GET /healthz", HealthCheckTags() },
-            { "/echo", false, "GET /echo", EchoTags() },
-            { "/echo/123", false, "GET /echo/{value?}", EchoTags() },
-            { "/echo/false", true, "GET /echo/false", EmptyTags() },
+            { "/", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
+            { "/Home", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
+            { "/Home/Index", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
+            { "/Home/Error", 500, true, "GET /home/error", ConventionalRouteTags(action: "error", endpoint: ErrorEndpointName) },
+            { "/MyTest", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: MyTestEndpointName) },
+            { "/MyTest/index", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: MyTestEndpointName) },
+            { "/statuscode", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
+            { "/statuscode/100", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
+            { "/statuscode/Oops", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
+            { "/statuscode/200", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
+            { "/healthz", 200, false, "GET /healthz", HealthCheckTags() },
+            { "/echo", 200, false, "GET /echo", EchoTags() },
+            { "/echo/123", 200, false, "GET /echo/{value?}", EchoTags() },
+            { "/echo/false", 404, false, "GET /echo/false", EmptyTags() },
+            { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
         };
 
         private static SerializableDictionary EmptyTags() => new()
