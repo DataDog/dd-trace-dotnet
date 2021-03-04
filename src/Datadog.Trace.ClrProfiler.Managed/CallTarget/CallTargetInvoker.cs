@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget>(TTarget instance)
         {
-            DebugLog($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}>({instance})");
+            DebugLog($"ProfilerOK: BeginMethod(0)<{typeof(TIntegration)}, {typeof(TTarget)}>({instance})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1>(TTarget instance, TArg1 arg1)
         {
-            DebugLog($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}>({instance}, {arg1})");
+            DebugLog($"ProfilerOK: BeginMethod(1)<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}>({instance}, {arg1})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2>(TTarget instance, TArg1 arg1, TArg2 arg2)
         {
-            DebugLog($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}>({instance}, {arg1}, {arg2})");
+            DebugLog($"ProfilerOK: BeginMethod(2)<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}>({instance}, {arg1}, {arg2})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3)
         {
-            DebugLog($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}>({instance}, {arg1}, {arg2}, {arg3})");
+            DebugLog($"ProfilerOK: BeginMethod(3)<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}>({instance}, {arg1}, {arg2}, {arg3})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
         {
-            DebugLog($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4})");
+            DebugLog($"ProfilerOK: BeginMethod(4)<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
@@ -155,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5)
         {
-            DebugLog($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5})");
+            DebugLog($"ProfilerOK: BeginMethod(5)<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
@@ -187,11 +187,81 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6)
         {
-            DebugLog($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}, {typeof(TArg6)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6})");
+            DebugLog($"ProfilerOK: BeginMethod(6)<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}, {typeof(TArg6)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
                 return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>.Invoke(instance, arg1, arg2, arg3, arg4, arg5, arg6);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <typeparam name="TArg2">Second argument type</typeparam>
+        /// <typeparam name="TArg3">Third argument type</typeparam>
+        /// <typeparam name="TArg4">Fourth argument type</typeparam>
+        /// <typeparam name="TArg5">Fifth argument type</typeparam>
+        /// <typeparam name="TArg6">Sixth argument type</typeparam>
+        /// <typeparam name="TArg7">Seventh argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <param name="arg2">Second argument value</param>
+        /// <param name="arg3">Third argument value</param>
+        /// <param name="arg4">Fourth argument value</param>
+        /// <param name="arg5">Fifth argument value</param>
+        /// <param name="arg6">Sixth argument value</param>
+        /// <param name="arg7">Seventh argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7)
+        {
+            DebugLog($"ProfilerOK: BeginMethod(7)<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}, {typeof(TArg6)}, {typeof(TArg7)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6}, {arg7})");
+
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>.Invoke(instance, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <typeparam name="TArg2">Second argument type</typeparam>
+        /// <typeparam name="TArg3">Third argument type</typeparam>
+        /// <typeparam name="TArg4">Fourth argument type</typeparam>
+        /// <typeparam name="TArg5">Fifth argument type</typeparam>
+        /// <typeparam name="TArg6">Sixth argument type</typeparam>
+        /// <typeparam name="TArg7">Seventh argument type</typeparam>
+        /// <typeparam name="TArg8">Eighth argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <param name="arg2">Second argument value</param>
+        /// <param name="arg3">Third argument value</param>
+        /// <param name="arg4">Fourth argument value</param>
+        /// <param name="arg5">Fifth argument value</param>
+        /// <param name="arg6">Sixth argument value</param>
+        /// <param name="arg7">Seventh argument value</param>
+        /// <param name="arg8">Eighth argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7, TArg8 arg8)
+        {
+            DebugLog($"ProfilerOK: BeginMethod(8)<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}, {typeof(TArg6)}, {typeof(TArg7)}, {typeof(TArg8)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6}, {arg7}, {arg8})");
+
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>.Invoke(instance, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
             }
 
             return CallTargetState.GetDefault();
@@ -230,7 +300,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetReturn EndMethod<TIntegration, TTarget>(TTarget instance, Exception exception, CallTargetState state)
         {
-            DebugLog($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TTarget)}>({instance}, {exception?.ToString() ?? "(null)"}, {state})");
+            DebugLog($"ProfilerOK: EndMethod(0)<{typeof(TIntegration)}, {typeof(TTarget)}>({instance}, {exception?.ToString() ?? "(null)"}, {state})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
@@ -254,7 +324,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            DebugLog($"ProfilerOK: EndMethod<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
+            DebugLog($"ProfilerOK: EndMethod(1)<{typeof(TIntegration)}, {typeof(TTarget)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
