@@ -21,31 +21,27 @@ namespace DynamicDiagnosticSourceBindings.Demo
 
         public static void Line(string line)
         {
-            if (line == null)
-            {
-                Console.WriteLine();
-            }
-            else
-            {
-                Console.WriteLine(" ### Demo says: " + line);
-            }
+            PrintLine(String.Empty, line);
         }
 
         public static void LineLine(string line)
         {
+            PrintLine(Environment.NewLine, line);
+        }
+
+        private static void PrintLine(string prefix, string line)
+        {
             if (line == null)
             {
-                Console.WriteLine(Environment.NewLine);
+                Console.WriteLine(prefix);
             }
             else
             {
-                Console.WriteLine(Environment.NewLine + " ### Demo says: " + line);
+                int ticks = Environment.TickCount & Int32.MaxValue;
+                int clicks = ticks % 100000;
+                Console.WriteLine(prefix + " ### Demo says @" + clicks.ToString("00000") + ": " + line); ;
             }
         }
 
-        internal static void LineLine(object p)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using System.Collections.Generic;
 using System.Security;
+using System.Threading.Tasks;
 
 #if NETCOREAPP
     using System.Runtime.Loader;
@@ -18,7 +19,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
     [SecuritySafeCritical]
     internal static class DynamicLoader
     {
-        private const string LogComonentMoniker = "DynamicAssemblyLoader-DiagnosticSource";
+        private const string LogComponentMoniker = "DynamicAssemblyLoader-DiagnosticSource";
 
         private static class DiagnosticSourceAssembly
         {
@@ -125,7 +126,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             try
             {
-                Log.Info(LogComonentMoniker,
+                Log.Info(LogComponentMoniker,
                         $"Started initializing {nameof(DynamicLoader)}.",
                         "Environment.Version", Environment.Version,
                         "BCL Assembly Name", typeof(object).Assembly.FullName,
@@ -136,14 +137,14 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 AppDomain.CurrentDomain.AssemblyLoad += AssemblyLoadEventHandler;
                 SetupDynamicInvokers();
 
-                Log.Info(LogComonentMoniker, $"Completed initializing {nameof(DynamicLoader)}.");
+                Log.Info(LogComponentMoniker, $"Completed initializing {nameof(DynamicLoader)}.");
 
                 Interlocked.Exchange(ref s_inilializationState, (int) InitState.Initialized);
                 return true;
             }
             catch (Exception ex)
             {
-                Log.Error(LogComonentMoniker, $"Error initializing {nameof(DynamicLoader)}.", ex);
+                Log.Error(LogComponentMoniker, $"Error initializing {nameof(DynamicLoader)}.", ex);
 
                 DynamicInvoker.Current = null;
 
@@ -166,7 +167,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     // To protect from non-recursive cuncurrent scenarios, SetupDynamicInvokers(..) takes a lock.
                     if (Log.IsDebugLoggingEnabled)
                     {
-                        Log.Debug(LogComonentMoniker,
+                        Log.Debug(LogComponentMoniker,
                                  $"An AssemblyLoad-event occurred, and the loaded assembly matches DiagnosticSource."
                                + $" Invoking {nameof(SetupDynamicInvokers)}.",
                                   "Loaded Assembly FullName", loadedAssembly.FullName,
@@ -185,8 +186,8 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(LogComonentMoniker,
-                                 $"{nameof(SetupDynamicInvokers)} was executed becasue an AssemblyLoad-event occurred, and the loaded assembly"
+                        Log.Error(LogComponentMoniker,
+                                 $"{nameof(SetupDynamicInvokers)} was executed because an AssemblyLoad-event occurred, and the loaded assembly"
                                + $" matched DiagnosticSource. That {nameof(SetupDynamicInvokers)}-execution resulted in an error."
                                + $" Any existing dynamic invokers will be invalidated.",
                                   ex,
@@ -203,6 +204,79 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                 }
             }
         }
+
+#if SUPPORTED_ASSEMBLYLOADCONTEXT_LOADED_ENUMERATIONS
+        private static void AssemblyLoadContextUnloadingEventHandler(AssemblyLoadContext unloadingContext)
+        {
+            if (unloadingContext == null)
+            {
+                return;
+            }
+
+            string unloadActionId = $"ALC-Unl-{unloadingContext.Name ?? "_"}-{Guid.NewGuid().ToString("N").Substring(22)}";
+
+            if (Log.IsDebugLoggingEnabled)
+            {
+                Log.Debug(LogComponentMoniker,
+                         $"An Unloading-event occurred for a non-default {nameof(AssemblyLoadContext)} that was previously"
+                        + " found to conatain an instance on the DiagnosticSource-assembly. Tracking the unload completion.",
+                          "UnloadActionId", unloadActionId,
+                          "AssemblyLoadContext Name", unloadingContext.Name,
+                          "AssemblyLoadContext IsCollectible", unloadingContext.IsCollectible,
+                          "CurrentAppDomain.Id", AppDomain.CurrentDomain.Id,
+                          "CurrentAppDomain.FriendlyName", AppDomain.CurrentDomain.FriendlyName,
+                          "CurrentAppDomain.IsDefault", AppDomain.CurrentDomain.IsDefaultAppDomain());
+            }
+
+            // Remove the subscription
+            unloadingContext.Unloading -= AssemblyLoadContextUnloadingEventHandler;
+
+            var unloadingContextWRef = new WeakReference(unloadingContext);
+            unloadingContext = null;
+            AssemblyLoadContextUnloadingEvent.TrackCompletion(Tuple.Create(unloadingContextWRef, unloadActionId))
+                                             .ContinueWith(AssemblyLoadContextUnloadedHandler, unloadActionId);
+        }
+
+        private static void AssemblyLoadContextUnloadedHandler(Task unloadCompletionTask, object unloadActionIdObj)
+        {
+            string unloadActionId = unloadActionIdObj?.ToString() ?? "<null>";
+
+            if (Log.IsDebugLoggingEnabled)
+            {
+                Log.Debug(LogComponentMoniker,
+                         $"Completed tracking an Unloading-event occurred for a non-default {nameof(AssemblyLoadContext)} that was previously"
+                       +  " found to conatain an instance on the DiagnosticSource-assembly (unloading may or may not have finished - see previous log messages)."
+                       + $" Invoking {nameof(SetupDynamicInvokers)}.",
+                          "UnloadActionId", unloadActionId,
+                          "UnloadCompletionTask.Status", unloadCompletionTask.Status,
+                          "CurrentAppDomain.Id", AppDomain.CurrentDomain.Id,
+                          "CurrentAppDomain.FriendlyName", AppDomain.CurrentDomain.FriendlyName,
+                          "CurrentAppDomain.IsDefault", AppDomain.CurrentDomain.IsDefaultAppDomain());
+            }
+
+            try
+            {
+                SetupDynamicInvokers();
+
+                Interlocked.Exchange(ref s_inilializationState, (int) InitState.Initialized);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(LogComponentMoniker,
+                         $"{nameof(SetupDynamicInvokers)} was executed becasue an Unloading-event occurred for a non-default"
+                       + $" {nameof(AssemblyLoadContext)} that was previously found to conatain an instance on the DiagnosticSource-assembly."
+                       + $" That {nameof(SetupDynamicInvokers)}-execution resulted in an error. Any existing dynamic invokers will be invalidated.",
+                          ex,
+                          "UnloadActionId", unloadActionId,
+                          "CurrentAppDomain.Id", AppDomain.CurrentDomain.Id,
+                          "CurrentAppDomain.FriendlyName", AppDomain.CurrentDomain.FriendlyName,
+                          "CurrentAppDomain.IsDefault", AppDomain.CurrentDomain.IsDefaultAppDomain());
+
+                DynamicInvoker.Current = null;
+                Interlocked.Exchange(ref s_inilializationState, (int) InitState.Error);
+            }
+        }
+#endif
 
         private static void SetupDynamicInvokers()
         {
@@ -278,7 +352,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
                     if (Log.IsDebugLoggingEnabled)
                     {
-                        Log.Debug(LogComonentMoniker,
+                        Log.Debug(LogComponentMoniker,
                                  $"Requesting the runtime to load the DiagnosticSource-assembly by applying the default"
                                 + " resolution logic and without specifying any particular assembly version.",
                                   "Requested Assembly Name", diagnosticSourceAssemblyName_NoVersion.FullName,
@@ -311,7 +385,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                         // Log as Debug, not as Error, becasue this is an expected condition if the DS assembly is not present.
                         if (Log.IsDebugLoggingEnabled)
                         {
-                            Log.Debug(LogComonentMoniker,
+                            Log.Debug(LogComponentMoniker,
                                      $"An exception was thrown while trying to dynamically load the DiagnosticSource-assembly (DS)."
                                     + " This is expected in cases where DS is not present in the resolution paths. The error is loged only in debug mode."
                                     + " A fallback DS will be used.",
@@ -334,7 +408,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             {
                 if (Log.IsDebugLoggingEnabled)
                 {
-                    Log.Debug(LogComonentMoniker,
+                    Log.Debug(LogComponentMoniker,
                              $"The DiagnosticSource-assembly (DS) instance being set for use by dynamic invokers"
                             + " is the same as the assembly instance already being used. Dynamic invokers will not be reset.",
                               "DS FullName", s_diagnosticSourceAssemblyInCurrentUse?.FullName,
@@ -356,7 +430,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             // Make sure to log type info incl. AssemblyQualifiedName. In theory, types may be forwarded.
 
-            Log.Info(LogComonentMoniker,
+            Log.Info(LogComponentMoniker,
                     $"Setting a new instance of the DiagnosticSource-assembly (DS) for use by dynamic invokers."
                    + " Users of existing dynamic invokers may fail, and new stub instances will need to be set up to correct it.",
                      "Previous DS FullName", s_diagnosticSourceAssemblyInCurrentUse?.FullName,
@@ -381,7 +455,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
         {
             if (Log.IsDebugLoggingEnabled)
             {
-                Log.Debug(LogComonentMoniker,
+                Log.Debug(LogComponentMoniker,
                          $"Scanning all assemblies loaded into the current AppDomain for a suitable version of the"
                        + $" DiagnosticSource-assembly that can be used by the dynamic invokers.",
                           "CurrentAppDomain.Id", AppDomain.CurrentDomain.Id,
@@ -419,7 +493,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
                             if (Log.IsDebugLoggingEnabled)
                             {
-                                Log.Debug(LogComonentMoniker,
+                                Log.Debug(LogComponentMoniker,
                                          $"The DiagnosticSource-assembly is loaded two or more times. This is an unsupported condition.",
                                           "1st instance Assembly Name", diagnosticSourceAssembly.FullName,
                                           "1st instance Location", diagnosticSourceAssembly.Location,
@@ -463,7 +537,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                         {
                             if (diagnosticSourceAssembly != null)
                             {
-                                Log.Debug(LogComonentMoniker,
+                                Log.Debug(LogComponentMoniker,
                                          $"The DiagnosticSource-assembly is loaded both, into the default {nameof(AssemblyLoadContext)} (Assembly 1),"
                                        + $" and into at least one non-default {nameof(AssemblyLoadContext)} (Assembly 2). This is an unsupported condition.",
                                           "Assembly 1 Name", diagnosticSourceAssembly.FullName,
@@ -480,7 +554,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                             }
                             else
                             {
-                                Log.Debug(LogComonentMoniker,
+                                Log.Debug(LogComponentMoniker,
                                          $"The DiagnosticSource-assembly is loaded into at least one non-default {nameof(AssemblyLoadContext)}"
                                        + $" (but it is not loaded and into the default {nameof(AssemblyLoadContext)}). This is an unsupported condition.",
                                           "Assembly Name", loadedAssembly.FullName,
@@ -493,6 +567,8 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                                           "CurrentAppDomain.IsDefault", AppDomain.CurrentDomain.IsDefaultAppDomain());
                             }
                         }
+
+                        asmLdCtx.Unloading += AssemblyLoadContextUnloadingEventHandler;
 
                         isAnyDiagnosticSourceAssemblyLoaded = true;
                         isSuitableDiagnosticSourceAssemblyLoaded = false;
@@ -510,7 +586,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             {
                 if (Log.IsDebugLoggingEnabled)
                 {
-                    Log.Debug(LogComonentMoniker,
+                    Log.Debug(LogComponentMoniker,
                              $"The DiagnosticSource-assembly is currently not loaded.",
                              "CurrentAppDomain.Id", AppDomain.CurrentDomain.Id,
                              "CurrentAppDomain.FriendlyName", AppDomain.CurrentDomain.FriendlyName,
@@ -530,7 +606,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             {
                 if (Log.IsDebugLoggingEnabled)
                 {
-                    Log.Debug(LogComonentMoniker,
+                    Log.Debug(LogComponentMoniker,
                              $"The DiagnosticSource-assembly is loaded excatly once"
 #if SUPPORTED_ASSEMBLYLOADCONTEXT_LOADED_ENUMERATIONS
                            + $" into a suitable {nameof(AssemblyLoadContext)}"
@@ -556,7 +632,7 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             if (Log.IsDebugLoggingEnabled)
             {
-                Log.Debug(LogComonentMoniker,
+                Log.Debug(LogComponentMoniker,
                          $"The DiagnosticSource-assembly is loaded excatly once"
 #if SUPPORTED_ASSEMBLYLOADCONTEXT_LOADED_ENUMERATIONS
                        + $" into a suitable {nameof(AssemblyLoadContext)}"

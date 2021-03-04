@@ -18,6 +18,16 @@ namespace Datadog.DynamicDiagnosticSourceBindings
             return DynamicLoader.EnsureInitialized();
         }
 
+        public static bool IsInitialized
+        {
+            get
+            {
+                return (DynamicLoader.InitializationState == DynamicLoader.InitState.Initialized)
+                            && DynamicInvoker.TryGetCurrent(out DynamicInvoker invoker)
+                            && invoker.IsValid;
+            }
+        }
+
         public static IDisposable SubscribeDynamicInvokerInitializedListener(Action<DiagnosticSourceAssembly.IDynamicInvoker> dynamicInvokerInitializedAction)
         {
             Validate.NotNull(dynamicInvokerInitializedAction, nameof(dynamicInvokerInitializedAction));

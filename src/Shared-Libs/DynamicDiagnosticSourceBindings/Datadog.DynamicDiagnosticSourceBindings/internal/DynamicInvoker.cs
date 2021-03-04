@@ -21,8 +21,14 @@ namespace Datadog.DynamicDiagnosticSourceBindings
 
             protected override bool GetMustImmediatelyInvokeNewSubscription(Subscription subscription, out DiagnosticSourceAssembly.IDynamicInvoker source)
             {
-                source = Volatile.Read(ref s_currentInvoker);
-                return (source != null) && source.IsValid;
+                if (TryGetCurrent(out DynamicInvoker invoker) && invoker.IsValid)
+                {
+                    source = invoker;
+                    return true;
+                }
+
+                source = null;
+                return false;
             }
         }
 
@@ -73,6 +79,12 @@ namespace Datadog.DynamicDiagnosticSourceBindings
                     NotifyInitializationListeners(value);
                 }
             }
+        }
+
+        public static bool TryGetCurrent(out DynamicInvoker currentInvoker)
+        {
+            currentInvoker = Volatile.Read(ref s_currentInvoker);
+            return (currentInvoker != null);
         }
 
         internal static IDisposable SubscribeInitializedListener(Action<DiagnosticSourceAssembly.IDynamicInvoker, object> dynamicInvokerInitializedAction, object state)

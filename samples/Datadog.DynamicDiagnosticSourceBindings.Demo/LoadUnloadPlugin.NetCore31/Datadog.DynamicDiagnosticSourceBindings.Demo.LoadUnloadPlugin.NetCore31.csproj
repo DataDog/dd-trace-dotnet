@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-	<SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\..\src\Shared-Src\</SharedSrcBaseDir>
+	  <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\..\src\Shared-Src\</SharedSrcBaseDir>
+	  <SharedDemoSrcBaseDir>$(MSBuildThisFileDirectory)..\Shared-Demo-Src</SharedDemoSrcBaseDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,7 +15,18 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Compile Include="..\Shared-Demo-Src\DynamicDiagnosticSourceBindings.Demo\internal\ConsoleWrite.cs" />
+    <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\DiagnosticEventsSpecification.cs" />
+    <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\DirectDiagnosticEventsGenerator.cs" />
+    <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\StubbedDiagnosticEventsGenerator.cs" />
+    <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\ReceivedEventsAccumulator.cs" />
+    <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\StubbedDiagnosticEventsCollector.cs" />
+    <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\ConsoleWrite.cs" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Content Include="System.Diagnostics.DiagnosticSource.Plugin.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 	
   <ItemGroup>
@@ -38,5 +50,4 @@
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
-
 </Project>

@@ -61,9 +61,12 @@ namespace DynamicDiagnosticSourceBindings.Demo
 
             DiagnosticSourceAssembly.SubscribeDynamicInvokerInitializedListener(OnDynamicDiagnosticSourceInvokerInitialized, rnd);
 
-            ConsoleWrite.LineLine($"Kicking off the DS magic.");
-            bool isDiagnosticSourceAssemblyInitialized = DiagnosticSourceAssembly.EnsureInitialized();
-            ConsoleWrite.Line($"isDiagnosticSourceAssemblyInitialized = {isDiagnosticSourceAssemblyInitialized}");
+            {
+                ConsoleWrite.LineLine($"Kicking off the DS magic.");
+                bool prevInit = DiagnosticSourceAssembly.IsInitialized;
+                bool nowInit = DiagnosticSourceAssembly.EnsureInitialized();
+                ConsoleWrite.Line($"DiagnosticSourceAssembly-magic status: prevInit={prevInit}, nowInit={nowInit}.");
+            }
 
             int currIteration = CurrentIteration;
             while (currIteration < _maxInterations)

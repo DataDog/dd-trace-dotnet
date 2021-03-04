@@ -1,10 +1,11 @@
-﻿using DynamicDiagnosticSourceBindings.Demo;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+
+using DynamicDiagnosticSourceBindings.Demo;
 
 namespace Demo.LateLoadDS.NetFx
 {
@@ -76,24 +77,22 @@ namespace Demo.LateLoadDS.NetFx
             }
 #pragma warning restore CS0162 // Unreachable code detected
 
-            ConsoleWrite.Line();
-            ConsoleWrite.Line($"Setting up {nameof(StubbedDiagnosticEventsCollector)}.");
+            ConsoleWrite.LineLine($"Setting up {nameof(StubbedDiagnosticEventsCollector)}.");
 
             var directResultsAccumulator = new ReceivedEventsAccumulator(MaxIterations);
             var stubbedResultsAccumulator = new ReceivedEventsAccumulator(MaxIterations);
             var stubbedCollector = new StubbedDiagnosticEventsCollector(directResultsAccumulator, stubbedResultsAccumulator);
 
-            ConsoleWrite.Line();
-            ConsoleWrite.Line($"Starting {nameof(StubbedDiagnosticEventsGenerator)}.");
-
             SetPhaseOneCompleted(false);
+
+            ConsoleWrite.LineLine($"Starting {nameof(StubbedDiagnosticEventsGenerator)}.");
+            
             var stubbedGenerator = new StubbedDiagnosticEventsGenerator(MaxIterations, PhaseOneIterations);
             Task stubbedGeneratorTask = Task.Run(stubbedGenerator.Run);
 
             stubbedGenerator.PhaseOneCompletedEvent.Wait();
 
-            ConsoleWrite.Line();
-            ConsoleWrite.Line($"Phase one of {nameof(StubbedDiagnosticEventsGenerator)} completed.");
+            ConsoleWrite.LineLine($"Phase one of {nameof(stubbedGenerator)} completed.");
             SetPhaseOneCompleted(true);
 
             ConsoleWrite.Line($"Starting {nameof(DirectDiagnosticEventsGenerator)}.");
@@ -103,21 +102,17 @@ namespace Demo.LateLoadDS.NetFx
 
             Task.WaitAll(stubbedGeneratorTask, directGeneratorTask);
 
-            ConsoleWrite.Line();
-            ConsoleWrite.Line($"Both, {nameof(StubbedDiagnosticEventsGenerator)} and {nameof(DirectDiagnosticEventsGenerator)} finished.");
+            ConsoleWrite.LineLine($"Both, {nameof(stubbedGenerator)} and {nameof(directGenerator)} finished.");
 
-            ConsoleWrite.Line();
-            ConsoleWrite.Line($"Summary of {nameof(stubbedResultsAccumulator)}:"
-                            + $" Received events: {stubbedResultsAccumulator.ReceivedCount}; Proportion: {stubbedResultsAccumulator.ReceivedProportion}.");
+            ConsoleWrite.LineLine($"Summary of {nameof(stubbedResultsAccumulator)}:"
+                                + $" Received events: {stubbedResultsAccumulator.ReceivedCount}; Proportion: {stubbedResultsAccumulator.ReceivedProportion}.");
             ConsoleWrite.Line(Environment.NewLine + stubbedResultsAccumulator.GetReceivedVisual(ReceivedEventsVisualWidth));
 
-            ConsoleWrite.Line();
-            ConsoleWrite.Line($"Summary of {nameof(directResultsAccumulator)}:"
-                            + $" Received events: {directResultsAccumulator.ReceivedCount}; Proportion: {directResultsAccumulator.ReceivedProportion}.");
+            ConsoleWrite.LineLine($"Summary of {nameof(directResultsAccumulator)}:"
+                                + $" Received events: {directResultsAccumulator.ReceivedCount}; Proportion: {directResultsAccumulator.ReceivedProportion}.");
             ConsoleWrite.Line(Environment.NewLine + directResultsAccumulator.GetReceivedVisual(ReceivedEventsVisualWidth));
 
-            ConsoleWrite.Line();
-            ConsoleWrite.Line("All done. Press enter to exit.");
+            ConsoleWrite.LineLine("All done. Press enter to exit.");
 
             Console.ReadLine();
             ConsoleWrite.Line("Good bye.");

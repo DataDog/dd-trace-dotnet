@@ -76,6 +76,7 @@
   </ItemGroup>
    
   <ItemGroup>
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\AssemblyLoadContextUnloadingEvent.cs" />
     <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DiagnosticListenerToStubObserverAdapter.cs" />
     <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DynamicInvokerInvalidationListenersCollection.cs" />
     <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\ListenerActionsCollection.cs" />
