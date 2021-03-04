@@ -16,7 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 
-namespace Datadog.Logging.Demo
+namespace Datadog.DynamicDiagnosticSourceBindings
 {
     /// <summary>
     /// Leightweight Log stub for Logging-SDK-agnostic logging.

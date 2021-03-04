@@ -27,6 +27,7 @@ namespace Datadog.Logging.Composition
         private const string FilenameExtension = "log";
 
         private const bool UseNewLinesInErrorMessages = false;
+        private const bool UseNewLinesInDataNamesAndValues = false;
 
         private const int FilenameTimestampAndIndexPartsLengthEstimate = 20;
 
@@ -255,7 +256,8 @@ namespace Datadog.Logging.Composition
                                                                  componentName.Part2,
                                                                  useUtcTimestamp: false,
                                                                  errorMessage,
-                                                                 dataNamesAndValues);
+                                                                 dataNamesAndValues,
+                                                                 UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch
@@ -273,7 +275,8 @@ namespace Datadog.Logging.Composition
                                                             componentName.Part2,
                                                             useUtcTimestamp: false,
                                                             message,
-                                                            dataNamesAndValues);
+                                                            dataNamesAndValues,
+                                                            UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch
@@ -291,7 +294,8 @@ namespace Datadog.Logging.Composition
                                                         componentName.Part2,
                                                         useUtcTimestamp: false,
                                                         message,
-                                                        dataNamesAndValues);
+                                                        dataNamesAndValues,
+                                                        UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch

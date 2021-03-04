@@ -179,9 +179,9 @@ namespace Datadog.Logging.Emission
             }
         }
 
-        public static StringBuilder ConstructLogLine(string logLevelMoniker, string componentName, bool useUtcTimestamp, string message, IEnumerable<object> dataNamesAndValues)
+        public static StringBuilder ConstructLogLine(string logLevelMoniker, string componentName, bool useUtcTimestamp, string message, IEnumerable<object> dataNamesAndValues, bool useNewLines)
         {
-            return ConstructLogLine(logLevelMoniker, componentName, null, useUtcTimestamp, message, dataNamesAndValues);
+            return ConstructLogLine(logLevelMoniker, componentName, null, useUtcTimestamp, message, dataNamesAndValues, useNewLines);
         }
 
         public static StringBuilder ConstructLogLine(string logLevelMoniker,
@@ -189,11 +189,12 @@ namespace Datadog.Logging.Emission
                                                      string componentNamePart2,
                                                      bool useUtcTimestamp,
                                                      string message,
-                                                     IEnumerable<object> dataNamesAndValues)
+                                                     IEnumerable<object> dataNamesAndValues,
+                                                     bool useNewLines)
         {
             var logLine = new StringBuilder(capacity: 128);
             AppendLogLinePrefix(logLine, logLevelMoniker, useUtcTimestamp);
-            AppendEventInfo(logLine, componentNamePart1, componentNamePart2, message, dataNamesAndValues);
+            AppendEventInfo(logLine, componentNamePart1, componentNamePart2, message, dataNamesAndValues, useNewLines);
 
             return logLine;
         }
@@ -238,7 +239,8 @@ namespace Datadog.Logging.Emission
                                            string componentNamePart1,
                                            string componentNamePart2,
                                            string message,
-                                           IEnumerable<object> dataNamesAndValues)
+                                           IEnumerable<object> dataNamesAndValues,
+                                           bool useNewLines)
         {
             bool hasComponentNamePart1 = !string.IsNullOrWhiteSpace(componentNamePart1);
             bool hasComponentNamePart2 = !string.IsNullOrWhiteSpace(componentNamePart2);
@@ -276,16 +278,32 @@ namespace Datadog.Logging.Emission
                 if (lastMsgChar == '.')
                 {
                     // Append space after '.':
-                    targetBuffer.Append(' ');
+
+                    if (useNewLines)
+                    {
+                        targetBuffer.AppendLine();
+                    }
+                    else
+                    {
+                        targetBuffer.Append(' ');
+                    }
                 }
                 else if (lastMsgChar == '\r' || lastMsgChar == '\n')
                 {
-                    // Append nothing after New Line:
+                    // Append nothing after New Line.
                 }
                 else
                 {
-                    // Append ". " in all other cases.
-                    targetBuffer.Append(". ");
+                    // Append ". " in all other cases:
+                    
+                    if (useNewLines)
+                    {
+                        targetBuffer.AppendLine(".");
+                    }
+                    else
+                    {
+                        targetBuffer.Append(". ");
+                    }
                 }
             }
 
@@ -293,30 +311,40 @@ namespace Datadog.Logging.Emission
             {
                 if (dataNamesAndValues is object[] dataNamesAndValuesArray)
                 {
-                    AppenddataNamesAndValuesArr(targetBuffer, dataNamesAndValuesArray);
+                    AppenddataNamesAndValuesArr(targetBuffer, dataNamesAndValuesArray, useNewLines);
                 }
                 else
                 {
-                    AppenddataNamesAndValuesEnum(targetBuffer, dataNamesAndValues);
+                    AppenddataNamesAndValuesEnum(targetBuffer, dataNamesAndValues, useNewLines);
                 }
             }
         }
 
-        private static void AppenddataNamesAndValuesArr(StringBuilder targetBuffer, object[] dataNamesAndValues)
+        private static void AppenddataNamesAndValuesArr(StringBuilder targetBuffer, object[] dataNamesAndValues, bool useNewLines)
         {
+            const string IndentStr = "    ";
+
             if (dataNamesAndValues.Length < 1)
             {
                 return;
             }
 
-            targetBuffer.Append('{');
             for (int i = 0; i < dataNamesAndValues.Length; i += 2)
             {
-                if (i > 0)
+                if (useNewLines)
                 {
-                    targetBuffer.Append(", ");
+                    targetBuffer.AppendLine((i == 0) ? "{" : ",");
+                }
+                else
+                {
+                    targetBuffer.Append((i == 0) ? "{" : ", ");
                 }
 
+                if (useNewLines)
+                {
+                    targetBuffer.Append(IndentStr);
+                }
+                
                 targetBuffer.Append('[');
                 QuoteIfString(targetBuffer, dataNamesAndValues[i]);
                 targetBuffer.Append(']');
@@ -332,23 +360,35 @@ namespace Datadog.Logging.Emission
                 }
             }
 
+            if (useNewLines)
+            {
+                targetBuffer.AppendLine();
+            }
+            
             targetBuffer.Append('}');
         }
 
-        private static void AppenddataNamesAndValuesEnum(StringBuilder targetBuffer, IEnumerable<object> dataNamesAndValues)
+        private static void AppenddataNamesAndValuesEnum(StringBuilder targetBuffer, IEnumerable<object> dataNamesAndValues, bool useNewLines)
         {
+            const string IndentStr = "    ";
+
             int enumIndex = 0;
             using (IEnumerator<object> enumerator = dataNamesAndValues.GetEnumerator())
             {
                 while (enumerator.MoveNext())
                 {
-                    if (enumIndex == 0)
+                    if (useNewLines)
                     {
-                        targetBuffer.Append('{');
+                        targetBuffer.AppendLine((enumIndex == 0) ? "{" : ",");
                     }
                     else
                     {
-                        targetBuffer.Append(", ");
+                        targetBuffer.Append((enumIndex == 0) ? "{" : ", ");
+                    }
+
+                    if (useNewLines)
+                    {
+                        targetBuffer.Append(IndentStr);
                     }
 
                     targetBuffer.Append('[');
@@ -372,6 +412,11 @@ namespace Datadog.Logging.Emission
 
             if (enumIndex > 0)
             {
+                if (useNewLines)
+                {
+                    targetBuffer.AppendLine();
+                }
+
                 targetBuffer.Append('}');
             }
         }

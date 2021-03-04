@@ -14,6 +14,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Collections.Generic;
+using System.Runtime.ExceptionServices;
 
 namespace <#= LogNamespace #>
 {
@@ -214,6 +215,35 @@ namespace <#= LogNamespace #>
         }
 
         /// <summary>
+        /// This method logs and rethrows the exception. It is typed to return the exception, to enable writing concise code like:
+        /// <code>
+        ///   try
+        ///   {
+        ///       // ...
+        ///   }
+        ///   catch (Exception ex)
+        ///   {
+        ///       throw Log.ErrorRethrow("...", ex);
+        ///   }
+        /// </code>
+        /// This is becasue the compiler does not know that this method throws and it may otherwise require code blow to
+        /// add no-op return statements and similar.
+        /// </summary>
+        /// <returns>Either <c>null</c> if the specified <c>exception</c> is <c>null</c>, or nothing at all,
+        /// because the specified <c>exception</c> is rethrown.</returns>
+        public static Exception ErrorRethrow(string componentName, Exception exception, params object[] dataNamesAndValues)
+        {
+            Error(componentName, message: null, exception, dataNamesAndValues);
+
+            if (exception != null)
+            {
+                ExceptionDispatchInfo.Capture(exception).Throw();
+            }
+
+            return exception;
+        }
+
+        /// <summary>
         /// Logs an error.
         /// These need to be persisted well, so that the info is available for support cases.
         /// </summary>
@@ -225,6 +255,35 @@ namespace <#= LogNamespace #>
             {
                 logEventHandler(componentName, message, exception, dataNamesAndValues);
             }
+        }
+
+        /// <summary>
+        /// This method logs and rethrows the exception. It is typed to return the exception, to enable writing concise code like:
+        /// <code>
+        ///   try
+        ///   {
+        ///       // ...
+        ///   }
+        ///   catch (Exception ex)
+        ///   {
+        ///       throw Log.ErrorRethrow("...", ex);
+        ///   }
+        /// </code>
+        /// This is becasue the compiler does not know that this method throws and it may otherwise require code blow to
+        /// add no-op return statements and similar.
+        /// </summary>
+        /// <returns>Either <c>null</c> if the specified <c>exception</c> is <c>null</c>, or nothing at all,
+        /// because the specified <c>exception</c> is rethrown.</returns>
+        public static Exception ErrorRethrow(string componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        {
+            Error(componentName, message: null, exception, dataNamesAndValues);
+
+            if (exception != null)
+            {
+                ExceptionDispatchInfo.Capture(exception).Throw();
+            }
+
+            return exception;
         }
 
         /// <summary>
