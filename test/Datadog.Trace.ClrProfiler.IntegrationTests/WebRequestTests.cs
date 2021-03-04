@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public WebRequestTests(ITestOutputHelper output)
             : base("WebRequest", output)
         {
+            EnvironmentHelper.EnableNamedPipes();
             SetServiceVersion("1.0.0");
         }
 
@@ -35,13 +36,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.WebRequest-http-client";
 
-            int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.CreateMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{ignoreAsync}Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
@@ -79,10 +78,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             const string expectedOperationName = "http.request";
 
-            int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.CreateMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"TracingDisabled Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");

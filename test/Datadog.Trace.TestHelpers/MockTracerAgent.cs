@@ -5,7 +5,6 @@ using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Pipes;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -13,18 +12,24 @@ using System.Text;
 using System.Threading;
 using Datadog.Core.Tools;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.TestHelpers.NamedPipes.Interfaces;
+using Datadog.Trace.TestHelpers.NamedPipes.Server;
 using MessagePack;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
     public class MockTracerAgent : IDisposable
     {
         private readonly HttpListener _listener;
+        private readonly Thread _httpListenerThread;
+
         private readonly string _tracesPipeName;
         private readonly Thread _namedPipeThread;
+
         private readonly UdpClient _udpClient;
-        private readonly Thread _httpListenerThread;
         private readonly Thread _statsdThread;
+
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         public MockTracerAgent(int port = 8126, int retries = 5, bool useStatsd = false, string tracePipeName = null)
@@ -196,6 +201,8 @@ namespace Datadog.Trace.TestHelpers
                        .ToImmutableList();
             }
 
+            Console.WriteLine($"Timeline entries: {AggregatePipeServer.Timeline.Count}");
+
             return relevantSpans;
         }
 
@@ -253,6 +260,21 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        private byte[] ReadFully(Stream input)
+        {
+            byte[] buffer = new byte[16 * 1024];
+            using (MemoryStream ms = new MemoryStream())
+            {
+                int read;
+                while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    ms.Write(buffer, 0, read);
+                }
+
+                return ms.ToArray();
+            }
+        }
+
         private void HandleHttpRequests()
         {
             while (_listener.IsListening)
@@ -264,7 +286,9 @@ namespace Datadog.Trace.TestHelpers
 
                     if (ShouldDeserializeTraces)
                     {
-                        var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(ctx.Request.InputStream);
+                        var streamBytes = ReadFully(ctx.Request.InputStream);
+                        // var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(ctx.Request.InputStream);
+                        var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(streamBytes);
                         OnRequestDeserialized(spans);
 
                         lock (this)
@@ -308,151 +332,52 @@ namespace Datadog.Trace.TestHelpers
 
         private void NamedPipeServerThread()
         {
-            using (var pipeServer = new NamedPipeServerStream(_tracesPipeName, PipeDirection.InOut, 1))
+            using (var aggregatePipeServer = new AggregatePipeServer(_tracesPipeName))
             {
-                var threadId = Thread.CurrentThread.ManagedThreadId;
+                EventHandler<MessageReceivedEventArgs> receivedHandler = (sender, args) =>
+                {
+                    try
+                    {
+                        if (ShouldDeserializeTraces)
+                        {
+                            if (args.Message.BodyBytes.Length < 2)
+                            {
+                                // Skip! Empty payload.
+                                return;
+                            }
+
+                            var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(args.Message.BodyBytes);
+                            OnRequestDeserialized(spans);
+
+                            Console.WriteLine($"Timeline entries: {AggregatePipeServer.Timeline.Count}");
+
+                            lock (this)
+                            {
+                                // we only need to lock when replacing the span collection,
+                                // not when reading it because it is immutable
+                                Spans = Spans.AddRange(spans.SelectMany(trace => trace));
+                                RequestHeaders = RequestHeaders.Add(new NameValueCollection(args.Message.Headers));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Can't deserialize!
+                        Console.WriteLine(ex);
+                    }
+                };
+
+                aggregatePipeServer.MessageReceivedEvent += receivedHandler;
+
+                aggregatePipeServer.Start();
 
                 while (_cancellationTokenSource.IsCancellationRequested == false)
                 {
-                    // Wait for a client to connect
-                    pipeServer.WaitForConnection();
-
-                    Console.WriteLine("Client connected on thread[{0}].", threadId);
-                    try
-                    {
-                        var request = ReadRequest(pipeServer);
-
-                        var response =
-                            @"HTTP/1.1 200 OK
-ContentType: application/json
-Content-Length: 0
-
-";
-                        var responseBytes = Encoding.UTF8.GetBytes(response);
-                        pipeServer.Write(responseBytes, 0, responseBytes.Length);
-
-                        if (request.Body != null && request.Body.Length > 1)
-                        {
-                            var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(request.Body);
-                            OnRequestDeserialized(spans);
-                        }
-                    }
-                    catch (IOException e)
-                    {
-                        Console.WriteLine("ERROR: {0}", e.Message);
-                    }
-                    finally
-                    {
-                        pipeServer.Disconnect();
-                    }
-                }
-            }
-        }
-
-        private MockRequest ReadRequest(NamedPipeServerStream pipeServer)
-        {
-            var batchRead = new byte[0x350];
-            var headerIndex = 0;
-            var headerBuffer = new byte[0x1000];
-
-            // byte nullByte = 0x0;
-            var carriageReturn = (byte)'\r';
-            var lineFeed = (byte)'\n';
-
-            bool EndOfHeaders()
-            {
-                if (headerIndex < 3) { return false; }
-
-                if (headerBuffer[headerIndex] != lineFeed) { return false; }
-
-                if (headerBuffer[headerIndex - 1] != carriageReturn) { return false; }
-
-                if (headerBuffer[headerIndex - 2] != lineFeed) { return false; }
-
-                if (headerBuffer[headerIndex - 3] != carriageReturn) { return false; }
-
-                return true;
-            }
-
-            string headerString;
-            var leftoverIndex = 0;
-            var leftoverBytes = new byte[0x350];
-
-            var endOfStream = false;
-            do
-            {
-                pipeServer.Read(batchRead, 0, batchRead.Length);
-
-                foreach (var t in batchRead)
-                {
-                    if (endOfStream)
-                    {
-                        leftoverBytes[leftoverIndex++] = t;
-                    }
-                    else
-                    {
-                        headerBuffer[headerIndex] = t;
-                    }
-
-                    if (EndOfHeaders())
-                    {
-                        endOfStream = true;
-                        continue;
-                    }
-
-                    headerIndex++;
-                }
-            }
-            while (!endOfStream);
-
-            Array.Resize(ref headerBuffer, headerIndex + 1);
-
-            headerString = Encoding.UTF8.GetString(headerBuffer);
-            var headerLines = headerString.Split(
-                new[] { Environment.NewLine },
-                StringSplitOptions.None);
-
-            var index = 0;
-            var currentLine = headerLines[index];
-
-            var mockRequest = new MockRequest();
-
-            var contentLength = 0;
-            while (!string.IsNullOrWhiteSpace(currentLine))
-            {
-                var semicolonIndex = currentLine.IndexOf(":");
-                if (semicolonIndex > -1)
-                {
-                    var key = currentLine.Substring(0, semicolonIndex);
-                    var value = currentLine.Substring(semicolonIndex + 1, currentLine.Length - semicolonIndex - 1);
-
-                    if (key.Equals("content-length", StringComparison.OrdinalIgnoreCase))
-                    {
-                        contentLength = int.Parse(value);
-                    }
-
-                    mockRequest.Headers.Add(new KeyValuePair<string, string>(key, value));
+                    Thread.Sleep(10);
                 }
 
-                currentLine = headerLines[++index];
+                aggregatePipeServer.MessageReceivedEvent -= receivedHandler;
             }
-
-            var body = new byte[contentLength];
-
-            if (contentLength < leftoverIndex)
-            {
-                Array.Copy(leftoverBytes, body, contentLength);
-            }
-            else
-            {
-                var bodyRemainder = contentLength - leftoverIndex;
-                Array.Copy(leftoverBytes, body, leftoverIndex);
-                pipeServer.Read(body, leftoverIndex, bodyRemainder);
-            }
-
-            mockRequest.Body = body;
-
-            return mockRequest;
         }
 
         [MessagePackObject]
@@ -499,13 +424,6 @@ Content-Length: 0
             {
                 return $"TraceId={TraceId}, SpanId={SpanId}, Service={Service}, Name={Name}, Resource={Resource}, Type={Type}";
             }
-        }
-
-        public class MockRequest
-        {
-            public List<KeyValuePair<string, string>> Headers { get; set; } = new List<KeyValuePair<string, string>>();
-
-            public byte[] Body { get; set; }
         }
     }
 }
