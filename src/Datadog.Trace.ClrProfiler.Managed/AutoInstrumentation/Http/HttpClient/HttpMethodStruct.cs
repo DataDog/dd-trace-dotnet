@@ -1,6 +1,6 @@
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     /// <summary>
     /// Http method struct copy target for ducktyping

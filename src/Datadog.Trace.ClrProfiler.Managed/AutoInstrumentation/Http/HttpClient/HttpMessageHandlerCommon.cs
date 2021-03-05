@@ -6,20 +6,16 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
-    internal class SocketsHttpHandlerCommon
+    internal static class HttpMessageHandlerCommon
     {
-        private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-        private static readonly IntegrationInfo SocketHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpSocketsHandler));
-
-        public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
+        public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken, IntegrationInfo integrationId, Func<bool> isTracingEnableFunc = null)
             where TRequest : IHttpRequestMessage
         {
-            if (IsTracingEnabled(requestMessage.Headers))
+            if (requestMessage.Instance is not null && IsTracingEnabled(requestMessage.Headers, isTracingEnableFunc))
             {
-                Scope scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, IntegrationId, out HttpTags tags);
+                Scope scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, integrationId, out HttpTags tags);
                 if (scope != null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;
@@ -46,7 +42,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler
 
             try
             {
-                scope.Span.SetHttpStatusCode(responseMessage.StatusCode, isServer: false);
+                if (responseMessage.Instance is not null)
+                {
+                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, isServer: false);
+                }
 
                 if (exception != null)
                 {
@@ -61,9 +60,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.SocketsHttpHandler
             return responseMessage;
         }
 
-        private static bool IsTracingEnabled(IRequestHeaders headers)
+        private static bool IsTracingEnabled(IRequestHeaders headers, Func<bool> isTracingEnableFunc = null)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: false))
+            if (isTracingEnableFunc != null && !isTracingEnableFunc())
             {
                 return false;
             }
