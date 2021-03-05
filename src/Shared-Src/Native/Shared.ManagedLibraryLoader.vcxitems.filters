@@ -53,5 +53,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)miniutfdata.h">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)pal.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)environment_variables.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
