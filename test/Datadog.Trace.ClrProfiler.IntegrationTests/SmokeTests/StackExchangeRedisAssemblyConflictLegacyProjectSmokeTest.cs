@@ -1,11 +1,10 @@
-using Datadog.Core.Tools;
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
-using Datadog.Trace.TestHelpers;
+using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
+    [Collection(nameof(StackExchangeRedisTestCollection))]
     public class StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest : SmokeTestBase
     {
         public StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest(ITestOutputHelper output)
