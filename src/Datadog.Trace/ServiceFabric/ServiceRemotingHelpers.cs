@@ -155,16 +155,7 @@ namespace Datadog.Trace.ServiceFabric
 
             Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
             span.ResourceName = resourceName;
-
-            switch (spanKind)
-            {
-                case SpanKinds.Client:
-                    tags.SetAnalyticsSampleRate(IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: false);
-                    break;
-                case SpanKinds.Server:
-                    tags.SetAnalyticsSampleRate(IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: true);
-                    break;
-            }
+            tags.SetAnalyticsSampleRate(IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: false);
 
             return span;
         }
