@@ -1,3 +1,4 @@
+using Datadog.Trace.Tests.DiagnosticListeners;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,23 +24,23 @@ namespace Samples.AspNetCoreRazorPages
 #endif
         }
 
-#if NETCOREAPP2_1
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder builder)
         {
-            app.UseMvc();
-        }
-#else
-        public void Configure(IApplicationBuilder app)
-        {
-            app.UseRouting();
-
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
+            builder.UseMultipleErrorHandlerPipelines(app =>
             {
-                endpoints.MapRazorPages();
+#if NETCOREAPP2_1
+                app.UseMvc();
+#else
+                app.UseRouting();
+
+                app.UseAuthorization();
+
+                app.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapRazorPages();
+                });
+#endif
             });
         }
-#endif
     }
 }

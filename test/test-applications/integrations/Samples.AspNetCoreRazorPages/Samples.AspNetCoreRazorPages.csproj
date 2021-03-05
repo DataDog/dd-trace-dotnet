@@ -9,5 +9,8 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp2')) ">
     <PackageReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
-
+  
+  <ItemGroup>
+    <Compile Include="..\..\..\Datadog.Trace.Tests\DiagnosticListeners\ErrorHandlingHelper.cs" Link="ErrorHandlingHelper.cs" />
+  </ItemGroup>
 </Project>

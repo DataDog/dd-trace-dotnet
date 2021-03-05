@@ -1,13 +1,15 @@
 ﻿#if !NETFRAMEWORK
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 #if !NETCOREAPP2_1
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 #endif
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable SA1402 // File may only contain a single class
@@ -29,12 +31,16 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 #endif
         }
 
-        public void Configure(IApplicationBuilder builder)
+        public void Configure(IApplicationBuilder builder, IConfiguration configuration)
         {
-            builder.UseMvc(routes =>
+            builder.UseMultipleErrorHandlerPipelines(app =>
             {
-                routes.MapRoute("custom", "Test/{action=Index}", new { Controller = "MyTest" });
-                routes.MapRoute("default", "{controller=Home}/{action=Index}/{id?}");
+                app.UseMvc(
+                    routes =>
+                    {
+                        routes.MapRoute("custom", "Test/{action=Index}", new { Controller = "MyTest" });
+                        routes.MapRoute("default", "{controller=Home}/{action=Index}/{id?}");
+                    });
             });
         }
     }
@@ -53,23 +59,27 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             services.AddAuthorization();
         }
 
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder builder, IConfiguration configuration)
         {
-            app.UseRouting();
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
+            builder.UseMultipleErrorHandlerPipelines(app =>
             {
-                endpoints.MapControllers();
-                endpoints.MapDefaultControllerRoute();
-                endpoints.MapHealthChecks("/healthz", new HealthCheckOptions { Predicate = _ => false })
-                         .WithDisplayName("Custom Health Check");
-                endpoints.MapGet(
-                    "/echo/{value:int?}",
-                    context =>
+                app.UseRouting();
+                app.UseAuthorization();
+
+                app.UseEndpoints(
+                    endpoints =>
                     {
-                        var value = context.GetRouteValue("value")?.ToString();
-                        return context.Response.WriteAsync(value ?? "No value");
+                        endpoints.MapControllers();
+                        endpoints.MapDefaultControllerRoute();
+                        endpoints.MapHealthChecks("/healthz", new HealthCheckOptions { Predicate = _ => false })
+                                 .WithDisplayName("Custom Health Check");
+                        endpoints.MapGet(
+                            "/echo/{value:int?}",
+                            context =>
+                            {
+                                var value = context.GetRouteValue("value")?.ToString();
+                                return context.Response.WriteAsync(value ?? "No value");
+                            });
                     });
             });
         }
@@ -90,6 +100,16 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         public void Error()
         {
             throw new Exception();
+        }
+
+        public void UncaughtError()
+        {
+            throw new InvalidOperationException();
+        }
+
+        public void BadHttpRequest()
+        {
+            ErrorHandlingHelper.ThrowBadHttpRequestException();
         }
     }
 

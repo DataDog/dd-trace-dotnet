@@ -1,5 +1,7 @@
-﻿using Datadog.Trace.TestHelpers;
+﻿#if !NETFRAMEWORK
+using Datadog.Trace.TestHelpers;
 using Xunit;
+using static Datadog.Trace.Tests.DiagnosticListeners.ErrorHandlingHelper;
 
 namespace Datadog.Trace.Tests.DiagnosticListeners
 {
@@ -18,7 +20,6 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 #endif
             { "/Home", 200, false, "GET Home/Index", EmptyTags() },
             { "/Home/Index", 200, false, "GET Home/Index", EmptyTags() },
-            { "/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
             { "/MyTest", 200, false, "GET MyTest/Index", EmptyTags() },
             { "/MyTest/index", 200, false, "GET MyTest/Index", EmptyTags() },
             { "/Api/index", 200, false, "GET api/Index", EmptyTags() },
@@ -28,6 +29,16 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             { "/statuscode/Oops", 200, false, "GET statuscode/{value=200}", EmptyTags() },
             { "/statuscode/200", 200, false, "GET statuscode/{value=200}", EmptyTags() },
             { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
+            { "/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
+            { "/Home/UncaughtError", 500, true, "GET Home/UncaughtError", EmptyTags() },
+            { "/Home/BadHttpRequest", 400, true, "GET Home/BadHttpRequest", EmptyTags() },
+            { $"{CustomHandlerPrefix}/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
+            { $"{CustomHandlerPrefix}/Home/UncaughtError", 500, true, "GET Home/UncaughtError", EmptyTags() },
+            { $"{CustomHandlerPrefix}/Home/BadHttpRequest", 500, true, "GET Home/BadHttpRequest", EmptyTags() },
+            { $"{ExceptionPagePrefix}/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
+            { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, "GET Home/BadHttpRequest", EmptyTags() },
+            { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
+            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, "GET Home/BadHttpRequest", EmptyTags() },
         };
 
         /// <summary>
@@ -49,6 +60,16 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             { "/statuscode/Oops", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
             { "/statuscode/200", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
             { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
+            { "/Home/Error", 500, true, "GET /home/error", ConventionalRouteTags(action: "error") },
+            { "/Home/UncaughtError", 500, true, "GET /home/uncaughterror", ConventionalRouteTags(action: "uncaughterror") },
+            { "/Home/BadHttpRequest", 400, true, "GET /home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
+            { $"{CustomHandlerPrefix}/Home/Error", 500, true, $"GET {CustomHandlerPrefix}/home/Error", ConventionalRouteTags(action: "error") },
+            { $"{CustomHandlerPrefix}/Home/UncaughtError", 500, true, $"GET {CustomHandlerPrefix}/home/uncaughterror", ConventionalRouteTags(action: "uncaughterror") },
+            { $"{CustomHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {CustomHandlerPrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
+            { $"{ExceptionPagePrefix}/Home/Error", 500, true, $"GET {ExceptionPagePrefix}/home/Error", ConventionalRouteTags(action: "error") },
+            { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
+            { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/Error", ConventionalRouteTags(action: "error") },
+            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
         };
 
         private static SerializableDictionary EmptyTags() => new()
@@ -76,5 +97,22 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             { Tags.AspNetAction, "setstatuscode" },
             // { Tags.AspNetEndpoint, endpoint },
         };
+
+        private static SerializableDictionary ApiIndexTags() => new()
+        {
+            { Tags.AspNetRoute, "api/index" },
+            { Tags.AspNetController, "api" },
+            { Tags.AspNetAction, "index" },
+            // { Tags.AspNetEndpoint, endpoint },
+        };
+
+        private static SerializableDictionary ApiValueTags() => new()
+        {
+            { Tags.AspNetRoute, "api/value/{value}" },
+            { Tags.AspNetController, "api" },
+            { Tags.AspNetAction, "value" },
+            // { Tags.AspNetEndpoint, endpoint },
+        };
     }
 }
+#endif
