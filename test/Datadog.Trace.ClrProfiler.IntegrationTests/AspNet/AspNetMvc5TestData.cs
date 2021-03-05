@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using Datadog.Trace.TestHelpers;
+using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
