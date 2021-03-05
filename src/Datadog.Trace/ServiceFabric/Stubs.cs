@@ -10,27 +10,6 @@ namespace Datadog.Trace.ServiceFabric
     /// For internal use only.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IServiceRemotingResponseMessageHeader
-    {
-    }
-
-    /// <summary>
-    /// For internal use only.
-    /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IServiceRemotingResponseMessage
-    {
-        /// <summary>
-        /// For internal use only.
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        IServiceRemotingResponseMessageHeader GetHeader();
-    }
-
-    /// <summary>
-    /// For internal use only.
-    /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IServiceRemotingRequestMessageHeader
     {
         /// <summary>
@@ -112,25 +91,6 @@ namespace Datadog.Trace.ServiceFabric
     /// For internal use only.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IServiceRemotingResponseEventArgs
-    {
-        /// <summary>
-        /// Gets the response message. For internal use only.
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public IServiceRemotingResponseMessage Response { get; }
-
-        /// <summary>
-        /// Gets the request message. For internal use only.
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public IServiceRemotingRequestMessage Request { get; }
-    }
-
-    /// <summary>
-    /// For internal use only.
-    /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IServiceRemotingFailedResponseEventArgs
     {
         /// <summary>
@@ -138,12 +98,6 @@ namespace Datadog.Trace.ServiceFabric
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public Exception? Error { get; }
-
-        /// <summary>
-        /// Gets the request message. For internal use only.
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public IServiceRemotingRequestMessage Request { get; }
     }
 }
 #pragma warning restore SA1649 // File name must match first type name

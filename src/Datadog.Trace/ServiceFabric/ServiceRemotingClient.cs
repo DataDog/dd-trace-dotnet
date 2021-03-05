@@ -85,8 +85,8 @@ namespace Datadog.Trace.ServiceFabric
         /// from the server after it finishes processing a request.
         /// </summary>
         /// <param name="sender">The object that raised the event.</param>
-        /// <param name="e">The event arguments. Can be of type <see cref="IServiceRemotingResponseEventArgs"/> on success
-        /// or <see cref="IServiceRemotingFailedResponseEventArgs"/> on failure.</param>
+        /// <param name="e">The event arguments. Can be of type <c>IServiceRemotingResponseEventArgs2</c> on success
+        /// or <c>IServiceRemotingFailedResponseEventArgs</c> on failure.</param>
         private static void ServiceRemotingClientEvents_ReceiveResponse(object? sender, EventArgs? e)
         {
             if (!_initialized || !Tracer.Instance.Settings.IsIntegrationEnabled(ServiceRemotingConstants.IntegrationId))
