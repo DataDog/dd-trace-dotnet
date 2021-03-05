@@ -45,9 +45,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="UseDiagnosticSourceStub.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Demo.Slimple.NetFx45\public\Program.cs" />
+    <Compile Include="Demo.Slimple.NetFx45\internal\UseDiagnosticSourceStub.cs" />
     <Compile Include="..\Shared-Demo-Src\DynamicDiagnosticSourceBindings.Demo\internal\ConsoleWrite.cs" />
   </ItemGroup>
   <ItemGroup>

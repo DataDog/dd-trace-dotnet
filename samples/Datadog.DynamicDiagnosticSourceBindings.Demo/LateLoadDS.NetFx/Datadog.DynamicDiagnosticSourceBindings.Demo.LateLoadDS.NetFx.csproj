@@ -66,8 +66,8 @@
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\ReceivedEventsAccumulator.cs" />
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\StubbedDiagnosticEventsCollector.cs" />
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\ConsoleWrite.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Demo.LoadLateLoadDS\public\Program.cs" />
+    <Compile Include="AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- The two following items trick the Solution Explorer in VS to display a folder  -->

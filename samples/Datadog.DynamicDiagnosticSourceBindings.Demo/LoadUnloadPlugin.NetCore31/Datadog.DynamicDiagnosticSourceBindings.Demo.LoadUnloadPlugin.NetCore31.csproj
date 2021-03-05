@@ -24,7 +24,7 @@
   </ItemGroup>
 	
   <ItemGroup>
-    <Content Include="System.Diagnostics.DiagnosticSource.Plugin.dll">
+    <Content Include="PluginRessource.System.Diagnostics.DiagnosticSource.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

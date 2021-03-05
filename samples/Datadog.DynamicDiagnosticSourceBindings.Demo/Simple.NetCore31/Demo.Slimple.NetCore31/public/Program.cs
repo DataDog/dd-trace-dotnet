@@ -3,7 +3,7 @@ using DynamicDiagnosticSourceBindings.Demo;
 
 namespace Demo.Slimple.NetCore31
 {
-    class Program
+    public class Program
     {
         // This demo shows one of several possible ways for dealing with dynamic invocation exceptions.
         // The corresponding Net Fx demo shows how to use the APIs directly.

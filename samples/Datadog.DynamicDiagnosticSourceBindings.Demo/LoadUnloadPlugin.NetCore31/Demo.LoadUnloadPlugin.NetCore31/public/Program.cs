@@ -9,7 +9,7 @@ using DynamicDiagnosticSourceBindings.Demo;
 
 namespace Demo.LoadUnloadPlugin.NetCore31
 {
-    class Program
+    public class Program
     {
         public static void Main(string[] args)
         {
@@ -89,7 +89,7 @@ namespace Demo.LoadUnloadPlugin.NetCore31
         private async Task Plugin()
         {
             //const string DSAssemblyNameForPlugin = "System.Diagnostics.DiagnosticSource, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51";
-            const string DSAssemblyFileForPlugin = "System.Diagnostics.DiagnosticSource.Plugin.dll";
+            const string DSAssemblyFileForPlugin = "PluginRessource.System.Diagnostics.DiagnosticSource.dll";
             const int RunningTimeMillis = 500;
 
             string currentDirectory = Directory.GetCurrentDirectory();
