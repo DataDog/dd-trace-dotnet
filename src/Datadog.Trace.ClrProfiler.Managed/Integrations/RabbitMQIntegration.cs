@@ -655,7 +655,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateRabbitMQScope(Tracer.Instance, out _, command, exchange: exchange))
+            using (var scope = ScopeFactory.CreateRabbitMQScope(Tracer.Instance, out _, command, SpanKinds.Client, exchange: exchange))
             {
                 try
                 {
@@ -729,7 +729,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateRabbitMQScope(Tracer.Instance, out _, command, queue: queue, exchange: exchange, routingKey: routingKey))
+            using (var scope = ScopeFactory.CreateRabbitMQScope(Tracer.Instance, out _, command, SpanKinds.Client, queue: queue, exchange: exchange, routingKey: routingKey))
             {
                 try
                 {
@@ -807,7 +807,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = ScopeFactory.CreateRabbitMQScope(Tracer.Instance, out _, command, queue: queue))
+            using (var scope = ScopeFactory.CreateRabbitMQScope(Tracer.Instance, out _, command, SpanKinds.Client, queue: queue))
             {
                 try
                 {
