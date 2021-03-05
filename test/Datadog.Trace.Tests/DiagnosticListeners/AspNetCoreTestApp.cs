@@ -107,5 +107,33 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         [HttpGet("/statuscode/{value=200}")]
         public string SetStatusCode(int value) => value.ToString();
     }
+
+    /// <summary>
+    /// Simple API controller used for the aspnetcore tests
+    /// </summary>
+    [ApiController]
+    [Route("api/[action]")]
+    public class ApiController : Controller
+    {
+        [HttpGet]
+        public async Task<string> Index()
+        {
+            await Task.Yield();
+            return "Hello world";
+        }
+
+        [HttpGet("{value}")]
+        public string Value([FromRoute] InputModel model) => model.Value.ToString();
+
+        /// <summary>
+        /// .NET Core 2.1 doesn't allow applying validation parameters directly to method params,
+        /// so need input model as holder
+        /// </summary>
+        public class InputModel
+        {
+            [Range(minimum: 1, maximum: 10)]
+            public int Value { get; set; }
+        }
+    }
 }
 #endif
