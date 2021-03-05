@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [MemberData(nameof(GetElasticsearch))]
         [Trait("Category", "EndToEnd")]
+        [Trait("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
