@@ -278,7 +278,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget>(TTarget instance, object[] arguments)
         {
-            DebugLog($"ProfilerOK: BeginMethod<{typeof(TIntegration)}, {typeof(TTarget)}>({instance}, args: {arguments?.Length})");
+            DebugLog($"ProfilerOK: BeginMethod(Array)<{typeof(TIntegration)}, {typeof(TTarget)}>({instance}, args: {arguments?.Length})");
 
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {

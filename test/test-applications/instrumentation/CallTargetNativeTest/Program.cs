@@ -14,17 +14,6 @@ namespace CallTargetNativeTest
 
         static void Main(string[] args)
         {
-            if (args?.Length == 0)
-            {
-                ShowTypeInfo(typeof(With0Arguments));
-                ShowTypeInfo(typeof(With0ArgumentsGeneric<string>));
-                ShowTypeInfo(typeof(With0ArgumentsInherits));
-                ShowTypeInfo(typeof(With0ArgumentsInheritsGeneric));
-                ShowTypeInfo(typeof(With0ArgumentsStruct));
-                ShowTypeInfo(typeof(With0ArgumentsStatic));
-                return;
-            }
-
             switch (args[0])
             {
                 case "0":
@@ -67,14 +56,36 @@ namespace CallTargetNativeTest
                         Argument7();
                         break;
                     }
+                case "8":
+                    {
+                        Argument8();
+                        break;
+                    }
+                case "9":
+                    {
+                        Argument9();
+                        break;
+                    }
+                case "all":
+                    {
+                        Argument0();
+                        Argument1();
+                        Argument2();
+                        Argument3();
+                        Argument4();
+                        Argument5();
+                        Argument6();
+                        Argument7();
+                        Argument8();
+                        Argument9();
+                        break;
+                    }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-7 as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/all as an argument.");
                     break;
             }
-
-            Console.WriteLine("Press ENTER to exit.");
-            Console.ReadLine();
         }
+
 
         private static void Argument0()
         {
@@ -780,6 +791,182 @@ namespace CallTargetNativeTest
             //
         }
 
+        private static void Argument8()
+        {
+            var w8 = new With8Arguments();
+            Console.WriteLine($"{typeof(With8Arguments).FullName}.VoidMethod");
+            RunMethod(() => w8.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8Arguments).FullName}.ReturnValueMethod");
+            RunMethod(() => w8.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8Arguments).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w8.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8Arguments).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w8.ReturnGenericMethod<string, string, Tuple<int, int>, ulong>("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8Arguments).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w8.ReturnGenericMethod<int, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine();
+            //
+            var w8g1 = new With8ArgumentsGeneric<string>();
+            Console.WriteLine($"{typeof(With8ArgumentsGeneric<string>).FullName}.VoidMethod", Assembly.GetExecutingAssembly());
+            RunMethod(() => w8g1.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsGeneric<string>).FullName}.ReturnValueMethod");
+            RunMethod(() => w8g1.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsGeneric<string>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w8g1.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsGeneric<string>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w8g1.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine();
+            //
+            var w8g2 = new With8ArgumentsGeneric<int>();
+            Console.WriteLine($"{typeof(With8ArgumentsGeneric<int>).FullName}.VoidMethod");
+            RunMethod(() => w8g2.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsGeneric<int>).FullName}.ReturnValueMethod");
+            RunMethod(() => w8g2.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsGeneric<int>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w8g2.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsGeneric<int>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w8g2.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine();
+            //
+            var w8in = new With8ArgumentsInherits();
+            Console.WriteLine($"{typeof(With8ArgumentsInherits).FullName}.VoidMethod");
+            RunMethod(() => w8in.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsInherits).FullName}.ReturnValueMethod");
+            RunMethod(() => w8in.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsInherits).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w8in.ReturnReferenceMethod("Hello Wolrd", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsInherits).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w8in.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsInherits).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w8in.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine();
+            //
+            var w8inGen = new With8ArgumentsInheritsGeneric();
+            Console.WriteLine($"{typeof(With8ArgumentsInheritsGeneric).FullName}.VoidMethod");
+            RunMethod(() => w8inGen.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsInheritsGeneric).FullName}.ReturnValueMethod");
+            RunMethod(() => w8inGen.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsInheritsGeneric).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w8inGen.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsInheritsGeneric).FullName}.ReturnGenericMethod");
+            RunMethod(() => w8inGen.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine();
+            //
+            var w8Struct = new With8ArgumentsStruct();
+            Console.WriteLine($"{typeof(With8ArgumentsStruct).FullName}.VoidMethod");
+            RunMethod(() => w8Struct.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsStruct).FullName}.ReturnValueMethod");
+            RunMethod(() => w8Struct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsStruct).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w8Struct.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsStruct).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w8Struct.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsStruct).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w8Struct.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine();
+            //
+            Console.WriteLine($"{typeof(With8ArgumentsStatic).FullName}.VoidMethod");
+            RunMethod(() => With8ArgumentsStatic.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsStatic).FullName}.ReturnValueMethod");
+            RunMethod(() => With8ArgumentsStatic.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsStatic).FullName}.ReturnReferenceMethod");
+            RunMethod(() => With8ArgumentsStatic.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsStatic).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => With8ArgumentsStatic.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine($"{typeof(With8ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => With8ArgumentsStatic.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+            Console.WriteLine();
+            //
+        }
+
+        private static void Argument9()
+        {
+            var w9 = new With9Arguments();
+            Console.WriteLine($"{typeof(With9Arguments).FullName}.VoidMethod");
+            RunMethod(() => w9.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9Arguments).FullName}.ReturnValueMethod");
+            RunMethod(() => w9.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9Arguments).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w9.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9Arguments).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w9.ReturnGenericMethod<string, string, Tuple<int, int>, ulong>("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9Arguments).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w9.ReturnGenericMethod<int, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine();
+            //
+            var w9g1 = new With9ArgumentsGeneric<string>();
+            Console.WriteLine($"{typeof(With9ArgumentsGeneric<string>).FullName}.VoidMethod", Assembly.GetExecutingAssembly(), null);
+            RunMethod(() => w9g1.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsGeneric<string>).FullName}.ReturnValueMethod");
+            RunMethod(() => w9g1.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsGeneric<string>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w9g1.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsGeneric<string>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w9g1.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine();
+            //
+            var w9g2 = new With9ArgumentsGeneric<int>();
+            Console.WriteLine($"{typeof(With9ArgumentsGeneric<int>).FullName}.VoidMethod");
+            RunMethod(() => w9g2.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsGeneric<int>).FullName}.ReturnValueMethod");
+            RunMethod(() => w9g2.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsGeneric<int>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w9g2.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsGeneric<int>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w9g2.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine();
+            //
+            var w9in = new With9ArgumentsInherits();
+            Console.WriteLine($"{typeof(With9ArgumentsInherits).FullName}.VoidMethod");
+            RunMethod(() => w9in.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsInherits).FullName}.ReturnValueMethod");
+            RunMethod(() => w9in.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsInherits).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w9in.ReturnReferenceMethod("Hello Wolrd", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsInherits).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w9in.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsInherits).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w9in.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine();
+            //
+            var w9inGen = new With9ArgumentsInheritsGeneric();
+            Console.WriteLine($"{typeof(With9ArgumentsInheritsGeneric).FullName}.VoidMethod");
+            RunMethod(() => w9inGen.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsInheritsGeneric).FullName}.ReturnValueMethod");
+            RunMethod(() => w9inGen.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsInheritsGeneric).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w9inGen.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsInheritsGeneric).FullName}.ReturnGenericMethod");
+            RunMethod(() => w9inGen.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine();
+            //
+            var w9Struct = new With9ArgumentsStruct();
+            Console.WriteLine($"{typeof(With9ArgumentsStruct).FullName}.VoidMethod");
+            RunMethod(() => w9Struct.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsStruct).FullName}.ReturnValueMethod");
+            RunMethod(() => w9Struct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsStruct).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w9Struct.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsStruct).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w9Struct.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsStruct).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w9Struct.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine();
+            //
+            Console.WriteLine($"{typeof(With9ArgumentsStatic).FullName}.VoidMethod");
+            RunMethod(() => With9ArgumentsStatic.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsStatic).FullName}.ReturnValueMethod");
+            RunMethod(() => With9ArgumentsStatic.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsStatic).FullName}.ReturnReferenceMethod");
+            RunMethod(() => With9ArgumentsStatic.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsStatic).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => With9ArgumentsStatic.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine($"{typeof(With9ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => With9ArgumentsStatic.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
+            Console.WriteLine();
+            //
+        }
+
 
         private static void RunMethod(Action action)
         {
@@ -802,7 +989,6 @@ namespace CallTargetNativeTest
                 cOut.Write("     " + string.Join("\n     ", str.Split('\n')));
             }
             Console.SetOut(cOut);
-            Console.SetCursorPosition(0, Console.CursorTop);
             Console.WriteLine();
         }
 
@@ -820,266 +1006,5 @@ namespace CallTargetNativeTest
             }
             Console.WriteLine();
         }
-
-    }
-
-    // *** With0Arguments
-    class With0Arguments
-    {
-        public void VoidMethod() {}
-        public int ReturnValueMethod() => 42;
-        public string ReturnReferenceMethod() => "Hello World";
-        public T ReturnGenericMethod<T>() => default;
-    }
-    class With0ArgumentsGeneric<T>
-    {
-        public void VoidMethod() { }
-        public int ReturnValueMethod() => 42;
-        public string ReturnReferenceMethod() => "Hello World";
-        public T ReturnGenericMethod() => default;
-    }
-    class With0ArgumentsInherits : With0Arguments { }
-    class With0ArgumentsInheritsGeneric : With0ArgumentsGeneric<int> { }
-    struct With0ArgumentsStruct
-    {
-        public void VoidMethod() { }
-        public int ReturnValueMethod() => 42;
-        public string ReturnReferenceMethod() => "Hello World";
-        public T ReturnGenericMethod<T>() => default;
-    }
-    static class With0ArgumentsStatic
-    {
-        public static void VoidMethod() { }
-        public static int ReturnValueMethod() => 42;
-        public static string ReturnReferenceMethod() => "Hello World";
-        public static T ReturnGenericMethod<T>() => default;
-    }
-
-    // *** With1Arguments
-    class With1Arguments
-    {
-        public void VoidMethod(string arg1) { }
-        public int ReturnValueMethod(string arg1) => 42;
-        public string ReturnReferenceMethod(string arg1) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1>(TArg1 arg1) => default;
-    }
-    class With1ArgumentsGeneric<T>
-    {
-        public void VoidMethod(string arg1) { }
-        public int ReturnValueMethod(string arg1) => 42;
-        public string ReturnReferenceMethod(string arg1) => "Hello World";
-        public T ReturnGenericMethod<TArg1>(TArg1 arg1) => default;
-    }
-    class With1ArgumentsInherits : With1Arguments { }
-    class With1ArgumentsInheritsGeneric : With1ArgumentsGeneric<int> { }
-    struct With1ArgumentsStruct
-    {
-        public void VoidMethod(string arg1) { }
-        public int ReturnValueMethod(string arg1) => 42;
-        public string ReturnReferenceMethod(string arg1) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1>(TArg1 arg1) => default;
-    }
-    static class With1ArgumentsStatic
-    {
-        public static void VoidMethod(string arg1) { }
-        public static int ReturnValueMethod(string arg1) => 42;
-        public static string ReturnReferenceMethod(string arg1) => "Hello World";
-        public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1) => default;
-    }
-
-    // *** With2Arguments
-    class With2Arguments
-    {
-        public void VoidMethod(string arg1, int arg2) { }
-        public int ReturnValueMethod(string arg1, int arg2) => 42;
-        public string ReturnReferenceMethod(string arg, int arg21) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
-    }
-    class With2ArgumentsGeneric<T>
-    {
-        public void VoidMethod(string arg1, int arg2) { }
-        public int ReturnValueMethod(string arg1, int arg2) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
-        public T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
-    }
-    class With2ArgumentsInherits : With2Arguments { }
-    class With2ArgumentsInheritsGeneric : With2ArgumentsGeneric<int> { }
-    struct With2ArgumentsStruct
-    {
-        public void VoidMethod(string arg1, int arg2) { }
-        public int ReturnValueMethod(string arg1, int arg2) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
-    }
-    static class With2ArgumentsStatic
-    {
-        public static void VoidMethod(string arg1, int arg2) { }
-        public static int ReturnValueMethod(string arg1, int arg2) => 42;
-        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
-        public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
-    }
-
-    // *** With3Arguments
-    class With3Arguments
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3) => 42;
-        public string ReturnReferenceMethod(string arg, int arg21, object arg3) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
-    }
-    class With3ArgumentsGeneric<T>
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3) => "Hello World";
-        public T ReturnGenericMethod<TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
-    }
-    class With3ArgumentsInherits : With3Arguments { }
-    class With3ArgumentsInheritsGeneric : With3ArgumentsGeneric<int> { }
-    struct With3ArgumentsStruct
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
-    }
-    static class With3ArgumentsStatic
-    {
-        public static void VoidMethod(string arg1, int arg2, object arg3) { }
-        public static int ReturnValueMethod(string arg1, int arg2, object arg3) => 42;
-        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3) => "Hello World";
-        public static T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
-    }
-
-    // *** With4Arguments
-    class With4Arguments
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4) => 42;
-        public string ReturnReferenceMethod(string arg, int arg21, object arg3, Task arg4) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4) => default;
-    }
-    class With4ArgumentsGeneric<T>
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4) => "Hello World";
-        public T ReturnGenericMethod<TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4) => default;
-    }
-    class With4ArgumentsInherits : With4Arguments { }
-    class With4ArgumentsInheritsGeneric : With4ArgumentsGeneric<int> { }
-    struct With4ArgumentsStruct
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4) => default;
-    }
-    static class With4ArgumentsStatic
-    {
-        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4) { }
-        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4) => 42;
-        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4) => "Hello World";
-        public static T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4) => default;
-    }
-
-    // *** With5Arguments
-    class With5Arguments
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => 42;
-        public string ReturnReferenceMethod(string arg, int arg21, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
-    }
-    class With5ArgumentsGeneric<T>
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
-        public T ReturnGenericMethod<TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
-    }
-    class With5ArgumentsInherits : With5Arguments { }
-    class With5ArgumentsInheritsGeneric : With5ArgumentsGeneric<int> { }
-    struct With5ArgumentsStruct
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
-    }
-    static class With5ArgumentsStatic
-    {
-        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) { }
-        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => 42;
-        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
-        public static T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
-    }
-
-    // *** With6Arguments
-    class With6Arguments
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => 42;
-        public async Task<string> ReturnReferenceMethod(string arg, int arg21, object arg3, Task arg4, CancellationToken arg5, ulong arg6)
-        {
-            await Task.Delay(4000);
-            return "Hello World";
-        }
-        public T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6) => default;
-    }
-    class With6ArgumentsGeneric<T>
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => "Hello World";
-        public T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6) => default;
-    }
-    class With6ArgumentsInherits : With6Arguments { }
-    class With6ArgumentsInheritsGeneric : With6ArgumentsGeneric<int> { }
-    struct With6ArgumentsStruct
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6) => default;
-    }
-    static class With6ArgumentsStatic
-    {
-        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) { }
-        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => 42;
-        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => "Hello World";
-        public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6) => default;
-    }
-
-    // *** With7Arguments
-    class With7Arguments
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) => 42;
-        public string ReturnReferenceMethod(string arg, int arg21, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7) => default;
-    }
-    class With7ArgumentsGeneric<T>
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) => "Hello World";
-        public T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7) => default;
-    }
-    class With7ArgumentsInherits : With7Arguments { }
-    class With7ArgumentsInheritsGeneric : With7ArgumentsGeneric<int> { }
-    struct With7ArgumentsStruct
-    {
-        public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) { }
-        public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) => 42;
-        public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) => "Hello World";
-        public T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7) => default;
-    }
-    static class With7ArgumentsStatic
-    {
-        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) { }
-        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) => 42;
-        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7) => "Hello World";
-        public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7) => default;
     }
 }
