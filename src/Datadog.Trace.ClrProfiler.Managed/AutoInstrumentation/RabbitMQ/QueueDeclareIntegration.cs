@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="queue">Name of the queue.</param>
         /// <param name="passive">The original passive setting</param>
-        /// <param name="durable">The original duable setting</param>
+        /// <param name="durable">The original durable setting</param>
         /// <param name="exclusive">The original exclusive settings</param>
         /// <param name="autoDelete">The original autoDelete setting</param>
         /// <param name="nowait">The original nowait setting</param>

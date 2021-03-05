@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="exchange">Name of the exchange.</param>
         /// <param name="type">Type of the exchange.</param>
         /// <param name="passive">The original passive setting</param>
-        /// <param name="durable">The original duable setting</param>
+        /// <param name="durable">The original durable setting</param>
         /// <param name="autoDelete">The original autoDelete setting</param>
         /// <param name="internal">The original internal setting</param>
         /// <param name="nowait">The original nowait setting</param>
