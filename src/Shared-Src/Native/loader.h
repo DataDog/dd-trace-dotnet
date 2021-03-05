@@ -125,13 +125,14 @@ namespace shared {
 
 		static Loader* CreateLoader(
 			ICorProfilerInfo4* info,
-			WSTRING process_name,
 			std::function<void(const std::string& str)> log_debug_callback,
 			std::function<void(const std::string& str)> log_info_callback,
 			std::function<void(const std::string& str)> log_warn_callback) {
 
 			std::vector<WSTRING> assembly_string_default_appdomain_vector;
 			std::vector<WSTRING> assembly_string_nondefault_appdomain_vector;
+			
+			WSTRING process_name = GetCurrentProcessName();
 			const bool is_iis = process_name == WStr("w3wp.exe") ||
 				process_name == WStr("iisexpress.exe");
 
