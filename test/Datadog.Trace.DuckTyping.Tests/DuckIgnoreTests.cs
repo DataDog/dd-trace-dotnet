@@ -13,6 +13,8 @@ namespace Datadog.Trace.DuckTyping.Tests
             PrivateStruct instance = default;
             CopyStruct copy = instance.DuckCast<CopyStruct>();
             Assert.Equal((int)instance.Value, (int)copy.Value);
+            Assert.Equal(ValuesDuckType.Third.ToString(), copy.GetValue());
+            Assert.Equal(ValuesDuckType.Third.ToString(), ((IGetValue)copy).GetValueProp);
         }
 
 #if NETCOREAPP3_0_OR_GREATER
@@ -22,6 +24,8 @@ namespace Datadog.Trace.DuckTyping.Tests
             PrivateStruct instance = default;
             IPrivateStruct proxy = instance.DuckCast<IPrivateStruct>();
             Assert.Equal((int)instance.Value, (int)proxy.Value);
+            Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValue());
+            Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValueProp);
         }
 #endif
 
@@ -31,6 +35,8 @@ namespace Datadog.Trace.DuckTyping.Tests
             PrivateStruct instance = default;
             AbstractPrivateProxy proxy = instance.DuckCast<AbstractPrivateProxy>();
             Assert.Equal((int)instance.Value, (int)proxy.Value);
+            Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValue());
+            Assert.Equal(ValuesDuckType.Third.ToString(), ((IGetValue)proxy).GetValueProp);
         }
 
         [Fact]
@@ -39,6 +45,8 @@ namespace Datadog.Trace.DuckTyping.Tests
             PrivateStruct instance = default;
             VirtualPrivateProxy proxy = instance.DuckCast<VirtualPrivateProxy>();
             Assert.Equal((int)instance.Value, (int)proxy.Value);
+            Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValue());
+            Assert.Equal(ValuesDuckType.Third.ToString(), ((IGetValue)proxy).GetValueProp);
         }
 
         [DuckCopy]
@@ -52,6 +60,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
 #if NETCOREAPP3_0_OR_GREATER
+        // Interface with a default implementation
         public interface IPrivateStruct
         {
             ValuesDuckType Value { get; }
