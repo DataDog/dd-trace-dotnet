@@ -25,12 +25,12 @@ namespace Datadog.Trace.ServiceFabric
             if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
             {
                 // try to subscribe to client events
-                if (ServiceRemotingHelpers.AddEventHandler(ServiceRemotingHelpers.ClientEventsTypeName, ServiceRemotingHelpers.SendRequestEventName, ServiceRemotingClientEvents_SendRequest) &&
-                    ServiceRemotingHelpers.AddEventHandler(ServiceRemotingHelpers.ClientEventsTypeName, ServiceRemotingHelpers.ReceiveResponseEventName, ServiceRemotingClientEvents_ReceiveResponse))
+                if (ServiceRemotingHelpers.AddEventHandler(ServiceRemotingConstants.ClientEventsTypeName, ServiceRemotingConstants.SendRequestEventName, ServiceRemotingClientEvents_SendRequest) &&
+                    ServiceRemotingHelpers.AddEventHandler(ServiceRemotingConstants.ClientEventsTypeName, ServiceRemotingConstants.ReceiveResponseEventName, ServiceRemotingClientEvents_ReceiveResponse))
                 {
                     // don't handle any client events until we have subscribed to both of them
                     _initialized = true;
-                    Log.Debug($"Subscribed to {ServiceRemotingHelpers.ClientEventsTypeName} events.");
+                    Log.Debug($"Subscribed to {ServiceRemotingConstants.ClientEventsTypeName} events.");
                 }
             }
         }
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ServiceFabric
         {
             var tracer = Tracer.Instance;
 
-            if (!_initialized || !tracer.Settings.IsIntegrationEnabled(ServiceRemotingHelpers.IntegrationId))
+            if (!_initialized || !tracer.Settings.IsIntegrationEnabled(ServiceRemotingConstants.IntegrationId))
             {
                 return;
             }
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ServiceFabric
         /// or <see cref="IServiceRemotingFailedResponseEventArgs"/> on failure.</param>
         private static void ServiceRemotingClientEvents_ReceiveResponse(object? sender, EventArgs? e)
         {
-            if (!_initialized || !Tracer.Instance.Settings.IsIntegrationEnabled(ServiceRemotingHelpers.IntegrationId))
+            if (!_initialized || !Tracer.Instance.Settings.IsIntegrationEnabled(ServiceRemotingConstants.IntegrationId))
             {
                 return;
             }

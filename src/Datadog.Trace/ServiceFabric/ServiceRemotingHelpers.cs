@@ -3,7 +3,6 @@
 using System;
 using System.Globalization;
 using System.Reflection;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
 
@@ -11,22 +10,6 @@ namespace Datadog.Trace.ServiceFabric
 {
     internal static class ServiceRemotingHelpers
     {
-        public const string AssemblyName = "Microsoft.ServiceFabric.Services.Remoting";
-
-        public const string ClientEventsTypeName = "Microsoft.ServiceFabric.Services.Remoting.V2.Client.ServiceRemotingClientEvents";
-
-        public const string ServiceEventsTypeName = "Microsoft.ServiceFabric.Services.Remoting.V2.Runtime.ServiceRemotingServiceEvents";
-
-        public const string SendRequestEventName = "SendRequest";
-
-        public const string ReceiveResponseEventName = "ReceiveResponse";
-
-        public const string ReceiveRequestEventName = "ReceiveRequest";
-
-        public const string SendResponseEventName = "SendResponse";
-
-        public static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ServiceRemoting));
-
         private const string SpanNamePrefix = "service_remoting";
 
         private static readonly Logging.IDatadogLogger Log = Logging.DatadogLogging.GetLoggerFor(typeof(ServiceRemotingHelpers));
@@ -49,7 +32,7 @@ namespace Datadog.Trace.ServiceFabric
 
             try
             {
-                Type? type = Type.GetType($"{typeName}, {AssemblyName}", throwOnError: false);
+                Type? type = Type.GetType($"{typeName}, {ServiceRemotingConstants.AssemblyName}", throwOnError: false);
 
                 if (type == null)
                 {
@@ -155,7 +138,7 @@ namespace Datadog.Trace.ServiceFabric
 
             Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
             span.ResourceName = resourceName;
-            tags.SetAnalyticsSampleRate(IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: false);
+            tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: false);
 
             return span;
         }
