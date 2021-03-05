@@ -69,11 +69,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
                 }
 
                 statsd.Verify(
-                    s => s.Increment(MetricsNames.ExceptionsCount, It.IsAny<int>(), It.IsAny<double>(), new[] { "exception_type:CustomException1" }),
-                    Times.Never);
-
-                statsd.Verify(
-                    s => s.Increment(MetricsNames.ExceptionsCount, It.IsAny<int>(), It.IsAny<double>(), new[] { "exception_type:CustomException2" }),
+                    s => s.Increment(MetricsNames.ExceptionsCount, It.IsAny<int>(), It.IsAny<double>(), It.IsAny<string[]>()),
                     Times.Never);
 
                 writer.PushEvents();
