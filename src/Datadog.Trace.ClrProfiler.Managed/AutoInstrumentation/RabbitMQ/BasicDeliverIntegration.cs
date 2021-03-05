@@ -1,5 +1,6 @@
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -56,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            var scope = ScopeFactory.CreateRabbitMQScope(Tracer.Instance, out RabbitMQTags tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey);
+            var scope = RabbitMQIntegration.CreateRabbitMQScope(Tracer.Instance, out RabbitMQTags tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey);
             if (tags != null)
             {
                 tags.MessageSize = body?.Length.ToString() ?? "0";
