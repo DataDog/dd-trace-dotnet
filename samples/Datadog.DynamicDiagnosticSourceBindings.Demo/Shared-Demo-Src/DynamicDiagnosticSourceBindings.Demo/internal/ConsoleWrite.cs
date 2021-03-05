@@ -37,9 +37,9 @@ namespace DynamicDiagnosticSourceBindings.Demo
             }
             else
             {
-                int ticks = Environment.TickCount & Int32.MaxValue;
-                int clicks = ticks % 100000;
-                Console.WriteLine(prefix + " ### Demo says @" + clicks.ToString("00000") + ": " + line); ;
+                const string TimestampPattern = @"HH\:mm\:ss\.ffff";
+
+                Console.WriteLine(prefix + " ### Demo says (@" + DateTimeOffset.Now.ToString(TimestampPattern) + "): " + line); ;
             }
         }
 
