@@ -12,6 +12,8 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Template;
 
 namespace Datadog.Trace.DiagnosticListeners
 {
@@ -312,18 +314,80 @@ namespace Datadog.Trace.DiagnosticListeners
                 //       has been selected but no filters have run and model binding hasn't occurred.
                 ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
                 HttpRequest request = typedArg.HttpContext.Request;
+                IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
 
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-                string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template;
+
+                string controllerName = routeValues.TryGetValue("controller", out controllerName)
+                    ? controllerName?.ToLowerInvariant()
+                    : null;
+                string actionName = routeValues.TryGetValue("action", out actionName)
+                    ? actionName?.ToLowerInvariant()
+                    : null;
+                string areaName = routeValues.TryGetValue("area", out areaName)
+                    ? areaName?.ToLowerInvariant()
+                    : null;
+                string pagePath = routeValues.TryGetValue("page", out pagePath)
+                    ? pagePath?.ToLowerInvariant()
+                    : null;
+
+                string rawRouteTemplate = actionDescriptor.AttributeRouteInfo?.Template;
+                RouteTemplate routeTemplate = null;
+                string cleanedRouteTemplate = null;
+                try
+                {
+                    routeTemplate = TemplateParser.Parse(rawRouteTemplate);
+                }
+                catch { }
+
                 if (routeTemplate is null)
                 {
-                    string controllerName = actionDescriptor.RouteValues["controller"];
-                    string actionName = actionDescriptor.RouteValues["action"];
-
-                    routeTemplate = $"{controllerName}/{actionName}";
+                    var routeData = typedArg.HttpContext.Features.Get<IRoutingFeature>()?.RouteData;
+                    if (routeData is not null)
+                    {
+                        var route = routeData.Routers.OfType<RouteBase>().FirstOrDefault();
+                        routeTemplate = route?.ParsedTemplate;
+                    }
                 }
 
-                string resourceName = $"{httpMethod} {routeTemplate}";
+                string resourcePathName = null;
+                if (routeTemplate is not null)
+                {
+                    var routeSegments = routeTemplate.Segments
+                        .Select(segment =>
+                            string.Join(string.Empty, segment.Parts
+                                .Where(part => !part.IsOptional || routeValues.ContainsKey(part.Name))
+                                .Select(part =>
+                                {
+                                // Necessary to strip out the defaults from in-line templates
+                                if (part.IsParameter)
+                                    {
+                                        return "{" + (part.IsCatchAll ? "*" : string.Empty) + part.Name + (part.IsOptional ? "?" : string.Empty) + "}";
+                                    }
+                                    else
+                                    {
+                                        return part.Text;
+                                    }
+                                })))
+                        .Where(segment => !string.IsNullOrEmpty(segment));
+
+                    cleanedRouteTemplate = string.Join("/", routeSegments);
+
+                    resourcePathName =
+                        cleanedRouteTemplate
+                            .ToLowerInvariant()
+                            .Replace("{area}", areaName)
+                            .Replace("{controller}", controllerName)
+                            .Replace("{action}", actionName);
+                }
+
+                if (string.IsNullOrEmpty(resourcePathName))
+                {
+                    // fallback, if all else fails
+                    resourcePathName = UriHelpers.GetRelativeUrl(request.Path, tryRemoveIds: true).ToLowerInvariant();
+                }
+
+                 string resourceName = $"{httpMethod} {request.PathBase}/{resourcePathName}";
 
                 // override the parent's resource name with the MVC route template
                 span.ResourceName = resourceName;
