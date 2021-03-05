@@ -16,10 +16,13 @@ namespace Datadog.Logging.Composition
     /// <summary>
     /// Collects data from many Log-sources and sends it to the specified Log Sink.
     /// This class has been generated using a T4 template. It covers the following logging components:
-    ///   1) Logger type:               "Datadog.Logging.Demo.Log"
-    ///      Logging component moniker: "LoggingDemo"
+    ///   1) Logger type:               "Datadog.Logging.Demo.EmitterAndComposerApp.Log"
+    ///      Logging component moniker: "Datadog.Logging.Demo"
     ///
-    /// TOTAL: 1 loggers.
+    ///   2) Logger type:               "Datadog.Logging.Demo.EmitterLib.Log"
+    ///      Logging component moniker: "Datadog.Logging.Demo"
+    ///
+    /// TOTAL: 2 loggers.
     /// </summary>
     internal static class LogComposer
     {
@@ -38,7 +41,8 @@ namespace Datadog.Logging.Composition
             {
                 s_isDebugLoggingEnabled = value;
                 {
-                    global::Datadog.Logging.Demo.Log.Configure.DebugLoggingEnabled(s_isDebugLoggingEnabled);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.DebugLoggingEnabled(s_isDebugLoggingEnabled);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.DebugLoggingEnabled(s_isDebugLoggingEnabled);
                 }
             }
         }
@@ -51,29 +55,51 @@ namespace Datadog.Logging.Composition
 
         public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirectionLogSinks)
         {
-            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>(capacity: 2);
+            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>(capacity: 3);
 
             {
-                Type loggerType = typeof(global::Datadog.Logging.Demo.Log);
-                const string logComponentGroupMoniker = "LoggingDemo";
+                Type loggerType = typeof(global::Datadog.Logging.Demo.EmitterAndComposerApp.Log);
+                const string logComponentGroupMoniker = "Datadog.Logging.Demo";
 
                 if (logSink == null)
                 {
                     redirectionSinks[loggerType] = null;
-                    global::Datadog.Logging.Demo.Log.Configure.Error(null);
-                    global::Datadog.Logging.Demo.Log.Configure.Info(null);
-                    global::Datadog.Logging.Demo.Log.Configure.Debug(null);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Error(null);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Info(null);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Debug(null);
                 }
                 else
                 {
                     var redirectionLogSink = new ComponentGroupCompositionLogSink(logComponentGroupMoniker, logSink);
                     redirectionSinks[loggerType] = redirectionLogSink;
-                    global::Datadog.Logging.Demo.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
-                    global::Datadog.Logging.Demo.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
-                    global::Datadog.Logging.Demo.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
                 }
 
-                Datadog.Logging.Demo.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
+                Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
+            }
+            {
+                Type loggerType = typeof(global::Datadog.Logging.Demo.EmitterLib.Log);
+                const string logComponentGroupMoniker = "Datadog.Logging.Demo";
+
+                if (logSink == null)
+                {
+                    redirectionSinks[loggerType] = null;
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Error(null);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Info(null);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Debug(null);
+                }
+                else
+                {
+                    var redirectionLogSink = new ComponentGroupCompositionLogSink(logComponentGroupMoniker, logSink);
+                    redirectionSinks[loggerType] = redirectionLogSink;
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
+                }
+
+                Datadog.Logging.Demo.EmitterLib.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
             }
 
             redirectionLogSinks = redirectionSinks;

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Logging.Demo.EmitterAndComposerApp
+namespace Datadog.Logging.Demo.EmitterLib
 {
     public class Program
     {
-        private const string LogComponentMoniker = "Demo.EmitterAndComposerApp";
+        private const string LogComponentMoniker = "Demo.EmitterLib";
 
         private const int RuntimeSecs = 20;
 
@@ -22,21 +22,13 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
 
         public static void Main(string[] args)
         {
-            (new Datadog.Logging.Demo.EmitterAndComposerApp.Program()).Run();
+            (new Program()).Run();
         }
 
         public void Run()
         {
             ConsoleWriteLine();
             ConsoleWriteLine($"{typeof(Program).FullName} started.");
-
-            LogConfigurator.SetupLogger();
-
-            ConsoleWriteLine($"Logger was configured.");
-
-            ConsoleWriteLine($"Starting EmitterApp to run in parallel...");
-
-            Task emitterApp = Task.Run((new Datadog.Logging.Demo.EmitterLib.Program()).Run);
 
             ConsoleWriteLine($"Starting workers...");
 
@@ -51,17 +43,11 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
 
             ConsoleWriteLine($"Workers started. Running tasks...");
 
-            Task allWorkersTask = Task.WhenAll(workers);
+            Task.WaitAll(workers);
             workers = null;
 
-            Task.WaitAll(emitterApp, allWorkersTask);
+            ConsoleWriteLine($"Workers completed. Exiting.");
 
-            ConsoleWriteLine($"Workers and the EmitterApp completed. Disposing log sink(s).");
-
-            LogConfigurator.DisposeLogSinks();
-            ConsoleWriteLine($"Log sink(s) disposed. Press Enter to end program.");
-
-            Console.ReadLine();
             ConsoleWriteLine($"Good bye.");
         }
 
@@ -114,7 +100,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                 switch(demoLogAction)
                 {
                     case DemoLogAction.ErrorWithMessage:
-                        Log.Error(LogComponentMoniker, "An error has occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Error(LogComponentMoniker, "A foo-bar error has occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
                         break;
 
                     case DemoLogAction.ErrorWithException:
@@ -122,15 +108,15 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                         break;
 
                     case DemoLogAction.ErrorWithMessageAndException:
-                        Log.Error(LogComponentMoniker, "An error has occurred", error, "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Error(LogComponentMoniker, "An foo-bar error has occurred", error, "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
                         break;
 
                     case DemoLogAction.Debug:
-                        Log.Debug(LogComponentMoniker, "A debug-relevant event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction, "<UnpairedTag />");
+                        Log.Debug(LogComponentMoniker, "A debug-relevant foo-bar event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction, "<UnpairedTag />");
                         break;
 
                     default:
-                        Log.Info(LogComponentMoniker, "A log-worthy event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Info(LogComponentMoniker, "A log-worthy foo-bar event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
                         break;
                 }
                 
@@ -156,7 +142,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
 
         private static void ThrowException()
         {
-            throw new Exception("An exceptional condition has occurred.");
+            throw new Exception("An exceptional foo-bar condition has occurred.");
         }
 
         private static void ConsoleWriteLine()
@@ -172,7 +158,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
             }
             else
             {
-                Console.WriteLine(" # # # EmitterAndComposerApp.Program says: " + line);
+                Console.WriteLine("  # # #EmitterLib says: " + line);
             }
         }
     }

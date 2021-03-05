@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 using Datadog.Logging.Emission;
 
-namespace Datadog.Logging.Demo.EmitterAndComposerApp
+namespace Datadog.Logging.Demo.EmitterLib
 {
     /// <summary>
     /// Leightweight Log stub for Logging-SDK-agnostic logging.

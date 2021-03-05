@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Logging.Composition;
 
-namespace Datadog.Logging.Demo
+namespace Datadog.Logging.Demo.EmitterAndComposerApp
 {
     internal static class LogConfigurator
     {
-        private const bool UseConsoleLogInsteadOfFileLog = false;
+        private const bool UseConsoleLogInsteadOfFileLog = true;
         private const bool UseConsoleLogIfFileLogNotAvailable = true;
         private const int LogFileSizeBytes = 1024 * 50;
 
@@ -147,7 +147,7 @@ namespace Datadog.Logging.Demo
             }
             else
             {
-                Console.WriteLine("Console-Message: " + line);
+                Console.WriteLine(" # # # EmitterAndComposerApp.LogConfigurator: " + line);
             }
         }
     }
