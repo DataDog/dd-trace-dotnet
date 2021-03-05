@@ -4,6 +4,7 @@ using System;
 using System.Globalization;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ServiceFabric
@@ -13,18 +14,6 @@ namespace Datadog.Trace.ServiceFabric
         private const string SpanNamePrefix = "service_remoting";
 
         private static readonly Logging.IDatadogLogger Log = Logging.DatadogLogging.GetLoggerFor(typeof(ServiceRemotingHelpers));
-
-        private static readonly string ServiceFabricServiceName = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.ServiceName);
-
-        private static readonly string ApplicationId = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.ApplicationId);
-
-        private static readonly string ApplicationName = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.ApplicationName);
-
-        private static readonly string PartitionId = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.PartitionId);
-
-        private static readonly string NodeId = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.NodeId);
-
-        private static readonly string NodeName = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariableNames.NodeName);
 
         public static bool AddEventHandler(string typeName, string eventName, EventHandler eventHandler)
         {
@@ -104,7 +93,7 @@ namespace Datadog.Trace.ServiceFabric
             string? resourceName = null;
             string? serviceUrl = null;
 
-            string serviceFabricServiceName = ServiceFabricServiceName;
+            string serviceFabricServiceName = PlatformHelpers.ServiceFabric.ServiceName;
 
             if (eventArgs != null)
             {
@@ -119,11 +108,11 @@ namespace Datadog.Trace.ServiceFabric
 
             var tags = new ServiceRemotingTags(spanKind)
             {
-                ApplicationId = ApplicationId,
-                ApplicationName = ApplicationName,
-                PartitionId = PartitionId,
-                NodeId = NodeId,
-                NodeName = NodeName,
+                ApplicationId = PlatformHelpers.ServiceFabric.ApplicationId,
+                ApplicationName = PlatformHelpers.ServiceFabric.ApplicationName,
+                PartitionId = PlatformHelpers.ServiceFabric.PartitionId,
+                NodeId = PlatformHelpers.ServiceFabric.NodeId,
+                NodeName = PlatformHelpers.ServiceFabric.NodeName,
                 ServiceName = serviceFabricServiceName,
                 RemotingUri = serviceUrl,
                 RemotingMethodName = methodName
