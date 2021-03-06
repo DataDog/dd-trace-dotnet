@@ -4,15 +4,23 @@ using Datadog.Logging.Emission;
 
 namespace Datadog.Logging.Composition
 {
-    internal class SimpleConsoleLogSink : ILogSink
+    internal sealed class SimpleConsoleLogSink : ILogSink
     {
         public static readonly SimpleConsoleLogSink SingeltonInstance = new SimpleConsoleLogSink();
 
-        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
+        public bool TryLogError(LogSourceInfo logSourceInfo, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
-                SimpleConsoleSink.Error(componentName.Part1, componentName.Part2, message, exception, dataNamesAndValues);
+                SimpleConsoleSink.Error(logSourceInfo.LogSourceNamePart1,
+                                        logSourceInfo.LogSourceNamePart2,
+                                        logSourceInfo.CallLineNumber,
+                                        logSourceInfo.CallMemberName,
+                                        logSourceInfo.CallFileName,
+                                        logSourceInfo.AssemblyName,
+                                        message,
+                                        exception,
+                                        dataNamesAndValues);
                 return true;
             }
             catch
@@ -22,11 +30,18 @@ namespace Datadog.Logging.Composition
             
         }
 
-        public bool TryLogInfo(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
+        public bool TryLogInfo(LogSourceInfo logSourceInfo, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
-                SimpleConsoleSink.Info(componentName.Part1, componentName.Part2, message, dataNamesAndValues);
+                SimpleConsoleSink.Info(logSourceInfo.LogSourceNamePart1,
+                                       logSourceInfo.LogSourceNamePart2,
+                                       logSourceInfo.CallLineNumber,
+                                       logSourceInfo.CallMemberName,
+                                       logSourceInfo.CallFileName,
+                                       logSourceInfo.AssemblyName,
+                                       message,
+                                       dataNamesAndValues);
                 return true;
             }
             catch
@@ -35,11 +50,18 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogDebug(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
+        public bool TryLogDebug(LogSourceInfo logSourceInfo, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
-                SimpleConsoleSink.Debug(componentName.Part1, componentName.Part2, message, dataNamesAndValues);
+                SimpleConsoleSink.Debug(logSourceInfo.LogSourceNamePart1,
+                                        logSourceInfo.LogSourceNamePart2,
+                                        logSourceInfo.CallLineNumber,
+                                        logSourceInfo.CallMemberName,
+                                        logSourceInfo.CallFileName,
+                                        logSourceInfo.AssemblyName,
+                                        message,
+                                        dataNamesAndValues);
                 return true;
             }
             catch

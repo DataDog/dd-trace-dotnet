@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Datadog.Logging.Emission;
 
 namespace Datadog.Logging.Demo.EmitterAndComposerApp
 {
     public class Program
     {
-        private const string LogComponentMoniker = "Demo.EmitterAndComposerApp";
+        private static readonly LogSourceInfo LogSourceInfo = new LogSourceInfo("Demo.EmitterAndComposerApp");
 
         private const int RuntimeSecs = 20;
 
@@ -114,23 +115,50 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                 switch(demoLogAction)
                 {
                     case DemoLogAction.ErrorWithMessage:
-                        Log.Error(LogComponentMoniker, "An error has occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Error(LogSourceInfo.WithCallInfo().WithinLogSourcesGroup("Some Large Component"),
+                                  "An error has occurred",
+                                  "workerId", workerId,
+                                  "iteration", iteration,
+                                  "runtime", runtime,
+                                  "demoLogAction", demoLogAction);
                         break;
 
                     case DemoLogAction.ErrorWithException:
-                        Log.Error(LogComponentMoniker, error, "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Error(LogSourceInfo.WithCallInfo().WithLogSourcesSubgroup("Some Subcomponent"),
+                                  error,
+                                  "workerId", workerId,
+                                  "iteration", iteration,
+                                  "runtime", runtime,
+                                  "demoLogAction", demoLogAction);
                         break;
 
                     case DemoLogAction.ErrorWithMessageAndException:
-                        Log.Error(LogComponentMoniker, "An error has occurred", error, "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Error(LogSourceInfo.WithCallInfo(),
+                                  "An error has occurred",
+                                  error,
+                                  "workerId", workerId,
+                                  "iteration", iteration,
+                                  "runtime", runtime,
+                                  "demoLogAction", demoLogAction);
                         break;
 
                     case DemoLogAction.Debug:
-                        Log.Debug(LogComponentMoniker, "A debug-relevant event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction, "<UnpairedTag />");
+                        Log.Debug(LogSourceInfo.WithSrcFileInfo(),
+                                  "A debug-relevant event occurred",
+                                  "workerId", workerId,
+                                  "iteration", iteration,
+                                  "runtime", runtime,
+                                  "demoLogAction", demoLogAction,
+                                  "<UnpairedTag />");
                         break;
 
                     default:
-                        Log.Info(LogComponentMoniker, "A log-worthy event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Info(LogSourceInfo,
+                                 "A log-worthy event occurred",
+                                 "workerId", workerId,
+                                 "iteration", iteration,
+                                 "runtime", runtime,
+                                 "demoLogAction", demoLogAction);
                         break;
                 }
                 

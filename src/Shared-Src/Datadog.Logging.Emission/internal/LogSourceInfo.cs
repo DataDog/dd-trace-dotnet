@@ -6,36 +6,32 @@ namespace Datadog.Logging.Emission
 {
     internal struct LogSourceInfo
     {
-        public string NamePart1 { get; }
-        public string NamePart2 { get; }
+        private static string s_assemblyName = null;
+
+        public string LogSourceNamePart1 { get; }
+        public string LogSourceNamePart2 { get; }
         public int CallLineNumber { get; }
         public string CallMemberName { get; }
         public string CallFileName { get; }
+        public string AssemblyName { get; }
 
-        public LogSourceInfo(string name)
-            : this(namePart1: null, namePart2: name, callLineNumber: 0, callMemberName: null, callFileName: null)
+        public LogSourceInfo(string logSourceName)
+            : this(logSourceNamePart1: null, logSourceNamePart2: logSourceName, callLineNumber: 0, callMemberName: null, callFileName: null, assemblyName: null)
         { }
 
-        public LogSourceInfo(string namePart1, string namePart2)
-            : this(namePart1, namePart2, callLineNumber: 0, callMemberName: null, callFileName: null)
-        { }
-
-        public LogSourceInfo(string namePart1, string namePart2, int callLineNumber, string callMemberName)
-            : this(namePart1, namePart2, callLineNumber, callMemberName, callFileName: null)
-        { }
-
-        public LogSourceInfo(string namePart1, string namePart2, int callLineNumber, string callMemberName, string callFileName)
+        public LogSourceInfo(string logSourceNamePart1, string logSourceNamePart2, int callLineNumber, string callMemberName, string callFileName, string assemblyName)
         {
-            NamePart1 = namePart1;
-            NamePart2 = namePart2;
+            LogSourceNamePart1 = logSourceNamePart1;
+            LogSourceNamePart2 = logSourceNamePart2;
             CallLineNumber = callLineNumber;
             CallMemberName = callMemberName;
             CallFileName = callFileName;
+            AssemblyName = assemblyName;
         }
 
         public LogSourceInfo WithCallInfo([CallerLineNumber] int callLineNumber = 0, [CallerMemberName] string callMemberName = null)
         {
-            return new LogSourceInfo(NamePart1, NamePart2, callLineNumber, callMemberName, callFileName: null);
+            return new LogSourceInfo(LogSourceNamePart1, LogSourceNamePart2, callLineNumber, callMemberName, callFileName: null, AssemblyName);
         }
 
         public LogSourceInfo WithSrcFileInfo([CallerLineNumber] int callLineNumber = 0,
@@ -43,7 +39,7 @@ namespace Datadog.Logging.Emission
                                              [CallerFilePath] string callFilePath = null)
         {
             string callFileName = null;
-            if (!String.IsNullOrWhiteSpace(callFilePath))
+            if (callFilePath != null)
             {
                 try
                 {
@@ -55,72 +51,92 @@ namespace Datadog.Logging.Emission
                 }
             }
 
-            return new LogSourceInfo(NamePart1, NamePart2, callLineNumber, callMemberName, callFileName);
+            return new LogSourceInfo(LogSourceNamePart1, LogSourceNamePart2, callLineNumber, callMemberName, callFileName, AssemblyName);
         }
 
-        public LogSourceInfo WithName(string name)
+        public LogSourceInfo WithAssemblyName()
         {
-            return new LogSourceInfo(namePart1: null, namePart2: name, CallLineNumber, CallMemberName, CallFileName);
+            string assemblyName = GetAssemblyName();
+            return new LogSourceInfo(LogSourceNamePart1, LogSourceNamePart2, CallLineNumber, CallMemberName, CallFileName, assemblyName);
         }
 
-        public LogSourceInfo WithName(string namePart1, string namePart2)
-        {
-            return new LogSourceInfo(namePart1, namePart2, CallLineNumber, CallMemberName, CallFileName);
-        }
-
-        public LogSourceInfo WithinComponentGroup(string superGroupName)
+        public LogSourceInfo WithinLogSourcesGroup(string superGroupName)
         {
             if (superGroupName == null)
             {
                 return this;
             }
 
-            if (NamePart1 == null && NamePart2 == null)
+            if (LogSourceNamePart1 == null && LogSourceNamePart2 == null)
             {
-                return WithName(null, superGroupName);
+                return WithLogSourcesName(null, superGroupName);
             }
             
-            if (NamePart1 == null && NamePart2 != null)
+            if (LogSourceNamePart1 == null && LogSourceNamePart2 != null)
             {
-                return WithName(superGroupName, NamePart2);
+                return WithLogSourcesName(superGroupName, LogSourceNamePart2);
             }
             
-            if (NamePart1 != null && NamePart2 == null)
+            if (LogSourceNamePart1 != null && LogSourceNamePart2 == null)
             {
-                return WithName(superGroupName, NamePart1);
+                return WithLogSourcesName(superGroupName, LogSourceNamePart1);
             }
 
-            // Must be (NamePart1 != null && NamePart2 != null)
-            
-            return WithName(superGroupName, DefaultFormat.MergeLogSourceName(NamePart1, NamePart2));
+            // Must be (LogSourceNamePart1 != null && LogSourceNamePart2 != null)
+
+            return WithLogSourcesName(superGroupName, DefaultFormat.LogSourceInfo.MergeNames(LogSourceNamePart1, LogSourceNamePart2));
         }
 
-        public LogSourceInfo WithComponentSubgroup(string subGroupName)
+        public LogSourceInfo WithLogSourcesSubgroup(string subGroupName)
         {
             if (subGroupName == null)
             {
                 return this;
             }
 
-            if (NamePart1 == null && NamePart2 == null)
+            if (LogSourceNamePart1 == null && LogSourceNamePart2 == null)
             {
-                return WithName(null, subGroupName);
+                return WithLogSourcesName(null, subGroupName);
             }
 
-            if (NamePart1 == null && NamePart2 != null)
+            if (LogSourceNamePart1 == null && LogSourceNamePart2 != null)
             {
-                return WithName(NamePart2, subGroupName);
+                return WithLogSourcesName(LogSourceNamePart2, subGroupName);
             }
 
-            if (NamePart1 != null && NamePart2 == null)
+            if (LogSourceNamePart1 != null && LogSourceNamePart2 == null)
             {
-                return WithName(NamePart1, subGroupName);
+                return WithLogSourcesName(LogSourceNamePart1, subGroupName);
             }
 
-            // Must be (NamePart1 != null && NamePart2 != null)
+            // Must be (LogSourceNamePart1 != null && LogSourceNamePart2 != null)
 
-            return WithName(DefaultFormat.MergeLogSourceName(NamePart1, NamePart2), subGroupName);
+            return WithLogSourcesName(DefaultFormat.LogSourceInfo.MergeNames(LogSourceNamePart1, LogSourceNamePart2), subGroupName);
         }
 
+        private LogSourceInfo WithLogSourcesName(string logSourceNamePart1, string logSourceNamePart2)
+        {
+            return new LogSourceInfo(logSourceNamePart1, logSourceNamePart2, CallLineNumber, CallMemberName, CallFileName, AssemblyName);
+        }
+
+        private string GetAssemblyName()
+        {
+            string assemblyName = s_assemblyName;
+            if (assemblyName == null)
+            {
+                try
+                {
+                    assemblyName = this.GetType().Assembly?.FullName;
+                }
+                catch
+                {
+                    assemblyName = null;
+                }
+
+                s_assemblyName = assemblyName;  // benign race
+            }
+
+            return assemblyName;
+        }
     }
 }

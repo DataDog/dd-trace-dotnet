@@ -18,7 +18,7 @@ namespace Datadog.Logging.Composition
     {
         public const int RotateLogFileWhenLargerBytesDefault = 1024 * 1024 * 128;  // 128 MB
 
-        private static readonly LoggingComponentName LogComponentMoniker = LoggingComponentName.Create(typeof(FileLogSink).FullName, null);
+        private static readonly LogSourceInfo SelfLogSourceInfo = new LogSourceInfo(typeof(FileLogSink).FullName);
 
         private const string FilenameSeparatorForTimestamp = "-";
         private const string FilenameTimestampFormat = "yyyyMMdd";
@@ -26,6 +26,7 @@ namespace Datadog.Logging.Composition
         private const string FilenameIndexFormat = "000";
         private const string FilenameExtension = "log";
 
+        private const bool UseUtcTimestamps = false;
         private const bool UseNewLinesInErrorMessages = false;
         private const bool UseNewLinesInDataNamesAndValues = false;
 
@@ -148,7 +149,7 @@ namespace Datadog.Logging.Composition
                     newSink = new FileLogSink(logGroupMutex, logFileDir, logFileNameBase, rotateLogFileWhenLargerBytes, logStream, rotationIndex);
                 }
 
-                if (newSink.TryLogInfo(LogComponentMoniker,
+                if (newSink.TryLogInfo(SelfLogSourceInfo.WithCallInfo().WithAssemblyName(),
                                        "Logging session started",
                                        new object[]
                                            {
@@ -225,7 +226,7 @@ namespace Datadog.Logging.Composition
             }
 
             // If this sink is already disposed, then TryLogInfo(..) will fail to aquire the _logGroupMutex and will gracefully return false.
-            this.TryLogInfo(LogComponentMoniker, "Finishing logging session", new object[] { "LogSessionId", LogSessionId });
+            this.TryLogInfo(SelfLogSourceInfo.WithCallInfo().WithAssemblyName(), "Finishing logging session", new object[] { "LogSessionId", LogSessionId });
 
             // If we can acquire the file mutex, we will dispose while holding it, so that concurrent log writes are not affected.
             // But eventually we will dispose regardless.
@@ -246,18 +247,22 @@ namespace Datadog.Logging.Composition
             _logGroupMutex.Dispose();
         }
 
-        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
+        public bool TryLogError(LogSourceInfo logSourceInfo, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
-                string errorMessage = DefaultFormat.ConstructErrorMessage(message, exception, UseNewLinesInErrorMessages);
-                StringBuilder logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Error,
-                                                                 componentName.Part1,
-                                                                 componentName.Part2,
-                                                                 useUtcTimestamp: false,
-                                                                 errorMessage,
-                                                                 dataNamesAndValues,
-                                                                 UseNewLinesInDataNamesAndValues);
+                string errorMessage = DefaultFormat.ErrorMessage.Construct(message, exception, UseNewLinesInErrorMessages);
+                StringBuilder logLine = DefaultFormat.LogLine.Construct(DefaultFormat.LogLevelMoniker_Error,
+                                                                        logSourceInfo.LogSourceNamePart1,
+                                                                        logSourceInfo.LogSourceNamePart2,
+                                                                        logSourceInfo.CallLineNumber,
+                                                                        logSourceInfo.CallMemberName,
+                                                                        logSourceInfo.CallFileName,
+                                                                        logSourceInfo.AssemblyName,
+                                                                        errorMessage,
+                                                                        dataNamesAndValues,
+                                                                        UseUtcTimestamps,
+                                                                        UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch
@@ -266,17 +271,21 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogInfo(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
+        public bool TryLogInfo(LogSourceInfo logSourceInfo, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
-                StringBuilder logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Info,
-                                                            componentName.Part1,
-                                                            componentName.Part2,
-                                                            useUtcTimestamp: false,
-                                                            message,
-                                                            dataNamesAndValues,
-                                                            UseNewLinesInDataNamesAndValues);
+                StringBuilder logLine = DefaultFormat.LogLine.Construct(DefaultFormat.LogLevelMoniker_Info,
+                                                                        logSourceInfo.LogSourceNamePart1,
+                                                                        logSourceInfo.LogSourceNamePart2,
+                                                                        logSourceInfo.CallLineNumber,
+                                                                        logSourceInfo.CallMemberName,
+                                                                        logSourceInfo.CallFileName,
+                                                                        logSourceInfo.AssemblyName,
+                                                                        message,
+                                                                        dataNamesAndValues,
+                                                                        UseUtcTimestamps,
+                                                                        UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch
@@ -285,17 +294,21 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogDebug(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
+        public bool TryLogDebug(LogSourceInfo logSourceInfo, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
-                StringBuilder logLine = DefaultFormat.ConstructLogLine(DefaultFormat.LogLevelMoniker_Debug,
-                                                        componentName.Part1,
-                                                        componentName.Part2,
-                                                        useUtcTimestamp: false,
-                                                        message,
-                                                        dataNamesAndValues,
-                                                        UseNewLinesInDataNamesAndValues);
+                StringBuilder logLine = DefaultFormat.LogLine.Construct(DefaultFormat.LogLevelMoniker_Debug,
+                                                                        logSourceInfo.LogSourceNamePart1,
+                                                                        logSourceInfo.LogSourceNamePart2,
+                                                                        logSourceInfo.CallLineNumber,
+                                                                        logSourceInfo.CallMemberName,
+                                                                        logSourceInfo.CallFileName,
+                                                                        logSourceInfo.AssemblyName,
+                                                                        message,
+                                                                        dataNamesAndValues,
+                                                                        UseUtcTimestamps,
+                                                                        UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch

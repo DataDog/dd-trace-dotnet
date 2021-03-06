@@ -53,9 +53,9 @@ namespace Datadog.Logging.Composition
             IsDebugLoggingEnabled = envSetting;
         }
 
-        public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirectionLogSinks)
+        public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> redirectionLogSinks)
         {
-            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>(capacity: 3);
+            var redirectionSinks = new Dictionary<Type, LogSourceNameCompositionLogSink>(capacity: 3);
 
             {
                 Type loggerType = typeof(global::Datadog.Logging.Demo.EmitterAndComposerApp.Log);
@@ -64,17 +64,18 @@ namespace Datadog.Logging.Composition
                 if (logSink == null)
                 {
                     redirectionSinks[loggerType] = null;
-                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Error(null);
-                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Info(null);
-                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Debug(null);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.EventHandlers.Error(null);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.EventHandlers.Info(null);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.EventHandlers.Debug(null);
                 }
                 else
                 {
-                    var redirectionLogSink = new ComponentGroupCompositionLogSink(logComponentGroupMoniker, logSink);
+                    var redirectionLogSink = new LogSourceNameCompositionLogSink(logComponentGroupMoniker, logSink);
+                    var logToSinkAdapter = new LogEventHandlersToLogSinkAdapter(redirectionLogSink);
                     redirectionSinks[loggerType] = redirectionLogSink;
-                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
-                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
-                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.EventHandlers.Error(logToSinkAdapter.Error);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.EventHandlers.Info(logToSinkAdapter.Info);
+                    global::Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.EventHandlers.Debug(logToSinkAdapter.Debug);
                 }
 
                 Datadog.Logging.Demo.EmitterAndComposerApp.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
@@ -86,17 +87,18 @@ namespace Datadog.Logging.Composition
                 if (logSink == null)
                 {
                     redirectionSinks[loggerType] = null;
-                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Error(null);
-                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Info(null);
-                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Debug(null);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.EventHandlers.Error(null);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.EventHandlers.Info(null);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.EventHandlers.Debug(null);
                 }
                 else
                 {
-                    var redirectionLogSink = new ComponentGroupCompositionLogSink(logComponentGroupMoniker, logSink);
+                    var redirectionLogSink = new LogSourceNameCompositionLogSink(logComponentGroupMoniker, logSink);
+                    var logToSinkAdapter = new LogEventHandlersToLogSinkAdapter(redirectionLogSink);
                     redirectionSinks[loggerType] = redirectionLogSink;
-                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
-                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
-                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.EventHandlers.Error(logToSinkAdapter.Error);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.EventHandlers.Info(logToSinkAdapter.Info);
+                    global::Datadog.Logging.Demo.EmitterLib.Log.Configure.EventHandlers.Debug(logToSinkAdapter.Debug);
                 }
 
                 Datadog.Logging.Demo.EmitterLib.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);

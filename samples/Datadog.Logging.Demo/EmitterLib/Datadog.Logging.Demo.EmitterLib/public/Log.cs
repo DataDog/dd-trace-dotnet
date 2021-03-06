@@ -139,56 +139,176 @@ namespace Datadog.Logging.Demo.EmitterLib
     public static class Log
     {
         /// <summary>
-        /// Use statements like <c>Log.Configure.Info(YourHandler)</c> to redirect logging to your destination.
+        /// Use statements like <c>Log.Configure.EventHandlers.Info(YourHandler)</c> to redirect logging to your destination.
         /// </summary>
         public static class Configure
         {
-            /// <summary>
-            /// Sets the handler delegate for processing Error log events.
-            /// If <c>null</c> is specified, then Error log events will be ignored.
-            /// </summary>
-            public static void Error(Action<string, string, Exception, IEnumerable<object>> logEventHandler)
-            {
-                s_errorLogEventHandler = logEventHandler;
-            }
-
-            /// <summary>
-            /// Sets the handler delegate for processing Info log events.
-            /// If <c>null</c> is specified, then Error log events will be ignored.
-            /// </summary>
-            public static void Info(Action<string, string, IEnumerable<object>> logEventHandler)
-            {
-                s_infoLogEventHandler = logEventHandler;
-            }
-
-            /// <summary>
-            /// Sets the handler delegate for processing Debug log events.
-            /// If <c>null</c> is specified, then Error log events will be ignored.
-            /// </summary>
-            public static void Debug(Action<string, string, IEnumerable<object>> logEventHandler)
-            {
-                s_debugLogEventHandler = logEventHandler;
-            }
-
             /// <summary>
             /// Sets whether Debug log events should be processed or ignored.
             /// </summary>
             public static void DebugLoggingEnabled(bool isDebugLoggingEnabled)
             {
-                s_isDebugLoggingEnabled = isDebugLoggingEnabled;
+                s_config_IsDebugLoggingEnabled = isDebugLoggingEnabled;
             }
+
+            /// <summary>
+            /// The params of the handler Actions are:
+            /// <code>
+            ///     void Handler(string logSourceNamePart1,
+            ///                  string logSourceNamePart2,
+            ///                  int logSourceCallLineNumber,
+            ///                  string logSourceCallMemberName,
+            ///                  string logSourceCallFileName,
+            ///                  string logSourceAssemblyName,
+            ///                  string message, 
+            ///                  Exception exception,                      //  <-- Only for Error handlers
+            ///                  IEnumerable<object> dataNamesAndValues);
+            /// </code>
+            /// </summary>
+            public static class EventHandlers
+            {
+                /// <summary>
+                /// Sets the handler delegate for processing Error log events.
+                /// If <c>null</c> is specified, then Error log events will be ignored.
+                /// </summary>
+                public static void Error(Action<string, string, int, string, string, string, string, Exception, IEnumerable<object>> logErrorEventHandler)
+                {
+                    s_AutomaticAssemblyName_ForError_LastTimestamp = 0;
+                    s_config_EventHandlers_Error = logErrorEventHandler;
+                }
+
+                /// <summary>
+                /// Sets the handler delegate for processing Info log events.
+                /// If <c>null</c> is specified, then Error log events will be ignored.
+                /// </summary>
+                public static void Info(Action<string, string, int, string, string, string, string, IEnumerable<object>> logInfoEventHandler)
+                {
+                    s_AutomaticAssemblyName_ForInfo_LastTimestamp = 0;
+                    s_config_EventHandlers_Info = logInfoEventHandler;
+                }
+
+                /// <summary>
+                /// Sets the handler delegate for processing Debug log events.
+                /// If <c>null</c> is specified, then Error log events will be ignored.
+                /// </summary>
+                public static void Debug(Action<string, string, int, string, string, string, string, IEnumerable<object>> logDebugEventHandler)
+                {
+                    s_AutomaticAssemblyName_ForDebug_LastTimestamp = 0; 
+                    s_config_EventHandlers_Debug = logDebugEventHandler;
+                }
+            }  // class Log.Configure.EventHandlers
+
+            public static class AutomaticAssemblyName
+            {
+                public static class ForError
+                {
+                    /// <summary>
+                    /// Gets or sets whether the assembly name (incl. version) of the <c>LogSourceInfo</c> used when emitting the log line will be automatically
+                    /// included when emitting Error log events (callers can always speciy the assembly name manually).
+                    /// </summary>
+                    public static bool Include
+                    {
+                        get { return s_config_AutomaticAssemblyName_ForError_Include; }
+                        set { s_AutomaticAssemblyName_ForError_LastTimestamp = 0;
+                              s_config_AutomaticAssemblyName_ForError_Include = value; }
+                    }
+
+                    /// <summary>
+                    /// If the assembly name is included automatically for Error log events, this setting controls how frequently.
+                    /// <c>0</c> means always include, positive values mean include once per the specified number of seconds
+                    /// (negative values are treated like <c>0</c>).
+                    /// </summary>
+                    public static int PeriodSecs
+                    {
+                        get { return s_config_AutomaticAssemblyName_ForError_PeriodMillisecs / 1000; }
+                        set { s_AutomaticAssemblyName_ForError_LastTimestamp = 0;
+                              s_config_AutomaticAssemblyName_ForError_PeriodMillisecs = (value >= 0) ? value * 1000 : 0; }
+                    }
+                }  // class Log.Configure.AutomaticAssemblyName.ForError
+
+                public static class ForInfo
+                {
+                    /// <summary>
+                    /// Gets or sets whether the assembly name (incl. version) of the <c>LogSourceInfo</c> used when emitting the log line will be automatically
+                    /// included when emitting Info log events (callers can always speciy the assembly name manually).
+                    /// </summary>
+                    public static bool Include
+                    {
+                        get { return s_config_AutomaticAssemblyName_ForInfo_Include; }
+                        set { s_AutomaticAssemblyName_ForInfo_LastTimestamp = 0;
+                              s_config_AutomaticAssemblyName_ForInfo_Include = value; }
+                    }
+
+                    /// <summary>
+                    /// If the assembly name is included automatically for Info log events, this setting controls how frequently.
+                    /// <c>0</c> means always include, positive values mean include once per the specified number of seconds
+                    /// (negative values are treated like <c>0</c>).
+                    /// </summary>
+                    public static int PeriodSecs
+                    {
+                        get { return s_config_AutomaticAssemblyName_ForInfo_PeriodMillisecs / 1000; }
+                        set { s_AutomaticAssemblyName_ForInfo_LastTimestamp = 0;
+                              s_config_AutomaticAssemblyName_ForInfo_PeriodMillisecs = (value >= 0) ? value * 1000 : 0; }
+                    }
+                }  // class Log.Configure.AutomaticAssemblyName.ForInfo
+
+                public static class ForDebug
+                {
+                    /// <summary>
+                    /// Gets or sets whether the assembly name (incl. version) of the <c>LogSourceInfo</c> used when emitting the log line will be automatically
+                    /// included when emitting Debug log events (callers can always speciy the assembly name manually).
+                    /// </summary>
+                    public static bool Include
+                    {
+                        get { return s_config_AutomaticAssemblyName_ForDebug_Include; }
+                        set { s_AutomaticAssemblyName_ForDebug_LastTimestamp = 0;
+                              s_config_AutomaticAssemblyName_ForDebug_Include = value; }
+                    }
+
+                    /// <summary>
+                    /// If the assembly name is included automatically for Debug log events, this setting controls how frequently.
+                    /// <c>0</c> means always include, positive values mean include once per the specified number of seconds
+                    /// (negative values are treated like <c>0</c>).
+                    /// </summary>
+                    public static int PeriodSecs
+                    {
+                        get { return s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs / 1000; }
+                        set { s_AutomaticAssemblyName_ForDebug_LastTimestamp = 0;
+                              s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs = (value >= 0) ? value * 1000 : 0; }
+                    }
+                }  // class Log.Configure.AutomaticAssemblyName.ForDebug
+            }  // class Log.Configure.AutomaticAssemblyName
         }  // class Log.Configure
 
-        private static Action<string, string, Exception, IEnumerable<object>> s_errorLogEventHandler = SimpleConsoleSink.Error;
-        private static Action<string, string, IEnumerable<object>> s_infoLogEventHandler = SimpleConsoleSink.Info;
-        private static Action<string, string, IEnumerable<object>> s_debugLogEventHandler = SimpleConsoleSink.Debug;
-        private static bool s_isDebugLoggingEnabled = SimpleConsoleSink.IsDebugLoggingEnabled;
+        // The doc-comment on inner class EventHandlers should have an explanation of the Action parameters for the event handlers.
+        private static Action<string, string, int, string, string, string, string, Exception, IEnumerable<object>> s_config_EventHandlers_Error = SimpleConsoleSink.Error;
+        private static Action<string, string, int, string, string, string, string, IEnumerable<object>> s_config_EventHandlers_Info = SimpleConsoleSink.Info;
+        private static Action<string, string, int, string, string, string, string, IEnumerable<object>> s_config_EventHandlers_Debug = SimpleConsoleSink.Debug;
+
+        private static bool s_config_IsDebugLoggingEnabled = true;
+
+        private static bool s_config_AutomaticAssemblyName_ForError_Include = true;
+        private static bool s_config_AutomaticAssemblyName_ForInfo_Include = true;
+        private static bool s_config_AutomaticAssemblyName_ForDebug_Include = true;
+
+        private static int s_config_AutomaticAssemblyName_ForError_PeriodMillisecs = 0;
+        private static int s_config_AutomaticAssemblyName_ForInfo_PeriodMillisecs = 60000;
+        private static int s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs = 0;
+
+        private static int s_AutomaticAssemblyName_ForError_LastTimestamp = 0;
+        private static int s_AutomaticAssemblyName_ForInfo_LastTimestamp = 0;
+        private static int s_AutomaticAssemblyName_ForDebug_LastTimestamp = 0;
 
         internal static LogSourceInfo WithCallInfo(string logSourceName,
                                                    [CallerLineNumber] int callLineNumber = 0,
                                                    [CallerMemberName] string callMemberName = null)
         {
-            return new LogSourceInfo(namePart1: null, namePart2: logSourceName, callLineNumber, callMemberName, callFileName: null);
+            return new LogSourceInfo(logSourceNamePart1: null,
+                                     logSourceNamePart2: logSourceName,
+                                     callLineNumber,
+                                     callMemberName,
+                                     callFileName: null,
+                                     assemblyName: null);
         }
 
         internal static LogSourceInfo WithCallInfo(LogSourceInfo logSourceInfo,
@@ -206,27 +326,97 @@ namespace Datadog.Logging.Demo.EmitterLib
         public static bool IsDebugLoggingEnabled
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { return s_isDebugLoggingEnabled; }
+            get { return s_config_IsDebugLoggingEnabled; }
         }
 
-        /// <summary>
-        /// Logs an error.
-        /// These need to be persisted well, so that the info is available for support cases.
-        /// </summary>
+                /// <summary> Logs an error. </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Error(string componentName, string message, params object[] dataNamesAndValues)
+        internal static void Error(string logSourceName, string message, params object[] dataNamesAndValues)
         {
-            Error(componentName, message, exception: null, dataNamesAndValues);
+            Error(new LogSourceInfo(logSourceName), message, exception: null, dataNamesAndValues);
         }
 
-        /// <summary>
-        /// Logs an error.
-        /// These need to be persisted well, so that the info is available for support cases.
-        /// </summary>
+        /// <summary> Logs an error. </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Error(string componentName, Exception exception, params object[] dataNamesAndValues)
+        internal static void Error(LogSourceInfo logSourceInfo, string message, params object[] dataNamesAndValues)
         {
-            Error(componentName, message: null, exception, dataNamesAndValues);
+            Error(logSourceInfo, message, exception: null, dataNamesAndValues);
+        }
+
+        /// <summary> Logs an error. </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Error(string logSourceName, Exception exception, params object[] dataNamesAndValues)
+        {
+            Error(new LogSourceInfo(logSourceName), message: null, exception, dataNamesAndValues);
+        }
+
+        /// <summary> Logs an error. </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Error(LogSourceInfo logSourceInfo, Exception exception, params object[] dataNamesAndValues)
+        {
+            Error(logSourceInfo, message: null, exception, dataNamesAndValues);
+        }
+
+        /// <summary> Logs an error. </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Error(string logSourceName, string message, Exception exception, params object[] dataNamesAndValues)
+        {
+            Error(new LogSourceInfo(logSourceName), message, exception, dataNamesAndValues);
+        }
+
+        /// <summary> Logs an error. </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Error(LogSourceInfo logSourceInfo, string message, Exception exception, params object[] dataNamesAndValues)
+        {
+            Action<string, string, int, string, string, string, string, Exception, IEnumerable<object>> logEventHandler = s_config_EventHandlers_Error;
+            if (logEventHandler != null)
+            {
+                // If AutomaticAssemblyName is enabled AND AssemblyName is not already specified, look into including the assembly name now.
+                if (s_config_AutomaticAssemblyName_ForError_Include && logSourceInfo.AssemblyName == null)
+                {
+                    // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
+                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
+                    if (s_config_AutomaticAssemblyName_ForError_PeriodMillisecs <= 0
+                            || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForError_LastTimestamp, out s_AutomaticAssemblyName_ForError_LastTimestamp)
+                                    >= s_config_AutomaticAssemblyName_ForError_PeriodMillisecs)
+                    {
+                        logSourceInfo = logSourceInfo.WithAssemblyName();
+                    }
+                }
+
+                logEventHandler(logSourceInfo.LogSourceNamePart1,
+                                logSourceInfo.LogSourceNamePart2,
+                                logSourceInfo.CallLineNumber,
+                                logSourceInfo.CallMemberName,
+                                logSourceInfo.CallFileName,
+                                logSourceInfo.AssemblyName,
+                                message,
+                                exception,
+                                dataNamesAndValues);
+            }
+        }
+
+/// <summary>
+        /// This method logs and rethrows the exception. It is typed to return the exception, to enable writing concise code like:
+        /// <code>
+        ///   try
+        ///   {
+        ///       // ...
+        ///   }
+        ///   catch (Exception ex)
+        ///   {
+        ///       throw Log.ErrorRethrow("...", ex);
+        ///   }
+        /// </code>
+        /// The throwing actually happens inside of the <c>ErrorRethrow(..)<.c> method. However, this syntaxt allows the compiler to know that 
+        /// an exception will occur at that line. This prevents incorrect code analysis warnings/end errors such as 'missing return value',
+        /// 'missing initialization' and similar.
+        /// </summary>
+        /// <returns>Either <c>null</c> if the specified <c>exception</c> is <c>null</c>, or nothing at all,
+        /// because the specified <c>exception</c> is rethrown.</returns>
+        internal static Exception ErrorRethrow(string logSourceName, Exception exception, params object[] dataNamesAndValues)
+        {
+            return ErrorRethrow(new LogSourceInfo(logSourceName), message: null, exception, dataNamesAndValues);
         }
 
         /// <summary>
@@ -241,35 +431,15 @@ namespace Datadog.Logging.Demo.EmitterLib
         ///       throw Log.ErrorRethrow("...", ex);
         ///   }
         /// </code>
-        /// This is becasue the compiler does not know that this method throws and it may otherwise require code blow to
-        /// add no-op return statements and similar.
+        /// The throwing actually happens inside of the <c>ErrorRethrow(..)<.c> method. However, this syntaxt allows the compiler to know that 
+        /// an exception will occur at that line. This prevents incorrect code analysis warnings/end errors such as 'missing return value',
+        /// 'missing initialization' and similar.
         /// </summary>
         /// <returns>Either <c>null</c> if the specified <c>exception</c> is <c>null</c>, or nothing at all,
         /// because the specified <c>exception</c> is rethrown.</returns>
-        public static Exception ErrorRethrow(string componentName, Exception exception, params object[] dataNamesAndValues)
+        internal static Exception ErrorRethrow(LogSourceInfo logSourceInfo, Exception exception, params object[] dataNamesAndValues)
         {
-            Error(componentName, message: null, exception, dataNamesAndValues);
-
-            if (exception != null)
-            {
-                ExceptionDispatchInfo.Capture(exception).Throw();
-            }
-
-            return exception;
-        }
-
-        /// <summary>
-        /// Logs an error.
-        /// These need to be persisted well, so that the info is available for support cases.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Error(string componentName, string message, Exception exception, params object[] dataNamesAndValues)
-        {
-            Action<string, string, Exception, object[]> logEventHandler = s_errorLogEventHandler;
-            if (logEventHandler != null)
-            {
-                logEventHandler(componentName, message, exception, dataNamesAndValues);
-            }
+            return ErrorRethrow(logSourceInfo, message: null, exception, dataNamesAndValues);
         }
 
         /// <summary>
@@ -284,14 +454,38 @@ namespace Datadog.Logging.Demo.EmitterLib
         ///       throw Log.ErrorRethrow("...", ex);
         ///   }
         /// </code>
-        /// This is becasue the compiler does not know that this method throws and it may otherwise require code blow to
-        /// add no-op return statements and similar.
+        /// The throwing actually happens inside of the <c>ErrorRethrow(..)<.c> method. However, this syntaxt allows the compiler to know that 
+        /// an exception will occur at that line. This prevents incorrect code analysis warnings/end errors such as 'missing return value',
+        /// 'missing initialization' and similar.
         /// </summary>
         /// <returns>Either <c>null</c> if the specified <c>exception</c> is <c>null</c>, or nothing at all,
         /// because the specified <c>exception</c> is rethrown.</returns>
-        public static Exception ErrorRethrow(string componentName, string message, Exception exception, params object[] dataNamesAndValues)
+        internal static Exception ErrorRethrow(string logSourceName, string message, Exception exception, params object[] dataNamesAndValues)
         {
-            Error(componentName, message: null, exception, dataNamesAndValues);
+            return ErrorRethrow(new LogSourceInfo(logSourceName), message, exception, dataNamesAndValues);
+        }
+
+        /// <summary>
+        /// This method logs and rethrows the exception. It is typed to return the exception, to enable writing concise code like:
+        /// <code>
+        ///   try
+        ///   {
+        ///       // ...
+        ///   }
+        ///   catch (Exception ex)
+        ///   {
+        ///       throw Log.ErrorRethrow("...", ex);
+        ///   }
+        /// </code>
+        /// The throwing actually happens inside of the <c>ErrorRethrow(..)<.c> method. However, this syntaxt allows the compiler to know that 
+        /// an exception will occur at that line. This prevents incorrect code analysis warnings/end errors such as 'missing return value',
+        /// 'missing initialization' and similar.
+        /// </summary>
+        /// <returns>Either <c>null</c> if the specified <c>exception</c> is <c>null</c>, or nothing at all,
+        /// because the specified <c>exception</c> is rethrown.</returns>
+        internal static Exception ErrorRethrow(LogSourceInfo logSourceInfo, string message, Exception exception, params object[] dataNamesAndValues)
+        {
+            Error(logSourceInfo, message, exception, dataNamesAndValues);
 
             if (exception != null)
             {
@@ -301,34 +495,110 @@ namespace Datadog.Logging.Demo.EmitterLib
             return exception;
         }
 
-        /// <summary>
-        /// Logs an important info message.
-        /// These need to be persisted well, so that the info is available for support cases.
-        /// </summary>
+        /// <summary> Logs an important info message. </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Info(string componentName, string message, params object[] dataNamesAndValues)
+        internal static void Info(string logSourceName, string message, params object[] dataNamesAndValues)
         {
-            Action<string, string, object[]> logEventHandler = s_infoLogEventHandler;
+            Info(new LogSourceInfo(logSourceName), message, dataNamesAndValues);
+        }
+
+        /// <summary> Logs an important info message. </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Info(LogSourceInfo logSourceInfo, string message, params object[] dataNamesAndValues)
+        {
+            Action<string, string, int, string, string, string, string, IEnumerable<object>> logEventHandler = s_config_EventHandlers_Info;
             if (logEventHandler != null)
             {
-                logEventHandler(componentName, message, dataNamesAndValues);
+                // If AutomaticAssemblyName is enabled AND AssemblyName is not already specified, look into including the assembly name now.
+                if (s_config_AutomaticAssemblyName_ForInfo_Include && logSourceInfo.AssemblyName == null)
+                {
+                    // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
+                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
+                    if (s_config_AutomaticAssemblyName_ForInfo_PeriodMillisecs <= 0
+                            || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForInfo_LastTimestamp, out s_AutomaticAssemblyName_ForInfo_LastTimestamp)
+                                    >= s_config_AutomaticAssemblyName_ForInfo_PeriodMillisecs)
+                    {
+                        logSourceInfo = logSourceInfo.WithAssemblyName();
+                    }
+                }
+
+                logEventHandler(logSourceInfo.LogSourceNamePart1,
+                                logSourceInfo.LogSourceNamePart2,
+                                logSourceInfo.CallLineNumber,
+                                logSourceInfo.CallMemberName,
+                                logSourceInfo.CallFileName,
+                                logSourceInfo.AssemblyName,
+                                message,
+                                dataNamesAndValues);
             }
         }
 
-        /// <summary>
-        /// Logs a non-critical info message. Mainly used for for debugging during prototyping.
-        /// These messages can likely be dropped in production.
-        /// </summary>
+        /// <summary> Logs a non-critical debug message. </summary>
+        /// <remarks> Mainly used for for debugging during prototyping.
+        /// These messages can likely be dropped in production during noirmal operations.
+        /// Debug logging may be activated to collect additional informaton to resolve production issues. </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Debug(string componentName, string message, params object[] dataNamesAndValues)
+        internal static void Debug(string logSourceName, string message, params object[] dataNamesAndValues)
         {
-            if (IsDebugLoggingEnabled)
+            if (s_config_IsDebugLoggingEnabled)
             { 
-                Action<string, string, object[]> logEventHandler = s_debugLogEventHandler;
+                Debug(new LogSourceInfo(logSourceName), message, dataNamesAndValues);
+            }
+        }
+
+        /// <summary> Logs a non-critical debug message. </summary>
+        /// <remarks> Mainly used for for debugging during prototyping.
+        /// These messages can likely be dropped in production during noirmal operations.
+        /// Debug logging may be activated to collect additional informaton to resolve production issues. </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Debug(LogSourceInfo logSourceInfo, string message, params object[] dataNamesAndValues)
+        {
+            if (s_config_IsDebugLoggingEnabled)
+            {
+                Action<string, string, int, string, string, string, string, IEnumerable<object>> logEventHandler = s_config_EventHandlers_Debug;
                 if (logEventHandler != null)
                 {
-                    logEventHandler(componentName, message, dataNamesAndValues);
+                    // If AutomaticAssemblyName is enabled AND AssemblyName is not already specified, look into including the assembly name now.
+                    if (s_config_AutomaticAssemblyName_ForDebug_Include && logSourceInfo.AssemblyName == null)
+                    {
+                // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
+                // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
+                if (s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs <= 0
+                            || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForDebug_LastTimestamp, out s_AutomaticAssemblyName_ForDebug_LastTimestamp)
+                                    >= s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs)
+                        {
+                            logSourceInfo = logSourceInfo.WithAssemblyName();
+                        }
+                    }
+
+                    logEventHandler(logSourceInfo.LogSourceNamePart1,
+                                    logSourceInfo.LogSourceNamePart2,
+                                    logSourceInfo.CallLineNumber,
+                                    logSourceInfo.CallMemberName,
+                                    logSourceInfo.CallFileName,
+                                    logSourceInfo.AssemblyName,
+                                    message,
+                                    dataNamesAndValues);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Computes the delta in the same units as given by <c>Environment.TickCount</c> (i.e. milliseconds) since the specified
+        /// previous result of such invocation. Recall that <c>Environment.TickCount</c> cycles approx every 49.8 days.
+        ///   ==> https://docs.microsoft.com/en-us/dotnet/api/system.environment.tickcount?examples
+        /// <para>THIS METHOD ONLY PRODUCES CORRECT RESULTS IF THE ACTUAL ELAPSED DELTA IS LESS THAN HALF OF THE CYCLE PERIOD,
+        /// I.E. LESS THAN APPROX 24.9 DAYS!</para>
+        /// Note that the method used here is correct for deltas in the valid range.
+        ///   ==> https://stackoverflow.com/questions/243351/environment-tickcount-vs-datetime-now/1078089#1078089
+        /// </summary>
+        private static int GetEnvironmentTicksSince(int previousEnvironmentTicks, out int currentEnvironmentTicks)
+        {
+            unchecked
+            {
+                currentEnvironmentTicks = Environment.TickCount;
+                int delta = currentEnvironmentTicks - previousEnvironmentTicks;
+                return delta;
             }
         }
     }  // class Log

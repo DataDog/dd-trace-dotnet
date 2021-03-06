@@ -7,7 +7,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
 {
     internal static class LogConfigurator
     {
-        private const bool UseConsoleLogInsteadOfFileLog = true;
+        private const bool UseConsoleLogInsteadOfFileLog = false;
         private const bool UseConsoleLogIfFileLogNotAvailable = true;
         private const int LogFileSizeBytes = 1024 * 50;
 
@@ -18,7 +18,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
         // If you copy this text, remember to re-generate a unique ID.
         private static readonly Guid LoggingDemoLogGroupId = Guid.Parse("8A335CC9-AAA7-435E-8794-87F9338ABFA2");
 
-        private static IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> s_logRedirections = null;
+        private static IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> s_logRedirections = null;
 
 #pragma warning disable CS0162 // Unreachable code detected: Purposeful control using const bool fields in this class.
         public static void SetupLogger()
@@ -53,10 +53,10 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
 
         public static void DisposeLogSinks()
         {
-            IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> logRedirections = Interlocked.Exchange(ref s_logRedirections, null);
+            IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> logRedirections = Interlocked.Exchange(ref s_logRedirections, null);
             if (logRedirections != null)
             {
-                foreach (KeyValuePair<Type, ComponentGroupCompositionLogSink> redirection in logRedirections)
+                foreach (KeyValuePair<Type, LogSourceNameCompositionLogSink> redirection in logRedirections)
                 {
                     if (redirection.Value != null)
                     {
@@ -67,8 +67,8 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                         catch(Exception ex)
                         {
                             ConsoleWriteLine();
-                            ConsoleWriteLine($"Error disposing a {nameof(ComponentGroupCompositionLogSink)}"
-                                            + $" with {nameof(ComponentGroupCompositionLogSink.DownstreamLogSink)} of type {redirection.Value.DownstreamLogSink.GetType().FullName}.");
+                            ConsoleWriteLine($"Error disposing a {nameof(LogSourceNameCompositionLogSink)}"
+                                            + $" with {nameof(LogSourceNameCompositionLogSink.DownstreamLogSink)} of type {redirection.Value.DownstreamLogSink.GetType().FullName}.");
                             ConsoleWriteLine($"{ex}");
                         }
                     }
@@ -109,14 +109,14 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
             return true;
         }
 
-        private static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirections)
+        private static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> redirections)
         {
             LogComposer.RedirectLogs(logSink, out redirections);
 
             ConsoleWriteLine();
             ConsoleWriteLine($"Configured a total of {redirections.Count} redirections:");
 
-            foreach (KeyValuePair<Type, ComponentGroupCompositionLogSink> redirection in redirections)
+            foreach (KeyValuePair<Type, LogSourceNameCompositionLogSink> redirection in redirections)
             {
                 ConsoleWriteLine( "{");
                 ConsoleWriteLine($"    Logger Type:         \"{redirection.Key.FullName}\"");
@@ -127,7 +127,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                 else
                 {
                     ConsoleWriteLine($"    Destination:         Log Sink Type:       \"{redirection.Value.DownstreamLogSink.GetType().Name}\"");
-                    ConsoleWriteLine($"                         Log Component Group: \"{redirection.Value.LogComponentGroupMoniker}\"");
+                    ConsoleWriteLine($"                         Log Component Group: \"{redirection.Value.LogSourcesGroupMoniker}\"");
                 }
                 
                 ConsoleWriteLine( "}");

@@ -5,7 +5,7 @@ namespace Datadog.Logging.Demo.EmitterLib
 {
     public class Program
     {
-        private const string LogComponentMoniker = "Demo.EmitterLib";
+        private const string LogSourceMoniker = "Demo.EmitterLib";
 
         private const int RuntimeSecs = 20;
 
@@ -100,23 +100,50 @@ namespace Datadog.Logging.Demo.EmitterLib
                 switch(demoLogAction)
                 {
                     case DemoLogAction.ErrorWithMessage:
-                        Log.Error(LogComponentMoniker, "A foo-bar error has occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Error(Log.WithCallInfo(LogSourceMoniker),
+                                  "A foo-bar error has occurred",
+                                  "workerId", workerId,
+                                  "iteration", iteration,
+                                  "runtime", runtime,
+                                  "demoLogAction", demoLogAction);
                         break;
 
                     case DemoLogAction.ErrorWithException:
-                        Log.Error(LogComponentMoniker, error, "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Error(Log.WithCallInfo(LogSourceMoniker),
+                                  error,
+                                  "workerId", workerId,
+                                  "iteration", iteration,
+                                  "runtime", runtime,
+                                  "demoLogAction", demoLogAction);
                         break;
 
                     case DemoLogAction.ErrorWithMessageAndException:
-                        Log.Error(LogComponentMoniker, "An foo-bar error has occurred", error, "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Error(Log.WithCallInfo(LogSourceMoniker),
+                                  "An foo-bar error has occurred",
+                                  error,
+                                  "workerId", workerId,
+                                  "iteration", iteration,
+                                  "runtime", runtime,
+                                  "demoLogAction", demoLogAction);
                         break;
 
                     case DemoLogAction.Debug:
-                        Log.Debug(LogComponentMoniker, "A debug-relevant foo-bar event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction, "<UnpairedTag />");
+                        Log.Debug(Log.WithCallInfo(LogSourceMoniker).WithSrcFileInfo(),
+                                  "A debug-relevant foo-bar event occurred",
+                                  "workerId", workerId,
+                                  "iteration", iteration,
+                                  "runtime", runtime,
+                                  "demoLogAction", demoLogAction,
+                                  "<UnpairedTag />");
                         break;
 
                     default:
-                        Log.Info(LogComponentMoniker, "A log-worthy foo-bar event occurred", "workerId", workerId, "iteration", iteration, "runtime", runtime, "demoLogAction", demoLogAction);
+                        Log.Info(LogSourceMoniker,
+                                 "A log-worthy foo-bar event occurred",
+                                 "workerId", workerId,
+                                 "iteration", iteration,
+                                 "runtime", runtime,
+                                 "demoLogAction", demoLogAction);
                         break;
                 }
                 
