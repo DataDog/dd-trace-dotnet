@@ -75,9 +75,9 @@ namespace Datadog.Logging.Composition
             IsDebugLoggingEnabled = envSetting;
         }
 
-        public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirectionLogSinks)
+        public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> redirectionLogSinks)
         {
-            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>(capacity: <#= (NamespacesAndMonikersToCompose.Length + 1) #>);
+            var redirectionSinks = new Dictionary<Type, LogSourceNameCompositionLogSink>(capacity: <#= (NamespacesAndMonikersToCompose.Length + 1) #>);
 
 <#
             for (int i = 0; i < NamespacesAndMonikersToCompose.Length; i++)
@@ -96,17 +96,18 @@ namespace Datadog.Logging.Composition
                 if (logSink == null)
                 {
                     redirectionSinks[loggerType] = null;
-                    global::<#= logNamespace #>.Log.Configure.Error(null);
-                    global::<#= logNamespace #>.Log.Configure.Info(null);
-                    global::<#= logNamespace #>.Log.Configure.Debug(null);
+                    global::<#= logNamespace #>.Log.Configure.EventHandlers.Error(null);
+                    global::<#= logNamespace #>.Log.Configure.EventHandlers.Info(null);
+                    global::<#= logNamespace #>.Log.Configure.EventHandlers.Debug(null);
                 }
                 else
                 {
-                    var redirectionLogSink = new ComponentGroupCompositionLogSink(logComponentGroupMoniker, logSink);
+                    var redirectionLogSink = new LogSourceNameCompositionLogSink(logComponentGroupMoniker, logSink);
+                    var logToSinkAdapter = new LogEventHandlersToLogSinkAdapter(redirectionLogSink);
                     redirectionSinks[loggerType] = redirectionLogSink;
-                    global::<#= logNamespace #>.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
-                    global::<#= logNamespace #>.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
-                    global::<#= logNamespace #>.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
+                    global::<#= logNamespace #>.Log.Configure.EventHandlers.Error(logToSinkAdapter.Error);
+                    global::<#= logNamespace #>.Log.Configure.EventHandlers.Info(logToSinkAdapter.Info);
+                    global::<#= logNamespace #>.Log.Configure.EventHandlers.Debug(logToSinkAdapter.Debug);
                 }
 
                 <#= logNamespace #>.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);

@@ -6,4 +6,4 @@
 
 <# string LogNamespaceName = "Datadog.AutoInstrumentation.ManagedLoader"; #>
 <# string LogClassAccessibilityLevel = "internal"; #>
-<#@ include file="$(SharedSrcBaseDir)\Datadog.Logging\public\Log.tt.cs" #>
+<#@ include file="$(SharedSrcBaseDir)\Shared-Src\Datadog.Logging\public\Log.tt.cs" #>

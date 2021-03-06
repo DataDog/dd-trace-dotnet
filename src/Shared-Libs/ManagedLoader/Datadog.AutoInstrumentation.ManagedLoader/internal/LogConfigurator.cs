@@ -17,7 +17,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// <summary>A universe-wide, randomly generated unique ID for managed loader logs.</summary>
         private static readonly Guid ManagedLoaderLogGroupId = Guid.Parse("27B50088-5AFB-44AC-9F24-8A5BD5D1DCF6");
 
-        private static IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> s_logRedirections = null;
+        private static IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> s_logRedirections = null;
 
 #pragma warning disable CS0162 // Unreachable code detected: Purposeful control using const bool fields in this class.
         public static void SetupLogger()
@@ -49,10 +49,10 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         public static void DisposeLogSinks()
         {
-            IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> logRedirections = Interlocked.Exchange(ref s_logRedirections, null);
+            IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> logRedirections = Interlocked.Exchange(ref s_logRedirections, null);
             if (logRedirections != null)
             {
-                foreach (KeyValuePair<Type, ComponentGroupCompositionLogSink> redirection in logRedirections)
+                foreach (KeyValuePair<Type, LogSourceNameCompositionLogSink> redirection in logRedirections)
                 {
                     if (redirection.Value != null)
                     {
@@ -95,7 +95,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             return true;
         }
 
-        private static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirections)
+        private static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> redirections)
         {
             LogComposer.RedirectLogs(logSink, out redirections);
         }

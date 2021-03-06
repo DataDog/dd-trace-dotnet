@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
+using Datadog.Logging.Emission;
 
 namespace Datadog.Logging.Composition
 {
@@ -9,7 +10,7 @@ namespace Datadog.Logging.Composition
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "Rule does not add redability")]
-    internal class AggregatedLogSink : ILogSink, IDisposable
+    internal sealed class AggregatedLogSink : ILogSink, IDisposable
     {
         private readonly ILogSink[] _logSinks;
 
@@ -39,21 +40,21 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        public bool TryLogError(LoggingComponentName componentName, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
+        public bool TryLogError(LogSourceInfo logSourceInfo, string message, Exception exception, IEnumerable<object> dataNamesAndValues)
         {
-            InvokeForAllLogSinks((ls) => ls.TryLogError(componentName, message, exception, dataNamesAndValues), out bool allSucceeded);
+            InvokeForAllLogSinks((ls) => ls.TryLogError(logSourceInfo, message, exception, dataNamesAndValues), out bool allSucceeded);
             return allSucceeded;
         }
 
-        public bool TryLogInfo(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
+        public bool TryLogInfo(LogSourceInfo logSourceInfo, string message, IEnumerable<object> dataNamesAndValues)
         {
-            InvokeForAllLogSinks((ls) => ls.TryLogInfo(componentName, message, dataNamesAndValues), out bool allSucceeded);
+            InvokeForAllLogSinks((ls) => ls.TryLogInfo(logSourceInfo, message, dataNamesAndValues), out bool allSucceeded);
             return allSucceeded;
         }
 
-        public bool TryLogDebug(LoggingComponentName componentName, string message, IEnumerable<object> dataNamesAndValues)
+        public bool TryLogDebug(LogSourceInfo logSourceInfo, string message, IEnumerable<object> dataNamesAndValues)
         {
-            InvokeForAllLogSinks((ls) => ls.TryLogDebug(componentName, message, dataNamesAndValues), out bool allSucceeded);
+            InvokeForAllLogSinks((ls) => ls.TryLogDebug(logSourceInfo, message, dataNamesAndValues), out bool allSucceeded);
             return allSucceeded;
         }
 

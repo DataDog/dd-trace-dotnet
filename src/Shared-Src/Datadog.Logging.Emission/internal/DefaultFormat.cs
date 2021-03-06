@@ -12,417 +12,585 @@ namespace Datadog.Logging.Emission
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
     internal static class DefaultFormat
     {
-        public const string TimestampPattern_Local = @"yyyy-MM-dd, HH\:mm\:ss\.fff \(zzz\)";
-        public const string TimestampPattern_Utc = @"yyyy-MM-dd, HH\:mm\:ss\.fff";
-
         public const string LogLevelMoniker_Error = "ERROR";
         public const string LogLevelMoniker_Info = "INFO ";
         public const string LogLevelMoniker_Debug = "DEBUG";
 
-        private const string ComponentPartSeparator = "::";
+        private const string LogSourceNamePartsSeparator = "::";
+
+        private const string TimestampPattern_Local = @"yyyy-MM-dd, HH\:mm\:ss\.fff \(zzz\)";
+        private const string TimestampPattern_Utc = @"yyyy-MM-dd, HH\:mm\:ss\.fff";
+
         private const string NewLineReplacement = "^->";
         private const string NullWord = "null";
         private const string DataValueNotSpecifiedWord = "unspecified";
-        private static readonly string s_procIdInfo = GetProcIdInfoString();
+        private const string IndentStr = "    ";
 
-        public static void ComposeComponentName(string inPart1, string inPart2, string inPart3, out string outPart1, out string outPart2)
+        private const string BlockMoniker_DataNamesAndValues = "DATA=";
+        private const string BlockMoniker_LogSourceInfo = "LOGSRC=";
+
+        public static class LogSourceInfo
         {
-            if (inPart1 != null && string.IsNullOrWhiteSpace(inPart1))
+            public static string MergeNames(string part1, string part2)
             {
-                inPart1 = null;
+                if (part1 == null && part2 == null)
+                {
+                    return null;
+                }
+                else if (part1 == null && part2 != null)
+                {
+                    return part2;
+                }
+                else if (part1 != null && part2 == null)
+                {
+                    return part1;
+                }
+                else // MUST BE (part1 != null && part2 != null)
+                {
+                    return part1 + LogSourceNamePartsSeparator + part2;
+                }
             }
+        }  // class DefaultFormat.LogSourceInfo
 
-            if (inPart2 != null && string.IsNullOrWhiteSpace(inPart2))
-            {
-                inPart2 = null;
-            }
-
-            if (inPart3 != null && string.IsNullOrWhiteSpace(inPart3))
-            {
-                inPart3 = null;
-            }
-
-            if (inPart2 == null && inPart3 == null)
-            {
-                outPart2 = inPart1;
-                outPart1 = null;
-                return;
-            }
-            else if (inPart2 == null && inPart3 != null)
-            {
-                outPart2 = inPart3;
-                outPart1 = inPart1;
-                return;
-            }
-            else if (inPart2 != null && inPart3 == null)
-            {
-                outPart2 = inPart2;
-                outPart1 = inPart1;
-                return;
-            }
-            else
-            {
-                // Must be (inPart2 != null && inPart3 != null)
-                outPart2 = inPart2 + ComponentPartSeparator + inPart3;
-                outPart1 = inPart1;
-                return;
-            }
-        }
-
-        public static string ConstructErrorMessage(string message, Exception exception, bool useNewLines)
+        public static class ErrorMessage
         {
-            if (message == null && exception == null)
+            public static string Construct(string message, Exception exception, bool useNewLines)
             {
-                return null;
-            }
-            else if (message != null && exception == null)
-            {
-                return message;
-            }
-            else if (message == null && exception != null)
-            {
-                var errorMsg = new StringBuilder();
-                DetectReplaceNewLines(exception.ToString(), errorMsg, useNewLines, out bool hasEncounteredNewLines);
-
-                if (useNewLines && hasEncounteredNewLines)
+                if (message == null && exception == null)
                 {
-                    errorMsg.Append(Environment.NewLine);
+                    return null;
                 }
-
-                return errorMsg.ToString();
-            }
-            else
-            {
-                // So we have (message != null && exception != null)
-
-                var errorMsg = new StringBuilder(message);
-                if (message.Length > 0 && message[message.Length - 1] != '.')
+                else if (message != null && exception == null)
                 {
-                    errorMsg.Append('.');
+                    return message;
                 }
-
-                int sepPos = errorMsg.Length;
-                DetectReplaceNewLines(exception.ToString(), errorMsg, useNewLines, out bool hasEncounteredNewLines);
-
-                if (useNewLines && hasEncounteredNewLines)
+                else if (message == null && exception != null)
                 {
-                    errorMsg.Insert(sepPos, Environment.NewLine);
-                    errorMsg.Append(Environment.NewLine);
+                    var errorMsg = new StringBuilder();
+                    DetectReplaceNewLines(exception.ToString(), errorMsg, useNewLines, out bool hasEncounteredNewLines);
+
+                    if (useNewLines && hasEncounteredNewLines)
+                    {
+                        errorMsg.Append(Environment.NewLine);
+                    }
+
+                    return errorMsg.ToString();
                 }
                 else
                 {
-                    errorMsg.Insert(sepPos, ' ');
+                    // So we have (message != null && exception != null)
+
+                    var errorMsg = new StringBuilder(message);
+                    if (message.Length > 0 && message[message.Length - 1] != '.')
+                    {
+                        errorMsg.Append('.');
+                    }
+
+                    int sepPos = errorMsg.Length;
+                    DetectReplaceNewLines(exception.ToString(), errorMsg, useNewLines, out bool hasEncounteredNewLines);
+
+                    if (useNewLines && hasEncounteredNewLines)
+                    {
+                        errorMsg.Insert(sepPos, Environment.NewLine);
+                        errorMsg.Append(Environment.NewLine);
+                    }
+                    else
+                    {
+                        errorMsg.Insert(sepPos, ' ');
+                    }
+
+                    return errorMsg.ToString();
                 }
-
-                return errorMsg.ToString();
             }
-        }
 
-        private static void DetectReplaceNewLines(string srcText, StringBuilder destBuffer, bool useNewLines, out bool hasEncounteredNewLines)
-        {
-            hasEncounteredNewLines = false;
-            int p = 0;
-            while(p < srcText.Length)
+            private static void DetectReplaceNewLines(string srcText, StringBuilder destBuffer, bool useNewLines, out bool hasEncounteredNewLines)
             {
-                char c = srcText[p];
-                if (c == '\n' || c == '\r')
+                hasEncounteredNewLines = false;
+                int p = 0;
+                while(p < srcText.Length)
                 {
-                    hasEncounteredNewLines = true;
-                    if (useNewLines)
+                    char c = srcText[p];
+                    if (c == '\n' || c == '\r')
+                    {
+                        hasEncounteredNewLines = true;
+                        if (useNewLines)
+                        {
+                            destBuffer.Append(c);
+                            p++;
+                        }
+                        else
+                        {
+                            // Add space if the last char copied was not a white-space:
+                            int destBufferLen = destBuffer.Length;
+                            if (destBufferLen > 0 && !Char.IsWhiteSpace(destBuffer[destBufferLen - 1]))
+                            {
+                                destBuffer.Append(' ');
+                            }
+
+                            // Use the replacement and skip current char:
+                            destBuffer.Append(NewLineReplacement);
+                            p++;
+
+                            // Skip all immediately following NL chars:
+                            while (p < srcText.Length)
+                            {
+                                c = srcText[p];
+                                if (c == '\n' || c == '\r')
+                                {
+                                    p++;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+
+                            // Next char is not NL. If it is not a white-space add a space now:
+                            if (p < srcText.Length)
+                            {
+                                c = srcText[p];
+                                if (!Char.IsWhiteSpace(c))
+                                {
+                                    destBuffer.Append(' ');
+                                }
+                            }
+                        }
+                    }
+                    else
                     {
                         destBuffer.Append(c);
                         p++;
                     }
-                    else
+                }
+            }
+        }  // class DefaultFormat.LogSourceInfo
+
+        public static class LogLine
+        {
+            private static readonly string s_procIdInfo = GetProcIdInfoString();
+
+            public static StringBuilder Construct(string logLevelMoniker,
+                                                  string logSourceNamePart1,
+                                                  string logSourceNamePart2,
+                                                  int logSourceCallLineNumber,
+                                                  string logSourceCallMemberName,
+                                                  string logSourceCallFileName,
+                                                  string logSourceAssemblyName,
+                                                  string message,
+                                                  IEnumerable<object> dataNamesAndValues,
+                                                  bool useUtcTimestamp,
+                                                  bool useNewLines)
+            {
+                var logLine = new StringBuilder(capacity: 512);
+                AppendPrefix(logLine, logLevelMoniker, useUtcTimestamp);
+                AppendEventInfo(logLine,
+                                logSourceNamePart1,
+                                logSourceNamePart2,
+                                logSourceCallLineNumber,
+                                logSourceCallMemberName,
+                                logSourceCallFileName,
+                                logSourceAssemblyName,
+                                message,
+                                dataNamesAndValues,
+                                useNewLines);
+
+                AppendDataNamesAndValues(logLine, dataNamesAndValues, useNewLines);
+
+                AppendLogSourceInfo(logLine,
+                                    logSourceCallLineNumber,
+                                    logSourceCallMemberName,
+                                    logSourceCallFileName,
+                                    logSourceAssemblyName,
+                                    useNewLines);
+
+                return logLine;
+            }
+
+            public static void AppendPrefix(StringBuilder targetBuffer, string logLevelMoniker, bool useUtcTimestamp)
+            {
+                if (targetBuffer == null)
+                {
+                    return;
+                }
+
+                targetBuffer.Append("[");
+                AppendPrefixCore(targetBuffer, logLevelMoniker, useUtcTimestamp);
+                targetBuffer.Append("] ");
+            }
+
+            public static void AppendPrefixCore(StringBuilder targetBuffer, string logLevelMoniker, bool useUtcTimestamp)
+            {
+                if (targetBuffer == null)
+                {
+                    return;
+                }
+
+                if (useUtcTimestamp)
+                {
+                    targetBuffer.Append(DateTimeOffset.UtcNow.ToString(TimestampPattern_Utc));
+                    targetBuffer.Append(" UTC");
+                }
+                else
+                {
+                    targetBuffer.Append(DateTimeOffset.Now.ToString(TimestampPattern_Local));
+                }
+
+                if (logLevelMoniker != null)
+                {
+                    targetBuffer.Append(" | ");
+                    targetBuffer.Append(logLevelMoniker);
+                }
+
+                if (s_procIdInfo != null)
+                {
+                    targetBuffer.Append(s_procIdInfo);
+                }
+            }
+
+            public static void AppendEventInfo(StringBuilder targetBuffer,
+                                               string logSourceNamePart1,
+                                               string logSourceNamePart2,
+                                               int logSourceCallLineNumber,
+                                               string logSourceCallMemberName,
+                                               string logSourceCallFileName,
+                                               string logSourceAssemblyName,
+                                               string message,
+                                               IEnumerable<object> dataNamesAndValues,
+                                               bool useNewLines)
+            {
+                bool hasLogSourceNamePart1 = !string.IsNullOrWhiteSpace(logSourceNamePart1);
+                bool hasLogSourceNamePart2 = !string.IsNullOrWhiteSpace(logSourceNamePart2);
+
+                if (hasLogSourceNamePart1)
+                {
+                    targetBuffer.Append(logSourceNamePart1);
+                }
+
+                if (hasLogSourceNamePart1 && hasLogSourceNamePart2)
+                {
+                    targetBuffer.Append(LogSourceNamePartsSeparator);
+                }
+
+                if (hasLogSourceNamePart2)
+                {
+                    targetBuffer.Append(logSourceNamePart2);
+                }
+
+                if (hasLogSourceNamePart1 || hasLogSourceNamePart2)
+                {
+                    targetBuffer.Append(": ");
+                }
+
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    targetBuffer.Append(message);
+
+                    if (message.Length > 0)
                     {
-                        // Add space if the last char copied was not a white-space:
-                        int destBufferLen = destBuffer.Length;
-                        if (destBufferLen > 0 && !Char.IsWhiteSpace(destBuffer[destBufferLen - 1]))
+                        char lastMsgChar = message[message.Length - 1];
+                        if (lastMsgChar == '.' || lastMsgChar == '\r' || lastMsgChar == '\n')
                         {
-                            destBuffer.Append(' ');
+                            // Append space after '.' or New Line, append nothing.
                         }
-
-                        // Use the replacement and skip current char:
-                        destBuffer.Append(NewLineReplacement);
-                        p++;
-
-                        // Skip all immediately following NL chars:
-                        while (p < srcText.Length)
+                        else
                         {
-                            c = srcText[p];
-                            if (c == '\n' || c == '\r')
-                            {
-                                p++;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        // Next char is not NL. If it is not a white-space add a space now:
-                        if (p < srcText.Length )
-                        {
-                            c = srcText[p];
-                            if (!Char.IsWhiteSpace(c))
-                            {
-                                destBuffer.Append(' ');
-                            }
+                            // Append '.' in all other cases:
+                            targetBuffer.Append('.');
                         }
                     }
                 }
-                else
+            }
+
+            public static void AppendDataNamesAndValues(StringBuilder targetBuffer, IEnumerable<object> dataNamesAndValues, bool useNewLines)
+            {
+                if (targetBuffer == null || dataNamesAndValues == null)
                 {
-                    destBuffer.Append(c);
-                    p++;
-                }
-            }
-        }
-
-        public static StringBuilder ConstructLogLine(string logLevelMoniker, string componentName, bool useUtcTimestamp, string message, IEnumerable<object> dataNamesAndValues)
-        {
-            return ConstructLogLine(logLevelMoniker, componentName, null, useUtcTimestamp, message, dataNamesAndValues);
-        }
-
-        public static StringBuilder ConstructLogLine(string logLevelMoniker,
-                                                     string componentNamePart1,
-                                                     string componentNamePart2,
-                                                     bool useUtcTimestamp,
-                                                     string message,
-                                                     IEnumerable<object> dataNamesAndValues)
-        {
-            var logLine = new StringBuilder(capacity: 128);
-            AppendLogLinePrefix(logLine, logLevelMoniker, useUtcTimestamp);
-            AppendEventInfo(logLine, componentNamePart1, componentNamePart2, message, dataNamesAndValues);
-
-            return logLine;
-        }
-
-        public static void AppendLogLinePrefix(StringBuilder targetBuffer, string logLevelMoniker, bool useUtcTimestamp)
-        {
-            targetBuffer.Append("[");
-            AppendLogLinePrefixCore(targetBuffer, logLevelMoniker, useUtcTimestamp);
-            targetBuffer.Append("] ");
-        }
-
-        public static void AppendLogLinePrefixCore(StringBuilder targetBuffer, string logLevelMoniker, bool useUtcTimestamp)
-        {
-            if (targetBuffer == null)
-            {
-                return;
-            }
-
-            if (useUtcTimestamp)
-            {
-                targetBuffer.Append(DateTimeOffset.UtcNow.ToString(TimestampPattern_Utc));
-                targetBuffer.Append(" UTC");
-            }
-            else
-            {
-                targetBuffer.Append(DateTimeOffset.Now.ToString(TimestampPattern_Local));
-            }
-
-            if (logLevelMoniker != null)
-            {
-                targetBuffer.Append(" | ");
-                targetBuffer.Append(logLevelMoniker);
-            }
-
-            if (s_procIdInfo != null)
-            {
-                targetBuffer.Append(s_procIdInfo);
-            }
-        }
-
-        public static void AppendEventInfo(StringBuilder targetBuffer,
-                                           string componentNamePart1,
-                                           string componentNamePart2,
-                                           string message,
-                                           IEnumerable<object> dataNamesAndValues)
-        {
-            bool hasComponentNamePart1 = !string.IsNullOrWhiteSpace(componentNamePart1);
-            bool hasComponentNamePart2 = !string.IsNullOrWhiteSpace(componentNamePart2);
-
-            if (hasComponentNamePart1)
-            {
-                targetBuffer.Append(componentNamePart1);
-            }
-
-            if (hasComponentNamePart1 && hasComponentNamePart2)
-            {
-                targetBuffer.Append(ComponentPartSeparator);
-            }
-
-            if (hasComponentNamePart2)
-            {
-                targetBuffer.Append(componentNamePart2);
-            }
-
-            if (hasComponentNamePart1 || hasComponentNamePart2)
-            {
-                targetBuffer.Append(": ");
-            }
-
-            if (!string.IsNullOrWhiteSpace(message))
-            {
-                targetBuffer.Append(message);
-
-                char lastMsgChar = '\0';
-                if (message.Length > 0)
-                {
-                    lastMsgChar = message[message.Length - 1];
+                    return;
                 }
 
-                if (lastMsgChar == '.')
-                {
-                    // Append space after '.':
-                    targetBuffer.Append(' ');
-                }
-                else if (lastMsgChar == '\r' || lastMsgChar == '\n')
-                {
-                    // Append nothing after New Line:
-                }
-                else
-                {
-                    // Append ". " in all other cases.
-                    targetBuffer.Append(". ");
-                }
-            }
-
-            if (dataNamesAndValues != null)
-            {
                 if (dataNamesAndValues is object[] dataNamesAndValuesArray)
                 {
-                    AppenddataNamesAndValuesArr(targetBuffer, dataNamesAndValuesArray);
+                    AppendDataNamesAndValuesArr(targetBuffer, dataNamesAndValuesArray, useNewLines);
                 }
                 else
                 {
-                    AppenddataNamesAndValuesEnum(targetBuffer, dataNamesAndValues);
-                }
-            }
-        }
-
-        private static void AppenddataNamesAndValuesArr(StringBuilder targetBuffer, object[] dataNamesAndValues)
-        {
-            if (dataNamesAndValues.Length < 1)
-            {
-                return;
-            }
-
-            targetBuffer.Append('{');
-            for (int i = 0; i < dataNamesAndValues.Length; i += 2)
-            {
-                if (i > 0)
-                {
-                    targetBuffer.Append(", ");
-                }
-
-                targetBuffer.Append('[');
-                QuoteIfString(targetBuffer, dataNamesAndValues[i]);
-                targetBuffer.Append(']');
-                targetBuffer.Append('=');
-
-                if (i + 1 < dataNamesAndValues.Length)
-                {
-                    QuoteIfString(targetBuffer, dataNamesAndValues[i + 1]);
-                }
-                else
-                {
-                    targetBuffer.Append(DataValueNotSpecifiedWord);
+                    AppendDataNamesAndValuesEnum(targetBuffer, dataNamesAndValues, useNewLines);
                 }
             }
 
-            targetBuffer.Append('}');
-        }
-
-        private static void AppenddataNamesAndValuesEnum(StringBuilder targetBuffer, IEnumerable<object> dataNamesAndValues)
-        {
-            int enumIndex = 0;
-            using (IEnumerator<object> enumerator = dataNamesAndValues.GetEnumerator())
+            private static void AppendDataNamesAndValuesArr(StringBuilder targetBuffer, object[] dataNamesAndValues, bool useNewLines)
             {
-                while (enumerator.MoveNext())
+                const string BlockMonikerWithOpeningBrace = BlockMoniker_DataNamesAndValues + "{";
+
+                if (dataNamesAndValues.Length < 1)
                 {
-                    if (enumIndex == 0)
+                    return;
+                }
+
+                for (int i = 0; i < dataNamesAndValues.Length; i += 2)
+                {
+                    if (i == 0)
                     {
-                        targetBuffer.Append('{');
+                        AppendSectionWhitespaceSeparator(targetBuffer, useNewLines);
+
+                        if (useNewLines)
+                        {
+                            targetBuffer.AppendLine(BlockMonikerWithOpeningBrace);
+                            targetBuffer.Append(IndentStr);
+                        }
+                        else
+                        {
+                            targetBuffer.Append(BlockMonikerWithOpeningBrace);
+                        }
                     }
                     else
                     {
-                        targetBuffer.Append(", ");
+                        if (useNewLines)
+                        {
+                            targetBuffer.AppendLine(",");
+                            targetBuffer.Append(IndentStr);
+                        }
+                        else
+                        {
+                            targetBuffer.Append(", ");
+                        }
                     }
 
                     targetBuffer.Append('[');
-                    QuoteIfString(targetBuffer, enumerator.Current);
+                    QuoteIfString(targetBuffer, dataNamesAndValues[i]);
                     targetBuffer.Append(']');
-                    enumIndex++;
 
                     targetBuffer.Append('=');
 
-                    if (enumerator.MoveNext())
+                    if (i + 1 < dataNamesAndValues.Length)
                     {
-                        QuoteIfString(targetBuffer, enumerator.Current);
-                        enumIndex++;
+                        QuoteIfString(targetBuffer, dataNamesAndValues[i + 1]);
                     }
                     else
                     {
                         targetBuffer.Append(DataValueNotSpecifiedWord);
                     }
                 }
-            }
 
-            if (enumIndex > 0)
-            {
-                targetBuffer.Append('}');
-            }
-        }
-
-        private static string GetProcIdInfoString()
-        {
-            const int MinPidWidth = 6;
-            const int MaxPidWidth = 10;
-            const string PIdPrefix = " | PId:";
-
-            int maxInfoStringLen = MaxPidWidth + PIdPrefix.Length;
-
-            try
-            {
-                var pidStr = new StringBuilder(capacity: maxInfoStringLen + 1);
-
-                pidStr.Append(Process.GetCurrentProcess().Id);
-                while (pidStr.Length < MinPidWidth)
+                if (useNewLines)
                 {
-                    pidStr.Insert(0, ' ');
+                    targetBuffer.AppendLine();
                 }
 
-                pidStr.Insert(0, PIdPrefix);
+                targetBuffer.Append('}');
+            }
 
-                return pidStr.ToString();
-            }
-            catch
+            private static void AppendDataNamesAndValuesEnum(StringBuilder targetBuffer, IEnumerable<object> dataNamesAndValues, bool useNewLines)
             {
-                return null;
-            }
-        }
+                const string BlockMonikerWithOpeningBrace = BlockMoniker_DataNamesAndValues + "{";
 
-        private static void QuoteIfString<T>(StringBuilder targetBuffer, T val)
-        {
-            if (val == null)
-            {
-                targetBuffer.Append(NullWord);
-            }
-            else
-            {
-                if (val is string strValue)
+                int enumIndex = 0;
+                using (IEnumerator<object> enumerator = dataNamesAndValues.GetEnumerator())
                 {
-                    targetBuffer.Append('"');
-                    targetBuffer.Append(strValue);
-                    targetBuffer.Append('"');
+                    while (enumerator.MoveNext())
+                    {
+                        if (enumIndex == 0)
+                        {
+                            AppendSectionWhitespaceSeparator(targetBuffer, useNewLines);
+
+                            if (useNewLines)
+                            {
+                                targetBuffer.AppendLine(BlockMonikerWithOpeningBrace);
+                                targetBuffer.Append(IndentStr);
+                            }
+                            else
+                            {
+                                targetBuffer.Append(BlockMonikerWithOpeningBrace);
+                            }
+                        }
+                        else
+                        {
+                            if (useNewLines)
+                            {
+                                targetBuffer.AppendLine(",");
+                                targetBuffer.Append(IndentStr);
+                            }
+                            else
+                            {
+                                targetBuffer.Append(", ");
+                            }
+                        }
+
+                        targetBuffer.Append('[');
+                        QuoteIfString(targetBuffer, enumerator.Current);
+                        targetBuffer.Append(']');
+                        enumIndex++;
+
+                        targetBuffer.Append('=');
+
+                        if (enumerator.MoveNext())
+                        {
+                            QuoteIfString(targetBuffer, enumerator.Current);
+                            enumIndex++;
+                        }
+                        else
+                        {
+                            targetBuffer.Append(DataValueNotSpecifiedWord);
+                        }
+                    }
+                }
+
+                if (enumIndex > 0)
+                {
+                    if (useNewLines)
+                    {
+                        targetBuffer.AppendLine();
+                    }
+
+                    targetBuffer.Append('}');
+                }
+            }
+
+            public static void AppendLogSourceInfo(StringBuilder targetBuffer,
+                                                   int logSourceCallLineNumber,
+                                                   string logSourceCallMemberName,
+                                                   string logSourceCallFileName,
+                                                   string logSourceAssemblyName,
+                                                   bool useNewLines)
+            {
+                if ((targetBuffer == null)
+                        || (logSourceCallLineNumber == 0
+                            && logSourceCallMemberName == null
+                            && logSourceCallFileName == null
+                            && logSourceAssemblyName == null))
+                {
+                    return;
+                }
+
+                AppendSectionWhitespaceSeparator(targetBuffer, useNewLines);
+
+                bool isFirstElement = true;
+
+                if (logSourceCallMemberName != null)
+                {
+                    AppendLogSourceInfoElement(targetBuffer, "CallMemberName", logSourceCallMemberName, isFirstElement, useNewLines);
+                    isFirstElement = false;
+                }
+
+                if (logSourceCallLineNumber != 0 || logSourceCallMemberName != null)
+                {
+                    AppendLogSourceInfoElement(targetBuffer, "CallLineNumber", logSourceCallLineNumber, isFirstElement, useNewLines);
+                    isFirstElement = false;
+                }
+
+                if (logSourceCallFileName != null)
+                {
+                    AppendLogSourceInfoElement(targetBuffer, "CallFileName", logSourceCallFileName, isFirstElement, useNewLines);
+                    isFirstElement = false;
+                }
+
+                if (logSourceAssemblyName != null)
+                {
+                    AppendLogSourceInfoElement(targetBuffer, "AssemblyName", logSourceAssemblyName, isFirstElement, useNewLines);
+                }
+
+                if (useNewLines)
+                {
+                    targetBuffer.AppendLine();
+                }
+
+                targetBuffer.Append('}');
+            }
+
+            private static void AppendSectionWhitespaceSeparator(StringBuilder targetBuffer, bool useNewLines)
+            {
+                if (targetBuffer.Length > 0)
+                {
+                    char lastBufferChar = targetBuffer[targetBuffer.Length - 1];
+                    if (useNewLines)
+                    {
+                        if (lastBufferChar != '\r' && lastBufferChar != '\n')
+                        {
+                            targetBuffer.AppendLine();
+                        }
+                    }
+                    else
+                    {
+                        if (!Char.IsWhiteSpace(lastBufferChar))
+                        {
+                            targetBuffer.Append(' ');
+                        }
+                    }
+                }
+            }
+
+            private static void AppendLogSourceInfoElement<T>(StringBuilder targetBuffer,
+                                                              string logSourceInfoElementName,
+                                                              T logSourceInfoElementValue,
+                                                              bool isFirstElement,
+                                                              bool useNewLines)
+            {
+                const string BlockMonikerWithOpeningBrace = BlockMoniker_LogSourceInfo + "{";
+
+                if (useNewLines)
+                {
+                    targetBuffer.AppendLine(isFirstElement ? BlockMonikerWithOpeningBrace : ",");
+                    targetBuffer.Append(IndentStr);
                 }
                 else
                 {
-                    targetBuffer.Append(val.ToString());
+                    targetBuffer.Append(isFirstElement ? BlockMonikerWithOpeningBrace : ", ");
+                }
+
+                targetBuffer.Append('[');
+                targetBuffer.Append(logSourceInfoElementName);
+                targetBuffer.Append("]=");
+                QuoteIfString<T>(targetBuffer, logSourceInfoElementValue);
+            }
+
+            private static void QuoteIfString<T>(StringBuilder targetBuffer, T val)
+            {
+                if (val == null)
+                {
+                    targetBuffer.Append(NullWord);
+                }
+                else
+                {
+                    if (val is string strValue)
+                    {
+                        targetBuffer.Append('"');
+                        targetBuffer.Append(strValue);
+                        targetBuffer.Append('"');
+                    }
+                    else
+                    {
+                        targetBuffer.Append(val.ToString());
+                    }
                 }
             }
-        }
+
+            private static string GetProcIdInfoString()
+            {
+                const int MinPidWidth = 6;
+                const int MaxPidWidth = 10;
+                const string PIdPrefix = " | PId:";
+
+                int maxInfoStringLen = MaxPidWidth + PIdPrefix.Length;
+
+                try
+                {
+                    var pidStr = new StringBuilder(capacity: maxInfoStringLen + 1);
+
+                    pidStr.Append(Process.GetCurrentProcess().Id);
+                    while (pidStr.Length < MinPidWidth)
+                    {
+                        pidStr.Insert(0, ' ');
+                    }
+
+                    pidStr.Insert(0, PIdPrefix);
+
+                    return pidStr.ToString();
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+        }  // class DefaultFormat.LogLine
     }
 }
