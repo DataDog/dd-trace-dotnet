@@ -11,14 +11,14 @@
   </PropertyGroup>
 	
   <PropertyGroup>
-    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\Shared-Src</SharedSrcBaseDir>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..</SharedSrcBaseDir>
   </PropertyGroup>
 
   <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
-  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+  <Import Project="$(SharedSrcBaseDir)\Shared-Src\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
 
   <!-- Datadog.Logging.Composition.props is required for composing logs and chosing a log sink: -->
-  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
+  <Import Project="$(SharedSrcBaseDir)\Shared-Src\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
 
 
   <ItemGroup>

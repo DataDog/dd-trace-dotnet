@@ -10,4 +10,4 @@
             Tuple.Create("Datadog.AutoInstrumentation.ManagedLoader", "ManagedLoader")
         };
 #>
-<#@ include file="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\LogComposer.tt.cs" #>
+<#@ include file="$(SharedSrcBaseDir)\Shared-Src\Datadog.Logging.Composition\internal\LogComposer.tt.cs" #>

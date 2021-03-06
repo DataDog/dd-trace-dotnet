@@ -49,9 +49,9 @@ namespace Datadog.Logging.Composition
             IsDebugLoggingEnabled = envSetting;
         }
 
-        public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, ComponentGroupCompositionLogSink> redirectionLogSinks)
+        public static void RedirectLogs(ILogSink logSink, out IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> redirectionLogSinks)
         {
-            var redirectionSinks = new Dictionary<Type, ComponentGroupCompositionLogSink>(capacity: 2);
+            var redirectionSinks = new Dictionary<Type, LogSourceNameCompositionLogSink>(capacity: 2);
 
             {
                 Type loggerType = typeof(global::Datadog.AutoInstrumentation.ManagedLoader.Log);
@@ -60,17 +60,18 @@ namespace Datadog.Logging.Composition
                 if (logSink == null)
                 {
                     redirectionSinks[loggerType] = null;
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Error(null);
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Info(null);
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Debug(null);
+                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.EventHandlers.Error(null);
+                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.EventHandlers.Info(null);
+                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.EventHandlers.Debug(null);
                 }
                 else
                 {
-                    var redirectionLogSink = new ComponentGroupCompositionLogSink(logComponentGroupMoniker, logSink);
+                    var redirectionLogSink = new LogSourceNameCompositionLogSink(logComponentGroupMoniker, logSink);
+                    var logToSinkAdapter = new LogEventHandlersToLogSinkAdapter(redirectionLogSink);
                     redirectionSinks[loggerType] = redirectionLogSink;
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Error(redirectionLogSink.OnErrorLogEvent);
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Info(redirectionLogSink.OnInfoLogEvent);
-                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.Debug(redirectionLogSink.OnDebugLogEvent);
+                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.EventHandlers.Error(logToSinkAdapter.Error);
+                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.EventHandlers.Info(logToSinkAdapter.Info);
+                    global::Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.EventHandlers.Debug(logToSinkAdapter.Debug);
                 }
 
                 Datadog.AutoInstrumentation.ManagedLoader.Log.Configure.DebugLoggingEnabled(IsDebugLoggingEnabled);
