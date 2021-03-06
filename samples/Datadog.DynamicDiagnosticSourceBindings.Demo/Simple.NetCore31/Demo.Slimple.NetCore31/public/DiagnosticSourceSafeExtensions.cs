@@ -41,6 +41,7 @@ namespace Demo.Slimple.NetCore31
                 error = ex;
                 if (s_isLogExceptionsEnabled)
                 {
+
                     Log.Error(s_logComponentMoniker, ex);
                 }
 

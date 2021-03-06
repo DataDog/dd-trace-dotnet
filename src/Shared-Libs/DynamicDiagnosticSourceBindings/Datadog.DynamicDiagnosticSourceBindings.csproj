@@ -18,21 +18,21 @@
   </PropertyGroup>
 	
   <PropertyGroup>
-    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\Shared-Src</SharedSrcBaseDir>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..</SharedSrcBaseDir>
   </PropertyGroup>
 	
   <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
-  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+  <Import Project="$(SharedSrcBaseDir)\Shared-Src\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
 
   <ItemGroup>
     <!-- Play a trick with the VS Solution Explorer:                                                               -->
     <!-- We want all these files to be grouped under a key that is:                                                -->
     <!-- the name of the immediate subfolder within the "Shared-Src" sources folder.                               -->
     <!-- For that, we need to create an item group rooted in "Shared-Src" and then exclude all except these files. -->
-    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\ArrayExtensions.cs" />
-    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Concurrent.cs" />
-    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Format.cs" />
-    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\ArrayExtensions.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\Concurrent.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\Format.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\Validate.cs" />
 
     <ExcludedSharedCompileItems Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
     <Compile Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
