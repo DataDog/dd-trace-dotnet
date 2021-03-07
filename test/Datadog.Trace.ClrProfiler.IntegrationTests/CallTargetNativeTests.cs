@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using Datadog.Core.Tools;
@@ -15,22 +16,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [InlineData(0, true)]
-        [InlineData(1, true)]
-        [InlineData(2, true)]
-        [InlineData(3, true)]
-        [InlineData(4, true)]
-        [InlineData(5, true)]
-        [InlineData(6, true)]
-        [InlineData(7, true)]
-        [InlineData(8, true)]
-        [InlineData(9, false)]
-        public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
+        public static IEnumerable<object[]> MethodArgumentsData()
         {
-            SetEnvironmentVariable("DD_CTARGET_TESTMODE", "True");
-            SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", "1");
-            SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "1");
+            for (int i = 0; i < 10; i++)
+            {
+                bool fastPath = i < 9;
+                yield return new object[] { i, fastPath, false };
+                yield return new object[] { i, fastPath, true };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(MethodArgumentsData))]
+        public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath, bool inlining)
+        {
+            SetCallTargetSettings(true, inlining);
             SetEnvironmentVariable("DD_INTEGRATIONS", Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), "integrations.json"));
             int agentPort = TcpPortProvider.GetOpenPort();
 
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, beginMethodString).Count;
-                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
 
                 string[] typeNames = new string[]
                 {
