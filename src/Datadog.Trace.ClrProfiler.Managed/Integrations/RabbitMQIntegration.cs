@@ -655,7 +655,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = CreateScope(Tracer.Instance, out _, command, exchange: exchange))
+            using (var scope = CreateScope(Tracer.Instance, out _, command, SpanKinds.Client, exchange: exchange))
             {
                 try
                 {
@@ -729,7 +729,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = CreateScope(Tracer.Instance, out _, command, queue: queue, exchange: exchange, routingKey: routingKey))
+            using (var scope = CreateScope(Tracer.Instance, out _, command, SpanKinds.Client, queue: queue, exchange: exchange, routingKey: routingKey))
             {
                 try
                 {
@@ -807,7 +807,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = CreateScope(Tracer.Instance, out _, command, queue: queue))
+            using (var scope = CreateScope(Tracer.Instance, out _, command, SpanKinds.Client, queue: queue))
             {
                 try
                 {
@@ -821,7 +821,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        internal static Scope CreateScope(Tracer tracer, out RabbitMQTags tags, string command, ISpanContext parentContext = null, string spanKind = SpanKinds.Client, DateTimeOffset? startTime = null, string queue = null, string exchange = null, string routingKey = null)
+        internal static Scope CreateScope(Tracer tracer, out RabbitMQTags tags, string command, string spanKind, ISpanContext parentContext = null, DateTimeOffset? startTime = null, string queue = null, string exchange = null, string routingKey = null)
         {
             tags = null;
 

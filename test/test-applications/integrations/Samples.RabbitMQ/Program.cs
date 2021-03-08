@@ -23,6 +23,17 @@ namespace Samples.RabbitMQ
 
         public static void Main(string[] args)
         {
+            string prefix = "";
+            if (args.Length > 0)
+            {
+                prefix = args[0];
+            }
+
+            RunRabbitMQ(prefix);
+        }
+
+        private static void RunRabbitMQ(string prefix)
+        {
             PublishAndGet();
             PublishAndGetDefault();
 

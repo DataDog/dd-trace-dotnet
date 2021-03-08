@@ -2080,6 +2080,176 @@
     ]
   },
   {
+    "name": "RabbitMQ",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "RabbitMQ.Client",
+          "type": "RabbitMQ.Client.Events.EventingBasicConsumer",
+          "method": "HandleBasicDeliver",
+          "signature_types": [
+            "System.Void",
+            "System.String",
+            "System.UInt64",
+            "System.Boolean",
+            "System.String",
+            "System.String",
+            "RabbitMQ.Client.IBasicProperties",
+            "_"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 9,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "RabbitMQ.Client",
+          "type": "RabbitMQ.Client.Impl.ModelBase",
+          "method": "BasicGet",
+          "signature_types": [
+            "RabbitMQ.Client.BasicGetResult",
+            "System.String",
+            "System.Boolean"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 9,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicGetIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "RabbitMQ.Client",
+          "type": "RabbitMQ.Client.Framing.Impl.Model",
+          "method": "_Private_BasicPublish",
+          "signature_types": [
+            "System.Void",
+            "System.String",
+            "System.String",
+            "System.Boolean",
+            "RabbitMQ.Client.IBasicProperties",
+            "_"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 9,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "RabbitMQ.Client",
+          "type": "RabbitMQ.Client.Framing.Impl.Model",
+          "method": "_Private_ExchangeDeclare",
+          "signature_types": [
+            "System.Void",
+            "System.String",
+            "System.String",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 9,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.ExchangeDeclareIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "RabbitMQ.Client",
+          "type": "RabbitMQ.Client.Impl.ModelBase",
+          "method": "QueueBind",
+          "signature_types": [
+            "System.Void",
+            "System.String",
+            "System.String",
+            "System.String",
+            "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 9,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueBindIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "RabbitMQ.Client",
+          "type": "RabbitMQ.Client.Framing.Impl.Model",
+          "method": "_Private_QueueDeclare",
+          "signature_types": [
+            "System.Void",
+            "System.String",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 9,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueDeclareIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "ServiceStackRedis",
     "method_replacements": [
       {
