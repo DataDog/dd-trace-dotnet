@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScope(object requestContext)
+        internal static Scope CreateScope(object requestContext)
         {
             var requestMessage = requestContext.GetProperty<object>("RequestMessage").GetValueOrDefault();
 

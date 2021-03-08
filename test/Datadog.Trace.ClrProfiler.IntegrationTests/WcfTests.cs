@@ -19,11 +19,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(ServiceVersion);
         }
 
-        [Fact]
+        [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces()
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void SubmitsTraces(bool enableCallTarget, bool enableInlining)
         {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
             var expectedSpanCount = 4;
