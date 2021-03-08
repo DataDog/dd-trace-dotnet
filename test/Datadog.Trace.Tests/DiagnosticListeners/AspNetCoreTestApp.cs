@@ -35,6 +35,16 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             builder.UseMultipleErrorHandlerPipelines(app =>
             {
+                app.Map(
+                    "/throws",
+                    inner =>
+                        inner.Run(
+                            async ctx =>
+                            {
+                                await Task.Yield();
+                                throw new Exception("Map exception");
+                            }));
+
                 app.UseMvc(
                     routes =>
                     {
@@ -79,6 +89,13 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                             {
                                 var value = context.GetRouteValue("value")?.ToString();
                                 return context.Response.WriteAsync(value ?? "No value");
+                            });
+                        endpoints.MapGet(
+                            "/throws",
+                            async ctx =>
+                            {
+                                await Task.Yield();
+                                throw new Exception("Endpoint exception");
                             });
                     });
             });
