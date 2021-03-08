@@ -29,6 +29,7 @@ class Stats : public Singleton<Stats> {
   std::chrono::nanoseconds moduleUnloadStarted;
   std::chrono::nanoseconds moduleLoadFinished;
   std::chrono::nanoseconds assemblyLoadFinished;
+  std::chrono::nanoseconds initialize;
   //
   unsigned int jitInliningCount;
   unsigned int jitCompilationStartedCount;
@@ -43,6 +44,7 @@ class Stats : public Singleton<Stats> {
     moduleUnloadStarted = std::chrono::nanoseconds(0);
     moduleLoadFinished = std::chrono::nanoseconds(0);
     assemblyLoadFinished = std::chrono::nanoseconds(0);
+    initialize = std::chrono::nanoseconds(0);
 
     jitInliningCount = 0;
     jitCompilationStartedCount = 0;
@@ -70,9 +72,14 @@ class Stats : public Singleton<Stats> {
     assemblyLoadFinishedCount++;
     return SWStat(&assemblyLoadFinished);
   }
+  SWStat InitializeMeasure() {
+    return SWStat(&initialize);
+  }
   std::string ToString() {
     std::stringstream ss;
-    ss << "[ModuleLoadFinished=";
+    ss << "[Initialize=";
+    ss << initialize.count() / 1000000 << "ms";
+    ss << ", ModuleLoadFinished=";
     ss << moduleLoadFinished.count() / 1000000 << "ms" << "/" << moduleLoadFinishedCount;
     ss << ", AssemblyLoadFinished=";
     ss << assemblyLoadFinished.count() / 1000000 << "ms" << "/" << assemblyLoadFinishedCount;
