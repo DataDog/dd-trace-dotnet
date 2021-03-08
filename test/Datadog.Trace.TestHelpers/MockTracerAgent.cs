@@ -21,6 +21,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public class MockTracerAgent : IDisposable
     {
+        private readonly ITestOutputHelper _output;
+
         private readonly HttpListener _listener;
         private readonly Thread _httpListenerThread;
 
@@ -32,10 +34,16 @@ namespace Datadog.Trace.TestHelpers
 
         private readonly CancellationTokenSource _cancellationTokenSource;
 
-        public MockTracerAgent(int port = 8126, int retries = 5, bool useStatsd = false, string tracePipeName = null)
+        public MockTracerAgent(
+            int port = 8126,
+            int retries = 5,
+            bool useStatsd = false,
+            string tracePipeName = null,
+            ITestOutputHelper output = null)
         {
             _tracesPipeName = tracePipeName;
             _cancellationTokenSource = new CancellationTokenSource();
+            _output = output;
 
             if (useStatsd)
             {
@@ -332,54 +340,61 @@ namespace Datadog.Trace.TestHelpers
 
         private void NamedPipeServerThread()
         {
-            using (var aggregatePipeServer = new AggregatePipeServer(_tracesPipeName))
+            void ReceivedHandler(object sender, MessageReceivedEventArgs args)
             {
-                void ReceivedHandler(object sender, MessageReceivedEventArgs args)
+                try
                 {
-                    try
+                    if (ShouldDeserializeTraces)
                     {
-                        if (ShouldDeserializeTraces)
+                        if (args.Message.BodyBytes.Length < 2)
                         {
-                            if (args.Message.BodyBytes.Length < 2)
-                            {
-                                // Skip! Empty payload.
-                                return;
-                            }
+                            // Skip! Empty payload.
+                            return;
+                        }
 
-                            var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(args.Message.BodyBytes);
-                            OnRequestDeserialized(spans);
+                        var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(args.Message.BodyBytes);
+                        OnRequestDeserialized(spans);
 
-                            Console.WriteLine($"Timeline entries: {AggregatePipeServer.Timeline.Count}");
+                        Console.WriteLine($"Timeline entries: {AggregatePipeServer.Timeline.Count}");
 
-                            lock (this)
-                            {
-                                // De-duplication in case of retry
-                                var tracesToAdd = spans.Where(s => Spans.All(e => e.TraceId != s.First().TraceId));
+                        lock (this)
+                        {
+                            // De-duplication in case of retry
+                            var tracesToAdd = spans.Where(s => Spans.All(e => e.TraceId != s.First().TraceId)).ToList();
 
-                                // we only need to lock when replacing the span collection,
-                                // not when reading it because it is immutable
-                                Spans = Spans.AddRange(tracesToAdd.SelectMany(trace => trace));
-                                RequestHeaders = RequestHeaders.Add(new NameValueCollection(args.Message.Headers));
-                            }
+                            // we only need to lock when replacing the span collection,
+                            // not when reading it because it is immutable
+                            Spans = Spans.AddRange(tracesToAdd.SelectMany(trace => trace));
+                            RequestHeaders = RequestHeaders.Add(new NameValueCollection(args.Message.Headers));
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        // Can't deserialize!
-                        Console.WriteLine(ex);
-                    }
                 }
-
-                aggregatePipeServer.MessageReceivedEvent += ReceivedHandler;
-
-                aggregatePipeServer.Start();
-
-                while (_cancellationTokenSource.IsCancellationRequested == false)
+                catch (Exception ex)
                 {
-                    Thread.Sleep(10);
+                    // Can't deserialize!
+                    Console.WriteLine(ex);
                 }
+            }
 
-                aggregatePipeServer.MessageReceivedEvent -= ReceivedHandler;
+            // using (var aggregatePipeServer = new AggregatePipeServer(_tracesPipeName))
+            // {
+            //     aggregatePipeServer.MessageReceivedEvent += ReceivedHandler;
+            //     aggregatePipeServer.Listen();
+            //     while (_cancellationTokenSource.IsCancellationRequested == false)
+            //     {
+            //         Thread.Sleep(10);
+            //     }
+            //     aggregatePipeServer.MessageReceivedEvent -= ReceivedHandler;
+            // }
+
+            using (var httpPipeServer = new DatadogHttpPipeServer(_tracesPipeName, 10, _output))
+            {
+                httpPipeServer.MessageReceivedEvent += ReceivedHandler;
+
+                // Blocking
+                httpPipeServer.Run(_cancellationTokenSource.Token);
+
+                httpPipeServer.MessageReceivedEvent -= ReceivedHandler;
             }
         }
 

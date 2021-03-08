@@ -1,71 +1,116 @@
 using System;
-using System.IO;
+using System.Collections.Concurrent;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Datadog.Trace.TestHelpers.NamedPipes.Interfaces;
-using Datadog.Trace.TestHelpers.NamedPipes.Utilities;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers.NamedPipes.Server
 {
-    internal class DatadogHttpPipeServer
+    internal class DatadogHttpPipeServer : IDisposable
     {
-        private const int BufferBatchSize = 0x150;
+        private const int BufferBatchSize = 1;
+        private readonly ConcurrentDictionary<int, ListenerState> _activeListeners = new ConcurrentDictionary<int, ListenerState>();
+        private readonly string _pipeName;
+        private readonly int _maxNumberOfServerInstances;
+        private readonly ITestOutputHelper _output;
+        private int _requestId = 0;
 
-        private readonly NamedPipeServerStream _pipeServer;
-
-        public DatadogHttpPipeServer(string pipeName, int maxNumberOfServerInstances)
+        public DatadogHttpPipeServer(
+            string pipeName,
+            int maxNumberOfServerInstances,
+            ITestOutputHelper output)
         {
-#pragma warning disable CA1416
-            _pipeServer = new NamedPipeServerStream(
-                pipeName,
-                PipeDirection.InOut,
-                maxNumberOfServerInstances,
-                PipeTransmissionMode.Message,
-                PipeOptions.Asynchronous);
-#pragma warning restore CA1416
+            _pipeName = pipeName;
+            _maxNumberOfServerInstances = maxNumberOfServerInstances;
+            _output = output;
         }
 
         public event EventHandler<MessageReceivedEventArgs> MessageReceivedEvent;
 
-        /// <summary>
-        /// This method begins an asynchronous operation to wait for a client to connect.
-        /// </summary>
-        public void Run()
+        public void Run(CancellationToken cancellationToken)
+        {
+            // Several listeners for concurrency... I guess
+            StartListener();
+            StartListener();
+            StartListener();
+
+            while (true)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                Thread.Sleep(50);
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var activeListener in _activeListeners)
+            {
+                var server = activeListener.Value.PipeServer;
+
+                try
+                {
+                    if (server.IsConnected)
+                    {
+                        server.Disconnect();
+                    }
+
+                    server.Close();
+                }
+                catch (Exception ex)
+                {
+                    _output?.WriteLine("Dispose error: {0}", ex);
+                }
+            }
+        }
+
+        public void StopListener(int requestId)
         {
             try
             {
-                while (true)
+                if (_activeListeners.TryRemove(requestId, out var listener))
                 {
                     try
                     {
-                        _pipeServer.WaitForConnection();
-                        HandleRequest();
-                    }
-                    catch (IOException ex)
-                    {
-                        Logger.Error(ex);
-                        continue;
+                        listener.PipeServer.Disconnect();
+                        // listener.PipeServer.Close();
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(ex);
-                        throw;
-                    }
-                    finally
-                    {
-                        if (_pipeServer.IsConnected)
-                        {
-                            _pipeServer.Disconnect();
-                        }
+                        _output?.WriteLine("PipeServer.Disconnect error: {0}", ex);
                     }
                 }
             }
-            finally
+            catch (Exception ex)
             {
-                _pipeServer.Close();
-                _pipeServer.Dispose();
+                _output?.WriteLine("StopListener error: {0}", ex);
             }
+        }
+
+        private void StartListener()
+        {
+            var requestId = Interlocked.Increment(ref _requestId);
+
+#pragma warning disable CA1416
+            var pipeServer = new NamedPipeServerStream(
+                _pipeName,
+                PipeDirection.InOut,
+                _maxNumberOfServerInstances,
+                PipeTransmissionMode.Message,
+                PipeOptions.Asynchronous);
+#pragma warning restore CA1416
+
+            var listener = new ListenerState() { PipeServer = pipeServer, RequestId = requestId };
+
+            _activeListeners.TryAdd(requestId, listener);
+
+            pipeServer.BeginWaitForConnection(WaitForConnectionCallBack, listener);
         }
 
         private void OnMessageReceived(MockHttpMessage message)
@@ -75,8 +120,35 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
                 new MessageReceivedEventArgs { Message = message });
         }
 
-        private void HandleRequest()
+        private void WaitForConnectionCallBack(IAsyncResult result)
         {
+            ListenerState listener = null;
+
+            try
+            {
+                listener = (ListenerState)result.AsyncState;
+                listener.PipeServer.EndWaitForConnection(result);
+                HandleRequest(listener);
+            }
+            catch (Exception ex)
+            {
+                _output?.WriteLine("WaitForConnectionCallBack error: {0}", ex);
+            }
+            finally
+            {
+                if (listener != null)
+                {
+                    StopListener(listener.RequestId);
+                }
+
+                StartListener();
+            }
+        }
+
+        private void HandleRequest(ListenerState listener)
+        {
+            var pipeServer = listener.PipeServer;
+
             var batchRead = new byte[BufferBatchSize];
             var headerIndex = 0;
             var headerBuffer = new byte[0x1000];
@@ -105,7 +177,7 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
             var endOfHeaders = false;
             do
             {
-                _pipeServer.Read(batchRead, 0, batchRead.Length);
+                pipeServer.Read(batchRead, 0, batchRead.Length);
 
                 foreach (var t in batchRead)
                 {
@@ -182,24 +254,22 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
                 {
                     var bodyRemainder = contentLength - leftoverIndex;
                     Array.Copy(leftoverBytes, bodyBytes, leftoverIndex);
-                    _pipeServer.Read(bodyBytes, leftoverIndex, bodyRemainder);
+                    pipeServer.Read(bodyBytes, leftoverIndex, bodyRemainder);
                 }
             }
 
             mockMessage.BodyBytes = bodyBytes;
 
-            WriteResponse(_pipeServer);
+            OnMessageReceived(mockMessage);
+
+            WriteResponse(pipeServer);
 
             // Clear the rest if any remains, it's invalid anyways
-            var waste = new byte[0x500];
-            while (!_pipeServer.IsMessageComplete)
-            {
-                _pipeServer.Read(waste, 0, waste.Length);
-                var examineWaste = Encoding.UTF8.GetString(waste);
-                Logger.Info(examineWaste);
-            }
-
-            OnMessageReceived(mockMessage);
+            // var waste = new byte[1];
+            // while (!pipeServer.IsMessageComplete)
+            // {
+            //     pipeServer.Read(waste, 0, waste.Length);
+            // }
         }
 
         private void WriteResponse(NamedPipeServerStream pipeServer)
@@ -231,8 +301,15 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
             }
             catch (Exception ex)
             {
-                Logger.Error(ex);
+                _output?.WriteLine("WriteResponse error: {0}", ex);
             }
+        }
+
+        private class ListenerState
+        {
+            public int RequestId { get; set; }
+
+            public NamedPipeServerStream PipeServer { get; set; }
         }
     }
 }

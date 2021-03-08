@@ -11,7 +11,7 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
     /// <summary>
     /// Aggregate pipe server for serving multiple requests in the test framework.
     /// </summary>
-    public class AggregatePipeServer : ICommunicationServer, IDisposable
+    public class AggregatePipeServer : IDisposable
     {
         private const int MaxNumberOfServerInstances = 10;
 
@@ -40,7 +40,7 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
             get { return _pipeName; }
         }
 
-        public void Start()
+        public void Listen()
         {
             StartNamedPipeServer();
         }
@@ -91,7 +91,7 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
             internalServer.ClientDisconnectedEvent += ClientDisconnectedHandler;
             internalServer.MessageReceivedEvent += MessageReceivedHandler;
 
-            internalServer.Start();
+            internalServer.Listen();
 
             // _availableServers.Enqueue(internalServer);
         }
@@ -104,7 +104,7 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
             _servers.Remove(id);
         }
 
-        private void UnregisterFromServerEvents(ICommunicationServer server)
+        private void UnregisterFromServerEvents(InternalPipeServer server)
         {
             server.ClientConnectedEvent -= ClientConnectedHandler;
             server.ClientDisconnectedEvent -= ClientDisconnectedHandler;

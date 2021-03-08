@@ -23,8 +23,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [InlineData(false, false)]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
+        // [InlineData(true, false)]
+        // [InlineData(true, true)]
         public void SubmitsTraces(bool enableCallTarget, bool enableInlining)
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);

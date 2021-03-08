@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -10,9 +9,9 @@ using Datadog.Trace.TestHelpers.NamedPipes.Utilities;
 
 namespace Datadog.Trace.TestHelpers.NamedPipes.Server
 {
-    internal class InternalPipeServer : ICommunicationServer
+    internal class InternalPipeServer
     {
-        private const int BufferBatchSize = 0x150;
+        private const int BufferBatchSize = 0x2;
         private static int _seed = 0;
 
         private readonly NamedPipeServerStream _pipeServer;
@@ -23,6 +22,7 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
 
         public InternalPipeServer(string pipeName, int maxNumberOfServerInstances)
         {
+            // https://github.com/DataDog/datadog-agent/blob/e081bed84866686eeab56a98da5ff9b4b9f03ded/pkg/util/pipe_windows.go#L27
 #pragma warning disable CA1416
             _pipeServer = new NamedPipeServerStream(
                 pipeName,
@@ -51,10 +51,11 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
         /// <summary>
         /// This method begins an asynchronous operation to wait for a client to connect.
         /// </summary>
-        public void Start()
+        public void Listen()
         {
             try
             {
+                AggregatePipeServer.Timeline.Push($"BeginWaitForConnection: {Id}");
                 _pipeServer.BeginWaitForConnection(WaitForConnectionCallBack, null);
             }
             catch (Exception ex)
@@ -95,8 +96,7 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
         {
             try
             {
-                ReadRequest(_pipeServer);
-                WriteResponse(_pipeServer);
+                HandleRequest(_pipeServer);
             }
             catch (IOException ex)
             {
@@ -110,13 +110,21 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
             finally
             {
                 OnDisconnected();
-                Stop();
+
+                if (_pipeServer.IsConnected)
+                {
+                    _pipeServer.Disconnect();
+                }
             }
+
+            // Start listening again
+            Listen();
         }
 
         private void WaitForConnectionCallBack(IAsyncResult result)
         {
-            AggregatePipeServer.Timeline.Push($"Internal Client connection callback: {Id}");
+            AggregatePipeServer.Timeline.Push($"EndWaitForConnection: {Id}");
+            _pipeServer.EndWaitForConnection(result);
 
             if (Interlocked.CompareExchange(ref _lockFlag, 1, 0) == 0)
             {
@@ -125,17 +133,17 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
                 {
                     if (!_isStopping)
                     {
-                        // Call EndWaitForConnection to complete the connection operation
-                        _pipeServer.EndWaitForConnection(result);
-
                         OnConnected();
-
-                        AggregatePipeServer.Timeline.Push($"Internal Client begin read: {Id}");
+                        AggregatePipeServer.Timeline.Push($"BeginRead: {Id}");
                         BeginRead();
                     }
 
                     Interlocked.Decrement(ref _lockFlag);
                 }
+            }
+            else
+            {
+                AggregatePipeServer.Timeline.Push($"Skipping read: {Id}");
             }
         }
 
@@ -149,16 +157,16 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
         private void OnConnected()
         {
             ClientConnectedEvent?.Invoke(this, new ClientConnectedEventArgs { ClientId = Id });
-            AggregatePipeServer.Timeline.Push($"Internal Client connected: {Id}");
+            AggregatePipeServer.Timeline.Push($"ClientConnectedEvent: {Id}");
         }
 
         private void OnDisconnected()
         {
             ClientDisconnectedEvent?.Invoke(this, new ClientDisconnectedEventArgs { ClientId = Id });
-            AggregatePipeServer.Timeline.Push($"Internal Client disconnected: {Id}");
+            AggregatePipeServer.Timeline.Push($"ClientDisconnectedEvent: {Id}");
         }
 
-        private void ReadRequest(NamedPipeServerStream pipeServer)
+        private void HandleRequest(NamedPipeServerStream pipeServer)
         {
             var batchRead = new byte[BufferBatchSize];
             var headerIndex = 0;
@@ -247,6 +255,8 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
                 }
             }
 
+            WriteResponse(_pipeServer);
+
             var bodyBytes = new byte[contentLength];
 
             if (contentLength > 1)
@@ -271,14 +281,14 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
 
             mockMessage.BodyBytes = bodyBytes;
 
-            // Clear the rest if any remains, it's invalid anyways
-            var waste = new byte[0x500];
-            while (!pipeServer.IsMessageComplete)
-            {
-                pipeServer.Read(waste, 0, waste.Length);
-                var examineWaste = Encoding.UTF8.GetString(waste);
-                Logger.Info(examineWaste);
-            }
+            // // Clear the rest if any remains, it's invalid anyways
+            // var waste = new byte[0x500];
+            // while (!pipeServer.IsMessageComplete)
+            // {
+            //     pipeServer.Read(waste, 0, waste.Length);
+            //     var examineWaste = Encoding.UTF8.GetString(waste);
+            //     Logger.Info(examineWaste);
+            // }
 
             OnMessageReceived(mockMessage);
         }

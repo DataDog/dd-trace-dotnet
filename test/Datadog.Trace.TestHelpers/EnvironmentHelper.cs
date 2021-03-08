@@ -454,10 +454,12 @@ namespace Datadog.Trace.TestHelpers
         {
             if (NamedPipesModeEnabled)
             {
+                _output.WriteLine($"Assigning pipe {TracePipeName} for the trace agent.");
                 return new MockTracerAgent(tracePipeName: TracePipeName);
             }
 
             var agentPort = TcpPortProvider.GetOpenPort();
+            _output.WriteLine($"Assigning port {agentPort} for the trace agent.");
             return new MockTracerAgent(agentPort);
         }
 

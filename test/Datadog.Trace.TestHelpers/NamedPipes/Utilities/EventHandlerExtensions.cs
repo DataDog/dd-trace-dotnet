@@ -1,6 +1,6 @@
 using System;
 
-namespace Datadog.Trace.TestHelpers.NamedPipes
+namespace Datadog.Trace.TestHelpers.NamedPipes.Utilities
 {
     internal static class EventHandlerExtensions
     {
