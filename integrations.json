@@ -228,6 +228,110 @@
     ]
   },
   {
+    "name": "ElasticsearchNet",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Elasticsearch.Net",
+          "type": "Elasticsearch.Net.RequestPipeline",
+          "method": "CallElasticsearchAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "Elasticsearch.Net.RequestData",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 6,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6.RequestPipeline_CallElasticsearchAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Elasticsearch.Net",
+          "type": "Elasticsearch.Net.RequestPipeline",
+          "method": "CallElasticsearch",
+          "signature_types": [
+            "T",
+            "Elasticsearch.Net.RequestData"
+          ],
+          "minimum_major": 6,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6.RequestPipeline_CallElasticsearch_Integration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
+    "name": "ElasticsearchNet5",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Elasticsearch.Net",
+          "type": "Elasticsearch.Net.RequestPipeline",
+          "method": "CallElasticsearchAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>",
+            "Elasticsearch.Net.RequestData",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 5,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearchAsync_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Elasticsearch.Net",
+          "type": "Elasticsearch.Net.RequestPipeline",
+          "method": "CallElasticsearch",
+          "signature_types": [
+            "Elasticsearch.Net.ElasticsearchResponse`1<T>",
+            "Elasticsearch.Net.RequestData"
+          ],
+          "minimum_major": 5,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearch_Integration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "GraphQL",
     "method_replacements": [
       {
