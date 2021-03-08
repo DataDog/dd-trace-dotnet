@@ -26,12 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         private const string IntegrationName = nameof(IntegrationIds.MsTestV2);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
-        static TestMethodRunnerExecuteIntegration()
-        {
-            // Preload environment variables.
-            CIEnvironmentValues.DecorateSpan(null);
-        }
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -41,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : ITestMethodRunner, IDuckType
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return CallTargetState.GetDefault();
             }
@@ -54,8 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             string testSuite = testMethodInfo.TestClassName;
             string testName = testMethodInfo.TestMethodName;
 
-            Tracer tracer = Tracer.Instance;
-            Scope scope = tracer.StartActive("mstest.test");
+            Scope scope = Common.TestTracer.StartActive("mstest.test", serviceName: Common.ServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
@@ -70,10 +63,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             var framework = FrameworkDescription.Instance;
 
             span.SetTag(CommonTags.RuntimeName, framework.Name);
-            span.SetTag(CommonTags.RuntimeOSArchitecture, framework.OSArchitecture);
-            span.SetTag(CommonTags.RuntimeOSPlatform, framework.OSPlatform);
-            span.SetTag(CommonTags.RuntimeProcessArchitecture, framework.ProcessArchitecture);
             span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
+            span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
+            span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
+            span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
+            span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
 
             // Get test parameters
             ParameterInfo[] methodParameters = testMethod.GetParameters();

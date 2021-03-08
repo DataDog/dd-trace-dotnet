@@ -275,3 +275,6 @@ deploy/AzureAppServices/
 *..DS_Store
 .DS_Store/*
 .DS_Store
+
+# profiler output files
+src/Datadog.Trace.ClrProfiler.Native/build/

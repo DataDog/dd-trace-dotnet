@@ -11,8 +11,7 @@ trigger:
 
 variables:
   buildConfiguration: Debug
-  dotnetCoreSdkVersion: 3.1.107
-  dotnetCoreSdk5Version: 5.0.100
+  dotnetCoreSdk5Version: 5.0.103
   ddApiKey: $(DD_API_KEY)
   DD_DOTNET_TRACER_MSBUILD:
 
@@ -65,10 +64,10 @@ jobs:
       version: 3.0.x
 
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.1
+    displayName: install dotnet core runtime 3.1
     inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
+      packageType: runtime
+      version: 3.1.x
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 5.0
@@ -88,7 +87,7 @@ jobs:
         test/benchmarks/**/*.csproj
         !src/Datadog.Trace.Tools.Runner/*.csproj
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet
+      DD_SERVICE: dd-trace-dotnet
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -97,7 +96,7 @@ jobs:
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
     env:
-      DD_SERVICE_NAME: dd-tracer-dotnet
+      DD_SERVICE: dd-trace-dotnet
 
 - job: managed_linux_arm64
   pool: Arm64
@@ -117,6 +116,8 @@ jobs:
         test/**/*.Tests.csproj
         benchmarks/**/*.csproj
         !src/Datadog.Trace.Tools.Runner/*.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -124,6 +125,8 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
 
 - job: managed_macos
   pool:
@@ -144,10 +147,10 @@ jobs:
       version: 3.0.x
 
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.1
+    displayName: install dotnet core runtime 3.1
     inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
+      packageType: runtime
+      version: 3.1.x
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 5.0
@@ -173,6 +176,8 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/**/*.Tests.csproj
+    env:
+      DD_SERVICE: dd-trace-dotnet
 
 
 - job: windows_profiler
@@ -188,10 +193,10 @@ jobs:
   steps:
 
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.1
+    displayName: install dotnet core runtime 3.1
     inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
+      packageType: runtime
+      version: 3.1.x
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 5.0
@@ -245,10 +250,10 @@ jobs:
   steps:
 
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.1
+    displayName: install dotnet core runtime 3.1
     inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
+      packageType: runtime
+      version: 3.1.x
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 5.0
@@ -304,10 +309,10 @@ jobs:
   steps:
 
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 3.1
+    displayName: install dotnet core runtime 3.1
     inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
+      packageType: runtime
+      version: 3.1.x
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk 5.0

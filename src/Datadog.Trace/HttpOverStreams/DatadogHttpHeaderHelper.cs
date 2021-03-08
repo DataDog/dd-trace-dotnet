@@ -14,7 +14,7 @@ namespace Datadog.Trace.HttpOverStreams
                 if (_metadataHeaders == null)
                 {
                     _metadataHeaders =
-                        $"{AgentHttpHeaderNames.Language}: .NET{DatadogHttpValues.NewLine}{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.AssemblyVersion}{DatadogHttpValues.NewLine}{HttpHeaderNames.TracingEnabled}: false{DatadogHttpValues.NewLine}";
+                        $"{AgentHttpHeaderNames.Language}: .NET{DatadogHttpValues.CrLf}{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.AssemblyVersion}{DatadogHttpValues.CrLf}{HttpHeaderNames.TracingEnabled}: false{DatadogHttpValues.CrLf}";
                 }
 
                 return _metadataHeaders;
@@ -24,18 +24,18 @@ namespace Datadog.Trace.HttpOverStreams
         public static Task WriteLeadingHeaders(HttpRequest request, StreamWriter writer)
         {
             var leadingHeaders =
-                $"{request.Verb} {request.Path} HTTP/1.1{DatadogHttpValues.NewLine}Host: {request.Host}{DatadogHttpValues.NewLine}Accept-Encoding: identity{DatadogHttpValues.NewLine}Content-Length: {request.Content.Length ?? 0}{DatadogHttpValues.NewLine}{MetadataHeaders}";
+                $"{request.Verb} {request.Path} HTTP/1.1{DatadogHttpValues.CrLf}Host: {request.Host}{DatadogHttpValues.CrLf}Accept-Encoding: identity{DatadogHttpValues.CrLf}Content-Length: {request.Content.Length ?? 0}{DatadogHttpValues.CrLf}{MetadataHeaders}";
             return writer.WriteAsync(leadingHeaders);
         }
 
         public static Task WriteHeader(StreamWriter writer, HttpHeaders.HttpHeader header)
         {
-            return writer.WriteAsync($"{header.Name}: {header.Value}{DatadogHttpValues.NewLine}");
+            return writer.WriteAsync($"{header.Name}: {header.Value}{DatadogHttpValues.CrLf}");
         }
 
         public static Task WriteEndOfHeaders(StreamWriter writer)
         {
-            return writer.WriteAsync($"Content-Type: application/msgpack{DatadogHttpValues.NewLine}{DatadogHttpValues.NewLine}");
+            return writer.WriteAsync($"Content-Type: application/msgpack{DatadogHttpValues.CrLf}{DatadogHttpValues.CrLf}");
         }
     }
 }

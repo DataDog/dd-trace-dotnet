@@ -56,6 +56,7 @@ namespace Datadog.Core.Tools
         public static string GetTracerVersion()
         {
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            // ReSharper disable once UnreachableCode
             return $"{TracerVersion.Major}.{TracerVersion.Minor}.{TracerVersion.Patch}{(TracerVersion.IsPreRelease ? "-prerelease" : string.Empty)}";
         }
 

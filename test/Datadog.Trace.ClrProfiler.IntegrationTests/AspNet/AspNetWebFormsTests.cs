@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Collection("IisTests")]
     public class AspNetWebFormsTests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;

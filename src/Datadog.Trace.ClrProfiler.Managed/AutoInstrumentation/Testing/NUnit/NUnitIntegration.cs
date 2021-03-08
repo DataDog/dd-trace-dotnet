@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ExtensionMethods;
@@ -10,12 +9,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
-        static NUnitIntegration()
-        {
-            // Preload environment variables.
-            CIEnvironmentValues.DecorateSpan(null);
-        }
-
         internal static Scope CreateScope<TContext>(TContext executionContext, Type targetType)
             where TContext : ITestExecutionContext
         {
@@ -34,8 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             string testName = testMethod.Name;
             string skipReason = null;
 
-            Tracer tracer = Tracer.Instance;
-            Scope scope = tracer.StartActive("nunit.test");
+            Scope scope = Common.TestTracer.StartActive("nunit.test", serviceName: Common.ServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
@@ -50,10 +42,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             var framework = FrameworkDescription.Instance;
 
             span.SetTag(CommonTags.RuntimeName, framework.Name);
-            span.SetTag(CommonTags.RuntimeOSArchitecture, framework.OSArchitecture);
-            span.SetTag(CommonTags.RuntimeOSPlatform, framework.OSPlatform);
-            span.SetTag(CommonTags.RuntimeProcessArchitecture, framework.ProcessArchitecture);
             span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
+            span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
+            span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
+            span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
+            span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
 
             // Get test parameters
             ParameterInfo[] methodParameters = testMethod.GetParameters();

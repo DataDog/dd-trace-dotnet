@@ -263,8 +263,12 @@ namespace Datadog.Trace.TestHelpers
                         }
                     }
 
+                    // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
+                    // (Setting content-length avoids that)
+
                     ctx.Response.ContentType = "application/json";
                     var buffer = Encoding.UTF8.GetBytes("{}");
+                    ctx.Response.ContentLength64 = buffer.LongLength;
                     ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                     ctx.Response.Close();
                 }

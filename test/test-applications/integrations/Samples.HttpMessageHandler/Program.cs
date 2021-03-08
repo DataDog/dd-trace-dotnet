@@ -99,6 +99,32 @@ namespace Samples.HttpMessageHandler
 
                 // sync http requests using HttpClient are not supported with WinHttpHandler
 #endif
+
+#if NETCOREAPP2_1 || NETCOREAPP3_0 || NETCOREAPP3_1
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Sending async request with internal WinHttpHandler.");
+                    Type winHttpHandler = typeof(System.Net.Http.HttpMessageHandler).Assembly.GetTypes().FirstOrDefault(t => t.Name == "WinHttpHandler");
+                    System.Net.Http.HttpMessageHandler handler = (System.Net.Http.HttpMessageHandler)Activator.CreateInstance(winHttpHandler);
+                    using (var invoker = new HttpMessageInvoker(handler, false))
+                    {
+                        await RequestHelpers.SendHttpMessageInvokerRequestsAsync(invoker, tracingDisabled, Url);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Sending async request with CurlHandler.");
+                    Type curlHandlerType = typeof(System.Net.Http.HttpMessageHandler).Assembly.GetTypes().FirstOrDefault(t => t.Name == "CurlHandler");
+                    System.Net.Http.HttpMessageHandler handler = (System.Net.Http.HttpMessageHandler)Activator.CreateInstance(curlHandlerType);
+                    using (var invoker = new HttpMessageInvoker(handler, false))
+                    {
+                        await RequestHelpers.SendHttpMessageInvokerRequestsAsync(invoker, tracingDisabled, Url);
+                    }
+                }
+#endif
+
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
                 listener.Stop();

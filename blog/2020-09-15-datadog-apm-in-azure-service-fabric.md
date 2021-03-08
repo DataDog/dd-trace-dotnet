@@ -25,12 +25,11 @@ More info on Azure Service Fabric:
 ### Optional quick start:
 **If you don't have an application and don't want to set one up, you can use the repository this article is based on.
 Change the API Key as in [step 2](#2-set-up-the-datadog-agent) and deploy this sample to an Azure Service Fabric cluster to get started right away. 
-https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample
-**
+https://github.com/DataDog/azureservicefabric-dotnet-tracing-sample**
 
-## 1. Create a service fabric application
+## 1. Create a Service Fabric application
 
-(*If you already have a service fabric application, you can skip ahead to [Set up the Datadog Agent](#2-set-up-the-datadog-agent)*).
+(*If you already have a Service Fabric application, you can skip ahead to [Set up the Datadog Agent](#2-set-up-the-datadog-agent)*).
 
 One way to setup a Azure Service Fabric application is by starting a new project in Visual Studio:
 
@@ -112,7 +111,7 @@ The Datadog .NET Tracer is also known as an in-process auto-instrumentation agen
 To install the .NET Tracer in a service, we include some scripts to be deployed into the output directory and executed.
 
 The install script requires machine administrator permissions.
-Add the *SetupAdminUser* to the *Principals* section in the `ApplicationManifest.xml`. If the *Principals* section is missing, add it:
+Add the `SetupAdminUser` to the`Principals` section in `ApplicationManifest.xml`. If the `Principals` section is missing, add it:
 
 ```
   <Principals>
@@ -132,7 +131,7 @@ Add the *SetupAdminUser* to the *Principals* section in the `ApplicationManifest
 
 ---
 
-In your `ApplicationManifest.xml`, within the *ServiceManifestImport* section of the service, give the Setup script *SetupAdminUser* as the executing user.
+In your `ApplicationManifest.xml`, in the `ServiceManifestImport` section of the service, give the Setup script `SetupAdminUser` as the executing user.
 
 ```diff
   <ServiceManifestImport>
@@ -144,8 +143,8 @@ In your `ApplicationManifest.xml`, within the *ServiceManifestImport* section of
   </ServiceManifestImport>
 ```  
 
-Within the `ServiceManifest.xml` of the service you want to monitor, add the reference to the install script.
-Then, add the envrionment variables to opt into profiling.
+In the `ServiceManifest.xml` of the service you want to monitor, add the reference to the install script.
+Then, add the environment variables to load the tracer.
 
 ```diff
   <CodePackage Name="Code" Version="1.0.0">

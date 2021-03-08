@@ -26,6 +26,41 @@ namespace Datadog.Trace.Ci
         public const string GitTag = "git.tag";
 
         /// <summary>
+        /// GIT Commit Author name
+        /// </summary>
+        public const string GitCommitAuthorName = "git.commit.author.name";
+
+        /// <summary>
+        /// GIT Commit Author email
+        /// </summary>
+        public const string GitCommitAuthorEmail = "git.commit.author.email";
+
+        /// <summary>
+        /// GIT Commit Author date
+        /// </summary>
+        public const string GitCommitAuthorDate = "git.commit.author.date";
+
+        /// <summary>
+        /// GIT Commit Committer name
+        /// </summary>
+        public const string GitCommitCommitterName = "git.commit.committer.name";
+
+        /// <summary>
+        /// GIT Commit Committer email
+        /// </summary>
+        public const string GitCommitCommitterEmail = "git.commit.committer.email";
+
+        /// <summary>
+        /// GIT Commit Committer date
+        /// </summary>
+        public const string GitCommitCommitterDate = "git.commit.committer.date";
+
+        /// <summary>
+        /// GIT Commit message
+        /// </summary>
+        public const string GitCommitMessage = "git.commit.message";
+
+        /// <summary>
         /// Build Source root
         /// </summary>
         public const string BuildSourceRoot = "build.source_root";
@@ -81,19 +116,24 @@ namespace Datadog.Trace.Ci
         public const string RuntimeName = "runtime.name";
 
         /// <summary>
-        /// Runtime os architecture
+        /// OS architecture
         /// </summary>
-        public const string RuntimeOSArchitecture = "runtime.os_architecture";
+        public const string OSArchitecture = "os.architecture";
 
         /// <summary>
-        /// Runtime os platform
+        /// OS platform
         /// </summary>
-        public const string RuntimeOSPlatform = "runtime.os_platform";
+        public const string OSPlatform = "os.platform";
 
         /// <summary>
-        /// Runtime process architecture
+        /// OS version
         /// </summary>
-        public const string RuntimeProcessArchitecture = "runtime.process_architecture";
+        public const string OSVersion = "os.version";
+
+        /// <summary>
+        /// Runtime architecture
+        /// </summary>
+        public const string RuntimeArchitecture = "runtime.architecture";
 
         /// <summary>
         /// Runtime version

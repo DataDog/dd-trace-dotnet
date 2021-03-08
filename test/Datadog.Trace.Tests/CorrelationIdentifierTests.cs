@@ -10,7 +10,7 @@ using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests
 {
-    [CollectionDefinition(nameof(CorrelationIdentifierTests), DisableParallelization = true)]
+    [Collection(nameof(TracerInstanceTestCollection))]
     [TracerRestorer]
     public class CorrelationIdentifierTests
     {

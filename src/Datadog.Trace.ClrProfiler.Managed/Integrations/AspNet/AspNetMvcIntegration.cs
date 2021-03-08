@@ -5,7 +5,9 @@ using System.Linq;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ClrProfiler.Integrations.AspNet;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -18,8 +20,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AspNetMvcIntegration
     {
+        internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
         private const string OperationName = "aspnet-mvc.request";
-        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
         private const string MinimumVersion = "4";
         private const string MaximumVersion = "5";
         private const string AssemblyName = "System.Web.Mvc";
@@ -36,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="controllerContext">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
         /// <returns>A new scope used to instrument an MVC action.</returns>
-        public static Scope CreateScope(object controllerContext)
+        public static Scope CreateScope(ControllerContextStruct controllerContext)
         {
             Scope scope = null;
 
@@ -48,12 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return null;
                 }
 
-                if (controllerContext == null || controllerContext.GetType().FullName != ControllerContextTypeName)
-                {
-                    return null;
-                }
-
-                var httpContext = controllerContext.GetProperty<HttpContextBase>("HttpContext").GetValueOrDefault();
+                var httpContext = controllerContext.HttpContext;
 
                 if (httpContext == null)
                 {
@@ -65,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string url = httpContext.Request.RawUrl.ToLowerInvariant();
                 string resourceName = null;
 
-                RouteData routeData = controllerContext.GetProperty<RouteData>("RouteData").GetValueOrDefault();
+                RouteData routeData = controllerContext.RouteData;
                 Route route = routeData?.Route as Route;
                 RouteValueDictionary routeValues = routeData?.Values;
 
@@ -202,7 +199,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (HttpContext.Current != null)
                 {
-                    scope = CreateScope(controllerContext);
+                    scope = CreateScope(controllerContext.DuckCast<ControllerContextStruct>());
                     HttpContext.Current.Items[HttpContextKey] = scope;
                 }
             }

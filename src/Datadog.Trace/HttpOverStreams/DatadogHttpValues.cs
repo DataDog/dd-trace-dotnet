@@ -5,7 +5,7 @@ namespace Datadog.Trace.HttpOverStreams
     internal static class DatadogHttpValues
     {
         public const char CarriageReturn = '\r';
-        public static readonly string NewLine = Environment.NewLine;
-        public static readonly int CrLfLength = NewLine.Length;
+        public const char LineFeed = '\n';
+        public const string CrLf = "\r\n";
     }
 }
