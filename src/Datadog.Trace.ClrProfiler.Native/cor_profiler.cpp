@@ -3149,8 +3149,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
   // ***
   ILInstr* startExceptionCatch = reWriterWrapper.StLocal(exceptionIndex);
   reWriterWrapper.SetILPosition(methodReturnInstr);
-  reWriterWrapper.Rethrow();
-  ILInstr* methodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+  ILInstr* rethrowInstr = reWriterWrapper.Rethrow();
 
   // ***
   // EXCEPTION FINALLY / END METHOD PART
@@ -3252,9 +3251,6 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     reWriterWrapper.LoadLocal(returnValueIndex);
   }
 
-  // Resolving branching to the end of the method
-  methodCatchLeaveInstr->m_pTarget = endFinallyInstr->m_pNext;
-  
   // Changes all returns to a LEAVE.S
   for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
        pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
@@ -3281,14 +3277,14 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
   exClause.m_pTryBegin = firstInstruction;
   exClause.m_pTryEnd = startExceptionCatch;
   exClause.m_pHandlerBegin = startExceptionCatch;
-  exClause.m_pHandlerEnd = methodCatchLeaveInstr;
+  exClause.m_pHandlerEnd = rethrowInstr;
   exClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
 
   EHClause finallyClause{};
   finallyClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FINALLY;
   finallyClause.m_pTryBegin = firstInstruction;
-  finallyClause.m_pTryEnd = methodCatchLeaveInstr->m_pNext;
-  finallyClause.m_pHandlerBegin = methodCatchLeaveInstr->m_pNext;
+  finallyClause.m_pTryEnd = rethrowInstr->m_pNext;
+  finallyClause.m_pHandlerBegin = rethrowInstr->m_pNext;
   finallyClause.m_pHandlerEnd = endFinallyInstr;
 
   // ***
