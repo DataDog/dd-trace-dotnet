@@ -30,8 +30,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             { $"{CustomHandlerPrefix}/BadHttpRequest", 500, true, "GET BadHttpRequest", EmptyTags() },
             { $"{ExceptionPagePrefix}/Error", 500, true, "GET Error", EmptyTags() },
             { $"{ExceptionPagePrefix}/BadHttpRequest", 400, true, "GET BadHttpRequest", EmptyTags() },
-            { $"{ReExecuteHandlerPrefix}/Error", 500, true, "GET Error", EmptyTags() },
-            { $"{ReExecuteHandlerPrefix}/BadHttpRequest", 500, true, "GET BadHttpRequest", EmptyTags() },
+            // { $"{ReExecuteHandlerPrefix}/Error", 500, true, "GET Error", EmptyTags() },
+            // { $"{ReExecuteHandlerPrefix}/BadHttpRequest", 500, true, "GET BadHttpRequest", EmptyTags() },
         };
 
         /// <summary>
