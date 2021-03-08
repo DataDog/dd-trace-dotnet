@@ -1,27 +1,20 @@
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using Datadog.Trace.TestHelpers.NamedPipes.Interfaces;
 using Datadog.Trace.TestHelpers.NamedPipes.Utilities;
 
 namespace Datadog.Trace.TestHelpers.NamedPipes.Server
 {
-    internal class InternalPipeServer : ICommunicationServer
+    internal class DatadogHttpPipeServer
     {
         private const int BufferBatchSize = 0x150;
-        private static int _seed = 0;
 
         private readonly NamedPipeServerStream _pipeServer;
-        private readonly object _lockingObject = new object();
 
-        private bool _isStopping;
-        private int _lockFlag = 0;
-
-        public InternalPipeServer(string pipeName, int maxNumberOfServerInstances)
+        public DatadogHttpPipeServer(string pipeName, int maxNumberOfServerInstances)
         {
 #pragma warning disable CA1416
             _pipeServer = new NamedPipeServerStream(
@@ -31,111 +24,47 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
                 PipeTransmissionMode.Message,
                 PipeOptions.Asynchronous);
 #pragma warning restore CA1416
-            Interlocked.Increment(ref _seed);
-            Id = _seed.ToString();
         }
-
-        public event EventHandler<ClientConnectedEventArgs> ClientConnectedEvent;
-
-        public event EventHandler<ClientDisconnectedEventArgs> ClientDisconnectedEvent;
 
         public event EventHandler<MessageReceivedEventArgs> MessageReceivedEvent;
-
-        public string Id { get; }
-
-        public string ServerId
-        {
-            get { return Id; }
-        }
 
         /// <summary>
         /// This method begins an asynchronous operation to wait for a client to connect.
         /// </summary>
-        public void Start()
+        public void Run()
         {
             try
             {
-                _pipeServer.BeginWaitForConnection(WaitForConnectionCallBack, null);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// This method disconnects, closes and disposes the server
-        /// </summary>
-        public void Stop()
-        {
-            // ReSharper disable once InconsistentlySynchronizedField
-            _isStopping = true;
-
-            try
-            {
-                if (_pipeServer.IsConnected)
+                while (true)
                 {
-                    _pipeServer.Disconnect();
+                    try
+                    {
+                        _pipeServer.WaitForConnection();
+                        HandleRequest();
+                    }
+                    catch (IOException ex)
+                    {
+                        Logger.Error(ex);
+                        continue;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex);
+                        throw;
+                    }
+                    finally
+                    {
+                        if (_pipeServer.IsConnected)
+                        {
+                            _pipeServer.Disconnect();
+                        }
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex);
-                throw;
             }
             finally
             {
                 _pipeServer.Close();
                 _pipeServer.Dispose();
-            }
-        }
-
-        private void BeginRead()
-        {
-            try
-            {
-                ReadRequest(_pipeServer);
-                WriteResponse(_pipeServer);
-            }
-            catch (IOException ex)
-            {
-                Logger.Error(ex);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex);
-                throw;
-            }
-            finally
-            {
-                OnDisconnected();
-                Stop();
-            }
-        }
-
-        private void WaitForConnectionCallBack(IAsyncResult result)
-        {
-            AggregatePipeServer.Timeline.Push($"Internal Client connection callback: {Id}");
-
-            if (Interlocked.CompareExchange(ref _lockFlag, 1, 0) == 0)
-            {
-                var unlocked = Monitor.TryEnter(_lockingObject);
-                if (unlocked)
-                {
-                    if (!_isStopping)
-                    {
-                        // Call EndWaitForConnection to complete the connection operation
-                        _pipeServer.EndWaitForConnection(result);
-
-                        OnConnected();
-
-                        AggregatePipeServer.Timeline.Push($"Internal Client begin read: {Id}");
-                        BeginRead();
-                    }
-
-                    Interlocked.Decrement(ref _lockFlag);
-                }
             }
         }
 
@@ -146,19 +75,7 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
                 new MessageReceivedEventArgs { Message = message });
         }
 
-        private void OnConnected()
-        {
-            ClientConnectedEvent?.Invoke(this, new ClientConnectedEventArgs { ClientId = Id });
-            AggregatePipeServer.Timeline.Push($"Internal Client connected: {Id}");
-        }
-
-        private void OnDisconnected()
-        {
-            ClientDisconnectedEvent?.Invoke(this, new ClientDisconnectedEventArgs { ClientId = Id });
-            AggregatePipeServer.Timeline.Push($"Internal Client disconnected: {Id}");
-        }
-
-        private void ReadRequest(NamedPipeServerStream pipeServer)
+        private void HandleRequest()
         {
             var batchRead = new byte[BufferBatchSize];
             var headerIndex = 0;
@@ -188,7 +105,7 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
             var endOfHeaders = false;
             do
             {
-                pipeServer.Read(batchRead, 0, batchRead.Length);
+                _pipeServer.Read(batchRead, 0, batchRead.Length);
 
                 foreach (var t in batchRead)
                 {
@@ -265,17 +182,19 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
                 {
                     var bodyRemainder = contentLength - leftoverIndex;
                     Array.Copy(leftoverBytes, bodyBytes, leftoverIndex);
-                    pipeServer.Read(bodyBytes, leftoverIndex, bodyRemainder);
+                    _pipeServer.Read(bodyBytes, leftoverIndex, bodyRemainder);
                 }
             }
 
             mockMessage.BodyBytes = bodyBytes;
 
+            WriteResponse(_pipeServer);
+
             // Clear the rest if any remains, it's invalid anyways
             var waste = new byte[0x500];
-            while (!pipeServer.IsMessageComplete)
+            while (!_pipeServer.IsMessageComplete)
             {
-                pipeServer.Read(waste, 0, waste.Length);
+                _pipeServer.Read(waste, 0, waste.Length);
                 var examineWaste = Encoding.UTF8.GetString(waste);
                 Logger.Info(examineWaste);
             }
@@ -285,28 +204,35 @@ namespace Datadog.Trace.TestHelpers.NamedPipes.Server
 
         private void WriteResponse(NamedPipeServerStream pipeServer)
         {
-            var responseContent = "{}";
-            var responseDate = DateTime.Now;
-            var responseBuilder = new StringBuilder("HTTP/1.1 200 OK");
-            responseBuilder.Append('\r');
-            responseBuilder.Append('\n');
-            responseBuilder.Append("Content-Type: application/json");
-            responseBuilder.Append('\r');
-            responseBuilder.Append('\n');
-            responseBuilder.Append("Date: ");
-            responseBuilder.Append(responseDate.ToUniversalTime().ToString("r"));
-            responseBuilder.Append('\r');
-            responseBuilder.Append('\n');
-            responseBuilder.Append("Content-Length: ");
-            responseBuilder.Append(responseContent.Length);
-            responseBuilder.Append('\r');
-            responseBuilder.Append('\n');
-            responseBuilder.Append('\r');
-            responseBuilder.Append('\n');
-            responseBuilder.Append(responseContent);
+            try
+            {
+                var responseContent = "{}";
+                var responseDate = DateTime.Now;
+                var responseBuilder = new StringBuilder("HTTP/1.1 200 OK");
+                responseBuilder.Append('\r');
+                responseBuilder.Append('\n');
+                responseBuilder.Append("Content-Type: application/json");
+                responseBuilder.Append('\r');
+                responseBuilder.Append('\n');
+                responseBuilder.Append("Date: ");
+                responseBuilder.Append(responseDate.ToUniversalTime().ToString("r"));
+                responseBuilder.Append('\r');
+                responseBuilder.Append('\n');
+                responseBuilder.Append("Content-Length: ");
+                responseBuilder.Append(responseContent.Length);
+                responseBuilder.Append('\r');
+                responseBuilder.Append('\n');
+                responseBuilder.Append('\r');
+                responseBuilder.Append('\n');
+                responseBuilder.Append(responseContent);
 
-            var responseBytes = Encoding.UTF8.GetBytes(responseBuilder.ToString());
-            pipeServer.Write(responseBytes, 0, responseBytes.Length);
+                var responseBytes = Encoding.UTF8.GetBytes(responseBuilder.ToString());
+                pipeServer.Write(responseBytes, 0, responseBytes.Length);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex);
+            }
         }
     }
 }

@@ -150,11 +150,12 @@ namespace Datadog.Trace.Agent
                     _statsd?.Increment(TracerMetricNames.Api.Requests);
                     response = await request.PostAsync(traces).ConfigureAwait(false);
                 }
-                catch
+                catch (Exception ex)
                 {
                     // count only network/infrastructure errors, not valid responses with error status codes
                     // (which are handled below)
                     _statsd?.Increment(TracerMetricNames.Api.Errors);
+                    Log.Error(ex, "OH NO WHY");
                     throw;
                 }
 

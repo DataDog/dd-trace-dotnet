@@ -49,11 +49,18 @@ namespace Datadog.Trace.HttpOverStreams
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
 
-        private async Task<HttpResponse> ReadResponseAsync(Stream responseStream)
+        private async Task<HttpResponse> ReadResponseAsync(Stream replaceStream)
         {
             var headers = new HttpHeaders();
             char currentChar = char.MinValue;
             int streamPosition = 0;
+
+            // var bytes = new byte[400];
+            // replaceStream.Read(bytes, 0, 400);
+            // var text = Encoding.UTF8.GetString(bytes);
+            // Logger.Warning(text);
+            // var responseStream = new MemoryStream(bytes);
+            var responseStream = replaceStream;
 
             // https://tools.ietf.org/html/rfc2616#section-4.2
             // HTTP/1.1 200 OK
