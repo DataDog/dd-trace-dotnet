@@ -122,25 +122,31 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
 
   member_ref = mdMemberRefNil;
 
-  hr = metadata_import_->FindMemberRef(
-      type_ref, method_replacement.wrapper_method.method_name.c_str(),
-      method_replacement.wrapper_method.method_signature.data.data(),
-      (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
-      &member_ref);
+  auto signature_data = method_replacement.wrapper_method.method_signature.data;
 
-  if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
-    // if memberRef not found, create it by emitting a metadata token
-    hr = metadata_emit_->DefineMemberRef(
+  // If the signature data size is greater than zero means we need to load the methodRef
+  // for CallSite instrumentation.
+  // In case of the signature data size is zero we asume we are in a calltarget scenario
+  // where we use the TypeRef but not a MemberRef.
+
+  if (signature_data.size() > 0) {
+    // callsite integrations do this path.
+    hr = metadata_import_->FindMemberRef(
         type_ref, method_replacement.wrapper_method.method_name.c_str(),
-        method_replacement.wrapper_method.method_signature.data.data(),
-        (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
-        &member_ref);
-  }
+        signature_data.data(), (DWORD)(signature_data.size()), &member_ref);
 
-  if (FAILED(hr)) {
-    // Record that this cache_key failed
-    metadata_.SetFailedWrapperMemberKey(cache_key);
-    return hr;
+    if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
+      // if memberRef not found, create it by emitting a metadata token
+      hr = metadata_emit_->DefineMemberRef(
+          type_ref, method_replacement.wrapper_method.method_name.c_str(),
+          signature_data.data(), (DWORD)(signature_data.size()), &member_ref);
+    }
+
+    if (FAILED(hr)) {
+      // Record that this cache_key failed
+      metadata_.SetFailedWrapperMemberKey(cache_key);
+      return hr;
+    }
   }
 
   metadata_.SetWrapperMemberRef(cache_key, member_ref);
