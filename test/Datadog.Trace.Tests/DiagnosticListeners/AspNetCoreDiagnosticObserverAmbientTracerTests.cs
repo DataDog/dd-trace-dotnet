@@ -7,13 +7,12 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Sampling;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+#if NETCOREAPP2_1
 using Microsoft.AspNetCore.Hosting.Internal;
+#endif
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
 using Xunit.Sdk;
@@ -22,7 +21,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 {
     [Collection(nameof(TracerInstanceTestCollection))]
     [TracerRestorer]
-    public class AspNetCoreDiagnosticObserverTests
+    public class AspNetCoreDiagnosticObserverAmbientTracerTests
     {
         [Fact]
         public async Task<string> CompleteDiagnosticObserverTest()
@@ -30,7 +29,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Tracer.Instance = GetTracer();
 
             var builder = new WebHostBuilder()
-                .UseStartup<Startup>();
+                .UseStartup<MvcStartup>();
 
             var testServer = new TestServer(builder);
             var client = testServer.CreateClient();
@@ -60,7 +59,11 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer);
 
+#if NETCOREAPP2_1
             var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
+#else
+            var context = new { HttpContext = GetHttpContext() };
+#endif
 
             observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Start", context));
 
@@ -107,19 +110,6 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             return httpContext;
         }
 
-        private class Startup
-        {
-            public void ConfigureServices(IServiceCollection services)
-            {
-                services.AddMvc();
-            }
-
-            public void Configure(IApplicationBuilder builder)
-            {
-                builder.UseMvcWithDefaultRoute();
-            }
-        }
-
         [AttributeUsage(AttributeTargets.Class, Inherited = true)]
         private class TracerRestorerAttribute : BeforeAfterTestAttribute
         {
@@ -136,24 +126,6 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 Tracer.Instance = _tracer;
                 base.After(methodUnderTest);
             }
-        }
-    }
-
-    /// <summary>
-    /// Simple controller used for the aspnetcore test
-    /// </summary>
-#pragma warning disable SA1402 // File may only contain a single class
-    public class HomeController : Controller
-    {
-        public async Task<string> Index()
-        {
-            await Task.Yield();
-            return "Hello world";
-        }
-
-        public void Error()
-        {
-            throw new Exception();
         }
     }
 }
