@@ -1,4 +1,4 @@
-using Datadog.Trace.Tests.DiagnosticListeners;
+using Datadog.Trace.IntegrationTests.DiagnosticListeners;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

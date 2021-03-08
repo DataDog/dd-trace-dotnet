@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 
 #pragma warning disable SA1402 // File may only contain a single class
 
-namespace Datadog.Trace.Tests.DiagnosticListeners
+namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     internal static class ErrorHandlingHelper
     {

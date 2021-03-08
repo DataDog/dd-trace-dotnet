@@ -1,9 +1,9 @@
 ﻿#if !NETFRAMEWORK
 using Datadog.Trace.TestHelpers;
 using Xunit;
-using static Datadog.Trace.Tests.DiagnosticListeners.ErrorHandlingHelper;
+using static Datadog.Trace.IntegrationTests.DiagnosticListeners.ErrorHandlingHelper;
 
-namespace Datadog.Trace.Tests.DiagnosticListeners
+namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     public static class AspNetCoreEndpointRoutingTestData
     {

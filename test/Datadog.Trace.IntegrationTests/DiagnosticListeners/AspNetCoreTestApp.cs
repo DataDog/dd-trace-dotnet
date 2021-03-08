@@ -3,9 +3,9 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 #if !NETCOREAPP2_1
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 #endif
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name should match first type
 
-namespace Datadog.Trace.Tests.DiagnosticListeners
+namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     /// <summary>
     /// A Startup file for testing MVC (without endpoint-routing enabled)
@@ -35,21 +35,24 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             builder.UseMultipleErrorHandlerPipelines(app =>
             {
-                app.Map(
+                MapExtensions.Map(
+                    app,
                     "/throws",
                     inner =>
-                        inner.Run(
+                        RunExtensions.Run(
+                            inner,
                             async ctx =>
                             {
                                 await Task.Yield();
                                 throw new Exception("Map exception");
                             }));
 
-                app.UseMvc(
+                MvcApplicationBuilderExtensions.UseMvc(
+                    app,
                     routes =>
                     {
-                        routes.MapRoute("custom", "Test/{action=Index}", new { Controller = "MyTest" });
-                        routes.MapRoute("default", "{controller=Home}/{action=Index}/{id?}");
+                        MapRouteRouteBuilderExtensions.MapRoute(routes, "custom", "Test/{action=Index}", new { Controller = "MyTest" });
+                        MapRouteRouteBuilderExtensions.MapRoute(routes, "default", "{controller=Home}/{action=Index}/{id?}");
                     });
             });
         }

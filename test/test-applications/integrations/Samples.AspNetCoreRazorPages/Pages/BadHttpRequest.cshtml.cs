@@ -1,5 +1,5 @@
 ﻿using System;
-using Datadog.Trace.Tests.DiagnosticListeners;
+using Datadog.Trace.IntegrationTests.DiagnosticListeners;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Samples.AspNetCoreRazorPages.Pages

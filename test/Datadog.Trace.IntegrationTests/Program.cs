@@ -1,5 +1,5 @@
 ﻿#if NETFRAMEWORK
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.IntegrationTests
 {
     public static class Program
     {

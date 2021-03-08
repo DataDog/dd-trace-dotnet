@@ -14,9 +14,9 @@ using Microsoft.AspNetCore.TestHost;
 using Moq;
 using Xunit;
 
-namespace Datadog.Trace.Tests.DiagnosticListeners
+namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
-    public class AspNetCoreDiagnosticObserverResourceTests
+    public class AspNetCoreDiagnosticObserverTests
     {
         [Theory]
         [MemberData(nameof(AspNetCoreMvcTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]

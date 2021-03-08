@@ -11,6 +11,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Compile Include="..\..\..\Datadog.Trace.Tests\DiagnosticListeners\ErrorHandlingHelper.cs" Link="ErrorHandlingHelper.cs" />
+    <Compile Include="..\..\..\Datadog.Trace.IntegrationTests\DiagnosticListeners\ErrorHandlingHelper.cs" Link="ErrorHandlingHelper.cs" />
   </ItemGroup>
 </Project>
