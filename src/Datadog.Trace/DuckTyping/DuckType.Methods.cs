@@ -22,30 +22,30 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                foreach (MethodInfo intMethod in imInterface.GetMethods())
+                foreach (MethodInfo interfaceMethod in imInterface.GetMethods())
                 {
-                    if (intMethod.IsSpecialName)
+                    if (interfaceMethod.IsSpecialName)
                     {
                         continue;
                     }
 
-                    string intMethodName = intMethod.ToString();
-                    bool found = false;
+                    string interfaceMethodName = interfaceMethod.ToString();
+                    bool methodAlreadySelected = false;
                     foreach (MethodInfo currentMethod in selectedMethods)
                     {
-                        if (currentMethod.ToString() == intMethodName)
+                        if (currentMethod.ToString() == interfaceMethodName)
                         {
-                            found = true;
+                            methodAlreadySelected = true;
                             break;
                         }
                     }
 
-                    if (!found)
+                    if (!methodAlreadySelected)
                     {
-                        MethodInfo prevMethod = baseType.GetMethod(intMethod.Name, DuckAttribute.DefaultFlags, null, intMethod.GetParameters().Select(p => p.ParameterType).ToArray(), null);
+                        MethodInfo prevMethod = baseType.GetMethod(interfaceMethod.Name, DuckAttribute.DefaultFlags, null, interfaceMethod.GetParameters().Select(p => p.ParameterType).ToArray(), null);
                         if (prevMethod == null || prevMethod.GetCustomAttribute<DuckIgnoreAttribute>() is null)
                         {
-                            selectedMethods.Add(intMethod);
+                            selectedMethods.Add(interfaceMethod);
                         }
                     }
                 }
