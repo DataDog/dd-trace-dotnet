@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Services.Runtime;
 
@@ -17,7 +18,7 @@ namespace WeatherService
             await ServiceRuntime.RegisterServiceAsync("WeatherService", context => new WeatherService(context));
 
             // Prevents this host process from terminating so services keep running.
-            await Task.Delay(-1);
+            await Task.Delay(Timeout.Infinite);
         }
     }
 }
