@@ -1,11 +1,12 @@
 #if !NET452
 using Datadog.Core.Tools;
-using Datadog.Trace.TestHelpers;
+using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
+    [Collection(nameof(StackExchangeRedisTestCollection))]
     public class StackExchangeRedisStackOverflowExceptionSmokeTest : SmokeTestBase
     {
         public StackExchangeRedisStackOverflowExceptionSmokeTest(ITestOutputHelper output)

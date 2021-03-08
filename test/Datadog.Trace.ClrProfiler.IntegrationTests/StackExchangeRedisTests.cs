@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
+using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,6 +13,7 @@ using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDe
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Collection(nameof(StackExchangeRedisTestCollection))]
     public class StackExchangeRedisTests : TestHelper
     {
         public StackExchangeRedisTests(ITestOutputHelper output)
