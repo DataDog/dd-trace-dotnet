@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ApplicationManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ApplicationTypeName="ServiceFabricApplicationType" ApplicationTypeVersion="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
   <Parameters>
-    <Parameter Name="WeatherService.NetFx461_InstanceCount" DefaultValue="-1" />
-    <Parameter Name="WeatherService.NetCore31_InstanceCount" DefaultValue="-1" />
+    <Parameter Name="WeatherService_NetFx461_InstanceCount" DefaultValue="-1" />
+    <Parameter Name="WeatherService_NetCore31_InstanceCount" DefaultValue="-1" />
     <Parameter Name="WebApp_ASPNETCORE_ENVIRONMENT" DefaultValue="" />
     <Parameter Name="WebApp_InstanceCount" DefaultValue="-1" />
   </Parameters>
@@ -10,11 +10,11 @@
        should match the Name and Version attributes of the ServiceManifest element defined in the
        ServiceManifest.xml file. -->
   <ServiceManifestImport>
-    <ServiceManifestRef ServiceManifestName="WeatherService.NetFx461" ServiceManifestVersion="1.0.0" />
+    <ServiceManifestRef ServiceManifestName="WeatherService_NetFx461" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
   </ServiceManifestImport>
   <ServiceManifestImport>
-    <ServiceManifestRef ServiceManifestName="WeatherService.NetCore31" ServiceManifestVersion="1.0.0" />
+    <ServiceManifestRef ServiceManifestName="WeatherService_NetCore31" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
   </ServiceManifestImport>
   <ServiceManifestImport>
@@ -30,13 +30,13 @@
          ServiceFabric PowerShell module.
 
          The attribute ServiceTypeName below must match the name defined in the imported ServiceManifest.xml file. -->
-    <Service Name="WeatherService.NetFx461" ServicePackageActivationMode="ExclusiveProcess">
-      <StatelessService ServiceTypeName="WeatherService.NetFx461" InstanceCount="[WeatherService.NetFx461_InstanceCount]">
+    <Service Name="WeatherService_NetFx461" ServicePackageActivationMode="ExclusiveProcess">
+      <StatelessService ServiceTypeName="WeatherService_NetFx461" InstanceCount="[WeatherService_NetFx461_InstanceCount]">
         <SingletonPartition />
       </StatelessService>
     </Service>
-    <Service Name="WeatherService.NetCore31" ServicePackageActivationMode="ExclusiveProcess">
-      <StatelessService ServiceTypeName="WeatherService.NetCore31" InstanceCount="[WeatherService.NetCore31_InstanceCount]">
+    <Service Name="WeatherService_NetCore31" ServicePackageActivationMode="ExclusiveProcess">
+      <StatelessService ServiceTypeName="WeatherService_NetCore31" InstanceCount="[WeatherService_NetCore31_InstanceCount]">
         <SingletonPartition />
       </StatelessService>
     </Service>

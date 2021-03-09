@@ -15,7 +15,7 @@ namespace WeatherService.NetFx461
             // Registering a service maps a service type name to a .NET type.
             // When Service Fabric creates an instance of this service type,
             // an instance of the class is created in this host process.
-            await ServiceRuntime.RegisterServiceAsync("WeatherService.NetFx461", context => new WeatherService(context));
+            await ServiceRuntime.RegisterServiceAsync("WeatherService_NetFx461", context => new WeatherService(context));
 
             // Prevents this host process from terminating so services keep running.
             await Task.Delay(Timeout.Infinite);
