@@ -50,7 +50,7 @@ namespace Samples.WcfClient
                 // Add the CustomEndpointBehavior / ClientMessageInspector to add headers on calls to the service
                 calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
                 double result = calculator.Add(1, 2);
-                Console.WriteLine($"Result: {result}");
+                Console.WriteLine($"[Client] Result: {result}");
             }
         }
     }

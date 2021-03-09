@@ -1,6 +1,6 @@
 using System.ServiceModel;
 
-namespace Samples.Wcf
+namespace Samples.Wcf.Server
 {
     [ServiceContract(Namespace = "WcfSample")]
     public interface ICalculator
