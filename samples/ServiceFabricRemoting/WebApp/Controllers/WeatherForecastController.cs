@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 using WeatherService.Abstractions;
 
@@ -11,14 +10,9 @@ namespace WebApp.Controllers
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        private static readonly IWeatherService WeatherService = ServiceProxy.Create<IWeatherService>(new Uri("fabric:/ServiceFabricApplication/WeatherService"));
+        private static readonly IWeatherService WeatherServiceNetCore31 = ServiceProxy.Create<IWeatherService>(new Uri("fabric:/ServiceFabricApplication/WeatherService.NetCore31"));
 
-        private readonly ILogger<WeatherForecastController> _logger;
-
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
-        {
-            _logger = logger;
-        }
+        private static readonly IWeatherService WeatherServiceNetFx461 = ServiceProxy.Create<IWeatherService>(new Uri("fabric:/ServiceFabricApplication/WeatherService.NetFx461"));
 
         [HttpGet("test")]
         public string Test()
@@ -27,9 +21,15 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        public async Task<WeatherForecast> Get()
+        public async Task<WeatherForecast> GetNetCore31()
         {
-            return await WeatherService.GetWeather("Hello, world!");
+            return await WeatherServiceNetCore31.GetWeather("Hello, world!");
+        }
+
+        [HttpGet]
+        public async Task<WeatherForecast> GetNetFx461()
+        {
+            return await WeatherServiceNetFx461.GetWeather("Hello, world!");
         }
     }
 }
