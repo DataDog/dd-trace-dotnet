@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <Target Name="CopyFiles" AfterTargets="Build">
-    <Copy SourceFiles="@(ResourceFilesOut)" DestinationFolder="$(ResourceOutPath)" />
+    <Copy SourceFiles="@(ResourceFilesOut)" DestinationFolder="$(ResourceOutPath)" SkipUnchangedFiles="false" />
   </Target>
 	
   <PropertyGroup>
