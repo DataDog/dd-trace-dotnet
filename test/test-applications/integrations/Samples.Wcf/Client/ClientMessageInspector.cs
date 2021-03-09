@@ -6,7 +6,7 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.ServiceModel.Dispatcher;
 
-namespace Samples.WcfClient
+namespace Samples.Wcf.Client
 {
     /// <summary>
     /// Represents a message inspector object that can be added to the <c>MessageInspectors</c> collection to view or modify messages.
@@ -35,13 +35,13 @@ namespace Samples.WcfClient
                 httpRequestMessage = httpRequestMessageObject as HttpRequestMessageProperty;
                 if (string.IsNullOrEmpty(httpRequestMessage.Headers["upstream-service"]))
                 {
-                    httpRequestMessage.Headers["upstream-service"] = "Samples.WcfClient";
+                    httpRequestMessage.Headers["upstream-service"] = "Samples.Wcf.Client";
                 }
             }
             else
             {
                 httpRequestMessage = new HttpRequestMessageProperty();
-                httpRequestMessage.Headers["upstream-service"] = "Samples.WcfClient";
+                httpRequestMessage.Headers["upstream-service"] = "Samples.Wcf.Client";
                 request.Properties.Add(HttpRequestMessageProperty.Name, httpRequestMessage);
             }
 

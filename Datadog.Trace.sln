@@ -205,6 +205,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoad.FileNotFoundEx
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD006-E206-488E-ACA1-1AA73F9B5146}"
 	ProjectSection(SolutionItems) = preProject
+		build\docker\build.arm64.sh = build\docker\build.arm64.sh
 		build\docker\build.sh = build\docker\build.sh
 		build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
 		build\docker\Datadog.Trace.ClrProfiler.Native.sh = build\docker\Datadog.Trace.ClrProfiler.Native.sh
@@ -215,7 +216,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD0
 		build\docker\package.sh = build\docker\package.sh
 		build\docker\with-profiler-logs.bash = build\docker\with-profiler-logs.bash
 		build\docker\with-profiler.bash = build\docker\with-profiler.bash
-		build\docker\build.arm64.sh = build\docker\build.arm64.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-pipelines", "{C52D6695-4E05-4930-88F8-0EFF8056A967}"
@@ -236,8 +236,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TraceContext.InvalidOperationException", "test\test-applications\regression\TraceContext.InvalidOperationException\TraceContext.InvalidOperationException.csproj", "{DF923186-5397-4E15-A95B-F15C8327ED53}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityFramework6x.MdTokenLookupFailure", "test\test-applications\regression\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj", "{E1706893-D3A5-43B9-9036-AEF49DB9600B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WcfClient", "test\test-applications\integrations\Samples.WcfClient\Samples.WcfClient.csproj", "{21D420EB-06D0-489D-A71C-C748BB46B8EF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper", "test\test-applications\integrations\dependency-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj", "{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}"
 EndProject
@@ -409,15 +407,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LargePayload", "test\test-a
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "Samples.SqlServer.Vb", "test\test-applications\integrations\dependency-libs\Samples.SqlServer.Vb\Samples.SqlServer.Vb.vbproj", "{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.FakeDbCommand", "test\test-applications\integrations\Samples.FakeDbCommand\Samples.FakeDbCommand.csproj", "{0E036453-2C80-4FC9-A517-771F0071734B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FakeDbCommand", "test\test-applications\integrations\Samples.FakeDbCommand\Samples.FakeDbCommand.csproj", "{0E036453-2C80-4FC9-A517-771F0071734B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Microsoft.Data.Sqlite", "test\test-applications\integrations\Samples.Microsoft.Data.Sqlite\Samples.Microsoft.Data.Sqlite.csproj", "{061AB58B-8235-4DAE-8D56-5F081DD78F5E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Microsoft.Data.Sqlite", "test\test-applications\integrations\Samples.Microsoft.Data.Sqlite\Samples.Microsoft.Data.Sqlite.csproj", "{061AB58B-8235-4DAE-8D56-5F081DD78F5E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.SQLite.Core", "test\test-applications\integrations\Samples.SQLite.Core\Samples.SQLite.Core.csproj", "{69B678F6-51CF-4A5B-8DEC-1F9CEDC5C9E2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SQLite.Core", "test\test-applications\integrations\Samples.SQLite.Core\Samples.SQLite.Core.csproj", "{69B678F6-51CF-4A5B-8DEC-1F9CEDC5C9E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.OracleMDA", "test\test-applications\integrations\Samples.OracleMDA\Samples.OracleMDA.csproj", "{BD46EFCC-177C-466E-81DF-39314B780ADA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OracleMDA", "test\test-applications\integrations\Samples.OracleMDA\Samples.OracleMDA.csproj", "{BD46EFCC-177C-466E-81DF-39314B780ADA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.OracleMDA.Core", "test\test-applications\integrations\Samples.OracleMDA.Core\Samples.OracleMDA.Core.csproj", "{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OracleMDA.Core", "test\test-applications\integrations\Samples.OracleMDA.Core\Samples.OracleMDA.Core.csproj", "{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -604,6 +602,7 @@ Global
 		{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}.Release|x86.ActiveCfg = Release|Any CPU
 		{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}.Release|x86.Build.0 = Release|Any CPU
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|Any CPU.Build.0 = Debug|x86
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|x64.ActiveCfg = Debug|x64
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|x64.Build.0 = Debug|x64
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|x86.ActiveCfg = Debug|x86
@@ -613,7 +612,6 @@ Global
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Release|x64.Build.0 = Release|x64
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Release|x86.ActiveCfg = Release|x86
 		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Release|x86.Build.0 = Release|x86
-		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|Any CPU.Build.0 = Debug|x86
 		{086FF8A0-9CEE-470A-9751-78B0F1340649}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{086FF8A0-9CEE-470A-9751-78B0F1340649}.Debug|x64.ActiveCfg = Debug|x64
 		{086FF8A0-9CEE-470A-9751-78B0F1340649}.Debug|x64.Build.0 = Debug|x64
@@ -912,16 +910,6 @@ Global
 		{E1706893-D3A5-43B9-9036-AEF49DB9600B}.Release|x64.Build.0 = Release|x64
 		{E1706893-D3A5-43B9-9036-AEF49DB9600B}.Release|x86.ActiveCfg = Release|x86
 		{E1706893-D3A5-43B9-9036-AEF49DB9600B}.Release|x86.Build.0 = Release|x86
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Debug|x64.ActiveCfg = Debug|x64
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Debug|x64.Build.0 = Debug|x64
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Debug|x86.ActiveCfg = Debug|x86
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Debug|x86.Build.0 = Debug|x86
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Release|Any CPU.ActiveCfg = Release|x86
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Release|x64.ActiveCfg = Release|x64
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Release|x64.Build.0 = Release|x64
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Release|x86.ActiveCfg = Release|x86
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF}.Release|x86.Build.0 = Release|x86
 		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -1635,7 +1623,6 @@ Global
 		{42FA33DD-AEA3-4FF3-8319-F30244A666A4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{DF923186-5397-4E15-A95B-F15C8327ED53} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{E1706893-D3A5-43B9-9036-AEF49DB9600B} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
-		{21D420EB-06D0-489D-A71C-C748BB46B8EF} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 		{72FB583A-A1B0-4B5F-8658-617B100DCD8E} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{35F581E9-3D7C-4E80-8DFF-D437B0D86710} = {498A300E-D036-49B7-A43D-821D1CAF11A5}

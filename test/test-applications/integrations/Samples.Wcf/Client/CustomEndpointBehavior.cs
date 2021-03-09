@@ -11,7 +11,7 @@ using System.ServiceModel.Dispatcher;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Samples.WcfClient
+namespace Samples.Wcf.Client
 {
     /// <summary>
     /// Represents a run-time behavior extension for a client endpoint.
