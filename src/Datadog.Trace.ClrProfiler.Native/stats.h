@@ -24,13 +24,16 @@ class Stats : public Singleton<Stats> {
   friend class Singleton<Stats>;
 
  private:
+  std::chrono::nanoseconds callTargetRequestRejit;
   std::chrono::nanoseconds jitInlining;
   std::chrono::nanoseconds jitCompilationStarted;
   std::chrono::nanoseconds moduleUnloadStarted;
   std::chrono::nanoseconds moduleLoadFinished;
   std::chrono::nanoseconds assemblyLoadFinished;
   std::chrono::nanoseconds initialize;
+
   //
+  unsigned int callTargetRequestRejitCount;
   unsigned int jitInliningCount;
   unsigned int jitCompilationStartedCount;
   unsigned int moduleUnloadStartedCount;
@@ -39,6 +42,7 @@ class Stats : public Singleton<Stats> {
 
  public:
   Stats() { 
+    callTargetRequestRejit = std::chrono::nanoseconds(0);
     jitInlining = std::chrono::nanoseconds(0);
     jitCompilationStarted = std::chrono::nanoseconds(0);
     moduleUnloadStarted = std::chrono::nanoseconds(0);
@@ -46,11 +50,16 @@ class Stats : public Singleton<Stats> {
     assemblyLoadFinished = std::chrono::nanoseconds(0);
     initialize = std::chrono::nanoseconds(0);
 
+    callTargetRequestRejitCount = 0;
     jitInliningCount = 0;
     jitCompilationStartedCount = 0;
     moduleUnloadStartedCount = 0;
     moduleLoadFinishedCount = 0;
     assemblyLoadFinishedCount = 0;
+  }
+  SWStat CallTargetRequestRejitMeasure() {
+    callTargetRequestRejitCount++;
+    return SWStat(&callTargetRequestRejit);
   }
   SWStat JITInliningMeasure() {
     jitInliningCount++;
@@ -81,6 +90,8 @@ class Stats : public Singleton<Stats> {
     ss << initialize.count() / 1000000 << "ms";
     ss << ", ModuleLoadFinished=";
     ss << moduleLoadFinished.count() / 1000000 << "ms" << "/" << moduleLoadFinishedCount;
+    ss << ", RequestRejit=";
+    ss << callTargetRequestRejit.count() / 1000000 << "ms" << "/" << callTargetRequestRejitCount;
     ss << ", AssemblyLoadFinished=";
     ss << assemblyLoadFinished.count() / 1000000 << "ms" << "/" << assemblyLoadFinishedCount;
     ss << ", ModuleUnloadStarted=";

@@ -444,7 +444,7 @@ std::vector<Integration> FilterIntegrationsByName(
 
 // FlattenIntegrations flattens integrations to per method structures
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations, bool is_calltarget_enabled);
+    const std::vector<Integration>& integrations, const bool is_calltarget_enabled);
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
@@ -456,7 +456,8 @@ std::vector<IntegrationMethod> FilterIntegrationsByCaller(
 // referenced by the module's assembly import
 std::vector<IntegrationMethod> FilterIntegrationsByTarget(
     const std::vector<IntegrationMethod>& integration_methods,
-    const ComPtr<IMetaDataAssemblyImport>& assembly_import);
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+    const bool is_calltarget_enabled);
 
 // FilterIntegrationsByTargetAssemblyName removes any integrations which target any
 // of the specified assemblies

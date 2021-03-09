@@ -386,6 +386,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
           module_info.assembly.app_domain_name);
   }
 
+  bool is_calltarget_enabled = IsCallTargetEnabled();
   AppDomainID app_domain_id = module_info.assembly.app_domain_id;
 
   // Identify the AppDomain ID of mscorlib which will be the Shared Domain
@@ -459,8 +460,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     }
   }
 
-  std::vector<IntegrationMethod> filtered_integrations =
-      FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
+  std::vector<IntegrationMethod> filtered_integrations = is_calltarget_enabled ? 
+      integration_methods_ : FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
 
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
@@ -473,7 +474,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
                                            IID_IMetaDataImport2,
                                            metadata_interfaces.GetAddressOf());
-
   if (FAILED(hr)) {
     Warn("ModuleLoadFinished failed to get metadata interface for ", module_id,
          " ", module_info.assembly.name);
@@ -495,8 +495,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // System.Data or System.Data.Common
   if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") &&
       module_info.assembly.name != WStr("Dapper")) {
-    filtered_integrations =
-        FilterIntegrationsByTarget(filtered_integrations, assembly_import);
+
+    filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import, is_calltarget_enabled);
 
     if (filtered_integrations.empty()) {
       // we don't need to instrument anything in this module, skip it
@@ -504,14 +504,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
             module_id, " ", module_info.assembly.name);
       return S_OK;
     }
-  }
-
-  mdModule module;
-  hr = metadata_import->GetModuleFromScope(&module);
-  if (FAILED(hr)) {
-    Warn("ModuleLoadFinished failed to get module metadata token for ",
-         module_id, " ", module_info.assembly.name);
-    return S_OK;
   }
 
   GUID module_version_id;
@@ -2746,6 +2738,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
 /// <param name="filtered_integrations">Filtered vector of integrations to be applied</param>
 /// <returns>Number of ReJIT requests made</returns>
 size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata, const std::vector<IntegrationMethod> &filtered_integrations) {
+  auto measure = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
+  
   auto metadata_import = module_metadata->metadata_import;
   std::vector<ModuleID> vtModules;
   std::vector<mdMethodDef> vtMethodDefs;
