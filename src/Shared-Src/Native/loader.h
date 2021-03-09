@@ -54,10 +54,10 @@ namespace shared {
 	{
 		public:
 			LoaderResourceMonikerIDs(void)
-                : Net45_Datadog_AutoInstrumentation_ManagedLoader_dll(101),
-				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll(102),
-				  Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb(103),
-				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb(104)
+                : Net45_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
+				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
+				  Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb(0),
+				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb(0)
 			{}
 
 			LoaderResourceMonikerIDs(const LoaderResourceMonikerIDs& ids)

@@ -1121,7 +1121,7 @@ namespace shared {
         LPCWSTR symbolsLpName;
 
         if (runtime_information_.is_desktop()) {
-          dllLpName = MAKEINTRESOURCE(resourceMonikerIDs_.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll); // MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_DLL);
+          dllLpName = MAKEINTRESOURCE(resourceMonikerIDs_.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll);
           symbolsLpName = MAKEINTRESOURCE(resourceMonikerIDs_.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb);
         } else {
           dllLpName = MAKEINTRESOURCE(resourceMonikerIDs_.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll);
