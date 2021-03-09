@@ -7,11 +7,6 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     public static class AspNetCoreEndpointRoutingTestData
     {
-        private const string IndexEndpointName = "Datadog.Trace.Tests.DiagnosticListeners.HomeController.Index (Datadog.Trace.Tests)";
-        private const string ErrorEndpointName = "Datadog.Trace.Tests.DiagnosticListeners.HomeController.Error (Datadog.Trace.Tests)";
-        private const string MyTestEndpointName = "Datadog.Trace.Tests.DiagnosticListeners.MyTestController.Index (Datadog.Trace.Tests)";
-        // private const string StatusCodeEndpointName = "Datadog.Trace.Tests.DiagnosticListeners.MyTestController.SetStatusCode (Datadog.Trace.Tests)";
-
         /// <summary>
         /// Gets data for Endpoint Routing tests with the feature flags disabled
         /// (URL, isError, Resource, Tags)
@@ -56,14 +51,16 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         /// </summary>
         public static TheoryData<string, int, bool, string, SerializableDictionary> WithFeatureFlag => new()
         {
-            { "/", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
-            { "/Home", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
-            { "/Home/Index", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
+            { "/", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: "HomeController.Index") },
+            { "/Home", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: "HomeController.Index") },
+            { "/Home/Index", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: "HomeController.Index") },
             { "/Api/index", 200, false, "GET /api/index", ApiIndexTags() },
-            { "/Api/Value/3", 200, false, "GET /api/value/{value}", ApiValueTags() },
-            { "/Api/Value/100", 400, false, "GET /api/value/{value}", ApiValueTags() },
-            { "/MyTest", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: MyTestEndpointName) },
-            { "/MyTest/index", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: MyTestEndpointName) },
+            { "/Api/Value/3", 400, false, "GET /api/value/{value}", ApiValueTags() },
+            { "/Api/Value/200", 200, false, "GET /api/value/{value}", ApiValueTags() },
+            { "/Api/Value/201", 201, false, "GET /api/value/{value}", ApiValueTags() },
+            { "/Api/Value/401", 401, false, "GET /api/value/{value}", ApiValueTags() },
+            { "/MyTest", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: "MyTestController.Index") },
+            { "/MyTest/index", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: "MyTestController.Index") },
             { "/statuscode", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
             { "/statuscode/100", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
             { "/statuscode/Oops", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
@@ -73,16 +70,19 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/echo/123", 200, false, "GET /echo/{value?}", EchoTags() },
             { "/echo/false", 404, false, "GET /echo/false", EmptyTags() },
             { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
-            { "/Home/Error", 500, true, "GET /home/error", ConventionalRouteTags(action: "error") },
-            { "/Home/UncaughtError", 500, true, "GET /home/uncaughterror", ConventionalRouteTags(action: "uncaughterror") },
-            { "/Home/BadHttpRequest", 400, true, "GET /home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
-            { $"{CustomHandlerPrefix}/Home/Error", 500, true, $"GET {CustomHandlerPrefix}/home/Error", ConventionalRouteTags(action: "error") },
-            { $"{CustomHandlerPrefix}/Home/UncaughtError", 500, true, $"GET {CustomHandlerPrefix}/home/uncaughterror", ConventionalRouteTags(action: "uncaughterror") },
-            { $"{CustomHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {CustomHandlerPrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
-            { $"{ExceptionPagePrefix}/Home/Error", 500, true, $"GET {ExceptionPagePrefix}/home/Error", ConventionalRouteTags(action: "error") },
-            { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
-            { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/Error", ConventionalRouteTags(action: "error") },
-            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
+            { "/Home/Error", 500, true, "GET /home/error", ErrorRouteTags() },
+            { "/Home/UncaughtError", 500, true, "GET /home/uncaughterror", UncaughtErrorTags() },
+            { "/Home/BadHttpRequest", 400, true, "GET /home/badhttprequest", BadHttpRequestTags() },
+            { $"{CustomHandlerPrefix}/Home/Error", 500, true, $"GET {CustomHandlerPrefix}/home/error", ErrorRouteTags() },
+            { $"{CustomHandlerPrefix}/Home/UncaughtError", 500, true, $"GET {CustomHandlerPrefix}/home/uncaughterror", UncaughtErrorTags() },
+            { $"{CustomHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {CustomHandlerPrefix}/home/badhttprequest", BadHttpRequestTags() },
+            { $"{CustomHandlerPrefix}/throws", 500, true, $"GET {CustomHandlerPrefix}/throws", ThrowsTags() },
+            { $"{ExceptionPagePrefix}/Home/Error", 500, true, $"GET {ExceptionPagePrefix}/home/error", ErrorRouteTags() },
+            { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/home/badhttprequest", BadHttpRequestTags() },
+            { $"{ExceptionPagePrefix}/throws", 500, true, $"GET {ExceptionPagePrefix}/throws", ThrowsTags() },
+            { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/error", ErrorRouteTags() },
+            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", BadHttpRequestTags() },
+            { $"{ReExecuteHandlerPrefix}/throws", 500, true, $"GET {ReExecuteHandlerPrefix}/throws", ThrowsTags() },
         };
 
         private static SerializableDictionary EmptyTags() => new()
@@ -90,7 +90,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetRoute, null },
             { Tags.AspNetController, null },
             { Tags.AspNetAction, null },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, null },
         };
 
         private static SerializableDictionary ConventionalRouteTags(
@@ -101,27 +103,58 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetRoute, "{controller=home}/{action=index}/{id?}" },
             { Tags.AspNetController, controller },
             { Tags.AspNetAction, action },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, $"Datadog.Trace.IntegrationTests.DiagnosticListeners.{endpoint} (Datadog.Trace.IntegrationTests)" },
         };
+
+        private static SerializableDictionary ErrorRouteTags()
+            => ConventionalRouteTags(action: "error", endpoint: "HomeController.Error");
+
+        private static SerializableDictionary BadHttpRequestTags()
+            => ConventionalRouteTags(action: "badhttprequest", endpoint: "HomeController.BadHttpRequest");
+
+        private static SerializableDictionary UncaughtErrorTags()
+            => ConventionalRouteTags(action: "uncaughterror", endpoint: "HomeController.UncaughtError");
 
         private static SerializableDictionary StatusCodeTags() => new()
         {
             { Tags.AspNetRoute, "statuscode/{value=200}" },
             { Tags.AspNetController, "mytest" },
             { Tags.AspNetAction, "setstatuscode" },
-            // { Tags.AspNetEndpoint, StatusCodeEndpointName },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.MyTestController.SetStatusCode (Datadog.Trace.IntegrationTests)" },
         };
 
         private static SerializableDictionary HealthCheckTags() => new()
         {
             { Tags.AspNetRoute, "/healthz" },
-            // { Tags.AspNetEndpoint, "Custom Health Check" },
+            { Tags.AspNetController, null },
+            { Tags.AspNetAction, null },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, "Custom Health Check" },
         };
 
         private static SerializableDictionary EchoTags() => new()
         {
             { Tags.AspNetRoute, "/echo/{value:int?}" },
-            // { Tags.AspNetEndpoint, "/echo/{value:int?} HTTP: GET" },
+            { Tags.AspNetController, null },
+            { Tags.AspNetAction, null },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, "/echo/{value:int?} HTTP: GET" },
+        };
+
+        private static SerializableDictionary ThrowsTags() => new()
+        {
+            { Tags.AspNetRoute, "/throws" },
+            { Tags.AspNetController, null },
+            { Tags.AspNetAction, null },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, "/throws HTTP: GET" },
         };
 
         private static SerializableDictionary ApiIndexTags() => new()
@@ -129,7 +162,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetRoute, "api/index" },
             { Tags.AspNetController, "api" },
             { Tags.AspNetAction, "index" },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.ApiController.Index (Datadog.Trace.IntegrationTests)" },
         };
 
         private static SerializableDictionary ApiValueTags() => new()
@@ -137,7 +172,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetRoute, "api/value/{value}" },
             { Tags.AspNetController, "api" },
             { Tags.AspNetAction, "value" },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.ApiController.Value (Datadog.Trace.IntegrationTests)" },
         };
     }
 }

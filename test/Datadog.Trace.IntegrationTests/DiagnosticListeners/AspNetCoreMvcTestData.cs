@@ -35,6 +35,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { $"{ExceptionPagePrefix}/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
             { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, "GET Home/BadHttpRequest", EmptyTags() },
             { $"{ExceptionPagePrefix}/throws", 500, true, $"GET {ExceptionPagePrefix}/throws", EmptyTags() },
+            // The below is the ideal behaviour, but we can't achieve that currently
             // { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
             // { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, "GET Home/BadHttpRequest", EmptyTags() },
             // { $"{ReExecuteHandlerPrefix}/throws", 500, true, $"GET {ReExecuteHandlerPrefix}/throws", EmptyTags() },
@@ -50,8 +51,10 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/Home", 200, false, "GET /home/index", ConventionalRouteTags() },
             { "/Home/Index", 200, false, "GET /home/index", ConventionalRouteTags() },
             { "/Api/index", 200, false, "GET /api/index", ApiIndexTags() },
-            { "/Api/Value/3", 200, false, "GET /api/value/{value}", ApiValueTags() },
-            { "/Api/Value/100", 400, false, "GET /api/value/{value}", ApiValueTags() },
+            { "/Api/Value/3", 400, false, "GET /api/value/{value}", ApiValueTags() },
+            { "/Api/Value/200", 200, false, "GET /api/value/{value}", ApiValueTags() },
+            { "/Api/Value/201", 201, false, "GET /api/value/{value}", ApiValueTags() },
+            { "/Api/Value/401", 401, false, "GET /api/value/{value}", ApiValueTags() },
             { "/MyTest", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest") },
             { "/MyTest/index", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest") },
             { "/statuscode", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
@@ -62,13 +65,18 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/Home/Error", 500, true, "GET /home/error", ConventionalRouteTags(action: "error") },
             { "/Home/UncaughtError", 500, true, "GET /home/uncaughterror", ConventionalRouteTags(action: "uncaughterror") },
             { "/Home/BadHttpRequest", 400, true, "GET /home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
-            { $"{CustomHandlerPrefix}/Home/Error", 500, true, $"GET {CustomHandlerPrefix}/home/Error", ConventionalRouteTags(action: "error") },
+            { $"{CustomHandlerPrefix}/Home/Error", 500, true, $"GET {CustomHandlerPrefix}/home/error", ConventionalRouteTags(action: "error") },
             { $"{CustomHandlerPrefix}/Home/UncaughtError", 500, true, $"GET {CustomHandlerPrefix}/home/uncaughterror", ConventionalRouteTags(action: "uncaughterror") },
             { $"{CustomHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {CustomHandlerPrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
-            { $"{ExceptionPagePrefix}/Home/Error", 500, true, $"GET {ExceptionPagePrefix}/home/Error", ConventionalRouteTags(action: "error") },
+            { $"{CustomHandlerPrefix}/throws", 500, true, $"GET {CustomHandlerPrefix}/throws", EmptyTags() },
+            { $"{ExceptionPagePrefix}/Home/Error", 500, true, $"GET {ExceptionPagePrefix}/home/error", ConventionalRouteTags(action: "error") },
             { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
-            { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/Error", ConventionalRouteTags(action: "error") },
+            { $"{ExceptionPagePrefix}/throws", 500, true, $"GET {ExceptionPagePrefix}/throws", EmptyTags() },
+            { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/error", ConventionalRouteTags(action: "error") },
             { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
+            // The below is the ideal behaviour, but we can't achieve that with arbitrary Map branches unfortunately
+            // { $"{ReExecuteHandlerPrefix}/throws", 500, true, $"GET {ReExecuteHandlerPrefix}/throws", EmptyTags() },
+            { $"{ReExecuteHandlerPrefix}/throws", 500, true, $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalRouteTags() },
         };
 
         private static SerializableDictionary EmptyTags() => new()
@@ -76,7 +84,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetRoute, null },
             { Tags.AspNetController, null },
             { Tags.AspNetAction, null },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, null },
         };
 
         private static SerializableDictionary ConventionalRouteTags(
@@ -86,7 +96,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetRoute, "{controller=home}/{action=index}/{id?}" },
             { Tags.AspNetController, controller },
             { Tags.AspNetAction, action },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, null },
         };
 
         private static SerializableDictionary StatusCodeTags() => new()
@@ -94,7 +106,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetRoute, "statuscode/{value=200}" },
             { Tags.AspNetController, "mytest" },
             { Tags.AspNetAction, "setstatuscode" },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, null },
         };
 
         private static SerializableDictionary ApiIndexTags() => new()
@@ -102,7 +116,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetRoute, "api/index" },
             { Tags.AspNetController, "api" },
             { Tags.AspNetAction, "index" },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, null },
         };
 
         private static SerializableDictionary ApiValueTags() => new()
@@ -110,7 +126,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { Tags.AspNetRoute, "api/value/{value}" },
             { Tags.AspNetController, "api" },
             { Tags.AspNetAction, "value" },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetArea, null },
+            { Tags.AspNetPage, null },
+            { Tags.AspNetEndpoint, null },
         };
     }
 }
