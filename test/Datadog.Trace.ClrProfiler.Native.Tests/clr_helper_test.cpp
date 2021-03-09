@@ -130,7 +130,7 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
       {{{}, {L"System.Runtime", L"", L"", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_}, {}}}};
   auto all = FlattenIntegrations({i1, i2, i3}, false);
   auto expected = FlattenIntegrations({i1, i3}, false);
-  auto actual = FilterIntegrationsByTarget(all, assembly_import_);
+  auto actual = FilterIntegrationsByTarget(all, assembly_import_, false);
   EXPECT_EQ(actual, expected);
 }
 
@@ -187,7 +187,7 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
 
   Integration i1 = {L"integration-1", {{{}, included, {}}, {{}, excluded, {}}}};
   auto all = FlattenIntegrations({i1}, false);
-  auto filtered = FilterIntegrationsByTarget(all, assembly_import_);
+  auto filtered = FilterIntegrationsByTarget(all, assembly_import_, false);
   bool foundExclusion = false;
   for (auto& item : filtered) {
     if (item.replacement.target_method == excluded) {
