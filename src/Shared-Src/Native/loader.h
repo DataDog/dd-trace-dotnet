@@ -50,6 +50,29 @@ namespace shared {
 		bool is_core() const { return runtime_type == COR_PRF_CORE_CLR; }
 	};
 
+	struct LoaderResourceMonikerIDs
+	{
+		public:
+			LoaderResourceMonikerIDs(void)
+                : Net45_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
+				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
+				  Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb(0),
+				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb(0)
+			{}
+
+			LoaderResourceMonikerIDs(const LoaderResourceMonikerIDs& ids)
+				: Net45_Datadog_AutoInstrumentation_ManagedLoader_dll(ids.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll),
+				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll(ids.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll),
+			   	  Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb(ids.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb),
+				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb(ids.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb)
+			{}
+
+			std::int32_t Net45_Datadog_AutoInstrumentation_ManagedLoader_dll;
+			std::int32_t NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll;
+			std::int32_t Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb;
+			std::int32_t NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb;
+	};
+
 	class Loader {
 	private:
 		RuntimeInfo runtime_information_;
@@ -64,6 +87,8 @@ namespace shared {
 		std::function<void(const std::string& str)> log_debug_callback_ = nullptr;
 		std::function<void(const std::string& str)> log_info_callback_ = nullptr;
 		std::function<void(const std::string& str)> log_warn_callback_ = nullptr;
+
+		LoaderResourceMonikerIDs resourceMonikerIDs_;
 
 		void Debug(const std::string& str) {
 			if (log_debug_callback_ != nullptr) {
@@ -109,14 +134,16 @@ namespace shared {
 			ULONG assembly_string_nondefault_appdomain_array_length,
 			std::function<void(const std::string& str)> log_debug_callback,
 			std::function<void(const std::string& str)> log_info_callback,
-			std::function<void(const std::string& str)> log_warn_callback);
+			std::function<void(const std::string& str)> log_warn_callback,
+			const LoaderResourceMonikerIDs& resourceMonikerIDs);
 
 		Loader(ICorProfilerInfo4* info,
 			std::vector<WSTRING> assembly_string_default_appdomain_vector,
 			std::vector<WSTRING> assembly_string_nondefault_appdomain_vector,
 			std::function<void(const std::string& str)> log_debug_callback,
 			std::function<void(const std::string& str)> log_info_callback,
-			std::function<void(const std::string& str)> log_warn_callback);
+			std::function<void(const std::string& str)> log_warn_callback,
+			const LoaderResourceMonikerIDs& resourceMonikerIDs);
 
 		HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
 
@@ -127,7 +154,8 @@ namespace shared {
 			ICorProfilerInfo4* info,
 			std::function<void(const std::string& str)> log_debug_callback,
 			std::function<void(const std::string& str)> log_info_callback,
-			std::function<void(const std::string& str)> log_warn_callback) {
+			std::function<void(const std::string& str)> log_warn_callback,
+		    const LoaderResourceMonikerIDs& resourceMonikerIDs) {
 
 			std::vector<WSTRING> assembly_string_default_appdomain_vector;
 			std::vector<WSTRING> assembly_string_nondefault_appdomain_vector;
@@ -161,10 +189,13 @@ namespace shared {
 
 			}
 
-			return new Loader(info, assembly_string_default_appdomain_vector,
-				assembly_string_nondefault_appdomain_vector,
-				log_debug_callback, log_info_callback,
-				log_warn_callback);
+			return new Loader(info,
+							  assembly_string_default_appdomain_vector,
+				              assembly_string_nondefault_appdomain_vector,
+				              log_debug_callback,
+				              log_info_callback,
+				              log_warn_callback,
+				              resourceMonikerIDs);
 		}
 	};
 

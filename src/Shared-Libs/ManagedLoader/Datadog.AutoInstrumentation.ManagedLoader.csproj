@@ -4,11 +4,36 @@
     <RootNamespace>Datadog.AutoInstrumentation.ManagedLoader</RootNamespace>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;netcoreapp2.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.0</TargetFrameworks>
-    <OutputPath>..\bin\ProfilerResources\</OutputPath>
 
-    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
+	  <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
+
+  <PropertyGroup>
+	  <BaseIntermediateOutputPath>..\..\..\..\.BinaryOutput\obj</BaseIntermediateOutputPath>
+	  <BaseOutputPath>..\..\..\..\.BinaryOutput\bin</BaseOutputPath>
+
+	  <RelativeBaseBinPath>$(Configuration)\$(TargetFramework)</RelativeBaseBinPath>
+	  <RelativeBaseBinPath Condition="'$(RuntimeIdentifier)' != ''">$(RelativeProjectBinPath)\$(RuntimeIdentifier)</RelativeBaseBinPath>
+	  <RelativeProjectBinPath>$(RelativeBaseBinPath)\$(MSBuildProjectName)</RelativeProjectBinPath>
+
+	  <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(RelativeProjectBinPath)</IntermediateOutputPath>
+	  <OutputPath>$(BaseOutputPath)\$(RelativeProjectBinPath)</OutputPath>
+	  <ResourceOutPath>..\..\..\..\..\Profiler-DotNet\.BinaryOutput\bin\$(RelativeBaseBinPath)\Resources</ResourceOutPath>
+
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+	  <ResourceFilesOut Include="$(OutputPath)\**\*.pdb" />
+	  <ResourceFilesOut Include="$(OutputPath)\**\*.dll" />
+  </ItemGroup>
+
+  <Target Name="CopyFiles" AfterTargets="Build">
+    <Copy SourceFiles="@(ResourceFilesOut)" DestinationFolder="$(ResourceOutPath)" />
+  </Target>
 	
   <PropertyGroup>
     <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..</SharedSrcBaseDir>

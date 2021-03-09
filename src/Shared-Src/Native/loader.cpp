@@ -5,7 +5,7 @@
 #endif
 
 #include "il_rewriter_wrapper.h"
-#include "resource.h"
+//#include "resource.h"
 
 #ifdef MACOS    
 #include <mach-o/dyld.h>
@@ -90,7 +90,10 @@ namespace shared {
         ULONG assembly_string_nondefault_appdomain_array_length,
         std::function<void(const std::string& str)> log_debug_callback,
         std::function<void(const std::string& str)> log_info_callback,
-        std::function<void(const std::string& str)> log_warn_callback) {
+        std::function<void(const std::string& str)> log_warn_callback,
+        const LoaderResourceMonikerIDs& resourceMonikerIDs) {
+
+        resourceMonikerIDs_ = LoaderResourceMonikerIDs(resourceMonikerIDs);
         info_ = info;
         if (assembly_string_default_appdomain_array != nullptr &&
             assembly_string_default_appdomain_array_length > 0) {
@@ -117,7 +120,10 @@ namespace shared {
         std::vector<WSTRING> assembly_string_nondefault_appdomain_vector,
         std::function<void(const std::string& str)> log_debug_callback,
         std::function<void(const std::string& str)> log_info_callback,
-        std::function<void(const std::string& str)> log_warn_callback) {
+        std::function<void(const std::string& str)> log_warn_callback,
+        const LoaderResourceMonikerIDs& resourceMonikerIDs) {
+
+        resourceMonikerIDs_ = LoaderResourceMonikerIDs(resourceMonikerIDs);
         info_ = info;
         assembly_string_default_appdomain_vector_ = assembly_string_default_appdomain_vector;
         assembly_string_nondefault_appdomain_vector_ = assembly_string_nondefault_appdomain_vector;
@@ -1115,11 +1121,11 @@ namespace shared {
         LPCWSTR symbolsLpName;
 
         if (runtime_information_.is_desktop()) {
-          dllLpName = MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_DLL);
-          symbolsLpName = MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_SYMBOLS);
+          dllLpName = MAKEINTRESOURCE(resourceMonikerIDs_.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll); // MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_DLL);
+          symbolsLpName = MAKEINTRESOURCE(resourceMonikerIDs_.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb);
         } else {
-          dllLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_DLL);
-          symbolsLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_SYMBOLS);
+          dllLpName = MAKEINTRESOURCE(resourceMonikerIDs_.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll);
+          symbolsLpName = MAKEINTRESOURCE(resourceMonikerIDs_.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb);
         }
 
         HRSRC hResAssemblyInfo = FindResource(hInstance, dllLpName, L"ASSEMBLY");
