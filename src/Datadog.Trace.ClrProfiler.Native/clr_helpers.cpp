@@ -443,7 +443,7 @@ bool DisableOptimizations() {
   return false;
 }
 
-bool EnableInlining() {
+bool EnableInlining(bool defaultValue) {
   const auto enable_inlining =
       GetEnvironmentValue(environment::clr_enable_inlining);
 
@@ -451,8 +451,12 @@ bool EnableInlining() {
     return true;
   }
 
+  if (enable_inlining == WStr("0") || enable_inlining == WStr("false")) {
+    return false;
+  }
+
   // default to false: don't inline.
-  return false;
+  return defaultValue;
 }
 
 bool IsCallTargetEnabled() {
