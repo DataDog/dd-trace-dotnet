@@ -1,13 +1,12 @@
-#if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 using Xunit;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests.CallTarget
+namespace Datadog.Trace.Tests.CallTarget
 {
-    public class ValueTaskContinuationGeneratorTests
+    public class TaskContinuationGeneratorTests
     {
         public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
@@ -15,14 +14,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CallTarget
         }
 
         [Fact]
-        public async ValueTask SuccessTest()
+        public async Task SuccessTest()
         {
-            var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask>();
+            var tcg = new TaskContinuationGenerator<TaskContinuationGeneratorTests, TaskContinuationGeneratorTests, Task>();
             var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault());
 
             await cTask;
 
-            async ValueTask GetPreviousTask()
+            async Task GetPreviousTask()
             {
                 await Task.Delay(1000).ConfigureAwait(false);
             }
@@ -34,15 +33,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CallTarget
             Exception ex = null;
 
             // Normal
-            ex = await Assert.ThrowsAsync<CustomException>(() => GetPreviousTask().AsTask());
+            ex = await Assert.ThrowsAsync<CustomException>(() => GetPreviousTask());
             Assert.Equal("Internal Test Exception", ex.Message);
 
             // Using the continuation
-            var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask>();
-            ex = await Assert.ThrowsAsync<CustomException>(() => tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()).AsTask());
+            var tcg = new TaskContinuationGenerator<TaskContinuationGeneratorTests, TaskContinuationGeneratorTests, Task>();
+            ex = await Assert.ThrowsAsync<CustomException>(() => tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()));
             Assert.Equal("Internal Test Exception", ex.Message);
 
-            async ValueTask GetPreviousTask()
+            async Task GetPreviousTask()
             {
                 await Task.Delay(1000).ConfigureAwait(false);
                 throw new CustomException("Internal Test Exception");
@@ -52,12 +51,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CallTarget
         [Fact]
         public async Task SuccessGenericTest()
         {
-            var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask<bool>, bool>();
+            var tcg = new TaskContinuationGenerator<TaskContinuationGeneratorTests, TaskContinuationGeneratorTests, Task<bool>, bool>();
             var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault());
 
             await cTask;
 
-            async ValueTask<bool> GetPreviousTask()
+            async Task<bool> GetPreviousTask()
             {
                 await Task.Delay(1000).ConfigureAwait(false);
                 return true;
@@ -70,15 +69,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CallTarget
             Exception ex = null;
 
             // Normal
-            ex = await Assert.ThrowsAsync<CustomException>(() => GetPreviousTask().AsTask());
+            ex = await Assert.ThrowsAsync<CustomException>(() => GetPreviousTask());
             Assert.Equal("Internal Test Exception", ex.Message);
 
             // Using the continuation
-            var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask<bool>, bool>();
-            ex = await Assert.ThrowsAsync<CustomException>(() => tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()).AsTask());
+            var tcg = new TaskContinuationGenerator<TaskContinuationGeneratorTests, TaskContinuationGeneratorTests, Task<bool>, bool>();
+            ex = await Assert.ThrowsAsync<CustomException>(() => tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()));
             Assert.Equal("Internal Test Exception", ex.Message);
 
-            async ValueTask<bool> GetPreviousTask()
+            async Task<bool> GetPreviousTask()
             {
                 await Task.Delay(1000).ConfigureAwait(false);
                 throw new CustomException("Internal Test Exception");
@@ -94,4 +93,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CallTarget
         }
     }
 }
-#endif
