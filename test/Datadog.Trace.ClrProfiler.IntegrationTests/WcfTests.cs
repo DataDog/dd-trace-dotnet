@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Fact]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
