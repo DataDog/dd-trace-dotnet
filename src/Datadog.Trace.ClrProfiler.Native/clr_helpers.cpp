@@ -455,7 +455,6 @@ bool EnableInlining(bool defaultValue) {
     return false;
   }
 
-  // default to false: don't inline.
   return defaultValue;
 }
 
