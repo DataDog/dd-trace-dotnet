@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 #endif
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,11 +25,20 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
     {
         public void ConfigureServices(IServiceCollection services)
         {
-#if NETCOREAPP2_1
-            services.AddMvc();
-#else
-            services.AddMvc(options => options.EnableEndpointRouting = false);
+            services
+               .AddMvc()
+#if !NETCOREAPP2_1
+               .AddMvcOptions(options => options.EnableEndpointRouting = false)
 #endif
+               .ConfigureApplicationPartManager(partManager =>
+                {
+                    // Ensure we only load controllers from this assembly
+                    // (don't accidentally load Razor Pages etc)
+                    var thisAssembly = typeof(MvcStartup).Assembly;
+                    var assemblyPart = new AssemblyPart(thisAssembly);
+                    partManager.ApplicationParts.Clear();
+                    partManager.ApplicationParts.Add(assemblyPart);
+                });
         }
 
         public void Configure(IApplicationBuilder builder, IConfiguration configuration)
@@ -67,7 +77,16 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers()
+                    .ConfigureApplicationPartManager(partManager =>
+                     {
+                         // Ensure we only load controllers from this assembly
+                         // (don't accidentally load Razor Pages etc)
+                         var thisAssembly = typeof(MvcStartup).Assembly;
+                         var assemblyPart = new AssemblyPart(thisAssembly);
+                         partManager.ApplicationParts.Clear();
+                         partManager.ApplicationParts.Add(assemblyPart);
+                     });
             services.AddHealthChecks();
             services.AddAuthorization();
         }

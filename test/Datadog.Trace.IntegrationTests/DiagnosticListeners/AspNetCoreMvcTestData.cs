@@ -13,11 +13,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         /// </summary>
         public static TheoryData<string, int, bool, string, SerializableDictionary> WithoutFeatureFlag => new()
         {
-#if NETCOREAPP2_1
             { "/", 200, false, "GET Home/Index", EmptyTags() },
-#else
-            { "/", 200, false, "GET ", EmptyTags() },
-#endif
             { "/Home", 200, false, "GET Home/Index", EmptyTags() },
             { "/Home/Index", 200, false, "GET Home/Index", EmptyTags() },
             { "/MyTest", 200, false, "GET MyTest/Index", EmptyTags() },
