@@ -35,13 +35,13 @@ namespace Samples.Wcf.Client
                 httpRequestMessage = httpRequestMessageObject as HttpRequestMessageProperty;
                 if (string.IsNullOrEmpty(httpRequestMessage.Headers["upstream-service"]))
                 {
-                    httpRequestMessage.Headers["upstream-service"] = "Samples.WcfClient";
+                    httpRequestMessage.Headers["upstream-service"] = "Samples.Wcf.Client";
                 }
             }
             else
             {
                 httpRequestMessage = new HttpRequestMessageProperty();
-                httpRequestMessage.Headers["upstream-service"] = "Samples.WcfClient";
+                httpRequestMessage.Headers["upstream-service"] = "Samples.Wcf.Client";
                 request.Properties.Add(HttpRequestMessageProperty.Name, httpRequestMessage);
             }
 
