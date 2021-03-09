@@ -20,7 +20,7 @@ using Datadog.Logging.Emission;
 namespace Datadog.AutoInstrumentation.ManagedLoader
 {
     /// <summary>
-    /// Leightweight Log stub for Logging-SDK-agnostic logging.
+    /// Lightweight Log stub for Logging-SDK-agnostic logging.
     /// Users of this library can use this class as a leighweight redirect to whatever log technology is used for output.
     /// An absolute minimum of dependencies is required: 3 small static classes that are included as source code (no library dependency).
     /// The only namespaces importand by those 3 static classes are (see also <c>Datadog.Logging.Emission.props</c>):
@@ -392,7 +392,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                                 logSourceInfo.AssemblyName,
                                 message,
                                 exception,
-                                dataNamesAndValues);
+                                GetDataNamesAndValuesEnum(dataNamesAndValues));
             }
         }
 
@@ -529,7 +529,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                                 logSourceInfo.CallFileName,
                                 logSourceInfo.AssemblyName,
                                 message,
-                                dataNamesAndValues);
+                                GetDataNamesAndValuesEnum(dataNamesAndValues));
             }
         }
 
@@ -561,11 +561,11 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     // If AutomaticAssemblyName is enabled AND AssemblyName is not already specified, look into including the assembly name now.
                     if (s_config_AutomaticAssemblyName_ForDebug_Include && logSourceInfo.AssemblyName == null)
                     {
-                // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
-                // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
-                if (s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs <= 0
-                            || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForDebug_LastTimestamp, out s_AutomaticAssemblyName_ForDebug_LastTimestamp)
-                                    >= s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs)
+                        // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
+                        // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
+                        if (s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs <= 0
+                                    || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForDebug_LastTimestamp, out s_AutomaticAssemblyName_ForDebug_LastTimestamp)
+                                            >= s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs)
                         {
                             logSourceInfo = logSourceInfo.WithAssemblyName();
                         }
@@ -578,8 +578,24 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                                     logSourceInfo.CallFileName,
                                     logSourceInfo.AssemblyName,
                                     message,
-                                    dataNamesAndValues);
+                                    GetDataNamesAndValuesEnum(dataNamesAndValues));
                 }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static IEnumerable<object> GetDataNamesAndValuesEnum(object[] dataNamesAndValues)
+        {
+            if (dataNamesAndValues != null
+                    && dataNamesAndValues.Length == 1
+                    && dataNamesAndValues[0] != null
+                    && dataNamesAndValues[0] is IEnumerable<object> enumVal )
+            {
+                return enumVal;
+            }
+            else
+            {
+                return dataNamesAndValues;
             }
         }
 

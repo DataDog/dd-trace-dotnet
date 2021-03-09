@@ -10,7 +10,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     /// </summary>
     internal partial class AssemblyResolveEventHandler
     {
-        private const string LoggingComponentMoniker = AssemblyLoader.AssemblyLoggingComponentMonikerPrefix + nameof(AssemblyResolveEventHandler);
+        // The prefix to this is specified in LogComposer.tt
+        private const string LoggingComponentMoniker = nameof(AssemblyResolveEventHandler);
 
         // This handler will try to load assemblies from the folders specified in <c>ManagedProductBinariesDirectories</c>.
         // It will handle all assemblies with names that start with the prefixes below (<see cref="LoadAssemblyFromProductDirectoryPrefixes" />).

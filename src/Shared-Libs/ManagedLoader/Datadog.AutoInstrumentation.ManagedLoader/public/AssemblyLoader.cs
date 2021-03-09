@@ -25,12 +25,12 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     /// or for any other reasons, it must set up its own AssemblyResolve handler as the first thing after its
     /// entry point is called.
     ///
-    /// ! Do not make the AppDomain.AssemblyResolve handler in here more complex !
+    /// !*! Do not make the AppDomain.AssemblyResolve handler in here more complex !*!
     /// If anything, it should be simplified and any special logic should be moved into the respective assemblies
     /// requested for loading.
     ///
-    /// ! Also, remember that this assembly is shared between the Tracer's profiler component
-    /// and the Profiler's profiler component. Do not put specialized code here !
+    /// !*! Also, remember that this assembly is shared between the Tracer's profiler component
+    /// and the Profiler's profiler component. Do not put specialized code here !*!
     /// </summary>
     public class AssemblyLoader
     {
@@ -49,8 +49,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// More info: <see cref="AssemblyLoader.TargetLibraryEntrypointMethod" />. </summary>
         public const string TargetLibraryEntrypointType = "Datadog.AutoInstrumentation" + "." + "DllMain";
 
-        internal const string AssemblyLoggingComponentMonikerPrefix = "ManagedLoader.";
-        private const string LoggingComponentMoniker = AssemblyLoader.AssemblyLoggingComponentMonikerPrefix + nameof(AssemblyLoader);
+        internal const bool UseConsoleLoggingInsteadOfFile = false;             // Should be False in production.
+        internal const bool UseConsoleLoggingIfFileLoggingFails = true;         // May be True n production. Can that affect customer app behaviour?
+        private const string LoggingComponentMoniker = nameof(AssemblyLoader);  // The prefix to this is specified in LogComposer.tt
 
         private bool _isDefaultAppDomain;
         private string[] _assemblyNamesToLoadIntoDefaultAppDomain;
@@ -76,22 +77,40 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         {
             try
             {
-                LogConfigurator.SetupLogger();
-
                 try
                 {
-                    var assemblyLoader = new AssemblyLoader(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
-                    assemblyLoader.Execute();
+                    LogConfigurator.SetupLogger();
+
+                    try
+                    {
+                        var assemblyLoader = new AssemblyLoader(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
+                        assemblyLoader.Execute();
+                    }
+                    catch (Exception ex)
+                    {
+                        // An exception escaped from the loader. We are about to return to the caller, which is likely the IL-generated code in the module cctor.
+                        // So all we can do is log the error and swallow it to avoid crashing things.
+                        Log.Error(LoggingComponentMoniker, ex);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(LoggingComponentMoniker, ex);
+                    // We still have an exception, despite the above catch-all. Likely the exception came out of the logger.
+                    // We can log it to console it as a backup (if enabled).
+#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
+                    if (UseConsoleLoggingIfFileLoggingFails)
+                    {
+                        Console.WriteLine($"{Environment.NewLine}An exception occurred in {LoggingComponentMoniker}. Assemblies may not be loded or started."
+
+                                        + $"{Environment.NewLine}{ex}");
+                    }
+#pragma warning restore CS0162 // Unreachable code detected
                 }
             }
             catch
             {
-                // An exception must have come out of the logger.
-                // We swallow it to avoid crashing the process.
+                // We still have an exception passing through the above double-catch-all. Could not even write to console.
+                // Our last choise is to let it excpe and potentially crash the process or swallow it. We prefer the later.
             }
         }
 
@@ -164,31 +183,55 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 return;
             }
 
-            Type entryPointType = assembly.GetType(TargetLibraryEntrypointType, throwOnError: false);
+            Exception findEntryPointError = null;
+            Type entryPointType = null;
+            try
+            {
+                entryPointType = assembly.GetType(TargetLibraryEntrypointType, throwOnError: false);
+            }
+            catch(Exception ex)
+            {
+                findEntryPointError = ex;
+            }
+            
             if (entryPointType == null)
             {
                 Log.Info(
                         LoggingComponentMoniker,
                         "Assembly was loaded, but entry point was not invoked, bacause it does not contain the entry point type",
-                        "assembly",
-                        assembly.FullName,
-                        "entryPointType",
-                        TargetLibraryEntrypointType);
+                        "assembly.FullName", assembly.FullName,
+                        "assembly.Location", assembly.Location,
+                        "assembly.CodeBase", assembly.CodeBase,
+                        "entryPointType", TargetLibraryEntrypointType,
+                        "findEntryPointError", (findEntryPointError == null) ? "None" : $"{findEntryPointError.GetType().Name}: {findEntryPointError.Message}");
                 return;
             }
 
-            MethodInfo entryPointMethod = entryPointType.GetRuntimeMethod(TargetLibraryEntrypointMethod, parameters: new Type[0]);
+            MethodInfo entryPointMethod = null;
+            try
+            {
+                entryPointMethod = entryPointType.GetMethod(TargetLibraryEntrypointMethod,
+                                                            BindingFlags.Public | BindingFlags.Static,
+                                                            binder: null,
+                                                            types: new Type[0],
+                                                            modifiers: null);
+            }
+            catch(Exception ex)
+            {
+                findEntryPointError = ex;
+            }
+
             if (entryPointMethod == null)
             {
                 Log.Info(
                         LoggingComponentMoniker,
-                        "Assembly was loaded, but entry point was not invoked, bacause the entry point type does not contain the entry point method",
-                        "assembly",
-                        assembly.FullName,
-                        "entryPointType",
-                        entryPointType.FullName,
-                        "entryPointMethod",
-                        TargetLibraryEntrypointMethod);
+                        "Assembly was loaded, but entry point was not invoked: the entry point type was found, but it does not contain the entry point method (it must be public static)",
+                        "assembly.FullName", assembly.FullName,
+                        "assembly.Location", assembly.Location,
+                        "assembly.CodeBase", assembly.CodeBase,
+                        "entryPointType", entryPointType.FullName,
+                        "entryPointMethod", TargetLibraryEntrypointMethod,
+                        "findEntryPointError", (findEntryPointError == null) ? "None" : $"{findEntryPointError.GetType().Name}: {findEntryPointError.Message}");
                 return;
             }
 
@@ -202,24 +245,22 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                         LoggingComponentMoniker,
                         "Assembly was loaded and the entry point was invoked; an exception was thrown from the entry point",
                         ex,
-                        "assembly",
-                        assembly.FullName,
-                        "entryPointType",
-                        entryPointType.FullName,
-                        "entryPointMethod",
-                        entryPointMethod.Name);
+                        "assembly.FullName", assembly.FullName,
+                        "assembly.Location", assembly.Location,
+                        "assembly.CodeBase", assembly.CodeBase,
+                        "entryPointType",  entryPointType.FullName,
+                        "entryPointMethod", entryPointMethod.Name);
                 return;
             }
 
             Log.Info(
                     LoggingComponentMoniker,
                     "Assembly was loaded and the entry point was invoked",
-                    "assembly",
-                    assembly.FullName,
-                    "entryPointType",
-                    entryPointType.FullName,
-                    "entryPointMethod",
-                    entryPointMethod.Name);
+                    "assembly.FullName", assembly.FullName,
+                    "assembly.Location", assembly.Location,
+                    "assembly.CodeBase", assembly.CodeBase,
+                    "entryPointType",  entryPointType.FullName,
+                    "entryPointMethod", entryPointMethod.Name);
             return;
         }
 
@@ -239,12 +280,14 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
             // Check for bad assemblyNamesToLoad entries. We expect the array to be small and entries to be OK.
             // So scrolling multiple times is better then allocating a temp buffer.
+            bool someAssemblyNameNeedsCleaning = false;
             int validAssemblyNamesCount = 0;
             for (int pAsmNames = 0; pAsmNames < assemblyNamesToLoad.Length; pAsmNames++)
             {
-                if (!string.IsNullOrWhiteSpace(assemblyNamesToLoad[pAsmNames]))
+                if (CleanAssemblyNameToLoad(assemblyNamesToLoad[pAsmNames], out _, out bool asmNameNeedsCleaning))
                 {
                     validAssemblyNamesCount++;
+                    someAssemblyNameNeedsCleaning = someAssemblyNameNeedsCleaning || asmNameNeedsCleaning;
                 }
             }
 
@@ -254,7 +297,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 return null;
             }
 
-            if (assemblyNamesToLoad.Length == validAssemblyNamesCount)
+            if (assemblyNamesToLoad.Length == validAssemblyNamesCount && !someAssemblyNameNeedsCleaning)
             {
                 return assemblyNamesToLoad;
             }
@@ -262,13 +305,49 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             var validAssemblyNamesToLoad = new string[validAssemblyNamesCount];
             for (int pAsmNames = 0, pValidAsmNames = 0; pAsmNames < assemblyNamesToLoad.Length; pAsmNames++)
             {
-                if (!string.IsNullOrWhiteSpace(assemblyNamesToLoad[pAsmNames]))
+                if (CleanAssemblyNameToLoad(assemblyNamesToLoad[pAsmNames], out string cleanAssemblyNameToLoad, out _))
                 {
-                    validAssemblyNamesToLoad[pValidAsmNames++] = assemblyNamesToLoad[pAsmNames];
+                    validAssemblyNamesToLoad[pValidAsmNames++] = cleanAssemblyNameToLoad;
                 }
             }
 
             return validAssemblyNamesToLoad;
+        }
+
+        private static bool CleanAssemblyNameToLoad(string rawAssemblyName, out string cleanAssemblyName, out bool asmNameNeedsCleaning)
+        {
+            if (string.IsNullOrWhiteSpace(rawAssemblyName))
+            {
+                cleanAssemblyName = null;
+                asmNameNeedsCleaning = true;
+                return false;
+            }
+
+            const string DllExtension = ".dll";
+
+            cleanAssemblyName = rawAssemblyName.Trim();
+            if (cleanAssemblyName.EndsWith(DllExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                cleanAssemblyName = cleanAssemblyName.Substring(0, cleanAssemblyName.Length - DllExtension.Length);
+            }
+            else
+            {
+                if (cleanAssemblyName.Equals(rawAssemblyName, StringComparison.Ordinal))
+                {
+                    asmNameNeedsCleaning = false;
+                    return true;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(cleanAssemblyName))
+            {
+                cleanAssemblyName = null;
+                asmNameNeedsCleaning = true;
+                return false;
+            }
+
+            asmNameNeedsCleaning = true;
+            return true;
         }
 
         private static IReadOnlyList<string> ResolveManagedProductBinariesDirectories()
@@ -297,7 +376,13 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             //  - c:\Program Files\Datadog\.NET Tracer\netcoreapp3.1\
             //  - ...
 
-            string tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
+            string tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+
+            if (String.IsNullOrWhiteSpace(tracerHomeDirectory))
+            {
+                return null;
+            }
+
             string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir();
             string managedBinariesDirectory = Path.Combine(tracerHomeDirectory, managedBinariesSubdir);
 
@@ -330,13 +415,17 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 nativeProductBinariesDir = nativeProductBinariesDir ?? ReadEnvironmentVariable("COR_PROFILER_PATH");
             }
 
-            nativeProductBinariesDir = nativeProductBinariesDir ?? string.Empty;                            // Be defensive against env var not being set
-            nativeProductBinariesDir = Path.GetDirectoryName(Path.Combine(nativeProductBinariesDir, "."));  // Normalize in respect to final dir separator
+            // Be defensive against env var not being set.
+            if (String.IsNullOrWhiteSpace(nativeProductBinariesDir))
+            {
+                return null;
+            }
 
+            nativeProductBinariesDir = Path.GetDirectoryName(Path.Combine(nativeProductBinariesDir, "."));  // Normalize in respect to final dir separator
             string tracerHomeDirectory = Path.GetDirectoryName(nativeProductBinariesDir);                   // Shared Tracer/Provifer loader is in Tracer HOME
             string profilerHomeDirectory = Path.Combine(tracerHomeDirectory, "ContinuousProfiler");         // Profiler-HOME is in <Tracer-HOME>/ContinuousProfiler
 
-            string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);   // Managed binarie are in <Profiler-HOME>/net-ver-moniker/
+            string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);   // Managed binaries are in <Profiler-HOME>/net-ver-moniker/
             return managedBinariesDirectory;
         }
 

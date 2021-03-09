@@ -20,7 +20,7 @@ using Datadog.Logging.Emission;
 namespace Demo.Slimple.NetCore31
 {
     /// <summary>
-    /// Leightweight Log stub for Logging-SDK-agnostic logging.
+    /// Lightweight Log stub for Logging-SDK-agnostic logging.
     /// Users of this library can use this class as a leighweight redirect to whatever log technology is used for output.
     /// An absolute minimum of dependencies is required: 3 small static classes that are included as source code (no library dependency).
     /// The only namespaces importand by those 3 static classes are (see also <c>Datadog.Logging.Emission.props</c>):

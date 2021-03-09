@@ -7,8 +7,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 {
     internal static class LogConfigurator
     {
-        private const bool UseConsoleLogInsteadOfFileLog = false;
-        private const bool UseConsoleLogIfFileLogNotAvailable = true;
+        private const bool UseConsoleLogInsteadOfFileLog = AssemblyLoader.UseConsoleLoggingInsteadOfFile;
+        private const bool UseConsoleLogIfFileLogNotAvailable = AssemblyLoader.UseConsoleLoggingIfFileLoggingFails;
 
         private const string ProductFamily = "DotNet";
         private const string Product = "Common";

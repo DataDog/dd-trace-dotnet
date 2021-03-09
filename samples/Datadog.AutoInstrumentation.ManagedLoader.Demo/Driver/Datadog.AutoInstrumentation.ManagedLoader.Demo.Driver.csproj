@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Shared-Libs\ManagedLoader\Datadog.AutoInstrumentation.ManagedLoader.csproj" />
+    <ProjectReference Include="..\DefAD.Asm1\Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefAD.Asm1.csproj" />
+  </ItemGroup>
+
+</Project>
