@@ -57,6 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return null;
                 }
 
+                var newResourceNamesEnabled = Tracer.Instance.Settings.AspnetRouteTemplateResourceNamesEnabled;
                 string host = httpContext.Request.Headers.Get("Host");
                 string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
                 string url = httpContext.Request.RawUrl.ToLowerInvariant();
@@ -97,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
 
-                if (string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
+                if (newResourceNamesEnabled && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
                 {
                     resourceName = $"{httpMethod} /{routeUrl.ToLowerInvariant()}";
                 }
@@ -121,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Replace("{controller}", controllerName)
                        .Replace("{action}", actionName);
 
-                if (!wasAttributeRouted && routeValues is not null && route is not null)
+                if (newResourceNamesEnabled && !wasAttributeRouted && routeValues is not null && route is not null)
                 {
                     // Remove unused parameters from conventional route templates
                     // Don't bother with routes defined using attribute routing
@@ -176,8 +177,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
-                // set the resource name in the HttpContext so TracingHttpModule can update it
-                httpContext.Items["__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename"] = resourceName;
+                if (newResourceNamesEnabled)
+                {
+                    // set the resource name in the HttpContext so TracingHttpModule can update root span
+                    httpContext.Items["__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename"] = resourceName;
+                }
             }
             catch (Exception ex)
             {

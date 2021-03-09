@@ -180,6 +180,8 @@ namespace Datadog.Trace.Configuration
 
             TraceBatchInterval = source?.GetInt32(ConfigurationKeys.SerializationBatchInterval)
                         ?? 100;
+
+            AspnetRouteTemplateResourceNamesEnabled = IsFeatureFlagEnabled(ConfigurationKeys.FeatureFlags.AspnetRouteTemplateResourceNamesEnabled);
         }
 
         /// <summary>
@@ -381,6 +383,12 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating the batch interval for the serialization queue, in milliseconds
         /// </summary>
         internal int TraceBatchInterval { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the feature flag to enable the updated ASP.NET resource names is enabled
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
+        internal bool AspnetRouteTemplateResourceNamesEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

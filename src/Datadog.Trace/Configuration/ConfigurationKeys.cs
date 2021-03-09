@@ -342,6 +342,12 @@ namespace Datadog.Trace.Configuration
         internal static class FeatureFlags
         {
             /// <summary>
+            /// Feature Flag for whether to enable the updated ASP.NET resource names
+            /// </summary>
+            /// <seealso cref="TracerSettings.AspnetRouteTemplateResourceNamesEnabled"/>
+            public const string AspnetRouteTemplateResourceNamesEnabled = "DD_TRACE_ASPNET_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED";
+
+            /// <summary>
             /// Feature Flag for whether .NET Standard mode is enabled
             /// </summary>
             public const string NetStandardEnabled = "DD_TRACE_NETSTANDARD_ENABLED";
