@@ -19,18 +19,18 @@ namespace shared {
     Loader* loader = nullptr;
 
 #ifdef _WIN32
-    const WSTRING native_profiler_file_win32                    = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
+    const WSTRING native_profiler_file_win32                    = WStr("DATADOG.AUTOINSTRUMENTATION.PROFILER.NATIVE.WINDOWS.X86.DLL");
 #elif LINUX
-    extern uint8_t dll_start[]                                  asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_start");
-    extern uint8_t dll_end[]                                    asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_end");
+    extern uint8_t dll_start[]                                  asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_start");
+    extern uint8_t dll_end[]                                    asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_end");
 
-    extern uint8_t pdb_start[]                                  asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_start");
-    extern uint8_t pdb_end[]                                    asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
+    extern uint8_t pdb_start[]                                  asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_pdb_start");
+    extern uint8_t pdb_end[]                                    asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_pdb_end");
 #elif MACOS
-    const std::string native_profiler_file_macos                = "Datadog.Trace.ClrProfiler.Native.dylib";
+    const std::string native_profiler_file_macos                = "Datadog.AutoInstrumentation.Profiler.Native.dylib";
 #endif
     
-    const WSTRING managed_loader_assembly_name                  = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
+    const WSTRING managed_loader_assembly_name                  = WStr("Datadog.AutoInstrumentation.ManagedLoader");
     const WSTRING empty_string                                  = WStr("");
     const WSTRING default_domain_name                           = WStr("DefaultDomain");
 

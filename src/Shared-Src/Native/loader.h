@@ -54,10 +54,10 @@ namespace shared {
 	{
 		public:
 			LoaderResourceMonikerIDs(void)
-                : Net45_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
-				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll(0),
-				  Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb(0),
-				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb(0)
+                : Net45_Datadog_AutoInstrumentation_ManagedLoader_dll(101),
+				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll(102),
+				  Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb(103),
+				  NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb(104)
 			{}
 
 			LoaderResourceMonikerIDs(const LoaderResourceMonikerIDs& ids)
@@ -167,24 +167,20 @@ namespace shared {
 			if (is_iis) {
 
 				assembly_string_default_appdomain_vector = {
-					WStr("Datadog.Trace.ClrProfiler.Managed"),
-					WStr("AppDomain default IIS"),
+					WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
 				};
 				assembly_string_nondefault_appdomain_vector = {
-					WStr("Datadog.Trace.ClrProfiler.Managed"),
-					WStr("AppDomain non default IIS"),
+					WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
 				};
 
 			}
 			else {
 
 				assembly_string_default_appdomain_vector = {
-					WStr("Datadog.Trace.ClrProfiler.Managed"),
-					WStr("AppDomain default normal process"),
+					WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
 				};
 				assembly_string_nondefault_appdomain_vector = {
-					WStr("Datadog.Trace.ClrProfiler.Managed"),
-					WStr("AppDomain non default normal process"),
+					WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
 				};
 
 			}
