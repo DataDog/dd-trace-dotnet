@@ -338,5 +338,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             public const string ForceFallbackLookup = "DD_TRACE_DEBUG_LOOKUP_FALLBACK";
         }
+
+        internal static class FeatureFlags
+        {
+            /// <summary>
+            /// Feature Flag for whether .NET Standard mode is enabled
+            /// </summary>
+            public const string NetStandardEnabled = "DD_TRACE_NETSTANDARD_ENABLED";
+        }
     }
 }
