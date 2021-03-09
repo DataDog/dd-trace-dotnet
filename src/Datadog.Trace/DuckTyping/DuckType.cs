@@ -285,6 +285,12 @@ namespace Datadog.Trace.DuckTyping
 
             foreach (PropertyInfo proxyProperty in proxyTypeProperties)
             {
+                // Ignore the properties marked with `DuckIgnore` attribute
+                if (proxyProperty.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                {
+                    continue;
+                }
+
                 PropertyBuilder propertyBuilder = null;
 
                 // If the property is abstract or interface we make sure that we have the property defined in the new class
@@ -410,6 +416,12 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
+                // Ignore the fields marked with `DuckIgnore` attribute
+                if (proxyFieldInfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                {
+                    continue;
+                }
+
                 PropertyBuilder propertyBuilder = null;
 
                 DuckAttribute duckAttribute = proxyFieldInfo.GetCustomAttribute<DuckAttribute>(true) ?? new DuckAttribute();
@@ -531,6 +543,12 @@ namespace Datadog.Trace.DuckTyping
             {
                 // Skip readonly fields
                 if ((finfo.Attributes & FieldAttributes.InitOnly) != 0)
+                {
+                    continue;
+                }
+
+                // Ignore the fields marked with `DuckIgnore` attribute
+                if (finfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
                 {
                     continue;
                 }

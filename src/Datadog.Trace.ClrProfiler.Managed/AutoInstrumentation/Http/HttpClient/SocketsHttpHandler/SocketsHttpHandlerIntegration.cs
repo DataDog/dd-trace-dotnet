@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         private static readonly IntegrationInfo SocketHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.HttpSocketsHandler));
-        private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: false);
+        private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: true);
 
         /// <summary>
         /// OnMethodBegin callback
