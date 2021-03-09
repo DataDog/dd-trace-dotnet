@@ -134,19 +134,22 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            if (lastChar == 'd')
+            if (_tracer?.Settings.AspNetCoreRouteTemplateResourceNamesEnabled ?? false)
             {
-                if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
+                if (lastChar == 'd')
                 {
-                    OnRoutingEndpointMatched(arg);
-                }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
-                {
-                    _routingEndpointMatchedKey = eventName;
-                    OnRoutingEndpointMatched(arg);
-                }
+                    if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
+                    {
+                        OnRoutingEndpointMatched(arg);
+                    }
+                    else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
+                    {
+                        _routingEndpointMatchedKey = eventName;
+                        OnRoutingEndpointMatched(arg);
+                    }
 
-                return;
+                    return;
+                }
             }
         }
 #else
@@ -421,6 +424,27 @@ namespace Datadog.Trace.DiagnosticListeners
             return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
         }
 
+        private static void SetLegacyResourceNames(BeforeActionStruct typedArg, Span span)
+        {
+            ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
+            HttpRequest request = typedArg.HttpContext.Request;
+
+            string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+            string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template;
+            if (routeTemplate is null)
+            {
+                string controllerName = actionDescriptor.RouteValues["controller"];
+                string actionName = actionDescriptor.RouteValues["action"];
+
+                routeTemplate = $"{controllerName}/{actionName}";
+            }
+
+            string resourceName = $"{httpMethod} {routeTemplate}";
+
+            // override the parent's resource name with the MVC route template
+            span.ResourceName = resourceName;
+        }
+
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = _tracer ?? Tracer.Instance;
@@ -484,6 +508,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
+
+                if (!tracer.Settings.AspNetCoreRouteTemplateResourceNamesEnabled)
+                {
+                    SetLegacyResourceNames(typedArg, span);
+                    return;
+                }
+
                 ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
                 HttpRequest request = typedArg.HttpContext.Request;
                 IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
