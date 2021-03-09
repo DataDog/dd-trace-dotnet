@@ -280,6 +280,147 @@ namespace Datadog.Trace.DiagnosticListeners
             return Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
+#if NETCOREAPP
+        private static string SimplifyRoutePattern(
+            RoutePattern routePattern,
+            RouteValueDictionary routeValueDictionary,
+            string areaName,
+            string controllerName,
+            string actionName)
+        {
+            var sb = new StringBuilder();
+
+            foreach (var pathSegment in routePattern.PathSegments)
+            {
+                var innerSb = new StringBuilder();
+                foreach (var part in pathSegment.Parts)
+                {
+                    switch (part)
+                    {
+                        case RoutePatternLiteralPart literal:
+                            innerSb.Append(literal.Content);
+                            break;
+
+                        case RoutePatternSeparatorPart separator:
+                            innerSb.Append(separator.Content);
+                            break;
+
+                        case RoutePatternParameterPart parameter:
+                        {
+                            var parameterName = parameter.Name;
+                            if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
+                            {
+                                innerSb.Append(areaName);
+                            }
+                            else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
+                            {
+                                innerSb.Append(controllerName);
+                            }
+                            else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                            {
+                                innerSb.Append(actionName);
+                            }
+                            else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
+                            {
+                                innerSb.Append('{');
+                                if (parameter.IsCatchAll)
+                                {
+                                    innerSb.Append(parameter.EncodeSlashes ? "**" : "*");
+                                }
+
+                                innerSb.Append(parameterName);
+                                if (parameter.IsOptional)
+                                {
+                                    innerSb.Append('?');
+                                }
+
+                                innerSb.Append('}');
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                if (innerSb.Length > 0)
+                {
+                    sb.Append('/');
+                    sb.Append(innerSb);
+                }
+            }
+
+            var simplifiedRoute = sb.ToString();
+
+            return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+        }
+#endif
+
+        private static string SimplifyRoutePattern(
+            RouteTemplate routePattern,
+            IDictionary<string, string> routeValueDictionary,
+            string areaName,
+            string controllerName,
+            string actionName)
+        {
+            var sb = new StringBuilder();
+
+            foreach (var pathSegment in routePattern.Segments)
+            {
+                var innerSb = new StringBuilder();
+                foreach (var part in pathSegment.Parts)
+                {
+                    var partName = part.Name;
+                    if (part.IsOptional && !routeValueDictionary.ContainsKey(partName))
+                    {
+                        continue;
+                    }
+
+                    if (!part.IsParameter)
+                    {
+                        innerSb.Append(part.Text);
+                    }
+                    else if (partName.Equals("area", StringComparison.OrdinalIgnoreCase))
+                    {
+                        innerSb.Append(areaName);
+                    }
+                    else if (partName.Equals("controller", StringComparison.OrdinalIgnoreCase))
+                    {
+                        innerSb.Append(controllerName);
+                    }
+                    else if (partName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                    {
+                        innerSb.Append(actionName);
+                    }
+                    else
+                    {
+                        innerSb.Append('{');
+                        if (part.IsCatchAll)
+                        {
+                            innerSb.Append('*');
+                        }
+
+                        innerSb.Append(partName);
+                        if (part.IsOptional)
+                        {
+                            innerSb.Append('?');
+                        }
+
+                        innerSb.Append('}');
+                    }
+                }
+
+                if (innerSb.Length > 0)
+                {
+                    sb.Append("/");
+                    sb.Append(innerSb);
+                }
+            }
+
+            var simplifiedRoute = sb.ToString();
+
+            return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+        }
+
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = _tracer ?? Tracer.Instance;
@@ -333,10 +474,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
-                // if we've already set these tags, we can bail to avoid duplicating work
                 var tags = span.Tags as AspNetCoreTags;
-                if (!string.IsNullOrEmpty(tags?.AspNetEndpoint))
+                if (tags is null || tags.AspNetEndpoint is not null || tags.AspNetRoute is not null)
                 {
+                    // We've already set the endpoint or other tags, don't replace them, as could be
+                    // the pipeline re-executing after an error. Also reduces the work required
                     return;
                 }
 
@@ -382,56 +524,26 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
-                string resourcePathName = null;
                 if (routeTemplate is not null)
                 {
-                    var routeSegments = routeTemplate.Segments
-                        .Select(segment =>
-                            string.Join(string.Empty, segment.Parts
-                                .Where(part => !part.IsOptional || routeValues.ContainsKey(part.Name))
-                                .Select(part =>
-                                {
-                                    // Necessary to strip out the defaults from in-line templates
-                                    if (part.IsParameter)
-                                    {
-                                        return "{" + (part.IsCatchAll ? "*" : string.Empty) + part.Name + (part.IsOptional ? "?" : string.Empty) + "}";
-                                    }
-                                    else
-                                    {
-                                        return part.Text;
-                                    }
-                                })))
-                        .Where(segment => !string.IsNullOrEmpty(segment));
+                    // If we don't have a route, don't overwrite the existing resource name
+                    var resourcePathName = SimplifyRoutePattern(
+                        routeTemplate,
+                        routeValues,
+                        areaName: areaName,
+                        controllerName: controllerName,
+                        actionName: actionName);
 
-                    var cleanedRouteTemplate = string.Join("/", routeSegments)?.ToLowerInvariant();
+                    string resourceName = $"{httpMethod} {request.PathBase}{resourcePathName}";
 
-                    resourcePathName =
-                        "/" + cleanedRouteTemplate
-                            .Replace("{area}", areaName)
-                            .Replace("{controller}", controllerName)
-                            .Replace("{action}", actionName);
+                    span.ResourceName = resourceName;
                 }
 
-                if (string.IsNullOrEmpty(resourcePathName))
-                {
-                    // fallback, if all else fails
-                    // NOTE: this includes the /prefix
-                    resourcePathName = UriHelpers.GetRelativeUrl(request.Path, tryRemoveIds: true).ToLowerInvariant();
-                }
-
-                string resourceName = $"{httpMethod} {request.PathBase}{resourcePathName}";
-
-                // override the parent's resource name with the MVC route template
-                span.ResourceName = resourceName;
-
-                if (tags is not null)
-                {
-                    tags.AspNetAction = actionName;
-                    tags.AspNetController = controllerName;
-                    tags.AspNetArea = areaName;
-                    tags.AspNetPage = pagePath;
-                    tags.AspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
-                }
+                tags.AspNetAction = actionName;
+                tags.AspNetController = controllerName;
+                tags.AspNetArea = areaName;
+                tags.AspNetPage = pagePath;
+                tags.AspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
             }
         }
 
@@ -449,9 +561,22 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null)
             {
+                var tags = span.Tags as AspNetCoreTags;
+                if (tags is null || tags.AspNetEndpoint is not null)
+                {
+                    // We've already set the endpoint once, don't replace it, as could be
+                    // the pipeline re-executing after an error. Also reduces the work
+                    return;
+                }
+
+                if (!arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
+                {
+                    return;
+                }
+
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
                 //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
-                HttpContext httpContext = arg.As<HttpRequestInEndpointMatchedStruct>().HttpContext;
+                HttpContext httpContext = typedArg.HttpContext;
                 var endpoint = httpContext.Features.Get<IEndpointFeature>()?.Endpoint as RouteEndpoint;
 
                 if (endpoint is null)
@@ -479,71 +604,27 @@ namespace Datadog.Trace.DiagnosticListeners
                                       ? raw?.ToString()?.ToLowerInvariant()
                                       : null;
 
-                string resourcePathName = null;
                 if (routePattern is not null)
                 {
-                    var simplifiedRouteTemplate = SimplifyRoutePattern(routePattern, routeValues);
+                    // If we don't have a route, don't overwrite the existing resource name
+                    var resourcePathName = SimplifyRoutePattern(
+                        routePattern,
+                        routeValues,
+                        areaName: areaName,
+                        controllerName: controllerName,
+                        actionName: actionName);
 
-                    resourcePathName =
-                        "/" + simplifiedRouteTemplate
-                            .Replace("{area}", areaName)
-                            .Replace("{controller}", controllerName)
-                            .Replace("{action}", actionName);
+                    string resourceName = $"{httpMethod} {request.PathBase}{resourcePathName}";
+
+                    span.ResourceName = resourceName;
                 }
 
-                if (string.IsNullOrEmpty(resourcePathName))
-                {
-                    // fallback, if all else fails
-                    // NOTE: this includes the /prefix
-                    resourcePathName = UriHelpers.GetRelativeUrl(request.Path, tryRemoveIds: true).ToLowerInvariant();
-                }
-
-                string resourceName = $"{httpMethod} {request.PathBase}{resourcePathName}";
-
-                // override the parent's resource name with the MVC route template
-                span.ResourceName = resourceName;
-
-                var tags = span.Tags as AspNetCoreTags;
-                if (tags is not null)
-                {
-                    tags.AspNetAction = actionName;
-                    tags.AspNetController = controllerName;
-                    tags.AspNetArea = areaName;
-                    tags.AspNetPage = pagePath;
-                    tags.AspNetRoute = routePattern?.RawText?.ToLowerInvariant();
-                    tags.AspNetEndpoint = endpoint.DisplayName;
-                }
-            }
-        }
-
-        private string SimplifyRoutePattern(
-            RoutePattern routePattern,
-            RouteValueDictionary routeValueDictionary)
-        {
-            var allSegments =
-                routePattern
-                   .PathSegments
-                   .Select(segment => string.Join(string.Empty, segment.Parts.Select(x => SegmentToString(x, routeValueDictionary))))
-                   .Where(segment => !string.IsNullOrEmpty(segment));
-
-            return string.Join("/", allSegments)?.ToLowerInvariant();
-
-            static string SegmentToString(RoutePatternPart part, RouteValueDictionary values)
-            {
-                return part switch
-                {
-                    RoutePatternLiteralPart literal => literal.Content,
-                    RoutePatternSeparatorPart separator => separator.Content,
-                    RoutePatternParameterPart parameter => parameter.IsOptional && !values.ContainsKey(parameter.Name)
-                                                               ? string.Empty
-                                                               : "{" + (parameter.IsCatchAll
-                                                                            ? (parameter.EncodeSlashes ? "**" : "*")
-                                                                            : string.Empty)
-                                                                     + parameter.Name
-                                                                     + (parameter.IsOptional ? "?" : string.Empty)
-                                                                     + "}",
-                    _ => string.Empty,
-                };
+                tags.AspNetAction = actionName;
+                tags.AspNetController = controllerName;
+                tags.AspNetArea = areaName;
+                tags.AspNetPage = pagePath;
+                tags.AspNetRoute = routePattern?.RawText?.ToLowerInvariant();
+                tags.AspNetEndpoint = endpoint.DisplayName;
             }
         }
 #endif
