@@ -32,7 +32,8 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\WeatherService\WeatherService.csproj" />
+    <ProjectReference Include="..\WeatherService.NetCore31\WeatherService.NetCore31.csproj" />
+    <ProjectReference Include="..\WeatherService.NetFx461\WeatherService.NetFx461.csproj" />
     <ProjectReference Include="..\WebApp\WebApp.csproj">
       <ServiceLaunchUrl>http://{MachineName}:{ServicePort}/weatherforecast</ServiceLaunchUrl>
     </ProjectReference>

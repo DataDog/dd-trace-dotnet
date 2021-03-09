@@ -9,5 +9,7 @@ namespace WeatherService.Abstractions
         public int Temperature { get; set; }
 
         public string Message { get; set; }
+
+        public string Service { get; set; }
     }
 }
