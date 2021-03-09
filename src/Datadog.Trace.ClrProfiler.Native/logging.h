@@ -12,6 +12,7 @@ namespace trace {
 
 extern bool debug_logging_enabled;
 extern bool dump_il_rewrite_enabled;
+extern bool enable_profiler_stats;
 
 class Logger : public Singleton<Logger> {
   friend class Singleton<Logger>;
@@ -41,18 +42,22 @@ template <typename... Args>
 std::string LogToString(Args const&... args) {
   std::ostringstream oss;
   int a[] = {0, ((void)(oss << LogToString(args)), 0)...};
-  auto dWith = 400 - oss.tellp();
-  if (dWith < 0) {
-    dWith = 0;
+  if (enable_profiler_stats) {
+    auto dWith = 500 - oss.tellp();
+    if (dWith < 0) {
+      dWith = 0;
+    }
+    oss << std::right << std::setw(dWith);
+    oss << Stats::Instance()->ToString();
   }
-  oss << std::right << std::setw(dWith);
-  oss << Stats::Instance()->ToString();
   return oss.str();
 }
 
 template <typename... Args>
 void Debug(const Args... args) {
-  Logger::Instance()->Debug(LogToString(args...));
+  if (debug_logging_enabled) {
+    Logger::Instance()->Debug(LogToString(args...));
+  }
 }
 
 template <typename... Args>

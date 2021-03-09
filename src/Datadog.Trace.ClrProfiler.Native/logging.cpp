@@ -13,6 +13,7 @@ namespace trace {
 
 bool debug_logging_enabled = false;
 bool dump_il_rewrite_enabled = false;
+bool enable_profiler_stats = false;
 
 #ifndef _WIN32
 // for linux and osx we need a function to get the path from a filepath

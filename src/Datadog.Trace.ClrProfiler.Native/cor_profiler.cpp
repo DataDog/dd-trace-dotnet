@@ -53,6 +53,15 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     dump_il_rewrite_enabled = true;
   }
 
+  // check if profiler stats is enabled
+  const auto include_profiler_stats_value =
+      GetEnvironmentValue(environment::include_profiler_stats);
+
+  if (include_profiler_stats_value == WStr("1") ||
+      include_profiler_stats_value == WStr("true")) {
+    enable_profiler_stats = true;
+  }
+
   CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
   // check if tracing is completely disabled
@@ -446,16 +455,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   for (auto&& skip_assembly_pattern : skip_assembly_prefixes) {
     if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0) {
-      Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ",
-            module_info.assembly.name);
+      Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ", module_info.assembly.name);
       return S_OK;
     }
   }
 
   for (auto&& skip_assembly : skip_assemblies) {
     if (module_info.assembly.name == skip_assembly) {
-      Debug("ModuleLoadFinished skipping known module: ", module_id, " ",
-            module_info.assembly.name);
+      Debug("ModuleLoadFinished skipping known module: ", module_id, " ", module_info.assembly.name);
       return S_OK;
     }
   }
@@ -465,8 +472,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Debug("ModuleLoadFinished skipping module (filtered by caller): ",
-          module_id, " ", module_info.assembly.name);
+    Debug("ModuleLoadFinished skipping module (filtered by caller): ", module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -480,14 +486,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  const auto metadata_import =
-      metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-  const auto metadata_emit =
-      metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
-      IID_IMetaDataAssemblyImport);
-  const auto assembly_emit =
-      metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+  const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+  const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+  const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
   // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
   // subscribe to DiagnosticSource events.
@@ -496,12 +498,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") &&
       module_info.assembly.name != WStr("Dapper")) {
 
-    filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import, is_calltarget_enabled);
+    filtered_integrations =
+        FilterIntegrationsByTarget(filtered_integrations, assembly_import, 
+            first_jit_compilation_app_domains.find(app_domain_id) != first_jit_compilation_app_domains.end());
 
     if (filtered_integrations.empty()) {
       // we don't need to instrument anything in this module, skip it
-      Debug("ModuleLoadFinished skipping module (filtered by target): ",
-            module_id, " ", module_info.assembly.name);
+      Debug("ModuleLoadFinished skipping module (filtered by target): ", module_id, " ", module_info.assembly.name);
       return S_OK;
     }
   }
@@ -591,8 +594,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   if (rejit_handler != nullptr) {
     rejit_handler->Shutdown();
   }
-  Warn("Exiting.");
-  Warn(Stats::Instance()->ToString());
+  Warn("Exiting. ", Stats::Instance()->ToString());
   is_attached_.store(false);
   Logger::Shutdown();
   return S_OK;

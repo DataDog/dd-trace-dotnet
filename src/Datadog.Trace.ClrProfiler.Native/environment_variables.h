@@ -108,6 +108,9 @@ const WSTRING clr_enable_inlining = WStr("DD_CLR_ENABLE_INLINING");
 // Sets whether to enable the CallTarget instrumentation mode
 const WSTRING calltarget_enabled = WStr("DD_TRACE_CALLTARGET_ENABLED");
 
+// Enable writing the profiler stats in the log file
+const WSTRING include_profiler_stats = WStr("DD_PROFILER_STATS");
+
 }  // namespace environment
 }  // namespace trace
 
