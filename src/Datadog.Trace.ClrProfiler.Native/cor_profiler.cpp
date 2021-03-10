@@ -198,7 +198,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     Info("CallTarget instrumentation is disabled.");
   }
   
-  if (!EnableInlining()) {
+  if (!EnableInlining(is_calltarget_enabled)) {
     Info("JIT Inlining is disabled.");
     event_mask |= COR_PRF_DISABLE_INLINING;
   } else {
