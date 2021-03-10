@@ -1,5 +1,6 @@
 #if !NETFRAMEWORK
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -12,12 +13,8 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
-#if NETCOREAPP
-using Microsoft.AspNetCore.Routing.Patterns;
-#endif
 using Microsoft.AspNetCore.Routing.Template;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -39,6 +36,10 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
+
+        private static readonly Type EndpointFeatureType =
+            Assembly.GetAssembly(typeof(RouteValueDictionary))
+                   ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", false);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
         private readonly Tracer _tracer;
@@ -285,7 +286,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
 #if NETCOREAPP
         private static string SimplifyRoutePattern(
-            RoutePattern routePattern,
+            RoutePatternStruct routePattern,
             RouteValueDictionary routeValueDictionary,
             string areaName,
             string controllerName,
@@ -296,51 +297,45 @@ namespace Datadog.Trace.DiagnosticListeners
             foreach (var pathSegment in routePattern.PathSegments)
             {
                 var innerSb = new StringBuilder();
-                foreach (var part in pathSegment.Parts)
+                foreach (var part in pathSegment.DuckCast<RoutePatternPathSegmentStruct>().Parts)
                 {
-                    switch (part)
+                    if (DuckType.CanCreate<RoutePatternContentPartStruct>(part))
                     {
-                        case RoutePatternLiteralPart literal:
-                            innerSb.Append(literal.Content);
-                            break;
+                        var contentPart = part.DuckCast<RoutePatternContentPartStruct>();
+                        innerSb.Append(contentPart.Content);
+                    }
+                    else if (DuckType.CanCreate<RoutePatternParameterPartStruct>(part))
+                    {
+                        var parameter = part.DuckCast<RoutePatternParameterPartStruct>();
 
-                        case RoutePatternSeparatorPart separator:
-                            innerSb.Append(separator.Content);
-                            break;
-
-                        case RoutePatternParameterPart parameter:
+                        var parameterName = parameter.Name;
+                        if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                         {
-                            var parameterName = parameter.Name;
-                            if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
+                            innerSb.Append(areaName);
+                        }
+                        else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
+                        {
+                            innerSb.Append(controllerName);
+                        }
+                        else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                        {
+                            innerSb.Append(actionName);
+                        }
+                        else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
+                        {
+                            innerSb.Append('{');
+                            if (parameter.IsCatchAll)
                             {
-                                innerSb.Append(areaName);
-                            }
-                            else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
-                            {
-                                innerSb.Append(controllerName);
-                            }
-                            else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
-                            {
-                                innerSb.Append(actionName);
-                            }
-                            else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
-                            {
-                                innerSb.Append('{');
-                                if (parameter.IsCatchAll)
-                                {
-                                    innerSb.Append(parameter.EncodeSlashes ? "**" : "*");
-                                }
-
-                                innerSb.Append(parameterName);
-                                if (parameter.IsOptional)
-                                {
-                                    innerSb.Append('?');
-                                }
-
-                                innerSb.Append('}');
+                                innerSb.Append(parameter.EncodeSlashes ? "**" : "*");
                             }
 
-                            break;
+                            innerSb.Append(parameterName);
+                            if (parameter.IsOptional)
+                            {
+                                innerSb.Append('?');
+                            }
+
+                            innerSb.Append('}');
                         }
                     }
                 }
@@ -608,16 +603,24 @@ namespace Datadog.Trace.DiagnosticListeners
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
                 //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
                 HttpContext httpContext = typedArg.HttpContext;
-                var endpoint = httpContext.Features.Get<IEndpointFeature>()?.Endpoint as RouteEndpoint;
 
-                if (endpoint is null)
+                var rawEndpointFeature = httpContext.Features[EndpointFeatureType];
+                if (rawEndpointFeature is null || !DuckType.CanCreate<EndpointFeatureStruct>(rawEndpointFeature))
                 {
                     return;
                 }
 
-                HttpRequest request = httpContext.Request;
+                var endpointFeature = rawEndpointFeature.DuckCast<EndpointFeatureStruct>();
+                if (endpointFeature.Endpoint is null)
+                {
+                    return;
+                }
+
+                var endpoint = endpointFeature.Endpoint.DuckCast<RouteEndpointStruct>();
+                // Must DuckCast this to access RouteValues in .NET Core 3.0+
+                var request = httpContext.Request.DuckCast<HttpRequestStruct>();
                 RouteValueDictionary routeValues = request.RouteValues;
-                var routePattern = endpoint.RoutePattern;
+                var routePattern = endpoint.RoutePattern?.DuckCast<RoutePatternStruct>();
 
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
 
@@ -639,7 +642,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // If we don't have a route, don't overwrite the existing resource name
                     var resourcePathName = SimplifyRoutePattern(
-                        routePattern,
+                        routePattern.Value,
                         routeValues,
                         areaName: areaName,
                         controllerName: controllerName,
@@ -753,6 +756,55 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
+        }
+
+        [DuckCopy]
+        public struct EndpointFeatureStruct
+        {
+            public object Endpoint;
+        }
+
+        [DuckCopy]
+        public struct RouteEndpointStruct
+        {
+            public object RoutePattern;
+            public string DisplayName;
+        }
+
+        [DuckCopy]
+        public struct HttpRequestStruct
+        {
+            public string Method;
+            public RouteValueDictionary RouteValues;
+            public PathString PathBase;
+        }
+
+        [DuckCopy]
+        public struct RoutePatternStruct
+        {
+            public IEnumerable PathSegments;
+            public string RawText;
+        }
+
+        [DuckCopy]
+        public struct RoutePatternPathSegmentStruct
+        {
+            public IEnumerable Parts;
+        }
+
+        [DuckCopy]
+        public struct RoutePatternContentPartStruct
+        {
+            public string Content;
+        }
+
+        [DuckCopy]
+        public struct RoutePatternParameterPartStruct
+        {
+            public string Name;
+            public bool IsOptional;
+            public bool IsCatchAll;
+            public bool EncodeSlashes;
         }
 
         private readonly struct HeadersCollectionAdapter : IHeadersCollection
