@@ -3534,6 +3534,35 @@
     ]
   },
   {
+    "name": "Wcf",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.ServiceModel",
+          "type": "System.ServiceModel.Dispatcher.ChannelHandler",
+          "method": "HandleRequest",
+          "signature_types": [
+            "System.Boolean",
+            "System.ServiceModel.Channels.RequestContext",
+            "System.ServiceModel.OperationContext"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.24.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.ChannelHandlerIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "WebRequest",
     "method_replacements": [
       {

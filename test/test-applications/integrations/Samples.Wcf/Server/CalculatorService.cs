@@ -1,6 +1,6 @@
 using System;
 
-namespace Samples.Wcf
+namespace Samples.Wcf.Server
 {
     public class CalculatorService : ICalculator
     {

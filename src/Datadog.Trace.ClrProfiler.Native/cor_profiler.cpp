@@ -2190,7 +2190,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
   // *** Load the method arguments to the stack
   unsigned elementType;
-  if (numArgs <= 6) {
+  if (numArgs <= 8) {
     // Load the arguments directly (FastPath)
     for (int i = 0; i < numArgs; i++) {
       reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
@@ -2276,6 +2276,22 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
           &methodArguments[0], &methodArguments[1], &methodArguments[2],
           &methodArguments[3], &methodArguments[4], &methodArguments[5],
           &beginCallInstruction));
+      break;
+    }
+    case 7: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &methodArguments[4], &methodArguments[5],
+          &methodArguments[6], &beginCallInstruction));
+      break;
+    }
+    case 8: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &methodArguments[4], &methodArguments[5],
+          &methodArguments[6], &methodArguments[7], &beginCallInstruction));
       break;
     }
     default: {
