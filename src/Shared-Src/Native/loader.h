@@ -147,8 +147,8 @@ namespace shared {
 
 		HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
 
-		bool GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize,
-			BYTE** pSymbolsArray, int* symbolsSize, AppDomainID appDomainId);
+		bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize,
+			void** pSymbolsArray, int* symbolsSize, AppDomainID appDomainId);
 
 		static Loader* CreateLoader(
 			ICorProfilerInfo4* info,

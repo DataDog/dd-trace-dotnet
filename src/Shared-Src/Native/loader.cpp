@@ -19,7 +19,7 @@ namespace shared {
     Loader* loader = nullptr;
 
 #ifdef _WIN32
-    const WSTRING native_profiler_file_win32                    = WStr("DATADOG.AUTOINSTRUMENTATION.PROFILER.NATIVE.WINDOWS.X86.DLL");
+    const WSTRING native_profiler_file_win64                    = WStr("Datadog.AutoInstrumentation.Profiler.Native.Windows.x64.dll");
 #elif LINUX
     extern uint8_t dll_start[]                                  asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_start");
     extern uint8_t dll_end[]                                    asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_end");
@@ -281,7 +281,7 @@ namespace shared {
         // create PInvoke method definition to the native GetAssemblyAndSymbolsBytes method (interop.cpp)
         //
         // Define a method on the managed side that will PInvoke into the profiler
-        // method: C++: void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int*
+        // method: C++: bool GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int*
         // assemblySize, BYTE** pSymbolsArray, int* symbolsSize, AppDomainID
         // appDomainId) C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr
         // assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int
@@ -316,7 +316,7 @@ namespace shared {
         }
 
 #ifdef _WIN32
-        WSTRING native_profiler_file = native_profiler_file_win32;
+        WSTRING native_profiler_file = native_profiler_file_win64;
 #else  // _WIN32
 
 #ifdef BIT64
@@ -1095,8 +1095,8 @@ namespace shared {
       return S_OK;
     }
 
-    bool Loader::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray,
-                                            int* assemblySize, BYTE** pSymbolsArray,
+    bool Loader::GetAssemblyAndSymbolsBytes(void** pAssemblyArray,
+                                            int* assemblySize, void** pSymbolsArray,
                                             int* symbolsSize,
                                             AppDomainID appDomainId) {
         //
@@ -1139,10 +1139,10 @@ namespace shared {
         *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
 #elif LINUX
         *assemblySize = dll_end - dll_start;
-        *pAssemblyArray = (BYTE*)dll_start;
+        *pAssemblyArray = (void*)dll_start;
 
         *symbolsSize = pdb_end - pdb_start;
-        *pSymbolsArray = (BYTE*)pdb_start;
+        *pSymbolsArray = (void*)pdb_start;
 #elif MACOS
         const unsigned int imgCount = _dyld_image_count();
 
@@ -1155,12 +1155,12 @@ namespace shared {
                 unsigned long dllSize;
                 const auto dllData = getsectiondata(header, "binary", "dll", &dllSize);
                 *assemblySize = dllSize;
-                *pAssemblyArray = (BYTE*)dllData;
+                *pAssemblyArray = (void*)dllData;
 
                 unsigned long pdbSize;
                 const auto pdbData = getsectiondata(header, "binary", "pdb", &pdbSize);
                 *symbolsSize = pdbSize;
-                *pSymbolsArray = (BYTE*)pdbData;
+                *pSymbolsArray = (void*)pdbData;
                 break;
             }
         }
