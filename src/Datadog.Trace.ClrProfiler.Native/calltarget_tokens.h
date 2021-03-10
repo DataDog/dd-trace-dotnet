@@ -63,6 +63,8 @@ class CallTargetTokens {
   mdMemberRef beginP4MemberRef = mdMemberRefNil;
   mdMemberRef beginP5MemberRef = mdMemberRefNil;
   mdMemberRef beginP6MemberRef = mdMemberRefNil;
+  mdMemberRef beginP7MemberRef = mdMemberRefNil;
+  mdMemberRef beginP8MemberRef = mdMemberRefNil;
 
   mdMemberRef endVoidMemberRef = mdMemberRefNil;
 
@@ -156,6 +158,22 @@ class CallTargetTokens {
       FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
       FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
       FunctionMethodArgument* arg6, ILInstr** instruction);
+
+  HRESULT WriteBeginMethodWithArguments(
+      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+      const TypeInfo* currentType, FunctionMethodArgument* arg1,
+      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
+      FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
+      FunctionMethodArgument* arg6, FunctionMethodArgument* arg7,
+      ILInstr** instruction);
+
+  HRESULT WriteBeginMethodWithArguments(
+      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+      const TypeInfo* currentType, FunctionMethodArgument* arg1,
+      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
+      FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
+      FunctionMethodArgument* arg6, FunctionMethodArgument* arg7,
+      FunctionMethodArgument* arg8, ILInstr** instruction);
 
   HRESULT WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr,
                                              mdTypeRef integrationTypeRef,

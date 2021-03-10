@@ -7,7 +7,7 @@
 
 namespace trace {
 
-const int signatureBufferSize = 250;
+const int signatureBufferSize = 500;
 
 /**
  * PRIVATE
@@ -697,6 +697,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
   return S_OK;
 }
 
+// fastpath BeginMethod with 0 arguments
 HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, ILInstr** instruction) {
@@ -778,6 +779,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
   return S_OK;
 }
 
+// fastpath BeginMethod with 1 arguments
 HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, FunctionMethodArgument* arg1,
@@ -872,6 +874,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   return S_OK;
 }
 
+// fastpath BeginMethod with 2 arguments
 HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, FunctionMethodArgument* arg1,
@@ -975,6 +978,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   return S_OK;
 }
 
+// fastpath BeginMethod with 3 arguments
 HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, FunctionMethodArgument* arg1,
@@ -1089,6 +1093,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   return S_OK;
 }
 
+// fastpath BeginMethod with 4 arguments
 HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, FunctionMethodArgument* arg1,
@@ -1212,6 +1217,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   return S_OK;
 }
 
+// fastpath BeginMethod with 5 arguments
 HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, FunctionMethodArgument* arg1,
@@ -1346,6 +1352,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   return S_OK;
 }
 
+// fastpath BeginMethod with 6 arguments
 HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, FunctionMethodArgument* arg1,
@@ -1489,6 +1496,326 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
   return S_OK;
 }
 
+// fastpath BeginMethod with 7 arguments
+HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
+    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+    const TypeInfo* currentType, FunctionMethodArgument* arg1,
+    FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
+    FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
+    FunctionMethodArgument* arg6, FunctionMethodArgument* arg7,
+    ILInstr** instruction) {
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+  ModuleMetadata* module_metadata = GetMetadata();
+
+  if (beginP7MemberRef == mdMemberRefNil) {
+    unsigned callTargetStateBuffer;
+    auto callTargetStateSize =
+        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+
+    auto signatureLength = 20 + callTargetStateSize;
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+    signature[offset++] = 0x09;
+    signature[offset++] = 0x08;
+
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+    offset += callTargetStateSize;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x01;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x02;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x03;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x04;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x05;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x06;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x07;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x08;
+
+    auto hr = module_metadata->metadata_emit->DefineMemberRef(
+        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
+        signature, signatureLength, &beginP7MemberRef);
+    if (FAILED(hr)) {
+      Warn("Wrapper beginP7MemberRef could not be defined.");
+      return hr;
+    }
+  }
+
+  mdMethodSpec beginP7MethodSpec = mdMethodSpecNil;
+
+  unsigned integrationTypeBuffer;
+  ULONG integrationTypeSize =
+      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
+
+  bool isValueType = currentType->valueType;
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+
+  unsigned currentTypeBuffer;
+  ULONG currentTypeSize =
+      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+
+  PCCOR_SIGNATURE arg1SignatureBuffer;
+  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
+
+  PCCOR_SIGNATURE arg2SignatureBuffer;
+  auto arg2SignatureSize = arg2->GetSignature(arg2SignatureBuffer);
+
+  PCCOR_SIGNATURE arg3SignatureBuffer;
+  auto arg3SignatureSize = arg3->GetSignature(arg3SignatureBuffer);
+
+  PCCOR_SIGNATURE arg4SignatureBuffer;
+  auto arg4SignatureSize = arg4->GetSignature(arg4SignatureBuffer);
+
+  PCCOR_SIGNATURE arg5SignatureBuffer;
+  auto arg5SignatureSize = arg5->GetSignature(arg5SignatureBuffer);
+
+  PCCOR_SIGNATURE arg6SignatureBuffer;
+  auto arg6SignatureSize = arg6->GetSignature(arg6SignatureBuffer);
+
+  PCCOR_SIGNATURE arg7SignatureBuffer;
+  auto arg7SignatureSize = arg7->GetSignature(arg7SignatureBuffer);
+
+  auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
+                         arg1SignatureSize + arg2SignatureSize +
+                         arg3SignatureSize + arg4SignatureSize + 
+                         arg5SignatureSize + arg6SignatureSize + 
+                         arg7SignatureSize;
+  COR_SIGNATURE signature[signatureBufferSize];
+  unsigned offset = 0;
+
+  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+  signature[offset++] = 0x09;
+
+  signature[offset++] = ELEMENT_TYPE_CLASS;
+  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
+  offset += integrationTypeSize;
+
+  if (isValueType) {
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+  } else {
+    signature[offset++] = ELEMENT_TYPE_CLASS;
+  }
+  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
+  offset += currentTypeSize;
+
+  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
+  offset += arg1SignatureSize;
+
+  memcpy(&signature[offset], arg2SignatureBuffer, arg2SignatureSize);
+  offset += arg2SignatureSize;
+
+  memcpy(&signature[offset], arg3SignatureBuffer, arg3SignatureSize);
+  offset += arg3SignatureSize;
+
+  memcpy(&signature[offset], arg4SignatureBuffer, arg4SignatureSize);
+  offset += arg4SignatureSize;
+
+  memcpy(&signature[offset], arg5SignatureBuffer, arg5SignatureSize);
+  offset += arg5SignatureSize;
+
+  memcpy(&signature[offset], arg6SignatureBuffer, arg6SignatureSize);
+  offset += arg6SignatureSize;
+
+  memcpy(&signature[offset], arg7SignatureBuffer, arg7SignatureSize);
+  offset += arg7SignatureSize;
+
+  hr = module_metadata->metadata_emit->DefineMethodSpec(
+      beginP7MemberRef, signature, signatureLength, &beginP7MethodSpec);
+  if (FAILED(hr)) {
+    Warn("Error creating begin method spec.");
+    return hr;
+  }
+
+  *instruction = rewriterWrapper->CallMember(beginP7MethodSpec, false);
+  return S_OK;
+}
+
+// fastpath BeginMethod with 8 arguments
+HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
+    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+    const TypeInfo* currentType, FunctionMethodArgument* arg1,
+    FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
+    FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
+    FunctionMethodArgument* arg6, FunctionMethodArgument* arg7,
+    FunctionMethodArgument* arg8, ILInstr** instruction) {
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+  ModuleMetadata* module_metadata = GetMetadata();
+
+  if (beginP8MemberRef == mdMemberRefNil) {
+    unsigned callTargetStateBuffer;
+    auto callTargetStateSize =
+        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+
+    auto signatureLength = 22 + callTargetStateSize;
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+    signature[offset++] = 0x0A;
+    signature[offset++] = 0x09;
+
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+    offset += callTargetStateSize;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x01;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x02;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x03;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x04;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x05;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x06;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x07;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x08;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x09;
+
+    auto hr = module_metadata->metadata_emit->DefineMemberRef(
+        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
+        signature, signatureLength, &beginP8MemberRef);
+    if (FAILED(hr)) {
+      Warn("Wrapper beginP8MemberRef could not be defined.");
+      return hr;
+    }
+  }
+
+  mdMethodSpec beginP8MethodSpec = mdMethodSpecNil;
+
+  unsigned integrationTypeBuffer;
+  ULONG integrationTypeSize =
+      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
+
+  bool isValueType = currentType->valueType;
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+
+  unsigned currentTypeBuffer;
+  ULONG currentTypeSize =
+      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+
+  PCCOR_SIGNATURE arg1SignatureBuffer;
+  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
+
+  PCCOR_SIGNATURE arg2SignatureBuffer;
+  auto arg2SignatureSize = arg2->GetSignature(arg2SignatureBuffer);
+
+  PCCOR_SIGNATURE arg3SignatureBuffer;
+  auto arg3SignatureSize = arg3->GetSignature(arg3SignatureBuffer);
+
+  PCCOR_SIGNATURE arg4SignatureBuffer;
+  auto arg4SignatureSize = arg4->GetSignature(arg4SignatureBuffer);
+
+  PCCOR_SIGNATURE arg5SignatureBuffer;
+  auto arg5SignatureSize = arg5->GetSignature(arg5SignatureBuffer);
+
+  PCCOR_SIGNATURE arg6SignatureBuffer;
+  auto arg6SignatureSize = arg6->GetSignature(arg6SignatureBuffer);
+
+  PCCOR_SIGNATURE arg7SignatureBuffer;
+  auto arg7SignatureSize = arg7->GetSignature(arg7SignatureBuffer);
+
+  PCCOR_SIGNATURE arg8SignatureBuffer;
+  auto arg8SignatureSize = arg8->GetSignature(arg8SignatureBuffer);
+
+  auto signatureLength =
+      4 + integrationTypeSize + currentTypeSize + arg1SignatureSize +
+      arg2SignatureSize + arg3SignatureSize + arg4SignatureSize +
+                         arg5SignatureSize + arg6SignatureSize +
+                         arg7SignatureSize + arg8SignatureSize;
+  COR_SIGNATURE signature[signatureBufferSize];
+  unsigned offset = 0;
+
+  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+  signature[offset++] = 0x0A;
+
+  signature[offset++] = ELEMENT_TYPE_CLASS;
+  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
+  offset += integrationTypeSize;
+
+  if (isValueType) {
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+  } else {
+    signature[offset++] = ELEMENT_TYPE_CLASS;
+  }
+  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
+  offset += currentTypeSize;
+
+  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
+  offset += arg1SignatureSize;
+
+  memcpy(&signature[offset], arg2SignatureBuffer, arg2SignatureSize);
+  offset += arg2SignatureSize;
+
+  memcpy(&signature[offset], arg3SignatureBuffer, arg3SignatureSize);
+  offset += arg3SignatureSize;
+
+  memcpy(&signature[offset], arg4SignatureBuffer, arg4SignatureSize);
+  offset += arg4SignatureSize;
+
+  memcpy(&signature[offset], arg5SignatureBuffer, arg5SignatureSize);
+  offset += arg5SignatureSize;
+
+  memcpy(&signature[offset], arg6SignatureBuffer, arg6SignatureSize);
+  offset += arg6SignatureSize;
+
+  memcpy(&signature[offset], arg7SignatureBuffer, arg7SignatureSize);
+  offset += arg7SignatureSize;
+
+  memcpy(&signature[offset], arg8SignatureBuffer, arg8SignatureSize);
+  offset += arg8SignatureSize;
+
+  hr = module_metadata->metadata_emit->DefineMethodSpec(
+      beginP8MemberRef, signature, signatureLength, &beginP8MethodSpec);
+  if (FAILED(hr)) {
+    Warn("Error creating begin method spec.");
+    return hr;
+  }
+
+  *instruction = rewriterWrapper->CallMember(beginP8MethodSpec, false);
+  return S_OK;
+}
+
+// slowpath BeginMethod
 HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, ILInstr** instruction) {
@@ -1573,6 +1900,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
   return S_OK;
 }
 
+// endmethod with void return
 HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, ILInstr** instruction) {
@@ -1671,6 +1999,7 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(
   return S_OK;
 }
 
+// endmethod with return type
 HRESULT CallTargetTokens::WriteEndReturnMemberRef(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
     const TypeInfo* currentType, FunctionMethodArgument* returnArgument,
@@ -1790,6 +2119,7 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(
   return S_OK;
 }
 
+// write log exception
 HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr,
                                             mdTypeRef integrationTypeRef,
                                             const TypeInfo* currentType,
