@@ -826,7 +826,7 @@ HRESULT CallTargetTokens::WriteBeginMethod(
 
     for (auto i = 0; i < numArguments; i++) {
       signature[offset++] = ELEMENT_TYPE_MVAR;
-      signature[offset++] = 0x01 + i;
+      signature[offset++] = 0x01 + (i + 1);
     }
 
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
