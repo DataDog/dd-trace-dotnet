@@ -2758,7 +2758,8 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     mdTypeDef typeDef = mdTypeDefNil;
     auto hr = metadata_import->FindTypeDefByName(integration.replacement.target_method.type_name.c_str(), mdTokenNil, &typeDef);
     if (FAILED(hr)) {
-      Warn("Can't load the TypeDef for: ", integration.replacement.target_method.type_name, ", Module: ", module_metadata->assemblyName);
+      // This can happen between .NET framework and .NET core, not all apis are available in both. Eg: WinHttpHandler, CurlHandler, and some methods in System.Data
+      Debug("Can't load the TypeDef for: ", integration.replacement.target_method.type_name, ", Module: ", module_metadata->assemblyName);
       continue;
     }
 
