@@ -49,9 +49,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _hostingUnhandledExceptionEventKey;
         private string _diagnosticsUnhandledExceptionEventKey;
         private string _hostingHttpRequestInStopEventKey;
-#if NETCOREAPP
         private string _routingEndpointMatchedKey;
-#endif
 
         public AspNetCoreDiagnosticObserver()
             : this(null)
@@ -221,6 +219,24 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 return;
             }
+
+            if (_tracer?.Settings.AspNetCoreRouteTemplateResourceNamesEnabled ?? false)
+            {
+                if (lastChar == 'd')
+                {
+                    if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
+                    {
+                        OnRoutingEndpointMatched(arg);
+                    }
+                    else if (eventName == "Microsoft.AspNetCore.Routing.EndpointMatched")
+                    {
+                        _routingEndpointMatchedKey = eventName;
+                        OnRoutingEndpointMatched(arg);
+                    }
+
+                    return;
+                }
+            }
         }
 #endif
 
@@ -284,7 +300,6 @@ namespace Datadog.Trace.DiagnosticListeners
             return Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
-#if NETCOREAPP
         private static string SimplifyRoutePattern(
             RoutePatternStruct routePattern,
             RouteValueDictionary routeValueDictionary,
@@ -351,7 +366,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
             return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
         }
-#endif
 
         private static string SimplifyRoutePattern(
             RouteTemplate routePattern,
@@ -573,7 +587,6 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-#if NETCOREAPP
         private void OnRoutingEndpointMatched(object arg)
         {
             var tracer = _tracer ?? Tracer.Instance;
@@ -661,7 +674,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 tags.AspNetEndpoint = endpoint.DisplayName;
             }
         }
-#endif
 
         private void OnHostingHttpRequestInStop(object arg)
         {
