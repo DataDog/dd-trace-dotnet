@@ -87,10 +87,13 @@ stages:
           matrix:
             windows:
               imageName: windows-2019
+              shouldInstallDotNet: true
             linux:
               imageName: ubuntu-18.04
+              shouldInstallDotNet: true
             macos:
               imageName: macOS-10.15
+              shouldInstallDotNet: true
         pool:
           vmImage: $(imageName)
         steps:
@@ -102,29 +105,9 @@ stages:
             artifact: source-build-managed
             path: $(System.DefaultWorkingDirectory)
 
-        - task: UseDotNet@2
-          displayName: install dotnet core runtime 2.1
-          inputs:
-            packageType: runtime
-            version: 2.1.x
-
-        - task: UseDotNet@2
-          displayName: install dotnet core runtime 3.0
-          inputs:
-            packageType: runtime
-            version: 3.0.x
-
-        - task: UseDotNet@2
-          displayName: install dotnet core runtime 3.1
-          inputs:
-            packageType: runtime
-            version: 3.1.x
-
-        - task: UseDotNet@2
-          displayName: install dotnet core sdk 5.0
-          inputs:
-            packageType: sdk
-            version: $(dotnetCoreSdk5Version)
+        - template: steps/install-dotnet.yml
+          parameters:
+            shouldInstall: $(shouldInstallDotNet)
 
         - task: DotNetCoreCLI@2
           displayName: dotnet test

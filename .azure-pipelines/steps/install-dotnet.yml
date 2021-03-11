@@ -1,0 +1,30 @@
+parameters:
+- name: 'shouldInstall'
+  type: string
+  default: true
+
+steps:
+- ${{ if eq(parameters.shouldInstall, 'true') }}:
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 2.1
+    inputs:
+      packageType: runtime
+      version: 2.1.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 3.0
+    inputs:
+      packageType: runtime
+      version: 3.0.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 3.1
+    inputs:
+      packageType: runtime
+      version: 3.1.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdk5Version)
