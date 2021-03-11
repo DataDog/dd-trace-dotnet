@@ -164,12 +164,6 @@ stages:
   dependsOn: build
   jobs:
   - job: native_unit_tests_windows
-    strategy:
-      matrix:
-        x64:
-          buildPlatform: x64
-        x86:
-          buildPlatform: x86
     pool:
       vmImage: windows-2019
 
@@ -183,12 +177,14 @@ stages:
 
     - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
       displayName: run tests
-      workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/$(buildPlatform)
+      workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/x86
+
+    - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
+      displayName: run tests
+      workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/x64
 
     - task: PublishTestResults@2
       displayName: publish test results
       inputs:
         testResultsFiles: test/**/test*.xml
-        buildPlatform: $(buildPlatform)
-        buildConfiguration: $(buildConfiguration)
       condition: succeededOrFailed()
