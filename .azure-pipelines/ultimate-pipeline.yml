@@ -49,12 +49,56 @@ stages:
           src/**/*.csproj
           test/**/*.Tests.csproj
           test/benchmarks/**/*.csproj
+          test/**/Samples.ExampleLibrary*.csproj
           !src/Datadog.Trace.Tools.Runner/*.csproj
       env:
         DD_SERVICE: dd-trace-dotnet
 
     - publish: $(System.DefaultWorkingDirectory)
       artifact: source-build-managed
+      condition: succeededOrFailed()
+
+  - job: build_native_windows
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool:
+      vmImage: windows-2019
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: source-build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
+
+    - task: NuGetCommand@2
+      displayName: nuget restore
+      inputs:
+        restoreSolution: Datadog.Trace.Native.sln
+        verbosityRestore: Normal
+
+    - task: MSBuild@1
+      displayName: msbuild
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: x86
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildCpp;BuildCppTests
+        maximumCpuCount: true
+
+    - task: MSBuild@1
+      displayName: msbuild
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: x64
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildCpp;BuildCppTests
+        maximumCpuCount: true
+
+    - publish: $(System.DefaultWorkingDirectory)
+      artifact: source-build-managed-and-native-windows
       condition: succeededOrFailed()
 
 - stage: managed_unit_tests
@@ -115,3 +159,36 @@ stages:
         arguments: '--no-build'
       env:
         DD_SERVICE: dd-trace-dotnet
+
+- stage: native_unit_tests
+  dependsOn: build
+  jobs:
+  - job: native_unit_tests_windows
+    strategy:
+      matrix:
+        x64:
+          buildPlatform: x64
+        x86:
+          buildPlatform: x86
+    pool:
+      vmImage: windows-2019
+
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: source-build-managed-and-native-windows
+        path: $(System.DefaultWorkingDirectory)
+
+    - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
+      displayName: run tests
+      workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/$(buildPlatform)
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFiles: test/**/test*.xml
+        buildPlatform: $(buildPlatform)
+        buildConfiguration: $(buildConfiguration)
+      condition: succeededOrFailed()
