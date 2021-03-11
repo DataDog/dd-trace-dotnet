@@ -419,6 +419,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OracleMDA.Core", "t
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{1f146d40-8b21-4630-8049-14fa4bbbb217}*SharedItemsImports = 5
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{3c493248-f1d1-4948-bba9-76beb5dfa9ff}*SharedItemsImports = 5
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}*SharedItemsImports = 5
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{a1d7653a-c409-414a-b9b0-7879953ebcdd}*SharedItemsImports = 13
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{c00d8070-a38a-4267-9730-e9985cae77df}*SharedItemsImports = 5

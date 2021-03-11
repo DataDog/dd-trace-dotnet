@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Version>1.25.0</Version>
@@ -29,6 +29,7 @@
   
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
   
   <ItemGroup>
@@ -42,5 +43,11 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
 
 </Project>
