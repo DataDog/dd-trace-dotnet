@@ -160,13 +160,15 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                     Span measureSpan = tracer.StartSpan("crank.test", startTime: measure.Timestamp.ToUniversalTime(), parent: span.Context);
 
                                     measureSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+                                    measureSpan.SetMetric(Tags.Analytics, 1.0);
                                     measureSpan.Type = SpanTypes.Custom;
                                     measureSpan.ResourceName = $"{fileName}.{jobItem.Key}.{measure.Name}";
                                     CIEnvironmentValues.DecorateSpan(measureSpan);
-                                    span.SetTag(TestTags.Name, jobItem.Key);
-                                    span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
-                                    span.SetTag(TestTags.Suite, fileName);
-                                    span.SetTag(TestTags.Framework, $"Crank");
+                                    measureSpan.SetTag(TestTags.Name, jobItem.Key);
+                                    measureSpan.SetTag(TestTags.Type, TestTags.TypeBenchmark);
+                                    measureSpan.SetTag(TestTags.Suite, fileName);
+                                    measureSpan.SetTag(TestTags.Framework, $"Crank");
+                                    measureSpan.SetTag(TestTags.Status, TestTags.StatusPass);
 
                                     measureSpan.SetTag("measurement.file_name", fileName);
                                     measureSpan.SetTag("measurement.job_name", jobItem.Key);
