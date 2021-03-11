@@ -88,6 +88,7 @@ stages:
         command: test
         configuration: $(buildConfiguration)
         projects: test/**/*.Tests.csproj
+        arguments: '--no-build'
       env:
         DD_SERVICE: dd-trace-dotnet
 
@@ -111,5 +112,6 @@ stages:
         command: test
         configuration: $(buildConfiguration)
         projects: test/**/*.Tests.csproj
+        arguments: '--no-build'
       env:
         DD_SERVICE: dd-trace-dotnet
