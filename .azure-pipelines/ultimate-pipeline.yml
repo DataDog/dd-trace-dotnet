@@ -29,87 +29,87 @@ resources:
 
 # Stages
 stages:
-  - stage: build
-    dependsOn: []
-    jobs:
-      - job: build_managed
-        pool:
-          vmImage: windows-2019
-        steps:
+- stage: build
+  dependsOn: []
+  jobs:
+  - job: build_managed
+    pool:
+      vmImage: windows-2019
+    steps:
 
-        - template: steps/install-dotnet.yml
+    - template: steps/install-dotnet.yml
 
-        - task: DotNetCoreCLI@2
-          displayName: dotnet build
-          inputs:
-            command: build
-            configuration: $(buildConfiguration)
-            arguments: /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
-            projects: |
-              src/**/*.csproj
-              test/**/*.Tests.csproj
-              test/benchmarks/**/*.csproj
-              !src/Datadog.Trace.Tools.Runner/*.csproj
-          env:
-            DD_SERVICE: dd-trace-dotnet
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build
+      inputs:
+        command: build
+        configuration: $(buildConfiguration)
+        arguments: /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+        projects: |
+          src/**/*.csproj
+          test/**/*.Tests.csproj
+          test/benchmarks/**/*.csproj
+          !src/Datadog.Trace.Tools.Runner/*.csproj
+      env:
+        DD_SERVICE: dd-trace-dotnet
 
-        - publish: $(System.DefaultWorkingDirectory)
-          artifact: source-build-managed
-          condition: succeededOrFailed()
+    - publish: $(System.DefaultWorkingDirectory)
+      artifact: source-build-managed
+      condition: succeededOrFailed()
 
-  - stage: managed_unit_tests
-    dependsOn: build
-    jobs:
-      - job: unit_tests_managed
-        strategy:
-          matrix:
-            windows:
-              imageName: windows-2019
-            linux:
-              imageName: ubuntu-18.04
-            macos:
-              imageName: macOS-10.15
-        pool:
-          vmImage: $(imageName)
-        steps:
+- stage: managed_unit_tests
+  dependsOn: build
+  jobs:
+  - job: unit_tests_managed
+    strategy:
+      matrix:
+        windows:
+          imageName: windows-2019
+        linux:
+          imageName: ubuntu-18.04
+        macos:
+          imageName: macOS-10.15
+    pool:
+      vmImage: $(imageName)
+    steps:
 
-        - checkout: none
+    - checkout: none
 
-        - task: DownloadPipelineArtifact@2
-          inputs:
-            artifact: source-build-managed
-            path: $(System.DefaultWorkingDirectory)
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: source-build-managed
+        path: $(System.DefaultWorkingDirectory)
 
-        - template: steps/install-dotnet.yml
+    - template: steps/install-dotnet.yml
 
-        - task: DotNetCoreCLI@2
-          displayName: dotnet test
-          inputs:
-            command: test
-            configuration: $(buildConfiguration)
-            projects: test/**/*.Tests.csproj
-          env:
-            DD_SERVICE: dd-trace-dotnet
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test
+      inputs:
+        command: test
+        configuration: $(buildConfiguration)
+        projects: test/**/*.Tests.csproj
+      env:
+        DD_SERVICE: dd-trace-dotnet
 
-      - job: unit_tests_managed_linux_arm64
-        pool: Arm64
-        workspace:
-          clean: all
+  - job: unit_tests_managed_linux_arm64
+    pool: Arm64
+    workspace:
+      clean: all
 
-        steps:
+    steps:
 
-        - checkout: none
+    - checkout: none
 
-        - task: DownloadPipelineArtifact@2
-          inputs:
-            artifact: source-build-managed
-            path: $(System.DefaultWorkingDirectory)
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: source-build-managed
+        path: $(System.DefaultWorkingDirectory)
 
-        - task: DotNetCoreCLI@2
-          displayName: dotnet test
-          inputs:
-            command: test
-            configuration: $(buildConfiguration)
-            projects: test/**/*.Tests.csproj
-          env:
-            DD_SERVICE: dd-trace-dotnet
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test
+      inputs:
+        command: test
+        configuration: $(buildConfiguration)
+        projects: test/**/*.Tests.csproj
+      env:
+        DD_SERVICE: dd-trace-dotnet
