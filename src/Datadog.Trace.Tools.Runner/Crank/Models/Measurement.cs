@@ -6,7 +6,7 @@ namespace Datadog.Trace.Tools.Runner.Crank.Models
     {
         public const string Delimiter = "$$Delimiter$$";
 
-        public DateTime Timestamp { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
 
         public string Name { get; set; }
 

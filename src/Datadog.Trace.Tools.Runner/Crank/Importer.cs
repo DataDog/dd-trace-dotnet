@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 #pragma warning disable SA1201 // Elements should appear in the correct order
 
 namespace Datadog.Trace.Tools.Runner.Crank
@@ -66,8 +68,6 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                 if (result?.JobResults?.Jobs?.Count > 0)
                 {
-                    DateTimeOffset startTime = DateTimeOffset.UtcNow;
-
                     var fileName = Path.GetFileName(jsonFilePath);
 
                     var tracerSettings = new TracerSettings();
@@ -76,7 +76,24 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                     foreach (var jobItem in result.JobResults.Jobs)
                     {
-                        Span span = tracer.StartSpan("crank.test", startTime: startTime);
+                        var jobResult = jobItem.Value;
+                        if (jobResult is null)
+                        {
+                            continue;
+                        }
+
+                        DateTimeOffset minTimeStamp = DateTimeOffset.UtcNow;
+                        DateTimeOffset maxTimeStamp = minTimeStamp;
+                        var measurements = jobResult.Measurements?.SelectMany(i => i).ToList() ?? new List<Models.Measurement>();
+                        if (measurements.Count > 0)
+                        {
+                            maxTimeStamp = measurements.Max(i => i.Timestamp).ToUniversalTime();
+                            minTimeStamp = measurements.Min(i => i.Timestamp).ToUniversalTime();
+                        }
+
+                        var duration = (maxTimeStamp - minTimeStamp);
+
+                        Span span = tracer.StartSpan("crank.test", startTime: minTimeStamp);
 
                         span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
                         span.Type = SpanTypes.Test;
@@ -96,8 +113,6 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                 span.SetTag("test.properties." + propItem.Key, propItem.Value);
                             }
                         }
-
-                        var jobResult = jobItem.Value;
 
                         try
                         {
@@ -137,12 +152,55 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                     span.SetTag("environment." + envItem.Key, envItem.Value?.ToString() ?? "(null)");
                                 }
                             }
+
+                            if (measurements.Count > 0)
+                            {
+                                foreach (var measure in measurements)
+                                {
+                                    Span measureSpan = tracer.StartSpan("crank.test", startTime: measure.Timestamp.ToUniversalTime(), parent: span.Context);
+
+                                    measureSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+                                    measureSpan.Type = SpanTypes.Custom;
+                                    measureSpan.ResourceName = $"{fileName}.{jobItem.Key}.{measure.Name}";
+                                    CIEnvironmentValues.DecorateSpan(measureSpan);
+                                    span.SetTag(TestTags.Name, jobItem.Key);
+                                    span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
+                                    span.SetTag(TestTags.Suite, fileName);
+                                    span.SetTag(TestTags.Framework, $"Crank");
+
+                                    measureSpan.SetTag("measurement.file_name", fileName);
+                                    measureSpan.SetTag("measurement.job_name", jobItem.Key);
+
+                                    if (measure.Value is string valueString)
+                                    {
+                                        measureSpan.SetTag("measurement." + measure.Name.Replace("/", ".").Replace("-", "_"), valueString);
+                                    }
+                                    else
+                                    {
+                                        foreach (var converter in Converters)
+                                        {
+                                            if (converter.CanConvert(measure.Name))
+                                            {
+                                                converter.SetToSpan(measureSpan, "measurement." + measure.Name.Replace("/", ".").Replace("-", "_"), measure.Value);
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    measureSpan.Finish(measureSpan.StartTime.AddMilliseconds(300));
+                                }
+                            }
                         }
                         finally
                         {
-                            // var duration = TimeSpan.FromTicks((long)(durationNanoseconds / TimeConstants.NanoSecondsPerTick));
-                            // span.Finish(startTime.Add(duration));
-                            span.Finish();
+                            if (duration == TimeSpan.Zero)
+                            {
+                                span.Finish();
+                            }
+                            else
+                            {
+                                span.Finish(span.StartTime.Add(duration));
+                            }
                         }
                     }
 
