@@ -483,8 +483,6 @@ stages:
 
     steps:
 
-    - checkout: none
-
     - download: current
       artifact: windows-msi-x64
       patterns: '**/*x64.msi'
@@ -524,6 +522,9 @@ stages:
         echo Generated index.txt file:
         cat $INDEX_FILE
       displayName: Write index.txt
+
+    - script: tree s3_upload
+      displayName: 'tree s3_upload'
 
     - script: |
         sudo apt-get install -y unzip python3-setuptools
