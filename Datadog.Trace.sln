@@ -417,6 +417,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OracleMDA", "test\t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OracleMDA.Core", "test\test-applications\integrations\Samples.OracleMDA.Core\Samples.OracleMDA.Core.csproj", "{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "throughput", "throughput", "{83CF7471-0C2D-4B10-AEEC-A345596AF74D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreSimpleController", "test\test-applications\throughput\Samples.AspNetCoreSimpleController\Samples.AspNetCoreSimpleController.csproj", "{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{1f146d40-8b21-4630-8049-14fa4bbbb217}*SharedItemsImports = 5
@@ -1574,6 +1578,16 @@ Global
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}.Release|x64.Build.0 = Release|x64
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}.Release|x86.ActiveCfg = Release|x86
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}.Release|x86.Build.0 = Release|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x64.ActiveCfg = Debug|x64
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x64.Build.0 = Debug|x64
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x86.ActiveCfg = Debug|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x86.Build.0 = Debug|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|Any CPU.ActiveCfg = Release|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|x64.ActiveCfg = Release|x64
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|x64.Build.0 = Release|x64
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|x86.ActiveCfg = Release|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1696,6 +1710,8 @@ Global
 		{69B678F6-51CF-4A5B-8DEC-1F9CEDC5C9E2} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BD46EFCC-177C-466E-81DF-39314B780ADA} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{83CF7471-0C2D-4B10-AEEC-A345596AF74D} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B} = {83CF7471-0C2D-4B10-AEEC-A345596AF74D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
