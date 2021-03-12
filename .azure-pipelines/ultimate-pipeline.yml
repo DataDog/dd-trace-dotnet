@@ -229,6 +229,33 @@ stages:
       displayName: Publish Alpine Linux package
       artifact: linux-alpine-packages
 
+  - job: build_native_linux_arm64
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool: Arm64
+    workspace:
+      clean: all
+
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run Profiler
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run Profiler
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+      artifact: build-linux-tracer-home-arm64
+
 - stage: unit_tests
   dependsOn: build
   jobs:
