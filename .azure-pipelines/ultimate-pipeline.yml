@@ -13,6 +13,7 @@ trigger:
 variables:
   buildConfiguration: Release
   dotnetCoreSdk5Version: 5.0.103
+  tracerHome: $(System.DefaultWorkingDirectory)/src/bin/tracer-home
   ddApiKey: $(DD_API_KEY)
   DD_DOTNET_TRACER_MSBUILD:
 
@@ -50,6 +51,14 @@ stages:
         msbuildArguments: /t:BuildCsharp
         maximumCpuCount: true
 
+    - task: MSBuild@1
+      displayName: Publish managed profiler to tracer home for Windows and Linux builds
+      inputs:
+        solution: Datadog.Trace.proj
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:PublishManagedProfilerOnDisk
+        maximumCpuCount: true
+
     - task: DotNetCoreCLI@2
       displayName: Create NuGet packages
       inputs:
@@ -72,9 +81,7 @@ stages:
     pool:
       vmImage: windows-2019
     variables:
-      tracerHomeName: windows-tracer-home
-      tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
-      msiHome: $(System.DefaultWorkingDirectory)/src/bin/msi
+      msiHome: $(System.DefaultWorkingDirectory)/src/WindowsInstaller/bin/$(buildConfiguration)
     steps:
     - checkout: none
 
@@ -115,11 +122,11 @@ stages:
       inputs:
         solution: Datadog.Trace.proj
         configuration: $(buildConfiguration)
-        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;TracerHomeDirectory=$(tracerHome);RunWixToolsOutOfProc=true;MsiOutputPath=$(msiHome)
+        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;RunWixToolsOutOfProc=true
         maximumCpuCount: true
 
     - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload Windows MSIs
+      displayName: Upload repo after windows build
       artifact: build-repo-managed-native-windows
 
     - publish: $(tracerHome)/win-x86
@@ -130,13 +137,17 @@ stages:
       displayName: Upload Windows x64 profiler directory
       artifact: build-profiler-windows-x64
 
-    - publish: $(msiHome)/en-us
-      displayName: Upload Windows MSIs
-      artifact: windows-msi
+    - publish: $(msiHome)/x86/en-us
+      displayName: Upload Windows x86 MSI
+      artifact: windows-msi-x86
+
+    - publish: $(msiHome)/x64/en-us
+      displayName: Upload Windows x64 MSI
+      artifact: windows-msi-x64
 
     - publish: $(tracerHome).zip
       displayName: Upload Windows tracer home zip
-      artifact: $(tracerHomeName)
+      artifact: windows-tracer-home
 
   - job: build_native_linux
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
