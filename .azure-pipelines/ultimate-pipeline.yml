@@ -190,7 +190,7 @@ stages:
       displayName: Uploading alpine linux tracer home artifact
       artifact: alpine-linux-tracer-home
 
-- stage: managed_unit_tests
+- stage: unit_tests
   dependsOn: build
   jobs:
   - job: unit_tests_managed
@@ -268,9 +268,6 @@ stages:
       env:
         DD_SERVICE: dd-trace-dotnet
 
-- stage: native_unit_tests
-  dependsOn: build
-  jobs:
   - job: native_unit_tests_windows
     pool:
       vmImage: windows-2019
