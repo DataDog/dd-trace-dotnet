@@ -231,8 +231,18 @@ stages:
         artifact: source-build-managed-and-native-windows
         path: $(System.DefaultWorkingDirectory)
 
-      # Install the .NET SDK so any managed libraries needed for the C++ unit tests can be built
+    # Install the .NET SDK so any managed libraries needed for the C++ unit tests can be built
     - template: steps/install-dotnet.yml
+
+    # This should already be accounted for but unfortunately it is not
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build
+      inputs:
+        command: build
+        configuration: $(buildConfiguration)
+        arguments: /nowarn:netsdk1138
+        projects: |
+          test/**/Samples.ExampleLibrary*.csproj
 
     - task: MSBuild@1
       displayName: Build x86 native unit test projects
