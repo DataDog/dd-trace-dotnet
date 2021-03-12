@@ -60,11 +60,12 @@ stages:
         configuration: $(buildConfiguration)
 
     - publish: $(System.DefaultWorkingDirectory)/nuget-output
+      displayName: Upload NuGet packages
       artifact: nuget-packages
 
     - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
       artifact: source-build-managed
-      condition: succeededOrFailed()
 
   - job: build_native_windows
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
