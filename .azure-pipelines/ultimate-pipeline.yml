@@ -11,7 +11,7 @@ trigger:
 
 # Global variables
 variables:
-  buildConfiguration: Debug
+  buildConfiguration: Release
   dotnetCoreSdk5Version: 5.0.103
   ddApiKey: $(DD_API_KEY)
   DD_DOTNET_TRACER_MSBUILD:
@@ -132,7 +132,6 @@ stages:
         command: test
         configuration: $(buildConfiguration)
         projects: test/**/*.Tests.csproj
-        arguments: '--no-build'
       env:
         DD_SERVICE: dd-trace-dotnet
 
@@ -156,7 +155,6 @@ stages:
         command: test
         configuration: $(buildConfiguration)
         projects: test/**/*.Tests.csproj
-        arguments: '--no-build'
       env:
         DD_SERVICE: dd-trace-dotnet
 
