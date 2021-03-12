@@ -36,23 +36,31 @@ stages:
     pool:
       vmImage: windows-2019
     steps:
+    - task: UseDotNet@2
+      displayName: Install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
 
-    - template: steps/install-dotnet.yml
+    - task: MSBuild@1
+      displayName: Build all managed projects
+      inputs:
+        solution: Datadog.Trace.proj
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildCsharp
+        maximumCpuCount: true
 
     - task: DotNetCoreCLI@2
-      displayName: dotnet build
+      displayName: dotnet pack
       inputs:
-        command: build
+        command: pack
+        arguments: '--no-build'
+        packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
+        packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
         configuration: $(buildConfiguration)
-        arguments: /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
-        projects: |
-          src/**/*.csproj
-          test/**/*.Tests.csproj
-          test/benchmarks/**/*.csproj
-          test/**/Samples.ExampleLibrary*.csproj
-          !src/Datadog.Trace.Tools.Runner/*.csproj
-      env:
-        DD_SERVICE: dd-trace-dotnet
+
+    - publish: $(System.DefaultWorkingDirectory)/nuget-output
+      artifact: nuget-packages
 
     - publish: $(System.DefaultWorkingDirectory)
       artifact: source-build-managed
@@ -126,10 +134,19 @@ stages:
 
     - template: steps/install-dotnet.yml
 
+    - task: MSBuild@1
+      displayName: Build all managed unit test projects
+      inputs:
+        solution: Datadog.Trace.proj
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildCsharpTests
+        maximumCpuCount: true
+
     - task: DotNetCoreCLI@2
       displayName: dotnet test
       inputs:
         command: test
+        arguments: '--no-build'
         configuration: $(buildConfiguration)
         projects: test/**/*.Tests.csproj
       env:
@@ -172,6 +189,27 @@ stages:
       inputs:
         artifact: source-build-managed-and-native-windows
         path: $(System.DefaultWorkingDirectory)
+
+      # Install the .NET SDK so any managed libraries needed for the C++ unit tests can be built
+    - template: steps/install-dotnet.yml
+
+    - task: MSBuild@1
+      displayName: Build x86 native unit test projects
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: x86
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildCppTests
+        maximumCpuCount: true
+
+    - task: MSBuild@1
+      displayName: Build x64 native unit test projects
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: x64
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildCppTests
+        maximumCpuCount: true
 
     - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
       displayName: run tests
