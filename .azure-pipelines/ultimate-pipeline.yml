@@ -135,13 +135,24 @@ stages:
 
     - template: steps/install-dotnet.yml
 
-    - task: MSBuild@1
-      displayName: Build all managed unit test projects
+#    - task: MSBuild@1
+#      displayName: Build all managed unit test projects
+#      inputs:
+#        solution: Datadog.Trace.proj
+#        configuration: $(buildConfiguration)
+#        msbuildArguments: /t:BuildCsharpTests
+#        maximumCpuCount: true
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build
       inputs:
-        solution: Datadog.Trace.proj
+        command: build
         configuration: $(buildConfiguration)
-        msbuildArguments: /t:BuildCsharpTests
-        maximumCpuCount: true
+        arguments: /nowarn:netsdk1138
+        projects: |
+          test/**/*.Tests.csproj
+      env:
+        DD_SERVICE: dd-trace-dotnet
 
     - task: DotNetCoreCLI@2
       displayName: dotnet test
