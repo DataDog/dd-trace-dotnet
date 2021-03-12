@@ -138,6 +138,58 @@ stages:
       displayName: Upload Windows x64 profiler directory
       artifact: profiler-windows-x64
 
+  - job: build_native_linux
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool:
+      vmImage: ubuntu-20.04
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: source-build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run Profiler
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run Profiler
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+      displayName: Uploading linux tracer home artifact
+      artifact: linux-tracer-home
+
+  - job: build_native_alpine_linux
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool:
+      vmImage: ubuntu-20.04
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: source-build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run Profiler.Alpine
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run Profiler.Alpine
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+      displayName: Uploading alpine linux tracer home artifact
+      artifact: alpine-linux-tracer-home
+
 - stage: managed_unit_tests
   dependsOn: build
   jobs:
