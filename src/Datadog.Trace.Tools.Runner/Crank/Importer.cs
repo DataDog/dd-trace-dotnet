@@ -152,46 +152,6 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                     span.SetTag("environment." + envItem.Key, envItem.Value?.ToString() ?? "(null)");
                                 }
                             }
-
-                            if (measurements.Count > 0)
-                            {
-                                foreach (var measure in measurements)
-                                {
-                                    Span measureSpan = tracer.StartSpan("crank.test", startTime: measure.Timestamp.ToUniversalTime(), parent: span.Context);
-
-                                    measureSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
-                                    measureSpan.SetMetric(Tags.Analytics, 1.0);
-                                    measureSpan.Type = SpanTypes.Custom;
-                                    measureSpan.ResourceName = $"{fileName}.{jobItem.Key}.{measure.Name}";
-                                    CIEnvironmentValues.DecorateSpan(measureSpan);
-                                    measureSpan.SetTag(TestTags.Name, jobItem.Key);
-                                    measureSpan.SetTag(TestTags.Type, TestTags.TypeBenchmark);
-                                    measureSpan.SetTag(TestTags.Suite, fileName);
-                                    measureSpan.SetTag(TestTags.Framework, $"Crank");
-                                    measureSpan.SetTag(TestTags.Status, TestTags.StatusPass);
-
-                                    measureSpan.SetTag("measurement.file_name", fileName);
-                                    measureSpan.SetTag("measurement.job_name", jobItem.Key);
-
-                                    if (measure.Value is string valueString)
-                                    {
-                                        measureSpan.SetTag("measurement." + measure.Name.Replace("/", ".").Replace("-", "_"), valueString);
-                                    }
-                                    else
-                                    {
-                                        foreach (var converter in Converters)
-                                        {
-                                            if (converter.CanConvert(measure.Name))
-                                            {
-                                                converter.SetToSpan(measureSpan, "measurement." + measure.Name.Replace("/", ".").Replace("-", "_"), measure.Value);
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    measureSpan.Finish(measureSpan.StartTime.AddMilliseconds(300));
-                                }
-                            }
                         }
                         finally
                         {
