@@ -71,6 +71,10 @@ stages:
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
     pool:
       vmImage: windows-2019
+    variables:
+      tracerHomeName: windows-tracer-home
+      tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
+      msiHome: $(System.DefaultWorkingDirectory)/src/bin/msi
     steps:
     - checkout: none
 
@@ -78,6 +82,19 @@ stages:
       inputs:
         artifact: source-build-managed
         path: $(System.DefaultWorkingDirectory)
+
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
+
+    # This is only here because the msi build later causes a restore error...not sure why
+    - task: DotNetCoreCLI@2
+      displayName: dotnet restore
+      inputs:
+        command: restore
+        projects: src/**/*.csproj
 
     - task: NuGetToolInstaller@1
       displayName: install nuget
@@ -88,27 +105,38 @@ stages:
         restoreSolution: Datadog.Trace.Native.sln
         verbosityRestore: Normal
 
+    # this triggers a dependency chain that builds all the managed, x64, and x86 dlls, and the zip and msi files
+    # Outputs include:
+    # - Windows Datadog.Trace.ClrProfiler.Native.dll (x86 and x64)
+    # - Windows MSI (x86 and x64)
+    # - Windows tracer home directory
     - task: MSBuild@1
-      displayName: msbuild
+      displayName: build both msi
       inputs:
         solution: Datadog.Trace.proj
-        platform: x86
         configuration: $(buildConfiguration)
-        msbuildArguments: /t:BuildCpp;BuildCppTests
-        maximumCpuCount: true
-
-    - task: MSBuild@1
-      displayName: msbuild
-      inputs:
-        solution: Datadog.Trace.proj
-        platform: x64
-        configuration: $(buildConfiguration)
-        msbuildArguments: /t:BuildCpp;BuildCppTests
+        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;TracerHomeDirectory=$(tracerHome);RunWixToolsOutOfProc=true;MsiOutputPath=$(msiHome)
         maximumCpuCount: true
 
     - publish: $(System.DefaultWorkingDirectory)
       artifact: source-build-managed-and-native-windows
       condition: succeededOrFailed()
+
+    - publish: $(msiHome)/en-us
+      displayName: Upload Windows MSIs
+      artifact: windows-msi
+
+    - publish: $(tracerHome).zip
+      displayName: Upload Windows tracer home zip
+      artifact: $(tracerHomeName)
+
+    - publish: $(tracerHome)/win-x86
+      displayName: Upload Windows x86 profiler directory
+      artifact: profiler-windows-x86
+
+    - publish: $(tracerHome)/win-x64
+      displayName: Upload Windows x64 profiler directory
+      artifact: profiler-windows-x64
 
 - stage: managed_unit_tests
   dependsOn: build
@@ -135,13 +163,14 @@ stages:
 
     - template: steps/install-dotnet.yml
 
-#    - task: MSBuild@1
-#      displayName: Build all managed unit test projects
-#      inputs:
-#        solution: Datadog.Trace.proj
-#        configuration: $(buildConfiguration)
-#        msbuildArguments: /t:BuildCsharpTests
-#        maximumCpuCount: true
+    # Ideally we would use the following MSBuild command which can more intelligently parallelize the build
+    #    - task: MSBuild@1
+    #      displayName: Build all managed unit test projects
+    #      inputs:
+    #        solution: Datadog.Trace.proj
+    #        configuration: $(buildConfiguration)
+    #        msbuildArguments: /t:BuildCsharpTests
+    #        maximumCpuCount: true
 
     - task: DotNetCoreCLI@2
       displayName: dotnet build
