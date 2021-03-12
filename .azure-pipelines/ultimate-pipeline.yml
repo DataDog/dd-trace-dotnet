@@ -490,6 +490,174 @@ stages:
         targetType: 'inline'
         script: 'Start-Sleep -s 120'
 
+- stage: dotnet_tool
+  dependsOn: build
+  jobs:
+  - job: build_runner_tool_and_standalone
+
+    pool:
+      vmImage: windows-2019
+
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - download: current
+      artifact: build-profiler-windows-x64
+      patterns: '**/*.dll'
+
+    - task: CopyFiles@2
+      displayName: Copying native windows binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-profiler-windows-x64
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/win-x64
+
+    - download: current
+      artifact: build-profiler-windows-x86
+      patterns: '**/*.dll'
+
+    - task: CopyFiles@2
+      displayName: Copying native windows binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-profiler-windows-x86
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/win-x86
+
+    - download: current
+      artifact: build-linux-tracer-home
+      patterns: '**/*.so'
+
+    - task: CopyFiles@2
+      displayName: Copying native linux binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
+
+    - download: current
+      artifact: build-alpine-linux-tracer-home
+      patterns: '**/*.so'
+
+    - task: CopyFiles@2
+      displayName: Copying native alpine linux binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-alpine-linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-musl-x64
+
+    - download: current
+      artifact: build-macos-tracer-home
+      patterns: '**/*.dylib'
+
+    - task: CopyFiles@2
+      displayName: Copying native macos binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-macos-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/osx-x64
+
+    # Install the tracer latest stable release to attach the profiler to the build and test steps.
+    # The script exposes the required environment variables to the following steps
+    - task: PowerShell@2
+      displayName: Install profiler latest release
+      inputs:
+        filePath: ./.azure-pipelines/setup_tracer.ps1
+
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
+
+    - task: DotNetCoreCLI@2
+      displayName: tool build
+      inputs:
+        command: build
+        configuration: $(buildConfiguration)
+        arguments: /nowarn:netsdk1138
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.proj
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build win-x86
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime win-x86
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build win-x64
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime win-x64
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build linux-x64
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime linux-x64
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build linux-musl-x64
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime linux-musl-x64
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build linux-osx-x64
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime osx-x64
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DeleteFiles@1
+      displayName: 'Remove unneeded files'
+      inputs:
+        Contents: |
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/!(*.nupkg)
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64/home*
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86/home*
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64/home*
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64/home*
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool
+      displayName: Uploading runner dotnet tool artifact
+      artifact: runner-dotnet-tool
+
 - stage: upload
   dependsOn: build
   jobs:
