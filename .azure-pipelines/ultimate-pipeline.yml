@@ -285,9 +285,16 @@ stages:
         make
       displayName: build_profiler
 
+    - script: |
+        mkdir -p src/Datadog.Trace.ClrProfiler.Native/bin/netstandard2.0
+        cp src/bin/windows-tracer-home/netstandard2.0/*.dll src/Datadog.Trace.ClrProfiler.Native/bin/netstandard2.0/
+        mkdir -p src/Datadog.Trace.ClrProfiler.Native/bin/netcoreapp3.1
+        cp src/bin/windows-tracer-home/netcoreapp3.1/*.dll src/Datadog.Trace.ClrProfiler.Native/bin/netcoreapp3.1/
+      displayName: Copy files into build-macos-tracer-home
+
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin
       displayName: Uploading macos profiler artifact
-      artifact: build-macos
+      artifact: build-macos-tracer-home
 
 - stage: unit_tests
   dependsOn: build
