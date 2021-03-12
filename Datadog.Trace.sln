@@ -419,7 +419,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OracleMDA.Core", "t
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "throughput", "throughput", "{83CF7471-0C2D-4B10-AEEC-A345596AF74D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreSimpleController", "test\test-applications\throughput\Samples.AspNetCoreSimpleController\Samples.AspNetCoreSimpleController.csproj", "{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreSimpleController", "test\test-applications\throughput\Samples.AspNetCoreSimpleController\Samples.AspNetCoreSimpleController.csproj", "{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "crank", "crank", "{E3FB283A-B766-4887-95E1-329667671921}"
+	ProjectSection(SolutionItems) = preProject
+		build\crank\run.sh = build\crank\run.sh
+		build\crank\Samples.AspNetCoreSimpleController.yml = build\crank\Samples.AspNetCoreSimpleController.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -1712,6 +1718,7 @@ Global
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{83CF7471-0C2D-4B10-AEEC-A345596AF74D} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B} = {83CF7471-0C2D-4B10-AEEC-A345596AF74D}
+		{E3FB283A-B766-4887-95E1-329667671921} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
