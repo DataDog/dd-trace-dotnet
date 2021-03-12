@@ -253,6 +253,16 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: run Profiler
 
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/package.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run package
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run package
+
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       artifact: build-linux-tracer-home-arm64
 
