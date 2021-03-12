@@ -219,6 +219,7 @@ stages:
     - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
       displayName: run tests
       workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/x64
+      condition: succeededOrFailed()
 
     - task: PublishTestResults@2
       displayName: publish test results
