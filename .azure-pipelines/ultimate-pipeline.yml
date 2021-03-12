@@ -367,7 +367,7 @@ stages:
 
 - stage: benchmarks
   dependsOn: build
-  condition: true
+  condition: and(succeeded(), true)
   jobs:
 
   #### Windows 
