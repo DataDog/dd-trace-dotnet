@@ -65,7 +65,7 @@ stages:
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
-      artifact: source-build-managed
+      artifact: build-managed
 
   - job: build_native_windows
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
@@ -80,7 +80,7 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: source-build-managed
+        artifact: build-managed
         path: $(System.DefaultWorkingDirectory)
 
     - task: UseDotNet@2
@@ -119,8 +119,16 @@ stages:
         maximumCpuCount: true
 
     - publish: $(System.DefaultWorkingDirectory)
-      artifact: source-build-managed-and-native-windows
-      condition: succeededOrFailed()
+      displayName: Upload Windows MSIs
+      artifact: build-repo-managed-native-windows
+
+    - publish: $(tracerHome)/win-x86
+      displayName: Upload Windows x86 profiler directory
+      artifact: build-profiler-windows-x86
+
+    - publish: $(tracerHome)/win-x64
+      displayName: Upload Windows x64 profiler directory
+      artifact: build-profiler-windows-x64
 
     - publish: $(msiHome)/en-us
       displayName: Upload Windows MSIs
@@ -129,14 +137,6 @@ stages:
     - publish: $(tracerHome).zip
       displayName: Upload Windows tracer home zip
       artifact: $(tracerHomeName)
-
-    - publish: $(tracerHome)/win-x86
-      displayName: Upload Windows x86 profiler directory
-      artifact: profiler-windows-x86
-
-    - publish: $(tracerHome)/win-x64
-      displayName: Upload Windows x64 profiler directory
-      artifact: profiler-windows-x64
 
   - job: build_native_linux
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
@@ -147,7 +147,7 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: source-build-managed
+        artifact: build-managed
         path: $(System.DefaultWorkingDirectory)
 
     - script: |
@@ -172,9 +172,10 @@ stages:
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       displayName: Uploading linux tracer home artifact
-      artifact: linux-tracer-home
+      artifact: build-linux-tracer-home
 
     - publish: $(System.DefaultWorkingDirectory)/deploy/linux
+      displayName: Publish Linux packages
       artifact: linux-packages
 
   - job: build_native_alpine_linux
@@ -186,7 +187,7 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: source-build-managed
+        artifact: build-managed
         path: $(System.DefaultWorkingDirectory)
 
     - script: |
@@ -211,9 +212,10 @@ stages:
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       displayName: Uploading alpine linux tracer home artifact
-      artifact: alpine-linux-tracer-home
+      artifact: build-alpine-linux-tracer-home
 
     - publish: $(System.DefaultWorkingDirectory)/deploy/linux
+      displayName: Publish Alpine Linux package
       artifact: linux-alpine-packages
 
 - stage: unit_tests
@@ -236,7 +238,7 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: source-build-managed
+        artifact: build-managed
         path: $(System.DefaultWorkingDirectory)
 
     - template: steps/install-dotnet.yml
@@ -282,7 +284,7 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: source-build-managed
+        artifact: build-managed
         path: $(System.DefaultWorkingDirectory)
 
     - task: DotNetCoreCLI@2
@@ -303,7 +305,7 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: source-build-managed-and-native-windows
+        artifact: build-repo-managed-native-windows
         path: $(System.DefaultWorkingDirectory)
 
     # Install the .NET SDK so any managed libraries needed for the C++ unit tests can be built
