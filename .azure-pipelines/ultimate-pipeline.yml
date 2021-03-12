@@ -51,10 +51,10 @@ stages:
         maximumCpuCount: true
 
     - task: DotNetCoreCLI@2
-      displayName: dotnet pack
+      displayName: Create NuGet packages
       inputs:
         command: pack
-        arguments: '--no-build'
+        nobuild: true
         packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
         packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
         configuration: $(buildConfiguration)
