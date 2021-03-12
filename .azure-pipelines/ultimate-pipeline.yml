@@ -291,13 +291,18 @@ stages:
     #        maximumCpuCount: true
 
     - task: DotNetCoreCLI@2
+      displayName: dotnet restore
+      inputs:
+        command: restore
+        projects: test/**/*.Tests.csproj
+
+    - task: DotNetCoreCLI@2
       displayName: dotnet build
       inputs:
         command: build
         configuration: $(buildConfiguration)
         arguments: /nowarn:netsdk1138
-        projects: |
-          test/**/*.Tests.csproj
+        projects: test/**/*.Tests.csproj
       env:
         DD_SERVICE: dd-trace-dotnet
 
