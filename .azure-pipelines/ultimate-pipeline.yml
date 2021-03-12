@@ -580,7 +580,7 @@ stages:
         command: build
         configuration: $(buildConfiguration)
         arguments: /nowarn:netsdk1138
-        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.proj
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Tool.csproj
       env:
         DD_SERVICE: dd-trace-dotnet-runner-tool
 
