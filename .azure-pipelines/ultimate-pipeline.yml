@@ -256,6 +256,29 @@ stages:
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       artifact: build-linux-tracer-home-arm64
 
+  - job: build_native_macos
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool:
+      vmImage: macOS-10.15
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - script: |
+        cd ./src/Datadog.Trace.ClrProfiler.Native
+        cmake .
+        make
+      displayName: build_profiler
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin
+      displayName: Uploading macos profiler artifact
+      artifact: build-macos
+
 - stage: unit_tests
   dependsOn: build
   jobs:
