@@ -7,6 +7,14 @@ jobs:
     source:
       project: test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj
     readyStateText: Application started.
+    options:
+      displayOutput: true
+      counterProviders:
+      - System.Runtime
+      - Microsoft-AspNetCore-Server-Kestrel
+      - Microsoft.AspNetCore.Hosting
+      - System.Net.Http
+      - Microsoft.AspNetCore.Http.Connections
 
 scenarios:
   baseline:
