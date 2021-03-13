@@ -447,6 +447,13 @@ stages:
           publishTargetFramework: net5.0
 
     steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
     - download: current
       artifact: build-linux-tracer-home
 
@@ -455,11 +462,19 @@ stages:
         sourceFolder: $(Pipeline.Workspace)/build-linux-tracer-home
         targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
 
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/build.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/build.sh'
+
     - task: DockerCompose@0
       displayName: docker-compose run build
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh'
 
     - task: DockerCompose@0
       displayName: docker-compose run IntegrationTests
@@ -491,6 +506,13 @@ stages:
           publishTargetFramework: net5.0
 
     steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
     - download: current
       artifact: build-alpine-linux-tracer-home
 
@@ -499,11 +521,19 @@ stages:
         sourceFolder: $(Pipeline.Workspace)/build-alpine-linux-tracer-home
         targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
 
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/build.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/build.sh'
+
     - task: DockerCompose@0
       displayName: docker-compose run build
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh'
 
     - task: DockerCompose@0
       displayName: docker-compose run IntegrationTests.Alpine.Core21
