@@ -1,6 +1,6 @@
 imports:
   - https://raw.githubusercontent.com/dotnet/crank/main/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
-  - /var/opt/crank/profiles.yml
+  - /var/opt/crank/variables.yml
 
 jobs:
   server:
@@ -9,6 +9,7 @@ jobs:
     readyStateText: Application started.
     options:
       displayOutput: true
+      displayBuild: true
       counterProviders:
       - System.Runtime
       - Microsoft-AspNetCore-Server-Kestrel
@@ -20,6 +21,9 @@ scenarios:
   baseline:
     application:
       job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 0
+        CORECLR_ENABLE_PROFILING: 0
     load:
       job: bombardier
       variables:
@@ -30,8 +34,6 @@ scenarios:
     application:
       job: server
       environmentVariables:
-        COR_ENABLE_PROFILING: 1
-        CORECLR_ENABLE_PROFILING: 1
         DD_TRACE_CALLTARGET_ENABLED: 0
         DD_CLR_ENABLE_INLINING: 0
     load:
@@ -44,8 +46,6 @@ scenarios:
     application:
       job: server
       environmentVariables:
-        COR_ENABLE_PROFILING: 1
-        CORECLR_ENABLE_PROFILING: 1
         DD_TRACE_CALLTARGET_ENABLED: 1
         DD_CLR_ENABLE_INLINING: 1
     load:
@@ -53,3 +53,51 @@ scenarios:
       variables:
         serverPort: 5080
         path: /
+
+profiles:
+
+  windows:
+    variables:
+      serverAddress: "{{ windowsEndpoint }}"
+    jobs:
+      application:
+        endpoints:
+          - "http://{{ windowsEndpoint }}:5010"
+        environmentVariables:
+          COR_ENABLE_PROFILING: 1
+          COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          COR_PROFILER_PATH: "{{ windowsProfilerPath }}\\Datadog.Trace.ClrProfiler.Native.dll"
+          CORECLR_ENABLE_PROFILING: 1
+          CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          CORECLR_PROFILER_PATH: "{{ windowsProfilerPath }}\\Datadog.Trace.ClrProfiler.Native.dll"
+          DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}"
+          DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\integrations.json"
+        options:
+          buildFiles:
+          - "./run.sh;{{ windowsProfilerPath }}"
+      load:
+        endpoints:
+          - http://localhost:5010
+
+  linux:
+    variables:
+      serverAddress: "{{ linuxEndpoint }}"
+    jobs:
+      application:
+        endpoints:
+          - "http://{{ linuxEndpoint }}:5010"
+        environmentVariables:
+          COR_ENABLE_PROFILING: 1
+          COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/Datadog.Trace.ClrProfiler.Native.so"
+          CORECLR_ENABLE_PROFILING: 1
+          CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/Datadog.Trace.ClrProfiler.Native.so"
+          DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}"
+          DD_INTEGRATIONS: "{{ linuxProfilerPath }}/integrations.json"
+        options:
+          buildFiles:
+          - "./run.sh;{{ linuxProfilerPath }}"
+      load:
+        endpoints:
+          - http://localhost:5010
