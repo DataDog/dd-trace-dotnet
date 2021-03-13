@@ -74,7 +74,8 @@ profiles:
           DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\integrations.json"
         options:
           buildFiles:
-          - "./run.sh;{{ windowsProfilerPath }}"
+          - "../../integrations.json;{{ windowsProfilerPath }}"
+          - "../../Datadog.Trace.ClrProfiler.Native.dll;{{ windowsProfilerPath }}"
       load:
         endpoints:
           - http://localhost:5010
@@ -97,7 +98,8 @@ profiles:
           DD_INTEGRATIONS: "{{ linuxProfilerPath }}/integrations.json"
         options:
           buildFiles:
-          - "./run.sh;{{ linuxProfilerPath }}"
+          - "../../integrations.json;{{ linuxProfilerPath }}"
+          - "../../Datadog.Trace.ClrProfiler.Native.so;{{ linuxProfilerPath }}"
       load:
         endpoints:
           - http://localhost:5010
