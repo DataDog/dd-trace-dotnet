@@ -509,10 +509,10 @@ stages:
     - task: CopyFiles@2
       displayName: Copying windows tracer home from previous job
       inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-windows-tracer-home
         Contents: |
-          $(Pipeline.Workspace)\build-windows-tracer-home\**\*.dll
-          $(Pipeline.Workspace)\build-windows-tracer-home\**\*.pdb
-          $(Pipeline.Workspace)\build-windows-tracer-home\**\*.xml
+          **/*
+          !**/*.zip
         targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home
 
     - download: current
