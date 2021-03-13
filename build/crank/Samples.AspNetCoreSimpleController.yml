@@ -58,11 +58,11 @@ profiles:
 
   windows:
     variables:
-      serverAddress: "{{ windowsEndpoint }}"
+      serverAddress: "{{ windowsIp }}"
     jobs:
       application:
         endpoints:
-          - "http://{{ windowsEndpoint }}:5010"
+          - "{{ windowsEndpoint }}"
         environmentVariables:
           COR_ENABLE_PROFILING: 1
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
@@ -81,11 +81,11 @@ profiles:
 
   linux:
     variables:
-      serverAddress: "{{ linuxEndpoint }}"
+      serverAddress: "{{ linuxIp }}"
     jobs:
       application:
         endpoints:
-          - "http://{{ linuxEndpoint }}:5010"
+          - "{{ linuxEndpoint }}"
         environmentVariables:
           COR_ENABLE_PROFILING: 1
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
