@@ -429,6 +429,55 @@ stages:
         testResultsFiles: test/**/test*.xml
       condition: succeededOrFailed()
 
+- stage: integration_tests
+  dependsOn: build
+  variables:
+    TestAllPackageVersions: true
+  jobs:
+  - job: Linux
+    strategy:
+      matrix:
+        netcoreapp2_1:
+          publishTargetFramework: netcoreapp2.1
+        netcoreapp3_0:
+          publishTargetFramework: netcoreapp3.0
+        netcoreapp3_1:
+          publishTargetFramework: netcoreapp3.1
+        net5_0:
+          publishTargetFramework: net5.0
+
+    steps:
+    - download: current
+      artifact: build-linux-tracer-home
+
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+
+    - task: DockerCompose@0
+      displayName: docker-compose run build
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+
+    - task: DockerCompose@0
+      displayName: docker-compose run IntegrationTests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
+
+    - publish: dotnet-tracer-native.log
+      artifact: $(Agent.JobName)_profiler-logs
+      condition: succeededOrFailed()
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: test/**/*.trx
+      condition: succeededOrFailed()
+
 - stage: benchmarks
   dependsOn: build
   condition: and(succeeded(), false)
