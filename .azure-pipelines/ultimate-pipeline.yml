@@ -128,14 +128,6 @@ stages:
       displayName: Upload repo after windows build
       artifact: build-repo-managed-native-windows
 
-    - publish: $(tracerHome)/win-x86
-      displayName: Upload Windows x86 profiler directory
-      artifact: build-profiler-windows-x86
-
-    - publish: $(tracerHome)/win-x64
-      displayName: Upload Windows x64 profiler directory
-      artifact: build-profiler-windows-x64
-
     - publish: $(msiHome)/x86/en-us
       displayName: Upload Windows x86 MSI
       artifact: windows-msi-x86
@@ -143,6 +135,10 @@ stages:
     - publish: $(msiHome)/x64/en-us
       displayName: Upload Windows x64 MSI
       artifact: windows-msi-x64
+
+    - publish: $(tracerHome)
+      displayName: Upload Windows tracer home directory
+      artifact: build-windows-tracer-home
 
     - publish: $(tracerHome).zip
       displayName: Upload Windows tracer home zip
@@ -508,24 +504,16 @@ stages:
         path: $(System.DefaultWorkingDirectory)
 
     - download: current
-      artifact: build-profiler-windows-x64
-      patterns: '**/*.dll'
+      artifact: build-windows-tracer-home
 
     - task: CopyFiles@2
-      displayName: Copying native windows binary from previous job
+      displayName: Copying windows tracer home from previous job
       inputs:
-        sourceFolder: $(Pipeline.Workspace)/build-profiler-windows-x64
-        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/win-x64
-
-    - download: current
-      artifact: build-profiler-windows-x86
-      patterns: '**/*.dll'
-
-    - task: CopyFiles@2
-      displayName: Copying native windows binary from previous job
-      inputs:
-        sourceFolder: $(Pipeline.Workspace)/build-profiler-windows-x86
-        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/win-x86
+        Contents: |
+          $(Pipeline.Workspace)\build-windows-tracer-home\**\*.dll
+          $(Pipeline.Workspace)\build-windows-tracer-home\**\*.pdb
+          $(Pipeline.Workspace)\build-windows-tracer-home\**\*.xml
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home
 
     - download: current
       artifact: build-linux-tracer-home
