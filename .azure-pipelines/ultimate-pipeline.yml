@@ -434,6 +434,190 @@ stages:
   variables:
     TestAllPackageVersions: true
   jobs:
+
+  - job: Windows
+    timeoutInMinutes: 100
+    strategy:
+      matrix:
+        x64:
+          buildPlatform: x64
+        x86:
+          buildPlatform: x86
+    pool:
+      vmImage: windows-2019
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-repo-managed-native-windows
+        path: $(System.DefaultWorkingDirectory)
+
+    - template: steps/install-dotnet.yml
+
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
+
+    - task: MSBuild@1
+      displayName: Build .NET Framework projects (not SDK-based projects)
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: $(buildPlatform)
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildFrameworkReproductions
+        maximumCpuCount: true
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build integration tests
+      inputs:
+        command: build
+        projects: |
+          test/test-applications/regression/**/*.csproj
+          test/*.IntegrationTests/*.IntegrationTests.csproj
+          !test/test-applications/regression/**/ExpenseItDemo*.csproj
+          !test/test-applications/regression/**/EntityFramework6x*.csproj
+          !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build samples
+      inputs:
+        command: build
+        projects: |
+          test/test-applications/integrations/**/*.csproj
+          !test/test-applications/integrations/dependency-libs/**/*.csproj
+        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138 -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true -p:LoadManagedProfilerFromProfilerDirectory=false
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test
+      inputs:
+        command: test
+        projects: |
+          test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
+          test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
+        arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform)
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test
+      inputs:
+        command: test
+        projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
+
+  - job: Windows_IIS
+    timeoutInMinutes: 100
+    strategy:
+      matrix:
+        x64:
+          buildPlatform: x64
+          enable32bit: false
+        x86:
+          buildPlatform: x86
+          enable32bit: true
+    pool:
+      vmImage: windows-2019
+    variables:
+      msiOutputDirectory: src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-repo-managed-native-windows
+        path: $(System.DefaultWorkingDirectory)
+
+    - template: steps/install-dotnet.yml
+
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
+
+    - task: MSBuild@1
+      displayName: Build .NET Framework projects (not SDK-based projects)
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: $(buildPlatform)
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildFrameworkReproductions
+        maximumCpuCount: true
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build integration tests
+      inputs:
+        command: build
+        projects: |
+          test/test-applications/regression/**/*.csproj
+          test/*.IntegrationTests/*.IntegrationTests.csproj
+          !test/test-applications/regression/**/ExpenseItDemo*.csproj
+          !test/test-applications/regression/**/EntityFramework6x*.csproj
+          !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build samples
+      inputs:
+        command: build
+        projects: |
+          test/test-applications/integrations/**/*.csproj
+          !test/test-applications/integrations/dependency-libs/**/*.csproj
+        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138 -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true -p:LoadManagedProfilerFromProfilerDirectory=false
+
+    - task: NuGetCommand@2
+      displayName: nuget restore IIS samples
+      inputs:
+        restoreSolution: test/test-applications/aspnet/samples-iis.sln
+        verbosityRestore: Normal
+
+    - task: MSBuild@1
+      displayName: Publish IIS samples
+      inputs:
+        solution: test/test-applications/aspnet/samples-iis.sln
+        configuration: '$(buildConfiguration)'
+        msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml'
+        maximumCpuCount: true
+
+    - task: DockerCompose@0
+      displayName: docker-compose build IIS containers
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: build --build-arg DOTNET_TRACER_MSI=$(msiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationRegKey
+
+    - task: DockerCompose@0
+      displayName: docker-compose start IIS containers
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
+
+    - powershell: |
+        [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
+        $publish = New-Object System.EnterpriseServices.Internal.Publish
+        Get-ChildItem $(publishOutput)/net45 -Filter *.dll | Foreach-Object { $publish.GacInstall($_.FullName) }
+      displayName: Add net45 Datadog.Trace.ClrProfiler.Managed assets to the GAC
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test --filter LoadFromGAC=True
+      inputs:
+        command: test
+        projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True&IIS!=True" -p:Platform=$(buildPlatform)
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test IIS
+      inputs:
+        command: test
+        projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        arguments: -c $(buildConfiguration) --filter "(IIS=True)" -p:Platform=$(buildPlatform)
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+      condition: succeededOrFailed()
+
   - job: Linux
     strategy:
       matrix:
