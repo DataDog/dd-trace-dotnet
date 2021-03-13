@@ -513,6 +513,7 @@ stages:
         Contents: |
           **/*
           !**/*.zip
+          !**/*.json
         targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home
 
     - download: current
