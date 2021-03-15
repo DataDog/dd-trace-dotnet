@@ -79,6 +79,7 @@ profiles:
           DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}"
           DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
+          DD_TRACE_DEBUG: 1
         options:
           requiredOperatingSystem: windows
           buildFiles:
