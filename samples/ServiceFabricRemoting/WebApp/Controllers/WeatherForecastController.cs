@@ -14,8 +14,8 @@ namespace WebApp.Controllers
 
         private static readonly IWeatherService WeatherServiceNetFx461 = ServiceProxy.Create<IWeatherService>(new Uri("fabric:/ServiceFabricApplication/WeatherService_NetFx461"));
 
-        [HttpGet("test")]
-        public string Test()
+        [HttpGet]
+        public string Get()
         {
             return "Hello, world!";
         }
