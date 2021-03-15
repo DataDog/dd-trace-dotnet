@@ -72,6 +72,10 @@
     <DefineConstants>$(DefineConstants);NAMED_PIPE_AVAILABLE</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  
   <!--DuckTyping-->
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />

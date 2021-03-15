@@ -15,6 +15,12 @@ namespace Datadog.Trace.Agent
 
         public static IApiRequestFactory Get(TracerSettings settings)
         {
+            if (settings.AgentlessEnabled)
+            {
+                Log.Information("Enabling agentless mode");
+                return new AgentlessRequestFactory();
+            }
+
             var strategy = settings.TracesTransport?.ToUpperInvariant();
 
             switch (strategy)

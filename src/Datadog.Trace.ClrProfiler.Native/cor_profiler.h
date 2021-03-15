@@ -3,18 +3,18 @@
 
 #include <atomic>
 #include <mutex>
-#include <vector>
 #include <string>
 #include <unordered_map>
-#include "cor.h"
-#include "corprof.h"
+#include <vector>
 
+#include "cor.h"
 #include "cor_profiler_base.h"
+#include "corprof.h"
 #include "environment_variables.h"
+#include "il_rewriter.h"
 #include "integration.h"
 #include "module_metadata.h"
 #include "pal.h"
-#include "il_rewriter.h"
 #include "rejit_handler.h"
 
 namespace trace {
@@ -36,7 +36,7 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
   bool is_desktop_iis = false;
-  
+
   //
   // CallTarget Members
   //
@@ -59,23 +59,20 @@ class CorProfiler : public CorProfilerBase {
   //
   // Helper methods
   //
-  bool GetWrapperMethodRef(ModuleMetadata* module_metadata,
-                           ModuleID module_id,
+  bool GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
                            const MethodReplacement& method_replacement,
                            mdMemberRef& wrapper_method_ref,
                            mdTypeRef& wrapper_type_ref);
-  HRESULT ProcessReplacementCalls(ModuleMetadata* module_metadata,
-                                         const FunctionID function_id,
-                                         const ModuleID module_id,
-                                         const mdToken function_token,
-                                         const FunctionInfo& caller,
-                                         const std::vector<MethodReplacement> method_replacements);
-  HRESULT ProcessInsertionCalls(ModuleMetadata* module_metadata,
-                                         const FunctionID function_id,
-                                         const ModuleID module_id,
-                                         const mdToken function_token,
-                                         const FunctionInfo& caller,
-                                         const std::vector<MethodReplacement> method_replacements);
+  HRESULT ProcessReplacementCalls(
+      ModuleMetadata* module_metadata, const FunctionID function_id,
+      const ModuleID module_id, const mdToken function_token,
+      const FunctionInfo& caller,
+      const std::vector<MethodReplacement> method_replacements);
+  HRESULT ProcessInsertionCalls(
+      ModuleMetadata* module_metadata, const FunctionID function_id,
+      const ModuleID module_id, const mdToken function_token,
+      const FunctionInfo& caller,
+      const std::vector<MethodReplacement> method_replacements);
   bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
   std::string GetILCodes(const std::string& title, ILRewriter* rewriter,
                          const FunctionInfo& caller,
@@ -84,20 +81,21 @@ class CorProfiler : public CorProfilerBase {
   // Startup methods
   //
   HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&,
-                             const ModuleID module_id,
-                             const mdToken function_token);
-  HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
-                           mdMethodDef* ret_method_token);
-  HRESULT AddIISPreStartInitFlags(const ModuleID module_id,
+                           const ModuleID module_id,
                            const mdToken function_token);
+  HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
+                                      mdMethodDef* ret_method_token);
+  HRESULT AddIISPreStartInitFlags(const ModuleID module_id,
+                                  const mdToken function_token);
 
   //
   // CallTarget Methods
   //
   size_t CallTarget_RequestRejitForModule(
-    ModuleID module_id, ModuleMetadata* module_metadata,
-    const std::vector<IntegrationMethod>& filtered_integrations);
-  HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
+      ModuleID module_id, ModuleMetadata* module_metadata,
+      const std::vector<IntegrationMethod>& filtered_integrations);
+  HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler,
+                                      RejitHandlerModuleMethod* methodHandler);
 
  public:
   CorProfiler() = default;
@@ -105,13 +103,17 @@ class CorProfiler : public CorProfilerBase {
   bool IsAttached() const;
 
   void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize,
-                                 BYTE** pSymbolsArray, int* symbolsSize) const;
+                                  BYTE** pSymbolsArray, int* symbolsSize) const;
 
   //
   // ICorProfilerCallback methods
   //
   HRESULT STDMETHODCALLTYPE
   Initialize(IUnknown* cor_profiler_info_unknown) override;
+
+  HRESULT STDMETHODCALLTYPE InitializeForAttach(IUnknown* pCorProfilerInfoUnk,
+                                                void* pvClientData,
+                                                UINT cbClientData) override;
 
   HRESULT STDMETHODCALLTYPE AssemblyLoadFinished(AssemblyID assembly_id,
                                                  HRESULT hr_status) override;
@@ -127,7 +129,7 @@ class CorProfiler : public CorProfilerBase {
   HRESULT STDMETHODCALLTYPE Shutdown() override;
 
   HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
-  
+
   HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId,
                                         FunctionID calleeId,
                                         BOOL* pfShouldInline) override;
@@ -142,9 +144,9 @@ class CorProfiler : public CorProfilerBase {
   GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                      ICorProfilerFunctionControl* pFunctionControl) override;
 
-  HRESULT STDMETHODCALLTYPE ReJITCompilationFinished(
-      FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
-      BOOL fIsSafeToBlock) override;
+  HRESULT STDMETHODCALLTYPE
+  ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId,
+                           HRESULT hrStatus, BOOL fIsSafeToBlock) override;
 
   HRESULT STDMETHODCALLTYPE ReJITError(ModuleID moduleId, mdMethodDef methodId,
                                        FunctionID functionId,
