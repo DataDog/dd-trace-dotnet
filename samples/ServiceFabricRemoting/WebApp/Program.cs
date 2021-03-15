@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
@@ -27,7 +28,7 @@ namespace WebApp
                 await ServiceRuntime.RegisterServiceAsync("WebApp", context => new WebApp(context));
 
                 // Prevents this host process from terminating so services keeps running.
-                await Task.Delay(-1);
+                await Task.Delay(Timeout.Infinite);
             }
         }
 

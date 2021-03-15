@@ -4,8 +4,6 @@ using System;
 using System.Globalization;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ServiceFabric
 {
