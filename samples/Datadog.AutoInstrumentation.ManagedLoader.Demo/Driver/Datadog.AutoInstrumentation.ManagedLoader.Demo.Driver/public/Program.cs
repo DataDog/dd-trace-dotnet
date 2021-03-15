@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Security.Principal;
 
 namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
@@ -18,6 +19,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
 
         public void Run(string[] args)
         {
+            bool validationSuccess = true;
+
             try
             {
                 ConsoleWrite.Line();
@@ -61,27 +64,57 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
                 }
 #pragma warning restore CS0162 // Unreachable code detected
 
-                LoadTestTargetsInCurrentAppDomain();
+                validationSuccess = validationSuccess && LoadTestTargetsInCurrentAppDomain();
 
-                const string CustomAppDomainName = "Validation non-default App Domain";
-                if (!AppDomain.CurrentDomain.FriendlyName.Equals(CustomAppDomainName))
+                try
                 {
-                    string thisExecutableFile = Path.ChangeExtension(this.GetType().Assembly.Location, "exe");
+                    const string CustomAppDomainName = "Non-default Validation-App-Domain";
+                    if (!AppDomain.CurrentDomain.FriendlyName.Equals(CustomAppDomainName))
+                    {
+                        string thisExecutableFile = Path.ChangeExtension(this.GetType().Assembly.Location, "exe");
 
-                    ConsoleWrite.LineLine($"Will attempt to repeat the test in a custom AppDomain.");
-                    ConsoleWrite.Line($"    Executable to load into the AppDomain: \"{thisExecutableFile}\".");
+                        ConsoleWrite.LineLine($"Will attempt to repeat the test in a custom AppDomain.");
+                        ConsoleWrite.Line($"    Executable to load into the AppDomain: \"{thisExecutableFile}\".");
 
-                    AppDomain additionalAppDomain = AppDomain.CreateDomain(CustomAppDomainName);
-                    additionalAppDomain.ExecuteAssembly(thisExecutableFile);
+                        AppDomain additionalAppDomain = AppDomain.CreateDomain(CustomAppDomainName);
+                        additionalAppDomain.ExecuteAssembly(thisExecutableFile);
+
+                        validationSuccess = validationSuccess && IsDummyWorkPerformed(additionalAppDomain, out _);
+                    }
                 }
-
-            } catch(Exception ex)
+                catch (PlatformNotSupportedException pnsEx)
+                {
+                    if ("System.Private.CoreLib".Equals(typeof(object).Assembly?.GetName()?.Name, StringComparison.Ordinal))
+                    {
+                        ConsoleWrite.LineLine($"While running on .NET Core, encountered a {nameof(PlatformNotSupportedException)} while trying to"
+                                             + " validate in non-default AppDomain. This is extected and benign becasue such AppDomains are not supported under .NET Core."
+                                             + " Displaying exception details below for info only.");
+                        ConsoleWrite.Exception(pnsEx);
+                    }
+                    else
+                    {
+                        ExceptionDispatchInfo.Capture(pnsEx).Throw();
+                        throw;  // line never reached
+                    }
+                }
+            }
+            catch(Exception ex)
             {
                 ConsoleWrite.Exception(ex);
+                validationSuccess = false;
             }
 
             if (AppDomain.CurrentDomain.IsDefaultAppDomain())
             {
+                if (validationSuccess)
+                {
+                    ConsoleWrite.LineLine("SUCCESS! Both, default (and non-default, if supported) AppDomain(s) validated.");
+                }
+                else
+                {
+                    ConsoleWrite.LineLine("FAILURE! Somethign did not get validated. See above output for details.");
+                }
+
                 ConsoleWrite.LineLine("Press Enter!");
                 Console.ReadKey();
 
@@ -89,11 +122,11 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
             }
             else
             {
-                ConsoleWrite.LineLine($"{nameof(Program)} was run in a non-default AppDomain. All done. Good bye.");
+                ConsoleWrite.LineLine($"{nameof(Program)} was run in a non-default AppDomain. Good bye.");
             }
         }
 
-        private void LoadTestTargetsInCurrentAppDomain()
+        private bool LoadTestTargetsInCurrentAppDomain()
         {
             try
             {
@@ -105,21 +138,58 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
                 AssemblyLoader.Run(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
 
                 ConsoleWrite.Line("AssemblyLoader.Run(..) invoked. Validating that target assemblies have been executed.");
-
-                object adData = AppDomain.CurrentDomain.GetData("Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefaultAD.Assembly1");
-                if (adData != null && adData is string adDataString && adData.Equals("Dummy Work Performed"))
+                
+                if (IsDummyWorkPerformed(AppDomain.CurrentDomain, out string details))
                 {
-                    ConsoleWrite.LineLine($"SUCCESS! Test data=\"{adDataString}\".");
+                    ConsoleWrite.LineLine($"AppDomain \"{AppDomain.CurrentDomain.FriendlyName}\" vaidated. Details: {details}.");
+                    return true;
                 }
                 else
                 {
-                    ConsoleWrite.LineLine($"No confirmation domain data foud! Test data type=\"{adData?.GetType()?.FullName ?? "<null>"}\".");
+                    ConsoleWrite.LineLine($"AppDomain \"{AppDomain.CurrentDomain.FriendlyName}\" not vaidated. Details: {details}.");
+                    return false;
                 }
             }
             catch(Exception ex)
             {
                 ConsoleWrite.Exception(ex);
+
+                ConsoleWrite.LineLine($"Error validating AppDomain.");
+                return false;
             }
+        }
+
+        private static bool IsDummyWorkPerformed(AppDomain appDomain, out string details)
+        {
+            if (appDomain == null)
+            {
+                details = "Specified AppDomain is null";
+                return false;
+            }
+
+            const string TestDataKey = "Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefaultAD.Assembly1";
+            const string TestDataExpectedValue = "Dummy Work Performed";
+            object adData = appDomain.GetData(TestDataKey);
+            if (adData == null)
+            {
+                details = $"Target AppDomain has no Data under the expected key (\"{TestDataKey}\").";
+                return false;
+            }
+
+            if (! (adData is string adDataString))
+            {
+                details = $"Target AppDomain has Data under the expected key, however the type is {adData.GetType().FullName} whereas {typeof(string).FullName} was expected.";
+                return false;
+            }
+
+            if (!adData.Equals(TestDataExpectedValue))
+            {
+                details = $"Target AppDomain has string Data under the expected key, however the value is \"{adData}\" whereas \"{TestDataExpectedValue}\" was expected.";
+                return false;
+            }
+
+            details = $"Test data=\"{adDataString}\".";
+            return true;
         }
 
         private void MoveTestTargetAssemliesToAppDirs(out bool mustRelaunchAsAdmin)
