@@ -27,8 +27,9 @@ scenarios:
     load:
       job: bombardier
       variables:
+        duration: 30
         serverPort: 5000
-        path: /
+        path: /hello
 
   callsite:
     application:
@@ -41,6 +42,7 @@ scenarios:
     load:
       job: bombardier
       variables:
+        duration: 30
         serverPort: 5000
         path: /hello
 
@@ -55,6 +57,7 @@ scenarios:
     load:
       job: bombardier
       variables:
+        duration: 30
         serverPort: 5000
         path: /hello
 
