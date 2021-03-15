@@ -108,3 +108,32 @@ jobs:
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin
     artifact: linux-native
+
+
+- job: crank
+  dependsOn:
+  - linux_profiler
+  - windows_profiler
+  condition: succeeded()
+
+  steps:
+  - download: current
+    artifact: linux_profiler
+
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/linux_profiler
+      targetFolder: $(System.DefaultWorkingDirectory)/
+
+  - download: current
+    artifact: windows_profiler
+
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/windows_profiler
+      targetFolder: $(System.DefaultWorkingDirectory)/
+
+  - script: |
+      cd ./build/crank
+      chmod +x ./run.sh
+      ./run.sh
