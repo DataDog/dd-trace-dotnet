@@ -10,6 +10,7 @@ jobs:
     options:
       displayOutput: true
       displayBuild: true
+      startTimeout: 00:05:00
       counterProviders:
       - System.Runtime
       - Microsoft-AspNetCore-Server-Kestrel
