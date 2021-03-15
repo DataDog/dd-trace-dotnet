@@ -87,12 +87,12 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary EmptyTags() => new()
         {
-            { Tags.AspNetRoute, null },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, null },
+            { Tags.AspNetCoreRoute, null },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
 
         private static SerializableDictionary ConventionalParentTags(
@@ -100,24 +100,24 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string controller = "home",
             string endpoint = null) => new()
         {
-            { Tags.AspNetRoute, "{controller=home}/{action=index}/{id?}" },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, $"Datadog.Trace.IntegrationTests.DiagnosticListeners.{endpoint} (Datadog.Trace.IntegrationTests)" },
+            { Tags.AspNetCoreRoute, "{controller=home}/{action=index}/{id?}" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, $"Datadog.Trace.IntegrationTests.DiagnosticListeners.{endpoint} (Datadog.Trace.IntegrationTests)" },
         };
 
         private static SerializableDictionary ConventionalChildTags(
             string action = "index",
             string controller = "home") => new()
         {
-            { Tags.AspNetRoute, "{controller=home}/{action=index}/{id?}" },
-            { Tags.AspNetController, controller },
-            { Tags.AspNetAction, action },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, null },
+            { Tags.AspNetCoreRoute, "{controller=home}/{action=index}/{id?}" },
+            { Tags.AspNetCoreController, controller },
+            { Tags.AspNetCoreAction, action },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
 
         private static SerializableDictionary ErrorRouteParentTags()
@@ -140,92 +140,92 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary StatusCodeParentTags() => new()
         {
-            { Tags.AspNetRoute, "statuscode/{value=200}" },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.MyTestController.SetStatusCode (Datadog.Trace.IntegrationTests)" },
+            { Tags.AspNetCoreRoute, "statuscode/{value=200}" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.MyTestController.SetStatusCode (Datadog.Trace.IntegrationTests)" },
         };
 
         private static SerializableDictionary StatusCodeChildTags() => new()
         {
-            { Tags.AspNetRoute, "statuscode/{value=200}" },
-            { Tags.AspNetController, "mytest" },
-            { Tags.AspNetAction, "setstatuscode" },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, null },
+            { Tags.AspNetCoreRoute, "statuscode/{value=200}" },
+            { Tags.AspNetCoreController, "mytest" },
+            { Tags.AspNetCoreAction, "setstatuscode" },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
 
         private static SerializableDictionary HealthCheckTags() => new()
         {
-            { Tags.AspNetRoute, "/healthz" },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, "Custom Health Check" },
+            { Tags.AspNetCoreRoute, "/healthz" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "Custom Health Check" },
         };
 
         private static SerializableDictionary EchoTags() => new()
         {
-            { Tags.AspNetRoute, "/echo/{value:int?}" },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, "/echo/{value:int?} HTTP: GET" },
+            { Tags.AspNetCoreRoute, "/echo/{value:int?}" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "/echo/{value:int?} HTTP: GET" },
         };
 
         private static SerializableDictionary ThrowsTags() => new()
         {
-            { Tags.AspNetRoute, "/throws" },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, "/throws HTTP: GET" },
+            { Tags.AspNetCoreRoute, "/throws" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "/throws HTTP: GET" },
         };
 
         private static SerializableDictionary ApiIndexParentTags() => new()
         {
-            { Tags.AspNetRoute, "api/index" },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.ApiController.Index (Datadog.Trace.IntegrationTests)" },
+            { Tags.AspNetCoreRoute, "api/index" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.ApiController.Index (Datadog.Trace.IntegrationTests)" },
         };
 
         private static SerializableDictionary ApiIndexChildTags() => new()
         {
-            { Tags.AspNetRoute, "api/index" },
-            { Tags.AspNetController, "api" },
-            { Tags.AspNetAction, "index" },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, null },
+            { Tags.AspNetCoreRoute, "api/index" },
+            { Tags.AspNetCoreController, "api" },
+            { Tags.AspNetCoreAction, "index" },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
 
         private static SerializableDictionary ApiValueParentTags() => new()
         {
-            { Tags.AspNetRoute, "api/value/{value}" },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.ApiController.Value (Datadog.Trace.IntegrationTests)" },
+            { Tags.AspNetCoreRoute, "api/value/{value}" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.ApiController.Value (Datadog.Trace.IntegrationTests)" },
         };
 
         private static SerializableDictionary ApiValueChildTags() => new()
         {
-            { Tags.AspNetRoute, "api/value/{value}" },
-            { Tags.AspNetController, "api" },
-            { Tags.AspNetAction, "value" },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, null },
+            { Tags.AspNetCoreRoute, "api/value/{value}" },
+            { Tags.AspNetCoreController, "api" },
+            { Tags.AspNetCoreAction, "value" },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
     }
 }

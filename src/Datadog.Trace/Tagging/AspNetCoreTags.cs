@@ -9,26 +9,26 @@ namespace Datadog.Trace.Tagging
         private static readonly IProperty<string>[] AspNetCoreTagsProperties =
             WebTagsProperties.Concat(
                 new ReadOnlyProperty<AspNetCoreTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetRoute, t => t.AspNetRoute, (t, v) => t.AspNetRoute = v),
-                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetArea, t => t.AspNetArea, (t, v) => t.AspNetArea = v),
-                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetController, t => t.AspNetController, (t, v) => t.AspNetController = v),
-                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetEndpoint, t => t.AspNetEndpoint, (t, v) => t.AspNetController = v),
-                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetPage, t => t.AspNetPage, (t, v) => t.AspNetController = v),
-                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetAction, t => t.AspNetAction, (t, v) => t.AspNetAction = v));
+                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetCoreRoute, t => t.AspNetCoreRoute, (t, v) => t.AspNetCoreRoute = v),
+                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetCoreArea, t => t.AspNetCoreArea, (t, v) => t.AspNetCoreArea = v),
+                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetCoreController, t => t.AspNetCoreController, (t, v) => t.AspNetCoreController = v),
+                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetCoreEndpoint, t => t.AspNetCoreEndpoint, (t, v) => t.AspNetCoreController = v),
+                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetCorePage, t => t.AspNetCorePage, (t, v) => t.AspNetCoreController = v),
+                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetCoreAction, t => t.AspNetCoreAction, (t, v) => t.AspNetCoreAction = v));
 
         public string InstrumentationName => ComponentName;
 
-        public string AspNetRoute { get; set; }
+        public string AspNetCoreRoute { get; set; }
 
-        public string AspNetController { get; set; }
+        public string AspNetCoreController { get; set; }
 
-        public string AspNetAction { get; set; }
+        public string AspNetCoreAction { get; set; }
 
-        public string AspNetArea { get; set; }
+        public string AspNetCoreArea { get; set; }
 
-        public string AspNetPage { get; set; }
+        public string AspNetCorePage { get; set; }
 
-        public string AspNetEndpoint { get; set; }
+        public string AspNetCoreEndpoint { get; set; }
 
         protected override IProperty<string>[] GetAdditionalTags() => AspNetCoreTagsProperties;
     }

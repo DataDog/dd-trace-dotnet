@@ -614,11 +614,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 // mirror the parent if we couldn't extract a route
                 span.ResourceName = resourceName ?? parentSpan.ResourceName;
 
-                mvcSpanTags.AspNetAction = actionName;
-                mvcSpanTags.AspNetController = controllerName;
-                mvcSpanTags.AspNetArea = areaName;
-                mvcSpanTags.AspNetPage = pagePath;
-                mvcSpanTags.AspNetRoute = aspNetRoute;
+                mvcSpanTags.AspNetCoreAction = actionName;
+                mvcSpanTags.AspNetCoreController = controllerName;
+                mvcSpanTags.AspNetCoreArea = areaName;
+                mvcSpanTags.AspNetCorePage = pagePath;
+                mvcSpanTags.AspNetCoreRoute = aspNetRoute;
 
                 if (!isUsingEndpointRouting && isFirstEndpointExecution)
                 {
@@ -626,7 +626,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     // these will already be set correctly
                     if (parentSpan.Tags is AspNetCoreTags parentTags)
                     {
-                        parentTags.AspNetRoute = aspNetRoute;
+                        parentTags.AspNetCoreRoute = aspNetRoute;
                     }
 
                     parentSpan.ResourceName = span.ResourceName;
@@ -680,7 +680,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var endpoint = endpointFeature.Endpoint.DuckCast<RouteEndpointStruct>();
                 if (isFirstExecution)
                 {
-                    tags.AspNetEndpoint = endpoint.DisplayName;
+                    tags.AspNetCoreEndpoint = endpoint.DisplayName;
                 }
 
                 // Must DuckCast this to access RouteValues in .NET Core 3.0+
@@ -729,7 +729,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (isFirstExecution)
                 {
                     span.ResourceName = resourceName;
-                    tags.AspNetRoute = normalizedRoute;
+                    tags.AspNetCoreRoute = normalizedRoute;
                 }
             }
         }

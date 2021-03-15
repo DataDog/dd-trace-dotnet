@@ -65,34 +65,34 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static SerializableDictionary EmptyTags() => new()
         {
-            { Tags.AspNetRoute, null },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetEndpoint, null },
+            { Tags.AspNetCoreRoute, null },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
 
         private static SerializableDictionary ConventionalParentTags(string page, string route = null) => new()
         {
-            { Tags.AspNetRoute, (route ?? page).ToLowerInvariant() },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetPage, null },
-            { Tags.AspNetArea, null },
+            { Tags.AspNetCoreRoute, (route ?? page).ToLowerInvariant() },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreArea, null },
 #if NETCOREAPP && !NETCOREAPP2_1 && !NETCOREAPP3_0
-            { Tags.AspNetEndpoint, $"/{page}" },
+            { Tags.AspNetCoreEndpoint, $"/{page}" },
 #endif
         };
 
         private static SerializableDictionary ConventionalChildTags(string page, string route = null) => new()
         {
-            { Tags.AspNetRoute, (route ?? page).ToLowerInvariant() },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            { Tags.AspNetPage, $"/{page.ToLowerInvariant()}" },
-            { Tags.AspNetArea, null },
-            { Tags.AspNetEndpoint, null },
+            { Tags.AspNetCoreRoute, (route ?? page).ToLowerInvariant() },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCorePage, $"/{page.ToLowerInvariant()}" },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
     }
 }
