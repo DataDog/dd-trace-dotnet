@@ -1,0 +1,110 @@
+trigger:
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - docs/*
+      - .github/*
+pr:
+  branches:
+    include:
+      - master
+      - release/*
+  paths:
+    exclude:
+      - docs/*
+      - .github/*
+
+jobs:
+
+
+- job: windows_profiler
+  pool:
+    vmImage: windows-2019
+
+  steps:
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 3.1
+    inputs:
+      packageType: runtime
+      version: 3.1.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: 5.0.x
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: Release
+      arguments: /nowarn:netsdk1138
+      projects: |
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        sample-libs/**/Samples.ExampleLibrary*.csproj
+
+  - task: NuGetToolInstaller@1
+    displayName: install nuget
+
+  - task: NuGetCommand@2
+    displayName: nuget restore
+    inputs:
+      restoreSolution: Datadog.Trace.Native.sln
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: msbuild
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: x64
+      configuration: Release
+      msbuildArguments: /t:BuildCpp
+      maximumCpuCount: true
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+    artifact: windows-native
+
+
+- job: linux_profiler
+  pool:
+    vmImage: ubuntu-20.04
+  steps:
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 3.1
+    inputs:
+      packageType: runtime
+      version: 3.1.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 5.0
+    inputs:
+      packageType: sdk
+      version: 5.0.x
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: Release
+      arguments: /nowarn:netsdk1138
+      projects: |
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+  
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y llvm clang
+    displayName: install_dependencies
+
+  - script: |
+      cd ./src/Datadog.Trace.ClrProfiler.Native
+      CXX=clang++ CC=clang cmake .
+      make
+    displayName: build_profiler
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin
+    artifact: linux-native
