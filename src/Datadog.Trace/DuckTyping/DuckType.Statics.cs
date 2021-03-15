@@ -34,6 +34,8 @@ namespace Datadog.Trace.DuckTyping
         private static ModuleBuilder _moduleBuilder = null;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static AssemblyBuilder _assemblyBuilder = null;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static long _typeCount = 0;
 
         /// <summary>
         /// DynamicMethods delegates cache

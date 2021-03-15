@@ -151,7 +151,7 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
-                    string proxyTypeName = $"{assembly}.{targetType.FullName.Replace(".", "_").Replace("+", "__")}.{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}";
+                    string proxyTypeName = $"{assembly}.{targetType.FullName.Replace(".", "_").Replace("+", "__")}.{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}_{++_typeCount}";
 
                     // Create Type
                     TypeBuilder proxyTypeBuilder = _moduleBuilder.DefineType(
