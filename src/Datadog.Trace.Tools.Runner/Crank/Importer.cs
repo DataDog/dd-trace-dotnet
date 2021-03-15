@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                         span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
                         span.Type = SpanTypes.Test;
-                        span.ResourceName = $"{fileName}.{jobItem.Key}";
+                        span.ResourceName = $"{fileName}/{jobItem.Key}";
                         CIEnvironmentValues.DecorateSpan(span);
 
                         span.SetTag(TestTags.Name, jobItem.Key);
@@ -115,13 +115,14 @@ namespace Datadog.Trace.Tools.Runner.Crank
                             string scenario = string.Empty;
                             string profile = string.Empty;
                             string arch = string.Empty;
+                            string testName = jobItem.Key;
                             foreach (var propItem in result.JobResults.Properties)
                             {
                                 span.SetTag("test.properties." + propItem.Key, propItem.Value);
 
                                 if (propItem.Key == "name")
                                 {
-                                    span.SetTag(TestTags.Name, propItem.Value);
+                                    testName = propItem.Value + "." + jobItem.Key;
                                 }
                                 else if (propItem.Key == "scenario")
                                 {
@@ -137,21 +138,25 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                 }
                             }
 
-                            string suite = null;
+                            string suite = fileName;
                             if (!string.IsNullOrEmpty(scenario))
                             {
                                 suite = scenario;
+
+                                if (!string.IsNullOrEmpty(profile))
+                                {
+                                    suite += "." + profile;
+                                }
+
+                                if (!string.IsNullOrEmpty(arch))
+                                {
+                                    suite += "." + arch;
+                                }
                             }
 
-                            if (!string.IsNullOrEmpty(profile))
-                            {
-                                suite += "." + profile;
-                            }
-
-                            if (!string.IsNullOrEmpty(arch))
-                            {
-                                suite += "." + arch;
-                            }
+                            span.SetTag(TestTags.Suite, suite);
+                            span.SetTag(TestTags.Name, testName);
+                            span.ResourceName = $"{suite}/{testName}";
                         }
 
                         try
