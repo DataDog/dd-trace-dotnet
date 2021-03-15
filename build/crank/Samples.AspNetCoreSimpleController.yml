@@ -27,7 +27,7 @@ scenarios:
     load:
       job: bombardier
       variables:
-        serverPort: 5080
+        serverPort: 5000
         path: /
 
   callsite:
@@ -39,7 +39,7 @@ scenarios:
     load:
       job: bombardier
       variables:
-        serverPort: 5080
+        serverPort: 5000
         path: /hello
 
   calltarget:
@@ -51,7 +51,7 @@ scenarios:
     load:
       job: bombardier
       variables:
-        serverPort: 5080
+        serverPort: 5000
         path: /hello
 
 profiles:
