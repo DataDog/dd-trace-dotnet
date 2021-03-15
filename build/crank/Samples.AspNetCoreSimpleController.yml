@@ -34,6 +34,8 @@ scenarios:
     application:
       job: server
       environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
         DD_TRACE_CALLTARGET_ENABLED: 0
         DD_CLR_ENABLE_INLINING: 0
     load:
@@ -46,6 +48,8 @@ scenarios:
     application:
       job: server
       environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
         DD_TRACE_CALLTARGET_ENABLED: 1
         DD_CLR_ENABLE_INLINING: 1
     load:
@@ -64,10 +68,8 @@ profiles:
         endpoints:
           - "{{ windowsEndpoint }}"
         environmentVariables:
-          COR_ENABLE_PROFILING: 1
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
           COR_PROFILER_PATH: "{{ windowsProfilerPath }}\\Datadog.Trace.ClrProfiler.Native.dll"
-          CORECLR_ENABLE_PROFILING: 1
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
           CORECLR_PROFILER_PATH: "{{ windowsProfilerPath }}\\Datadog.Trace.ClrProfiler.Native.dll"
           DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}"
@@ -89,10 +91,8 @@ profiles:
         endpoints:
           - "{{ linuxEndpoint }}"
         environmentVariables:
-          COR_ENABLE_PROFILING: 1
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
           COR_PROFILER_PATH: "{{ linuxProfilerPath }}/Datadog.Trace.ClrProfiler.Native.so"
-          CORECLR_ENABLE_PROFILING: 1
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
           CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}"
