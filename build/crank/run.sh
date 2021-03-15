@@ -1,7 +1,7 @@
 #!/bin/bash
 
 repository="--application.source.repository $BUILD_REPOSITORY_URI"
-commit="--application.source.branchOrCommit $BUILD_SOURCEVERSION"
+commit="--application.source.branchOrCommit $BUILD_SOURCEBRANCH#$BUILD_SOURCEVERSION"
 
 crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile windows --output baseline_windows.json $repository $commit
 dd-trace --crank-import="baseline_windows.json"
