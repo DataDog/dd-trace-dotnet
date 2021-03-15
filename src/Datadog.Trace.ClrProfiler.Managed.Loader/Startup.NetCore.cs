@@ -62,6 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
             else if (File.Exists(path))
             {
+                path = Path.GetFullPath(path);
                 StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
                 return DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
             }

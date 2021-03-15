@@ -196,6 +196,8 @@ namespace Datadog.Trace.Configuration
             {
                 PartialFlushMinSpans = 500;
             }
+            
+            AgentlessEnabled = source?.GetBool(ConfigurationKeys.AgentlessKey) ?? false;
         }
 
         /// <summary>
@@ -392,6 +394,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the tracer is running in agentless mode
+        /// </summary>
+        internal bool AgentlessEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for server integrations.

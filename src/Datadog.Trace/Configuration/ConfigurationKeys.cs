@@ -107,6 +107,11 @@ namespace Datadog.Trace.Configuration
         public const string TraceAgentPortKey = "DD_APM_RECEIVER_PORT";
 
         /// <summary>
+        /// Configuration key for enabling agentless mode
+        /// </summary>
+        public const string AgentlessKey = "DD_TRACE_AGENTLESS";
+
+        /// <summary>
         /// Configuration key for the Agent URL where the Tracer can send traces.
         /// Overrides values in <see cref="AgentHost"/> and <see cref="AgentPort"/> if present.
         /// Default value is "http://localhost:8126".
