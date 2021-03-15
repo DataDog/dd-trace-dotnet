@@ -85,6 +85,7 @@ profiles:
           buildFiles:
           - "../../integrations.json;{{ windowsProfilerPath }}"
           - "../../Datadog.Trace.ClrProfiler.Native.dll;{{ windowsProfilerPath }}"
+          - "../../Datadog.Trace.ClrProfiler.Native.pdb;{{ windowsProfilerPath }}"
       load:
         endpoints:
           - http://localhost:5010
