@@ -327,13 +327,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             foreach (var pathSegment in routePattern.PathSegments)
             {
-                var innerSb = new StringBuilder();
                 foreach (var part in pathSegment.DuckCast<RoutePatternPathSegmentStruct>().Parts)
                 {
                     if (DuckType.CanCreate<RoutePatternContentPartStruct>(part))
                     {
                         var contentPart = part.DuckCast<RoutePatternContentPartStruct>();
-                        innerSb.Append(contentPart.Content);
+                        sb.Append('/');
+                        sb.Append(contentPart.Content.ToLowerInvariant());
                     }
                     else if (DuckType.CanCreate<RoutePatternParameterPartStruct>(part))
                     {
@@ -342,45 +342,49 @@ namespace Datadog.Trace.DiagnosticListeners
                         var parameterName = parameter.Name;
                         if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                         {
-                            innerSb.Append(areaName);
+                            sb.Append('/');
+                            sb.Append(areaName?.ToLowerInvariant());
                         }
                         else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                         {
-                            innerSb.Append(controllerName);
+                            sb.Append('/');
+                            sb.Append(controllerName?.ToLowerInvariant());
                         }
                         else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
                         {
-                            innerSb.Append(actionName);
+                            sb.Append('/');
+                            sb.Append(actionName?.ToLowerInvariant());
                         }
                         else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
                         {
-                            innerSb.Append('{');
+                            sb.Append("/{");
                             if (parameter.IsCatchAll)
                             {
-                                innerSb.Append(parameter.EncodeSlashes ? "**" : "*");
+                                if (parameter.EncodeSlashes)
+                                {
+                                    sb.Append("**");
+                                }
+                                else
+                                {
+                                    sb.Append('*');
+                                }
                             }
 
-                            innerSb.Append(parameterName);
+                            sb.Append(parameterName.ToLowerInvariant());
                             if (parameter.IsOptional)
                             {
-                                innerSb.Append('?');
+                                sb.Append('?');
                             }
 
-                            innerSb.Append('}');
+                            sb.Append('}');
                         }
                     }
-                }
-
-                if (innerSb.Length > 0)
-                {
-                    sb.Append('/');
-                    sb.Append(innerSb);
                 }
             }
 
             var simplifiedRoute = sb.ToString();
 
-            return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+            return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute;
         }
 
         private static string SimplifyRoutePattern(
@@ -394,53 +398,46 @@ namespace Datadog.Trace.DiagnosticListeners
 
             foreach (var pathSegment in routePattern.Segments)
             {
-                var innerSb = new StringBuilder();
                 foreach (var part in pathSegment.Parts)
                 {
                     var partName = part.Name;
-                    if (part.IsOptional && !routeValueDictionary.ContainsKey(partName))
-                    {
-                        continue;
-                    }
 
                     if (!part.IsParameter)
                     {
-                        innerSb.Append(part.Text);
+                        sb.Append('/');
+                        sb.Append(part.Text?.ToLowerInvariant());
                     }
                     else if (partName.Equals("area", StringComparison.OrdinalIgnoreCase))
                     {
-                        innerSb.Append(areaName);
+                        sb.Append('/');
+                        sb.Append(areaName);
                     }
                     else if (partName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                     {
-                        innerSb.Append(controllerName);
+                        sb.Append('/');
+                        sb.Append(controllerName);
                     }
                     else if (partName.Equals("action", StringComparison.OrdinalIgnoreCase))
                     {
-                        innerSb.Append(actionName);
+                        sb.Append('/');
+                        sb.Append(actionName);
                     }
-                    else
+                    else if (!part.IsOptional || routeValueDictionary.ContainsKey(partName))
                     {
-                        innerSb.Append('{');
+                        sb.Append("/{");
                         if (part.IsCatchAll)
                         {
-                            innerSb.Append('*');
+                            sb.Append('*');
                         }
 
-                        innerSb.Append(partName);
+                        sb.Append(partName.ToLowerInvariant());
                         if (part.IsOptional)
                         {
-                            innerSb.Append('?');
+                            sb.Append('?');
                         }
 
-                        innerSb.Append('}');
+                        sb.Append('}');
                     }
-                }
-
-                if (innerSb.Length > 0)
-                {
-                    sb.Append("/");
-                    sb.Append(innerSb);
                 }
             }
 
