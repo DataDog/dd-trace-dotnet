@@ -112,9 +112,45 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                         if (result.JobResults.Properties?.Count > 0)
                         {
+                            string scenario = string.Empty;
+                            string profile = string.Empty;
+                            string arch = string.Empty;
                             foreach (var propItem in result.JobResults.Properties)
                             {
                                 span.SetTag("test.properties." + propItem.Key, propItem.Value);
+
+                                if (propItem.Key == "name")
+                                {
+                                    span.SetTag(TestTags.Name, propItem.Value);
+                                }
+                                else if (propItem.Key == "scenario")
+                                {
+                                    scenario = propItem.Value;
+                                }
+                                else if (propItem.Key == "profile")
+                                {
+                                    profile = propItem.Value;
+                                }
+                                else if (propItem.Key == "arch")
+                                {
+                                    arch = propItem.Value;
+                                }
+                            }
+
+                            string suite = null;
+                            if (!string.IsNullOrEmpty(scenario))
+                            {
+                                suite = scenario;
+                            }
+
+                            if (!string.IsNullOrEmpty(profile))
+                            {
+                                suite += "." + profile;
+                            }
+
+                            if (!string.IsNullOrEmpty(arch))
+                            {
+                                suite += "." + arch;
                             }
                         }
 
@@ -135,15 +171,22 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                     }
                                     else
                                     {
-                                        // bool converted = false;
+                                        NumberResultConverter numberConverter = default;
+
+                                        bool converted = false;
                                         foreach (var converter in Converters)
                                         {
                                             if (converter.CanConvert(resultItem.Key))
                                             {
                                                 converter.SetToSpan(span, "test.results." + resultItem.Key.Replace("/", ".").Replace("-", "_"), resultItem.Value);
-                                                // converted = true;
+                                                converted = true;
                                                 break;
                                             }
+                                        }
+
+                                        if (!converted)
+                                        {
+                                            numberConverter.SetToSpan(span, "test.results." + resultItem.Key.Replace("/", ".").Replace("-", "_"), resultItem.Value);
                                         }
                                     }
                                 }
