@@ -663,18 +663,32 @@ namespace Datadog.Trace.DiagnosticListeners
                 //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
 
                 var rawEndpointFeature = httpContext.Features[EndpointFeatureType];
-                if (rawEndpointFeature is null || !DuckType.CanCreate<EndpointFeatureStruct>(rawEndpointFeature))
+                if (rawEndpointFeature is null)
                 {
                     return;
                 }
 
-                var endpointFeature = rawEndpointFeature.DuckCast<EndpointFeatureStruct>();
-                if (endpointFeature.Endpoint is null)
+                object endpointStruct = null;
+
+                if (DuckType.CanCreate<IEndpointFeatureStruct>(rawEndpointFeature))
                 {
-                    return;
+                    var endpointFeature = rawEndpointFeature.DuckCast<IEndpointFeatureStruct>();
+                    endpointStruct = endpointFeature.GetEndpoint();
                 }
 
-                var endpoint = endpointFeature.Endpoint.DuckCast<RouteEndpointStruct>();
+                if (endpointStruct is null)
+                {
+                    if (!DuckType.CanCreate<EndpointFeatureStruct>(rawEndpointFeature))
+                    {
+                        // Neither case supported
+                        return;
+                    }
+
+                    var endpointFeature = rawEndpointFeature.DuckCast<EndpointFeatureStruct>();
+                    endpointStruct = endpointFeature.Endpoint;
+                }
+
+                var endpoint = endpointStruct.DuckCast<RouteEndpointStruct>();
                 if (isFirstExecution)
                 {
                     tags.AspNetCoreEndpoint = endpoint.DisplayName;
