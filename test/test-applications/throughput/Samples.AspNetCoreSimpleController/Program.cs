@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,6 +14,12 @@ namespace Samples.AspNetCoreSimpleController
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine("Environment Variables:");
+            foreach(DictionaryEntry item in Environment.GetEnvironmentVariables())
+            {
+                Console.WriteLine("  {0} = {1}", item.Key, item.Value);
+            }
+            Console.WriteLine();
             CreateHostBuilder(args).Build().Run();
         }
 
