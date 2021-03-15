@@ -33,6 +33,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
         private const string HttpRequestInOperationName = "aspnet_core.request";
+        private const string MvcOperationName = "aspnet_core.mvc";
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
@@ -46,6 +47,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
+        private string _mvcAfterActionEventKey;
         private string _hostingUnhandledExceptionEventKey;
         private string _diagnosticsUnhandledExceptionEventKey;
         private string _hostingHttpRequestInStopEventKey;
@@ -90,6 +92,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     OnMvcBeforeAction(arg);
                     return;
                 }
+                else if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
+                {
+                    OnMvcAfterAction(arg);
+                    return;
+                }
                 else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
                     ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
                 {
@@ -103,6 +110,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     _mvcBeforeActionEventKey = eventName;
                     OnMvcBeforeAction(arg);
+                }
+                else if (suffix.SequenceEqual("Mvc.AfterAction"))
+                {
+                    _mvcAfterActionEventKey = eventName;
+                    OnMvcAfterAction(arg);
                 }
                 else if (suffix.SequenceEqual("Hosting.UnhandledException"))
                 {
@@ -133,22 +145,19 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            if (_tracer?.Settings.AspNetCoreRouteTemplateResourceNamesEnabled ?? false)
+            if (lastChar == 'd')
             {
-                if (lastChar == 'd')
+                if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
                 {
-                    if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
-                    {
-                        OnRoutingEndpointMatched(arg);
-                    }
-                    else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
-                    {
-                        _routingEndpointMatchedKey = eventName;
-                        OnRoutingEndpointMatched(arg);
-                    }
-
-                    return;
+                    OnRoutingEndpointMatched(arg);
                 }
+                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
+                {
+                    _routingEndpointMatchedKey = eventName;
+                    OnRoutingEndpointMatched(arg);
+                }
+
+                return;
             }
         }
 #else
@@ -178,6 +187,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     OnMvcBeforeAction(arg);
                     return;
                 }
+                else if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
+                {
+                    OnMvcAfterAction(arg);
+                    return;
+                }
                 else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
                     ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
                 {
@@ -190,6 +204,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     case "Microsoft.AspNetCore.Mvc.BeforeAction":
                         _mvcBeforeActionEventKey = eventName;
                         OnMvcBeforeAction(arg);
+                        break;
+
+                    case "Microsoft.AspNetCore.Mvc.AfterAction":
+                        _mvcAfterActionEventKey = eventName;
+                        OnMvcAfterAction(arg);
                         break;
 
                     case "Microsoft.AspNetCore.Hosting.UnhandledException":
@@ -220,22 +239,19 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            if (_tracer?.Settings.AspNetCoreRouteTemplateResourceNamesEnabled ?? false)
+            if (lastChar == 'd')
             {
-                if (lastChar == 'd')
+                if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
                 {
-                    if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
-                    {
-                        OnRoutingEndpointMatched(arg);
-                    }
-                    else if (eventName == "Microsoft.AspNetCore.Routing.EndpointMatched")
-                    {
-                        _routingEndpointMatchedKey = eventName;
-                        OnRoutingEndpointMatched(arg);
-                    }
-
-                    return;
+                    OnRoutingEndpointMatched(arg);
                 }
+                else if (eventName == "Microsoft.AspNetCore.Routing.EndpointMatched")
+                {
+                    _routingEndpointMatchedKey = eventName;
+                    OnRoutingEndpointMatched(arg);
+                }
+
+                return;
             }
         }
 #endif
@@ -465,10 +481,15 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
-                HttpRequest request = requestStruct.HttpContext.Request;
+                HttpContext httpContext = requestStruct.HttpContext;
+                HttpRequest request = httpContext.Request;
                 string host = request.Host.Value;
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
                 string url = GetUrl(request);
+                httpContext.Features.Set(new RequestTrackingFeature
+                {
+                    HttpMethod = httpMethod
+                });
 
                 string absolutePath = request.Path.Value;
 
@@ -503,32 +524,38 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span span = tracer.ActiveScope?.Span;
+            Span parentSpan = tracer.ActiveScope?.Span;
 
-            if (span != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
+            if (parentSpan != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
-                var tags = span.Tags as AspNetCoreTags;
-                if (tags is null || tags.AspNetEndpoint is not null || tags.AspNetRoute is not null)
-                {
-                    // We've already set the endpoint or other tags, don't replace them, as could be
-                    // the pipeline re-executing after an error. Also reduces the work required
-                    return;
-                }
-
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
 
                 if (!tracer.Settings.AspNetCoreRouteTemplateResourceNamesEnabled)
                 {
-                    SetLegacyResourceNames(typedArg, span);
+                    SetLegacyResourceNames(typedArg, parentSpan);
                     return;
                 }
 
-                ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
-                HttpRequest request = typedArg.HttpContext.Request;
-                IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
+                // Create a child span for the MVC action
+                var mvcSpanTags = new AspNetCoreTags();
+                var mvcScope = tracer.StartActiveWithTags(MvcOperationName, parentSpan.Context, tags: mvcSpanTags);
+                var span = mvcScope.Span;
+                span.Type = SpanTypes.Web;
 
-                string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                HttpContext httpContext = typedArg.HttpContext;
+                var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
+                var executionCount = trackingFeature.PipelineExecutionCount;
+                var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
+                var isFirstEndpointExecution = executionCount is 0 || (isUsingEndpointRouting && executionCount is 1);
+                if (!isUsingEndpointRouting)
+                {
+                    trackingFeature.PipelineExecutionCount = executionCount + 1;
+                }
+
+                ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
+                HttpRequest request = httpContext.Request;
+                IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
 
                 string controllerName = routeValues.TryGetValue("controller", out controllerName)
                     ? controllerName?.ToLowerInvariant()
@@ -542,48 +569,68 @@ namespace Datadog.Trace.DiagnosticListeners
                 string pagePath = routeValues.TryGetValue("page", out pagePath)
                     ? pagePath?.ToLowerInvariant()
                     : null;
+                string aspNetRoute = trackingFeature.Route;
+                string resourceName = trackingFeature.ResourceName;
 
-                string rawRouteTemplate = actionDescriptor.AttributeRouteInfo?.Template;
-                RouteTemplate routeTemplate = null;
-                if (rawRouteTemplate is not null)
+                if (aspNetRoute is null || resourceName is null)
                 {
-                    try
+                    // Not using endpoint routing
+                    string rawRouteTemplate = actionDescriptor.AttributeRouteInfo?.Template;
+                    RouteTemplate routeTemplate = null;
+                    if (rawRouteTemplate is not null)
                     {
-                        routeTemplate = TemplateParser.Parse(rawRouteTemplate);
+                        try
+                        {
+                            routeTemplate = TemplateParser.Parse(rawRouteTemplate);
+                        }
+                        catch { }
                     }
-                    catch { }
-                }
 
-                if (routeTemplate is null)
-                {
-                    var routeData = typedArg.HttpContext.Features.Get<IRoutingFeature>()?.RouteData;
-                    if (routeData is not null)
+                    if (routeTemplate is null)
                     {
-                        var route = routeData.Routers.OfType<RouteBase>().FirstOrDefault();
-                        routeTemplate = route?.ParsedTemplate;
+                        var routeData = httpContext.Features.Get<IRoutingFeature>()?.RouteData;
+                        if (routeData is not null)
+                        {
+                            var route = routeData.Routers.OfType<RouteBase>().FirstOrDefault();
+                            routeTemplate = route?.ParsedTemplate;
+                        }
+                    }
+
+                    if (routeTemplate is not null)
+                    {
+                        // If we don't have a route, don't overwrite the existing resource name
+                        var resourcePathName = SimplifyRoutePattern(
+                            routeTemplate,
+                            routeValues,
+                            areaName: areaName,
+                            controllerName: controllerName,
+                            actionName: actionName);
+
+                        resourceName = $"{trackingFeature.HttpMethod} {request.PathBase}{resourcePathName}";
+                        aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                     }
                 }
 
-                if (routeTemplate is not null)
+                // mirror the parent if we couldn't extract a route
+                span.ResourceName = resourceName ?? parentSpan.ResourceName;
+
+                mvcSpanTags.AspNetAction = actionName;
+                mvcSpanTags.AspNetController = controllerName;
+                mvcSpanTags.AspNetArea = areaName;
+                mvcSpanTags.AspNetPage = pagePath;
+                mvcSpanTags.AspNetRoute = aspNetRoute;
+
+                if (!isUsingEndpointRouting && isFirstEndpointExecution)
                 {
-                    // If we don't have a route, don't overwrite the existing resource name
-                    var resourcePathName = SimplifyRoutePattern(
-                        routeTemplate,
-                        routeValues,
-                        areaName: areaName,
-                        controllerName: controllerName,
-                        actionName: actionName);
+                    // If we're using endpoint routing or this is a pipeline re-execution,
+                    // these will already be set correctly
+                    if (parentSpan.Tags is AspNetCoreTags parentTags)
+                    {
+                        parentTags.AspNetRoute = aspNetRoute;
+                    }
 
-                    string resourceName = $"{httpMethod} {request.PathBase}{resourcePathName}";
-
-                    span.ResourceName = resourceName;
+                    parentSpan.ResourceName = span.ResourceName;
                 }
-
-                tags.AspNetAction = actionName;
-                tags.AspNetController = controllerName;
-                tags.AspNetArea = areaName;
-                tags.AspNetPage = pagePath;
-                tags.AspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
             }
         }
 
@@ -591,7 +638,8 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = _tracer ?? Tracer.Instance;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+                !tracer.Settings.AspNetCoreRouteTemplateResourceNamesEnabled)
             {
                 return;
             }
@@ -601,21 +649,21 @@ namespace Datadog.Trace.DiagnosticListeners
             if (span != null)
             {
                 var tags = span.Tags as AspNetCoreTags;
-                if (tags is null || tags.AspNetEndpoint is not null)
+                if (tags is null || !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
                 {
-                    // We've already set the endpoint once, don't replace it, as could be
-                    // the pipeline re-executing after an error. Also reduces the work
+                    // Shouldn't happen in normal execution
                     return;
                 }
 
-                if (!arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
-                {
-                    return;
-                }
+                HttpContext httpContext = typedArg.HttpContext;
+                var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
+                var executionCount = trackingFeature.PipelineExecutionCount;
+                var isFirstExecution = executionCount == 0;
+                trackingFeature.IsUsingEndpointRouting = true;
+                trackingFeature.PipelineExecutionCount = executionCount + 1;
 
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
                 //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
-                HttpContext httpContext = typedArg.HttpContext;
 
                 var rawEndpointFeature = httpContext.Features[EndpointFeatureType];
                 if (rawEndpointFeature is null || !DuckType.CanCreate<EndpointFeatureStruct>(rawEndpointFeature))
@@ -630,48 +678,77 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 var endpoint = endpointFeature.Endpoint.DuckCast<RouteEndpointStruct>();
-                // Must DuckCast this to access RouteValues in .NET Core 3.0+
-                var request = httpContext.Request.DuckCast<HttpRequestStruct>();
-                RouteValueDictionary routeValues = request.RouteValues;
-                var routePattern = endpoint.RoutePattern?.DuckCast<RoutePatternStruct>();
-
-                string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-
-                object raw;
-                string controllerName = routeValues.TryGetValue("controller", out raw)
-                                        ? raw?.ToString()?.ToLowerInvariant()
-                                        : null;
-                string actionName = routeValues.TryGetValue("action", out raw)
-                                        ? raw?.ToString()?.ToLowerInvariant()
-                                        : null;
-                string areaName = routeValues.TryGetValue("area", out raw)
-                                      ? raw?.ToString()?.ToLowerInvariant()
-                                      : null;
-                string pagePath = routeValues.TryGetValue("page", out raw)
-                                      ? raw?.ToString()?.ToLowerInvariant()
-                                      : null;
-
-                if (routePattern is not null)
+                if (isFirstExecution)
                 {
-                    // If we don't have a route, don't overwrite the existing resource name
-                    var resourcePathName = SimplifyRoutePattern(
-                        routePattern.Value,
-                        routeValues,
-                        areaName: areaName,
-                        controllerName: controllerName,
-                        actionName: actionName);
-
-                    string resourceName = $"{httpMethod} {request.PathBase}{resourcePathName}";
-
-                    span.ResourceName = resourceName;
+                    tags.AspNetEndpoint = endpoint.DisplayName;
                 }
 
-                tags.AspNetAction = actionName;
-                tags.AspNetController = controllerName;
-                tags.AspNetArea = areaName;
-                tags.AspNetPage = pagePath;
-                tags.AspNetRoute = routePattern?.RawText?.ToLowerInvariant();
-                tags.AspNetEndpoint = endpoint.DisplayName;
+                // Must DuckCast this to access RouteValues in .NET Core 3.0+
+                var routePattern = endpoint.RoutePattern?.DuckCast<RoutePatternStruct>();
+                if (routePattern is null)
+                {
+                    // Nothing more we can do
+                    return;
+                }
+
+                // Have to pass this value through to the MVC span, as not available there
+                var normalizedRoute = routePattern.Value.RawText?.ToLowerInvariant();
+                trackingFeature.Route = normalizedRoute;
+
+                var request = httpContext.Request.DuckCast<HttpRequestStruct>();
+                RouteValueDictionary routeValues = request.RouteValues;
+
+                // No need to ToLowerInvariant() these strings, as we lower case
+                // the whole route later
+                object raw;
+                string controllerName = routeValues.TryGetValue("controller", out raw)
+                                        ? raw as string
+                                        : null;
+                string actionName = routeValues.TryGetValue("action", out raw)
+                                        ? raw as string
+                                        : null;
+                string areaName = routeValues.TryGetValue("area", out raw)
+                                      ? raw as string
+                                      : null;
+
+                // If we don't have a route, don't overwrite the existing resource name
+                var resourcePathName = SimplifyRoutePattern(
+                    routePattern.Value,
+                    routeValues,
+                    areaName: areaName,
+                    controllerName: controllerName,
+                    actionName: actionName);
+
+                var resourceName = $"{trackingFeature.HttpMethod} {request.PathBase}{resourcePathName}";
+
+                // NOTE: We could set the controller/action/area tags on the parent span
+                // But instead we re-extract them in the MVC endpoint as these are MVC
+                // constructs. this is likely marginally less efficient, but simplifies the
+                // already complex logic in the MVC handler
+                trackingFeature.ResourceName = resourceName;
+                if (isFirstExecution)
+                {
+                    span.ResourceName = resourceName;
+                    tags.AspNetRoute = normalizedRoute;
+                }
+            }
+        }
+
+        private void OnMvcAfterAction(object arg)
+        {
+            var tracer = _tracer ?? Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+                !tracer.Settings.AspNetCoreRouteTemplateResourceNamesEnabled)
+            {
+                return;
+            }
+
+            var scope = tracer.ActiveScope;
+
+            if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
+            {
+                scope.Dispose();
             }
         }
 
@@ -852,6 +929,22 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 throw new NotImplementedException();
             }
+        }
+
+        /// <summary>
+        /// Holds state that we want to pass between diagnostic source events
+        /// </summary>
+        private class RequestTrackingFeature
+        {
+            public bool IsUsingEndpointRouting { get; set; }
+
+            public int PipelineExecutionCount { get; set; }
+
+            public string Route { get; set; }
+
+            public string ResourceName { get; set; }
+
+            public string HttpMethod { get; set; }
         }
     }
 }

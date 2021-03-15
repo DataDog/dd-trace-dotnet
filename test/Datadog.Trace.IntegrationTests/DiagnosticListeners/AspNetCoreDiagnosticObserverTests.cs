@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,9 +30,29 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         [Theory]
         [MemberData(nameof(AspNetCoreMvcTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]
-        public async Task DiagnosticObserver_ForMvcEndpoints_WithFeatureFlag_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForMvcEndpoints_WithFeatureFlag_SubmitsSpans(
+            string path,
+            HttpStatusCode statusCode,
+            bool isError,
+            string resourceName,
+            SerializableDictionary expectedTags,
+            int childSpanCount,
+            SerializableDictionary firstChildSpanTags,
+            string childSpan2ResourceName,
+            SerializableDictionary secondChildSpanTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(path, statusCode, isError, resourceName, expectedTags, featureFlag: true);
+            await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(
+                path,
+                statusCode,
+                isError,
+                resourceName,
+                expectedTags,
+                featureFlag: true,
+                childSpanCount,
+                null,
+                firstChildSpanTags,
+                childSpan2ResourceName,
+                secondChildSpanTags);
         }
 
         [Theory]
@@ -43,9 +64,30 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         [Theory]
         [MemberData(nameof(AspNetCoreRazorPagesTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
-        public async Task DiagnosticObserver_ForRazorPages_WithFeatureFlag_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForRazorPages_WithFeatureFlag_SubmitsSpans(
+            string path,
+            HttpStatusCode statusCode,
+            bool isError,
+            string resourceName,
+            SerializableDictionary expectedTags,
+            int childSpanCount,
+            string childSpan1ResourceName,
+            SerializableDictionary firstChildSpanTags,
+            string childSpan2ResourceName,
+            SerializableDictionary secondChildSpanTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(path, statusCode, isError, resourceName, expectedTags, featureFlag: true);
+            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(
+                path,
+                statusCode,
+                isError,
+                resourceName,
+                expectedTags,
+                featureFlag: true,
+                childSpanCount,
+                childSpan1ResourceName,
+                firstChildSpanTags,
+                childSpan2ResourceName,
+                secondChildSpanTags);
         }
 
 #if !NETCOREAPP2_1
@@ -58,9 +100,30 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         [Theory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForEndpointRouting_WithFeatureFlag_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        public async Task DiagnosticObserver_ForEndpointRouting_WithFeatureFlag_SubmitsSpans(
+            string path,
+            HttpStatusCode statusCode,
+            bool isError,
+            string resourceName,
+            SerializableDictionary expectedTags,
+            int childSpanCount,
+            string childSpan1ResourceName,
+            SerializableDictionary firstChildSpanTags,
+            string childSpan2ResourceName,
+            SerializableDictionary secondChildSpanTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(path, statusCode, isError, resourceName, expectedTags, featureFlag: true);
+            await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(
+                path,
+                statusCode,
+                isError,
+                resourceName,
+                expectedTags,
+                featureFlag: true,
+                childSpanCount,
+                childSpan1ResourceName,
+                firstChildSpanTags,
+                childSpan2ResourceName,
+                secondChildSpanTags);
         }
 #endif
 
@@ -69,8 +132,13 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             HttpStatusCode statusCode,
             bool isError,
             string resourceName,
-            SerializableDictionary expectedTags,
-            bool featureFlag = false)
+            SerializableDictionary expectedParentSpanTags,
+            bool featureFlag = false,
+            int spanCount = 1,
+            string childSpan1ResourceName = null,
+            SerializableDictionary firstChildSpanTags = null,
+            string childSpan2ResourceName = null,
+            SerializableDictionary secondChildSpanTags = null)
             where T : class
         {
             var writer = new AgentWriterStub();
@@ -116,22 +184,66 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             }
 
             var trace = Assert.Single(writer.Traces);
-            var span = Assert.Single(trace);
+            trace.Should().HaveCount(spanCount);
 
-            span.OperationName.Should().Be("aspnet_core.request");
-            AssertTagHasValue(span, Tags.InstrumentationName, "aspnet_core");
-            span.Type.Should().Be(SpanTypes.Web);
-            span.ResourceName.Should().Be(resourceName);
-            AssertTagHasValue(span, Tags.SpanKind, SpanKinds.Server);
-            AssertTagHasValue(span, Tags.Language, TracerConstants.Language);
-            AssertTagHasValue(span, Tags.HttpStatusCode, ((int)statusCode).ToString());
-            span.Error.Should().Be(isError);
+            var parentSpan = trace.Should()
+                                  .ContainSingle(x => x.OperationName == "aspnet_core.request")
+                                  .Subject;
 
-            if (expectedTags is not null)
+            AssertTagHasValue(parentSpan, Tags.InstrumentationName, "aspnet_core");
+            parentSpan.Type.Should().Be(SpanTypes.Web);
+            parentSpan.ResourceName.Should().Be(resourceName);
+            AssertTagHasValue(parentSpan, Tags.SpanKind, SpanKinds.Server);
+            AssertTagHasValue(parentSpan, Tags.Language, TracerConstants.Language);
+            AssertTagHasValue(parentSpan, Tags.HttpStatusCode, ((int)statusCode).ToString());
+            parentSpan.Error.Should().Be(isError);
+
+            if (expectedParentSpanTags is not null)
             {
-                foreach (var expectedTag in expectedTags.Values)
+                foreach (var expectedTag in expectedParentSpanTags.Values)
                 {
-                    AssertTagHasValue(span, expectedTag.Key, expectedTag.Value);
+                    AssertTagHasValue(parentSpan, expectedTag.Key, expectedTag.Value);
+                }
+            }
+
+            if (spanCount > 1)
+            {
+                trace.Should().Contain(x => x.OperationName == "aspnet_core.mvc");
+
+                var childSpan = trace.First(x => x.OperationName == "aspnet_core.mvc");
+
+                AssertTagHasValue(childSpan, Tags.InstrumentationName, "aspnet_core");
+                childSpan.Type.Should().Be(SpanTypes.Web);
+                childSpan.ResourceName.Should().Be(childSpan1ResourceName ?? resourceName);
+                AssertTagHasValue(childSpan, Tags.SpanKind, SpanKinds.Server);
+                AssertTagHasValue(childSpan, Tags.Language, TracerConstants.Language);
+
+                if (firstChildSpanTags is not null)
+                {
+                    foreach (var expectedTag in firstChildSpanTags.Values)
+                    {
+                        AssertTagHasValue(childSpan, expectedTag.Key, expectedTag.Value);
+                    }
+                }
+
+                if (spanCount > 2)
+                {
+                    var childSpan2 = trace.Last(x => x.OperationName == "aspnet_core.mvc");
+                    childSpan2.Should().NotBe(childSpan);
+
+                    AssertTagHasValue(childSpan2, Tags.InstrumentationName, "aspnet_core");
+                    childSpan2.Type.Should().Be(SpanTypes.Web);
+                    childSpan2.ResourceName.Should().Be(childSpan2ResourceName);
+                    AssertTagHasValue(childSpan2, Tags.SpanKind, SpanKinds.Server);
+                    AssertTagHasValue(childSpan2, Tags.Language, TracerConstants.Language);
+
+                    if (secondChildSpanTags is not null)
+                    {
+                        foreach (var expectedTag in secondChildSpanTags.Values)
+                        {
+                            AssertTagHasValue(childSpan2, expectedTag.Key, expectedTag.Value);
+                        }
+                    }
                 }
             }
         }
