@@ -77,6 +77,7 @@ profiles:
           CORECLR_PROFILER_PATH: "{{ windowsProfilerPath }}\\Datadog.Trace.ClrProfiler.Native.dll"
           DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}"
           DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\integrations.json"
+          DD_AGENT_HOST: "{{ controllerIp }}"
         options:
           requiredOperatingSystem: windows
           buildFiles:
@@ -100,6 +101,7 @@ profiles:
           CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}"
           DD_INTEGRATIONS: "{{ linuxProfilerPath }}/integrations.json"
+          DD_AGENT_HOST: "{{ controllerIp }}"
         options:
           requiredOperatingSystem: linux
           buildFiles:
