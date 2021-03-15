@@ -121,7 +121,7 @@ jobs:
 
   steps:
   - download: current
-    artifact: linux_profiler
+    artifact: linux-native
 
   - task: CopyFiles@2
     inputs:
@@ -129,7 +129,7 @@ jobs:
       targetFolder: $(System.DefaultWorkingDirectory)/
 
   - download: current
-    artifact: windows_profiler
+    artifact: windows-native
 
   - task: CopyFiles@2
     inputs:
