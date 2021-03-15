@@ -125,7 +125,7 @@ jobs:
 
   - task: CopyFiles@2
     inputs:
-      sourceFolder: $(Pipeline.Workspace)/linux_profiler
+      sourceFolder: $(Pipeline.Workspace)/linux-native
       targetFolder: $(System.DefaultWorkingDirectory)/
 
   - download: current
@@ -133,7 +133,7 @@ jobs:
 
   - task: CopyFiles@2
     inputs:
-      sourceFolder: $(Pipeline.Workspace)/windows_profiler
+      sourceFolder: $(Pipeline.Workspace)/windows-native
       targetFolder: $(System.DefaultWorkingDirectory)/
 
   - script: |
