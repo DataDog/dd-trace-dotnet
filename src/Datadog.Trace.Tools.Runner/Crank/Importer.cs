@@ -71,7 +71,11 @@ namespace Datadog.Trace.Tools.Runner.Crank
                     var fileName = Path.GetFileName(jsonFilePath);
 
                     var tracerSettings = new TracerSettings();
-                    tracerSettings.ServiceName = "crank";
+                    if (string.IsNullOrEmpty(tracerSettings.ServiceName))
+                    {
+                        tracerSettings.ServiceName = "crank";
+                    }
+
                     Tracer tracer = new Tracer(tracerSettings);
 
                     foreach (var jobItem in result.JobResults.Jobs)

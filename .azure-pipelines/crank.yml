@@ -140,3 +140,5 @@ jobs:
       cd ./build/crank
       chmod +x ./run.sh
       ./run.sh
+    env:
+      DD_SERVICE: dd-trace-dotnet
