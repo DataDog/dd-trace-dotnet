@@ -111,6 +111,9 @@ jobs:
 
 
 - job: crank
+  pool: Throughput
+  workspace:
+    clean: all
   dependsOn:
   - linux_profiler
   - windows_profiler
