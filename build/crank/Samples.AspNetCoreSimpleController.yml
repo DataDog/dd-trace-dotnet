@@ -10,7 +10,7 @@ jobs:
     options:
       displayOutput: true
       displayBuild: true
-      startTimeout: 00:05:00
+      startTimeout: 00:10:00
       counterProviders:
       - System.Runtime
       - Microsoft-AspNetCore-Server-Kestrel
@@ -79,7 +79,7 @@ profiles:
           DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}"
           DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
-          DD_TRACE_DEBUG: 1
+          DD_TRACE_DEBUG: 0
         options:
           requiredOperatingSystem: windows
           buildFiles:
@@ -104,6 +104,7 @@ profiles:
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}"
           DD_INTEGRATIONS: "{{ linuxProfilerPath }}/integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
+          DD_TRACE_DEBUG: 0
         options:
           requiredOperatingSystem: linux
           buildFiles:
