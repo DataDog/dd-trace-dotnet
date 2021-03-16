@@ -182,8 +182,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
         [HttpGet("{value}")]
-        public ObjectResult Value([FromRoute] InputModel model)
-            => StatusCode(model.Value, model.Value.ToString());
+        public string Value([FromRoute] InputModel model) => model.Value.ToString();
 
         /// <summary>
         /// .NET Core 2.1 doesn't allow applying validation parameters directly to method params,
@@ -191,7 +190,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         /// </summary>
         public class InputModel
         {
-            [Range(minimum: 100, maximum: 599)]
+            [Range(minimum: 1, maximum: 10)]
             public int Value { get; set; }
         }
     }
