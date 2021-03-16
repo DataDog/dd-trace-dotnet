@@ -1,5 +1,6 @@
 using System;
 using System.Reflection.Emit;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -53,7 +54,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
         private static void ContinuationAction(Task previousTask, object state)
         {
             ContinuationGeneratorState<TTarget> contState = (ContinuationGeneratorState<TTarget>)state;
-            _continuation(contState.Target, null, previousTask?.Exception, contState.State);
+            _continuation(contState.Target, null, previousTask.Exception, contState.State);
+            if (previousTask.Exception is not null)
+            {
+                ExceptionDispatchInfo.Capture(previousTask.Exception.GetBaseException()).Throw();
+            }
         }
     }
 }
