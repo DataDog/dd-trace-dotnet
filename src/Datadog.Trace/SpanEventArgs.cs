@@ -1,14 +1,12 @@
-using System;
-
 namespace Datadog.Trace
 {
     /// <summary>
     /// EventArgs for a Span
     /// </summary>
-    internal class SpanEventArgs : EventArgs
+    internal readonly struct SpanEventArgs
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanEventArgs"/> class.
+        /// Initializes a new instance of the <see cref="SpanEventArgs"/> struct.
         /// Creates a new <see cref="SpanEventArgs"/> using <paramref name="span"/>
         /// </summary>
         /// <param name="span">The <see cref="Span"/> used to initialize the <see cref="SpanEventArgs"/> object.</param>

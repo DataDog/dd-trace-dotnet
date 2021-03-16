@@ -14,6 +14,7 @@ namespace Datadog.Trace.Logging
     {
         private const int _numPropertiesSetOnSpanEvent = 5;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LibLogScopeEventSubscriber));
+
 #if NETFRAMEWORK
         private static readonly string NamedSlotName = "Datadog_IISPreInitStart";
         private static bool _performAppDomainFlagChecks = false;
@@ -21,11 +22,15 @@ namespace Datadog.Trace.Logging
 
         private static bool _executingIISPreStartInit = false;
 
+        private readonly Tracer _tracer;
         private readonly IScopeManager _scopeManager;
         private readonly string _defaultServiceName;
         private readonly string _version;
         private readonly string _env;
         private readonly ILogProvider _logProvider;
+        private readonly object _serilogEnricher;
+
+        private readonly AsyncLocalCompat<IDisposable> _currentEnricher = new AsyncLocalCompat<IDisposable>();
 
         // Each mapped context sets a key-value pair into the logging context
         // Disposing the returned context unsets the key-value pair
@@ -40,9 +45,9 @@ namespace Datadog.Trace.Logging
 
         private bool _safeToAddToMdc = true;
 
-#if NETFRAMEWORK
         static LibLogScopeEventSubscriber()
         {
+#if NETFRAMEWORK
             // Check if IIS automatic instrumentation has set the AppDomain property to indicate the PreStartInit state
             // If the property is not set, we must rely on a different method of determining the state
             object state = AppDomain.CurrentDomain.GetData(NamedSlotName);
@@ -77,8 +82,10 @@ namespace Datadog.Trace.Logging
             {
                 Log.Warning("Automatic logs injection detected that IIS is still initializating. The {Source} will be checked at the start of each trace to only enable automatic logs injection when IIS is finished initializing.", _performAppDomainFlagChecks ? "AppDomain" : "System.Diagnostics.StackTrace");
             }
-        }
 #endif
+
+            InitResolvers();
+        }
 
         // IMPORTANT: For all logging frameworks, do not set any default values for
         //            "dd.trace_id" and "dd.span_id" when initializing the subscriber
@@ -92,8 +99,9 @@ namespace Datadog.Trace.Logging
         //            but the target AppDomain is unable to de-serialize the object --
         //            this can easily happen if the target AppDomain cannot find/load the
         //            logging framework assemblies.
-        public LibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
+        public LibLogScopeEventSubscriber(Tracer tracer, IScopeManager scopeManager, string defaultServiceName, string version, string env)
         {
+            _tracer = tracer;
             _scopeManager = scopeManager;
             _defaultServiceName = defaultServiceName;
             _version = version;
@@ -115,6 +123,11 @@ namespace Datadog.Trace.Logging
                     // except at the application startup, but this would require auto-instrumentation
                     _scopeManager.SpanOpened += StackOnSpanOpened;
                     _scopeManager.SpanClosed += StackOnSpanClosed;
+
+                    if (_logProvider is CustomSerilogLogProvider customSerilogLogProvider)
+                    {
+                        _serilogEnricher = customSerilogLogProvider.CreateEnricher(tracer);
+                    }
                 }
                 else
                 {
@@ -127,6 +140,8 @@ namespace Datadog.Trace.Logging
                 Log.Error(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
             }
         }
+
+        internal static bool UseOptimization { get; set; } = true;
 
 #if NETFRAMEWORK
         public void OnTraceStarted_RefreshIISState(object sender, SpanEventArgs spanEventArgs)
@@ -195,6 +210,16 @@ namespace Datadog.Trace.Logging
             RemoveAllCorrelationIdentifierContexts();
         }
 
+        private static void InitResolvers()
+        {
+            // Register the custom Serilog provider
+            LogProvider.LogProviderResolvers.Insert(
+                0,
+                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
+                    CustomSerilogLogProvider.IsLoggerAvailable,
+                    () => new CustomSerilogLogProvider()));
+        }
+
         private void SetDefaultValues()
         {
             SetLogContext(0, 0);
@@ -202,6 +227,18 @@ namespace Datadog.Trace.Logging
 
         private void RemoveLastCorrelationIdentifierContext()
         {
+            if (UseOptimization && _logProvider is CustomSerilogLogProvider)
+            {
+                if (_tracer.ActiveScope == null)
+                {
+                    // We closed the last span
+                    _currentEnricher.Get()?.Dispose();
+                    _currentEnricher.Set(null);
+                }
+
+                return;
+            }
+
             // TODO: Debug logs
             for (int i = 0; i < _numPropertiesSetOnSpanEvent; i++)
             {
@@ -226,6 +263,9 @@ namespace Datadog.Trace.Logging
             {
                 ctxDisposable.Dispose();
             }
+
+            _currentEnricher.Get()?.Dispose();
+            _currentEnricher.Set(null);
         }
 
         private void SetLogContext(ulong traceId, ulong spanId)
@@ -270,6 +310,18 @@ namespace Datadog.Trace.Logging
 
             try
             {
+                if (UseOptimization && _logProvider is CustomSerilogLogProvider customSerilogLogProvider)
+                {
+                    var currentEnricher = _currentEnricher.Get();
+
+                    if (currentEnricher == null)
+                    {
+                        _currentEnricher.Set(customSerilogLogProvider.OpenContext(_serilogEnricher));
+                    }
+
+                    return;
+                }
+
                 // TODO: Debug logs
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(

@@ -707,7 +707,7 @@ namespace Datadog.Trace
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
         {
-            new LibLogScopeEventSubscriber(scopeManager, defaultServiceName, version ?? string.Empty, env ?? string.Empty);
+            new LibLogScopeEventSubscriber(this, scopeManager, defaultServiceName, version ?? string.Empty, env ?? string.Empty);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
