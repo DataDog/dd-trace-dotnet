@@ -164,7 +164,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
         [HttpGet("/statuscode/{value=200}")]
-        public string SetStatusCode(int value) => value.ToString();
+        public ObjectResult SetStatusCode(int value)
+            => StatusCode(value, value.ToString());
     }
 
     /// <summary>
