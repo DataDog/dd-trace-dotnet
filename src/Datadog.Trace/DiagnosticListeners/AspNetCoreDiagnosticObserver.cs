@@ -317,7 +317,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         private static string SimplifyRoutePattern(
-            RoutePatternStruct routePattern,
+            RoutePattern routePattern,
             RouteValueDictionary routeValueDictionary,
             string areaName,
             string controllerName,
@@ -668,42 +668,33 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                object endpointStruct = null;
+                RouteEndpoint? endpoint = null;
 
-                if (DuckType.CanCreate<IEndpointFeatureStruct>(rawEndpointFeature))
+                if (rawEndpointFeature.TryDuckCast<IEndpointFeature>(out var endpointFeatureInterface))
                 {
-                    var endpointFeature = rawEndpointFeature.DuckCast<IEndpointFeatureStruct>();
-                    endpointStruct = endpointFeature.GetEndpoint();
+                    endpoint = endpointFeatureInterface.GetEndpoint();
                 }
 
-                if (endpointStruct is null)
+                if (endpoint is null && rawEndpointFeature.TryDuckCast<EndpointFeatureStruct>(out var endpointFeatureStruct))
                 {
-                    if (!DuckType.CanCreate<EndpointFeatureStruct>(rawEndpointFeature))
-                    {
-                        // Neither case supported
-                        return;
-                    }
-
-                    var endpointFeature = rawEndpointFeature.DuckCast<EndpointFeatureStruct>();
-                    endpointStruct = endpointFeature.Endpoint;
+                    endpoint = endpointFeatureStruct.Endpoint;
                 }
 
-                var endpoint = endpointStruct.DuckCast<RouteEndpointStruct>();
-                if (isFirstExecution)
+                if (endpoint is null)
                 {
-                    tags.AspNetCoreEndpoint = endpoint.DisplayName;
-                }
-
-                // Must DuckCast this to access RouteValues in .NET Core 3.0+
-                var routePattern = endpoint.RoutePattern?.DuckCast<RoutePatternStruct>();
-                if (routePattern is null)
-                {
-                    // Nothing more we can do
+                    // Unable to cast to either type
                     return;
                 }
 
+                if (isFirstExecution)
+                {
+                    tags.AspNetCoreEndpoint = endpoint.Value.DisplayName;
+                }
+
+                var routePattern = endpoint.Value.RoutePattern;
+
                 // Have to pass this value through to the MVC span, as not available there
-                var normalizedRoute = routePattern.Value.RawText?.ToLowerInvariant();
+                var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
                 trackingFeature.Route = normalizedRoute;
 
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
@@ -724,7 +715,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 // If we don't have a route, don't overwrite the existing resource name
                 var resourcePathName = SimplifyRoutePattern(
-                    routePattern.Value,
+                    routePattern,
                     routeValues,
                     areaName: areaName,
                     controllerName: controllerName,
@@ -861,14 +852,7 @@ namespace Datadog.Trace.DiagnosticListeners
         [DuckCopy]
         public struct EndpointFeatureStruct
         {
-            public object Endpoint;
-        }
-
-        [DuckCopy]
-        public struct RouteEndpointStruct
-        {
-            public object RoutePattern;
-            public string DisplayName;
+            public RouteEndpoint Endpoint;
         }
 
         [DuckCopy]
@@ -877,13 +861,6 @@ namespace Datadog.Trace.DiagnosticListeners
             public string Method;
             public RouteValueDictionary RouteValues;
             public PathString PathBase;
-        }
-
-        [DuckCopy]
-        public struct RoutePatternStruct
-        {
-            public IEnumerable PathSegments;
-            public string RawText;
         }
 
         [DuckCopy]

@@ -3,14 +3,14 @@
 namespace Datadog.Trace.DiagnosticListeners
 {
     /// <summary>
-    /// Helper struct for retrieving IEndpointFeature from HttpContext
+    /// IEndpointFeature for ducktyping HttpContext
     /// </summary>
-    public interface IEndpointFeatureStruct
+    public interface IEndpointFeature
     {
         /// <summary>
         /// Delegates to IEndpointFeature.Endpoint;
         /// </summary>
         [Duck(Name = "Microsoft.AspNetCore.Http.Features.IEndpointFeature.get_Endpoint")]
-        object GetEndpoint();
+        RouteEndpoint GetEndpoint();
     }
 }
