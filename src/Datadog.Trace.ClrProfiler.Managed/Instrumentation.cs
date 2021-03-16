@@ -67,9 +67,6 @@ namespace Datadog.Trace.ClrProfiler
                 // ignore
             }
 
-            ServiceRemotingClient.StartTracing();
-            ServiceRemotingService.StartTracing();
-
 #if !NETFRAMEWORK
             try
             {
@@ -92,6 +89,29 @@ namespace Datadog.Trace.ClrProfiler
             catch
             {
                 // ignore
+            }
+
+            // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
+            if (string.Equals(FrameworkDescription.Instance.Name, ".NET Core", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(FrameworkDescription.Instance.Name, ".NET", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    ServiceRemotingClient.StartTracing();
+                }
+                catch
+                {
+                    // ignore
+                }
+
+                try
+                {
+                    ServiceRemotingService.StartTracing();
+                }
+                catch
+                {
+                    // ignore
+                }
             }
 #endif
         }
