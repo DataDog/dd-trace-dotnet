@@ -485,7 +485,8 @@ namespace Datadog.Trace.DiagnosticListeners
                 string url = GetUrl(request);
                 httpContext.Features.Set(new RequestTrackingFeature
                 {
-                    HttpMethod = httpMethod
+                    HttpMethod = httpMethod,
+                    Url = url,
                 });
 
                 string absolutePath = request.Path.Value;
@@ -542,12 +543,19 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 HttpContext httpContext = typedArg.HttpContext;
                 var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
-                var executionCount = trackingFeature.PipelineExecutionCount;
                 var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
-                var isFirstEndpointExecution = executionCount is 0 || (isUsingEndpointRouting && executionCount is 1);
-                if (!isUsingEndpointRouting)
+
+                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
+                if (isFirstExecution)
                 {
-                    trackingFeature.PipelineExecutionCount = executionCount + 1;
+                    trackingFeature.IsFirstPipelineExecution = false;
+                    var url = GetUrl(httpContext.Request);
+                    if (!string.Equals(url, trackingFeature.Url))
+                    {
+                        // URL has changed from original, so treat this execution as a "subsequent" request
+                        // Typically occurs for 404s for example
+                        isFirstExecution = false;
+                    }
                 }
 
                 ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
@@ -617,7 +625,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 mvcSpanTags.AspNetCorePage = pagePath;
                 mvcSpanTags.AspNetCoreRoute = aspNetRoute;
 
-                if (!isUsingEndpointRouting && isFirstEndpointExecution)
+                if (!isUsingEndpointRouting && isFirstExecution)
                 {
                     // If we're using endpoint routing or this is a pipeline re-execution,
                     // these will already be set correctly
@@ -654,10 +662,20 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 HttpContext httpContext = typedArg.HttpContext;
                 var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
-                var executionCount = trackingFeature.PipelineExecutionCount;
-                var isFirstExecution = executionCount == 0;
-                trackingFeature.IsUsingEndpointRouting = true;
-                trackingFeature.PipelineExecutionCount = executionCount + 1;
+                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
+                if (isFirstExecution)
+                {
+                    trackingFeature.IsUsingEndpointRouting = true;
+                    trackingFeature.IsFirstPipelineExecution = false;
+
+                    var url = GetUrl(httpContext.Request);
+                    if (!string.Equals(url, trackingFeature.Url))
+                    {
+                        // URL has changed from original, so treat this execution as a "subsequent" request
+                        // Typically occurs for 404s for example
+                        isFirstExecution = false;
+                    }
+                }
 
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
                 //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
@@ -924,15 +942,35 @@ namespace Datadog.Trace.DiagnosticListeners
         /// </summary>
         private class RequestTrackingFeature
         {
+            /// <summary>
+            /// Gets or sets a value indicating whether the pipeline using endpoint routing
+            /// </summary>
             public bool IsUsingEndpointRouting { get; set; }
 
-            public int PipelineExecutionCount { get; set; }
+            /// <summary>
+            /// Gets or sets a value indicating whether this is the first pipeline execution
+            /// </summary>
+            public bool IsFirstPipelineExecution { get; set; } = true;
 
+            /// <summary>
+            /// Gets or sets a value indicating the route as calculated by endpoint routing (if available)
+            /// </summary>
             public string Route { get; set; }
 
+            /// <summary>
+            /// Gets or sets a value indicating the resource name as calculated by the endpoint routing(if available)
+            /// </summary>
             public string ResourceName { get; set; }
 
+            /// <summary>
+            /// Gets or sets the HTTP method, as it requires normalization, so avoids repeatedly calculations
+            /// </summary>
             public string HttpMethod { get; set; }
+
+            /// <summary>
+            /// Gets or Sets the original URL received by the pipeline
+            /// </summary>
+            public string Url { get; set; }
         }
     }
 }

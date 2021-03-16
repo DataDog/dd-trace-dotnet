@@ -37,6 +37,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string resourceName,
             SerializableDictionary expectedTags,
             int childSpanCount,
+            string childSpan1ResourceName,
             SerializableDictionary firstChildSpanTags,
             string childSpan2ResourceName,
             SerializableDictionary secondChildSpanTags)
@@ -49,7 +50,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 expectedTags,
                 featureFlag: true,
                 childSpanCount,
-                null,
+                childSpan1ResourceName,
                 firstChildSpanTags,
                 childSpan2ResourceName,
                 secondChildSpanTags);
