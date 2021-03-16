@@ -12,6 +12,23 @@ namespace Datadog.Logging.Emission
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
     internal static class DefaultFormat
     {
+        public class Options
+        {
+            public static readonly Options SingleLines = new Options(useUtcTimestamps: false, useNewLinesInErrorMessages: false, useNewLinesInDataNamesAndValues: false);
+            public static readonly Options StructuredMultilines = new Options(useUtcTimestamps: false, useNewLinesInErrorMessages: true, useNewLinesInDataNamesAndValues: true);
+
+            public Options(bool useUtcTimestamps, bool useNewLinesInErrorMessages, bool useNewLinesInDataNamesAndValues)
+            {
+                this.UseUtcTimestamps = useUtcTimestamps;
+                this.UseNewLinesInErrorMessages = useNewLinesInErrorMessages;
+                this.UseNewLinesInDataNamesAndValues = useNewLinesInDataNamesAndValues;
+            }
+
+            public bool UseUtcTimestamps { get; }
+            public bool UseNewLinesInErrorMessages { get; }
+            public bool UseNewLinesInDataNamesAndValues { get; }
+        }
+
         public const string LogLevelMoniker_Error = "ERROR";
         public const string LogLevelMoniker_Info = "INFO ";
         public const string LogLevelMoniker_Debug = "DEBUG";

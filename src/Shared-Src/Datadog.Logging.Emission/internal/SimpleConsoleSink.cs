@@ -7,9 +7,7 @@ namespace Datadog.Logging.Emission
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1116:Split parameters must start on line after declaration", Justification = "Bad rule")]
     internal static class SimpleConsoleSink
     {
-        private const bool UseUtcTimestamps = false;
-        private const bool UseNewLinesInErrorMessages = true;
-        private const bool UseNewLinesInDataNamesAndValues = true;
+        private static readonly DefaultFormat.Options FormatOptions = DefaultFormat.Options.StructuredMultilines;
 
         public static void Error(string logSourceNamePart1,
                                  string logSourceNamePart2,
@@ -21,7 +19,7 @@ namespace Datadog.Logging.Emission
                                  Exception exception,
                                  IEnumerable<object> dataNamesAndValues)
         {
-            string errorMessage = DefaultFormat.ErrorMessage.Construct(message, exception, UseNewLinesInErrorMessages);
+            string errorMessage = DefaultFormat.ErrorMessage.Construct(message, exception, FormatOptions.UseNewLinesInErrorMessages);
 
             Console.WriteLine(Environment.NewLine
                             + DefaultFormat.LogLine.Construct(DefaultFormat.LogLevelMoniker_Error,
@@ -33,8 +31,8 @@ namespace Datadog.Logging.Emission
                                                               logSourceAssemblyName,
                                                               errorMessage,
                                                               dataNamesAndValues,
-                                                              UseUtcTimestamps,
-                                                              UseNewLinesInDataNamesAndValues)
+                                                              FormatOptions.UseUtcTimestamps,
+                                                              FormatOptions.UseNewLinesInDataNamesAndValues)
                                                    .ToString());
         }
 
@@ -57,8 +55,8 @@ namespace Datadog.Logging.Emission
                                                               logSourceAssemblyName,
                                                               message,
                                                               dataNamesAndValues,
-                                                              UseUtcTimestamps,
-                                                              UseNewLinesInDataNamesAndValues)
+                                                              FormatOptions.UseUtcTimestamps,
+                                                              FormatOptions.UseNewLinesInDataNamesAndValues)
                                                    .ToString());
         }
 
@@ -81,8 +79,8 @@ namespace Datadog.Logging.Emission
                                                               logSourceAssemblyName,
                                                               message,
                                                               dataNamesAndValues,
-                                                              UseUtcTimestamps,
-                                                              UseNewLinesInDataNamesAndValues)
+                                                              FormatOptions.UseUtcTimestamps,
+                                                              FormatOptions.UseNewLinesInDataNamesAndValues)
                                                    .ToString());
         }
     }

@@ -18,6 +18,10 @@ namespace Datadog.Logging.Composition
     {
         public const int RotateLogFileWhenLargerBytesDefault = 1024 * 1024 * 128;  // 128 MB
 
+        public static readonly DefaultFormat.Options DefaultFormatOptions = new DefaultFormat.Options(useUtcTimestamps: false,
+                                                                                                      useNewLinesInErrorMessages: false,
+                                                                                                      useNewLinesInDataNamesAndValues: false);
+
         private static readonly LogSourceInfo SelfLogSourceInfo = new LogSourceInfo(typeof(FileLogSink).FullName);
 
         private const string FilenameSeparatorForTimestamp = "-";
@@ -26,16 +30,13 @@ namespace Datadog.Logging.Composition
         private const string FilenameIndexFormat = "000";
         private const string FilenameExtension = "log";
 
-        private const bool UseUtcTimestamps = false;
-        private const bool UseNewLinesInErrorMessages = false;
-        private const bool UseNewLinesInDataNamesAndValues = false;
-
         private const int FilenameTimestampAndIndexPartsLengthEstimate = 20;
 
         private static readonly Encoding LogTextEncoding = Encoding.UTF8;
 
         private static readonly bool s_isWindowsFileSystem = GetIsWindowsFileSystem();
 
+        private readonly DefaultFormat.Options _formatOptions;
         private readonly Guid _logSessionId;
         private readonly LogGroupMutex _logGroupMutex;
         private readonly string _logFileDir;
@@ -51,7 +52,8 @@ namespace Datadog.Logging.Composition
                             string logFileNameBase,
                             int rotateLogFileWhenLargerBytes,
                             FileStream logStream,
-                            int initialRotationIndex)
+                            int initialRotationIndex,
+                            DefaultFormat.Options formatOptions)
         {
             _logSessionId = Guid.NewGuid();
             _logGroupMutex = logGroupMutex;
@@ -63,6 +65,8 @@ namespace Datadog.Logging.Composition
             _logWriter = new StreamWriter(logStream, LogTextEncoding);
 
             _rotationIndex = initialRotationIndex;
+
+            _formatOptions = formatOptions ?? DefaultFormatOptions;
         }
 
         public Guid LogSessionId
@@ -87,15 +91,20 @@ namespace Datadog.Logging.Composition
 
         public static bool IsWindowsFileSystem { get { return s_isWindowsFileSystem; } }
 
-        public static bool TryCreateNew(string logFileDir, string logFileNameBase, Guid logGroupId, out FileLogSink newSink)
+        public static bool TryCreateNew(string logFileDir, string logFileNameBase, Guid logGroupId, DefaultFormat.Options formatOptions, out FileLogSink newSink)
         {
-            return TryCreateNew(logFileDir, logFileNameBase, logGroupId, FileLogSink.RotateLogFileWhenLargerBytesDefault, out newSink);
+            return TryCreateNew(logFileDir, logFileNameBase, logGroupId, FileLogSink.RotateLogFileWhenLargerBytesDefault, formatOptions, out newSink);
         }
 
         /// <summary>
         /// Attention: All loggers from all processes that write to the same <c>logFileNameBase</c> MUST use the same value for <c>rotateLogFileWhenLargerBytes</c>!
         /// </summary>
-        public static bool TryCreateNew(string logFileDir, string logFileNameBase, Guid logGroupId, int rotateLogFileWhenLargerBytes, out FileLogSink newSink)
+        public static bool TryCreateNew(string logFileDir,
+                                        string logFileNameBase,
+                                        Guid logGroupId,
+                                        int rotateLogFileWhenLargerBytes,
+                                        DefaultFormat.Options formatOptions,
+                                        out FileLogSink newSink)
         {
             // Bad usage - throw.
 
@@ -146,7 +155,7 @@ namespace Datadog.Logging.Composition
                     string logFilePath = Path.Combine(logFileDir, logFileName);
                     FileStream logStream = new FileStream(logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
 
-                    newSink = new FileLogSink(logGroupMutex, logFileDir, logFileNameBase, rotateLogFileWhenLargerBytes, logStream, rotationIndex);
+                    newSink = new FileLogSink(logGroupMutex, logFileDir, logFileNameBase, rotateLogFileWhenLargerBytes, logStream, rotationIndex, formatOptions);
                 }
 
                 if (newSink.TryLogInfo(SelfLogSourceInfo.WithCallInfo().WithAssemblyName(),
@@ -251,7 +260,7 @@ namespace Datadog.Logging.Composition
         {
             try
             {
-                string errorMessage = DefaultFormat.ErrorMessage.Construct(message, exception, UseNewLinesInErrorMessages);
+                string errorMessage = DefaultFormat.ErrorMessage.Construct(message, exception, _formatOptions.UseNewLinesInErrorMessages);
                 StringBuilder logLine = DefaultFormat.LogLine.Construct(DefaultFormat.LogLevelMoniker_Error,
                                                                         logSourceInfo.LogSourceNamePart1,
                                                                         logSourceInfo.LogSourceNamePart2,
@@ -261,8 +270,8 @@ namespace Datadog.Logging.Composition
                                                                         logSourceInfo.AssemblyName,
                                                                         errorMessage,
                                                                         dataNamesAndValues,
-                                                                        UseUtcTimestamps,
-                                                                        UseNewLinesInDataNamesAndValues);
+                                                                        _formatOptions.UseUtcTimestamps,
+                                                                        _formatOptions.UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch
@@ -284,8 +293,8 @@ namespace Datadog.Logging.Composition
                                                                         logSourceInfo.AssemblyName,
                                                                         message,
                                                                         dataNamesAndValues,
-                                                                        UseUtcTimestamps,
-                                                                        UseNewLinesInDataNamesAndValues);
+                                                                        _formatOptions.UseUtcTimestamps,
+                                                                        _formatOptions.UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch
@@ -307,8 +316,8 @@ namespace Datadog.Logging.Composition
                                                                         logSourceInfo.AssemblyName,
                                                                         message,
                                                                         dataNamesAndValues,
-                                                                        UseUtcTimestamps,
-                                                                        UseNewLinesInDataNamesAndValues);
+                                                                        _formatOptions.UseUtcTimestamps,
+                                                                        _formatOptions.UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch

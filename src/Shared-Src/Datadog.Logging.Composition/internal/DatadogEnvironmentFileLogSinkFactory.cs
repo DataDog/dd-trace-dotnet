@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
+using Datadog.Logging.Emission;
+
 namespace Datadog.Logging.Composition
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1308:Variable names must not be prefixed", Justification = "Should not apply to statics")]
@@ -12,7 +14,7 @@ namespace Datadog.Logging.Composition
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1615:Element return value must be documented", Justification = "That would be great.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1611:Element parameters must be documented", Justification = "That would be great.")]
-    internal class DatadogEnvironmentFileLogSinkFactory
+    internal static class DatadogEnvironmentFileLogSinkFactory
     {
         private const string FilenamePrefix = "DD-";
         private const string FilenameMissingComponentFallback = "_";
@@ -75,7 +77,31 @@ namespace Datadog.Logging.Composition
 
         public static bool TryCreateNewFileLogSink(string productFamily, string product, string componentGroup, Guid logGroupId, out FileLogSink newLogSink)
         {
-            return TryCreateNewFileLogSink(productFamily, product, componentGroup, GetProcessName(), logGroupId, FileLogSink.RotateLogFileWhenLargerBytesDefault, out newLogSink);
+            return TryCreateNewFileLogSink(productFamily,
+                                           product,
+                                           componentGroup,
+                                           GetProcessName(),
+                                           logGroupId,
+                                           FileLogSink.RotateLogFileWhenLargerBytesDefault,
+                                           FileLogSink.DefaultFormatOptions,
+                                           out newLogSink);
+        }
+
+        public static bool TryCreateNewFileLogSink(string productFamily,
+                                                   string product,
+                                                   string componentGroup,
+                                                   Guid logGroupId,
+                                                   DefaultFormat.Options formatOptions,
+                                                   out FileLogSink newLogSink)
+        {
+            return TryCreateNewFileLogSink(productFamily,
+                                           product,
+                                           componentGroup,
+                                           GetProcessName(),
+                                           logGroupId,
+                                           FileLogSink.RotateLogFileWhenLargerBytesDefault,
+                                           formatOptions,
+                                           out newLogSink);
         }
 
         /// <summary>
@@ -90,12 +116,42 @@ namespace Datadog.Logging.Composition
                                                    int rotateLogFileWhenLargerBytes,
                                                    out FileLogSink newLogSink)
         {
-            return TryCreateNewFileLogSink(productFamily, product, componentGroup, GetProcessName(), logGroupId, rotateLogFileWhenLargerBytes, out newLogSink);
+            return TryCreateNewFileLogSink(productFamily,
+                                           product,
+                                           componentGroup,
+                                           GetProcessName(),
+                                           logGroupId,
+                                           rotateLogFileWhenLargerBytes,
+                                           FileLogSink.DefaultFormatOptions,
+                                           out newLogSink);
+        }
+
+        /// <summary>
+        /// Attention: All loggers from all processes that write to the same
+        ///   (<c>productFamily</c> - <c>product</c> - <c>componentGroup</c> - <c>processName</c>)
+        /// MUST use the same value for <c>rotateLogFileWhenLargerBytes</c>!
+        /// </summary>
+        public static bool TryCreateNewFileLogSink(string productFamily,
+                                                   string product,
+                                                   string componentGroup,
+                                                   Guid logGroupId,
+                                                   int rotateLogFileWhenLargerBytes,
+                                                   DefaultFormat.Options formatOptions,
+                                                   out FileLogSink newLogSink)
+        {
+            return TryCreateNewFileLogSink(productFamily, product, componentGroup, GetProcessName(), logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink);
         }
 
         public static bool TryCreateNewFileLogSink(string productFamily, string product, string componentGroup, string processName, Guid logGroupId, out FileLogSink newLogSink)
         {
-            return TryCreateNewFileLogSink(productFamily, product, componentGroup, processName, logGroupId, FileLogSink.RotateLogFileWhenLargerBytesDefault, out newLogSink);
+            return TryCreateNewFileLogSink(productFamily,
+                                           product,
+                                           componentGroup,
+                                           processName,
+                                           logGroupId,
+                                           FileLogSink.RotateLogFileWhenLargerBytesDefault,
+                                           FileLogSink.DefaultFormatOptions,
+                                           out newLogSink);
         }
 
         /// <summary>
@@ -109,6 +165,7 @@ namespace Datadog.Logging.Composition
                                                    string processName,
                                                    Guid logGroupId,
                                                    int rotateLogFileWhenLargerBytes,
+                                                   DefaultFormat.Options formatOptions,
                                                    out FileLogSink newLogSink)
         {
             // Construct the basis for the file name within the log dir:
@@ -117,7 +174,7 @@ namespace Datadog.Logging.Composition
             // If specified and accessible, use the Env Var for the log folder:
             {
                 string userSetDdTraceLogDir = ReadEnvironmentVariable(DdTraceLogDirectoryEnvVarName);
-                if (FileLogSink.TryCreateNew(userSetDdTraceLogDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, out newLogSink))
+                if (FileLogSink.TryCreateNew(userSetDdTraceLogDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
                 {
                     return true;
                 }
@@ -143,7 +200,7 @@ namespace Datadog.Logging.Composition
                     defaultProductFamilyLogDir = null;
                 }
 
-                if (FileLogSink.TryCreateNew(defaultProductFamilyLogDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, out newLogSink))
+                if (FileLogSink.TryCreateNew(defaultProductFamilyLogDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
                 {
                     return true;
                 }
@@ -161,7 +218,7 @@ namespace Datadog.Logging.Composition
                     appDir = null;
                 }
 
-                if (FileLogSink.TryCreateNew(appDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, out newLogSink))
+                if (FileLogSink.TryCreateNew(appDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
                 {
                     return true;
                 }
@@ -179,7 +236,7 @@ namespace Datadog.Logging.Composition
                     tempDir = null;
                 }
 
-                if (FileLogSink.TryCreateNew(tempDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, out newLogSink))
+                if (FileLogSink.TryCreateNew(tempDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
                 {
                     return true;
                 }

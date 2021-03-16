@@ -396,7 +396,7 @@ namespace <#= LogNamespace #>
             }
         }
 
-/// <summary>
+        /// <summary>
         /// This method logs and rethrows the exception. It is typed to return the exception, to enable writing concise code like:
         /// <code>
         ///   try
