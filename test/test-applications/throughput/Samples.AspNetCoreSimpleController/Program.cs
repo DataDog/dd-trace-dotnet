@@ -14,12 +14,6 @@ namespace Samples.AspNetCoreSimpleController
     {
         public static void Main(string[] args)
         {
-            // Console.WriteLine("Environment Variables:");
-            // foreach(DictionaryEntry item in Environment.GetEnvironmentVariables())
-            // {
-            //     Console.WriteLine("  {0} = {1}", item.Key, item.Value);
-            // }
-            // Console.WriteLine();
             Console.WriteLine(typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.FullName);
             Console.WriteLine();
             CreateHostBuilder(args).Build().Run();

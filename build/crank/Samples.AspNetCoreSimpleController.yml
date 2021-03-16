@@ -12,9 +12,7 @@ jobs:
       displayBuild: true
       counterProviders:
       - System.Runtime
-      - Microsoft-AspNetCore-Server-Kestrel
       - Microsoft.AspNetCore.Hosting
-      - System.Net.Http
       - Microsoft.AspNetCore.Http.Connections
 
 scenarios:
@@ -27,7 +25,8 @@ scenarios:
     load:
       job: bombardier
       variables:
-        duration: 30
+        warmup: 30
+        duration: 120
         serverPort: 5000
         path: /hello
 
@@ -42,7 +41,8 @@ scenarios:
     load:
       job: bombardier
       variables:
-        duration: 30
+        warmup: 30
+        duration: 120
         serverPort: 5000
         path: /hello
 
@@ -57,7 +57,8 @@ scenarios:
     load:
       job: bombardier
       variables:
-        duration: 30
+        warmup: 30
+        duration: 120
         serverPort: 5000
         path: /hello
 
