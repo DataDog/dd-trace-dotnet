@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetReturn<T> GetDefault()
         {
-            return new CallTargetReturn<T>(default);
+            return default;
         }
 
         /// <summary>
