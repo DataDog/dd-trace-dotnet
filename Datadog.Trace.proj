@@ -8,13 +8,53 @@
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Tools.Runner/*.csproj" />
     <CsharpTestProject Include="test\*\*.csproj" Exclude="test\Datadog.Trace.ClrProfiler.IntegrationTests\*.csproj" />
+    <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
+    <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj"/>
+    <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj"/>
+    <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj"/>
+    <CsharpToolsProject Include="tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <SampleProject Include="test\test-applications\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
+    <SampleProject Include="test\test-applications\**\Samples.GraphQL.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
     <WindowsInstallerProject Include="src\**\*.wixproj"/>
   </ItemGroup>
 
+  <Target Name="BuildCsharpSrc">
+    <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+  
+  <Target Name="BuildCsharpUnitTests">
+    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+  <Target Name="BuildCsharpIntegrationTests">
+    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+  
+  <Target Name="BuildCppSrc">
+    <MSBuild Targets="Build" Projects="@(CppProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+  
+  <Target Name="BuildDependencyLibs">
+    <MSBuild Targets="Build" Projects="@(SampleLibProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+  
+  <Target Name="SampleLibs">
+    <MSBuild Targets="Build" Projects="@(SampleProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+  
   <ItemGroup>
     <FrameworkReproduction Include="test\test-applications\regression\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
     <FrameworkReproduction Include="test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />

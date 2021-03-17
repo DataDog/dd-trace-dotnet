@@ -430,6 +430,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DuplicateTypeProxy", "test\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreRazorPages", "test\test-applications\integrations\Samples.AspNetCoreRazorPages\Samples.AspNetCoreRazorPages.csproj", "{1B9E6BF4-9D48-4988-9945-248096119E46}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build\_build.csproj", "{B4073E48-73D5-4625-9B49-5C3B0B859071}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{1f146d40-8b21-4630-8049-14fa4bbbb217}*SharedItemsImports = 5
@@ -1336,9 +1338,7 @@ Global
 		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|x64.ActiveCfg = Release|Any CPU
-		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|x64.Build.0 = Release|Any CPU
 		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|x86.ActiveCfg = Release|Any CPU
-		{1F146D40-8B21-4630-8049-14FA4BBBB217}.Release|x86.Build.0 = Release|Any CPU
 		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -1348,9 +1348,7 @@ Global
 		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|x64.ActiveCfg = Release|Any CPU
-		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|x64.Build.0 = Release|Any CPU
 		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|x86.ActiveCfg = Release|Any CPU
-		{3C493248-F1D1-4948-BBA9-76BEB5DFA9FF}.Release|x86.Build.0 = Release|Any CPU
 		{D79491F0-CA92-439B-98CE-7AF9F57EBEB0}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{D79491F0-CA92-439B-98CE-7AF9F57EBEB0}.Debug|x64.ActiveCfg = Debug|x64
 		{D79491F0-CA92-439B-98CE-7AF9F57EBEB0}.Debug|x64.Build.0 = Debug|x64
@@ -1602,6 +1600,12 @@ Global
 		{1B9E6BF4-9D48-4988-9945-248096119E46}.Release|x64.Build.0 = Release|Any CPU
 		{1B9E6BF4-9D48-4988-9945-248096119E46}.Release|x86.ActiveCfg = Release|Any CPU
 		{1B9E6BF4-9D48-4988-9945-248096119E46}.Release|x86.Build.0 = Release|Any CPU
+		{B4073E48-73D5-4625-9B49-5C3B0B859071}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4073E48-73D5-4625-9B49-5C3B0B859071}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B4073E48-73D5-4625-9B49-5C3B0B859071}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B4073E48-73D5-4625-9B49-5C3B0B859071}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4073E48-73D5-4625-9B49-5C3B0B859071}.Release|x64.ActiveCfg = Release|Any CPU
+		{B4073E48-73D5-4625-9B49-5C3B0B859071}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1727,6 +1731,7 @@ Global
 		{E3FB283A-B766-4887-95E1-329667671921} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{34B67004-7249-4EF1-8E12-6E6DA37EA6BE} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{1B9E6BF4-9D48-4988-9945-248096119E46} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{B4073E48-73D5-4625-9B49-5C3B0B859071} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
