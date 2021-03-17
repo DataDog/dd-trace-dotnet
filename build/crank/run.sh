@@ -9,11 +9,11 @@ echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
 repo="$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
 commit_sha="$SYSTEM_PULLREQUEST_SOURCECOMMITID"
 
-if [ -z "$repo" ] then
+if [ -z "$repo" ]; then
     repo="$BUILD_REPOSITORY_URI"
 fi
 
-if [ -z "$commit_sha" ] then
+if [ -z "$commit_sha" ]; then
     commit_sha="$BUILD_SOURCEVERSION"
 fi
 
