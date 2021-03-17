@@ -31,9 +31,7 @@ namespace Datadog.Trace.DuckTyping
         private static readonly MethodInfo _methodBuilderGetToken = typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static ModuleBuilder _moduleBuilder = null;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static AssemblyBuilder _assemblyBuilder = null;
+        private static long _typeCount = 0;
 
         /// <summary>
         /// DynamicMethods delegates cache
