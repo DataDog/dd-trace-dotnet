@@ -28,7 +28,7 @@ using static CustomDotNetTasks;
 // #pragma warning disable SA1401  
 
 [CheckBuildProjectConfigurations]
-class Build : NukeBuild
+partial class Build : NukeBuild
 {
     /// Support plugins are available for:
     ///   - JetBrains ReSharper        https://nuke.build/resharper
@@ -72,8 +72,6 @@ class Build : NukeBuild
 
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
-    [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")] 
-    readonly Lazy<Tool> GacUtil;
     
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(Platform, MSBuildTargetPlatform.x64)
@@ -384,30 +382,6 @@ class Build : NukeBuild
                 .SetMaxCpuCount(null));
         });
 
-    Target GacAdd => _ => _
-        .Description("Adds the (already built) files to the Windows GAC **REQUIRES ELEVATED PERMISSIONS** ")
-        .Requires(() => IsWin)
-        .After(BuildTracerHome)
-        .Executes(() =>
-        {
-            foreach (var dll in GacProjects)
-            {
-                var path = TracerHomeDirectory / "net461" / $"{dll}.dll";
-                GacUtil.Value($"/i \"{path}\"");
-            }
-        });
-    
-    Target GacRemove => _ => _
-        .Description("Removes the Datadog tracer files from the Windows GAC **REQUIRES ELEVATED PERMISSIONS** ")
-        .Requires(() => IsWin)
-        .Executes(() =>
-        {
-            foreach (var dll in GacProjects)
-            {
-                GacUtil.Value($"/u \"{dll}\"");
-            }
-        });
-    
     Target RunNativeTests => _ => _
         .Executes(() =>
         {

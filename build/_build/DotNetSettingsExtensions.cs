@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
@@ -36,6 +37,17 @@ internal static class DotNetSettingsExtensions
         where T: ToolSettings
     {
         return settings.SetProcessEnvironmentVariable("DD_SERVICE_NAME", "dd-tracer-dotnet");
+    }
+    
+    public static T SetProcessEnvironmentVariables<T>(this T settings, IEnumerable<KeyValuePair<string, string>> variables)
+        where T: ToolSettings
+    {
+        foreach (var keyValuePair in variables)
+        {
+            settings = settings.SetProcessEnvironmentVariable(keyValuePair.Key, keyValuePair.Value);
+        }
+
+        return settings;
     }
     
     public static DotNetMSBuildSettings SetNoDependencies(this DotNetMSBuildSettings settings)
