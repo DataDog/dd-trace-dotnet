@@ -16,6 +16,13 @@ pr:
       - docs/*
       - .github/*
 
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight run
+  branches:
+    include:
+    - master
+
 jobs:
 
 
