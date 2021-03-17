@@ -1,7 +1,9 @@
 #!/bin/bash
+sha="$(git rev-parse HEAD)"
+echo "running for sha $sha"
 
 repository="--application.source.repository $BUILD_REPOSITORY_URI"
-commit="--application.source.branchOrCommit #$BUILD_SOURCEVERSION"
+commit="--application.source.branchOrCommit #$sha"
 
 crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile windows --output baseline_windows.json $repository $commit --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=windows --property arch=x64
 dd-trace --crank-import="baseline_windows.json"
