@@ -41,7 +41,7 @@ namespace <#= LogNamespace #>
     /// Library "Datadog.AutoInstrumentation.Profiler.Managed.dll" gets a copy of this file with the adjusted namespace:
     /// 
     /// <code>
-    ///   namespace Datadog.AutoInstrumentation.Profiler.Managed
+    ///   namespace Datadog.AutoInstrumentation.Profiler
     ///   {
     ///       public static class Log
     ///       {
@@ -86,7 +86,7 @@ namespace <#= LogNamespace #>
     ///   namespace Datadog.AutoInstrumentation.TracerAndProfilerLoader
     ///   {
     ///       using ComposerLogAdapter = Datadog.AutoInstrumentation.ProductComposer.LogAdapter;
-    ///       using ProfilerLog = Datadog.AutoInstrumentation.Profiler.Managed.Log;
+    ///       using ProfilerLog = Datadog.AutoInstrumentation.Profiler.Log;
     ///       using TracerLog = Datadog.AutoInstrumentation.Tracer.Managed.Log;
     ///       
     ///       internal static class LogComposer
