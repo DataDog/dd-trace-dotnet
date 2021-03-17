@@ -6,8 +6,8 @@ echo "BUILD_SOURCEVERSION=$BUILD_SOURCEVERSION"
 echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
 echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
 
-repository="--application.source.repository $BUILD_REPOSITORY_URI"
-commit="--application.source.branchOrCommit #$BUILD_SOURCEVERSION"
+repository="--application.source.repository $SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
+commit="--application.source.branchOrCommit #$SYSTEM_PULLREQUEST_SOURCECOMMITID"
 
 crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile windows --output baseline_windows.json $repository $commit --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=windows --property arch=x64
 dd-trace --crank-import="baseline_windows.json"
