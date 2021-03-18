@@ -496,6 +496,10 @@ stages:
           !test/test-applications/integrations/dependency-libs/**/*.csproj
         arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138 -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true -p:LoadManagedProfilerFromProfilerDirectory=false
 
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
+      artifact: build-integration-tests-windows-$(buildPlatform)
+
     - task: DotNetCoreCLI@2
       displayName: dotnet test
       inputs:
@@ -602,6 +606,10 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
+
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
+      artifact: build-integration-tests-windows-iis-$(buildPlatform)
 
     - powershell: |
         [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
