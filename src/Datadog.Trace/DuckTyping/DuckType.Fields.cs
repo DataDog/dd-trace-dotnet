@@ -45,7 +45,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // We create the dynamic method
                 Type[] dynParameters = targetField.IsStatic ? Type.EmptyTypes : new[] { typeof(object) };
-                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, _moduleBuilder, true);
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
 
                 // Emit the dynamic method body
                 LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
@@ -155,7 +155,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create dynamic method
                 Type[] dynParameters = targetField.IsStatic ? new[] { dynValueType } : new[] { typeof(object), dynValueType };
-                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, _moduleBuilder, true);
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, true);
 
                 // Write the dynamic method body
                 LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
