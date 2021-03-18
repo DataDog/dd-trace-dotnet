@@ -28,8 +28,6 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("https://localhost:5040/controller/action/2022", "/controller/action/?")]
         [InlineData("https://example.org/controller/action/2022", "/controller/action/?")]
         [InlineData("ftp://example.org/controller/action/2022", "/controller/action/?")]
-        [InlineData("//example.org/controller/action/2022", "/controller/action/?")]
-        [InlineData("//[::]/controller/action/2022", "/controller/action/?")]
         public void GetCleanUriPath_ShouldExtractThePathAndRemoveIds(string url, string expected)
         {
             Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url)));
