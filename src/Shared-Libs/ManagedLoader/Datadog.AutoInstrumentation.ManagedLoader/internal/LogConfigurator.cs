@@ -27,6 +27,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 #pragma warning disable CS0162 // Unreachable code detected: Purposeful control using const bool fields in this class.
         public static void SetupLogger()
         {
+            // In case that we are re-initializing, dispose previous log sinks (one log sink via one-or-more redirections).
+            DisposeLogSinks();
+
             if (UseConsoleLogInsteadOfFileLog)
             {
                 if (TrySetupConsoleLogger())
@@ -57,6 +60,10 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> logRedirections = Interlocked.Exchange(ref s_logRedirections, null);
             if (logRedirections != null)
             {
+                // Log singks must be OK with being disposed multiple times, as we are are directing One-Or-More log
+                // sources to One log sink, i.e. we have One-Or-More s_logRedirections backed by one log sink
+                // and we will end up disposing that one log sink One-Or-More times accordingly.
+
                 foreach (KeyValuePair<Type, LogSourceNameCompositionLogSink> redirection in logRedirections)
                 {
                     if (redirection.Value != null)

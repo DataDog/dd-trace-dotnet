@@ -375,7 +375,7 @@ namespace <#= LogNamespace #>
                 if (s_config_AutomaticAssemblyName_ForError_Include && logSourceInfo.AssemblyName == null)
                 {
                     // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
-                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
+                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly names a few extra times or get the period off by a few millisecs.
                     if (s_config_AutomaticAssemblyName_ForError_PeriodMillisecs <= 0
                             || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForError_LastTimestamp, out s_AutomaticAssemblyName_ForError_LastTimestamp)
                                     >= s_config_AutomaticAssemblyName_ForError_PeriodMillisecs)
@@ -513,7 +513,7 @@ namespace <#= LogNamespace #>
                 if (s_config_AutomaticAssemblyName_ForInfo_Include && logSourceInfo.AssemblyName == null)
                 {
                     // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
-                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
+                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly names a few extra times or get the period off by a few millisecs.
                     if (s_config_AutomaticAssemblyName_ForInfo_PeriodMillisecs <= 0
                             || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForInfo_LastTimestamp, out s_AutomaticAssemblyName_ForInfo_LastTimestamp)
                                     >= s_config_AutomaticAssemblyName_ForInfo_PeriodMillisecs)
@@ -562,7 +562,7 @@ namespace <#= LogNamespace #>
                     if (s_config_AutomaticAssemblyName_ForDebug_Include && logSourceInfo.AssemblyName == null)
                     {
                         // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
-                        // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
+                        // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly names a few extra times or get the period off by a few millisecs.
                         if (s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs <= 0
                                     || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForDebug_LastTimestamp, out s_AutomaticAssemblyName_ForDebug_LastTimestamp)
                                             >= s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs)
