@@ -453,7 +453,7 @@ stages:
         artifact: build-repo-managed-native-windows
         path: $(System.DefaultWorkingDirectory)
 
-    - template: steps/install-dotnet.yml
+    - template: steps/install-dotnet-sdks.yml
 
     - task: NuGetToolInstaller@1
       displayName: install nuget
@@ -538,7 +538,7 @@ stages:
         artifact: build-repo-managed-native-windows
         path: $(System.DefaultWorkingDirectory)
 
-    - template: steps/install-dotnet.yml
+    - template: steps/install-dotnet-sdks.yml
 
     - task: NuGetToolInstaller@1
       displayName: install nuget
