@@ -168,7 +168,7 @@ namespace Datadog.Trace.AspNet
                     }
                     else
                     {
-                        string path = UriHelpers.GetRelativeUrl(app.Request.Url, tryRemoveIds: true);
+                        string path = UriHelpers.GetCleanUriPath(app.Request.Url);
                         scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                     }
 

@@ -7,7 +7,7 @@ namespace Datadog.Trace.Util
     {
         public static string CleanUri(Uri uri, bool removeScheme, bool tryRemoveIds)
         {
-            var path = GetRelativeUrl(uri, tryRemoveIds);
+            var path = tryRemoveIds ? CleanUriSegment(uri.AbsolutePath) : uri.AbsolutePath;
 
             if (removeScheme)
             {
@@ -21,15 +21,9 @@ namespace Datadog.Trace.Util
             return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
         }
 
-        public static string GetRelativeUrl(Uri uri, bool tryRemoveIds)
+        public static string GetCleanUriPath(Uri uri)
         {
-            return GetRelativeUrl(uri.AbsolutePath, tryRemoveIds);
-        }
-
-        public static string GetRelativeUrl(string uri, bool tryRemoveIds)
-        {
-            // try to remove segments that look like ids
-            return tryRemoveIds ? CleanUriSegment(uri) : uri;
+            return CleanUriSegment(uri.AbsolutePath);
         }
 
         public static string CleanUriSegment(string absolutePath)
