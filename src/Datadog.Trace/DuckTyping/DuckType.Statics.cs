@@ -34,12 +34,8 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly Dictionary<Assembly, ModuleBuilder> ActiveBuilders = new Dictionary<Assembly, ModuleBuilder>();
 
-        /// <summary>
-        /// Count of emmited AssemblyBuilders.
-        /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _assemblyCount = 0;
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _typeCount = 0;
 
