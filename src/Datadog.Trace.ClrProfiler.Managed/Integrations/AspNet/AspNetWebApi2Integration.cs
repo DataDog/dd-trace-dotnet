@@ -260,7 +260,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 string host = request.Headers.Host ?? string.Empty;
                 string rawUrl = requestUri?.ToString().ToLowerInvariant() ?? string.Empty;
-                string absoluteUri = requestUri?.AbsoluteUri?.ToLowerInvariant() ?? string.Empty;
                 string method = request.Method.Method?.ToUpperInvariant() ?? "GET";
                 string route = null;
                 try
@@ -284,7 +283,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
                 else
                 {
-                    resourceName = $"{method} {absoluteUri.ToLowerInvariant()}";
+                    resourceName = $"{method}";
                 }
 
                 string controller = string.Empty;
