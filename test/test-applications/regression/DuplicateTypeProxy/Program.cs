@@ -17,6 +17,15 @@ namespace DuplicateTypeProxy
                 var assembly = Assembly.LoadFile(typeof(HttpClient).Assembly.Location);
                 await RunAsync(assembly.GetType("System.Net.Http.HttpClient"));
             }
+
+#if NETCOREAPP3_1 || NET5_0
+            for (int i = 0; i < 5; i++)
+            {
+                var alc = new System.Runtime.Loader.AssemblyLoadContext($"Context: {i}");
+                var assembly = alc.LoadFromAssemblyPath(typeof(HttpClient).Assembly.Location);
+                await RunAsync(assembly.GetType("System.Net.Http.HttpClient"));
+            }
+#endif
         }
 
         public static async Task RunAsync(Type httpClientType)

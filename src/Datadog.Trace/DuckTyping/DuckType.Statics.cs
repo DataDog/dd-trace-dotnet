@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -32,7 +32,7 @@ namespace Datadog.Trace.DuckTyping
         private static readonly MethodInfo _methodBuilderGetToken = typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly Dictionary<Assembly, ModuleBuilder> ActiveBuilders = new Dictionary<Assembly, ModuleBuilder>();
+        private static readonly ConditionalWeakTable<Assembly, ModuleBuilder> ActiveBuilders = new ConditionalWeakTable<Assembly, ModuleBuilder>();
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _assemblyCount = 0;
@@ -58,24 +58,26 @@ namespace Datadog.Trace.DuckTyping
                 {
                     if (type.Assembly != targetAssembly)
                     {
-                        var name = new AssemblyName($"DuckTypeGenericTypeAssembly.{targetType.Name}_{++_assemblyCount}");
-                        name.Version = targetAssembly.GetName().Version;
-                        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.Run);
-                        return assemblyBuilder.DefineDynamicModule("MainModule");
+                        return CreateModuleBuilder($"DuckTypeGenericTypeAssembly.{targetType.Name}_{++_assemblyCount}", targetAssembly);
                     }
                 }
             }
 
             if (!ActiveBuilders.TryGetValue(targetAssembly, out var moduleBuilder))
             {
-                var name = new AssemblyName($"DuckTypeAssembly.{targetType.Assembly?.GetName().Name}_{++_assemblyCount}");
-                name.Version = targetAssembly.GetName().Version;
-                var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.Run);
-                moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
+                moduleBuilder = CreateModuleBuilder($"DuckTypeAssembly.{targetType.Assembly?.GetName().Name}_{++_assemblyCount}", targetAssembly);
                 ActiveBuilders.Add(targetAssembly, moduleBuilder);
             }
 
             return moduleBuilder;
+
+            static ModuleBuilder CreateModuleBuilder(string name, Assembly targetAssembly)
+            {
+                var assemblyName = new AssemblyName(name);
+                assemblyName.Version = targetAssembly.GetName().Version;
+                var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+                return assemblyBuilder.DefineDynamicModule("MainModule");
+            }
         }
 
         /// <summary>
