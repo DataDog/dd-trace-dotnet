@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Datadog.Trace.ServiceFabric
@@ -49,7 +50,6 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             ServiceRemotingHelpers.GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
-            PropagationContext? propagationContext = null;
             SpanContext? spanContext = null;
 
             try
@@ -57,42 +57,22 @@ namespace Datadog.Trace.ServiceFabric
                 // extract propagation context from message headers for distributed tracing
                 if (messageHeaders != null)
                 {
-                    propagationContext = ExtractContext(messageHeaders);
-
-                    if (propagationContext != null)
-                    {
-                        spanContext = new SpanContext(propagationContext.Value.TraceId, propagationContext.Value.ParentSpanId, propagationContext.Value.SamplingPriority);
-                    }
+                    spanContext = SpanContextPropagator.Instance.Extract(messageHeaders, GetHeaders);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error using propagation context to initialize Service Fabric Service Remoting span context.");
+                Log.Error(ex, "Error extracting span context from Service Fabric Service Remoting message headers.");
             }
 
             try
             {
                 var span = ServiceRemotingHelpers.CreateSpan(tracer, spanContext, SpanKinds.Server, eventArgs, messageHeaders);
-
-                try
-                {
-                    string? origin = propagationContext?.Origin;
-
-                    if (!string.IsNullOrEmpty(origin))
-                    {
-                        span.SetTag(Tags.Origin, origin);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error setting origin tag on Service Fabric Service Remoting span.");
-                }
-
                 tracer.ActivateSpan(span);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating or activating new Service Fabric Service Remoting span.");
+                Log.Error(ex, "Error creating or activating new Service Fabric Service Remoting service span.");
             }
         }
 
@@ -113,32 +93,9 @@ namespace Datadog.Trace.ServiceFabric
             ServiceRemotingHelpers.FinishSpan(e, SpanKinds.Server);
         }
 
-        private static PropagationContext? ExtractContext(IServiceRemotingRequestMessageHeader messageHeaders)
+        private static IEnumerable<string?> GetHeaders(IServiceRemotingRequestMessageHeader headers, string headerName)
         {
-            try
-            {
-                ulong traceId = messageHeaders.TryGetHeaderValueUInt64(HttpHeaderNames.TraceId) ?? 0;
-
-                if (traceId > 0)
-                {
-                    ulong parentSpanId = messageHeaders.TryGetHeaderValueUInt64(HttpHeaderNames.ParentId) ?? 0;
-
-                    if (parentSpanId > 0)
-                    {
-                        SamplingPriority? samplingPriority = (SamplingPriority?)messageHeaders.TryGetHeaderValueInt32(HttpHeaderNames.SamplingPriority);
-                        string? origin = messageHeaders.TryGetHeaderValueString(HttpHeaderNames.Origin);
-
-                        return new PropagationContext(traceId, parentSpanId, samplingPriority, origin);
-                    }
-                }
-
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error extracting Service Fabric Service Remoting message headers.");
-                return default;
-            }
+            yield return headers.TryGetHeaderValueString(headerName);
         }
     }
 }

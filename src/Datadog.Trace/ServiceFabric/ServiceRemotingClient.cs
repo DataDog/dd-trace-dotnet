@@ -1,7 +1,6 @@
 #nullable enable
 
 using System;
-using System.Text;
 using System.Threading;
 
 namespace Datadog.Trace.ServiceFabric
@@ -60,23 +59,22 @@ namespace Datadog.Trace.ServiceFabric
                     // inject propagation context into message headers for distributed tracing
                     if (messageHeaders != null)
                     {
-                        SamplingPriority? samplingPriority = span.Context.TraceContext?.SamplingPriority ?? span.Context.SamplingPriority;
-                        string? origin = span.GetTag(Tags.Origin);
-                        var context = new PropagationContext(span.TraceId, span.SpanId, samplingPriority, origin);
-
-                        InjectContext(context, messageHeaders);
+                        SpanContextPropagator.Instance.Inject(
+                            span.Context,
+                            messageHeaders,
+                            (headers, headerName, headerValue) => headers.TryAddHeader(headerName, headerValue));
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error injecting Service Fabric Service Remoting message headers.");
+                    Log.Error(ex, "Error injecting span context into Service Fabric Service Remoting message headers.");
                 }
 
                 tracer.ActivateSpan(span);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating or activating Service Fabric Service Remoting span.");
+                Log.Error(ex, "Error creating or activating Service Fabric Service Remoting client span.");
             }
         }
 
@@ -95,35 +93,6 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             ServiceRemotingHelpers.FinishSpan(e, SpanKinds.Client);
-        }
-
-        private static void InjectContext(PropagationContext context, IServiceRemotingRequestMessageHeader messageHeaders)
-        {
-            if (context.TraceId == 0 || context.ParentSpanId == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                messageHeaders.TryAddHeader(HttpHeaderNames.TraceId, context, ctx => BitConverter.GetBytes(ctx.TraceId));
-
-                messageHeaders.TryAddHeader(HttpHeaderNames.ParentId, context, ctx => BitConverter.GetBytes(ctx.ParentSpanId));
-
-                if (context.SamplingPriority != null)
-                {
-                    messageHeaders.TryAddHeader(HttpHeaderNames.SamplingPriority, context, ctx => BitConverter.GetBytes((int)ctx.SamplingPriority!));
-                }
-
-                if (!string.IsNullOrEmpty(context.Origin))
-                {
-                    messageHeaders.TryAddHeader(HttpHeaderNames.Origin, context, ctx => Encoding.UTF8.GetBytes(ctx.Origin!));
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error injecting Service Fabric Service Remoting message headers.");
-            }
         }
     }
 }
