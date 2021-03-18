@@ -460,6 +460,12 @@ stages:
     - task: NuGetToolInstaller@1
       displayName: install nuget
 
+    - task: NuGetCommand@2
+      displayName: nuget restore
+      inputs:
+        restoreSolution: Datadog.Trace.sln
+        verbosityRestore: Normal
+
     - task: MSBuild@1
       displayName: Build .NET Framework projects (not SDK-based projects)
       inputs:
@@ -534,6 +540,12 @@ stages:
 
     - task: NuGetToolInstaller@1
       displayName: install nuget
+
+    - task: NuGetCommand@2
+      displayName: nuget restore
+      inputs:
+        restoreSolution: Datadog.Trace.sln
+        verbosityRestore: Normal
 
     - task: MSBuild@1
       displayName: Build .NET Framework projects (not SDK-based projects)
