@@ -323,7 +323,13 @@ namespace Datadog.Trace.DiagnosticListeners
             string controllerName,
             string actionName)
         {
-            var sb = new StringBuilder();
+            var maxSize = routePattern.RawText.Length
+                        + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
+                        + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
+                        + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
+                        + 1; // '/' prefix
+
+            var sb = StringBuilderCache.Acquire(maxSize);
 
             foreach (var pathSegment in routePattern.PathSegments)
             {
@@ -382,7 +388,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
             }
 
-            var simplifiedRoute = sb.ToString();
+            var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
 
             return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute;
         }
@@ -394,7 +400,13 @@ namespace Datadog.Trace.DiagnosticListeners
             string controllerName,
             string actionName)
         {
-            var sb = new StringBuilder();
+            var maxSize = routePattern.TemplateText.Length
+                        + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
+                        + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
+                        + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
+                        + 1; // '/' prefix
+
+            var sb = StringBuilderCache.Acquire(maxSize);
 
             foreach (var pathSegment in routePattern.Segments)
             {
@@ -441,7 +453,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
             }
 
-            var simplifiedRoute = sb.ToString();
+            var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
 
             return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
         }
