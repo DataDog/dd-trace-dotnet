@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -68,6 +69,51 @@ namespace Datadog.Trace.ExtensionMethods
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Datadog tag requirements:
+        /// 1. Tag must start with a letter
+        /// 2. Tag cannot exceed 200 characters
+        /// 3. If the first two requirements are met, then valid characters will be retained while all other characters will be converted to underscores. Valid characters include:
+        ///    - Alphanumerics
+        ///    - Underscores
+        ///    - Minuses
+        ///    - Colons
+        ///    - Periods
+        ///    - Slashes
+        ///
+        /// Note: This method will trim leading/trailing whitespace before checking the requirements.
+        /// </summary>
+        /// <param name="value">Input string to convert into tag name</param>
+        /// <param name="result">If the method returns true, the</param>
+        /// <param name="convertPeriodsToUnderscores">A flag determining whether periods should also be converted to underscores</param>
+        /// <returns>Returns whether the conversion was successful</returns>
+        public static bool TryConvertToNormalizedTagName(this string value, out string result, bool convertPeriodsToUnderscores = false)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                result = null;
+                return false;
+            }
+
+            string trimmedValue = value?.Trim();
+            if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
+            {
+                result = null;
+                return false;
+            }
+
+            if (convertPeriodsToUnderscores)
+            {
+                result = Regex.Replace(input: trimmedValue, pattern: "[^a-zA-Z0-9_:/-]", replacement: "_").ToLowerInvariant();
+                return true;
+            }
+            else
+            {
+                result = Regex.Replace(input: trimmedValue, pattern: "[^a-zA-Z0-9_:./-]", replacement: "_").ToLowerInvariant();
+                return true;
+            }
         }
     }
 }
