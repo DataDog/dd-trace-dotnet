@@ -76,10 +76,10 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         {
             try
             {
-                if (DatadogEnvironmentFileLogSinkFactory.TryCreateNewFileLogSink(ProductFamily,
-                                                                                 Product,
-                                                                                 ComponentGroup,
+                var filenameBaseInfo = new DatadogEnvironmentFileLogSinkFactory.FilenameBaseInfo(ProductFamily, Product, ComponentGroup);
+                if (DatadogEnvironmentFileLogSinkFactory.TryCreateNewFileLogSink(filenameBaseInfo,
                                                                                  ManagedLoaderLogGroupId,
+                                                                                 preferredLogFileDirectory: null,
                                                                                  FileFormatOptions,
                                                                                  out FileLogSink fileLogSink))
                 {

@@ -196,34 +196,39 @@ namespace Datadog.Logging.Composition
             return false;
         }
 
-        public static void ConstructAndAppendFilename(StringBuilder bufferWithFileameBase, DateTimeOffset timestamp)
+        public static string ConstructFilename(string nameBase, DateTimeOffset timestamp)
         {
-            ConstructAndAppendFilename(bufferWithFileameBase, timestamp, indexStr: null);
+            return ConstructFilename(nameBase, timestamp, indexStr: null);
         }
 
-        public static void ConstructAndAppendFilename(StringBuilder bufferWithFileameBase, DateTimeOffset timestamp, int index)
+        public static string ConstructFilename(string nameBase, DateTimeOffset timestamp, int index)
         {
-            ConstructAndAppendFilename(bufferWithFileameBase, timestamp, (index < 0) ? null : index.ToString(FilenameIndexFormat));
+            return ConstructFilename(nameBase, timestamp, indexStr: (index < 0) ? null : index.ToString(FilenameIndexFormat));
         }
 
-        public static void ConstructAndAppendFilename(StringBuilder bufferWithFileameBase, DateTimeOffset timestamp, string indexStr)
+        public static string ConstructFilename(string nameBase, DateTimeOffset timestamp, string indexStr)
         {
-            if (bufferWithFileameBase == null)
+            if (nameBase == null)
             {
-                throw new ArgumentNullException(nameof(bufferWithFileameBase));
+                throw new ArgumentNullException(nameof(nameBase));
             }
 
-            bufferWithFileameBase.Append(FilenameSeparatorForTimestamp);
-            bufferWithFileameBase.Append(timestamp.ToString(FilenameTimestampFormat));
+            var filename = new StringBuilder(nameBase.Length + FilenameTimestampAndIndexPartsLengthEstimate);
+            filename.Append(nameBase);
+
+            filename.Append(FilenameSeparatorForTimestamp);
+            filename.Append(timestamp.ToString(FilenameTimestampFormat));
 
             if (indexStr != null)
             {
-                bufferWithFileameBase.Append(FilenameSeparatorForIndex);
-                bufferWithFileameBase.Append(indexStr);
+                filename.Append(FilenameSeparatorForIndex);
+                filename.Append(indexStr);
             }
 
-            bufferWithFileameBase.Append(".");
-            bufferWithFileameBase.Append(FilenameExtension);
+            filename.Append(".");
+            filename.Append(FilenameExtension);
+
+            return filename.ToString();
         }
 
         public void Dispose()
@@ -448,22 +453,6 @@ namespace Datadog.Logging.Composition
                 // defaut to Windows.
                 return true;
             }
-        }
-
-        private static string ConstructFilename(string nameBase, DateTimeOffset timestamp, int index)
-        {
-            var filename = new StringBuilder(nameBase.Length + FilenameTimestampAndIndexPartsLengthEstimate);
-            filename.Append(nameBase);
-            ConstructAndAppendFilename(filename, timestamp, index);
-            return filename.ToString();
-        }
-
-        private static string ConstructFilename(string nameBase, DateTimeOffset timestamp, string indexStr)
-        {
-            var filename = new StringBuilder(nameBase.Length + FilenameTimestampAndIndexPartsLengthEstimate);
-            filename.Append(nameBase);
-            ConstructAndAppendFilename(filename, timestamp, indexStr);
-            return filename.ToString();
         }
 
         private static bool SafeDisposeAndSetToNull<T>(ref T reference) where T : class, IDisposable

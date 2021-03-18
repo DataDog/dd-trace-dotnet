@@ -16,6 +16,60 @@ namespace Datadog.Logging.Composition
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1611:Element parameters must be documented", Justification = "That would be great.")]
     internal static class DatadogEnvironmentFileLogSinkFactory
     {
+        /// <summary>
+        /// Encapsulates the information required to construct the filename base:
+        ///   <c>DD-{ProductFamily}-{Product}-{ComponentGroup}-{ProcessName}</c>
+        /// </summary>
+        public struct FilenameBaseInfo
+        {
+            public static void EnsureValidAsParam(FilenameBaseInfo filenameBaseInfo)
+            {
+                if (!filenameBaseInfo.IsValid)
+                {
+                    throw new ArgumentException($"Specified {nameof(filenameBaseInfo)} is not valid."
+                                              + $" Use the non-default (aka paramaterized) ctor to create valid {nameof(FilenameBaseInfo)} instances.",
+                                                nameof(filenameBaseInfo));
+                }
+            }
+
+            private string _logFilenameBase;
+
+            public FilenameBaseInfo(string productFamily, string product, string componentGroup)
+                : this(productFamily, product, componentGroup, GetProcessName())
+            { }
+
+            public FilenameBaseInfo(string productFamily, string product, string componentGroup, string processName)
+            {
+                ProductFamily = productFamily;
+                Product = product;
+                ComponentGroup = componentGroup;
+                ProcessName = processName;
+                IsValid = true;
+                _logFilenameBase = null;
+            }
+
+            public bool IsValid { get; }
+
+            public string ProductFamily { get; }
+            public string Product { get; }
+            public string ComponentGroup { get; }
+            public string ProcessName { get; }
+            public string LogFilenameBase
+            {
+                get
+                {
+                    string logFilenameBase = _logFilenameBase;
+                    if (logFilenameBase == null && IsValid)
+                    {
+                        logFilenameBase = ConstructFilenameBase(ProductFamily, Product, ComponentGroup, ProcessName);
+                        _logFilenameBase = logFilenameBase;
+                    }
+
+                    return logFilenameBase;
+                }
+            }
+        }
+
         private const string FilenamePrefix = "DD-";
         private const string FilenameMissingComponentFallback = "_";
         private const char FilenameInvalidCharFallback = '_';
@@ -32,73 +86,32 @@ namespace Datadog.Logging.Composition
         /// The name that will be constructed is:
         /// <c>DD-{ProductFamily}-{Product}-{ComponentGroup}-{ProcessName}-{Date}[_Index].log</c>
         /// </summary>
-        public static string ConstructFilename(string productFamily, string product, string componentGroup, DateTimeOffset timestamp)
+        /// <remarks>Specify an <c>index</c> smaller than zero to avoid including the index component.</remarks>
+        public static string ConstructFilename(FilenameBaseInfo filenameBaseInfo, DateTimeOffset timestamp, int index)
         {
-            return ConstructFilename(productFamily, product, componentGroup, timestamp, index: -1);
+            FilenameBaseInfo.EnsureValidAsParam(filenameBaseInfo);
+            return FileLogSink.ConstructFilename(filenameBaseInfo.LogFilenameBase, timestamp, index);
         }
 
-        /// <summary>
-        /// The name that will be constructed is:
-        /// <c>DD-{ProductFamily}-{Product}-{ComponentGroup}-{ProcessName}-{Date}[_Index].log</c>
-        /// </summary>
-        public static string ConstructFilename(string productFamily, string product, string componentGroup, DateTimeOffset timestamp, int index)
+        public static bool TryCreateNewFileLogSink(FilenameBaseInfo filenameBaseInfo, Guid logGroupId, out FileLogSink newLogSink)
         {
-            return ConstructFilename(productFamily, product, componentGroup, GetProcessName(), timestamp, index);
-        }
-
-        /// <summary>
-        /// The name that will be constructed is:
-        /// <c>DD-{ProductFamily}-{Product}-{ComponentGroup}-{ProcessName}-{Date}[_Index].log</c>
-        /// </summary>
-        public static string ConstructFilename(string productFamily, string product, string componentGroup, string processName, DateTimeOffset timestamp, int index)
-        {
-            StringBuilder filenameBuffer = ConstructFilenameBaseBuffer(productFamily, product, componentGroup, processName);
-            FileLogSink.ConstructAndAppendFilename(filenameBuffer, timestamp, index);
-            return filenameBuffer.ToString();
-        }
-
-        /// <summary>
-        /// The name base that will be constructed is:
-        /// <c>DD-{ProductFamily}-{Product}-{ComponentGroup}-{ProcessName}</c>
-        /// </summary>
-        public static string ConstructFilenameBase(string productFamily, string product, string componentGroup)
-        {
-            return ConstructFilenameBase(productFamily, product, componentGroup, GetProcessName());
-        }
-
-        /// <summary>
-        /// The name base that will be constructed is:
-        /// <c>DD-{ProductFamily}-{Product}-{ComponentGroup}-{ProcessName}</c>
-        /// </summary>
-        public static string ConstructFilenameBase(string productFamily, string product, string componentGroup, string processName)
-        {
-            return ConstructFilenameBaseBuffer(productFamily, product, componentGroup, processName).ToString();
-        }
-
-        public static bool TryCreateNewFileLogSink(string productFamily, string product, string componentGroup, Guid logGroupId, out FileLogSink newLogSink)
-        {
-            return TryCreateNewFileLogSink(productFamily,
-                                           product,
-                                           componentGroup,
-                                           GetProcessName(),
+            return TryCreateNewFileLogSink(filenameBaseInfo,
                                            logGroupId,
+                                           preferredLogFileDirectory: null,
                                            FileLogSink.RotateLogFileWhenLargerBytesDefault,
                                            FileLogSink.DefaultFormatOptions,
                                            out newLogSink);
         }
 
-        public static bool TryCreateNewFileLogSink(string productFamily,
-                                                   string product,
-                                                   string componentGroup,
+        public static bool TryCreateNewFileLogSink(FilenameBaseInfo filenameBaseInfo,
                                                    Guid logGroupId,
+                                                   string preferredLogFileDirectory,
                                                    DefaultFormat.Options formatOptions,
                                                    out FileLogSink newLogSink)
         {
-            return TryCreateNewFileLogSink(productFamily,
-                                           product,
-                                           componentGroup,
-                                           GetProcessName(),
+            return TryCreateNewFileLogSink(filenameBaseInfo,
                                            logGroupId,
+                                           preferredLogFileDirectory,
                                            FileLogSink.RotateLogFileWhenLargerBytesDefault,
                                            formatOptions,
                                            out newLogSink);
@@ -109,72 +122,42 @@ namespace Datadog.Logging.Composition
         ///   (<c>productFamily</c> - <c>product</c> - <c>componentGroup</c> - <c>processName</c>)
         /// MUST use the same value for <c>rotateLogFileWhenLargerBytes</c>!
         /// </summary>
-        public static bool TryCreateNewFileLogSink(string productFamily,
-                                                   string product,
-                                                   string componentGroup,
+        /// <param name="filenameBaseInfo">Info required to construct the base file name.
+        ///     Use the non-default (aka paramaterized) ctor to create valid <c>FilenameBaseInfo</c> instances.</param>
+        /// <param name="logGroupId">A unique ID for all loggers across all processes that write to the same file (or a set of rotating files).
+        ///     Used for inter-process synchronization.</param>
+        /// <param name="preferredLogFileDirectory">Target folder for the log file.
+        ///     Specify <c>null</c> to use default.</param>
+        /// <param name="rotateLogFileWhenLargerBytes">Log files will be rotated (new index used) when the file uses the specified size.
+        ///     Specify a nagative value to disable size-based file rotation.
+        ///     All loggers that write to the same file must use the same value for this parameter.
+        ///     Use <c>FileLogSink.RotateLogFileWhenLargerBytesDefault</c> as a default.</param>
+        /// <param name="formatOptions">Formatting options for the log file.
+        ///     Specify <c>null</c> to use default.</param>
+        /// <param name="newLogSink">OUT parameter containing the newly created <c>FileLogSink</c>.</param>
+        /// <returns><c>True</c> is a new <c>FileLogSink</c> was created and initialized, <c>False</c> otherwise.</returns>        
+        public static bool TryCreateNewFileLogSink(FilenameBaseInfo filenameBaseInfo,
                                                    Guid logGroupId,
-                                                   int rotateLogFileWhenLargerBytes,
-                                                   out FileLogSink newLogSink)
-        {
-            return TryCreateNewFileLogSink(productFamily,
-                                           product,
-                                           componentGroup,
-                                           GetProcessName(),
-                                           logGroupId,
-                                           rotateLogFileWhenLargerBytes,
-                                           FileLogSink.DefaultFormatOptions,
-                                           out newLogSink);
-        }
-
-        /// <summary>
-        /// Attention: All loggers from all processes that write to the same
-        ///   (<c>productFamily</c> - <c>product</c> - <c>componentGroup</c> - <c>processName</c>)
-        /// MUST use the same value for <c>rotateLogFileWhenLargerBytes</c>!
-        /// </summary>
-        public static bool TryCreateNewFileLogSink(string productFamily,
-                                                   string product,
-                                                   string componentGroup,
-                                                   Guid logGroupId,
+                                                   string preferredLogFileDirectory,
                                                    int rotateLogFileWhenLargerBytes,
                                                    DefaultFormat.Options formatOptions,
                                                    out FileLogSink newLogSink)
         {
-            return TryCreateNewFileLogSink(productFamily, product, componentGroup, GetProcessName(), logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink);
-        }
+            FilenameBaseInfo.EnsureValidAsParam(filenameBaseInfo);
 
-        public static bool TryCreateNewFileLogSink(string productFamily, string product, string componentGroup, string processName, Guid logGroupId, out FileLogSink newLogSink)
-        {
-            return TryCreateNewFileLogSink(productFamily,
-                                           product,
-                                           componentGroup,
-                                           processName,
-                                           logGroupId,
-                                           FileLogSink.RotateLogFileWhenLargerBytesDefault,
-                                           FileLogSink.DefaultFormatOptions,
-                                           out newLogSink);
-        }
-
-        /// <summary>
-        /// Attention: All loggers from all processes that write to the same
-        ///   (<c>productFamily</c> - <c>product</c> - <c>componentGroup</c> - <c>processName</c>)
-        /// MUST use the same value for <c>rotateLogFileWhenLargerBytes</c>!
-        /// </summary>
-        public static bool TryCreateNewFileLogSink(string productFamily,
-                                                   string product,
-                                                   string componentGroup,
-                                                   string processName,
-                                                   Guid logGroupId,
-                                                   int rotateLogFileWhenLargerBytes,
-                                                   DefaultFormat.Options formatOptions,
-                                                   out FileLogSink newLogSink)
-        {
-            // Construct the basis for the file name within the log dir:
-            string logFilenameBase = ConstructFilenameBase(productFamily, product, componentGroup, processName);
+            // If user speficied a log file directory, we try to use it. If it fails we fry to fall back to defaults.
+            if (!String.IsNullOrWhiteSpace(preferredLogFileDirectory))
+            {
+                if (FileLogSink.TryCreateNew(preferredLogFileDirectory, filenameBaseInfo.LogFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
+                {
+                    return true;
+                }
+            }
 
             // If specified and accessible, use the Env Var for the log folder:
             {
                 string userSetDdTraceLogDir = ReadEnvironmentVariable(DdTraceLogDirectoryEnvVarName);
-                if (FileLogSink.TryCreateNew(userSetDdTraceLogDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
+                if (FileLogSink.TryCreateNew(userSetDdTraceLogDir, filenameBaseInfo.LogFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
                 {
                     return true;
                 }
@@ -188,11 +171,13 @@ namespace Datadog.Logging.Composition
                     if (FileLogSink.IsWindowsFileSystem)
                     {
                         string commonAppDataDir = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                        defaultProductFamilyLogDir = Path.Combine(commonAppDataDir, WindowsDefaultLogDirectory, (productFamily ?? FilenameMissingComponentFallback).ToLower());
+                        defaultProductFamilyLogDir = Path.Combine(commonAppDataDir,
+                                                                  WindowsDefaultLogDirectory,
+                                                                  filenameBaseInfo.ProductFamily ?? FilenameMissingComponentFallback);
                     }
                     else
                     {
-                        defaultProductFamilyLogDir = Path.Combine(NixDefaultLogDirectory, (productFamily ?? FilenameMissingComponentFallback).ToLower());
+                        defaultProductFamilyLogDir = Path.Combine(NixDefaultLogDirectory, (filenameBaseInfo.ProductFamily ?? FilenameMissingComponentFallback).ToLower());
                     }
                 }
                 catch
@@ -200,7 +185,7 @@ namespace Datadog.Logging.Composition
                     defaultProductFamilyLogDir = null;
                 }
 
-                if (FileLogSink.TryCreateNew(defaultProductFamilyLogDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
+                if (FileLogSink.TryCreateNew(defaultProductFamilyLogDir, filenameBaseInfo.LogFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
                 {
                     return true;
                 }
@@ -218,7 +203,7 @@ namespace Datadog.Logging.Composition
                     appDir = null;
                 }
 
-                if (FileLogSink.TryCreateNew(appDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
+                if (FileLogSink.TryCreateNew(appDir, filenameBaseInfo.LogFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
                 {
                     return true;
                 }
@@ -236,7 +221,7 @@ namespace Datadog.Logging.Composition
                     tempDir = null;
                 }
 
-                if (FileLogSink.TryCreateNew(tempDir, logFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
+                if (FileLogSink.TryCreateNew(tempDir, filenameBaseInfo.LogFilenameBase, logGroupId, rotateLogFileWhenLargerBytes, formatOptions, out newLogSink))
                 {
                     return true;
                 }
@@ -248,7 +233,7 @@ namespace Datadog.Logging.Composition
             return false;
         }
 
-        private static StringBuilder ConstructFilenameBaseBuffer(string productFamily, string product, string componentGroup, string processName)
+        private static string ConstructFilenameBase(string productFamily, string product, string componentGroup, string processName)
         {
             var filenameBase = new StringBuilder();
             filenameBase.Append(FilenamePrefix);
@@ -260,7 +245,7 @@ namespace Datadog.Logging.Composition
             filenameBase.Append(FilenameSeparator);
             AppendToFilenameBase(filenameBase, processName);
 
-            return filenameBase;
+            return filenameBase.ToString();
         }
 
         private static void AppendToFilenameBase(StringBuilder filenameBase, string filenameComponent)
