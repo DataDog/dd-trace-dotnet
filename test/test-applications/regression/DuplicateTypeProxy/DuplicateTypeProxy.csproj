@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-      <TargetFrameworks>netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1</TargetFrameworks>
-      <TargetFrameworks Condition="$(MSBuildVersion) >= 16.8.0">$(TargetFrameworks);net5.0</TargetFrameworks>
       <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
     </PropertyGroup>
 
