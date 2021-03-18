@@ -304,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
-                // Fail safe to catch templates in routing values
+                // Replace well-known routing tokens
                 resourceName =
                     resourceName
                        .Replace("{area}", area)
