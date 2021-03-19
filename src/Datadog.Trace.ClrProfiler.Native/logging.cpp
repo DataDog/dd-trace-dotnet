@@ -3,7 +3,7 @@
 #include "pal.h"
 
 #include "spdlog/sinks/null_sink.h"
-#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/rotating_file_sink.h"
 
 #ifndef _WIN32
 typedef struct stat Stat;
@@ -64,7 +64,8 @@ Logger::Logger() {
   spdlog::flush_every(std::chrono::seconds(3));
 
   try {
-    m_fileout = spdlog::basic_logger_mt("Logger", GetLogPath());
+    m_fileout = spdlog::rotating_logger_mt(
+        "Logger", GetLogPath(), 1048576 * 5, 10);
   }
   catch (...) {
     std::cerr << "Logger Handler: Error creating native log file." << std::endl;
