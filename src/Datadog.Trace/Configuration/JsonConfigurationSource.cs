@@ -118,8 +118,34 @@ namespace Datadog.Trace.Configuration
         /// </remarks>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
-        /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>"
+        /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
         public IDictionary<string, string> GetDictionary(string key)
+        {
+            return GetDictionaryInternal(key, false);
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the values.
+        /// </summary>
+        /// <remarks>
+        /// Example JSON where `globalTags` is the configuration key.
+        /// {
+        ///  "globalTags": {
+        ///     "name1": "value1",
+        ///     "name2": "value2"
+        ///     }
+        /// }
+        /// </remarks>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <param name="applyDefaultMappings">Determines whether to add dictionary entries for inputs without mappings. This only applies to string values, not JSON objects</param>
+        /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
+        /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
+        public IDictionary<string, string> GetDictionary(string key, bool applyDefaultMappings)
+        {
+            return GetDictionaryInternal(key, applyDefaultMappings);
+        }
+
+        private IDictionary<string, string> GetDictionaryInternal(string key, bool applyDefaultMappings)
         {
             var token = _configuration.SelectToken(key, errorWhenNoMatch: false);
             if (token == null)
@@ -142,7 +168,7 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            return StringConfigurationSource.ParseCustomKeyValues(token.ToString());
+            return StringConfigurationSource.ParseCustomKeyValues(token.ToString(), applyDefaultMappings);
         }
     }
 }

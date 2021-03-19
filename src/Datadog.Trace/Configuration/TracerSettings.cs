@@ -133,7 +133,7 @@ namespace Datadog.Trace.Configuration
             GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            var inputHeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags) ??
+            var inputHeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags, applyDefaultMappings: true) ??
                          // default value (empty)
                          new ConcurrentDictionary<string, string>();
 
@@ -498,7 +498,11 @@ namespace Datadog.Trace.Configuration
             IDictionary<string, string> headerTags = new Dictionary<string, string>();
             foreach (KeyValuePair<string, string> kvp in configurationDictionary)
             {
-                if (!string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value) && kvp.Value.TryConvertToNormalizedTagName(out string result, convertPeriodsToUnderscores: true))
+                if (!string.IsNullOrWhiteSpace(kvp.Key) && string.IsNullOrWhiteSpace(kvp.Value))
+                {
+                    headerTags.Add(kvp.Key.Trim(), string.Empty);
+                }
+                else if (!string.IsNullOrWhiteSpace(kvp.Key) && kvp.Value.TryConvertToNormalizedTagName(out string result, convertPeriodsToUnderscores: true))
                 {
                     headerTags.Add(kvp.Key.Trim(), result);
                 }

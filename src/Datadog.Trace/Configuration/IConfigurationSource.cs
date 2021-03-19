@@ -46,5 +46,14 @@ namespace Datadog.Trace.Configuration
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         IDictionary<string, string> GetDictionary(string key);
-   }
+
+        /// <summary>
+        /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
+        /// the setting with the specified key.
+        /// </summary>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <param name="applyDefaultMappings">Determines whether to add dictionary entries for inputs without mappings</param>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        IDictionary<string, string> GetDictionary(string key, bool applyDefaultMappings);
+    }
 }
