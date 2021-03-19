@@ -95,7 +95,10 @@ namespace Datadog.Trace.ServiceFabric
 
         private static IEnumerable<string?> GetHeaders(IServiceRemotingRequestMessageHeader headers, string headerName)
         {
-            yield return headers.TryGetHeaderValueString(headerName);
+            if (headers.TryGetHeaderValueString(headerName, out var headerValue))
+            {
+                yield return headerValue;
+            }
         }
     }
 }

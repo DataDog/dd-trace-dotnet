@@ -19,14 +19,16 @@ namespace Datadog.Trace.ServiceFabric
             return false;
         }
 
-        public static string? TryGetHeaderValueString(this IServiceRemotingRequestMessageHeader headers, string headerName)
+        public static bool TryGetHeaderValueString(this IServiceRemotingRequestMessageHeader headers, string headerName, out string? headerValue)
         {
-            if (headers.TryGetHeaderValue(headerName, out var bytes) && bytes?.Length > 0)
+            if (headers.TryGetHeaderValue(headerName, out var bytes) && bytes is not null)
             {
-                return Encoding.UTF8.GetString(bytes);
+                headerValue = Encoding.UTF8.GetString(bytes);
+                return true;
             }
 
-            return null;
+            headerValue = default;
+            return false;
         }
     }
 }
