@@ -148,12 +148,12 @@
         <!-- By default, Configuration is DEBUG, but user can (and will) overwrite it.                                                                      -->
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         
-        <!-- By default, PlatformName is AnyCPU, but user can (and may) overwrite it.                                                                       -->
-        <PlatformName Condition=" '$(PlatformName)' == '' ">AnyCPU</PlatformName>
+        <!-- By default, Platform is AnyCPU, but user can (and may) overwrite it.                                                                       -->
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 
         <!-- ConfigBasedRelativeOutputPath is the relative subdir such as "Debug\x64" or "Release\netcoreapp3.1" or similar within the project              -->
         <ConfigBasedRelativeOutputPath>$(Configuration)</ConfigBasedRelativeOutputPath>
-        <ConfigBasedRelativeOutputPath Condition=" '$(PlatformName)' != '' ">$(ConfigBasedRelativeOutputPath)-$(PlatformName)</ConfigBasedRelativeOutputPath>
+        <ConfigBasedRelativeOutputPath Condition=" '$(Platform)' != '' ">$(ConfigBasedRelativeOutputPath)-$(Platform)</ConfigBasedRelativeOutputPath>
 
         <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>true</AppendRuntimeIdentifierToOutputPath>
@@ -163,7 +163,7 @@
         <BaseIntermediateOutputPath>$([System.IO.Path]::GetFullPath( $(BaseIntermediateOutputPath) ))</BaseIntermediateOutputPath>
         
         <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(ConfigBasedRelativeOutputPath)\$(RelativeProjectPathBase)</IntermediateOutputPath>
-        <IntermediateOutputPath>$([System.IO.Path]::GetFullPath( $(IntermediateOutputPath) ))\</IntermediateOutputPath>
+        <IntermediateOutputPath>$([System.IO.Path]::GetFullPath( $(IntermediateOutputPath) ))</IntermediateOutputPath>
         
         <MSBuildProjectExtensionsPath>$(IntermediateOutputPath)</MSBuildProjectExtensionsPath>
 
@@ -172,8 +172,8 @@
         <BaseOutputPath>$([System.IO.Path]::GetFullPath( $(BaseOutputPath) ))</BaseOutputPath>
         
         <OutputPath>$(BaseOutputPath)\$(ConfigBasedRelativeOutputPath)\$(RelativeProjectPathBase)</OutputPath>
-        <OutputPath>$([System.IO.Path]::GetFullPath( $(OutputPath) ))\</OutputPath>
-        
+        <OutputPath>$([System.IO.Path]::GetFullPath( $(OutputPath) ))</OutputPath>
+
         <!-- PackageOutputPath is where all the generated NuGet packages are going to go. Tnis is different to where we are storing the importned packages. -->
         <PackageOutputPath>$(BuildOutputRoot)\CreatedPackages\$(ConfigBasedRelativeOutputPath)</PackageOutputPath>
         <PackageOutputPath>$([System.IO.Path]::GetFullPath( $(PackageOutputPath) ))</PackageOutputPath>
@@ -182,6 +182,17 @@
         <PackagesDir>$(BuildOutputRoot)\ImportedPackages</PackagesDir>
         <PackagesDir>$([System.IO.Path]::GetFullPath( $(PackagesDir) ))</PackagesDir>
 
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- Specific items for C++ projects:                                                                                                               -->
+
+        <!-- IntDir is the equivalent for IntermediateOutputPath in C++ projects (must have training slash).                                                -->
+        <IntDir>$(IntermediateOutputPath)\</IntDir>
+        
+        <!-- OutDir is the equivalent for OutputPath in C++ projects (must have training slash).                                                            -->
+        <OutDir>$(OutputPath)\</OutDir>
+        
     </PropertyGroup>
 
     <PropertyGroup>
@@ -240,17 +251,23 @@
         <Message Text="[$(RdrctOutptMsgPrefix)]     BuildOutputRoot:                 &quot;$(BuildOutputRoot)&quot;." Importance="high" />
 
         <Message Text="[$(RdrctOutptMsgPrefix)]     Configuration:                   &quot;$(Configuration)&quot;." Importance="high" />
-        <Message Text="[$(RdrctOutptMsgPrefix)]     PlatformName:                    &quot;$(PlatformName)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     Platform:                        &quot;$(Platform)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     TargetFramework:                 &quot;$(TargetFramework)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     RuntimeIdentifier:               &quot;$(RuntimeIdentifier)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     ConfigBasedRelativeOutputPath:   &quot;$(ConfigBasedRelativeOutputPath)&quot;." Importance="high" />
 
         <Message Text="[$(RdrctOutptMsgPrefix)]     BaseIntermediateOutputPath:      &quot;$(BaseIntermediateOutputPath)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     IntermediateOutputPath:          &quot;$(IntermediateOutputPath)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     IntDir (c++):                    &quot;$(IntDir)&quot;." Importance="high" />
 
         <Message Text="[$(RdrctOutptMsgPrefix)]     BaseOutputPath:                  &quot;$(BaseOutputPath)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     OutputPath:                      &quot;$(OutputPath)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     OutDir (c++):                    &quot;$(OutDir)&quot;." Importance="high" />
 
+        <Message Text="[$(RdrctOutptMsgPrefix)]     TargetDir (c++):                 &quot;$(TargetDir)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     TargetName (c++):                &quot;$(TargetName)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     PlatformShortName (c++):         &quot;$(PlatformShortName)&quot;." Importance="high" />
+        
         <Message Text="[$(RdrctOutptMsgPrefix)]     MSBuildProjectExtensionsPath:    &quot;$(MSBuildProjectExtensionsPath)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     PackageOutputPath:               &quot;$(PackageOutputPath)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     PackagesDir:                     &quot;$(PackagesDir)&quot;." Importance="high" />
