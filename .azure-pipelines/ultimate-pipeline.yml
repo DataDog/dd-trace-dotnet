@@ -431,8 +431,6 @@ stages:
 
 - stage: integration_tests
   dependsOn: build
-  variables:
-    TestAllPackageVersions: true
   jobs:
 
   - job: Windows
@@ -650,6 +648,9 @@ stages:
         net5_0:
           publishTargetFramework: net5.0
 
+    variables:
+      TestAllPackageVersions: true
+
     steps:
     - checkout: none
 
@@ -708,6 +709,9 @@ stages:
           publishTargetFramework: netcoreapp3.1
         net5_0:
           publishTargetFramework: net5.0
+
+    variables:
+      TestAllPackageVersions: true
 
     steps:
     - checkout: none
@@ -782,6 +786,9 @@ stages:
     pool: Arm64
     workspace:
       clean: all
+
+    variables:
+      TestAllPackageVersions: true
 
     steps:
     - checkout: none
