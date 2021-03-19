@@ -8,15 +8,6 @@
 	  <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
-
-  <!--<ItemGroup>
-	  <ResourceFilesOut Include="$(OutputPath)\**\*.pdb" />
-	  <ResourceFilesOut Include="$(OutputPath)\**\*.dll" />
-  </ItemGroup>
-
-  <Target Name="CopyFiles" AfterTargets="Build" KeepDuplicateOutputs="true">
-    <Copy SourceFiles="@(ResourceFilesOut)" DestinationFolder="$(GeneratedResourceOutputPath)" SkipUnchangedFiles="false" />
-  </Target>-->
 	
   <PropertyGroup>
     <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..</SharedSrcBaseDir>

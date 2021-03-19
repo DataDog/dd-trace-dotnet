@@ -167,9 +167,6 @@
         
         <MSBuildProjectExtensionsPath>$(IntermediateOutputPath)</MSBuildProjectExtensionsPath>
 
-        <!-- GeneratedResourceOutputPath is where we will place generated resoruces for consumption by other projects.                                      -->
-        <GeneratedResourceOutputPath>$(BuildOutputRoot)\Resources\$(ConfigBasedRelativeOutputPath)\$(RelativeProjectPathBase)</GeneratedResourceOutputPath>
-        
         <!-- OutputPath is the BIN folder for the project. It is within BaseOutputPath, which is the BIN root for all projects.                             -->
         <BaseOutputPath>$(BuildOutputRoot)\bin</BaseOutputPath>
         <BaseOutputPath>$([System.IO.Path]::GetFullPath( $(BaseOutputPath) ))</BaseOutputPath>
@@ -253,8 +250,6 @@
 
         <Message Text="[$(RdrctOutptMsgPrefix)]     BaseOutputPath:                  &quot;$(BaseOutputPath)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     OutputPath:                      &quot;$(OutputPath)&quot;." Importance="high" />
-
-        <Message Text="[$(RdrctOutptMsgPrefix)]     GeneratedResourceOutputPath:     &quot;$(GeneratedResourceOutputPath)&quot;." Importance="high" />
 
         <Message Text="[$(RdrctOutptMsgPrefix)]     MSBuildProjectExtensionsPath:    &quot;$(MSBuildProjectExtensionsPath)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     PackageOutputPath:               &quot;$(PackageOutputPath)&quot;." Importance="high" />
