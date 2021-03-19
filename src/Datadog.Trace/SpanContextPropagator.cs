@@ -9,6 +9,9 @@ namespace Datadog.Trace
 {
     internal class SpanContextPropagator
     {
+        internal static readonly string HttpRequestHeadersTagPrefix = "http.request.headers";
+        internal static readonly string HttpResponseHeadersTagPrefix = "http.response.headers";
+
         private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
         private const int MinimumSamplingPriority = (int)SamplingPriority.UserReject;
         private const int MaximumSamplingPriority = (int)SamplingPriority.UserKeep;
