@@ -9,31 +9,14 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
-  <PropertyGroup>
-	  <BaseIntermediateOutputPath>..\..\..\..\.BinaryOutput\obj</BaseIntermediateOutputPath>
-	  <BaseOutputPath>..\..\..\..\.BinaryOutput\bin</BaseOutputPath>
-
-	  <RelativeBaseBinPath>$(Configuration)\$(TargetFramework)</RelativeBaseBinPath>
-	  <RelativeBaseBinPath Condition="'$(RuntimeIdentifier)' != ''">$(RelativeProjectBinPath)\$(RuntimeIdentifier)</RelativeBaseBinPath>
-	  <RelativeProjectBinPath>$(RelativeBaseBinPath)\$(MSBuildProjectName)</RelativeProjectBinPath>
-
-	  <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(RelativeProjectBinPath)</IntermediateOutputPath>
-	  <OutputPath>$(BaseOutputPath)\$(RelativeProjectBinPath)</OutputPath>
-	  <ResourceOutPath>..\..\..\..\..\Profiler-DotNet\.BinaryOutput\bin\$(RelativeBaseBinPath)\Resources</ResourceOutPath>
-
-	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-
-  </PropertyGroup>
-
-  <ItemGroup>
+  <!--<ItemGroup>
 	  <ResourceFilesOut Include="$(OutputPath)\**\*.pdb" />
 	  <ResourceFilesOut Include="$(OutputPath)\**\*.dll" />
   </ItemGroup>
 
-  <Target Name="CopyFiles" AfterTargets="Build">
-    <Copy SourceFiles="@(ResourceFilesOut)" DestinationFolder="$(ResourceOutPath)" SkipUnchangedFiles="false" />
-  </Target>
+  <Target Name="CopyFiles" AfterTargets="Build" KeepDuplicateOutputs="true">
+    <Copy SourceFiles="@(ResourceFilesOut)" DestinationFolder="$(GeneratedResourceOutputPath)" SkipUnchangedFiles="false" />
+  </Target>-->
 	
   <PropertyGroup>
     <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..</SharedSrcBaseDir>
@@ -44,7 +27,6 @@
 
   <!-- Datadog.Logging.Composition.props is required for composing logs and chosing a log sink: -->
   <Import Project="$(SharedSrcBaseDir)\Shared-Src\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
-
 
   <ItemGroup>
 	<!-- This "service" is required for T4-templating.                                                                                   -->
