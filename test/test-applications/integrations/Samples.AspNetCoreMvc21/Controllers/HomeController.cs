@@ -12,6 +12,8 @@ namespace Samples.AspNetCoreMvc.Controllers
 {
     public class HomeController : Controller
     {
+        private const string CorrelationIdentifierHeaderName = "sample.correlation.identifier";
+
         public IActionResult Index()
         {
             var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace.ClrProfiler.Managed");
@@ -30,6 +32,7 @@ namespace Samples.AspNetCoreMvc.Controllers
                           orderby key
                           select new KeyValuePair<string, string>(key, value);
 
+            AddCorrelationIdentifierToResponse();
             return View(envVars.ToList());
         }
 
@@ -38,6 +41,7 @@ namespace Samples.AspNetCoreMvc.Controllers
         {
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
+            AddCorrelationIdentifierToResponse();
             return View(seconds);
         }
 
@@ -46,18 +50,21 @@ namespace Samples.AspNetCoreMvc.Controllers
         {
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
             await Task.Delay(TimeSpan.FromSeconds(seconds));
+            AddCorrelationIdentifierToResponse();
             return View("Delay", seconds);
         }
 
         [Route("bad-request")]
         public IActionResult ThrowException()
         {
+            AddCorrelationIdentifierToResponse();
             throw new Exception("This was a bad request.");
         }
 
         [Route("status-code/{statusCode}")]
         public string StatusCodeTest(int statusCode)
         {
+            AddCorrelationIdentifierToResponse();
             HttpContext.Response.StatusCode = statusCode;
             return $"Status code has been set to {statusCode}";
         }
@@ -65,7 +72,17 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("alive-check")]
         public string IsAlive()
         {
+            AddCorrelationIdentifierToResponse();
             return "Yes";
+        }
+
+        private void AddCorrelationIdentifierToResponse()
+        {
+            // sample-correlation-identifier
+            if (Request.Headers.ContainsKey(CorrelationIdentifierHeaderName))
+            {
+                Response.Headers.Add(CorrelationIdentifierHeaderName, Request.Headers[CorrelationIdentifierHeaderName]);
+            }
         }
     }
 }
