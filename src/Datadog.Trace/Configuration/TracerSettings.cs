@@ -181,7 +181,8 @@ namespace Datadog.Trace.Configuration
             TraceBatchInterval = source?.GetInt32(ConfigurationKeys.SerializationBatchInterval)
                         ?? 100;
 
-            AspnetRouteTemplateResourceNamesEnabled = IsFeatureFlagEnabled(ConfigurationKeys.FeatureFlags.AspnetRouteTemplateResourceNamesEnabled);
+            AspnetRouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.AspnetRouteTemplateResourceNamesEnabled)
+                                                   ?? false;
         }
 
         /// <summary>
@@ -496,12 +497,7 @@ namespace Datadog.Trace.Configuration
 
         internal bool IsNetStandardFeatureFlagEnabled()
         {
-            return IsFeatureFlagEnabled(ConfigurationKeys.FeatureFlags.NetStandardEnabled);
-        }
-
-        internal bool IsFeatureFlagEnabled(string featureFlag)
-        {
-            var value = EnvironmentHelpers.GetEnvironmentVariable(featureFlag, string.Empty);
+            var value = EnvironmentHelpers.GetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", string.Empty);
 
             return value == "1" || value == "true";
         }
