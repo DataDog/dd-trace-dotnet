@@ -348,7 +348,7 @@ namespace Datadog.Trace.Configuration
             public const string AspnetRouteTemplateResourceNamesEnabled = "DD_TRACE_ASPNET_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED";
 
             /// <summary>
-            /// Feature Flag for whether .NET Standard mode is enabled
+            /// Feature Flag: enables instrumenting calls to netstandard.dll (only applies to CallSite instrumentation)
             /// </summary>
             public const string NetStandardEnabled = "DD_TRACE_NETSTANDARD_ENABLED";
         }
