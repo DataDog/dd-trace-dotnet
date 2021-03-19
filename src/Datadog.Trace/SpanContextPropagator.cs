@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -155,16 +157,49 @@ namespace Datadog.Trace
             return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
 
+        [Obsolete("This method is deprecated and will be removed. Use ExtractHeaderTags<T>(T, IEnumerable<KeyValuePair<string, string>>, string) instead. " +
+            "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
         public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap)
             where T : IHeadersCollection
         {
             foreach (KeyValuePair<string, string> headerNameToTagName in headerToTagMap)
             {
+                // Empty tag names were only allowed when the newer API was introduced,
+                // so we should never encounter an empty tag name when invoking this API.
+                // But just in case we get here, skip the processing of this header:tag mapping
+                if (string.IsNullOrWhiteSpace(headerNameToTagName.Value))
+                {
+                    continue;
+                }
+
                 string headerValue = ParseString(headers, headerNameToTagName.Key);
 
                 if (headerValue != null)
                 {
                     yield return new KeyValuePair<string, string>(headerNameToTagName.Value, headerValue);
+                }
+            }
+        }
+
+        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string emptyMappingPrefix)
+            where T : IHeadersCollection
+        {
+            foreach (KeyValuePair<string, string> headerNameToTagName in headerToTagMap)
+            {
+                string headerValue = ParseString(headers, headerNameToTagName.Key);
+                if (headerValue is null)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(headerNameToTagName.Value))
+                {
+                    yield return new KeyValuePair<string, string>(headerNameToTagName.Value, headerValue);
+                }
+                else if (headerNameToTagName.Key.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName))
+                {
+                    // Empty tag names will result in the tag name <prefix>.<header_name>
+                    yield return new KeyValuePair<string, string>(emptyMappingPrefix + "." + normalizedHeaderTagName, headerValue);
                 }
             }
         }

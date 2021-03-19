@@ -112,7 +112,7 @@ namespace Datadog.Trace.AspNet
                         // extract propagated http headers
                         var headers = httpRequest.Headers.Wrap();
                         propagatedContext = SpanContextPropagator.Instance.Extract(headers);
-                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags);
+                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                     catch (Exception ex)
                     {
