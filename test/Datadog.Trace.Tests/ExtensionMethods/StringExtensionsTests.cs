@@ -43,5 +43,25 @@ namespace Datadog.Trace.Tests.ExtensionMethods
                 Assert.Equal(expectedTagName, actualTagName);
             }
         }
+
+        [Theory]
+        [InlineData("Content-Type", true, "content-type")]
+        [InlineData(" Content-Type ", true, "content-type")]
+        [InlineData("C!!!ont_____ent----tYp!/!e", true, "")]
+        [InlineData("Some.Header", true, "Some_Header")]
+        [InlineData("9invalidtagname", false, null)]
+        [InlineData("invalid_length_201_______________________________________________________________________________________________________________________________________________________________________________________", false, null)]
+        [InlineData("valid_length_200________________________________________________________________________________________________________________________________________________________________________________________", false, "valid_length_200________________________________________________________________________________________________________________________________________________________________________________________")]
+        [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", false, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
+        public void TryConvertToNormalizedHeaderTagName(string input, bool expectedConversionSuccess, string expectedTagName)
+        {
+            bool actualConversionSuccess = input.TryConvertToNormalizedHeaderTagName(out string actualTagName);
+            Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
+
+            if (actualConversionSuccess)
+            {
+                Assert.Equal(expectedTagName, actualTagName);
+            }
+        }
     }
 }

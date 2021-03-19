@@ -502,7 +502,7 @@ namespace Datadog.Trace.Configuration
                 {
                     headerTags.Add(kvp.Key.Trim(), string.Empty);
                 }
-                else if (!string.IsNullOrWhiteSpace(kvp.Key) && kvp.Value.TryConvertToNormalizedTagName(out string result, convertPeriodsToUnderscores: true))
+                else if (!string.IsNullOrWhiteSpace(kvp.Key) && kvp.Value.TryConvertToNormalizedHeaderTagName(out string result))
                 {
                     headerTags.Add(kvp.Key.Trim(), result);
                 }

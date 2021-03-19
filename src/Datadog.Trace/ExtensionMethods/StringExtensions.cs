@@ -115,5 +115,20 @@ namespace Datadog.Trace.ExtensionMethods
                 return true;
             }
         }
+
+        /// <summary>
+        /// Attempts to convert the input to a valid tag name following the rules
+        /// described in <see cref="TryConvertToNormalizedTagName(string, out string, bool)"/>
+        ///
+        /// Additionally, the resulting tag name replaces any periods with underscores so that
+        /// the tag does not create any further object nesting.
+        /// </summary>
+        /// <param name="value">Input string to convert into tag name</param>
+        /// <param name="normalizedTagName">If the method returns true, the normalized header tag name</param>
+        /// <returns>Returns whether the conversion was successful</returns>
+        public static bool TryConvertToNormalizedHeaderTagName(this string value, out string normalizedTagName)
+        {
+            return value.TryConvertToNormalizedTagName(out normalizedTagName, convertPeriodsToUnderscores: true);
+        }
     }
 }
