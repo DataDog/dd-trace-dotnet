@@ -23,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected const string HeaderValue1 = "asp-net-core";
         protected const string HeaderName2 = "sample.correlation.identifier";
         protected const string HeaderValue2 = "0000-0000-0000";
+        protected const string HeaderName3 = "Server";
+        protected const string HeaderValue3 = "Kestrel";
 
         protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output, string serviceVersion)
             : base(sampleAppName, output)
@@ -31,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             HttpClient = new HttpClient();
             HttpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
             HttpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
-            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2}");
+            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2},{HeaderName3}");
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-501-234, s342, 500");
 
             SetServiceVersion(ServiceVersion);
@@ -250,8 +252,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _ = HeaderTagName1WithMapping.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName1WithMapping);
             expectation.RegisterTagExpectation(normalizedHeaderTagName1WithMapping, HeaderValue1);
 
-            _ = HeaderName2.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagNameNoMapping1);
-            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpRequestHeadersTagPrefix}.{normalizedHeaderTagNameNoMapping1}", HeaderValue2);
+            // For successful requests, assert that a header tag is present in both the request and response, withe the prefixes "http.request.headers" and "http.response.headers", respectively
+            _ = HeaderName2.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName2);
+            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpRequestHeadersTagPrefix}.{normalizedHeaderTagName2}", HeaderValue2);
+            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpResponseHeadersTagPrefix}.{normalizedHeaderTagName2}", HeaderValue2, when: (span) => span.Resource != "GET /not-found" && span.Resource != "GET bad-request");
+
+            // Assert that a response header tag is set on successful requests and failing requests
+            _ = HeaderName3.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName3);
+            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpResponseHeadersTagPrefix}.{normalizedHeaderTagName3}", HeaderValue3);
 
             Expectations.Add(expectation);
         }
