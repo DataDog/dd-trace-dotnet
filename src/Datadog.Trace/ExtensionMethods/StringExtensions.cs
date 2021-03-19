@@ -86,32 +86,32 @@ namespace Datadog.Trace.ExtensionMethods
         /// Note: This method will trim leading/trailing whitespace before checking the requirements.
         /// </summary>
         /// <param name="value">Input string to convert into tag name</param>
-        /// <param name="result">If the method returns true, the</param>
+        /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
         /// <param name="convertPeriodsToUnderscores">A flag determining whether periods should also be converted to underscores</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedTagName(this string value, out string result, bool convertPeriodsToUnderscores = false)
+        public static bool TryConvertToNormalizedTagName(this string value, out string normalizedTagName, bool convertPeriodsToUnderscores = false)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                result = null;
+                normalizedTagName = null;
                 return false;
             }
 
             string trimmedValue = value?.Trim();
             if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
             {
-                result = null;
+                normalizedTagName = null;
                 return false;
             }
 
             if (convertPeriodsToUnderscores)
             {
-                result = Regex.Replace(input: trimmedValue, pattern: "[^a-zA-Z0-9_:/-]", replacement: "_").ToLowerInvariant();
+                normalizedTagName = Regex.Replace(input: trimmedValue, pattern: "[^a-zA-Z0-9_:/-]", replacement: "_").ToLowerInvariant();
                 return true;
             }
             else
             {
-                result = Regex.Replace(input: trimmedValue, pattern: "[^a-zA-Z0-9_:./-]", replacement: "_").ToLowerInvariant();
+                normalizedTagName = Regex.Replace(input: trimmedValue, pattern: "[^a-zA-Z0-9_:./-]", replacement: "_").ToLowerInvariant();
                 return true;
             }
         }
