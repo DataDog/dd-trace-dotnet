@@ -15,9 +15,9 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("/DataDog/dd-trace-dotnet/blob/e2d83dec7d6862d4181937776ddaf72819e291ce/src/Datadog.Trace/Util/UriHelpers.cs", "/DataDog/dd-trace-dotnet/blob/e2d83dec7d6862d4181937776ddaf72819e291ce/src/Datadog.Trace/Util/UriHelpers.cs")]
         [InlineData("/controller/action/2022", "/controller/action/?")]
         [InlineData("/controller/action/", "/controller/action/")]
-        public void CleanUriSegment_ShouldRemoveIdsFromPaths(string url, string expected)
+        public void GetCleanUriPath_ShouldRemoveIdsFromPaths(string url, string expected)
         {
-            Assert.Equal(expected, Trace.Util.UriHelpers.CleanUriSegment(url));
+            Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(url));
         }
 
         [Theory]
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("https://localhost:5040/controller/action/2022", "/controller/action/?")]
         [InlineData("https://example.org/controller/action/2022", "/controller/action/?")]
         [InlineData("ftp://example.org/controller/action/2022", "/controller/action/?")]
-        public void GetCleanUriPath_ShouldExtractThePathAndRemoveIds(string url, string expected)
+        public void GetCleanUriPath_ByUri_ShouldExtractThePathAndRemoveIds(string url, string expected)
         {
             Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url)));
         }

@@ -278,7 +278,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     absolutePath = request.PathBase.Value + absolutePath;
                 }
 
-                string resourceUrl = UriHelpers.CleanUriSegment(absolutePath)
+                string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
                                                .ToLowerInvariant();
 
                 string resourceName = $"{httpMethod} {resourceUrl}";

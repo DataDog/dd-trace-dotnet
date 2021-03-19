@@ -7,7 +7,7 @@ namespace Datadog.Trace.Util
     {
         public static string CleanUri(Uri uri, bool removeScheme, bool tryRemoveIds)
         {
-            var path = tryRemoveIds ? CleanUriSegment(uri.AbsolutePath) : uri.AbsolutePath;
+            var path = tryRemoveIds ? GetCleanUriPath(uri.AbsolutePath) : uri.AbsolutePath;
 
             if (removeScheme)
             {
@@ -23,10 +23,10 @@ namespace Datadog.Trace.Util
 
         public static string GetCleanUriPath(Uri uri)
         {
-            return CleanUriSegment(uri.AbsolutePath);
+            return GetCleanUriPath(uri.AbsolutePath);
         }
 
-        public static string CleanUriSegment(string absolutePath)
+        public static string GetCleanUriPath(string absolutePath)
         {
             if (string.IsNullOrWhiteSpace(absolutePath) || (absolutePath.Length == 1 && absolutePath[0] == '/'))
             {
