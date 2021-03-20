@@ -110,19 +110,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var tracer = Tracer.Instance;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
-                if (tracer.ActiveScope == null)
+                try
                 {
-                    try
-                    {
-                        // extract propagated http headers
-                        var headers = httpContext.Request.Headers.Wrap();
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headers);
-                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error extracting propagated HTTP headers.");
-                    }
+                    // extract propagated http headers
+                    var headers = httpContext.Request.Headers.Wrap();
+                    propagatedContext = tracer.ActiveScope == null ? SpanContextPropagator.Instance.Extract(headers) : null;
+                    tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting propagated HTTP headers.");
                 }
 
                 var tags = new AspNetTags();
@@ -324,6 +321,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (scope != null)
                 {
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
                     scope.Dispose();
                 }
@@ -355,6 +353,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
+            scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();

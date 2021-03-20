@@ -109,8 +109,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             else
             {
-                var statusCode = responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode;
-                scope.Span.SetHttpStatusCode(statusCode, isServer: true);
+                var httpContext = HttpContext.Current;
+                if (httpContext != null)
+                {
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                }
+
+                scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true);
                 scope.Dispose();
             }
 
@@ -119,6 +124,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
+            scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();

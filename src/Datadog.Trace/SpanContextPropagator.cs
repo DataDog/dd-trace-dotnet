@@ -181,7 +181,7 @@ namespace Datadog.Trace
             }
         }
 
-        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string emptyMappingPrefix)
+        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string defaultMappingPrefix)
             where T : IHeadersCollection
         {
             foreach (KeyValuePair<string, string> headerNameToTagName in headerToTagMap)
@@ -198,8 +198,8 @@ namespace Datadog.Trace
                 }
                 else if (headerNameToTagName.Key.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName))
                 {
-                    // Empty tag names will result in the tag name <prefix>.<header_name>
-                    yield return new KeyValuePair<string, string>(emptyMappingPrefix + "." + normalizedHeaderTagName, headerValue);
+                    // Empty tag mapping will result in the tag name <default_mapping_prefix>.<normalized_header_tag_name>
+                    yield return new KeyValuePair<string, string>(defaultMappingPrefix + "." + normalizedHeaderTagName, headerValue);
                 }
             }
         }

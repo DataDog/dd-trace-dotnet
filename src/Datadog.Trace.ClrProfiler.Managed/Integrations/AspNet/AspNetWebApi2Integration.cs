@@ -164,8 +164,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // some fields aren't set till after execution, so populate anything missing
                     UpdateSpan(controllerContext, scope.Span, tags, Enumerable.Empty<KeyValuePair<string, string>>());
 
-                    var statusCode = responseMessage.GetProperty("StatusCode");
-                    scope.Span.SetHttpStatusCode((int)statusCode.Value, isServer: true);
+                    var httpContext = System.Web.HttpContext.Current;
+                    if (httpContext != null)
+                    {
+                        scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    }
+
+                    scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true);
                     scope.Dispose();
                 }
 
@@ -219,7 +224,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
-                if (request != null && tracer.ActiveScope == null)
+                if (request != null)
                 {
                     try
                     {
@@ -227,7 +232,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         var headers = request.Headers;
                         var headersCollection = new HttpHeadersCollection(headers);
 
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
+                        propagatedContext = tracer.ActiveScope == null ? SpanContextPropagator.Instance.Extract(headersCollection) : null;
                         tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headersCollection, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                     catch (Exception ex)
@@ -327,6 +332,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(System.Web.HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
+            scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();

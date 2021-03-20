@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -12,6 +14,8 @@ namespace Datadog.Trace.ExtensionMethods
     /// </summary>
     public static class SpanExtensions
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
+
         /// <summary>
         /// Sets the sampling priority for the trace that contains the specified <see cref="Span"/>.
         /// </summary>
@@ -64,6 +68,26 @@ namespace Datadog.Trace.ExtensionMethods
             foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
             {
                 span.SetTag(kvp.Key, kvp.Value);
+            }
+        }
+
+        internal static void SetHeaderTags(this Span span, IHeadersCollection headers, IDictionary<string, string> headerTags, string defaultMappingPrefix)
+        {
+            if (headerTags is not null && !headerTags.IsEmpty())
+            {
+                try
+                {
+                    // extract propagation details from http headers
+                    var tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, defaultMappingPrefix);
+                    foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
+                    {
+                        span.SetTag(kvp.Key, kvp.Value);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting propagated HTTP headers.");
+                }
             }
         }
 

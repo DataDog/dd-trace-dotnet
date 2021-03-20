@@ -348,6 +348,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
+                    scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
                 scope.Dispose();

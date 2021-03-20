@@ -160,6 +160,7 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
+                    scope.Span.SetHeaderTags(app.Context.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                     scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
                     scope.Dispose();
                 }
@@ -181,9 +182,17 @@ namespace Datadog.Trace.AspNet
                 var httpException = exception as HttpException;
                 var is404 = httpException?.GetHttpCode() == 404;
 
-                if (exception != null && !is404 && httpContext.Items[_httpContextScopeKey] is Scope scope)
+                if (httpContext.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    scope.Span.SetException(exception);
+                    if (httpContext != null)
+                    {
+                        scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    }
+
+                    if (exception != null && !is404)
+                    {
+                        scope.Span.SetException(exception);
+                    }
                 }
             }
             catch (Exception ex)
