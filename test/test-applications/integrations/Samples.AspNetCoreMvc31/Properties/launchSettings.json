@@ -20,7 +20,8 @@
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
-        "DD_VERSION": "1.0.0"
+        "DD_VERSION": "1.0.0",
+        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server"
       },
       "use64Bit": true,
       "nativeDebugging": true
@@ -37,7 +38,8 @@
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
-        "DD_VERSION": "1.0.0"
+        "DD_VERSION": "1.0.0",
+        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server"
       },
       "nativeDebugging": true,
       "applicationUrl": "http://localhost:54568"
