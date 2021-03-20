@@ -184,8 +184,9 @@
 
     </PropertyGroup>
 
-    <PropertyGroup>
+    <PropertyGroup Condition=" '$(AvoidRedirectingBinaryOutput)' != 'True' And '$(MSBuildProjectExtension)' == '.vcxproj' ">
         <!-- Specific items for C++ projects:                                                                                                               -->
+        <!-- (Note this this group is only included for .vcxproj projects. If there are ever other projects that need it, adjust accordingly.)              -->
 
         <!-- IntDir is the equivalent for IntermediateOutputPath in C++ projects (must have training slash).                                                -->
         <IntDir>$(IntermediateOutputPath)\</IntDir>
@@ -195,7 +196,7 @@
         
     </PropertyGroup>
 
-    <PropertyGroup>
+    <PropertyGroup Condition=" '$(AvoidRedirectingBinaryOutput)' != 'True' ">
         <!-- Enable NuGet package restore during build                                                                                                      -->
         <RestorePackages>true</RestorePackages>
         <RequireRestoreConsent>false</RequireRestoreConsent>
@@ -238,6 +239,7 @@
         <!-- It can be used to view the details of the redefinitions, but be careful when using it for debugging.                                           -->
         
         <Message Text="[$(RdrctOutptMsgPrefix)]     Project file:                    &quot;$(MSBuildProjectFullPath)&quot;." Importance="high"/>
+        <Message Text="[$(RdrctOutptMsgPrefix)]     MSBuildProjectExtension:         &quot;$(MSBuildProjectExtension)&quot;." Importance="high"/>
         <Message Text="[$(RdrctOutptMsgPrefix)]     Set-Output-Dirs PROPS file:      &quot;$(MSBuildThisFileFullPath)&quot;." Importance="high"/>
 
         <Message Text="[$(RdrctOutptMsgPrefix)]     AvoidRedirectingBinaryOutput:    &quot;$(AvoidRedirectingBinaryOutput)&quot;." Importance="high" />
