@@ -50,9 +50,7 @@
  * Enable WCF integration tests (#1273)
  * Fix flaky tests (#1262, #1263, #1264, #1265, #1266)
 
-[Changes since 1.24.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.24.0...v1.25.0)
-
-[All commits](https://github.com/DataDog/dd-trace-dotnet/compare/v1.24.0...v1.25.0) | [Full diff](https://github.com/DataDog/dd-trace-dotnet/compare/v1.24.0..v1.25.0)
+Changes since 1.24.0: [All commits](https://github.com/DataDog/dd-trace-dotnet/compare/v1.24.0...v1.25.0) | [Full diff](https://github.com/DataDog/dd-trace-dotnet/compare/v1.24.0..v1.25.0)
 
 ---
 
