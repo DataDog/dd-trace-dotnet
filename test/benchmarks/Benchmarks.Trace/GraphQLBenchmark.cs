@@ -50,6 +50,19 @@ namespace Benchmarks.Trace
             return task.GetAwaiter().GetResult().Value;
         }
 
+        [Benchmark]
+        public unsafe int CallTargetExecuteAsync()
+        {
+            var task = CallTarget.Run<Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration, GraphQLClient, ExecutionContext, Task<ExecutionResult>>(
+                Client,
+                Context,
+                &ExecuteAsync);
+
+            return task.GetAwaiter().GetResult().Value;
+
+            static Task<ExecutionResult> ExecuteAsync(ExecutionContext context) => Result;
+        }
+
         private class GraphQLClient : IExecutionStrategy
         {
             public Task<ExecutionResult> ExecuteAsync(ExecutionContext context)
