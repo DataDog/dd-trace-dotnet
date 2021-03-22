@@ -343,7 +343,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                if (arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
+                // if we had an unhandled exception, the status code is already updated
+                if (!scope.Span.Error && arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
@@ -367,6 +368,15 @@ namespace Datadog.Trace.DiagnosticListeners
             if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {
                 span.SetException(unhandledStruct.Exception);
+                int statusCode = 500;
+
+                if (unhandledStruct.Exception.TryDuckCast<BadHttpRequestExceptionStruct>(out var badRequestException))
+                {
+                    statusCode = badRequestException.StatusCode;
+                }
+
+                // Generic unhandled exceptions are converted to 500 errors by Kestrel
+                span.SetHttpStatusCode(statusCode: statusCode, isServer: true);
             }
         }
 
@@ -399,6 +409,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public ActionDescriptor ActionDescriptor;
+        }
+
+        [DuckCopy]
+        public struct BadHttpRequestExceptionStruct
+        {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase | BindingFlags.NonPublic)]
+            public int StatusCode;
         }
 
         private readonly struct HeadersCollectionAdapter : IHeadersCollection
