@@ -17,11 +17,13 @@ pr:
       - .github/*
 
 schedules:
-- cron: "0 0 * * *"
-  displayName: Daily midnight run
+- cron: "0 4 * * *"
+  displayName: Daily 4am (UTC) build
   branches:
     include:
     - master
+    - benchmarks/*
+  always: true
 
 jobs:
 
