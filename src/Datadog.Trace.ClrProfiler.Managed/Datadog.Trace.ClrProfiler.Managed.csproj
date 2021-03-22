@@ -30,6 +30,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
@@ -52,5 +53,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
   <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
     <PackageReference Include="Sigil-vNext" Version="4.8.41" />
   </ItemGroup>
+  
+  <Import Project="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
 
 </Project>
