@@ -1,5 +1,5 @@
 using System;
-using System.Data.Common;
+using System.Data;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            return new CallTargetState(ScopeFactory.CreateDbCommandScope(Tracer.Instance, instance as DbCommand));
+            return new CallTargetState(ScopeFactory.CreateDbCommandScope(Tracer.Instance, instance as IDbCommand));
         }
 
         /// <summary>
