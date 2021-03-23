@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
@@ -20,6 +21,7 @@ namespace Datadog.Trace
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
+        private static readonly ConcurrentDictionary<Key, string> DefaultTagMappingCache = new ConcurrentDictionary<Key, string>();
 
         private static readonly int[] SamplingPriorities;
 
@@ -196,10 +198,27 @@ namespace Datadog.Trace
                 {
                     yield return new KeyValuePair<string, string>(headerNameToTagName.Value, headerValue);
                 }
-                else if (headerNameToTagName.Key.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName))
+                else
                 {
-                    // Empty tag mapping will result in the tag name <default_tag_prefix>.<normalized_header_tag_name>
-                    yield return new KeyValuePair<string, string>(defaultTagPrefix + "." + normalizedHeaderTagName, headerValue);
+                    // Since the header name was saved to do the lookup in the input headers,
+                    // convert the header to its final tag name once per prefix
+                    var cacheKey = new Key(headerNameToTagName.Key, defaultTagPrefix);
+                    string tagNameResult = DefaultTagMappingCache.GetOrAdd(cacheKey, key =>
+                    {
+                        if (key.HeaderName.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName))
+                        {
+                            return key.TagPrefix + "." + normalizedHeaderTagName;
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    });
+
+                    if (!string.IsNullOrWhiteSpace(tagNameResult))
+                    {
+                        yield return new KeyValuePair<string, string>(tagNameResult, headerValue);
+                    }
                 }
             }
         }
@@ -342,6 +361,51 @@ namespace Datadog.Trace
             }
 
             return null;
+        }
+
+        private struct Key : IEquatable<Key>
+        {
+            public readonly string HeaderName;
+            public readonly string TagPrefix;
+
+            public Key(
+                string headerName,
+                string tagPrefix)
+            {
+                HeaderName = headerName;
+                TagPrefix = tagPrefix;
+            }
+
+            /// <summary>
+            /// Gets the struct hashcode
+            /// </summary>
+            /// <returns>Hashcode</returns>
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (HeaderName.GetHashCode() * 397) ^ TagPrefix.GetHashCode();
+                }
+            }
+
+            /// <summary>
+            /// Gets if the struct is equal to other object or struct
+            /// </summary>
+            /// <param name="obj">Object to compare</param>
+            /// <returns>True if both are equals; otherwise, false.</returns>
+            public override bool Equals(object obj)
+            {
+                return obj is Key key &&
+                       HeaderName == key.HeaderName &&
+                       TagPrefix == key.TagPrefix;
+            }
+
+            /// <inheritdoc />
+            public bool Equals(Key other)
+            {
+                return HeaderName == other.HeaderName &&
+                       TagPrefix == other.TagPrefix;
+            }
         }
     }
 }
