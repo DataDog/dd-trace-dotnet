@@ -373,14 +373,14 @@ namespace Datadog.Trace.Configuration
         internal ServiceNames ServiceNameMappings { get; }
 
         /// <summary>
-        /// Gets a value indicating the size in bytes of the trace buffer
+        /// Gets or sets a value indicating the size in bytes of the trace buffer
         /// </summary>
-        internal int TraceBufferSize { get; }
+        internal int TraceBufferSize { get; set; }
 
         /// <summary>
-        /// Gets a value indicating the batch interval for the serialization queue, in milliseconds
+        /// Gets or sets a value indicating the batch interval for the serialization queue, in milliseconds
         /// </summary>
-        internal int TraceBatchInterval { get; }
+        internal int TraceBatchInterval { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
