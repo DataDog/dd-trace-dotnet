@@ -209,7 +209,7 @@ namespace Datadog.Logging.Composition
                 }
             }
 
-            // As last resort, we will try using the log directory:
+            // As last resort, we will try using the temp directory:
             {
                 string tempDir;
                 try

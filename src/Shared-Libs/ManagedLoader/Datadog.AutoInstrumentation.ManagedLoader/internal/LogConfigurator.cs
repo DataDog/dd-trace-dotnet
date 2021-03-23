@@ -9,6 +9,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     internal static class LogConfigurator
     {
         private const bool UseConsoleLogInsteadOfFileLog = AssemblyLoader.UseConsoleLoggingInsteadOfFile;
+        private const bool UseConsoleLogInAdditionToFileLog = AssemblyLoader.UseConsoleLogInAdditionToFileLog;
         private const bool UseConsoleLogIfFileLogNotAvailable = AssemblyLoader.UseConsoleLoggingIfFileLoggingFails;
 
         private const string ProductFamily = "DotNet";
@@ -90,7 +91,20 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                                                                                  FileFormatOptions,
                                                                                  out FileLogSink fileLogSink))
                 {
-                    RedirectLogs(fileLogSink, out s_logRedirections);
+                    ILogSink logSink;
+#pragma warning disable CS0162 // Unreachable code detected - intentional conditional using const bool
+                    if (UseConsoleLogInAdditionToFileLog)
+                    {
+                        logSink = new AggregatedLogSink(SimpleConsoleLogSink.SingeltonInstance, fileLogSink);
+                    }
+                    else
+                    {
+
+                        logSink = fileLogSink;
+                    }
+#pragma warning restore CS0162 // Unreachable code detected
+
+                    RedirectLogs(logSink, out s_logRedirections);
                     LogComposer.SetDebugLoggingEnabledBasedOnEnvironment();
                     return true;
                 }
