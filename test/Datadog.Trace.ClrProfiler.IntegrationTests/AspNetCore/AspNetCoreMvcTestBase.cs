@@ -252,7 +252,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _ = HeaderTagName1WithMapping.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName1WithMapping);
             expectation.RegisterTagExpectation(normalizedHeaderTagName1WithMapping, HeaderValue1);
 
-            // For successful requests, assert that a header tag is present in both the request and response, withe the prefixes "http.request.headers" and "http.response.headers", respectively
+            // For successful requests, assert that a header tag is present in both the request and response, with the prefixes "http.request.headers" and "http.response.headers", respectively
             _ = HeaderName2.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName2);
             expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpRequestHeadersTagPrefix}.{normalizedHeaderTagName2}", HeaderValue2);
             expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpResponseHeadersTagPrefix}.{normalizedHeaderTagName2}", HeaderValue2, when: (span) => span.Resource != "GET /not-found" && span.Resource != "GET bad-request");

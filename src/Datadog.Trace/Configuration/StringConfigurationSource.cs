@@ -15,9 +15,9 @@ namespace Datadog.Trace.Configuration
         /// <paramref name="data"/>.
         /// </summary>
         /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
-        /// <param name="applyDefaultMappings">Determines whether to add dictionary entries for inputs without mappings</param>
+        /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
-        public static IDictionary<string, string> ParseCustomKeyValues(string data, bool applyDefaultMappings = false)
+        public static IDictionary<string, string> ParseCustomKeyValues(string data, bool allowOptionalMappings = false)
         {
             var dictionary = new ConcurrentDictionary<string, string>();
 
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Configuration
             foreach (var e in entries)
             {
                 var kv = e.Split(':');
-                if (applyDefaultMappings && kv.Length == 1)
+                if (allowOptionalMappings && kv.Length == 1)
                 {
                     var key = kv[0];
                     var value = string.Empty;
@@ -104,11 +104,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> from parsing
         /// </summary>
         /// <param name="key">The key</param>
-        /// <param name="applyDefaultMappings">Determines whether to add dictionary entries for inputs without mappings</param>
+        /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
         /// <returns><see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
-        public IDictionary<string, string> GetDictionary(string key, bool applyDefaultMappings)
+        public IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings)
         {
-            return ParseCustomKeyValues(GetString(key), applyDefaultMappings);
+            return ParseCustomKeyValues(GetString(key), allowOptionalMappings);
         }
     }
 }

@@ -21,8 +21,6 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             Assert.Equal(expected, actual);
         }
 
-        // private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new Dictionary<string, string> { { "header1", "tag1" }, { "header2", "content-type" }, { "header3", "content-type" }, { "header4", "c___ont_____ent----typ_/_e" }, { "header5", "some_header" }, { "validheaderonly", string.Empty }, { "validheaderwithoutcolon", string.Empty } };
-
         [Theory]
         [InlineData("Content-Type", false, true, "content-type")]
         [InlineData(" Content-Type ", false, true, "content-type")]

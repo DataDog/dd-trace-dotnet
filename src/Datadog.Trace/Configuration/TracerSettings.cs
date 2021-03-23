@@ -133,7 +133,7 @@ namespace Datadog.Trace.Configuration
             GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            var inputHeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags, applyDefaultMappings: true) ??
+            var inputHeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags, allowOptionalMappings: true) ??
                          // default value (empty)
                          new ConcurrentDictionary<string, string>();
 

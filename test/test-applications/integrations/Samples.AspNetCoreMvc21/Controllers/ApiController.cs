@@ -30,7 +30,6 @@ namespace Samples.AspNetCoreMvc.Controllers
 
         private void AddCorrelationIdentifierToResponse()
         {
-            // sample-correlation-identifier
             if (Request.Headers.ContainsKey(CorrelationIdentifierHeaderName))
             {
                 Response.Headers.Add(CorrelationIdentifierHeaderName, Request.Headers[CorrelationIdentifierHeaderName]);

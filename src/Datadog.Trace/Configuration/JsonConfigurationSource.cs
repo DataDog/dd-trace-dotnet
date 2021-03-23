@@ -137,15 +137,15 @@ namespace Datadog.Trace.Configuration
         /// }
         /// </remarks>
         /// <param name="key">The key that identifies the setting.</param>
-        /// <param name="applyDefaultMappings">Determines whether to add dictionary entries for inputs without mappings. This only applies to string values, not JSON objects</param>
+        /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping. This only applies to string values, not JSON objects</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
         /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
-        public IDictionary<string, string> GetDictionary(string key, bool applyDefaultMappings)
+        public IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings)
         {
-            return GetDictionaryInternal(key, applyDefaultMappings);
+            return GetDictionaryInternal(key, allowOptionalMappings);
         }
 
-        private IDictionary<string, string> GetDictionaryInternal(string key, bool applyDefaultMappings)
+        private IDictionary<string, string> GetDictionaryInternal(string key, bool allowOptionalMappings)
         {
             var token = _configuration.SelectToken(key, errorWhenNoMatch: false);
             if (token == null)
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            return StringConfigurationSource.ParseCustomKeyValues(token.ToString(), applyDefaultMappings);
+            return StringConfigurationSource.ParseCustomKeyValues(token.ToString(), allowOptionalMappings);
         }
     }
 }

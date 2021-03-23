@@ -112,7 +112,7 @@ namespace Datadog.Trace.AspNet
                         // extract propagated http headers
                         var headers = httpRequest.Headers.Wrap();
                         propagatedContext = SpanContextPropagator.Instance.Extract(headers);
-                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                     catch (Exception ex)
                     {
@@ -160,7 +160,7 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    scope.Span.SetHeaderTags(app.Context.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.Span.SetHeaderTags(app.Context.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                     scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
                     scope.Dispose();
                 }
@@ -186,7 +186,7 @@ namespace Datadog.Trace.AspNet
                 {
                     if (httpContext != null)
                     {
-                        scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                        scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                     }
 
                     if (exception != null && !is404)

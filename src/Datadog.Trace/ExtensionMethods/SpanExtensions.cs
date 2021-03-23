@@ -71,14 +71,14 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHeaderTags(this Span span, IHeadersCollection headers, IDictionary<string, string> headerTags, string defaultMappingPrefix)
+        internal static void SetHeaderTags(this Span span, IHeadersCollection headers, IDictionary<string, string> headerTags, string defaultTagPrefix)
         {
             if (headerTags is not null && !headerTags.IsEmpty())
             {
                 try
                 {
                     // extract propagation details from http headers
-                    var tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, defaultMappingPrefix);
+                    var tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, defaultTagPrefix);
                     foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
                     {
                         span.SetTag(kvp.Key, kvp.Value);

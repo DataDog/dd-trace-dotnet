@@ -167,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     var httpContext = System.Web.HttpContext.Current;
                     if (httpContext != null)
                     {
-                        scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                        scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                     }
 
                     scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true);
@@ -332,7 +332,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(System.Web.HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
-            scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultMappingPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+            scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();
