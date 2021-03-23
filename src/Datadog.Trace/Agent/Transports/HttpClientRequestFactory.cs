@@ -12,12 +12,10 @@ namespace Datadog.Trace.Agent.Transports
         {
             _client = handler == null ? new HttpClient() : new HttpClient(handler);
 
-            // Default headers
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion);
-
-            // don't add automatic instrumentation to requests from this HttpClient
-            _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+            foreach (var pair in AgentHttpHeaderNames.DefaultHeaders)
+            {
+                _client.DefaultRequestHeaders.Add(pair.Key, pair.Value);
+            }
         }
 
         public string Info(Uri endpoint)
