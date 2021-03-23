@@ -52,12 +52,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             _startTime = startTime;
         }
 
-        private CallTargetState(Scope previousScope, Scope scope, object state)
+        internal CallTargetState(Scope previousScope, CallTargetState state)
         {
             _previousScope = previousScope;
-            _scope = scope;
-            _state = state;
-            _startTime = null;
+            _scope = state._scope;
+            _state = state._state;
+            _startTime = state._startTime;
         }
 
         /// <summary>
@@ -70,9 +70,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// </summary>
         public object State => _state;
 
-        internal Scope PreviousScope => _previousScope;
+        /// <summary>
+        /// Gets the CallTarget state StartTime
+        /// </summary>
+        public DateTimeOffset? StartTime => _startTime;
 
-        internal DateTimeOffset? StartTime => _startTime;
+        internal Scope PreviousScope => _previousScope;
 
         /// <summary>
         /// Gets the default call target state (used by the native side to initialize the locals)
@@ -81,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState GetDefault()
         {
-            return new CallTargetState(null);
+            return default;
         }
 
         /// <summary>
@@ -91,11 +94,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         public override string ToString()
         {
             return $"{typeof(CallTargetState).FullName}({_previousScope}, {_scope}, {_state})";
-        }
-
-        internal static CallTargetState WithPreviousScope(Scope previousScope, CallTargetState state)
-        {
-            return new CallTargetState(previousScope, state._scope, state._state);
         }
     }
 }

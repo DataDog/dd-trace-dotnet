@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     public class SerializableDictionary : IXunitSerializable, IEnumerable<KeyValuePair<string, string>>
     {

@@ -4,6 +4,7 @@
 
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
