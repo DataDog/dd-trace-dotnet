@@ -1095,8 +1095,9 @@ namespace shared {
       return S_OK;
     }
 
-    bool Loader::GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize,
-                                            void** pSymbolsArray, int* symbolsSize,
+    bool Loader::GetAssemblyAndSymbolsBytes(void** pAssemblyArray,
+                                            int* assemblySize, void** pSymbolsArray,
+                                            int* symbolsSize,
                                             AppDomainID appDomainId) {
         //
         // global lock
