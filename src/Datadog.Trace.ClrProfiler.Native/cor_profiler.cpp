@@ -3054,7 +3054,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
   // *** Emit BeginMethod call
   ILInstr* beginCallInstruction;
   IfFailRet(callTargetTokens->WriteBeginMethod(&reWriterWrapper, wrapper_type_ref, &caller->type, methodArguments, &beginCallInstruction));
-    reWriterWrapper.StLocal(callTargetStateIndex);
+  reWriterWrapper.StLocal(callTargetStateIndex);
   ILInstr* pStateLeaveToBeginOriginalMethodInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
   // *** BeginMethod call catch
