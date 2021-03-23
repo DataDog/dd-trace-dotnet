@@ -221,6 +221,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-pipelines", "{C52D6695-4E05-4930-88F8-0EFF8056A967}"
 	ProjectSection(SolutionItems) = preProject
 		.azure-pipelines\benchmarks.yml = .azure-pipelines\benchmarks.yml
+		.azure-pipelines\crank.yml = .azure-pipelines\crank.yml
 		.azure-pipelines\integration-tests.yml = .azure-pipelines\integration-tests.yml
 		.azure-pipelines\packages.yml = .azure-pipelines\packages.yml
 		.azure-pipelines\runner.yml = .azure-pipelines\runner.yml
@@ -417,12 +418,27 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OracleMDA", "test\t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OracleMDA.Core", "test\test-applications\integrations\Samples.OracleMDA.Core\Samples.OracleMDA.Core.csproj", "{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "throughput", "throughput", "{83CF7471-0C2D-4B10-AEEC-A345596AF74D}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\throughput\Directory.Build.props = test\test-applications\throughput\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreSimpleController", "test\test-applications\throughput\Samples.AspNetCoreSimpleController\Samples.AspNetCoreSimpleController.csproj", "{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "crank", "crank", "{E3FB283A-B766-4887-95E1-329667671921}"
+	ProjectSection(SolutionItems) = preProject
+		build\crank\run.sh = build\crank\run.sh
+		build\crank\Samples.AspNetCoreSimpleController.yml = build\crank\Samples.AspNetCoreSimpleController.yml
+	EndProjectSection
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DuplicateTypeProxy", "test\test-applications\regression\DuplicateTypeProxy\DuplicateTypeProxy.csproj", "{34B67004-7249-4EF1-8E12-6E6DA37EA6BE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreRazorPages", "test\test-applications\integrations\Samples.AspNetCoreRazorPages\Samples.AspNetCoreRazorPages.csproj", "{1B9E6BF4-9D48-4988-9945-248096119E46}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{1f146d40-8b21-4630-8049-14fa4bbbb217}*SharedItemsImports = 5
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{3c493248-f1d1-4948-bba9-76beb5dfa9ff}*SharedItemsImports = 5
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}*SharedItemsImports = 5
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{a1d7653a-c409-414a-b9b0-7879953ebcdd}*SharedItemsImports = 13
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{c00d8070-a38a-4267-9730-e9985cae77df}*SharedItemsImports = 5
@@ -1576,6 +1592,17 @@ Global
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}.Release|x64.Build.0 = Release|x64
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}.Release|x86.ActiveCfg = Release|x86
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}.Release|x86.Build.0 = Release|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x64.ActiveCfg = Debug|x64
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x64.Build.0 = Debug|x64
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x86.ActiveCfg = Debug|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x86.Build.0 = Debug|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|Any CPU.ActiveCfg = Release|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|x64.ActiveCfg = Release|x64
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|x64.Build.0 = Release|x64
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|x86.ActiveCfg = Release|x86
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|x86.Build.0 = Release|x86
 		{34B67004-7249-4EF1-8E12-6E6DA37EA6BE}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{34B67004-7249-4EF1-8E12-6E6DA37EA6BE}.Debug|x64.ActiveCfg = Debug|x64
 		{34B67004-7249-4EF1-8E12-6E6DA37EA6BE}.Debug|x64.Build.0 = Debug|x64
@@ -1720,6 +1747,9 @@ Global
 		{69B678F6-51CF-4A5B-8DEC-1F9CEDC5C9E2} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BD46EFCC-177C-466E-81DF-39314B780ADA} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{83CF7471-0C2D-4B10-AEEC-A345596AF74D} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B} = {83CF7471-0C2D-4B10-AEEC-A345596AF74D}
+		{E3FB283A-B766-4887-95E1-329667671921} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{34B67004-7249-4EF1-8E12-6E6DA37EA6BE} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{1B9E6BF4-9D48-4988-9945-248096119E46} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
