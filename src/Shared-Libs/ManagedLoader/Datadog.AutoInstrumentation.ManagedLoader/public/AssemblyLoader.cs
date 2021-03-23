@@ -361,7 +361,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             return binaryDirs;
         }
 
-        private static bool GetTracerManagedBinariesDirectories(List<string> binaryDirs)
+        private static void GetTracerManagedBinariesDirectories(List<string> binaryDirs)
         {
             // E.g.:
             //  - c:\Program Files\Datadog\.NET Tracer\net45\
@@ -372,7 +372,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
             if (String.IsNullOrWhiteSpace(tracerHomeDirectory))
             {
-                return false;
+                return;
             }
 
             string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir();
@@ -381,15 +381,10 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
             {
                 binaryDirs.Add(managedBinariesDirectory);
-                return true;
-            }
-            else
-            {
-                return false;
             }
         }
 
-        private static bool GetProfilerManagedBinariesDirectories(List<string> binaryDirs)
+        private static void GetProfilerManagedBinariesDirectories(List<string> binaryDirs)
         {
             // Assumed folder structure
             // (support both options for now; be aware tha tgis may change while we are still in Alpha):
@@ -425,11 +420,10 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             // Be defensive against env var not being set.
             if (String.IsNullOrWhiteSpace(nativeProductBinariesDir))
             {
-                return false;
+                return;
             }
 
             nativeProductBinariesDir = Path.GetDirectoryName(Path.Combine(nativeProductBinariesDir, "."));  // Normalize in respect to final dir separator
-            bool dirAdded = false;
 
             {
                 // OPTION A from above (SxS with Tracer):
@@ -441,7 +435,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
                 {
                     binaryDirs.Add(managedBinariesDirectory);
-                    dirAdded = true;
                 }
             }
 
@@ -454,7 +447,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
                 {
                     binaryDirs.Add(managedBinariesDirectory);
-                    dirAdded = true;
                 }
             }
 
@@ -483,11 +475,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
                 {
                     binaryDirs.Add(managedBinariesDirectory);
-                    dirAdded = true;
                 }
             }
 #endif
-            return dirAdded;
         }
 
         private static string GetRuntimeBasedProductBinariesSubdir()
