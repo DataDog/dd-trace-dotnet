@@ -65,8 +65,11 @@ Logger::Logger() {
 
   static auto current_process_name = ToString(GetCurrentProcessName());
   static auto current_process_id= GetPID();
-  static auto file_name_suffix =
-      "-" + current_process_name + "-" + std::to_string(current_process_id);
+  static auto current_process_without_extension =
+      current_process_name.substr(0, current_process_name.find_last_of("."));
+
+  static auto file_name_suffix = "-" + current_process_without_extension + "-" +
+                                 std::to_string(current_process_id);
 
   try {
     m_fileout = spdlog::rotating_logger_mt(
