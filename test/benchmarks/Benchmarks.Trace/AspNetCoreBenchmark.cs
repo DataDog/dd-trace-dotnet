@@ -160,6 +160,12 @@ namespace Benchmarks.Trace
         {
             return null;
         }
+
+        [Benchmark]
+        public string CallTargetSendRequest()
+        {
+            return null;
+        }
     }
 }
 
