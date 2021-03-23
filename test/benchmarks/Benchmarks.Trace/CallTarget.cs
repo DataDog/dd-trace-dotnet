@@ -31,6 +31,7 @@ namespace Benchmarks.Trace
                 catch(Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 result = bodyCallback();
             }
@@ -49,6 +50,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
             return result;
@@ -70,6 +72,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 result = bodyCallback(arg1);
             }
@@ -88,6 +91,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
             return result;
@@ -109,6 +113,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 result = bodyCallback(arg1, arg2);
             }
@@ -127,6 +132,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
             return result;
@@ -148,6 +154,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3);
             }
@@ -166,6 +173,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
             return result;
@@ -187,6 +195,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4);
             }
@@ -205,6 +214,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
             return result;
@@ -226,6 +236,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4, arg5);
             }
@@ -244,6 +255,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
             return result;
@@ -265,6 +277,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6);
             }
@@ -283,6 +296,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
             return result;
@@ -304,6 +318,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
             }
@@ -322,6 +337,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
             return result;
@@ -343,6 +359,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
             }
@@ -361,11 +378,11 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
             return result;
         }
-
 
         // ***************************************************************************************************************
         //  RunVoid
@@ -386,6 +403,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 bodyCallback();
             }
@@ -403,6 +421,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
         }
@@ -422,6 +441,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 bodyCallback(arg1);
             }
@@ -439,6 +459,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
         }
@@ -458,6 +479,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 bodyCallback(arg1, arg2);
             }
@@ -475,6 +497,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
         }
@@ -494,6 +517,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3);
             }
@@ -511,6 +535,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
         }
@@ -530,6 +555,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4);
             }
@@ -547,6 +573,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
         }
@@ -566,6 +593,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4, arg5);
             }
@@ -583,6 +611,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
         }
@@ -602,6 +631,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6);
             }
@@ -619,6 +649,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
         }
@@ -638,6 +669,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
             }
@@ -655,6 +687,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
         }
@@ -674,6 +707,7 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
             }
@@ -691,10 +725,9 @@ namespace Benchmarks.Trace
                 catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                    throw;
                 }
             }
         }
-
-
     }
 }

@@ -79,19 +79,19 @@ namespace Benchmarks.Trace
         [Benchmark]
         public unsafe object CallTargetCallElasticsearch()
         {
-            return CallTarget.Run<RequestPipeline_CallElasticsearch_Integration, RequestPipeline, RequestData, object>(Pipeline, Data, &GetData);
+            return CallTarget.Run<RequestPipeline_CallElasticsearch_Integration, RequestPipeline, RequestData, int>(Pipeline, Data, &GetData);
 
-            static object GetData(RequestData data) => null;
+            static int GetData(RequestData data) => default;
         }
 
 
         [Benchmark]
-        public unsafe object CallTargetCallElasticsearchAsync()
+        public unsafe int CallTargetCallElasticsearchAsync()
         {
-            return CallTarget.Run<RequestPipeline_CallElasticsearchAsync_Integration, RequestPipeline, RequestData, CancellationToken, Task<object>>
+            return CallTarget.Run<RequestPipeline_CallElasticsearchAsync_Integration, RequestPipeline, RequestData, CancellationToken, Task<int>>
                 (Pipeline, Data, CancellationToken.None, &GetData).GetAwaiter().GetResult();
 
-            static Task<object> GetData(RequestData data, CancellationToken cancellationToken) => Task.FromResult<object>(null);
+            static Task<int> GetData(RequestData data, CancellationToken cancellationToken) => Task.FromResult<int>(default);
         }
     }
 }
