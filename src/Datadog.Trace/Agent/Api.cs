@@ -59,8 +59,6 @@ namespace Datadog.Trace.Agent
 
                 // Set additional headers
                 request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
-                request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, FrameworkDescription.Instance.Name);
-                request.AddHeader(AgentHttpHeaderNames.LanguageVersion, FrameworkDescription.Instance.ProductVersion);
 
                 if (_containerId != null)
                 {

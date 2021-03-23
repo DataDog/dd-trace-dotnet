@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace Datadog.Trace
 {
@@ -37,5 +37,17 @@ namespace Datadog.Trace
         /// The id of the container where the traced application is running.
         /// </summary>
         public const string ContainerId = "Datadog-Container-ID";
+
+        /// <summary>
+        /// Gets the default constant header that should be added to any request to the agent
+        /// </summary>
+        internal static KeyValuePair<string, string>[] DefaultHeaders { get; } =
+        {
+            new(Language, ".NET"),
+            new(TracerVersion, TracerConstants.AssemblyVersion),
+            new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
+            new(LanguageInterpreter, FrameworkDescription.Instance.Name),
+            new(LanguageVersion, FrameworkDescription.Instance.ProductVersion)
+        };
     }
 }
