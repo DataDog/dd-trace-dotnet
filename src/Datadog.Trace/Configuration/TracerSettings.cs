@@ -388,7 +388,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the feature flag to enable the updated ASP.NET resource names is enabled
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.AspnetRouteTemplateResourceNamesEnabled"/>
         internal bool AspnetRouteTemplateResourceNamesEnabled { get; }
 
         /// <summary>
