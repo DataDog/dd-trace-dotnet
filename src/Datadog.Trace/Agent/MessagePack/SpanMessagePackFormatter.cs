@@ -65,7 +65,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteByte(ref bytes, offset, 1);
             }
 
-            offset += value.Tags.SerializeTo(ref bytes, offset);
+            offset += value.Tags.SerializeTo(ref bytes, offset, value);
 
             return offset - originalOffset;
         }

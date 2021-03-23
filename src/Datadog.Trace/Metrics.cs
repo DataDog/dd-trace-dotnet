@@ -21,5 +21,11 @@ namespace Datadog.Trace
         /// Read: Rate Limiter Priority Sample Rate
         /// </summary>
         public const string SamplingLimitDecision = "_dd.limit_psr";
+
+        /// <summary>
+        /// To be set on top-level spans
+        /// Top-level spans are spans with a different service name from their immediate parent
+        /// </summary>
+        internal const string TopLevelSpan = "_dd.top_level";
     }
 }
