@@ -1108,11 +1108,11 @@ namespace shared {
         // check if the loader has been already loaded for this AppDomain
         //
         if (loaders_loaded_.find(appDomainId) != loaders_loaded_.end()) {
-            Warn("Loader::GetAssemblyAndSymbolsBytes the loader was already loaded for AppDomainID=" + ToString(appDomainId));
+            Warn("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded for AppDomainID=" + ToString(appDomainId));
             return false;
         }
 
-        Info("Loader::GetAssemblyAndSymbolsBytes Loading loader data for AppDomainID=" + ToString(appDomainId));
+        Info("Loader::GetAssemblyAndSymbolsBytes: Loading loader data for AppDomainID=" + ToString(appDomainId));
         loaders_loaded_.insert(appDomainId);
 
 #ifdef _WIN32
@@ -1137,12 +1137,29 @@ namespace shared {
         HGLOBAL hResSymbols = LoadResource(hInstance, hResSymbolsInfo);
         *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
         *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
+
+        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for AppDomainID=" + ToString(appDomainId) + " (platform=_WIN32)."
+              " *assemblySize=" + ToString(*assemblySize) + ","
+              " *pAssemblyArray=" + ToString(reinterpret_cast<std::uint64_t>(*pAssemblyArray)) + ","
+              " *symbolsSize=" + ToString(*symbolsSize) + ","
+              " *pSymbolsArray=" + ToString(reinterpret_cast<std::uint64_t>(*pSymbolsArray)) + ".");
+
+        Debug("Loader::GetAssemblyAndSymbolsBytes: resourceMonikerIDs_: _.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll=" + ToString(resourceMonikerIDs_.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll) + ","
+            " _.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb=" + ToString(resourceMonikerIDs_.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb) + ","
+            " _.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll=" + ToString(resourceMonikerIDs_.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll) + ","
+            " _.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb=" + ToString(resourceMonikerIDs_.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb) + ".");
 #elif LINUX
         *assemblySize = dll_end - dll_start;
         *pAssemblyArray = (void*)dll_start;
 
         *symbolsSize = pdb_end - pdb_start;
         *pSymbolsArray = (void*)pdb_start;
+
+        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for AppDomainID=" + ToString(appDomainId) + " (platform=LINUX)."
+            " *assemblySize=" + ToString(*assemblySize) + ", "
+            " *pAssemblyArray=" + ToString(reinterpret_cast<std::uint64_t>(*pAssemblyArray)) + ", "
+            " *symbolsSize=" + ToString(*symbolsSize) + ", "
+            " *pSymbolsArray=" + ToString(reinterpret_cast<std::uint64_t>(*pSymbolsArray)) + ".");
 #elif MACOS
         const unsigned int imgCount = _dyld_image_count();
 
@@ -1164,8 +1181,14 @@ namespace shared {
                 break;
             }
         }
+
+        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for AppDomainID=" + ToString(appDomainId) + " (platform=MACOS)."
+            " *assemblySize=" + ToString(*assemblySize) + ", "
+            " *pAssemblyArray=" + ToString(reinterpret_cast<std::uint64_t>(*pAssemblyArray)) + ", "
+            " *symbolsSize=" + ToString(*symbolsSize) + ", "
+            " *pSymbolsArray=" + ToString(reinterpret_cast<std::uint64_t>(*pSymbolsArray)) + ".");
 #else
-        Error("Platform not supported.");
+        Error("Loader::GetAssemblyAndSymbolsBytes. Platform not supported.");
         return false;
 #endif
         return true;
