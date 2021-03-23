@@ -6,6 +6,9 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Benchmarks.Trace
 {
+    /// <summary>
+    /// Helper class to simulate the calltarget rewriting for benchmark tests
+    /// </summary>
     internal unsafe static class CallTarget
     {
         // ***************************************************************************************************************
@@ -285,6 +288,84 @@ namespace Benchmarks.Trace
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TResult Run<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult>(TTarget targetInstance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7, delegate*<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult> bodyCallback)
+        {
+            TResult result = default;
+            CallTargetState state = CallTargetState.GetDefault();
+            CallTargetReturn<TResult> cReturn = CallTargetReturn<TResult>.GetDefault();
+            Exception exception = null;
+            try
+            {
+                try
+                {
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                }
+                catch (Exception ex)
+                {
+                    CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                }
+                result = bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                throw;
+            }
+            finally
+            {
+                try
+                {
+                    cReturn = CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, state);
+                    result = cReturn.GetReturnValue();
+                }
+                catch (Exception ex)
+                {
+                    CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                }
+            }
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TResult Run<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult>(TTarget targetInstance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7, TArg8 arg8, delegate*<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult> bodyCallback)
+        {
+            TResult result = default;
+            CallTargetState state = CallTargetState.GetDefault();
+            CallTargetReturn<TResult> cReturn = CallTargetReturn<TResult>.GetDefault();
+            Exception exception = null;
+            try
+            {
+                try
+                {
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+                }
+                catch (Exception ex)
+                {
+                    CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                }
+                result = bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                throw;
+            }
+            finally
+            {
+                try
+                {
+                    cReturn = CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, state);
+                    result = cReturn.GetReturnValue();
+                }
+                catch (Exception ex)
+                {
+                    CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                }
+            }
+            return result;
+        }
+
 
         // ***************************************************************************************************************
         //  RunVoid
@@ -541,6 +622,79 @@ namespace Benchmarks.Trace
                 }
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void RunVoid<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(TTarget targetInstance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7, delegate*<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, void> bodyCallback)
+        {
+            CallTargetState state = CallTargetState.GetDefault();
+            CallTargetReturn cReturn = CallTargetReturn.GetDefault();
+            Exception exception = null;
+            try
+            {
+                try
+                {
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                }
+                catch (Exception ex)
+                {
+                    CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                }
+                bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                throw;
+            }
+            finally
+            {
+                try
+                {
+                    cReturn = CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, state);
+                }
+                catch (Exception ex)
+                {
+                    CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void RunVoid<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(TTarget targetInstance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7, TArg8 arg8, delegate*<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, void> bodyCallback)
+        {
+            CallTargetState state = CallTargetState.GetDefault();
+            CallTargetReturn cReturn = CallTargetReturn.GetDefault();
+            Exception exception = null;
+            try
+            {
+                try
+                {
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+                }
+                catch (Exception ex)
+                {
+                    CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                }
+                bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                throw;
+            }
+            finally
+            {
+                try
+                {
+                    cReturn = CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, state);
+                }
+                catch (Exception ex)
+                {
+                    CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
+                }
+            }
+        }
+
 
     }
 }

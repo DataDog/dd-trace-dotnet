@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
@@ -91,12 +92,13 @@ namespace GraphQL
         {
             public DocumentImpl Document { get; } = new DocumentImpl();
             public OperationImpl Operation { get; } = new OperationImpl();
+            public ErrorsImpl Errors { get; } = new ErrorsImpl();
         }
 
         internal class OperationImpl
         {
             public string Name { get; } = "OperationName";
-            public OperationTypes OperationType { get; } = OperationTypes.Default;
+            public OperationTypes OperationType { get; } = OperationTypes.Query;
         }
 
         internal class DocumentImpl
@@ -104,9 +106,30 @@ namespace GraphQL
             public string OriginalQuery { get; } = "Query";
         }
 
-        internal enum OperationTypes
+        internal class ErrorsImpl
         {
-            Default
+            int Count { get; } = 0;
+
+            ExecutionErrorImpl this[int index] { 
+                get {
+                    return null;
+                } 
+            }
+        }
+
+        internal class ExecutionErrorImpl
+        {
+            string Code { get; }
+            IEnumerable<object> Locations { get; }
+            string Message { get; }
+            IEnumerable<string> Path { get; }
+        }
+
+        public enum OperationTypes
+        {
+            Query,
+            Mutation,
+            Subscription
         }
     }
 }

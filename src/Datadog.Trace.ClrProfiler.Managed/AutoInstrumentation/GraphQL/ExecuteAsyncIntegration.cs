@@ -1,7 +1,5 @@
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
@@ -60,12 +58,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 {
                     scope.Span?.SetException(exception);
                 }
-                else
+                else if (state.State is IExecutionContext context)
                 {
-                    if (state.State.TryDuckCast<IExecutionContext>(out var context))
-                    {
-                        GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, context.Errors);
-                    }
+                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, context.Errors);
                 }
             }
             finally
