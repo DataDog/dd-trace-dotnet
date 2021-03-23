@@ -14,6 +14,11 @@ namespace Datadog.Logging.Composition
     {
         private readonly ILogSink[] _logSinks;
 
+        public AggregatedLogSink(params ILogSink[] logSinks)
+            : this((IEnumerable <ILogSink>) logSinks)
+        {
+        }
+
         public AggregatedLogSink(IEnumerable<ILogSink> logSinks)
         {
             if (logSinks == null)
