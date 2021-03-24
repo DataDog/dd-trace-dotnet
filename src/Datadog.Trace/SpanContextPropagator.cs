@@ -194,6 +194,7 @@ namespace Datadog.Trace
                     continue;
                 }
 
+                // Tag name is normalized during Tracer instantiation so use as-is
                 if (!string.IsNullOrWhiteSpace(headerNameToTagName.Value))
                 {
                     yield return new KeyValuePair<string, string>(headerNameToTagName.Value, headerValue);
