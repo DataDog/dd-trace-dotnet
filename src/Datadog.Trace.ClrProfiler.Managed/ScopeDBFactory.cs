@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             if (_dbTypeName == null)
             {
-                // don't create a scope, skip this trace
+                // don't create a scope, skip this span
                 return null;
             }
 
