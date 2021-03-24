@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget, enableInlining);
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.AspnetRouteTemplateResourceNamesEnabled, "true");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
 
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);

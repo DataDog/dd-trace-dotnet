@@ -255,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
-                var newResourceNamesEnabled = Tracer.Instance.Settings.AspnetRouteTemplateResourceNamesEnabled;
+                var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;
                 Uri requestUri = request.RequestUri;
 

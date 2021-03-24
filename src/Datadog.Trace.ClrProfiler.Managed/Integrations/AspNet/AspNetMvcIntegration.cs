@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return null;
                 }
 
-                var newResourceNamesEnabled = Tracer.Instance.Settings.AspnetRouteTemplateResourceNamesEnabled;
+                var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
                 string host = httpContext.Request.Headers.Get("Host");
                 string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
                 string url = httpContext.Request.RawUrl.ToLowerInvariant();

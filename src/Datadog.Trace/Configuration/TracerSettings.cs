@@ -181,7 +181,7 @@ namespace Datadog.Trace.Configuration
             TraceBatchInterval = source?.GetInt32(ConfigurationKeys.SerializationBatchInterval)
                         ?? 100;
 
-            AspnetRouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.AspnetRouteTemplateResourceNamesEnabled)
+            RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                    ?? false;
         }
 
@@ -388,8 +388,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the feature flag to enable the updated ASP.NET resource names is enabled
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.FeatureFlags.AspnetRouteTemplateResourceNamesEnabled"/>
-        internal bool AspnetRouteTemplateResourceNamesEnabled { get; }
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
+        internal bool RouteTemplateResourceNamesEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
