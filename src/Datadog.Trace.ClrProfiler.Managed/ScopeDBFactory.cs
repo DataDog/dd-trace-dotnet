@@ -10,20 +10,29 @@ namespace Datadog.Trace.ClrProfiler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeDBFactory<T>));
 
+        private static readonly Type _type;
         private static readonly string _fullName;
         private static readonly string _dbTypeName;
         private static readonly string _operationName;
 
         static ScopeDBFactory()
         {
-            var type = typeof(T);
-            _fullName = type.FullName;
-            _dbTypeName = ScopeFactory.GetDbType(type.Name);
+            _type = typeof(T);
+            _fullName = _type.FullName;
+            _dbTypeName = ScopeFactory.GetDbType(_type.Name);
             _operationName = $"{_dbTypeName}.query";
         }
 
         public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
+            if (command.GetType() != _type)
+            {
+                // if the type of the instance is different than the factory type
+                // (if the method instrumented is defined in a base class)
+                // we fallback to the previous factory.
+                return ScopeFactory.CreateDbCommandScope(tracer, command);
+            }
+
             if (_dbTypeName == null)
             {
                 // don't create a scope, skip this span
