@@ -3,7 +3,7 @@
 #include "pal.h"
 
 #include "spdlog/sinks/null_sink.h"
-#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/rotating_file_sink.h"
 
 #ifndef _WIN32
 typedef struct stat Stat;
@@ -26,8 +26,8 @@ std::string getPathName(const std::string& s) {
 }
 #endif
 
-std::string Logger::GetLogPath() {
-  const auto path = ToString(DatadogLogFilePath());
+std::string Logger::GetLogPath(const std::string& file_name_suffix) {
+  const auto path = ToString(DatadogLogFilePath(file_name_suffix));
 
 #ifdef _WIN32
   // on VC++, use std::filesystem (C++ 17) to
@@ -63,8 +63,17 @@ Logger::Logger() {
 
   spdlog::flush_every(std::chrono::seconds(3));
 
+  static auto current_process_name = ToString(GetCurrentProcessName());
+  static auto current_process_id= GetPID();
+  static auto current_process_without_extension =
+      current_process_name.substr(0, current_process_name.find_last_of("."));
+
+  static auto file_name_suffix = "-" + current_process_without_extension + "-" +
+                                 std::to_string(current_process_id);
+
   try {
-    m_fileout = spdlog::basic_logger_mt("Logger", GetLogPath());
+    m_fileout = spdlog::rotating_logger_mt(
+        "Logger", GetLogPath(file_name_suffix), 1048576 * 5, 10);
   }
   catch (...) {
     std::cerr << "Logger Handler: Error creating native log file." << std::endl;
@@ -73,10 +82,7 @@ Logger::Logger() {
 
   m_fileout->set_level(spdlog::level::debug);
 
-  static auto current_process_name = ToString(GetCurrentProcessName());
-
-  m_fileout->set_pattern("%D %I:%M:%S.%e %p [" + current_process_name +
-                         "|%P|%t] [%l] %v");
+  m_fileout->set_pattern("%D %I:%M:%S.%e %p [%P|%t] [%l] %v");
 
   m_fileout->flush_on(spdlog::level::info);
 };
