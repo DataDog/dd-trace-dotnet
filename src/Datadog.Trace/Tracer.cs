@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Conventions;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -103,6 +104,17 @@ namespace Datadog.Trace
             else
             {
                 _agentWriter = agentWriter;
+            }
+
+            switch (Settings.Convention)
+            {
+                case ConventionType.OpenTelemetry:
+                    OutboundHttpConvention = new OtelOutboundHttpConvention(this);
+                    break;
+                case ConventionType.Datadog:
+                default:
+                    OutboundHttpConvention = new DatadogOutboundHttpConvention(this);
+                    break;
             }
 
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
@@ -240,6 +252,8 @@ namespace Datadog.Trace
         internal ISampler Sampler { get; }
 
         internal IDogStatsd Statsd { get; private set; }
+
+        internal IOutboundHttpConvention OutboundHttpConvention { get; }
 
         /// <summary>
         /// Create a new Tracer with the given parameters

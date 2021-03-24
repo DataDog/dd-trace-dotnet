@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests.Tagging
 
         private void ValidateProperties<T>(Type type, string methodName, Func<T> valueGenerator)
         {
-            var instance = (ITags)Activator.CreateInstance(type);
+            var instance = (ITags)Activator.CreateInstance(type, nonPublic: true);
 
             var allTags = (IProperty<T>[])type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)
                 .Invoke(instance, null);

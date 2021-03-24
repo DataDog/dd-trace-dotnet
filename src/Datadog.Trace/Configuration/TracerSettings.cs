@@ -170,6 +170,9 @@ namespace Datadog.Trace.Configuration
                                            "500-599";
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
 
+            Enum.TryParse(source?.GetString(ConfigurationKeys.Convention) ?? "default", ignoreCase: true, out ConventionType conventionType);
+            Convention = conventionType;
+
             var httpClientErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpClientErrorStatusCodes) ??
                                         // Default value
                                         "400-499";
@@ -327,6 +330,14 @@ namespace Datadog.Trace.Configuration
         /// are enabled and sent to DogStatsd.
         /// </summary>
         public bool TracerMetricsEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the semantic convention to be used.
+        /// The Tracer uses it to define operation names, span tags, statuses etc.
+        /// Default is <c>"Default"</c>.
+        /// <seealso cref="ConfigurationKeys.Convention"/>
+        /// </summary>
+        public ConventionType Convention { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether runtime metrics

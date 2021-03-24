@@ -278,6 +278,14 @@ namespace Datadog.Trace.Configuration
         public const string DiagnosticSourceEnabled = "DD_DIAGNOSTIC_SOURCE_ENABLED";
 
         /// <summary>
+        /// Configuration key for the semantic convention to be used.
+        /// The Tracer uses it to define operation names, span tags, statuses etc.
+        /// Default is <c>"Default"</c>.
+        /// <seealso cref="TracerSettings.Convention"/>
+        /// </summary>
+        public const string Convention = "DD_CONVENTION";
+
+        /// <summary>
         /// Configuration key for setting the API key, used by the Agent.
         /// This key is here for troubleshooting purposes.
         /// </summary>
