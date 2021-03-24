@@ -32,13 +32,13 @@ namespace Datadog.Trace.ClrProfiler
 
             if (!tracer.Settings.IsIntegrationEnabled(AdoNetConstants.IntegrationId))
             {
-                // integration disabled, don't create a scope, skip this trace
+                // integration disabled, don't create a scope, skip this span
                 return null;
             }
 
             if (tracer.Settings.AdoNetExcludedTypes.Count > 0 && tracer.Settings.AdoNetExcludedTypes.Contains(_fullName))
             {
-                // AdoNet type disabled, don't create a scope, skip this trace
+                // AdoNet type disabled, don't create a scope, skip this span
                 return null;
             }
 
