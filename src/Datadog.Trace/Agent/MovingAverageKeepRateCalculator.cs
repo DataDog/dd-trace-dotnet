@@ -23,6 +23,7 @@ namespace Datadog.Trace.Agent
         private readonly uint[] _created;
 
         private readonly CancellationTokenSource _cts = new();
+        private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
         private int _index = 0;
         private long _totals = 0;
@@ -98,7 +99,7 @@ namespace Datadog.Trace.Agent
         /// </summary>
         public void CancelUpdates()
         {
-            _cts.Cancel();
+            _processExit.TrySetResult(true);
         }
 
         /// <summary>
@@ -131,14 +132,17 @@ namespace Datadog.Trace.Agent
         {
             while (true)
             {
-                if (_cts.IsCancellationRequested)
+                if (_processExit.Task.IsCompleted)
                 {
                     return;
                 }
 
                 UpdateBucket();
 
-                await Task.Delay(_bucketDuration, _cts.Token).ConfigureAwait(false);
+                await Task.WhenAny(
+                               Task.Delay(_bucketDuration),
+                               _processExit.Task)
+                          .ConfigureAwait(false);
             }
         }
 

@@ -64,54 +64,6 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task Calculator_ShouldAutomaticallyIncrementBuckets()
-        {
-            var bucketSize = 10;
-            const int milliseconds = 50;
-            var timespanIncrements = TimeSpan.FromMilliseconds(milliseconds);
-
-            var calc = new MovingAverageKeepRateCalculator(bucketSize, timespanIncrements);
-
-            // keep rate should be 0 before we add anything
-            Assert.Equal(expected: 0, actual: calc.GetKeepRate());
-
-            calc.IncrementKeeps(10);
-
-            await Task.Delay(milliseconds * 2);
-
-            Assert.Equal(expected: 1, actual: calc.GetKeepRate());
-
-            calc.IncrementDrops(2);
-            calc.IncrementKeeps(8);
-
-            await Task.Delay(milliseconds * 2);
-
-            Assert.Equal(expected: 0.9, calc.GetKeepRate(), precision: 2);
-
-            // the initial "keeps" should drop off the end at some point
-            var hitExpectedRate = false;
-            for (int i = 0; i < bucketSize; i++)
-            {
-                await Task.Delay(milliseconds);
-                var rate = calc.GetKeepRate();
-
-                // Should hit 0.8 at some point
-                if (Math.Abs(rate - 0.8) < 0.01)
-                {
-                    hitExpectedRate = true;
-                }
-            }
-
-            calc.CancelUpdates();
-
-            Assert.True(hitExpectedRate, "Should have seen a hit rate of 0.8");
-
-            var finalRate = calc.GetKeepRate();
-
-            Assert.Equal(expected: 0, finalRate);
-        }
-
-        [Fact]
         public void Calculator_ShouldHandleOverflows()
         {
             const int size = 5;
@@ -126,6 +78,43 @@ namespace Datadog.Trace.Tests.Agent
 
             // should not be negative!
             Assert.Equal(expected: 1, actualRate);
+        }
+
+        [Fact(Skip = "Flaky as is very timing/load dependent")]
+        public void Calculator_ShouldUpdateAutomatically()
+        {
+            const int bucketSize = 10;
+            const int bucketDuration = 10;
+
+            var calc = new MovingAverageKeepRateCalculator(bucketSize, TimeSpan.FromMilliseconds(bucketDuration));
+
+            // precondition
+            Assert.Equal(0, calc.GetKeepRate());
+
+            calc.IncrementKeeps(10);
+            calc.IncrementDrops(10);
+
+            var updatedKeepRate = false;
+
+            for (var i = 0; i < 20; i++)
+            {
+                var rate = calc.GetKeepRate();
+                if (Math.Abs(rate - 0.5) < 0.01)
+                {
+                    // rate updated automatically
+                    updatedKeepRate = true;
+                    break;
+                }
+
+                Thread.Sleep(5);
+            }
+
+            Assert.True(updatedKeepRate, "Keep rate was not updated automatically");
+
+            Thread.Sleep(bucketDuration * bucketSize);
+
+            // buckets should all be empty again now
+            Assert.Equal(0, calc.GetKeepRate());
         }
     }
 }
