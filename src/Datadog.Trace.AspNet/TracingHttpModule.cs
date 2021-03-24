@@ -161,7 +161,7 @@ namespace Datadog.Trace.AspNet
                 {
                     scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
 
-                    if (app.Context.Items["__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename"] is string resourceName
+                    if (app.Context.Items[SharedConstants.HttpContextPropagatedResourceNameKey] is string resourceName
                         && !string.IsNullOrEmpty(resourceName))
                     {
                         scope.Span.ResourceName = resourceName;

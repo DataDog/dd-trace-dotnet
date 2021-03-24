@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Routing;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
 using Datadog.Trace.Configuration;
@@ -180,7 +181,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 if (newResourceNamesEnabled)
                 {
                     // set the resource name in the HttpContext so TracingHttpModule can update root span
-                    httpContext.Items["__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename"] = resourceName;
+                    httpContext.Items[SharedConstants.HttpContextPropagatedResourceNameKey] = resourceName;
                 }
             }
             catch (Exception ex)

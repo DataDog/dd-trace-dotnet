@@ -50,4 +50,10 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
     <!-- Include Datadog.Trace.Build assembly as a reference for publishing purposes -->
     <ProjectReference Include="..\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj" PrivateAssets="all" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace.AspNet\SharedConstants.cs">
+      <Link>Integrations\AspNet\SharedConstants.cs</Link>
+    </Compile>
+  </ItemGroup>
 </Project>

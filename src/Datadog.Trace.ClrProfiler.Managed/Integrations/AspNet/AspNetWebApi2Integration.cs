@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
@@ -329,7 +330,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     var httpContext = System.Web.HttpContext.Current;
                     if (httpContext is not null)
                     {
-                        httpContext.Items["__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename"] = resourceName;
+                        httpContext.Items[SharedConstants.HttpContextPropagatedResourceNameKey] = resourceName;
                     }
                 }
             }
