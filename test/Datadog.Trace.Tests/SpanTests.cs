@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -149,12 +148,6 @@ namespace Datadog.Trace.Tests
             spans.Add((_tracer.StartActive("Child2", serviceName: "child"), true));
             spans.Add((_tracer.StartActive("Child3", serviceName: "child"), false));
             spans.Add((_tracer.StartActive("Child4", serviceName: "root"), true));
-
-            // Dispose the scope to populate the top-level property
-            foreach (var (scope, _) in spans.AsEnumerable().Reverse())
-            {
-                scope.Dispose();
-            }
 
             foreach (var (scope, expectedResult) in spans)
             {

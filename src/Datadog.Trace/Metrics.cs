@@ -23,8 +23,8 @@ namespace Datadog.Trace
         public const string SamplingLimitDecision = "_dd.limit_psr";
 
         /// <summary>
-        /// To be set on top-level spans
-        /// Top-level spans are spans with a different service name from their immediate parent
+        /// Identifies top-level spans.
+        /// Top-level spans have a different service name from their immediate parent or have no parent.
         /// </summary>
         internal const string TopLevelSpan = "_dd.top_level";
     }

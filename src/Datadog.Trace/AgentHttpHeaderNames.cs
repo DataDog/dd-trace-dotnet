@@ -41,7 +41,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Tells the agent whether top-level spans are computed by the tracer
         /// </summary>
-        public const string ComputedTopLevel = "Datadog-Client-Computed-Top-Level";
+        public const string ComputedTopLevelSpan = "Datadog-Client-Computed-Top-Level";
 
         /// <summary>
         /// Gets the default constant header that should be added to any request to the agent
@@ -53,7 +53,7 @@ namespace Datadog.Trace
             new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
             new(LanguageInterpreter, FrameworkDescription.Instance.Name),
             new(LanguageVersion, FrameworkDescription.Instance.ProductVersion),
-            new(ComputedTopLevel, "1")
+            new(ComputedTopLevelSpan, "1")
         };
     }
 }
