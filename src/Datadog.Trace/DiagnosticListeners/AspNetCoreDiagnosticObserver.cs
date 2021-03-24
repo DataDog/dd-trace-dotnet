@@ -541,7 +541,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
 
-                if (!tracer.Settings.AspNetCoreRouteTemplateResourceNamesEnabled)
+                if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
                 {
                     SetLegacyResourceNames(typedArg, parentSpan);
                     return;
@@ -656,7 +656,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var tracer = _tracer ?? Tracer.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
-                !tracer.Settings.AspNetCoreRouteTemplateResourceNamesEnabled)
+                !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
             }
@@ -771,7 +771,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var tracer = _tracer ?? Tracer.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
-                !tracer.Settings.AspNetCoreRouteTemplateResourceNamesEnabled)
+                !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
             }

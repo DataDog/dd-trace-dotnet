@@ -145,7 +145,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var writer = new AgentWriterStub();
             var configSource = new NameValueConfigurationSource(new NameValueCollection
             {
-                { ConfigurationKeys.FeatureFlags.AspNetCoreRouteTemplateResourceNamesEnabled, featureFlag.ToString() },
+                { ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, featureFlag.ToString() },
             });
             var tracer = GetTracer(writer, configSource);
 
