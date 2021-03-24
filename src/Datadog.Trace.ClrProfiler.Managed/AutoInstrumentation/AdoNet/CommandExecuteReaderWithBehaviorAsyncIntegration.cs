@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior, CancellationToken cancellationToken)
         {
-            return new CallTargetState(ScopeFactory.CreateDbCommandScope(Tracer.Instance, instance as IDbCommand));
+            return new CallTargetState(ScopeDBFactory<TTarget>.CreateDbCommandScope(Tracer.Instance, (IDbCommand)instance));
         }
 
         /// <summary>
