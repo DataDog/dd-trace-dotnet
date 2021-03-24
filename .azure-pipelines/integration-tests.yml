@@ -73,7 +73,7 @@ jobs:
     displayName: docker-compose run Profiler
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run Profiler
+      dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
     artifact: linux-tracer-home
@@ -174,7 +174,7 @@ jobs:
     displayName: docker-compose run Profiler.Alpine
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run Profiler.Alpine
+      dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
     artifact: alpine-linux-tracer-home
