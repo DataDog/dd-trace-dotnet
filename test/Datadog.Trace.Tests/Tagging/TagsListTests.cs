@@ -6,6 +6,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.MessagePack;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Tagging
@@ -36,11 +37,26 @@ namespace Datadog.Trace.Tests.Tagging
             }
         }
 
-        [Fact]
-        public void Serialization()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Serialization(bool topLevelSpan)
         {
             var tags = new CommonTags();
-            var span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow, tags);
+
+            Span span;
+
+            if (topLevelSpan)
+            {
+                span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow, tags);
+            }
+            else
+            {
+                // Assign a parent to prevent the span from being considered as top-level
+                var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+                var parent = new SpanContext(42, 41);
+                span = new Span(new SpanContext(parent, traceContext, null), DateTimeOffset.UtcNow, tags);
+            }
 
             // The span has 1 "common" tag and 15 additional tags (and same number of metrics)
             // Those numbers are picked to test the variable-size header of MessagePack
@@ -67,7 +83,9 @@ namespace Datadog.Trace.Tests.Tagging
             var deserializedSpan = MessagePack.MessagePackSerializer.Deserialize<FakeSpan>(buffer);
 
             Assert.Equal(16, deserializedSpan.Tags.Count);
-            Assert.Equal(16, deserializedSpan.Metrics.Count);
+
+            // For top-level spans, there is one metric added during serialization
+            Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Metrics.Count);
 
             Assert.Equal("Test", deserializedSpan.Tags[Tags.Env]);
             Assert.Equal(0.5, deserializedSpan.Metrics[Metrics.SamplingLimitDecision]);
@@ -76,6 +94,11 @@ namespace Datadog.Trace.Tests.Tagging
             {
                 Assert.Equal(i.ToString(), deserializedSpan.Tags[i.ToString()]);
                 Assert.Equal((double)i, deserializedSpan.Metrics[i.ToString()]);
+            }
+
+            if (topLevelSpan)
+            {
+                Assert.Equal(1.0, deserializedSpan.Metrics[Metrics.TopLevelSpan]);
             }
         }
 

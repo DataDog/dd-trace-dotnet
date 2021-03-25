@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -169,12 +170,12 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public int SerializeTo(ref byte[] bytes, int offset)
+        public int SerializeTo(ref byte[] bytes, int offset, Span span)
         {
             int originalOffset = offset;
 
             offset += WriteTags(ref bytes, offset);
-            offset += WriteMetrics(ref bytes, offset);
+            offset += WriteMetrics(ref bytes, offset, span);
 
             return offset - originalOffset;
         }
@@ -236,6 +237,13 @@ namespace Datadog.Trace.Tagging
 
         protected virtual IProperty<double?>[] GetAdditionalMetrics() => ArrayHelper.Empty<IProperty<double?>>();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteMetric(ref byte[] bytes, ref int offset, string key, double value)
+        {
+            offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+            offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
+        }
+
         private int WriteTags(ref byte[] bytes, int offset)
         {
             int originalOffset = offset;
@@ -289,13 +297,18 @@ namespace Datadog.Trace.Tagging
             return offset - originalOffset;
         }
 
-        private int WriteMetrics(ref byte[] bytes, int offset)
+        private int WriteMetrics(ref byte[] bytes, int offset, Span span)
         {
             int originalOffset = offset;
 
             offset += MessagePackBinary.WriteString(ref bytes, offset, "metrics");
 
             int count = 0;
+
+            if (span.IsTopLevel)
+            {
+                count++;
+            }
 
             var metrics = Metrics;
             var additionalMetrics = GetAdditionalMetrics();
@@ -318,8 +331,7 @@ namespace Datadog.Trace.Tagging
 
                     foreach (var pair in metrics)
                     {
-                        offset += MessagePackBinary.WriteString(ref bytes, offset, pair.Key);
-                        offset += MessagePackBinary.WriteDouble(ref bytes, offset, pair.Value);
+                        WriteMetric(ref bytes, ref offset, pair.Key, pair.Value);
                     }
                 }
             }
@@ -334,9 +346,13 @@ namespace Datadog.Trace.Tagging
 
                 if (value != null)
                 {
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, property.Key);
-                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, value.Value);
+                    WriteMetric(ref bytes, ref offset, property.Key, value.Value);
                 }
+            }
+
+            if (span.IsTopLevel)
+            {
+                WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0);
             }
 
             return offset - originalOffset;
