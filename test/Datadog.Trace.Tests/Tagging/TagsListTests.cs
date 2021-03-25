@@ -206,26 +206,5 @@ namespace Datadog.Trace.Tests.Tagging
             [MessagePack.Key("metrics")]
             public Dictionary<string, double> Metrics { get; set; }
         }
-
-        internal class DerivedCommonTags : CommonTags
-        {
-            public IEnumerable<KeyValuePair<string, string>> GetAllTags()
-            {
-                foreach (var pair in Tags)
-                {
-                    yield return pair;
-                }
-
-                foreach (var property in GetAdditionalTags())
-                {
-                    var value = property.Getter(this);
-
-                    if (value != null)
-                    {
-                        yield return new KeyValuePair<string, string>(property.Key, value);
-                    }
-                }
-            }
-        }
     }
 }
