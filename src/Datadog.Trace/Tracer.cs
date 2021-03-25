@@ -96,16 +96,7 @@ namespace Datadog.Trace
                 Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort);
             }
 
-            IMetrics metrics = Statsd != null ? new DogStatsdMetrics(Statsd) : new NullMetrics();
-            if (traceWriter == null)
-            {
-                Log.Warning("Using eager agent writer");
-                _traceWriter = new AgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), metrics, maxBufferSize: Settings.TraceBufferSize);
-            }
-            else
-            {
-                _traceWriter = traceWriter;
-            }
+            _traceWriter = traceWriter ?? CreateTraceWriter(Settings, DefaultServiceName, Statsd);
 
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
@@ -655,6 +646,15 @@ namespace Datadog.Trace
                 Log.Error(ex, $"Unable to instantiate {nameof(Statsd)} client.");
                 return new NoOpStatsd();
             }
+        }
+
+        private static ITraceWriter CreateTraceWriter(TracerSettings settings, string serviceName, IDogStatsd statsd)
+        {
+            IMetrics metrics = statsd != null
+                ? new DogStatsdMetrics(statsd)
+                : new NullMetrics();
+
+            return new AgentWriter(new Api(settings.AgentUri, TransportStrategy.Get(settings), statsd), metrics, maxBufferSize: settings.TraceBufferSize);
         }
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
