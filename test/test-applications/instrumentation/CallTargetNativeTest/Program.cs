@@ -85,6 +85,12 @@ namespace CallTargetNativeTest
                     Console.WriteLine("Run with the profiler and use a number from 0-9/all as an argument.");
                     break;
             }
+
+#if NETCOREAPP2_1
+            // Add a delay to avoid a race condition on shutdown: https://github.com/dotnet/coreclr/pull/22712
+            // This would cause a segmentation fault on .net core 2.x
+            System.Threading.Thread.Sleep(5000);
+#endif
         }
 
 
