@@ -44,7 +44,7 @@ namespace DuplicateTypeProxy
 
         private static HttpListener StartHttpListenerWithPortResilience(out string uri)
         {
-            static void HandleHttpRequests(object state)
+            static async Task HandleHttpRequests(object state)
             {
                 var listener = (HttpListener)state;
 
@@ -54,12 +54,11 @@ namespace DuplicateTypeProxy
                 {
                     try
                     {
-                        var context = listener.GetContext();
+                        var context = await listener.GetContextAsync();
 
                         context.Response.ContentEncoding = Encoding.UTF8;
                         context.Response.ContentLength64 = payload.Length;
                         context.Response.OutputStream.Write(payload, 0, payload.Length);
-                        
                         context.Response.Close();
                     }
                     catch (HttpListenerException)
@@ -77,7 +76,7 @@ namespace DuplicateTypeProxy
             {
                 var port = TcpPortProvider.GetOpenPort().ToString();
 
-                uri = $"http://localhost:{port}/Samples.HttpMessageHandler/";
+                uri = $"http://localhost:{port}/Samples.DuplicateTypeProxy/";
 
                 // seems like we can't reuse a listener if it fails to start,
                 // so create a new listener each time we retry
@@ -88,7 +87,7 @@ namespace DuplicateTypeProxy
                 {
                     listener.Start();
 
-                    new Thread(HandleHttpRequests).Start(listener);
+                    _ = Task.Run(() => HandleHttpRequests(listener));
 
                     return listener;
                 }
