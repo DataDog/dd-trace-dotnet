@@ -19,7 +19,9 @@
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <SampleProject Include="test\test-applications\integrations\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
+    <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
+    <RegressionSampleLibProject Include="test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
     <WindowsInstallerProject Include="src\**\*.wixproj"/>
   </ItemGroup>
 
@@ -48,7 +50,13 @@
   </Target>
   
   <Target Name="BuildDependencyLibs">
-    <MSBuild Targets="Build" Projects="@(SampleLibProject)">
+    <MSBuild Targets="Build" Projects="@(SampleLibProject);@(VbSampleLibProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildRegressionDependencyLibs">
+    <MSBuild Targets="Build" Projects="@(RegressionSampleLibProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>

@@ -42,12 +42,9 @@ partial class Build : NukeBuild
     [Parameter("Platform to build - x86 or x64. Default is x64")]
     readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
 
-    [Parameter("The location to publish the build output. Default is ./src/bin/managed-publish ")]
-    readonly AbsolutePath PublishOutput;
-    
-    [Parameter("The location to create the tracer home directory. Default is ./src/bin/tracer-home ")]
+    [Parameter("The location to create the tracer home directory. Default is ./bin/tracer-home ")]
     readonly AbsolutePath TracerHome;
-    [Parameter("The location to place NuGet packages and other packages. Default is ./src/bin/artifiacts ")]
+    [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
     
     [Parameter("The location to restore Nuget packages (optional) ")]
@@ -311,20 +308,37 @@ partial class Build : NukeBuild
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(Configuration)
                 .DisableRestore()
-                .SetNoDependencies()
+                .EnableNoDependencies()
                 .SetTargets("BuildDependencyLibs")
             );
         });
 
-    Target CompileFrameworkReproductions => _ => _
-        .DependsOn(CompileDependencyLibs)
+    Target CompileRegressionDependencyLibs => _ => _
+        .DependsOn(Restore)
+        .DependsOn(CompileManagedSrc)
         .Executes(() =>
         {
-            // TODO: this currently rebuilds all the core libraries for the specific platform, which is _not_ what we want,
-            // but I can't find a simple way to avoid it yet
+            // Platform specific
+            DotNetMSBuild(x => x
+                .SetTargetPath(MsBuildProject)
+                .DisableRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(Configuration)
+                .SetTargetPlatform(Platform)
+                .SetTargets("BuildRegressionDependencyLibs")
+            );
+        });
+
+    Target CompileFrameworkReproductions => _ => _
+        .DependsOn(CompileRegressionDependencyLibs)
+        .DependsOn(CompileDependencyLibs)
+        .DependsOn(CopyPlatformlessBuildOutput)
+        .Executes(() =>
+        {
             DotNetMSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .DisableRestore()
+                .EnableNoDependencies()
                 .SetConfiguration(Configuration)
                 .SetTargetPlatform(Platform)
                 .SetTargets("BuildFrameworkReproductions")
@@ -337,11 +351,10 @@ partial class Build : NukeBuild
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
         {
-            // TODO: this currently rebuilds all the core libraries for the specific platform, which is _not_ what we want,
-            // but I can't find a simple way to avoid it yet
             DotNetMSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .DisableRestore()
+                .EnableNoDependencies()
                 .SetConfiguration(Configuration)
                 .SetTargetPlatform(Platform)
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
@@ -351,6 +364,7 @@ partial class Build : NukeBuild
     
     Target CompileSamples => _ => _
         .DependsOn(CompileDependencyLibs)
+        .DependsOn(CopyPlatformlessBuildOutput)
         .DependsOn(CompileFrameworkReproductions)
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
@@ -417,8 +431,10 @@ partial class Build : NukeBuild
         });
     
     Target RunIntegrationTests => _ => _
+        .DependsOn(BuildTracerHome)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(CompileSamples)
+        .DependsOn(CompileFrameworkReproductions)
         .Executes(() =>
         {
             var projects = new[]
@@ -434,18 +450,57 @@ partial class Build : NukeBuild
                 .EnableNoBuild()
                 .CombineWith(projects, (s, project) => s
                     .SetProjectFile(project)), degreeOfParallelism: 2);
-            
+
+            var clrProfilerIntegrationTests = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
+
             // TODO: I think we should change this filter to run on Windows by default
             // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
             DotNetTest(config => config
+                .SetProjectFile(clrProfilerIntegrationTests)
                 .SetConfiguration(Configuration)
                 .SetTargetPlatform(Platform)
                 .EnableNoRestore()
                 .EnableNoBuild()
-                .SetFilter("(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True") 
-                .CombineWith(projects, (s, project) => s
-                    .SetProjectFile(project)), degreeOfParallelism: 2);
+                .SetFilter("(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True"));
+        });
 
+    /// <summary>
+    /// This target is a bit of a hack, but means that we actually use the All CPU builds in intgration tests etc
+    /// </summary>
+    Target CopyPlatformlessBuildOutput => _ => _
+        .Description("Copies the build output from 'All CPU' platforms to platform-specific folders")
+        .Unlisted()
+        .After(CompileManagedSrc)
+        .After(CompileDependencyLibs)
+        .After(CompileManagedUnitTests)
+        .Executes(() =>
+        {
+            var directories = RootDirectory.GlobDirectories(
+                $"**/src/**/bin/{Configuration}",
+                $"**/test/Datadog.Trace.TestHelpers/**/bin/{Configuration}",
+                $"**/test/test-applications/integrations/dependency-libs/**/bin/{Configuration}"
+            );
+            directories.ForEach(source =>
+            {
+                var targetPlatforms = new[]
+                {
+                    MSBuildTargetPlatform.x86,
+                    MSBuildTargetPlatform.x64,
+                    MSBuildTargetPlatform.arm,
+                };
+
+                foreach (var platform in targetPlatforms)
+                {
+                    var target = source.Parent / $"{platform}" / Configuration;
+                    if (DirectoryExists(target))
+                    {
+                        Logger.Info($"Skipping '{target}' as already exists");
+                        continue;
+                    }
+
+                    CopyDirectoryRecursively(source, target, DirectoryExistsPolicy.Fail, FileExistsPolicy.Fail);
+                }
+            });
         });
 
     Target LocalBuild => _ =>
@@ -461,7 +516,6 @@ partial class Build : NukeBuild
         _
             .Description("Convenience method for running the same build steps as the full Windows CI build")
             .DependsOn(CreateRequiredDirectories)
-            .DependsOn(Clean)
             .DependsOn(RestoreNuGet)
             .DependsOn(CompileManagedSrc)
             .DependsOn(CompileNativeSrc)
@@ -470,11 +524,14 @@ partial class Build : NukeBuild
             .DependsOn(PackNuGet)
             .DependsOn(BuildMsi)
             .DependsOn(CompileManagedUnitTests)
-            .DependsOn(RunManagedUnitTests)
             .DependsOn(CompileDependencyLibs)
+            .DependsOn(CopyPlatformlessBuildOutput)
+            .DependsOn(CompileRegressionDependencyLibs)
             .DependsOn(CompileFrameworkReproductions)
             .DependsOn(CompileIntegrationTests)
-            .DependsOn(CompileSamples);
+            .DependsOn(CompileSamples)
+            .DependsOn(RunManagedUnitTests)
+            .DependsOn(RunIntegrationTests);
 
     Target LinuxFullCiBuild => _ =>
         _
