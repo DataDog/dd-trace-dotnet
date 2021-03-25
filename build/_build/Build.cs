@@ -57,7 +57,6 @@ partial class Build : NukeBuild
     [Solution("Datadog.Trace.Native.sln")] readonly Solution NativeSolution;
     AbsolutePath MsBuildProject => RootDirectory / "Datadog.Trace.proj";
 
-    AbsolutePath PublishOutputPath => PublishOutput ?? (SourceDirectory / "bin" / "managed-publish");
     AbsolutePath TracerHomeDirectory => TracerHome ?? (RootDirectory / "bin" / "tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (RootDirectory / "bin" / "artifacts");
     AbsolutePath TracerHomeZip => ArtifactsDirectory / "tracer-home.zip";
@@ -97,10 +96,17 @@ partial class Build : NukeBuild
         {
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => EnsureCleanDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => EnsureCleanDirectory(x));
-            EnsureCleanDirectory(PublishOutputPath);
             EnsureCleanDirectory(TracerHomeDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
             DeleteFile(TracerHomeZip);
+        });
+
+    Target CreateRequiredDirectories => _ => _
+        .Unlisted()
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(TracerHomeDirectory);
+            EnsureExistingDirectory(ArtifactsDirectory);
         });
 
     Target RestoreNuGet => _ => _
@@ -129,11 +135,13 @@ partial class Build : NukeBuild
 
     Target Restore => _ => _
         .After(Clean)
+        .DependsOn(CreateRequiredDirectories)
         // .DependsOn(RestoreDotNet)
         .DependsOn(RestoreNuGet);
 
     Target CompileManagedSrc => _ => _
         .Description("Compiles the managed code in the src directory")
+        .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
         .Executes(() =>
         {
@@ -148,6 +156,7 @@ partial class Build : NukeBuild
 
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
+        .DependsOn(CreateRequiredDirectories)
         .DependsOn(CompileManagedSrc)
         .Executes(() =>
         {
@@ -253,6 +262,7 @@ partial class Build : NukeBuild
     
     Target CopyIntegrationsJson => _ => _
         .After(Clean)
+        .DependsOn(CreateRequiredDirectories)
         .Executes(() =>
         {
             var source = RootDirectory / "integrations.json";
@@ -441,6 +451,7 @@ partial class Build : NukeBuild
     Target LocalBuild => _ =>
         _
             .Description("Compiles the source and builds the tracer home directory for local usage")
+            .DependsOn(CreateRequiredDirectories)
             .DependsOn(RestoreNuGet)
             .DependsOn(CompileManagedSrc)
             .DependsOn(CompileNativeSrc)
@@ -449,6 +460,7 @@ partial class Build : NukeBuild
     Target WindowsFullCiBuild => _ =>
         _
             .Description("Convenience method for running the same build steps as the full Windows CI build")
+            .DependsOn(CreateRequiredDirectories)
             .DependsOn(Clean)
             .DependsOn(RestoreNuGet)
             .DependsOn(CompileManagedSrc)
