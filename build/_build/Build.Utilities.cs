@@ -36,6 +36,14 @@ partial class Build
 
     AbsolutePath IisExpressApplicationConfig =>
         RootDirectory / ".vs" / Solution.Name / "config" / "applicationhost.config";
+    
+    readonly IEnumerable<string> GacProjects = new []
+    {
+        Projects.DatadogTrace,
+        Projects.DatadogTraceAspNet,
+        Projects.ClrProfilerManaged,
+        Projects.ClrProfilerManagedCore,
+    };
 
     Target GacAdd => _ => _
         .Description("Adds the (already built) files to the Windows GAC **REQUIRES ELEVATED PERMISSIONS** ")

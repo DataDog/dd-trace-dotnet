@@ -7,4 +7,7 @@
     public const string ClrProfilerManagedLoader = "Datadog.Trace.ClrProfiler.Managed.Loader";
     public const string ClrProfilerNative = "Datadog.Trace.ClrProfiler.Native";
     public const string WindowsInstaller = "WindowsInstaller";
+    
+    public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";
+    public const string OpenTracingIntegrationTests = "Datadog.Trace.OpenTracing.IntegrationTests";
 }

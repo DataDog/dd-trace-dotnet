@@ -10,12 +10,15 @@
     <CsharpTestProject Include="test\*\*.csproj" Exclude="test\Datadog.Trace.ClrProfiler.IntegrationTests\*.csproj" />
     <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
     <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj"/>
-    <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj"/>
+    <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
+    <ExcludeExpenseItDemoProject Remove="test/test-applications/regression/**/ExpenseItDemo*.csproj" />
+    <ExcludeEF6DemoProject Remove="test/test-applications/regression/**/EntityFramework6x*.csproj" />
+    <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
     <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj"/>
     <CsharpToolsProject Include="tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <SampleProject Include="test\test-applications\**\Samples.GraphQL.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
+    <SampleProject Include="test\test-applications\integrations\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
     <WindowsInstallerProject Include="src\**\*.wixproj"/>
   </ItemGroup>
@@ -31,8 +34,9 @@
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
+  
   <Target Name="BuildCsharpIntegrationTests">
-    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
+    <MSBuild Targets="Build" Projects="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeEF6DemoProject);@(ExcludeLegacyRedisProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -49,7 +53,7 @@
     </MSBuild>
   </Target>
   
-  <Target Name="SampleLibs">
+  <Target Name="BuildSampleLibs">
     <MSBuild Targets="Build" Projects="@(SampleProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>

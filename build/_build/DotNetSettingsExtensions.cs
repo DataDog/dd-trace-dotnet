@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
+using Nuke.Common.Tools.NuGet;
 
 internal static class DotNetSettingsExtensions
 {
@@ -31,6 +32,13 @@ internal static class DotNetSettingsExtensions
     {
         return settings.SetProcessArgumentConfigurator(
             arg => arg.Add("/nowarn:netsdk1138"));
+    }
+    
+    public static T SetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
+        where T: NuGetRestoreSettings
+    {
+        return settings.SetProcessArgumentConfigurator(
+            arg => arg.Add($"/p:\"Platform={platform}\""));
     }
     
     public static T SetDDEnvironmentVariables<T>(this T settings)

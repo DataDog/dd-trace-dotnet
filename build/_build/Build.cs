@@ -84,20 +84,12 @@ partial class Build : NukeBuild
         Solution.GetProject("Datadog.Trace.OpenTracing"),
     };
     
-    IEnumerable<TargetFramework> TargetFrameworks = new []
+    readonly IEnumerable<TargetFramework> TargetFrameworks = new []
     {
         TargetFramework.NET45, 
         TargetFramework.NET461,
         TargetFramework.NETSTANDARD2_0, 
         TargetFramework.NETCOREAPP3_1,
-    };
-    
-    IEnumerable<string> GacProjects = new []
-    {
-        Projects.DatadogTrace,
-        Projects.DatadogTraceAspNet,
-        Projects.ClrProfilerManaged,
-        Projects.ClrProfilerManagedCore,
     };
 
     Target Clean => _ => _
@@ -131,7 +123,6 @@ partial class Build : NukeBuild
                 .SetVerbosity(DotNetVerbosity.Normal)
                 .SetTargetPlatform(Platform) // necessary to ensure we restore every project
                 .SetProperty("configuration", Configuration.ToString())
-                // .SetNoWarnDotNetCore3()
                 .When(!string.IsNullOrEmpty(NugetManagedCacheFolder), o => 
                         o.SetPackageDirectory(NugetManagedCacheFolder)));
         });
@@ -314,24 +305,62 @@ partial class Build : NukeBuild
                 .SetTargets("BuildDependencyLibs")
             );
         });
-    
-    Target CompileSamples => _ => _
-        .After(CompileDependencyLibs)
+
+    Target CompileFrameworkReproductions => _ => _
+        .DependsOn(CompileDependencyLibs)
         .Executes(() =>
         {
-            DotNetMSBuild(config => config
+            // TODO: this currently rebuilds all the core libraries for the specific platform, which is _not_ what we want,
+            // but I can't find a simple way to avoid it yet
+            DotNetMSBuild(s => s
                 .SetTargetPath(MsBuildProject)
-                .SetConfiguration(Configuration)
                 .DisableRestore()
-                .SetNoDependencies()
+                .SetConfiguration(Configuration)
+                .SetTargetPlatform(Platform)
+                .SetTargets("BuildFrameworkReproductions")
+                .SetMaxCpuCount(null));
+        });
+    
+    Target CompileIntegrationTests => _ => _
+        .DependsOn(CompileManagedSrc)
+        .DependsOn(CompileFrameworkReproductions)
+        .Requires(() => TracerHomeDirectory != null)
+        .Executes(() =>
+        {
+            // TODO: this currently rebuilds all the core libraries for the specific platform, which is _not_ what we want,
+            // but I can't find a simple way to avoid it yet
+            DotNetMSBuild(s => s
+                .SetTargetPath(MsBuildProject)
+                .DisableRestore()
+                .SetConfiguration(Configuration)
+                .SetTargetPlatform(Platform)
+                .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
+                .SetTargets("BuildCsharpIntegrationTests")
+                .SetMaxCpuCount(null));
+        });
+    
+    Target CompileSamples => _ => _
+        .DependsOn(CompileDependencyLibs)
+        .DependsOn(CompileFrameworkReproductions)
+        .Requires(() => TracerHomeDirectory != null)
+        .Executes(() =>
+        {
+            // This does some "unnecessary" rebuilding and restoring
+            var include = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
+
+            var projects = include.Where(x => !exclude.Contains(x));
+            DotNetBuild(config => config
+                .SetConfiguration(Configuration)
+                .SetTargetPlatform(Platform)
+                .EnableNoDependencies()
                 .SetProperty("BuildInParallel", "false")
-                .SetProperty("ManagedProfilerOutputDirectory", PublishOutputPath)
+                .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("ExcludeManagedProfiler", true)
                 .SetProperty("ExcludeNativeProfiler", true)
                 .SetProperty("LoadManagedProfilerFromProfilerDirectory", false)
-                .SetTargets("SampleLibs")
-                .CombineWith(ArchitecturesForPlatform.Reverse(), (o, arch) => 
-                    o.SetTargetPlatform(arch)));
+                .CombineWith(projects, (s, project) => s
+                    .SetProjectFile(project)));
         });
 
     Target BuildTracerHome => _ => _
@@ -368,20 +397,6 @@ partial class Build : NukeBuild
                 degreeOfParallelism: 2);
         });
 
-    Target CompileFrameworkReproductions => _ => _
-        .After(CompileManagedSrc)
-        .Requires(() => PublishOutputPath != null)
-        .Executes(() =>
-        {
-            // this triggers a dependency chain that builds all the managed and native dlls
-            DotNetMSBuild(s => s
-                .SetTargetPath(MsBuildProject)
-                .SetConfiguration(Configuration)
-                .SetTargetPlatform(Platform)
-                .SetTargets("BuildFrameworkReproductions")
-                .SetMaxCpuCount(null));
-        });
-
     Target RunNativeTests => _ => _
         .Executes(() =>
         {
@@ -389,6 +404,38 @@ partial class Build : NukeBuild
             var exePath = workingDirectory / "Datadog.Trace.ClrProfiler.Native.Tests.exe";
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+        });
+    
+    Target RunIntegrationTests => _ => _
+        .DependsOn(CompileIntegrationTests)
+        .DependsOn(CompileSamples)
+        .Executes(() =>
+        {
+            var projects = new[]
+            {
+                Solution.GetProject(Projects.TraceIntegrationTests),
+                Solution.GetProject(Projects.OpenTracingIntegrationTests),
+            };
+
+            DotNetTest(config => config
+                .SetConfiguration(Configuration)
+                .SetTargetPlatform(Platform)
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .CombineWith(projects, (s, project) => s
+                    .SetProjectFile(project)), degreeOfParallelism: 2);
+            
+            // TODO: I think we should change this filter to run on Windows by default
+            // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
+            DotNetTest(config => config
+                .SetConfiguration(Configuration)
+                .SetTargetPlatform(Platform)
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetFilter("(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True") 
+                .CombineWith(projects, (s, project) => s
+                    .SetProjectFile(project)), degreeOfParallelism: 2);
+
         });
 
     Target LocalBuild => _ =>
@@ -413,7 +460,9 @@ partial class Build : NukeBuild
             .DependsOn(CompileManagedUnitTests)
             .DependsOn(RunManagedUnitTests)
             .DependsOn(CompileDependencyLibs)
-            .DependsOn(CompileFrameworkReproductions);
+            .DependsOn(CompileFrameworkReproductions)
+            .DependsOn(CompileIntegrationTests)
+            .DependsOn(CompileSamples);
 
     Target LinuxFullCiBuild => _ =>
         _
