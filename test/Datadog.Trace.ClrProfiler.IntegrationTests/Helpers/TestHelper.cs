@@ -50,6 +50,58 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
+        public Process StartDotnetTestSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort, int? statsdPort = null, string framework = "")
+        {
+            // get path to sample app that the profiler will attach to
+            string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
+            if (!File.Exists(sampleAppPath))
+            {
+                throw new Exception($"application not found: {sampleAppPath}");
+            }
+
+            // get full paths to integration definitions
+            IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
+
+            Output.WriteLine($"Starting Application: {sampleAppPath}");
+            return ProfilerHelper.StartProcessWithProfiler(
+                EnvironmentHelper.GetDotNetTest(),
+                $"test {sampleAppPath}",
+                EnvironmentHelper,
+                integrationPaths,
+                arguments,
+                traceAgentPort: traceAgentPort,
+                statsdPort: statsdPort,
+                aspNetCorePort: aspNetCorePort,
+                forceExecutable: true);
+        }
+
+        public ProcessResult RunDotnetTestSampleAndWaitForExit(int traceAgentPort, int? statsdPort = null, string arguments = null, string packageVersion = "", string framework = "")
+        {
+            var process = StartDotnetTestSample(traceAgentPort, arguments, packageVersion, aspNetCorePort: 5000, statsdPort: statsdPort, framework: framework);
+
+            using var helper = new ProcessHelper(process);
+
+            process.WaitForExit();
+            helper.Drain();
+            var exitCode = process.ExitCode;
+
+            var standardOutput = helper.StandardOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardOutput))
+            {
+                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            }
+
+            var standardError = helper.ErrorOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
+
+            return new ProcessResult(process, standardOutput, standardError, exitCode);
+        }
+
         public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort, int? statsdPort = null, string framework = "")
         {
             // get path to sample app that the profiler will attach to

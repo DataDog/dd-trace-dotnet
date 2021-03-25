@@ -150,7 +150,8 @@ namespace Datadog.Trace.TestHelpers
             int aspNetCorePort,
             int? statsdPort,
             string processPath,
-            StringDictionary environmentVariables)
+            StringDictionary environmentVariables,
+            bool ignoringProfilerProcesses = false)
         {
             var processName = processPath;
             string profilerEnabled = _requiresProfiling ? "1" : "0";
@@ -182,7 +183,10 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
-            environmentVariables["DD_PROFILER_PROCESSES"] = processName;
+            if (!ignoringProfilerProcesses)
+            {
+                environmentVariables["DD_PROFILER_PROCESSES"] = processName;
+            }
 
             string integrations = string.Join(";", GetIntegrationsFilePaths());
             environmentVariables["DD_INTEGRATIONS"] = integrations;
@@ -331,6 +335,13 @@ namespace Datadog.Trace.TestHelpers
             return sampleAppPath;
         }
 
+        public string GetTestCommandForSampleApplicationPath(string packageVersion = "", string framework = "")
+        {
+            var appFileName = $"{FullSampleName}.dll";
+            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
+            return sampleAppPath;
+        }
+
         public string GetSampleExecutionSource()
         {
             string executor;
@@ -355,6 +366,11 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return executor;
+        }
+
+        public string GetDotNetTest()
+        {
+            return EnvironmentTools.IsWindows() ? "dotnet.exe" : "dotnet";
         }
 
         public string GetSampleProjectDirectory()
