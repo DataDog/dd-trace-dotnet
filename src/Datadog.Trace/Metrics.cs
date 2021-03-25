@@ -31,6 +31,6 @@ namespace Datadog.Trace
         /// <summary>
         /// Records the keep rate of spans in the tracer, independent of sampling rate
         /// </summary>
-        public const string TracesKeepRate = "_dd.tracer_kr";
+        internal const string TracesKeepRate = "_dd.tracer_kr";
     }
 }
