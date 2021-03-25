@@ -122,7 +122,7 @@ stages:
       inputs:
         solution: Datadog.Trace.proj
         configuration: $(buildConfiguration)
-        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;RunWixToolsOutOfProc=true
+        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;RunWixToolsOutOfProc=true /p:TracerHomeDirectory=$(tracerHome)
         maximumCpuCount: true
 
     - publish: $(System.DefaultWorkingDirectory)
