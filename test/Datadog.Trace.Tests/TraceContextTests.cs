@@ -78,6 +78,21 @@ namespace Datadog.Trace.Tests
                 tracer.Verify(t => t.Write(It.IsAny<Span[]>()), Times.Never);
             }
 
+            for (int i = 0; i < 5; i++)
+            {
+                AddAndCloseSpan();
+            }
+
+            // We have 5 more closed spans, partial flush should kick-in a second time if activated
+            if (partialFlush)
+            {
+                tracer.Verify(t => t.Write(It.Is<Span[]>(s => s.Length == 5)), Times.Exactly(2));
+            }
+            else
+            {
+                tracer.Verify(t => t.Write(It.IsAny<Span[]>()), Times.Never);
+            }
+
             traceContext.CloseSpan(rootSpan);
 
             // Now the remaining spans are flushed
@@ -87,7 +102,7 @@ namespace Datadog.Trace.Tests
             }
             else
             {
-                tracer.Verify(t => t.Write(It.Is<Span[]>(s => s.Length == 6)), Times.Once);
+                tracer.Verify(t => t.Write(It.Is<Span[]>(s => s.Length == 11)), Times.Once);
             }
         }
     }
