@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -23,7 +24,7 @@ namespace Datadog.Trace.Agent
         private static readonly ArraySegment<byte> EmptyPayload;
 
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
-        private readonly IDogStatsd _statsd;
+        private readonly IMetrics _metrics;
         private readonly Task _flushTask;
         private readonly Task _serializationTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
@@ -53,10 +54,10 @@ namespace Datadog.Trace.Agent
             EmptyPayload = new ArraySegment<byte>(data);
         }
 
-        public AgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
+        public AgentWriter(IApi api, IMetrics metrics, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
         {
             _api = api;
-            _statsd = statsd;
+            _metrics = metrics;
             _batchInterval = batchInterval;
 
             var formatterResolver = SpanFormatterResolver.Instance;
@@ -104,11 +105,8 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            if (_statsd != null)
-            {
-                _statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces);
-                _statsd.Increment(TracerMetricNames.Queue.EnqueuedSpans, trace.Length);
-            }
+            _metrics.Increment(TracerMetricNames.Queue.EnqueuedTraces);
+            _metrics.Increment(TracerMetricNames.Queue.EnqueuedSpans, trace.Length);
         }
 
         public async Task FlushAndCloseAsync()
@@ -256,11 +254,8 @@ namespace Datadog.Trace.Agent
 
             try
             {
-                if (_statsd != null)
-                {
-                    _statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
-                    _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
-                }
+                _metrics.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
+                _metrics.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
 
                 if (buffer.TraceCount > 0)
                 {
@@ -331,11 +326,8 @@ namespace Datadog.Trace.Agent
             // All the buffers are full :( drop the trace
             Log.Warning("Trace buffer is full. Dropping a trace.");
 
-            if (_statsd != null)
-            {
-                _statsd.Increment(TracerMetricNames.Queue.DroppedTraces);
-                _statsd.Increment(TracerMetricNames.Queue.DroppedSpans, trace.Length);
-            }
+            _metrics.Increment(TracerMetricNames.Queue.DroppedTraces);
+            _metrics.Increment(TracerMetricNames.Queue.DroppedSpans, trace.Length);
         }
 
         private void SerializeTracesLoop()

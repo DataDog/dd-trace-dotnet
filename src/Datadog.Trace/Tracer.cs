@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
@@ -95,10 +96,11 @@ namespace Datadog.Trace
                 Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort);
             }
 
+            IMetrics metrics = Statsd != null ? new DogStatsdMetrics(Statsd) : new NullMetrics();
             if (traceWriter == null)
             {
                 Log.Warning("Using eager agent writer");
-                _traceWriter = new AgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), Statsd, maxBufferSize: Settings.TraceBufferSize);
+                _traceWriter = new AgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), metrics, maxBufferSize: Settings.TraceBufferSize);
             }
             else
             {
