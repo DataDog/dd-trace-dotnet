@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     public class XUnitTests : TestHelper
     {
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
-        private const int ExpectedSpanCount = 3;
+        private const int ExpectedSpanCount = 6;
 
         public XUnitTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -86,6 +86,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         case "SimpleErrorTest":
                             CheckSimpleErrorTest(targetSpan);
                             break;
+
+                        case "TraitPassTest":
+                            CheckSimpleTestSpan(targetSpan);
+                            CheckTraitsValues(targetSpan);
+                            break;
+
+                        case "TraitSkipFromAttributeTest":
+                            CheckSimpleSkipFromAttributeTest(targetSpan);
+                            CheckTraitsValues(targetSpan);
+                            break;
+
+                        case "TraitErrorTest":
+                            CheckSimpleErrorTest(targetSpan);
+                            CheckTraitsValues(targetSpan);
+                            break;
                     }
 
                     // check remaining tag (only the name)
@@ -154,6 +169,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertTargetSpanEqual(targetSpan, CommonTags.OSArchitecture, framework.OSArchitecture);
             AssertTargetSpanEqual(targetSpan, CommonTags.OSPlatform, framework.OSPlatform);
             AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, Environment.OSVersion.VersionString);
+        }
+
+        private static void CheckTraitsValues(MockTracerAgent.Span targetSpan)
+        {
+            // Check the traits tag value
+            AssertTargetSpanEqual(targetSpan, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
         }
 
         private static void CheckSimpleTestSpan(MockTracerAgent.Span targetSpan)
