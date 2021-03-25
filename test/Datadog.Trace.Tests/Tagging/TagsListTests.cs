@@ -5,6 +5,7 @@ using System.Reflection;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Xunit;
 
@@ -12,6 +13,32 @@ namespace Datadog.Trace.Tests.Tagging
 {
     public class TagsListTests
     {
+        [Fact]
+        public void SetTag_WillNotCauseDuplicates()
+        {
+            // Initialize common tags
+            var tags = new DerivedCommonTags()
+            {
+                Version = "v1.0",
+                Environment = "Test"
+            };
+
+            // Initialize custom tags
+            tags.SetTag("sample.1", "Temp 1");
+            tags.SetTag("sample.2", "Temp 2");
+
+            // Try set existing tag
+            tags.SetTag(Tags.Version, "v2.0");
+            tags.SetTag("sample.2", "Temp 3");
+
+            var all = tags.GetAllTags();
+            var distinctKeys = all.Select(x => x.Key).Distinct().Count();
+
+            Assert.Equal(all.Count(), distinctKeys);
+            Assert.Single(all, x => x.Key == Tags.Version && x.Value == "v2.0");
+            Assert.Single(all, x => x.Key == "sample.2" && x.Value == "Temp 3");
+        }
+
         [Fact]
         public void CheckProperties()
         {
@@ -167,6 +194,27 @@ namespace Datadog.Trace.Tests.Tagging
 
             [MessagePack.Key("metrics")]
             public Dictionary<string, double> Metrics { get; set; }
+        }
+
+        internal class DerivedCommonTags : CommonTags
+        {
+            public IEnumerable<KeyValuePair<string, string>> GetAllTags()
+            {
+                foreach (var pair in Tags)
+                {
+                    yield return pair;
+                }
+
+                foreach (var property in GetAdditionalTags())
+                {
+                    var value = property.Getter(this);
+
+                    if (value != null)
+                    {
+                        yield return new KeyValuePair<string, string>(property.Key, value);
+                    }
+                }
+            }
         }
     }
 }
