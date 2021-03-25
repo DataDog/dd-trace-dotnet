@@ -259,7 +259,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             // Assert that a response header tag is set on successful requests and failing requests
             _ = HeaderName3.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName3);
-            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpResponseHeadersTagPrefix}.{normalizedHeaderTagName3}", HeaderValue3);
+            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpResponseHeadersTagPrefix}.{normalizedHeaderTagName3}", HeaderValue3, when: (span) => span.Resource != "GET bad-request");
 
             Expectations.Add(expectation);
         }
