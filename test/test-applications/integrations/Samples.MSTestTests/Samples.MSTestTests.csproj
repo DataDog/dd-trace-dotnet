@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <OutputType>Library</OutputType>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.0.0</ApiVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="$(ApiVersion)" />
+    <PackageReference Include="MSTest.TestFramework" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+</Project>

@@ -92,5 +92,26 @@
     "NugetPackageSearchName": "Oracle.ManagedDataAccess.Core",
     "MinVersion": "2.18.3",
     "MaxVersionExclusive": "3.0.0"
+  },
+  {
+    "IntegrationName": "XUnit",
+    "SampleProjectName": "Samples.XUnitTests",
+    "NugetPackageSearchName": "xunit",
+    "MinVersion": "2.2.0",
+    "MaxVersionExclusive": "3.0.0"
+  },
+  {
+    "IntegrationName": "NUnit",
+    "SampleProjectName": "Samples.NUnitTests",
+    "NugetPackageSearchName": "NUnit",
+    "MinVersion": "3.6.0",
+    "MaxVersionExclusive": "4.0.0"
+  },
+  {
+    "IntegrationName": "MSTest",
+    "SampleProjectName": "Samples.MSTestTests",
+    "NugetPackageSearchName": "MSTest.TestFramework",
+    "MinVersion": "2.0.0",
+    "MaxVersionExclusive": "3.0.0"
   }
 ]

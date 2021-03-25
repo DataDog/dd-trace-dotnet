@@ -512,5 +512,66 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+        public static IEnumerable<object[]> XUnit =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "2.2.0" },
+                new object[] { "2.3.0" },
+                new object[] { "2.3.1" },
+                new object[] { "2.4.0" },
+                new object[] { "2.4.1" },
+#endif
+            };
+
+        public static IEnumerable<object[]> NUnit =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "3.6.0" },
+                new object[] { "3.6.1" },
+                new object[] { "3.7.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.8.1" },
+                new object[] { "3.9.0" },
+                new object[] { "3.10.0" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
+                new object[] { "3.12.0" },
+                new object[] { "3.13.0" },
+                new object[] { "3.13.1" },
+#endif
+            };
+
+        public static IEnumerable<object[]> MSTest =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "2.0.0" },
+                new object[] { "2.1.0" },
+                new object[] { "2.1.1" },
+                new object[] { "2.1.2" },
+                new object[] { "2.2.1" },
+                new object[] { "2.2.2" },
+                new object[] { "2.2.3" },
+#endif
+            };
+
     }
 }
