@@ -108,16 +108,16 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             }
         }
 
-        private static Tracer GetTracer(IAgentWriter writer = null)
+        private static Tracer GetTracer(ITraceWriter writer = null)
         {
             var settings = new TracerSettings();
-            var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
+            var agentWriter = writer ?? new Mock<ITraceWriter>().Object;
             var samplerMock = new Mock<ISampler>();
 
             return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
-        private class AgentWriterStub : IAgentWriter
+        private class AgentWriterStub : ITraceWriter
         {
             public List<Span[]> Traces { get; } = new();
 

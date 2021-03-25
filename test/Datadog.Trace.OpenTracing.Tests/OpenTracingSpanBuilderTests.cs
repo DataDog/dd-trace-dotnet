@@ -21,7 +21,7 @@ namespace Datadog.Trace.OpenTracing.Tests
                 ServiceName = DefaultServiceName
             };
 
-            var writerMock = new Mock<IAgentWriter>(MockBehavior.Strict);
+            var writerMock = new Mock<ITraceWriter>(MockBehavior.Strict);
             var samplerMock = new Mock<ISampler>();
 
             var datadogTracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);

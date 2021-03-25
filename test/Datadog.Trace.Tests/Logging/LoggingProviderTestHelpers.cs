@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests.Logging
         internal static Tracer InitializeTracer(bool enableLogsInjection)
         {
             var settings = new TracerSettings();
-            var writerMock = new Mock<IAgentWriter>();
+            var writerMock = new Mock<ITraceWriter>();
             var samplerMock = new Mock<ISampler>();
 
             settings.LogsInjectionEnabled = enableLogsInjection;

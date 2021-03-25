@@ -14,7 +14,7 @@ namespace Datadog.Trace.Tests
     public class SpanTests
     {
         private readonly ITestOutputHelper _output;
-        private readonly Mock<IAgentWriter> _writerMock;
+        private readonly Mock<ITraceWriter> _writerMock;
         private readonly Tracer _tracer;
 
         public SpanTests(ITestOutputHelper output)
@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests
             _output = output;
 
             var settings = new TracerSettings();
-            _writerMock = new Mock<IAgentWriter>();
+            _writerMock = new Mock<ITraceWriter>();
             var samplerMock = new Mock<ISampler>();
 
             _tracer = new Tracer(settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);

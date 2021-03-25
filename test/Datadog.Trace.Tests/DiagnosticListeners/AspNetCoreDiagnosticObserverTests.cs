@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         private static Tracer GetTracer()
         {
             var settings = new TracerSettings();
-            var writerMock = new Mock<IAgentWriter>();
+            var writerMock = new Mock<ITraceWriter>();
             var samplerMock = new Mock<ISampler>();
 
             return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);

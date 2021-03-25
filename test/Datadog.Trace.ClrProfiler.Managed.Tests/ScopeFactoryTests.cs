@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             // Set up Tracer
             var settings = new TracerSettings();
-            var writerMock = new Mock<IAgentWriter>();
+            var writerMock = new Mock<ITraceWriter>();
             var samplerMock = new Mock<ISampler>();
             var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             // Set up Tracer
             var settings = new TracerSettings();
-            var writerMock = new Mock<IAgentWriter>();
+            var writerMock = new Mock<ITraceWriter>();
             var samplerMock = new Mock<ISampler>();
             var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             // Set up Tracer
             var settings = new TracerSettings();
-            var writerMock = new Mock<IAgentWriter>();
+            var writerMock = new Mock<ITraceWriter>();
             var samplerMock = new Mock<ISampler>();
             var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 

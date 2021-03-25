@@ -10,7 +10,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
-    internal class AgentWriter : IAgentWriter
+    internal class AgentWriter : ITraceWriter
     {
 #if NET45
         private const TaskCreationOptions TaskOptions = TaskCreationOptions.None;

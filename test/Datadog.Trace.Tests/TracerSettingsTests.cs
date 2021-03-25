@@ -12,12 +12,12 @@ namespace Datadog.Trace.Tests
 {
     public class TracerSettingsTests
     {
-        private readonly Mock<IAgentWriter> _writerMock;
+        private readonly Mock<ITraceWriter> _writerMock;
         private readonly Mock<ISampler> _samplerMock;
 
         public TracerSettingsTests()
         {
-            _writerMock = new Mock<IAgentWriter>();
+            _writerMock = new Mock<ITraceWriter>();
             _samplerMock = new Mock<ISampler>();
         }
 

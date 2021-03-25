@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
 {
-    internal interface IAgentWriter
+    internal interface ITraceWriter
     {
         void WriteTrace(Span[] trace);
 
