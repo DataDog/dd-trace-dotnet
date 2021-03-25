@@ -19,7 +19,7 @@ namespace shared {
     Loader* loader = nullptr;
 
 #ifdef _WIN32
-    const WSTRING native_profiler_file_win64                    = WStr("Datadog.AutoInstrumentation.Profiler.Native.Windows.x64.dll");
+    const WSTRING native_profiler_file_win64                    = WStr("Datadog.AutoInstrumentation.Profiler.Native.x64.dll");
 #elif LINUX
     extern uint8_t dll_start[]                                  asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_start");
     extern uint8_t dll_end[]                                    asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_end");
