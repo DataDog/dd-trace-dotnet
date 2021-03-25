@@ -3,6 +3,7 @@ using System.Data;
 using System.Runtime.InteropServices;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Configuration;
@@ -15,6 +16,7 @@ namespace Benchmarks.Trace
         private static readonly int MdToken;
         private static readonly IntPtr GuidPtr;
         private static readonly IDbCommand DbCommand = new CustomDbCommand();
+        private static readonly CustomDbCommand CustomCommand = new CustomDbCommand();
 
         static DbCommandBenchmark()
         {
@@ -34,13 +36,23 @@ namespace Benchmarks.Trace
 
             Marshal.StructureToPtr(guid, GuidPtr, false);
 
-            new DbCommandBenchmark().ExecuteNonQuery();
+            var bench = new DbCommandBenchmark();
+            bench.ExecuteNonQuery();
+            bench.CallTargetExecuteNonQuery();
         }
 
         [Benchmark]
         public int ExecuteNonQuery()
         {
             return IDbCommandIntegration.ExecuteNonQuery(DbCommand, (int)OpCodeValue.Callvirt, MdToken, (long)GuidPtr);
+        }
+
+        [Benchmark]
+        public unsafe int CallTargetExecuteNonQuery()
+        {
+            return CallTarget.Run<CommandExecuteNonQueryIntegration, CustomDbCommand, int>(CustomCommand, &InternalExecuteNonQuery);
+
+            static int InternalExecuteNonQuery() => 1;
         }
 
         private class CustomDbCommand : IDbCommand

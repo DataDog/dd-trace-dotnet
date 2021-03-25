@@ -10,6 +10,6 @@ namespace Datadog.Trace.Tagging
 
         void SetMetric(string key, double? value);
 
-        int SerializeTo(ref byte[] buffer, int offset);
+        int SerializeTo(ref byte[] buffer, int offset, Span span);
     }
 }

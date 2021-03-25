@@ -4,6 +4,15 @@ trigger:
       - master
       - refs/tags/*
 
+schedules:
+- cron: "0 3 * * *"
+  displayName: Daily 3am (UTC) build
+  branches:
+    include:
+    - master
+    - benchmarks/*
+  always: true
+
 variables:
   buildConfiguration: release
   dotnetCoreSdkVersion: 5.0.103

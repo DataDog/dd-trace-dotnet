@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
@@ -16,7 +17,8 @@ namespace Benchmarks.Trace
     {
         private static readonly int MdToken;
         private static readonly IntPtr GuidPtr;
-        private static readonly object Pipeline = new RequestPipeline();
+        private static readonly RequestPipeline Pipeline = new RequestPipeline();
+        private static readonly object PipelineObject = new RequestPipeline();
         private static readonly RequestData Data = new RequestData
         {
             Method = HttpMethod.POST,
@@ -42,15 +44,18 @@ namespace Benchmarks.Trace
 
             Marshal.StructureToPtr(guid, GuidPtr, false);
 
-            new ElasticsearchBenchmark().CallElasticsearch();
-            new ElasticsearchBenchmark().CallElasticsearchAsync();
+            var bench = new ElasticsearchBenchmark();
+            bench.CallElasticsearch();
+            bench.CallElasticsearchAsync();
+            bench.CallTargetCallElasticsearch();
+            bench.CallTargetCallElasticsearchAsync();
         }
 
         [Benchmark]
         public object CallElasticsearch()
         {
             return ElasticsearchNet6Integration.CallElasticsearch<int>(
-                Pipeline,
+                PipelineObject,
                 Data,
                 (int)OpCodeValue.Callvirt,
                 MdToken,
@@ -61,7 +66,7 @@ namespace Benchmarks.Trace
         public int CallElasticsearchAsync()
         {
             var task = (Task<int>)ElasticsearchNet6Integration.CallElasticsearchAsync<int>(
-                Pipeline,
+                PipelineObject,
                 Data,
                 CancellationToken.None,
                 (int)OpCodeValue.Callvirt,
@@ -69,6 +74,24 @@ namespace Benchmarks.Trace
                 (long)GuidPtr);
 
             return task.GetAwaiter().GetResult();
+        }
+
+        [Benchmark]
+        public unsafe object CallTargetCallElasticsearch()
+        {
+            return CallTarget.Run<RequestPipeline_CallElasticsearch_Integration, RequestPipeline, RequestData, int>(Pipeline, Data, &GetData);
+
+            static int GetData(RequestData data) => default;
+        }
+
+
+        [Benchmark]
+        public unsafe int CallTargetCallElasticsearchAsync()
+        {
+            return CallTarget.Run<RequestPipeline_CallElasticsearchAsync_Integration, RequestPipeline, RequestData, CancellationToken, Task<int>>
+                (Pipeline, Data, CancellationToken.None, &GetData).GetAwaiter().GetResult();
+
+            static Task<int> GetData(RequestData data, CancellationToken cancellationToken) => Task.FromResult<int>(default);
         }
     }
 }

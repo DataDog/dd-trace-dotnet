@@ -24,7 +24,7 @@
 
 namespace trace {
 
-inline WSTRING DatadogLogFilePath() {
+inline WSTRING DatadogLogFilePath(const std::string& file_name_suffix) {
   WSTRING directory = GetEnvironmentValue(environment::log_directory);
 
   if (directory.length() > 0) {
@@ -34,7 +34,7 @@ inline WSTRING DatadogLogFilePath() {
 #else
            WStr('/') +
 #endif
-        WStr("dotnet-tracer-native.log");
+           ToWSTRING("dotnet-tracer-native" + file_name_suffix + ".log");
   }
 
   WSTRING path = GetEnvironmentValue(environment::log_path);
@@ -56,9 +56,11 @@ inline WSTRING DatadogLogFilePath() {
   }
 
   return ToWSTRING(program_data +
-                   R"(\Datadog .NET Tracer\logs\dotnet-tracer-native.log)");
+                   R"(\Datadog .NET Tracer\logs\dotnet-tracer-native)" + 
+                   file_name_suffix + ".log");
 #else
-  return WStr("/var/log/datadog/dotnet/dotnet-tracer-native.log");
+  return ToWSTRING("/var/log/datadog/dotnet/dotnet-tracer-native" +
+                   file_name_suffix + ".log");
 #endif
 }
 

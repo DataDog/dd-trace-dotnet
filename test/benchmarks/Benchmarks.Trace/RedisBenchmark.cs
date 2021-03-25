@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
@@ -16,7 +17,8 @@ namespace Benchmarks.Trace
     {
         private static readonly int MdToken;
         private static readonly IntPtr GuidPtr;
-        private static readonly object Client = new RedisNativeClient();
+        private static readonly object ClientObject = new RedisNativeClient();
+        private static readonly RedisNativeClient Client = new RedisNativeClient();
         private static readonly Func<int> Fn = () => 42;
         private static readonly Action<Func<int>> CompletePipelineFn = _ => { };
         private static readonly byte[][] RawCommands;
@@ -50,7 +52,7 @@ namespace Benchmarks.Trace
         public int SendReceive()
         {
             return ServiceStackRedisIntegration.SendReceive<int>(
-                Client,
+                ClientObject,
                 RawCommands,
                 Fn,
                 CompletePipelineFn,
@@ -58,6 +60,15 @@ namespace Benchmarks.Trace
                 (int)OpCodeValue.Callvirt,
                 MdToken,
                 (long)GuidPtr);
+        }
+
+        [Benchmark]
+        public unsafe int CallTargetSendReceive()
+        {
+            return CallTarget.Run<RedisNativeClientSendReceiveIntegration, RedisNativeClient, byte[][], Func<int>, Action<Func<int>>, bool, int>
+                (Client, RawCommands, Fn, CompletePipelineFn, true, &SendReceive);
+
+            static int SendReceive(byte[][] cmdWithBinaryArgs, Func<int> fn, Action<Func<int>> completePipelineFn, bool sendWithoutRead) => fn();
         }
     }
 }
