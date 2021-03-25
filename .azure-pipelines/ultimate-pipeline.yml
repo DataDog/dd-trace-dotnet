@@ -1139,3 +1139,53 @@ stages:
             eq(variables.isMainBranch, true)
           )
         )
+
+- stage: throughput
+  dependsOn: build
+  condition: and(succeeded(), false)
+  jobs:
+
+  #### Linux
+
+  - job: Linux
+    pool: Throughput
+    
+    workspace:
+      clean: all
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - download: current
+      artifact: build-windows-tracer-home
+      patterns: '**/win-x64/*.dll'
+
+    - task: CopyFiles@2
+      displayName: Copying windows native bindary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-windows-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/
+
+    - download: current
+      artifact: build-linux-tracer-home
+      patterns: '**/*.so'
+
+    - task: CopyFiles@2
+      displayName: Copying native linux binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/
+
+    - script: |
+        cd $(System.DefaultWorkingDirectory)/build/crank
+        chmod +x ./run.sh
+        ./run.sh
+      displayName: Crank
+      env:
+        DD_SERVICE: dd-trace-dotnet
