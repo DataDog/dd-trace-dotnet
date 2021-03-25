@@ -13,7 +13,7 @@ namespace Datadog.Trace
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
-        private readonly List<Span> _spans = new List<Span>();
+        private List<Span> _spans = new List<Span>();
 
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
@@ -78,13 +78,14 @@ namespace Datadog.Trace
                     }
                 }
 
-                _spans.Add(span);
                 _openSpans++;
             }
         }
 
         public void CloseSpan(Span span)
         {
+            bool ShouldTriggerPartialFlush() => Tracer.Settings.PartialFlushEnabled && _spans.Count >= Tracer.Settings.PartialFlushMinSpans;
+
             if (span == RootSpan)
             {
                 // lock sampling priority and set metric when root span finishes
@@ -104,9 +105,10 @@ namespace Datadog.Trace
 
             lock (_spans)
             {
+                _spans.Add(span);
                 _openSpans--;
 
-                if (_openSpans == 0)
+                if (_openSpans == 0 || ShouldTriggerPartialFlush())
                 {
                     spansToWrite = _spans.ToArray();
                     _spans.Clear();

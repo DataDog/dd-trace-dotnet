@@ -540,6 +540,12 @@ namespace Datadog.Trace
                     writer.WritePropertyName("routetemplate_resourcenames_enabled");
                     writer.WriteValue(Settings.RouteTemplateResourceNamesEnabled);
 
+                    writer.WritePropertyName("partialflush_enabled");
+                    writer.WriteValue(Settings.PartialFlushEnabled);
+
+                    writer.WritePropertyName("partialflush_minspans");
+                    writer.WriteValue(Settings.PartialFlushMinSpans);
+
                     writer.WritePropertyName("agent_reachable");
                     writer.WriteValue(agentError == null);
 

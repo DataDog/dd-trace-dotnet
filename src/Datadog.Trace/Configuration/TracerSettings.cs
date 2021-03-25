@@ -24,6 +24,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public const int DefaultAgentPort = 8126;
 
+        private int _partialFlushMinSpans;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
@@ -183,6 +185,14 @@ namespace Datadog.Trace.Configuration
 
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                    ?? false;
+
+            PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
+                // default value
+                ?? false;
+
+            PartialFlushMinSpans = source?.GetInt32(ConfigurationKeys.PartialFlushMinSpans)
+                // default value
+                ?? 500;
         }
 
         /// <summary>
@@ -351,6 +361,28 @@ namespace Datadog.Trace.Configuration
         {
             get => GlobalSettings.Source.DiagnosticSourceEnabled;
             set { }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether partial flush is enabled
+        /// </summary>
+        public bool PartialFlushEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the minimum number of closed spans in a trace before it's partially flushed
+        /// </summary>
+        public int PartialFlushMinSpans
+        {
+            get => _partialFlushMinSpans;
+            set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentException("The value must be strictly greater than 0", nameof(PartialFlushMinSpans));
+                }
+
+                _partialFlushMinSpans = value;
+            }
         }
 
         /// <summary>
