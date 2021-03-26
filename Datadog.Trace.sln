@@ -438,11 +438,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreRazorPage
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FeatureTracking", "tools\FeatureTracking\FeatureTracking.csproj", "{2829C811-66EE-4B81-96CA-2ACB00B8E813}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.XUnitTests", "test\test-applications\integrations\Samples.XUnitTests\Samples.XUnitTests.csproj", "{4AD438D9-D4E3-4EB5-8851-89DB4D1CFB9C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.XUnitTests", "test\test-applications\integrations\Samples.XUnitTests\Samples.XUnitTests.csproj", "{4AD438D9-D4E3-4EB5-8851-89DB4D1CFB9C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.NUnitTests", "test\test-applications\integrations\Samples.NUnitTests\Samples.NUnitTests.csproj", "{BC998ACD-353B-4A56-8A56-DF6200E141B6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.NUnitTests", "test\test-applications\integrations\Samples.NUnitTests\Samples.NUnitTests.csproj", "{BC998ACD-353B-4A56-8A56-DF6200E141B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.MSTestTests", "test\test-applications\integrations\Samples.MSTestTests\Samples.MSTestTests.csproj", "{8EAABFB9-8A47-4B11-AD7F-AC8B373CDE49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MSTestTests", "test\test-applications\integrations\Samples.MSTestTests\Samples.MSTestTests.csproj", "{8EAABFB9-8A47-4B11-AD7F-AC8B373CDE49}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Msmq", "test\test-applications\integrations\Samples.Msmq\Samples.Msmq.csproj", "{662B587F-97B5-4CEF-ABF9-6C76A6DBD29E}"
 EndProject
@@ -1568,8 +1568,8 @@ Global
 		{B0F3148C-1251-4AAA-B6E6-357A8E675EA1}.Release|x86.Build.0 = Release|x86
 		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x64.ActiveCfg = Debug|x64
-		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x64.Build.0 = Debug|x64
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x64.Build.0 = Debug|Any CPU
 		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x86.ActiveCfg = Debug|x86
 		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Debug|x86.Build.0 = Debug|x86
 		{1ACC5FC6-2F80-4A0C-A46C-9A97C0AB181B}.Release|Any CPU.ActiveCfg = Release|x86

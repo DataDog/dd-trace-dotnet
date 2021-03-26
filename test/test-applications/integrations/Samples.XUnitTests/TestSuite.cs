@@ -22,6 +22,8 @@ namespace Samples.XUnitTests
             int z = 0 / i;
         }
 
+        // **********************************************************************************
+
         [Fact]
         [Trait("Category", "Category01")]
         [Trait("Compatibility", "Windows")]
@@ -46,6 +48,36 @@ namespace Samples.XUnitTests
         {
             int i = 0;
             int z = 0 / i;
+        }
+
+        // **********************************************************************************
+
+        [Theory]
+        [InlineData(1, 1, 2)]
+        [InlineData(2, 2, 4)]
+        [InlineData(3, 3, 6)]
+        public void SimpleParameterizedTest(int xValue, int yValue, int expectedResult)
+        {
+            Assert.Equal(expectedResult, xValue + yValue);
+        }
+
+
+        [Theory(Skip = "Simple skip reason")]
+        [InlineData(1, 1, 2)]
+        [InlineData(2, 2, 4)]
+        [InlineData(3, 3, 6)]
+        public void SimpleSkipParameterizedTest(int xValue, int yValue, int expectedResult)
+        {
+            Assert.Equal(expectedResult, xValue + yValue);
+        }
+
+        [Theory]
+        [InlineData(1, 0, 2)]
+        [InlineData(2, 0, 4)]
+        [InlineData(3, 0, 6)]
+        public void SimpleErrorParameterizedTest(int xValue, int yValue, int expectedResult)
+        {
+            Assert.Equal(expectedResult, xValue / yValue);
         }
     }
 }

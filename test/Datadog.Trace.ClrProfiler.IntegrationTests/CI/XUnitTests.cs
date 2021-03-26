@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     public class XUnitTests : TestHelper
     {
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
-        private const int ExpectedSpanCount = 6;
+        private const int ExpectedSpanCount = 13;
 
         public XUnitTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -101,12 +101,53 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             CheckSimpleErrorTest(targetSpan);
                             CheckTraitsValues(targetSpan);
                             break;
+
+                        case "SimpleParameterizedTest":
+                            CheckSimpleTestSpan(targetSpan);
+                            AssertTargetSpanAnyOf(
+                                targetSpan,
+                                TestTags.Parameters,
+                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
+                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
+                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
+                            break;
+
+                        case "SimpleSkipParameterizedTest":
+                            CheckSimpleSkipFromAttributeTest(targetSpan);
+                            // On callsite the parameters tags are being sent with no parameters, this is not required due the whole test is skipped.
+                            // That behavior has changed in calltarget.
+                            if (!enableCallTarget)
+                            {
+                                AssertTargetSpanAnyOf(
+                                    targetSpan,
+                                    TestTags.Parameters,
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleSkipParameterizedTest\"},\"arguments\":{\"xValue\":\"(default)\",\"yValue\":\"(default)\",\"expectedResult\":\"(default)\"}}");
+                            }
+
+                            break;
+
+                        case "SimpleErrorParameterizedTest":
+                            CheckSimpleErrorTest(targetSpan);
+                            AssertTargetSpanAnyOf(
+                                targetSpan,
+                                TestTags.Parameters,
+                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
+                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
+                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
+                            break;
                     }
 
                     // check remaining tag (only the name)
                     Assert.Single(targetSpan.Tags);
                 }
             }
+        }
+
+        private static void AssertTargetSpanAnyOf(MockTracerAgent.Span targetSpan, string key, params string[] values)
+        {
+            string actualValue = targetSpan.Tags[key];
+            Assert.Contains(actualValue, values);
+            targetSpan.Tags.Remove(key);
         }
 
         private static void AssertTargetSpanEqual(MockTracerAgent.Span targetSpan, string key, string value)

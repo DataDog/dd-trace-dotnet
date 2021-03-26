@@ -63,9 +63,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
             Output.WriteLine($"Starting Application: {sampleAppPath}");
+            string testCli = EnvironmentHelper.GetDotNetTest();
             return ProfilerHelper.StartProcessWithProfiler(
-                EnvironmentHelper.GetDotNetTest(),
-                $"test {sampleAppPath}",
+                testCli,
+                testCli.StartsWith("dotnet") ? $"test {sampleAppPath}" : sampleAppPath,
                 EnvironmentHelper,
                 integrationPaths,
                 arguments,
