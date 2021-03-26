@@ -1,5 +1,9 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Unreleased]
+### Added
+- New instrumentation for Service Fabric Service Remoting (#1234)
+
 ## [Release 1.25.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.25.0)
 
 ## Changes
