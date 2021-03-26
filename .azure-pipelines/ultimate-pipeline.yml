@@ -8,6 +8,10 @@ trigger:
     exclude:
       - docs/*
       - .github/*
+pr:
+  branches:
+    exclude: # Don't run PR validation for now
+    - '*'
 
 # Global variables
 variables:
