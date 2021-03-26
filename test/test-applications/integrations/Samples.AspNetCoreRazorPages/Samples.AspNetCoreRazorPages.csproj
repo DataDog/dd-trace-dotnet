@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+      <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;net5.0</TargetFrameworks>
+      <Configurations>Debug;Release</Configurations>
+      <Platforms>x64;x86;AnyCPU</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Strong name signature -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(ProjectDir)../../../../Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp2')) ">
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\..\..\Datadog.Trace.IntegrationTests\DiagnosticListeners\ErrorHandlingHelper.cs" Link="ErrorHandlingHelper.cs" />
+  </ItemGroup>
+</Project>

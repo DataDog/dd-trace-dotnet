@@ -22,18 +22,33 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                List<MethodInfo> newMethods = imInterface.GetMethods()
-                    .Where(iMethod =>
+                foreach (MethodInfo interfaceMethod in imInterface.GetMethods())
+                {
+                    if (interfaceMethod.IsSpecialName)
                     {
-                        if (iMethod.IsSpecialName)
-                        {
-                            return false;
-                        }
+                        continue;
+                    }
 
-                        string iMethodString = iMethod.ToString();
-                        return selectedMethods.All(i => i.ToString() != iMethodString);
-                    }).ToList();
-                selectedMethods.AddRange(newMethods);
+                    string interfaceMethodName = interfaceMethod.ToString();
+                    bool methodAlreadySelected = false;
+                    foreach (MethodInfo currentMethod in selectedMethods)
+                    {
+                        if (currentMethod.ToString() == interfaceMethodName)
+                        {
+                            methodAlreadySelected = true;
+                            break;
+                        }
+                    }
+
+                    if (!methodAlreadySelected)
+                    {
+                        MethodInfo prevMethod = baseType.GetMethod(interfaceMethod.Name, DuckAttribute.DefaultFlags, null, interfaceMethod.GetParameters().Select(p => p.ParameterType).ToArray(), null);
+                        if (prevMethod == null || prevMethod.GetCustomAttribute<DuckIgnoreAttribute>() is null)
+                        {
+                            selectedMethods.Add(interfaceMethod);
+                        }
+                    }
+                }
             }
 
             return selectedMethods;
@@ -68,6 +83,12 @@ namespace Datadog.Trace.DuckTyping
             List<MethodInfo> proxyMethodsDefinitions = GetMethods(proxyType);
             foreach (MethodInfo proxyMethodDefinition in proxyMethodsDefinitions)
             {
+                // Ignore the method marked with `DuckIgnore` attribute
+                if (proxyMethodDefinition.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                {
+                    continue;
+                }
+
                 // Extract the method parameters types
                 ParameterInfo[] proxyMethodDefinitionParameters = proxyMethodDefinition.GetParameters();
                 Type[] proxyMethodDefinitionParametersTypes = proxyMethodDefinitionParameters.Select(p => p.ParameterType).ToArray();
@@ -336,7 +357,7 @@ namespace Datadog.Trace.DuckTyping
                     Type[] originalTargetParameters = targetMethod.GetParameters().Select(p => p.ParameterType).ToArray();
                     Type[] targetParameters = targetMethod.IsStatic ? originalTargetParameters : (new[] { typeof(object) }).Concat(originalTargetParameters).ToArray();
                     Type[] dynParameters = targetMethod.IsStatic ? targetMethodParametersTypes : (new[] { typeof(object) }).Concat(targetMethodParametersTypes).ToArray();
-                    DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, _moduleBuilder, true);
+                    DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
 
                     // Emit the dynamic method body
                     LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());

@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using FluentAssertions;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
@@ -134,6 +136,23 @@ namespace Datadog.Trace.Tests
             Assert.True(
                 stopwatchSpanDiff < maxDifference,
                 $"Span duration difference ({stopwatchSpanDiff}ms) outside of allowed threshold {maxDifference}ms. Expected average: {avgStopwatch}ms, actual average: {avgSpan}ms");
+        }
+
+        [Fact]
+        public void TopLevelSpans()
+        {
+            var spans = new List<(Scope Scope, bool IsTopLevel)>();
+
+            spans.Add((_tracer.StartActive("Root", serviceName: "root"), true));
+            spans.Add((_tracer.StartActive("Child1", serviceName: "root"), false));
+            spans.Add((_tracer.StartActive("Child2", serviceName: "child"), true));
+            spans.Add((_tracer.StartActive("Child3", serviceName: "child"), false));
+            spans.Add((_tracer.StartActive("Child4", serviceName: "root"), true));
+
+            foreach (var (scope, expectedResult) in spans)
+            {
+                scope.Span.Should().Match<Span>(s => s.IsTopLevel == expectedResult);
+            }
         }
     }
 }

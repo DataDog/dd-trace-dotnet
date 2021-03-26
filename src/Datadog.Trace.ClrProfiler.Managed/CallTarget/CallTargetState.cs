@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
@@ -10,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         private readonly Scope _previousScope;
         private readonly Scope _scope;
         private readonly object _state;
+        private readonly DateTimeOffset? _startTime;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
@@ -20,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             _previousScope = null;
             _scope = scope;
             _state = null;
+            _startTime = null;
         }
 
         /// <summary>
@@ -32,13 +35,29 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             _previousScope = null;
             _scope = scope;
             _state = state;
+            _startTime = null;
         }
 
-        private CallTargetState(Scope previousScope, Scope scope, object state)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
+        /// </summary>
+        /// <param name="scope">Scope instance</param>
+        /// <param name="state">Object state instance</param>
+        /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
+        public CallTargetState(Scope scope, object state, DateTimeOffset? startTime)
         {
-            _previousScope = previousScope;
+            _previousScope = null;
             _scope = scope;
             _state = state;
+            _startTime = startTime;
+        }
+
+        internal CallTargetState(Scope previousScope, CallTargetState state)
+        {
+            _previousScope = previousScope;
+            _scope = state._scope;
+            _state = state._state;
+            _startTime = state._startTime;
         }
 
         /// <summary>
@@ -51,6 +70,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// </summary>
         public object State => _state;
 
+        /// <summary>
+        /// Gets the CallTarget state StartTime
+        /// </summary>
+        public DateTimeOffset? StartTime => _startTime;
+
         internal Scope PreviousScope => _previousScope;
 
         /// <summary>
@@ -60,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState GetDefault()
         {
-            return new CallTargetState(null);
+            return default;
         }
 
         /// <summary>
@@ -70,11 +94,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         public override string ToString()
         {
             return $"{typeof(CallTargetState).FullName}({_previousScope}, {_scope}, {_state})";
-        }
-
-        internal static CallTargetState WithPreviousScope(Scope previousScope, CallTargetState state)
-        {
-            return new CallTargetState(previousScope, state._scope, state._state);
         }
     }
 }

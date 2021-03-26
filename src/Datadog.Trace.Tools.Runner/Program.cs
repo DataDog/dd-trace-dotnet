@@ -81,6 +81,10 @@ namespace Datadog.Trace.Tools.Runner
                 Console.WriteLine("Setting up the environment variables.");
                 CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables);
             }
+            else if (!string.IsNullOrEmpty(options.CrankImportFile))
+            {
+                return Crank.Importer.Process(options.CrankImportFile);
+            }
             else
             {
                 string cmdLine = string.Join(' ', args);

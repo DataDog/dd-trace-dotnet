@@ -14,27 +14,24 @@ namespace CallTargetNativeTest.NoOp
             where TArg3 : IArg, IDuckType
         {
             CallTargetState returnValue = new CallTargetState(null, instance.Instance);
-            string msg = $"{returnValue} {nameof(Noop3ArgumentsIntegration)}.OnMethodBegin<{typeof(TTarget).FullName}, {typeof(TArg1).FullName}, {typeof(TArg2).FullName}, {typeof(TArg3).FullName}>({instance}, {arg1}, {arg2}, {arg3})";
-            Console.WriteLine(msg);
+            Console.WriteLine($"ProfilerOK: BeginMethod(3)<{typeof(Noop3ArgumentsIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}>({instance}, {arg1}, {arg2}, {arg3})");
             return returnValue;
         }
 
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
-            where TTarget : IInstance, IDuckType
-            where TReturn : IReturnValue, IDuckType
+            where TTarget : IInstance
+            where TReturn : IReturnValue
         {
             CallTargetReturn<TReturn> rValue = new CallTargetReturn<TReturn>(returnValue);
-            string msg = $"{rValue} {nameof(Noop3ArgumentsIntegration)}.OnMethodEnd<{typeof(TTarget).FullName}, {typeof(TReturn).FullName}>({instance}, {returnValue}, {exception}, {state})";
-            Console.WriteLine(msg);
+            Console.WriteLine($"ProfilerOK: EndMethod(1)<{typeof(Noop3ArgumentsIntegration)}, {typeof(TTarget)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
             return rValue;
         }
 
         public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
-            where TTarget : IInstance, IDuckType
-            where TReturn : IReturnValue, IDuckType
+            where TTarget : IInstance
+            where TReturn : IReturnValue
         {
-            string msg = $"{returnValue} {nameof(Noop3ArgumentsIntegration)}.OnAsyncMethodEnd<{typeof(TTarget).FullName}, {typeof(TReturn).FullName}>({instance}, {returnValue}, {exception}, {state})";
-            Console.WriteLine(msg);
+            Console.WriteLine($"ProfilerOK: EndMethodAsync(1)<{typeof(Noop3ArgumentsIntegration)}, {typeof(TTarget)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
             return returnValue;
         }
 

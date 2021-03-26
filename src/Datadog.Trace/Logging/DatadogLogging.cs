@@ -14,7 +14,8 @@ namespace Datadog.Trace.Logging
     internal static class DatadogLogging
     {
         internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new LoggingLevelSwitch(DefaultLogLevel);
-        private const int DefaultLogMessageRateLimit = 60;
+        // By default, we don't rate limit log messages;
+        private const int DefaultLogMessageRateLimit = 0;
         private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
         private static readonly IDatadogLogger SharedLogger = null;
@@ -156,8 +157,7 @@ namespace Datadog.Trace.Logging
                 return rate;
             }
 
-            // We don't want to rate limit messages by default when in debug mode
-            return GlobalSettings.Source.DebugEnabled ? 0 : DefaultLogMessageRateLimit;
+            return DefaultLogMessageRateLimit;
         }
 
         private static string GetLogDirectory()

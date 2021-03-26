@@ -36,7 +36,10 @@ namespace Datadog.Trace.Tools.Runner
         [Option("tracer-home", Required = false, HelpText = "Sets the tracer home folder path.")]
         public string TracerHomeFolder { get; set; }
 
-        [Value(0, Hidden = true, HelpText = "Command to be wrapped by the cli tool.")]
+        [Option("crank-import", HelpText = "Import crank Json results file.")]
+        public string CrankImportFile { get; set; }
+
+        [Value(0, Required = false, Hidden = true, HelpText = "Command to be wrapped by the cli tool.")]
         public IEnumerable<string> Value { get; set; }
     }
 }

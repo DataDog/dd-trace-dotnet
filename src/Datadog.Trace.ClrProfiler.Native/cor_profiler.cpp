@@ -198,7 +198,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     Info("CallTarget instrumentation is disabled.");
   }
   
-  if (!EnableInlining()) {
+  if (!EnableInlining(is_calltarget_enabled)) {
     Info("JIT Inlining is disabled.");
     event_mask |= COR_PRF_DISABLE_INLINING;
   } else {
@@ -2758,7 +2758,8 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     mdTypeDef typeDef = mdTypeDefNil;
     auto hr = metadata_import->FindTypeDefByName(integration.replacement.target_method.type_name.c_str(), mdTokenNil, &typeDef);
     if (FAILED(hr)) {
-      Warn("Can't load the TypeDef for: ", integration.replacement.target_method.type_name, ", Module: ", module_metadata->assemblyName);
+      // This can happen between .NET framework and .NET core, not all apis are available in both. Eg: WinHttpHandler, CurlHandler, and some methods in System.Data
+      Debug("Can't load the TypeDef for: ", integration.replacement.target_method.type_name, ", Module: ", module_metadata->assemblyName);
       continue;
     }
 
@@ -3013,7 +3014,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
   // *** Load the method arguments to the stack
   unsigned elementType;
-  if (numArgs <= 6) {
+  if (numArgs <= 8) {
     // Load the arguments directly (FastPath)
     for (int i = 0; i < numArgs; i++) {
       reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
@@ -3101,6 +3102,22 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
           &beginCallInstruction));
       break;
     }
+    case 7: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &methodArguments[4], &methodArguments[5],
+          &methodArguments[6], &beginCallInstruction));
+      break;
+    }
+    case 8: {
+      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
+          &reWriterWrapper, wrapper_type_ref, &caller->type,
+          &methodArguments[0], &methodArguments[1], &methodArguments[2],
+          &methodArguments[3], &methodArguments[4], &methodArguments[5],
+          &methodArguments[6], &methodArguments[7], &beginCallInstruction));
+      break;
+    }
     default: {
       IfFailRet(callTargetTokens->WriteBeginMethodWithArgumentsArray(
           &reWriterWrapper, wrapper_type_ref, &caller->type,
@@ -3149,8 +3166,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
   // ***
   ILInstr* startExceptionCatch = reWriterWrapper.StLocal(exceptionIndex);
   reWriterWrapper.SetILPosition(methodReturnInstr);
-  reWriterWrapper.Rethrow();
-  ILInstr* methodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
+  ILInstr* rethrowInstr = reWriterWrapper.Rethrow();
 
   // ***
   // EXCEPTION FINALLY / END METHOD PART
@@ -3252,9 +3268,6 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     reWriterWrapper.LoadLocal(returnValueIndex);
   }
 
-  // Resolving branching to the end of the method
-  methodCatchLeaveInstr->m_pTarget = endFinallyInstr->m_pNext;
-  
   // Changes all returns to a LEAVE.S
   for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
        pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
@@ -3281,14 +3294,14 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
   exClause.m_pTryBegin = firstInstruction;
   exClause.m_pTryEnd = startExceptionCatch;
   exClause.m_pHandlerBegin = startExceptionCatch;
-  exClause.m_pHandlerEnd = methodCatchLeaveInstr;
+  exClause.m_pHandlerEnd = rethrowInstr;
   exClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
 
   EHClause finallyClause{};
   finallyClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FINALLY;
   finallyClause.m_pTryBegin = firstInstruction;
-  finallyClause.m_pTryEnd = methodCatchLeaveInstr->m_pNext;
-  finallyClause.m_pHandlerBegin = methodCatchLeaveInstr->m_pNext;
+  finallyClause.m_pTryEnd = rethrowInstr->m_pNext;
+  finallyClause.m_pHandlerBegin = rethrowInstr->m_pNext;
   finallyClause.m_pHandlerEnd = endFinallyInstr;
 
   // ***

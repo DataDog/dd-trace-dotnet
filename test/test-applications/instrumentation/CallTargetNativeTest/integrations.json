@@ -2497,6 +2497,790 @@
           "type": "CallTargetNativeTest.NoOp.Noop7ArgumentsIntegration",
           "action": "CallTargetModification"
         }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8Arguments",
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsVoidIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8Arguments",
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8Arguments",
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8Arguments",
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsGeneric`1",
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsVoidIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsGeneric`1",
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsStruct",
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsVoidIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsStruct",
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsStruct",
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsStruct",
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsStatic",
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsVoidIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsStatic",
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsStatic",
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With8ArgumentsStatic",
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop8ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9Arguments",
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsVoidIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9Arguments",
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9Arguments",
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9Arguments",
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsGeneric`1",
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsVoidIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsGeneric`1",
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsGeneric`1",
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsGeneric`1",
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsStruct",
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsVoidIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsStruct",
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsStruct",
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsStruct",
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsStatic",
+          "method": "VoidMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsVoidIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsStatic",
+          "method": "ReturnValueMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsStatic",
+          "method": "ReturnReferenceMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With9ArgumentsStatic",
+          "method": "ReturnGenericMethod",
+          "signature_types": [
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop9ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
       }
     ]
   }

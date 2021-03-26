@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
@@ -50,6 +51,19 @@ namespace Benchmarks.Trace
             return task.GetAwaiter().GetResult().Value;
         }
 
+        [Benchmark]
+        public unsafe int CallTargetExecuteAsync()
+        {
+            var task = CallTarget.Run<Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration, GraphQLClient, ExecutionContext, Task<ExecutionResult>>(
+                Client,
+                Context,
+                &ExecuteAsync);
+
+            return task.GetAwaiter().GetResult().Value;
+
+            static Task<ExecutionResult> ExecuteAsync(ExecutionContext context) => Result;
+        }
+
         private class GraphQLClient : IExecutionStrategy
         {
             public Task<ExecutionResult> ExecuteAsync(ExecutionContext context)
@@ -78,12 +92,13 @@ namespace GraphQL
         {
             public DocumentImpl Document { get; } = new DocumentImpl();
             public OperationImpl Operation { get; } = new OperationImpl();
+            public ErrorsImpl Errors { get; } = new ErrorsImpl();
         }
 
         internal class OperationImpl
         {
             public string Name { get; } = "OperationName";
-            public OperationTypes OperationType { get; } = OperationTypes.Default;
+            public OperationTypes OperationType { get; } = OperationTypes.Query;
         }
 
         internal class DocumentImpl
@@ -91,9 +106,30 @@ namespace GraphQL
             public string OriginalQuery { get; } = "Query";
         }
 
-        internal enum OperationTypes
+        internal class ErrorsImpl
         {
-            Default
+            int Count { get; } = 0;
+
+            ExecutionErrorImpl this[int index] { 
+                get {
+                    return null;
+                } 
+            }
+        }
+
+        internal class ExecutionErrorImpl
+        {
+            string Code { get; }
+            IEnumerable<object> Locations { get; }
+            string Message { get; }
+            IEnumerable<string> Path { get; }
+        }
+
+        public enum OperationTypes
+        {
+            Query,
+            Mutation,
+            Subscription
         }
     }
 }

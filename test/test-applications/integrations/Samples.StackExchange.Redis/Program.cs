@@ -8,6 +8,11 @@ namespace Samples.StackExchangeRedis
 {
     class Program
     {
+        // Set the expire timespan so it cannot be represented in seconds, so the resulting redis command will always be PEXPIRE.
+        // This removes a bug where *sometimes* the expire could be represented as seconds and the resulting redis command
+        // was occasionally EXPIRE.
+        private static readonly TimeSpan ExpireTimeSpan = TimeSpan.FromMilliseconds(1500);
+
         static void Main(string[] args)
         {
             string prefix = "";
@@ -123,7 +128,7 @@ namespace Samples.StackExchangeRedis
                 { "KeyDelete", () => db.KeyDelete($"{prefix}Key") },
                 { "KeyDump", () => db.KeyDump($"{prefix}Key") },
                 { "KeyExists", () => db.KeyExists($"{prefix}Key") },
-                { "KeyExpire", () => db.KeyExpire($"{prefix}Key", DateTime.Now) },
+                { "KeyExpire", () => db.KeyExpire($"{prefix}Key", ExpireTimeSpan) },
 #if (STACKEXCHANGEREDIS_1_0_297 && !DEFAULT_SAMPLES)
                 { "KeyMigrate", () => { db.KeyMigrate($"{prefix}Key", db.IdentifyEndpoint());  return null; } },
 #endif
@@ -262,7 +267,7 @@ namespace Samples.StackExchangeRedis
                 { "KeyDeleteAsync", () => db.KeyDeleteAsync("key") },
                 { "KeyDumpAsync", () => db.KeyDumpAsync("key") },
                 { "KeyExistsAsync", () => db.KeyExistsAsync("key") },
-                { "KeyExpireAsync", () => db.KeyExpireAsync("key", DateTime.Now) },
+                { "KeyExpireAsync", () => db.KeyExpireAsync("key", ExpireTimeSpan) },
                 // () => db.KeyMigrateAsync("key", ???)
                 { "KeyMoveAsync", () => db.KeyMoveAsync("key", 1) },
                 { "KeyPersistAsync", () => db.KeyPersistAsync("key") },

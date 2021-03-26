@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.HttpOverStreams
@@ -13,8 +14,8 @@ namespace Datadog.Trace.HttpOverStreams
             {
                 if (_metadataHeaders == null)
                 {
-                    _metadataHeaders =
-                        $"{AgentHttpHeaderNames.Language}: .NET{DatadogHttpValues.CrLf}{AgentHttpHeaderNames.TracerVersion}: {TracerConstants.AssemblyVersion}{DatadogHttpValues.CrLf}{HttpHeaderNames.TracingEnabled}: false{DatadogHttpValues.CrLf}";
+                    var headers = AgentHttpHeaderNames.DefaultHeaders.Select(kvp => $"{kvp.Key}: {kvp.Value}{DatadogHttpValues.CrLf}");
+                    _metadataHeaders = string.Concat(headers);
                 }
 
                 return _metadataHeaders;

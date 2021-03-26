@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
@@ -42,13 +43,21 @@ namespace Benchmarks.Trace
 
             HomeController.Initialize();
 
-            new AspNetCoreBenchmark().SendRequest();
+            var bench = new AspNetCoreBenchmark();
+            bench.SendRequest();
+            bench.CallTargetSendRequest();
         }
 
         [Benchmark]
         public string SendRequest()
         {
             return Client.GetStringAsync("/Home").GetAwaiter().GetResult();
+        }
+
+        [Benchmark]
+        public string CallTargetSendRequest()
+        {
+            return Client.GetStringAsync("/CallTargetHome").GetAwaiter().GetResult();
         }
 
         private class Startup
@@ -115,6 +124,25 @@ namespace Benchmarks.Trace
             }
         }
     }
+
+    /// <summary>
+    /// Simple controller used for the calltarget aspnetcore benchmark
+    /// </summary>
+    public class CallTargetHomeController : Controller
+    {
+        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
+        private static readonly Task<HttpResponseMessage> CachedResult = Task.FromResult(new HttpResponseMessage());
+        
+        public unsafe string Index()
+        {
+            CallTarget.Run<HttpClientHandlerIntegration, CallTargetHomeController, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>
+                (this, HttpRequest, CancellationToken.None, &GetResult).GetAwaiter().GetResult();
+
+            return "OK";
+
+            static Task<HttpResponseMessage> GetResult(HttpRequestMessage request, CancellationToken cancellationToken) => CachedResult;
+        }
+    }
 }
 
 #else
@@ -129,6 +157,12 @@ namespace Benchmarks.Trace
     {
         [Benchmark]
         public string SendRequest()
+        {
+            return null;
+        }
+
+        [Benchmark]
+        public string CallTargetSendRequest()
         {
             return null;
         }

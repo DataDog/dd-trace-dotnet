@@ -19,11 +19,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(ServiceVersion);
         }
 
-        [Fact(Skip = "Skipped until we determine a strategy for testing two executables in conjunction.")]
+        [Theory]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        [Trait("RunOnWindows", "True")]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void SubmitsTraces(bool enableCallTarget, bool enableInlining)
         {
+            SetCallTargetSettings(enableCallTarget, enableInlining);
+
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
+
+            var expectedSpanCount = 4;
 
             const string expectedOperationName = "wcf.request";
             const string expectedServiceName = "Samples.Wcf";
@@ -39,12 +47,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int wcfPort = 8585;
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"WSHttpBinding Port={wcfPort} Timeout=20000"))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"WSHttpBinding Port={wcfPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
 
-                var spans = agent.WaitForSpans(4, 20000);
-                Assert.True(spans.Count >= 4, $"Expecting at least 3 spans, only received {spans.Count}");
+                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                Assert.True(spans.Count >= expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
                 foreach (var span in spans)
                 {

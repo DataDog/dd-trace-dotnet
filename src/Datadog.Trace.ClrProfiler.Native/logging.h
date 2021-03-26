@@ -17,7 +17,7 @@ class Logger : public Singleton<Logger> {
 
  private:
   std::shared_ptr<spdlog::logger> m_fileout;
-  static std::string GetLogPath();
+  static std::string GetLogPath(const std::string& file_name_suffix);
   Logger();
   ~Logger();
 

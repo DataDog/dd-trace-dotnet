@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
+using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,6 +13,7 @@ using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDe
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Collection(nameof(StackExchangeRedisTestCollection))]
     public class StackExchangeRedisTests : TestHelper
     {
         public StackExchangeRedisTests(ITestOutputHelper output)
@@ -92,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     // { "DEL", $"DEL key" },
                     { "DUMP", $"DUMP key" },
                     { "EXISTS", $"EXISTS key" },
-                    { "PEXPIREAT", $"PEXPIREAT key" },
+                    { "PEXPIRE", $"PEXPIRE key" },
                     { "MOVE", $"MOVE key" },
                     { "PERSIST", $"PERSIST key" },
                     { "RANDOMKEY", $"RANDOMKEY" },
@@ -191,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     // { "DEL", $"DEL {dbPrefix}Key" },
                     { "DUMP", $"DUMP {dbPrefix}Key" },
                     { "EXISTS", $"EXISTS {dbPrefix}Key" },
-                    { "PEXPIREAT", $"PEXPIREAT {dbPrefix}Key" },
+                    { "PEXPIRE", $"PEXPIRE {dbPrefix}Key" },
                     { "MIGRATE", $"MIGRATE {dbPrefix}Key" }, // Only present on 1.0.297+
                     { "MOVE", $"MOVE {dbPrefix}Key" },
                     { "PERSIST", $"PERSIST {dbPrefix}Key" },

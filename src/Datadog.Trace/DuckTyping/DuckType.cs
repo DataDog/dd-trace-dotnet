@@ -130,14 +130,8 @@ namespace Datadog.Trace.DuckTyping
                         interfaceTypes = new[] { typeof(IDuckType) };
                     }
 
-                    // Ensures the module builder
-                    if (_moduleBuilder is null)
-                    {
-                        var id = Guid.NewGuid().ToString("N");
-                        AssemblyName aName = new AssemblyName("DuckTypeAssembly._" + id);
-                        _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.Run);
-                        _moduleBuilder = _assemblyBuilder.DefineDynamicModule("MainModule");
-                    }
+                    // Gets the module builder
+                    var moduleBuilder = GetModuleBuilder(targetType);
 
                     string assembly = string.Empty;
                     if (targetType.Assembly != null)
@@ -151,10 +145,10 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
-                    string proxyTypeName = $"{assembly}.{targetType.FullName.Replace(".", "_").Replace("+", "__")}.{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}";
+                    string proxyTypeName = $"{assembly}.{targetType.FullName.Replace(".", "_").Replace("+", "__")}.{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}_{++_typeCount}";
 
                     // Create Type
-                    TypeBuilder proxyTypeBuilder = _moduleBuilder.DefineType(
+                    TypeBuilder proxyTypeBuilder = moduleBuilder.DefineType(
                         proxyTypeName,
                         typeAttributes,
                         parentType,
@@ -285,6 +279,12 @@ namespace Datadog.Trace.DuckTyping
 
             foreach (PropertyInfo proxyProperty in proxyTypeProperties)
             {
+                // Ignore the properties marked with `DuckIgnore` attribute
+                if (proxyProperty.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                {
+                    continue;
+                }
+
                 PropertyBuilder propertyBuilder = null;
 
                 // If the property is abstract or interface we make sure that we have the property defined in the new class
@@ -410,6 +410,12 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
+                // Ignore the fields marked with `DuckIgnore` attribute
+                if (proxyFieldInfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                {
+                    continue;
+                }
+
                 PropertyBuilder propertyBuilder = null;
 
                 DuckAttribute duckAttribute = proxyFieldInfo.GetCustomAttribute<DuckAttribute>(true) ?? new DuckAttribute();
@@ -531,6 +537,12 @@ namespace Datadog.Trace.DuckTyping
             {
                 // Skip readonly fields
                 if ((finfo.Attributes & FieldAttributes.InitOnly) != 0)
+                {
+                    continue;
+                }
+
+                // Ignore the fields marked with `DuckIgnore` attribute
+                if (finfo.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
                 {
                     continue;
                 }
