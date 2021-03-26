@@ -1,17 +1,17 @@
 Component,Origin,License,Copyright
-opentracing-csharp,https://github.com/opentracing/opentracing-csharp,MIT,Copyright 2016-2017 The OpenTracing Authors
-MessagePack-CSharp,https://github.com/neuecc/MessagePack-CSharp,MIT,Copyright (c) 2017 Yoshifumi Kawai and contributors
-liblog,https://github.com/damianh/LibLog,MIT,Copyright (C) 2011-2017 Damian Hickey
-dotnet/runtime,https://github.com/dotnet/runtime,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
-clr-samples,https://github.com/Microsoft/clr-samples,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
-clrprofiler,https://github.com/MicrosoftArchive/clrprofiler,MIT,Copyright (c) Microsoft Corporation.  All rights reserved.
-JSON for Modern C++,https://github.com/nlohmann/json,MIT,Copyright (c) 2013-2018 Niels Lohmann
-Sigil,https://github.com/kevin-montrose/Sigil,MS-PL,2013-2016 Kevin Montrose
-miniutf,https://github.com/dropbox/miniutf,MIT,"Copyright (c) 2013 Dropbox, Inc."
-Serilog,https://github.com/serilog/serilog,Apache-2.0,"Copyright (c) 2013-2018 Serilog Contributors"
-Serilog.Sinks.File,https://github.com/serilog/serilog-sinks-file,Apache-2.0,"Copyright (c) 2016 Serilog Contributors"
-opentracing-contrib/csharp-netcore,https://github.com/opentracing-contrib/csharp-netcore,Apache-2.0,
-opentelemetry-dotnet-instrumentation,https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation,Apache-2.0,
-Newtonsoft.Json,https://github.com/JamesNK/Newtonsoft.Json,MIT,Copyright (c) 2007 James Newton-King
-spdlog,https://github.com/gabime/spdlog,MIT,"Copyright (c) 2016 Gabi Melman."
-{fmt},https://github.com/fmtlib/fmt,MIT,"Copyright (c) 2012 - present, Victor Zverovich"
+Datadog.Trace,https://github.com/neuecc/MessagePack-CSharp,MIT,Copyright (c) 2017 Yoshifumi Kawai and contributors
+Datadog.Trace,https://github.com/damianh/LibLog,MIT,Copyright (C) 2011-2017 Damian Hickey
+Datadog.Trace,https://github.com/serilog/serilog,Apache-2.0,Copyright (c) 2013-2018 Serilog Contributors
+Datadog.Trace,https://github.com/serilog/serilog-sinks-file,Apache-2.0,Copyright (c) 2016 Serilog Contributors
+Datadog.Trace,https://github.com/JamesNK/Newtonsoft.Json,MIT,Copyright (c) 2007 James Newton-King
+Datadog.Trace.ClrProfiler.Managed,https://github.com/kevin-montrose/Sigil,MS-PL,2013-2016 Kevin Montrose
+Datadog.Trace.ClrProfiler.Native,https://github.com/dotnet/runtime,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
+Datadog.Trace.ClrProfiler.Native,https://github.com/Microsoft/clr-samples,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
+Datadog.Trace.ClrProfiler.Native,https://github.com/MicrosoftArchive/clrprofiler,MIT,Copyright (c) Microsoft Corporation.  All rights reserved.
+Datadog.Trace.ClrProfiler.Native,https://github.com/nlohmann/json,MIT,Copyright (c) 2013-2018 Niels Lohmann
+Datadog.Trace.ClrProfiler.Native,https://github.com/dropbox/miniutf,MIT,"Copyright (c) 2013 Dropbox, Inc."
+Datadog.Trace.ClrProfiler.Native,https://github.com/gabime/spdlog,MIT,Copyright (c) 2016 Gabi Melman.
+Datadog.Trace.ClrProfiler.Native,https://github.com/fmtlib/fmt,MIT,"Copyright (c) 2012 - present, Victor Zverovich"
+Datadog.Trace.OpenTracing,https://github.com/opentracing/opentracing-csharp,MIT,Copyright 2016-2017 The OpenTracing Authors
+Datadog.Trace.OpenTracing,https://github.com/opentracing-contrib/csharp-netcore,Apache-2.0,
+(all),https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation,Apache-2.0,
