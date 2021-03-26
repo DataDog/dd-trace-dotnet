@@ -537,6 +537,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("netstandard_enabled");
                     writer.WriteValue(Settings.IsNetStandardFeatureFlagEnabled());
 
+                    writer.WritePropertyName("routetemplate_resourcenames_enabled");
+                    writer.WriteValue(Settings.RouteTemplateResourceNamesEnabled);
+
                     writer.WritePropertyName("agent_reachable");
                     writer.WriteValue(agentError == null);
 
