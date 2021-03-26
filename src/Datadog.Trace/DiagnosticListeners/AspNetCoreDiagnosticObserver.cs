@@ -40,7 +40,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly Type EndpointFeatureType =
             Assembly.GetAssembly(typeof(RouteValueDictionary))
-                   ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", false);
+                   ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
         private readonly Tracer _tracer;
