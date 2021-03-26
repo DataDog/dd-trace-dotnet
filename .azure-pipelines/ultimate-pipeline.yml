@@ -15,6 +15,7 @@ variables:
   dotnetCoreSdk5Version: 5.0.103
   tracerHome: $(System.DefaultWorkingDirectory)/src/bin/windows-tracer-home
   ddApiKey: $(DD_API_KEY)
+  isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   DD_DOTNET_TRACER_MSBUILD:
 
 # Declare the datadog agent as a resource to be used as a pipeline service
@@ -1135,6 +1136,6 @@ stages:
           ne(variables['push_artifacts_to_s3'], 'false'),
           or(
             eq(variables['push_artifacts_to_s3'], 'true'),
-            eq(variables['Build.SourceBranch'], 'refs/heads/master')
+            eq(variables.isMainBranch, true)
           )
         )
