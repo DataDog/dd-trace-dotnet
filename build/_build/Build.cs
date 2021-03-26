@@ -166,14 +166,14 @@ partial class Build : NukeBuild
                         .SetProject(project)),
                 degreeOfParallelism: 2);
         });
-    
+
     Target CompileNativeSrcWindows => _ => _
-        .Unlisted()   
+        .Unlisted()
         .DependsOn(CompileManagedSrc)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            // If we're building for x64, build for x86 too 
+            // If we're building for x64, build for x86 too
             var platforms =
                 Equals(Platform, MSBuildTargetPlatform.x64)
                     ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
@@ -189,9 +189,9 @@ partial class Build : NukeBuild
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
-    
+
     Target CompileNativeSrcLinux => _ => _
-        .Unlisted()   
+        .Unlisted()
         .DependsOn(CompileManagedSrc)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
@@ -209,6 +209,43 @@ partial class Build : NukeBuild
         .Description("Compiles the native loader")
         .DependsOn(CompileNativeSrcWindows)
         .DependsOn(CompileNativeSrcLinux);
+
+
+    Target CompileNativeTestsWindows => _ => _
+        .Unlisted()
+        .DependsOn(CompileNativeSrcWindows)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            // If we're building for x64, build for x86 too
+            var platforms =
+                Equals(Platform, MSBuildTargetPlatform.x64)
+                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
+                    : new[] { MSBuildTargetPlatform.x86 };
+
+            // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
+            MSBuild(s => s
+                .SetTargetPath(MsBuildProject)
+                .SetConfiguration(Configuration)
+                .SetTargets("BuildCppTests")
+                .DisableRestore()
+                .SetMaxCpuCount(null)
+                .CombineWith(platforms, (m, platform) => m
+                    .SetTargetPlatform(platform)));
+        });
+
+    Target CompileNativeTestsLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            Logger.Error("We don't currently run unit tests on Linux");
+        });
+
+    Target CompileNativeTests => _ => _
+        .Description("Compiles the native loader unit tests")
+        .DependsOn(CompileNativeTestsWindows)
+        .DependsOn(CompileNativeTestsLinux);
 
     Target PublishManagedProfiler => _ => _
         .DependsOn(CompileManagedSrc)
@@ -421,7 +458,11 @@ partial class Build : NukeBuild
                 degreeOfParallelism: 2);
         });
 
-    Target RunNativeTests => _ => _
+    Target RunNativeTestsWindows => _ => _
+        .Unlisted()
+        .DependsOn(CompileNativeSrcWindows)
+        .DependsOn(CompileNativeTestsWindows)
+        .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
             var workingDirectory = TestsDirectory / "Datadog.Trace.ClrProfiler.Native.Tests" / "bin" / Configuration.ToString() / Platform.ToString();
@@ -429,7 +470,21 @@ partial class Build : NukeBuild
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
         });
-    
+
+    Target RunNativeTestsLinux => _ => _
+        .Unlisted()
+        .DependsOn(CompileNativeSrcLinux)
+        .DependsOn(CompileNativeTestsLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            Logger.Error("We don't currently run unit tests on Linux");
+        });
+
+    Target RunNativeTests => _ => _
+        .DependsOn(RunNativeTestsWindows)
+        .DependsOn(RunNativeTestsLinux);
+
     Target RunIntegrationTests => _ => _
         .DependsOn(BuildTracerHome)
         .DependsOn(CompileIntegrationTests)
@@ -530,6 +585,8 @@ partial class Build : NukeBuild
             .DependsOn(CompileFrameworkReproductions)
             .DependsOn(CompileIntegrationTests)
             .DependsOn(CompileSamples)
+            .DependsOn(CompileNativeTests)
+            .DependsOn(RunNativeTests)
             .DependsOn(RunManagedUnitTests)
             .DependsOn(RunIntegrationTests);
 
