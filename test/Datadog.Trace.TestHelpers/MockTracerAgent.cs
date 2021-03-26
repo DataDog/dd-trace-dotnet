@@ -290,7 +290,7 @@ namespace Datadog.Trace.TestHelpers
 
         [MessagePackObject]
         [DebuggerDisplay("TraceId={TraceId}, SpanId={SpanId}, Service={Service}, Name={Name}, Resource={Resource}")]
-        public struct Span
+        public class Span
         {
             [Key("trace_id")]
             public ulong TraceId { get; set; }
