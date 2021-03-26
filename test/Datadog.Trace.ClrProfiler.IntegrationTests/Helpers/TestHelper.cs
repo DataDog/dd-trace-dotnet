@@ -49,9 +49,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public EnvironmentHelper EnvironmentHelper { get; }
 
-        protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
+        public ITestOutputHelper Output { get; }
 
-        protected ITestOutputHelper Output { get; }
+        protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
 
         public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort, int? statsdPort = null, string framework = "")
         {

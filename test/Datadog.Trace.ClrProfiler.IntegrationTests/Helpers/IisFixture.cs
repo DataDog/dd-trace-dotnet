@@ -2,12 +2,14 @@ using System;
 using System.Diagnostics;
 using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Docker;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public sealed class IisFixture : IDisposable
     {
-        private Process _iisExpress;
+        private IDisposable _testInstance = null;
+        private Process _iisExpress = null;
 
         public MockTracerAgent Agent { get; private set; }
 
@@ -17,13 +19,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             lock (this)
             {
-                if (_iisExpress == null)
+                if (helper.EnvironmentHelper.ContainerModeEnabled)
                 {
-                    Agent = helper.EnvironmentHelper.CreateMockAgent();
+                    if (_testInstance == null)
+                    {
+                        Agent = helper.EnvironmentHelper.CreateMockAgent();
+                        HttpPort = TcpPortProvider.GetOpenPort();
 
-                    HttpPort = TcpPortProvider.GetOpenPort();
+                        var manager = new DockerManager(
+                            environmentHelper: helper.EnvironmentHelper,
+                            containerPort: HttpPort);
 
-                    _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort);
+                        manager.BuildImage();
+                        manager.StartContainer();
+
+                        _testInstance = manager;
+                    }
+                }
+                else
+                {
+                    if (_iisExpress == null)
+                    {
+                        Agent = helper.EnvironmentHelper.CreateMockAgent();
+
+                        HttpPort = TcpPortProvider.GetOpenPort();
+
+                        _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort);
+                    }
                 }
             }
         }
@@ -31,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void Dispose()
         {
             Agent?.Dispose();
+            _testInstance?.Dispose();
 
             lock (this)
             {

@@ -18,12 +18,14 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 ARG SITE_DIR=SITE_DIR_NOT_SPECIFIED
 ARG MSI_DIR=MSI_DIR_NOT_SPECIFIED
 
+COPY . ./sln
 COPY windows-container-scripts ./scripts
 COPY $MSI_DIR ./msi
-COPY $SITE_DIR ./site
+
+ENV SITE_DIR=$SITE_DIR
 
 # Build the app
-RUN C:\scripts\build-proj.ps1
+RUN C:\scripts\build-proj-to-site-dir.ps1 $env:SITE_DIR
 
 FROM $SERVER_IMG AS final
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]

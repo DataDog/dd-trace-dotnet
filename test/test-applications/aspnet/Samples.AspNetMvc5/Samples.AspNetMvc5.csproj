@@ -113,6 +113,8 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Helpers\DistributedTracingModel.cs" />
+    <Compile Include="Helpers\HttpClientExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\web.config" />
@@ -140,13 +142,8 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Areas\Datadog\Models\" />
-    <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\integrations\dependency-libs\Samples.Shared\Samples.Shared.csproj">
-      <Project>{b4ae8b0f-c2b2-41df-88bb-d97e267d8964}</Project>
-      <Name>Samples.Shared</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
       <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
       <Name>Datadog.Trace.ClrProfiler.Managed</Name>

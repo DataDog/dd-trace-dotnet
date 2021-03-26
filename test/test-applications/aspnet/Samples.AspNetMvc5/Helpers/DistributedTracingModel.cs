@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Samples.Shared.Web
+namespace Samples.AspNetMvc5.Helpers
 {
     public class DistributedTracingModel
     {

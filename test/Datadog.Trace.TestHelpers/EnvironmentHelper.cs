@@ -67,6 +67,10 @@ namespace Datadog.Trace.TestHelpers
                           : string.Empty;
         }
 
+        public ITestOutputHelper OutputHelper => _output;
+
+        public bool ContainerModeEnabled { get; set; }
+
         public bool DebugModeEnabled { get; set; }
 
         public bool NamedPipesModeEnabled { get; set; }
@@ -153,6 +157,12 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        public void EnableWindowsContainerBasis()
+        {
+            EnableNamedPipes();
+            ContainerModeEnabled = true;
+        }
+
         public void EnableNamedPipes()
         {
             NamedPipesModeEnabled = true;
@@ -185,6 +195,11 @@ namespace Datadog.Trace.TestHelpers
             string processPath,
             StringDictionary environmentVariables)
         {
+            if (ContainerModeEnabled)
+            {
+                return;
+            }
+
             var processName = processPath;
             string profilerEnabled = _requiresProfiling ? "1" : "0";
             string profilerPath;
@@ -297,6 +312,11 @@ namespace Datadog.Trace.TestHelpers
 
         public string GetProfilerPath()
         {
+            if (ContainerModeEnabled)
+            {
+                return null;
+            }
+
             if (_profilerFileLocation == null)
             {
                 string extension = EnvironmentTools.GetOS() switch

@@ -10,23 +10,22 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection("IisTests")]
-    public class AspNetMvc5TestsCallsite : AspNetMvc5Tests
-    {
-        public AspNetMvc5TestsCallsite(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, enableInlining: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetMvc5TestsCallTargetNoInlining : AspNetMvc5Tests
-    {
-        public AspNetMvc5TestsCallTargetNoInlining(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, enableInlining: false)
-        {
-        }
-    }
+    // [Collection("IisTests")]
+    // public class AspNetMvc5TestsCallsite : AspNetMvc5Tests
+    // {
+    //     public AspNetMvc5TestsCallsite(IisFixture iisFixture, ITestOutputHelper output)
+    //         : base(iisFixture, output, enableCallTarget: false, enableInlining: false)
+    //     {
+    //     }
+    // }
+    // [Collection("IisTests")]
+    // public class AspNetMvc5TestsCallTargetNoInlining : AspNetMvc5Tests
+    // {
+    //     public AspNetMvc5TestsCallTargetNoInlining(IisFixture iisFixture, ITestOutputHelper output)
+    //         : base(iisFixture, output, enableCallTarget: true, enableInlining: false)
+    //     {
+    //     }
+    // }
 
     [Collection("IisTests")]
     public class AspNetMvc5TestsCallTarget : AspNetMvc5Tests
@@ -48,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetCallTargetSettings(enableCallTarget, enableInlining);
 
             _iisFixture = iisFixture;
+            EnvironmentHelper.EnableWindowsContainerBasis();
             _iisFixture.TryStartIis(this);
         }
 
