@@ -305,12 +305,14 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key to enable sending partial traces to the agent
         /// </summary>
-        public const string PartialFlushEnabled = "DD_TRACER_PARTIAL_FLUSH_ENABLED";
+        /// <seealso cref="TracerSettings.PartialFlushEnabled"/>
+        public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
 
         /// <summary>
         /// Configuration key to set the minimum number of closed spans in a trace before it's partially flushed
         /// </summary>
-        public const string PartialFlushMinSpans = "DD_TRACER_PARTIAL_FLUSH_MIN_SPANS";
+        /// <seealso cref="TracerSettings.PartialFlushMinSpans"/>
+        public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
 
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
