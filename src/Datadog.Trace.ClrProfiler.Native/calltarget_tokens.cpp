@@ -643,1178 +643,6 @@ HRESULT CallTargetTokens::ModifyLocalSig(
   return hr;
 }
 
-/**
- * PUBLIC
- **/
-
-mdTypeRef CallTargetTokens::GetObjectTypeRef() { return objectTypeRef; }
-mdTypeRef CallTargetTokens::GetExceptionTypeRef() { return exTypeRef; }
-mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef() { return corLibAssemblyRef; }
-
-HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
-    void* rewriterWrapperPtr, FunctionInfo* functionInfo,
-    ULONG* callTargetStateIndex, ULONG* exceptionIndex,
-    ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
-    mdToken* callTargetStateToken, mdToken* exceptionToken,
-    mdToken* callTargetReturnToken, ILInstr** firstInstruction) {
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-
-  // Modify the Local Var Signature of the method
-  auto returnFunctionMethod = functionInfo->method_signature.GetRet();
-
-  auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(),
-                           &returnFunctionMethod, callTargetStateIndex,
-                           exceptionIndex, callTargetReturnIndex,
-                           returnValueIndex, callTargetStateToken,
-                           exceptionToken, callTargetReturnToken);
-
-  if (FAILED(hr)) {
-    Warn("ModifyLocalSig() failed.");
-    return hr;
-  }
-
-  // Init locals
-  if (*returnValueIndex != static_cast<ULONG>(ULONG_MAX)) {
-    *firstInstruction = rewriterWrapper->CallMember(
-        GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
-    rewriterWrapper->StLocal(*returnValueIndex);
-
-    rewriterWrapper->CallMember(
-        GetCallTargetReturnValueDefaultMemberRef(*callTargetReturnToken),
-        false);
-    rewriterWrapper->StLocal(*callTargetReturnIndex);
-  } else {
-    *firstInstruction = rewriterWrapper->CallMember(
-        GetCallTargetReturnVoidDefaultMemberRef(), false);
-    rewriterWrapper->StLocal(*callTargetReturnIndex);
-  }
-  rewriterWrapper->LoadNull();
-  rewriterWrapper->StLocal(*exceptionIndex);
-  // We don't need to initialize calltarget state because is going to be initialized right after this method call.
-  // So we can save 2 instructions.
-  /*rewriterWrapper->CallMember(GetCallTargetStateDefaultMemberRef(), false);
-  rewriterWrapper->StLocal(*callTargetStateIndex);*/
-  return S_OK;
-}
-
-// fastpath BeginMethod with 0 arguments
-HRESULT CallTargetTokens::WriteBeginMethodWithoutArguments(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, ILInstr** instruction) {
-  auto hr = EnsureBaseCalltargetTokens();
-  if (FAILED(hr)) {
-    return hr;
-  }
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  if (beginP0MemberRef == mdMemberRefNil) {
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize =
-        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 6 + callTargetStateSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x02;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
-        signature, signatureLength, &beginP0MemberRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper beginP0MemberRef could not be defined.");
-      return hr;
-    }
-  }
-
-  mdMethodSpec beginP0MethodSpec = mdMethodSpecNil;
-
-  unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize =
-      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-  bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-  unsigned currentTypeBuffer;
-  ULONG currentTypeSize =
-      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
-  COR_SIGNATURE signature[signatureBufferSize];
-  unsigned offset = 0;
-  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-  signature[offset++] = 0x02;
-
-  signature[offset++] = ELEMENT_TYPE_CLASS;
-  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-  offset += integrationTypeSize;
-
-  if (isValueType) {
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-  } else {
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-  }
-  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-  offset += currentTypeSize;
-
-  hr = module_metadata->metadata_emit->DefineMethodSpec(
-      beginP0MemberRef, signature, signatureLength, &beginP0MethodSpec);
-  if (FAILED(hr)) {
-    Warn("Error creating begin method spec.");
-    return hr;
-  }
-
-  *instruction = rewriterWrapper->CallMember(beginP0MethodSpec, false);
-  return S_OK;
-}
-
-// fastpath BeginMethod with 1 arguments
-HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, FunctionMethodArgument* arg1,
-    ILInstr** instruction) {
-  auto hr = EnsureBaseCalltargetTokens();
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  if (beginP1MemberRef == mdMemberRefNil) {
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize =
-        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 8 + callTargetStateSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x03;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
-        signature, signatureLength, &beginP1MemberRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper beginP1MemberRef could not be defined.");
-      return hr;
-    }
-  }
-
-  mdMethodSpec beginP1MethodSpec = mdMethodSpecNil;
-
-  unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize =
-      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-  bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-  unsigned currentTypeBuffer;
-  ULONG currentTypeSize =
-      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  PCCOR_SIGNATURE arg1SignatureBuffer;
-  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
-
-  auto signatureLength =
-      4 + integrationTypeSize + currentTypeSize + arg1SignatureSize;
-  COR_SIGNATURE signature[signatureBufferSize];
-  unsigned offset = 0;
-
-  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-  signature[offset++] = 0x03;
-
-  signature[offset++] = ELEMENT_TYPE_CLASS;
-  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-  offset += integrationTypeSize;
-
-  if (isValueType) {
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-  } else {
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-  }
-  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-  offset += currentTypeSize;
-
-  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
-  offset += arg1SignatureSize;
-
-  hr = module_metadata->metadata_emit->DefineMethodSpec(
-      beginP1MemberRef, signature, signatureLength, &beginP1MethodSpec);
-  if (FAILED(hr)) {
-    Warn("Error creating begin method spec.");
-    return hr;
-  }
-
-  *instruction = rewriterWrapper->CallMember(beginP1MethodSpec, false);
-  return S_OK;
-}
-
-// fastpath BeginMethod with 2 arguments
-HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, FunctionMethodArgument* arg1,
-    FunctionMethodArgument* arg2, ILInstr** instruction) {
-  auto hr = EnsureBaseCalltargetTokens();
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  if (beginP2MemberRef == mdMemberRefNil) {
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize =
-        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 10 + callTargetStateSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x04;
-    signature[offset++] = 0x03;
-
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x03;
-
-    auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
-        signature, signatureLength, &beginP2MemberRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper beginP2MemberRef could not be defined.");
-      return hr;
-    }
-  }
-
-  mdMethodSpec beginP2MethodSpec = mdMethodSpecNil;
-
-  unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize =
-      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-  bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-  unsigned currentTypeBuffer;
-  ULONG currentTypeSize =
-      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  PCCOR_SIGNATURE arg1SignatureBuffer;
-  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
-
-  PCCOR_SIGNATURE arg2SignatureBuffer;
-  auto arg2SignatureSize = arg2->GetSignature(arg2SignatureBuffer);
-
-  auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
-                         arg1SignatureSize + arg2SignatureSize;
-  COR_SIGNATURE signature[signatureBufferSize];
-  unsigned offset = 0;
-
-  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-  signature[offset++] = 0x04;
-
-  signature[offset++] = ELEMENT_TYPE_CLASS;
-  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-  offset += integrationTypeSize;
-
-  if (isValueType) {
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-  } else {
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-  }
-  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-  offset += currentTypeSize;
-
-  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
-  offset += arg1SignatureSize;
-
-  memcpy(&signature[offset], arg2SignatureBuffer, arg2SignatureSize);
-  offset += arg2SignatureSize;
-
-  hr = module_metadata->metadata_emit->DefineMethodSpec(
-      beginP2MemberRef, signature, signatureLength, &beginP2MethodSpec);
-  if (FAILED(hr)) {
-    Warn("Error creating begin method spec.");
-    return hr;
-  }
-
-  *instruction = rewriterWrapper->CallMember(beginP2MethodSpec, false);
-  return S_OK;
-}
-
-// fastpath BeginMethod with 3 arguments
-HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, FunctionMethodArgument* arg1,
-    FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-    ILInstr** instruction) {
-  auto hr = EnsureBaseCalltargetTokens();
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  if (beginP3MemberRef == mdMemberRefNil) {
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize =
-        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 12 + callTargetStateSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x05;
-    signature[offset++] = 0x04;
-
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x03;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x04;
-
-    auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
-        signature, signatureLength, &beginP3MemberRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper beginP3MemberRef could not be defined.");
-      return hr;
-    }
-  }
-
-  mdMethodSpec beginP3MethodSpec = mdMethodSpecNil;
-
-  unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize =
-      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-  bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-  unsigned currentTypeBuffer;
-  ULONG currentTypeSize =
-      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  PCCOR_SIGNATURE arg1SignatureBuffer;
-  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
-
-  PCCOR_SIGNATURE arg2SignatureBuffer;
-  auto arg2SignatureSize = arg2->GetSignature(arg2SignatureBuffer);
-
-  PCCOR_SIGNATURE arg3SignatureBuffer;
-  auto arg3SignatureSize = arg3->GetSignature(arg3SignatureBuffer);
-
-  auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
-                         arg1SignatureSize + arg2SignatureSize +
-                         arg3SignatureSize;
-  COR_SIGNATURE signature[signatureBufferSize];
-  unsigned offset = 0;
-
-  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-  signature[offset++] = 0x05;
-
-  signature[offset++] = ELEMENT_TYPE_CLASS;
-  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-  offset += integrationTypeSize;
-
-  if (isValueType) {
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-  } else {
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-  }
-  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-  offset += currentTypeSize;
-
-  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
-  offset += arg1SignatureSize;
-
-  memcpy(&signature[offset], arg2SignatureBuffer, arg2SignatureSize);
-  offset += arg2SignatureSize;
-
-  memcpy(&signature[offset], arg3SignatureBuffer, arg3SignatureSize);
-  offset += arg3SignatureSize;
-
-  hr = module_metadata->metadata_emit->DefineMethodSpec(
-      beginP3MemberRef, signature, signatureLength, &beginP3MethodSpec);
-  if (FAILED(hr)) {
-    Warn("Error creating begin method spec.");
-    return hr;
-  }
-
-  *instruction = rewriterWrapper->CallMember(beginP3MethodSpec, false);
-  return S_OK;
-}
-
-// fastpath BeginMethod with 4 arguments
-HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, FunctionMethodArgument* arg1,
-    FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-    FunctionMethodArgument* arg4, ILInstr** instruction) {
-  auto hr = EnsureBaseCalltargetTokens();
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  if (beginP4MemberRef == mdMemberRefNil) {
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize =
-        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 14 + callTargetStateSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x06;
-    signature[offset++] = 0x05;
-
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x03;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x04;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x05;
-
-    auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
-        signature, signatureLength, &beginP4MemberRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper beginP4MemberRef could not be defined.");
-      return hr;
-    }
-  }
-
-  mdMethodSpec beginP4MethodSpec = mdMethodSpecNil;
-
-  unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize =
-      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-  bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-  unsigned currentTypeBuffer;
-  ULONG currentTypeSize =
-      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  PCCOR_SIGNATURE arg1SignatureBuffer;
-  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
-
-  PCCOR_SIGNATURE arg2SignatureBuffer;
-  auto arg2SignatureSize = arg2->GetSignature(arg2SignatureBuffer);
-
-  PCCOR_SIGNATURE arg3SignatureBuffer;
-  auto arg3SignatureSize = arg3->GetSignature(arg3SignatureBuffer);
-
-  PCCOR_SIGNATURE arg4SignatureBuffer;
-  auto arg4SignatureSize = arg4->GetSignature(arg4SignatureBuffer);
-
-  auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
-                         arg1SignatureSize + arg2SignatureSize +
-                         arg3SignatureSize + arg4SignatureSize;
-  COR_SIGNATURE signature[signatureBufferSize];
-  unsigned offset = 0;
-
-  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-  signature[offset++] = 0x06;
-
-  signature[offset++] = ELEMENT_TYPE_CLASS;
-  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-  offset += integrationTypeSize;
-
-  if (isValueType) {
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-  } else {
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-  }
-  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-  offset += currentTypeSize;
-
-  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
-  offset += arg1SignatureSize;
-
-  memcpy(&signature[offset], arg2SignatureBuffer, arg2SignatureSize);
-  offset += arg2SignatureSize;
-
-  memcpy(&signature[offset], arg3SignatureBuffer, arg3SignatureSize);
-  offset += arg3SignatureSize;
-
-  memcpy(&signature[offset], arg4SignatureBuffer, arg4SignatureSize);
-  offset += arg4SignatureSize;
-
-  hr = module_metadata->metadata_emit->DefineMethodSpec(
-      beginP4MemberRef, signature, signatureLength, &beginP4MethodSpec);
-  if (FAILED(hr)) {
-    Warn("Error creating begin method spec.");
-    return hr;
-  }
-
-  *instruction = rewriterWrapper->CallMember(beginP4MethodSpec, false);
-  return S_OK;
-}
-
-// fastpath BeginMethod with 5 arguments
-HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, FunctionMethodArgument* arg1,
-    FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-    FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
-    ILInstr** instruction) {
-  auto hr = EnsureBaseCalltargetTokens();
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  if (beginP5MemberRef == mdMemberRefNil) {
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize =
-        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 16 + callTargetStateSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x07;
-    signature[offset++] = 0x06;
-
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x03;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x04;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x05;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x06;
-
-    auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
-        signature, signatureLength, &beginP5MemberRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper beginP5MemberRef could not be defined.");
-      return hr;
-    }
-  }
-
-  mdMethodSpec beginP5MethodSpec = mdMethodSpecNil;
-
-  unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize =
-      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-  bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-  unsigned currentTypeBuffer;
-  ULONG currentTypeSize =
-      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  PCCOR_SIGNATURE arg1SignatureBuffer;
-  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
-
-  PCCOR_SIGNATURE arg2SignatureBuffer;
-  auto arg2SignatureSize = arg2->GetSignature(arg2SignatureBuffer);
-
-  PCCOR_SIGNATURE arg3SignatureBuffer;
-  auto arg3SignatureSize = arg3->GetSignature(arg3SignatureBuffer);
-
-  PCCOR_SIGNATURE arg4SignatureBuffer;
-  auto arg4SignatureSize = arg4->GetSignature(arg4SignatureBuffer);
-
-  PCCOR_SIGNATURE arg5SignatureBuffer;
-  auto arg5SignatureSize = arg5->GetSignature(arg5SignatureBuffer);
-
-  auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
-                         arg1SignatureSize + arg2SignatureSize +
-                         arg3SignatureSize + arg4SignatureSize +
-                         arg5SignatureSize;
-  COR_SIGNATURE signature[signatureBufferSize];
-  unsigned offset = 0;
-
-  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-  signature[offset++] = 0x07;
-
-  signature[offset++] = ELEMENT_TYPE_CLASS;
-  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-  offset += integrationTypeSize;
-
-  if (isValueType) {
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-  } else {
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-  }
-  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-  offset += currentTypeSize;
-
-  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
-  offset += arg1SignatureSize;
-
-  memcpy(&signature[offset], arg2SignatureBuffer, arg2SignatureSize);
-  offset += arg2SignatureSize;
-
-  memcpy(&signature[offset], arg3SignatureBuffer, arg3SignatureSize);
-  offset += arg3SignatureSize;
-
-  memcpy(&signature[offset], arg4SignatureBuffer, arg4SignatureSize);
-  offset += arg4SignatureSize;
-
-  memcpy(&signature[offset], arg5SignatureBuffer, arg5SignatureSize);
-  offset += arg5SignatureSize;
-
-  hr = module_metadata->metadata_emit->DefineMethodSpec(
-      beginP5MemberRef, signature, signatureLength, &beginP5MethodSpec);
-  if (FAILED(hr)) {
-    Warn("Error creating begin method spec.");
-    return hr;
-  }
-
-  *instruction = rewriterWrapper->CallMember(beginP5MethodSpec, false);
-  return S_OK;
-}
-
-// fastpath BeginMethod with 6 arguments
-HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, FunctionMethodArgument* arg1,
-    FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-    FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
-    FunctionMethodArgument* arg6, ILInstr** instruction) {
-  auto hr = EnsureBaseCalltargetTokens();
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  if (beginP6MemberRef == mdMemberRefNil) {
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize =
-        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 18 + callTargetStateSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x08;
-    signature[offset++] = 0x07;
-
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x03;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x04;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x05;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x06;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x07;
-
-    auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
-        signature, signatureLength, &beginP6MemberRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper beginP6MemberRef could not be defined.");
-      return hr;
-    }
-  }
-
-  mdMethodSpec beginP6MethodSpec = mdMethodSpecNil;
-
-  unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize =
-      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-  bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-  unsigned currentTypeBuffer;
-  ULONG currentTypeSize =
-      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  PCCOR_SIGNATURE arg1SignatureBuffer;
-  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
-
-  PCCOR_SIGNATURE arg2SignatureBuffer;
-  auto arg2SignatureSize = arg2->GetSignature(arg2SignatureBuffer);
-
-  PCCOR_SIGNATURE arg3SignatureBuffer;
-  auto arg3SignatureSize = arg3->GetSignature(arg3SignatureBuffer);
-
-  PCCOR_SIGNATURE arg4SignatureBuffer;
-  auto arg4SignatureSize = arg4->GetSignature(arg4SignatureBuffer);
-
-  PCCOR_SIGNATURE arg5SignatureBuffer;
-  auto arg5SignatureSize = arg5->GetSignature(arg5SignatureBuffer);
-
-  PCCOR_SIGNATURE arg6SignatureBuffer;
-  auto arg6SignatureSize = arg6->GetSignature(arg6SignatureBuffer);
-
-  auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
-                         arg1SignatureSize + arg2SignatureSize +
-                         arg3SignatureSize + arg4SignatureSize +
-                         arg5SignatureSize + arg6SignatureSize;
-  COR_SIGNATURE signature[signatureBufferSize];
-  unsigned offset = 0;
-
-  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-  signature[offset++] = 0x08;
-
-  signature[offset++] = ELEMENT_TYPE_CLASS;
-  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-  offset += integrationTypeSize;
-
-  if (isValueType) {
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-  } else {
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-  }
-  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-  offset += currentTypeSize;
-
-  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
-  offset += arg1SignatureSize;
-
-  memcpy(&signature[offset], arg2SignatureBuffer, arg2SignatureSize);
-  offset += arg2SignatureSize;
-
-  memcpy(&signature[offset], arg3SignatureBuffer, arg3SignatureSize);
-  offset += arg3SignatureSize;
-
-  memcpy(&signature[offset], arg4SignatureBuffer, arg4SignatureSize);
-  offset += arg4SignatureSize;
-
-  memcpy(&signature[offset], arg5SignatureBuffer, arg5SignatureSize);
-  offset += arg5SignatureSize;
-
-  memcpy(&signature[offset], arg6SignatureBuffer, arg6SignatureSize);
-  offset += arg6SignatureSize;
-
-  hr = module_metadata->metadata_emit->DefineMethodSpec(
-      beginP6MemberRef, signature, signatureLength, &beginP6MethodSpec);
-  if (FAILED(hr)) {
-    Warn("Error creating begin method spec.");
-    return hr;
-  }
-
-  *instruction = rewriterWrapper->CallMember(beginP6MethodSpec, false);
-  return S_OK;
-}
-
-// fastpath BeginMethod with 7 arguments
-HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, FunctionMethodArgument* arg1,
-    FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-    FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
-    FunctionMethodArgument* arg6, FunctionMethodArgument* arg7,
-    ILInstr** instruction) {
-  auto hr = EnsureBaseCalltargetTokens();
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  if (beginP7MemberRef == mdMemberRefNil) {
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize =
-        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 20 + callTargetStateSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x09;
-    signature[offset++] = 0x08;
-
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x03;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x04;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x05;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x06;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x07;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x08;
-
-    auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
-        signature, signatureLength, &beginP7MemberRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper beginP7MemberRef could not be defined.");
-      return hr;
-    }
-  }
-
-  mdMethodSpec beginP7MethodSpec = mdMethodSpecNil;
-
-  unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize =
-      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-  bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-  unsigned currentTypeBuffer;
-  ULONG currentTypeSize =
-      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  PCCOR_SIGNATURE arg1SignatureBuffer;
-  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
-
-  PCCOR_SIGNATURE arg2SignatureBuffer;
-  auto arg2SignatureSize = arg2->GetSignature(arg2SignatureBuffer);
-
-  PCCOR_SIGNATURE arg3SignatureBuffer;
-  auto arg3SignatureSize = arg3->GetSignature(arg3SignatureBuffer);
-
-  PCCOR_SIGNATURE arg4SignatureBuffer;
-  auto arg4SignatureSize = arg4->GetSignature(arg4SignatureBuffer);
-
-  PCCOR_SIGNATURE arg5SignatureBuffer;
-  auto arg5SignatureSize = arg5->GetSignature(arg5SignatureBuffer);
-
-  PCCOR_SIGNATURE arg6SignatureBuffer;
-  auto arg6SignatureSize = arg6->GetSignature(arg6SignatureBuffer);
-
-  PCCOR_SIGNATURE arg7SignatureBuffer;
-  auto arg7SignatureSize = arg7->GetSignature(arg7SignatureBuffer);
-
-  auto signatureLength = 4 + integrationTypeSize + currentTypeSize +
-                         arg1SignatureSize + arg2SignatureSize +
-                         arg3SignatureSize + arg4SignatureSize + 
-                         arg5SignatureSize + arg6SignatureSize + 
-                         arg7SignatureSize;
-  COR_SIGNATURE signature[signatureBufferSize];
-  unsigned offset = 0;
-
-  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-  signature[offset++] = 0x09;
-
-  signature[offset++] = ELEMENT_TYPE_CLASS;
-  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-  offset += integrationTypeSize;
-
-  if (isValueType) {
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-  } else {
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-  }
-  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-  offset += currentTypeSize;
-
-  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
-  offset += arg1SignatureSize;
-
-  memcpy(&signature[offset], arg2SignatureBuffer, arg2SignatureSize);
-  offset += arg2SignatureSize;
-
-  memcpy(&signature[offset], arg3SignatureBuffer, arg3SignatureSize);
-  offset += arg3SignatureSize;
-
-  memcpy(&signature[offset], arg4SignatureBuffer, arg4SignatureSize);
-  offset += arg4SignatureSize;
-
-  memcpy(&signature[offset], arg5SignatureBuffer, arg5SignatureSize);
-  offset += arg5SignatureSize;
-
-  memcpy(&signature[offset], arg6SignatureBuffer, arg6SignatureSize);
-  offset += arg6SignatureSize;
-
-  memcpy(&signature[offset], arg7SignatureBuffer, arg7SignatureSize);
-  offset += arg7SignatureSize;
-
-  hr = module_metadata->metadata_emit->DefineMethodSpec(
-      beginP7MemberRef, signature, signatureLength, &beginP7MethodSpec);
-  if (FAILED(hr)) {
-    Warn("Error creating begin method spec.");
-    return hr;
-  }
-
-  *instruction = rewriterWrapper->CallMember(beginP7MethodSpec, false);
-  return S_OK;
-}
-
-// fastpath BeginMethod with 8 arguments
-HRESULT CallTargetTokens::WriteBeginMethodWithArguments(
-    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-    const TypeInfo* currentType, FunctionMethodArgument* arg1,
-    FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-    FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
-    FunctionMethodArgument* arg6, FunctionMethodArgument* arg7,
-    FunctionMethodArgument* arg8, ILInstr** instruction) {
-  auto hr = EnsureBaseCalltargetTokens();
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
-  ModuleMetadata* module_metadata = GetMetadata();
-
-  if (beginP8MemberRef == mdMemberRefNil) {
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize =
-        CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 22 + callTargetStateSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x0A;
-    signature[offset++] = 0x09;
-
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x03;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x04;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x05;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x06;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x07;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x08;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x09;
-
-    auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(),
-        signature, signatureLength, &beginP8MemberRef);
-    if (FAILED(hr)) {
-      Warn("Wrapper beginP8MemberRef could not be defined.");
-      return hr;
-    }
-  }
-
-  mdMethodSpec beginP8MethodSpec = mdMethodSpecNil;
-
-  unsigned integrationTypeBuffer;
-  ULONG integrationTypeSize =
-      CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-  bool isValueType = currentType->valueType;
-  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-  unsigned currentTypeBuffer;
-  ULONG currentTypeSize =
-      CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-  PCCOR_SIGNATURE arg1SignatureBuffer;
-  auto arg1SignatureSize = arg1->GetSignature(arg1SignatureBuffer);
-
-  PCCOR_SIGNATURE arg2SignatureBuffer;
-  auto arg2SignatureSize = arg2->GetSignature(arg2SignatureBuffer);
-
-  PCCOR_SIGNATURE arg3SignatureBuffer;
-  auto arg3SignatureSize = arg3->GetSignature(arg3SignatureBuffer);
-
-  PCCOR_SIGNATURE arg4SignatureBuffer;
-  auto arg4SignatureSize = arg4->GetSignature(arg4SignatureBuffer);
-
-  PCCOR_SIGNATURE arg5SignatureBuffer;
-  auto arg5SignatureSize = arg5->GetSignature(arg5SignatureBuffer);
-
-  PCCOR_SIGNATURE arg6SignatureBuffer;
-  auto arg6SignatureSize = arg6->GetSignature(arg6SignatureBuffer);
-
-  PCCOR_SIGNATURE arg7SignatureBuffer;
-  auto arg7SignatureSize = arg7->GetSignature(arg7SignatureBuffer);
-
-  PCCOR_SIGNATURE arg8SignatureBuffer;
-  auto arg8SignatureSize = arg8->GetSignature(arg8SignatureBuffer);
-
-  auto signatureLength =
-      4 + integrationTypeSize + currentTypeSize + arg1SignatureSize +
-      arg2SignatureSize + arg3SignatureSize + arg4SignatureSize +
-                         arg5SignatureSize + arg6SignatureSize +
-                         arg7SignatureSize + arg8SignatureSize;
-  COR_SIGNATURE signature[signatureBufferSize];
-  unsigned offset = 0;
-
-  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-  signature[offset++] = 0x0A;
-
-  signature[offset++] = ELEMENT_TYPE_CLASS;
-  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-  offset += integrationTypeSize;
-
-  if (isValueType) {
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-  } else {
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-  }
-  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-  offset += currentTypeSize;
-
-  memcpy(&signature[offset], arg1SignatureBuffer, arg1SignatureSize);
-  offset += arg1SignatureSize;
-
-  memcpy(&signature[offset], arg2SignatureBuffer, arg2SignatureSize);
-  offset += arg2SignatureSize;
-
-  memcpy(&signature[offset], arg3SignatureBuffer, arg3SignatureSize);
-  offset += arg3SignatureSize;
-
-  memcpy(&signature[offset], arg4SignatureBuffer, arg4SignatureSize);
-  offset += arg4SignatureSize;
-
-  memcpy(&signature[offset], arg5SignatureBuffer, arg5SignatureSize);
-  offset += arg5SignatureSize;
-
-  memcpy(&signature[offset], arg6SignatureBuffer, arg6SignatureSize);
-  offset += arg6SignatureSize;
-
-  memcpy(&signature[offset], arg7SignatureBuffer, arg7SignatureSize);
-  offset += arg7SignatureSize;
-
-  memcpy(&signature[offset], arg8SignatureBuffer, arg8SignatureSize);
-  offset += arg8SignatureSize;
-
-  hr = module_metadata->metadata_emit->DefineMethodSpec(
-      beginP8MemberRef, signature, signatureLength, &beginP8MethodSpec);
-  if (FAILED(hr)) {
-    Warn("Error creating begin method spec.");
-    return hr;
-  }
-
-  *instruction = rewriterWrapper->CallMember(beginP8MethodSpec, false);
-  return S_OK;
-}
-
 // slowpath BeginMethod
 HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
     void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
@@ -1897,6 +725,173 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(
   }
 
   *instruction = rewriterWrapper->CallMember(beginArrayMethodSpec, false);
+  return S_OK;
+}
+
+/**
+ * PUBLIC
+ **/
+
+mdTypeRef CallTargetTokens::GetObjectTypeRef() { return objectTypeRef; }
+mdTypeRef CallTargetTokens::GetExceptionTypeRef() { return exTypeRef; }
+mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef() { return corLibAssemblyRef; }
+
+HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(
+    void* rewriterWrapperPtr, FunctionInfo* functionInfo,
+    ULONG* callTargetStateIndex, ULONG* exceptionIndex,
+    ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+    mdToken* callTargetStateToken, mdToken* exceptionToken,
+    mdToken* callTargetReturnToken, ILInstr** firstInstruction) {
+  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+
+  // Modify the Local Var Signature of the method
+  auto returnFunctionMethod = functionInfo->method_signature.GetRet();
+
+  auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(),
+                           &returnFunctionMethod, callTargetStateIndex,
+                           exceptionIndex, callTargetReturnIndex,
+                           returnValueIndex, callTargetStateToken,
+                           exceptionToken, callTargetReturnToken);
+
+  if (FAILED(hr)) {
+    Warn("ModifyLocalSig() failed.");
+    return hr;
+  }
+
+  // Init locals
+  if (*returnValueIndex != static_cast<ULONG>(ULONG_MAX)) {
+    *firstInstruction = rewriterWrapper->CallMember(
+        GetCallTargetDefaultValueMethodSpec(&returnFunctionMethod), false);
+    rewriterWrapper->StLocal(*returnValueIndex);
+
+    rewriterWrapper->CallMember(
+        GetCallTargetReturnValueDefaultMemberRef(*callTargetReturnToken),
+        false);
+    rewriterWrapper->StLocal(*callTargetReturnIndex);
+  } else {
+    *firstInstruction = rewriterWrapper->CallMember(
+        GetCallTargetReturnVoidDefaultMemberRef(), false);
+    rewriterWrapper->StLocal(*callTargetReturnIndex);
+  }
+  rewriterWrapper->LoadNull();
+  rewriterWrapper->StLocal(*exceptionIndex);
+  // We don't need to initialize calltarget state because is going to be initialized right after this method call.
+  // So we can save 2 instructions.
+  /*rewriterWrapper->CallMember(GetCallTargetStateDefaultMemberRef(), false);
+  rewriterWrapper->StLocal(*callTargetStateIndex);*/
+  return S_OK;
+}
+
+HRESULT CallTargetTokens::WriteBeginMethod(
+    void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+    const TypeInfo* currentType,
+    std::vector<FunctionMethodArgument>& methodArguments,
+    ILInstr** instruction) {
+  auto hr = EnsureBaseCalltargetTokens();
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+  ModuleMetadata* module_metadata = GetMetadata();
+
+  auto numArguments = (int)methodArguments.size();
+  if (numArguments >= FASTPATH_COUNT) {
+    return WriteBeginMethodWithArgumentsArray(
+        rewriterWrapperPtr, integrationTypeRef, currentType, instruction);
+  }
+
+  //
+  // FastPath
+  //
+
+  if (beginMethodFastPathRefs[numArguments] == mdMemberRefNil) {
+    unsigned callTargetStateBuffer;
+    auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+
+    auto signatureLength = 6 + (numArguments * 2) + callTargetStateSize;
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+    
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+    signature[offset++] = 0x02 + numArguments;
+    signature[offset++] = 0x01 + numArguments;
+
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+    offset += callTargetStateSize;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x01;
+
+    for (auto i = 0; i < numArguments; i++) {
+      signature[offset++] = ELEMENT_TYPE_MVAR;
+      signature[offset++] = 0x01 + (i + 1);
+    }
+
+    auto hr = module_metadata->metadata_emit->DefineMemberRef(
+        callTargetTypeRef, 
+        managed_profiler_calltarget_beginmethod_name.data(),
+        signature, 
+        signatureLength, 
+        &beginMethodFastPathRefs[numArguments]);
+    if (FAILED(hr)) {
+      Warn("Wrapper beginMethod for ", numArguments," arguments could not be defined.");
+      return hr;
+    }
+  }
+
+  mdMethodSpec beginMethodSpec = mdMethodSpecNil;
+
+  unsigned integrationTypeBuffer;
+  ULONG integrationTypeSize = CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
+
+  bool isValueType = currentType->valueType;
+  mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+
+  unsigned currentTypeBuffer;
+  ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+
+  auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
+
+  PCCOR_SIGNATURE argumentsSignatureBuffer[FASTPATH_COUNT];
+  ULONG argumentsSignatureSize[FASTPATH_COUNT];
+  for (auto i = 0; i < numArguments; i++) {
+    auto signatureSize = methodArguments[i].GetSignature(argumentsSignatureBuffer[i]);
+    argumentsSignatureSize[i] = signatureSize;
+    signatureLength += signatureSize;
+  }
+
+  COR_SIGNATURE signature[signatureBufferSize];
+  unsigned offset = 0;
+
+  signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+  signature[offset++] = 0x02 + numArguments;
+
+  signature[offset++] = ELEMENT_TYPE_CLASS;
+  memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
+  offset += integrationTypeSize;
+
+  if (isValueType) {
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+  } else {
+    signature[offset++] = ELEMENT_TYPE_CLASS;
+  }
+  memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
+  offset += currentTypeSize;
+
+  for (auto i = 0; i < numArguments; i++) {
+    memcpy(&signature[offset], argumentsSignatureBuffer[i], argumentsSignatureSize[i]);
+    offset += argumentsSignatureSize[i];
+  }
+
+  hr = module_metadata->metadata_emit->DefineMethodSpec(beginMethodFastPathRefs[numArguments], signature, signatureLength, &beginMethodSpec);
+  if (FAILED(hr)) {
+    Warn("Error creating begin method spec.");
+    return hr;
+  }
+
+  *instruction = rewriterWrapper->CallMember(beginMethodSpec, false);
   return S_OK;
 }
 

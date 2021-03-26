@@ -3053,78 +3053,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
   // *** Emit BeginMethod call
   ILInstr* beginCallInstruction;
-  switch (numArgs) { 
-    case 0: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithoutArguments(
-          &reWriterWrapper, wrapper_type_ref, &caller->type, 
-          &beginCallInstruction));
-      break;
-    }
-    case 1: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
-          &reWriterWrapper, wrapper_type_ref, &caller->type,
-          &methodArguments[0], &beginCallInstruction));
-      break;
-    }
-    case 2: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
-          &reWriterWrapper, wrapper_type_ref, &caller->type,
-          &methodArguments[0], &methodArguments[1],
-          &beginCallInstruction));
-      break;
-    }
-    case 3: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
-          &reWriterWrapper, wrapper_type_ref, &caller->type,
-          &methodArguments[0], &methodArguments[1], &methodArguments[2],
-          &beginCallInstruction));
-      break;
-    }
-    case 4: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
-          &reWriterWrapper, wrapper_type_ref, &caller->type,
-          &methodArguments[0], &methodArguments[1], &methodArguments[2],
-          &methodArguments[3], &beginCallInstruction));
-      break;
-    }
-    case 5: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
-          &reWriterWrapper, wrapper_type_ref, &caller->type,
-          &methodArguments[0], &methodArguments[1], &methodArguments[2],
-          &methodArguments[3], &methodArguments[4], &beginCallInstruction));
-      break;
-    }
-    case 6: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
-          &reWriterWrapper, wrapper_type_ref, &caller->type,
-          &methodArguments[0], &methodArguments[1], &methodArguments[2],
-          &methodArguments[3], &methodArguments[4], &methodArguments[5],
-          &beginCallInstruction));
-      break;
-    }
-    case 7: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
-          &reWriterWrapper, wrapper_type_ref, &caller->type,
-          &methodArguments[0], &methodArguments[1], &methodArguments[2],
-          &methodArguments[3], &methodArguments[4], &methodArguments[5],
-          &methodArguments[6], &beginCallInstruction));
-      break;
-    }
-    case 8: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithArguments(
-          &reWriterWrapper, wrapper_type_ref, &caller->type,
-          &methodArguments[0], &methodArguments[1], &methodArguments[2],
-          &methodArguments[3], &methodArguments[4], &methodArguments[5],
-          &methodArguments[6], &methodArguments[7], &beginCallInstruction));
-      break;
-    }
-    default: {
-      IfFailRet(callTargetTokens->WriteBeginMethodWithArgumentsArray(
-          &reWriterWrapper, wrapper_type_ref, &caller->type,
-          &beginCallInstruction));
-      break;
-    }
-  }
+  IfFailRet(callTargetTokens->WriteBeginMethod(&reWriterWrapper, wrapper_type_ref, &caller->type, methodArguments, &beginCallInstruction));
   reWriterWrapper.StLocal(callTargetStateIndex);
   ILInstr* pStateLeaveToBeginOriginalMethodInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 

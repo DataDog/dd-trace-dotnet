@@ -13,6 +13,8 @@
 #include "integration.h"
 #include "string.h"  // NOLINT
 
+#define FASTPATH_COUNT 9
+
 namespace trace {
 
 /// <summary>
@@ -56,16 +58,7 @@ class CallTargetTokens {
   mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
 
   mdMemberRef beginArrayMemberRef = mdMemberRefNil;
-  mdMemberRef beginP0MemberRef = mdMemberRefNil;
-  mdMemberRef beginP1MemberRef = mdMemberRefNil;
-  mdMemberRef beginP2MemberRef = mdMemberRefNil;
-  mdMemberRef beginP3MemberRef = mdMemberRefNil;
-  mdMemberRef beginP4MemberRef = mdMemberRefNil;
-  mdMemberRef beginP5MemberRef = mdMemberRefNil;
-  mdMemberRef beginP6MemberRef = mdMemberRefNil;
-  mdMemberRef beginP7MemberRef = mdMemberRefNil;
-  mdMemberRef beginP8MemberRef = mdMemberRefNil;
-
+  mdMemberRef beginMethodFastPathRefs[FASTPATH_COUNT];
   mdMemberRef endVoidMemberRef = mdMemberRefNil;
 
   mdMemberRef logExceptionRef = mdMemberRefNil;
@@ -98,9 +91,17 @@ class CallTargetTokens {
                          mdToken* callTargetStateToken, mdToken* exceptionToken,
                          mdToken* callTargetReturnToken);
 
+  HRESULT WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr,
+                                             mdTypeRef integrationTypeRef,
+                                             const TypeInfo* currentType,
+                                             ILInstr** instruction);
+
  public:
   CallTargetTokens(void* module_metadata_ptr) {
     this->module_metadata_ptr = module_metadata_ptr;
+    for (int i = 0; i < FASTPATH_COUNT; i++) {
+      beginMethodFastPathRefs[i] = mdMemberRefNil;
+    }
   }
   mdTypeRef GetObjectTypeRef();
   mdTypeRef GetExceptionTypeRef();
@@ -113,72 +114,11 @@ class CallTargetTokens {
       mdToken* callTargetStateToken, mdToken* exceptionToken,
       mdToken* callTargetReturnToken, ILInstr** firstInstruction);
 
-  HRESULT WriteBeginMethodWithoutArguments(void* rewriterWrapperPtr,
-                                           mdTypeRef integrationTypeRef,
-                                           const TypeInfo* currentType,
-                                           ILInstr** instruction);
-
-  HRESULT WriteBeginMethodWithArguments(void* rewriterWrapperPtr,
-                                        mdTypeRef integrationTypeRef,
-                                        const TypeInfo* currentType,
-                                        FunctionMethodArgument* arg1,
-                                        ILInstr** instruction);
-
-  HRESULT WriteBeginMethodWithArguments(void* rewriterWrapperPtr,
-                                        mdTypeRef integrationTypeRef,
-                                        const TypeInfo* currentType,
-                                        FunctionMethodArgument* arg1,
-                                        FunctionMethodArgument* arg2,
-                                        ILInstr** instruction);
-
-  HRESULT WriteBeginMethodWithArguments(void* rewriterWrapperPtr,
-                                        mdTypeRef integrationTypeRef,
-                                        const TypeInfo* currentType,
-                                        FunctionMethodArgument* arg1,
-                                        FunctionMethodArgument* arg2,
-                                        FunctionMethodArgument* arg3,
-                                        ILInstr** instruction);
-
-  HRESULT WriteBeginMethodWithArguments(
-      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-      const TypeInfo* currentType, FunctionMethodArgument* arg1,
-      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-      FunctionMethodArgument* arg4, ILInstr** instruction);
-
-  HRESULT WriteBeginMethodWithArguments(
-      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-      const TypeInfo* currentType, FunctionMethodArgument* arg1,
-      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-      FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
-      ILInstr** instruction);
-
-  HRESULT WriteBeginMethodWithArguments(
-      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-      const TypeInfo* currentType, FunctionMethodArgument* arg1,
-      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-      FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
-      FunctionMethodArgument* arg6, ILInstr** instruction);
-
-  HRESULT WriteBeginMethodWithArguments(
-      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-      const TypeInfo* currentType, FunctionMethodArgument* arg1,
-      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-      FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
-      FunctionMethodArgument* arg6, FunctionMethodArgument* arg7,
-      ILInstr** instruction);
-
-  HRESULT WriteBeginMethodWithArguments(
-      void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-      const TypeInfo* currentType, FunctionMethodArgument* arg1,
-      FunctionMethodArgument* arg2, FunctionMethodArgument* arg3,
-      FunctionMethodArgument* arg4, FunctionMethodArgument* arg5,
-      FunctionMethodArgument* arg6, FunctionMethodArgument* arg7,
-      FunctionMethodArgument* arg8, ILInstr** instruction);
-
-  HRESULT WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr,
-                                             mdTypeRef integrationTypeRef,
-                                             const TypeInfo* currentType,
-                                             ILInstr** instruction);
+  HRESULT WriteBeginMethod(void* rewriterWrapperPtr,
+                           mdTypeRef integrationTypeRef,
+                           const TypeInfo* currentType, 
+                           std::vector<FunctionMethodArgument> &methodArguments,
+                           ILInstr** instruction);
 
   HRESULT WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr,
                                       mdTypeRef integrationTypeRef,
