@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
@@ -43,7 +44,7 @@ namespace Benchmarks.Trace
                         GC.Collect();
                         GC.WaitForPendingFinalizers();
 
-                        if (JetBrains.Profiler.Api.MeasureProfiler.GetFeatures().HasFlag(JetBrains.Profiler.Api.MeasureFeatures.Ready))
+                        if ((JetBrains.Profiler.Api.MeasureProfiler.GetFeatures() & JetBrains.Profiler.Api.MeasureFeatures.Ready) != 0)
                         {
                             Console.WriteLine("  Collecting Data...");
                             JetBrains.Profiler.Api.MeasureProfiler.StartCollectingData(groupName);
@@ -57,7 +58,7 @@ namespace Benchmarks.Trace
                             GC.WaitForPendingFinalizers();
                         }
 
-                        if (JetBrains.Profiler.Api.MemoryProfiler.GetFeatures().HasFlag(JetBrains.Profiler.Api.MeasureFeatures.Ready))
+                        if ((JetBrains.Profiler.Api.MemoryProfiler.GetFeatures() & JetBrains.Profiler.Api.MemoryFeatures.Ready) != 0)
                         {
                             Console.WriteLine("  Getting memory snapshot...");
                             JetBrains.Profiler.Api.MemoryProfiler.ForceGc();
