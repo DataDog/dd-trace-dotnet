@@ -339,7 +339,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     {
                         var contentPart = part.DuckCast<RoutePatternContentPartStruct>();
                         sb.Append('/');
-                        sb.Append(contentPart.Content.ToLowerInvariant());
+                        sb.Append(contentPart.Content);
                     }
                     else if (DuckType.CanCreate<RoutePatternParameterPartStruct>(part))
                     {
@@ -349,17 +349,17 @@ namespace Datadog.Trace.DiagnosticListeners
                         if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                         {
                             sb.Append('/');
-                            sb.Append(areaName?.ToLowerInvariant());
+                            sb.Append(areaName);
                         }
                         else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                         {
                             sb.Append('/');
-                            sb.Append(controllerName?.ToLowerInvariant());
+                            sb.Append(controllerName);
                         }
                         else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
                         {
                             sb.Append('/');
-                            sb.Append(actionName?.ToLowerInvariant());
+                            sb.Append(actionName);
                         }
                         else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
                         {
@@ -376,7 +376,7 @@ namespace Datadog.Trace.DiagnosticListeners
                                 }
                             }
 
-                            sb.Append(parameterName.ToLowerInvariant());
+                            sb.Append(parameterName);
                             if (parameter.IsOptional)
                             {
                                 sb.Append('?');
@@ -390,7 +390,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
 
-            return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute;
+            return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
         }
 
         private static string SimplifyRoutePattern(
@@ -417,7 +417,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     if (!part.IsParameter)
                     {
                         sb.Append('/');
-                        sb.Append(part.Text?.ToLowerInvariant());
+                        sb.Append(part.Text);
                     }
                     else if (partName.Equals("area", StringComparison.OrdinalIgnoreCase))
                     {
@@ -442,7 +442,7 @@ namespace Datadog.Trace.DiagnosticListeners
                             sb.Append('*');
                         }
 
-                        sb.Append(partName.ToLowerInvariant());
+                        sb.Append(partName);
                         if (part.IsOptional)
                         {
                             sb.Append('?');
