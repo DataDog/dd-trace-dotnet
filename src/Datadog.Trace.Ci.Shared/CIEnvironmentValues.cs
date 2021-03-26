@@ -177,13 +177,17 @@ namespace Datadog.Trace.Ci
             // **********
             // Add Author, Committer and Message from git
             // **********
-            AuthorName = gitInfo.AuthorName;
-            AuthorEmail = gitInfo.AuthorEmail;
-            AuthorDate = gitInfo.AuthorDate;
-            CommitterName = gitInfo.CommitterName;
-            CommitterEmail = gitInfo.CommitterEmail;
-            CommitterDate = gitInfo.CommitterDate;
-            Message = gitInfo.Message;
+            // Merge commits have a different commit hash from the one reported by the CI.
+            if (gitInfo.Commit == Commit)
+            {
+                AuthorName = gitInfo.AuthorName;
+                AuthorEmail = gitInfo.AuthorEmail;
+                AuthorDate = gitInfo.AuthorDate;
+                CommitterName = gitInfo.CommitterName;
+                CommitterEmail = gitInfo.CommitterEmail;
+                CommitterDate = gitInfo.CommitterDate;
+                Message = gitInfo.Message;
+            }
 
             // **********
             // Remove sensitive info from repository url
