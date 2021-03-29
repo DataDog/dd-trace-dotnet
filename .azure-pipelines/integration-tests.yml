@@ -291,11 +291,10 @@ jobs:
       version: $(dotnetCoreSdk5Version)
       includePreviewVersions: true
            
-  - task: DotNetCoreCLI@2
+  - task: CmdLine@2
     displayName: dotnet tool install coverlet
     inputs:
-      command: tool
-      arguments: update -g coverlet.console
+      script: 'dotnet tool install -g coverlet.console'
          
   - task: NuGetToolInstaller@1
     displayName: install nuget
