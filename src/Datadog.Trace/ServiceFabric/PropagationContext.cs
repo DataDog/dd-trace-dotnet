@@ -1,3 +1,5 @@
+#nullable enable
+
 namespace Datadog.Trace.ServiceFabric
 {
     internal readonly struct PropagationContext

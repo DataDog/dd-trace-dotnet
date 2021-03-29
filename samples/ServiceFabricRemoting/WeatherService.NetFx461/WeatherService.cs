@@ -7,7 +7,7 @@ using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using WeatherService.Abstractions;
 
-namespace WeatherService
+namespace WeatherService.NetFx461
 {
     /// <summary>
     /// An instance of this class is created for each service instance by the Service Fabric runtime.
@@ -36,7 +36,8 @@ namespace WeatherService
                            {
                                Date = DateTime.Now,
                                Temperature = rng.Next(-100, 100),
-                               Message = message
+                               Message = message,
+                               Service = typeof(WeatherService).FullName
                            };
 
             return Task.FromResult(forecast);

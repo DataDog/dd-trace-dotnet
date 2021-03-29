@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ServiceManifest Name="WeatherService"
+<ServiceManifest Name="WeatherService_NetFx461"
                  Version="1.0.0"
                  xmlns="http://schemas.microsoft.com/2011/01/fabric"
                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -7,16 +7,28 @@
   <ServiceTypes>
     <!-- This is the name of your ServiceType.
          This name must match the string used in the RegisterServiceAsync call in Program.cs. -->
-    <StatelessServiceType ServiceTypeName="WeatherService" />
+    <StatelessServiceType ServiceTypeName="WeatherService_NetFx461" />
   </ServiceTypes>
 
   <!-- Code package is your service executable. -->
   <CodePackage Name="Code" Version="1.0.0">
+    <!-- Install Datadog .NET Tracer -->
+    <SetupEntryPoint>
+      <ExeHost>
+        <Program>DatadogInstall.bat</Program>
+        <WorkingFolder>CodePackage</WorkingFolder>
+      </ExeHost>
+    </SetupEntryPoint>
     <EntryPoint>
       <ExeHost>
-        <Program>WeatherService.exe</Program>
+        <Program>WeatherService.NetFx461.exe</Program>
       </ExeHost>
     </EntryPoint>
+    <EnvironmentVariables>
+      <!-- Enable Datadog .NET Tracer -->
+      <EnvironmentVariable Name="CORECLR_ENABLE_PROFILING" Value="1" />
+      <EnvironmentVariable Name="COR_ENABLE_PROFILING" Value="1" />
+    </EnvironmentVariables>
   </CodePackage>
 
   <!-- Config package is the contents of the Config directoy under PackageRoot that contains an

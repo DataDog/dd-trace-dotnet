@@ -4,6 +4,7 @@ using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
+using Datadog.Trace.ServiceFabric;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -58,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                // ensure global instance is created if it's not already
                 _ = Tracer.Instance;
             }
             catch
@@ -87,6 +89,29 @@ namespace Datadog.Trace.ClrProfiler
             catch
             {
                 // ignore
+            }
+
+            // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
+            if (string.Equals(FrameworkDescription.Instance.Name, ".NET Core", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(FrameworkDescription.Instance.Name, ".NET", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    ServiceRemotingClient.StartTracing();
+                }
+                catch
+                {
+                    // ignore
+                }
+
+                try
+                {
+                    ServiceRemotingService.StartTracing();
+                }
+                catch
+                {
+                    // ignore
+                }
             }
 #endif
         }
