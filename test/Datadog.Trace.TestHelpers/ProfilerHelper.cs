@@ -48,7 +48,7 @@ namespace Datadog.Trace.TestHelpers
                     var profilerFolder = Path.Combine(applicationFolder, @"profiler-lib\netcoreapp3.1");
                     var reportFile = Path.Combine(applicationFolder, $"coverage.{Guid.NewGuid():N}.xml");
 
-                    startInfo = new ProcessStartInfo("coverlet", $"\"{applicationPath}\" --format cobertura --output \"{reportFile}\" --include-directory \"{profilerFolder}\" --target dotnet --targetargs \"{applicationPath} {arguments ?? string.Empty}\"");
+                    startInfo = new ProcessStartInfo("coverlet", $"\"{applicationPath}\" --format cobertura --output \"{reportFile}\" --exclude \"[*]Datadog.Trace.Vendors.*\" --include-directory \"{profilerFolder}\" --target dotnet --targetargs \"{applicationPath} {arguments ?? string.Empty}\"");
                 }
                 else
                 {
