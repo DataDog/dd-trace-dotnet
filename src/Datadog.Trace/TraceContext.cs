@@ -13,7 +13,7 @@ namespace Datadog.Trace
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
-        private List<Span> _spans = new List<Span>();
+        private readonly List<Span> _spans = new List<Span>();
 
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
