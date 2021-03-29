@@ -290,7 +290,13 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdk5Version)
       includePreviewVersions: true
-      
+           
+  - task: DotNetCoreCLI@2
+    displayName: dotnet tool install coverlet
+    inputs:
+      command: tool
+      arguments: update -g coverlet.console
+         
   - task: NuGetToolInstaller@1
     displayName: install nuget
 
@@ -355,6 +361,10 @@ jobs:
       command: test
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
+
+- task: PublishCodeCoverageResults@2
+  inputs:
+    summaryFileLocation: **/coverage.*.xml
 
   - task: DockerCompose@0
     displayName: docker-compose stop services

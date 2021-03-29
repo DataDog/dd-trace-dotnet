@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -34,8 +35,13 @@ namespace Datadog.Trace.TestHelpers
 
             if (EnvironmentHelper.IsCoreClr())
             {
+                var applicationFolder = Path.GetDirectoryName(applicationPath);
+                var profilerFolder = Path.Combine(applicationFolder, @"profiler-lib\netcoreapp3.1");
+                var reportFile = Path.Combine(applicationFolder, $"coverage.{Guid.NewGuid():N}.xml");
+
                 // .NET Core
-                startInfo = new ProcessStartInfo(executable, $"{applicationPath} {arguments ?? string.Empty}");
+                //  startInfo = new ProcessStartInfo(executable, $"{applicationPath} {arguments ?? string.Empty}");
+                startInfo = new ProcessStartInfo("coverlet", $"\"{applicationPath}\" --format cobertura --output \"{reportFile}\" --include-directory \"{profilerFolder}\" --target dotnet --targetargs \"{applicationPath} {arguments ?? string.Empty}\"");
             }
             else
             {
