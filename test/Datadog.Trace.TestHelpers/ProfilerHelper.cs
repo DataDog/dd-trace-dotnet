@@ -34,11 +34,6 @@ namespace Datadog.Trace.TestHelpers
 
             ProcessStartInfo startInfo;
 
-            if (useCodeCoverage && System.Environment.OSVersion.Platform != PlatformID.Win32NT)
-            {
-                useCodeCoverage = false;
-            }
-
             if (EnvironmentHelper.IsCoreClr())
             {
                 // .NET Core
@@ -47,6 +42,13 @@ namespace Datadog.Trace.TestHelpers
                     var applicationFolder = Path.GetDirectoryName(applicationPath);
                     var profilerFolder = Path.Combine(applicationFolder, @"profiler-lib\netcoreapp3.1");
                     var reportFile = Path.Combine(applicationFolder, $"coverage.{Guid.NewGuid():N}.xml");
+
+#if !NETFRAMEWORK
+                    if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                    {
+                        reportFile = Path.Combine("/var/log/datadog/cover", $"coverage.{Guid.NewGuid():N}.xml");
+                    }
+#endif
 
                     startInfo = new ProcessStartInfo("coverlet", $"\"{applicationPath}\" --format cobertura --output \"{reportFile}\" --exclude \"[*]Datadog.Trace.Vendors.*\" --include-directory \"{profilerFolder}\" --target dotnet --targetargs \"{applicationPath} {arguments ?? string.Empty}\"");
                 }
