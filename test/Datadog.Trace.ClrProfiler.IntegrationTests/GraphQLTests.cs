@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int aspNetCorePort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: aspNetCorePort))
+            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: aspNetCorePort, useCodeCoverage: false))
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -113,6 +113,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // wait for server to be ready to receive requests
                 while (intervals-- > 0)
                 {
+                    if (process.HasExited)
+                    {
+                        throw new Exception("The child process has exited with code " + process.ExitCode);
+                    }
+
                     var aliveCheckRequest = new RequestInfo() { HttpMethod = "GET", Url = "/alive-check" };
                     try
                     {

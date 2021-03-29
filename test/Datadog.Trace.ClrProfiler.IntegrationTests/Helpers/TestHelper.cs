@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
-        public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort, int? statsdPort = null, string framework = "")
+        public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort, int? statsdPort = null, string framework = "", bool useCodeCoverage = true)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
@@ -71,7 +71,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 arguments,
                 traceAgentPort: traceAgentPort,
                 statsdPort: statsdPort,
-                aspNetCorePort: aspNetCorePort);
+                aspNetCorePort: aspNetCorePort,
+                useCodeCoverage: useCodeCoverage);
         }
 
         public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, int? statsdPort = null, string arguments = null, string packageVersion = "", string framework = "")

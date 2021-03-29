@@ -16,7 +16,8 @@ namespace Datadog.Trace.TestHelpers
             bool redirectStandardInput = false,
             int traceAgentPort = 9696,
             int aspNetCorePort = 5000,
-            int? statsdPort = null)
+            int? statsdPort = null,
+            bool useCodeCoverage = true)
         {
             if (environmentHelper == null)
             {
@@ -33,15 +34,26 @@ namespace Datadog.Trace.TestHelpers
 
             ProcessStartInfo startInfo;
 
+            if (useCodeCoverage && System.Environment.OSVersion.Platform != PlatformID.Win32NT)
+            {
+                useCodeCoverage = false;
+            }
+
             if (EnvironmentHelper.IsCoreClr())
             {
-                var applicationFolder = Path.GetDirectoryName(applicationPath);
-                var profilerFolder = Path.Combine(applicationFolder, @"profiler-lib\netcoreapp3.1");
-                var reportFile = Path.Combine(applicationFolder, $"coverage.{Guid.NewGuid():N}.xml");
-
                 // .NET Core
-                //  startInfo = new ProcessStartInfo(executable, $"{applicationPath} {arguments ?? string.Empty}");
-                startInfo = new ProcessStartInfo("coverlet", $"\"{applicationPath}\" --format cobertura --output \"{reportFile}\" --include-directory \"{profilerFolder}\" --target dotnet --targetargs \"{applicationPath} {arguments ?? string.Empty}\"");
+                if (useCodeCoverage)
+                {
+                    var applicationFolder = Path.GetDirectoryName(applicationPath);
+                    var profilerFolder = Path.Combine(applicationFolder, @"profiler-lib\netcoreapp3.1");
+                    var reportFile = Path.Combine(applicationFolder, $"coverage.{Guid.NewGuid():N}.xml");
+
+                    startInfo = new ProcessStartInfo("coverlet", $"\"{applicationPath}\" --format cobertura --output \"{reportFile}\" --include-directory \"{profilerFolder}\" --target dotnet --targetargs \"{applicationPath} {arguments ?? string.Empty}\"");
+                }
+                else
+                {
+                    startInfo = new ProcessStartInfo(executable, $"{applicationPath} {arguments ?? string.Empty}");
+                }
             }
             else
             {
