@@ -145,16 +145,6 @@ namespace Datadog.Trace
                 Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
             }
 
-            try
-            {
-                // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
-                Console.CancelKeyPress += Console_CancelKeyPress;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
-            }
-
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
 
@@ -668,11 +658,6 @@ namespace Datadog.Trace
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Log.Warning("Application threw an unhandled exception: {Exception}", e.ExceptionObject);
-            RunShutdownTasks();
-        }
-
-        private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
             RunShutdownTasks();
         }
 
