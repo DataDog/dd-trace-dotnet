@@ -190,9 +190,12 @@ namespace Datadog.Trace.Configuration
                 // default value
                 ?? false;
 
-            PartialFlushMinSpans = source?.GetInt32(ConfigurationKeys.PartialFlushMinSpans)
-                // default value
-                ?? 500;
+            var partialFlushMinSpans = source?.GetInt32(ConfigurationKeys.PartialFlushMinSpans);
+
+            if ((partialFlushMinSpans ?? 0) <= 0)
+            {
+                PartialFlushMinSpans = 500;
+            }
         }
 
         /// <summary>
