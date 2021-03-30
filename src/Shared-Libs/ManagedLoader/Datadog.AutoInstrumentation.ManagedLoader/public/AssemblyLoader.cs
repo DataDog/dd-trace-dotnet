@@ -50,6 +50,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         public const string TargetLibraryEntrypointType = "Datadog.AutoInstrumentation" + "." + "DllMain";
 
         internal const bool UseConsoleLoggingInsteadOfFile = false;             // Should be False in production.
+        internal const bool UseConsoleLogInAdditionToFileLog = false;           // Should be False in production?
         internal const bool UseConsoleLoggingIfFileLoggingFails = true;         // May be True n production. Can that affect customer app behaviour?
         private const string LoggingComponentMoniker = nameof(AssemblyLoader);  // The prefix to this is specified in LogComposer.tt
 
@@ -352,24 +353,15 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static IReadOnlyList<string> ResolveManagedProductBinariesDirectories()
         {
-            var binaryDirs = new List<string>(capacity: 3);
+            var binaryDirs = new List<string>(capacity: 5);
 
-            string tracerDir = GetTracerManagedBinariesDirectory();
-            if (tracerDir != null)
-            {
-                binaryDirs.Add(tracerDir);
-            }
-
-            string profilerDir = GetProfilerManagedBinariesDirectory();
-            if (profilerDir != null)
-            {
-                binaryDirs.Add(profilerDir);
-            }
+            GetTracerManagedBinariesDirectories(binaryDirs);
+            GetProfilerManagedBinariesDirectories(binaryDirs);
 
             return binaryDirs;
         }
 
-        private static string GetTracerManagedBinariesDirectory()
+        private static void GetTracerManagedBinariesDirectories(List<string> binaryDirs)
         {
             // E.g.:
             //  - c:\Program Files\Datadog\.NET Tracer\net45\
@@ -380,25 +372,35 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
             if (String.IsNullOrWhiteSpace(tracerHomeDirectory))
             {
-                return null;
+                return;
             }
 
             string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir();
             string managedBinariesDirectory = Path.Combine(tracerHomeDirectory, managedBinariesSubdir);
 
-            return managedBinariesDirectory;
+            if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
+            {
+                binaryDirs.Add(managedBinariesDirectory);
+            }
         }
 
-        private static string GetProfilerManagedBinariesDirectory()
+        private static void GetProfilerManagedBinariesDirectories(List<string> binaryDirs)
         {
-            // Assumed folder structure (may change while we ar still in Alpha):
-            //  - c:\Program Files\Datadog\.NET Tracer\                                     <= Native Tracer/Provifer loader binary
+            // Assumed folder structure
+            // (support both options for now; be aware tha tgis may change while we are still in Alpha):
+            // OPTION A (SxS with Tracer):
+            //  - c:\Program Files\Datadog\.NET Tracer\                                     <= Native Tracer/Profiler loader binary
             //  - c:\Program Files\Datadog\.NET Tracer\                                     <= Also, native Tracer binaries for Win-x64
             //  - c:\Program Files\Datadog\.NET Tracer\net45\                               <= Managed Tracer binaries for Net Fx 4.5
             //  - c:\Program Files\Datadog\.NET Tracer\netcoreapp3.1\                       <= Managed Tracer binaries for Net Core 3.1 +
             //  - c:\Program Files\Datadog\.NET Tracer\ContinuousProfiler\win-x64\          <= Native Profiler binaries for Win-x64
             //  - c:\Program Files\Datadog\.NET Tracer\ContinuousProfiler\net45\            <= Managed Profiler binaries for Net Fx 4.5
             //  - c:\Program Files\Datadog\.NET Tracer\ContinuousProfiler\netcoreapp3.1\    <= Managed Profiler binaries for Net Core 3.1 +
+            //  - ...
+            // OPTION B (Profiler only):
+            //  - c:\Program Files\Datadog\Some Dir\                                        <= Native Profiler binaries (x86 & x64 .dll)
+            //  - c:\Program Files\Datadog\Some Dir\net45\                                  <= Managed Profiler binaries for Net Fx 4.5
+            //  - c:\Program Files\Datadog\Some Dir\netcoreapp3.1\                          <= Managed Profiler binaries for Net Core 3.1 +
             //  - ...
 
             string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir(out bool isCoreFx);
@@ -418,15 +420,64 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             // Be defensive against env var not being set.
             if (String.IsNullOrWhiteSpace(nativeProductBinariesDir))
             {
-                return null;
+                return;
             }
 
             nativeProductBinariesDir = Path.GetDirectoryName(Path.Combine(nativeProductBinariesDir, "."));  // Normalize in respect to final dir separator
-            string tracerHomeDirectory = Path.GetDirectoryName(nativeProductBinariesDir);                   // Shared Tracer/Provifer loader is in Tracer HOME
-            string profilerHomeDirectory = Path.Combine(tracerHomeDirectory, "ContinuousProfiler");         // Profiler-HOME is in <Tracer-HOME>/ContinuousProfiler
 
-            string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);   // Managed binaries are in <Profiler-HOME>/net-ver-moniker/
-            return managedBinariesDirectory;
+            {
+                // OPTION A from above (SxS with Tracer):
+
+                string tracerHomeDirectory = Path.GetDirectoryName(nativeProductBinariesDir);                   // Shared Tracer/Profiler loader is in Tracer HOME
+                string profilerHomeDirectory = Path.Combine(tracerHomeDirectory, "ContinuousProfiler");         // Profiler-HOME is in <Tracer-HOME>/ContinuousProfiler
+
+                string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);   // Managed binaries are in <Profiler-HOME>/net-ver-moniker/
+                if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
+                {
+                    binaryDirs.Add(managedBinariesDirectory);
+                }
+            }
+
+            {
+                // OPTION B from above (Profiler only):
+
+                string profilerHomeDirectory = Path.GetDirectoryName(nativeProductBinariesDir);                 // Profiler-HOME
+                string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);   // Managed binaries are in <Profiler-HOME>/net-ver-moniker/
+
+                if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
+                {
+                    binaryDirs.Add(managedBinariesDirectory);
+                }
+            }
+
+#if DEBUG
+            {
+                // For debug builds only we also support F5-running from within VS.
+                // For that we use the relavite path from where our build places the native profiler engine DLL to where the build process
+                // places the managed profiler engine DLL.
+                const string NativeToManagedRelativePath = @"..\..\..\Debug-AnyCPU\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Managed\";
+
+                string profilerHomeDirectory = Path.GetDirectoryName(nativeProductBinariesDir);
+                string managedBinariesRoot = Path.Combine(profilerHomeDirectory, NativeToManagedRelativePath);
+
+                string managedBinariesRootFull;
+                try
+                {
+                    managedBinariesRootFull = Path.GetFullPath(managedBinariesRoot);
+                }
+                catch
+                {
+                    managedBinariesRootFull = managedBinariesRoot;
+                }
+                
+                string managedBinariesDirectory = Path.Combine(managedBinariesRootFull, managedBinariesSubdir);
+
+                if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
+                {
+                    binaryDirs.Add(managedBinariesDirectory);
+                }
+            }
+#endif
         }
 
         private static string GetRuntimeBasedProductBinariesSubdir()

@@ -8,7 +8,8 @@ See [license information](./LICENSE).
 
 ## Copyright
 
-Datadog .NET Profiler
-Copyright (c) 2021 Datadog
+Datadog .NET libraries and components
+
+Copyright (c) 2020 Datadog
 
 This product includes software developed at Datadog (https://www.datadoghq.com/).
