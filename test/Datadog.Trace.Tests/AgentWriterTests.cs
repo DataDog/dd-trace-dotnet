@@ -252,7 +252,7 @@ namespace Datadog.Trace.Tests
         public async Task AddsTraceKeepRateMetricToRootSpan()
         {
             // Traces should be dropped when both buffers are full
-            var calculator = new MovingAverageKeepRateCalculator(size: 10, Timeout.InfiniteTimeSpan);
+            var calculator = new MovingAverageKeepRateCalculator(windowSize: 10, Timeout.InfiniteTimeSpan);
 
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
