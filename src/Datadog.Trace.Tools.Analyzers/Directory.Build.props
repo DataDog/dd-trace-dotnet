@@ -1,0 +1,21 @@
+<Project>
+  <!-- Deliberately not importing parent directory props-->
+
+  <PropertyGroup>
+    <!-- Strong name signature -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>../../Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+  <ItemGroup>
+
+    <!-- StyleCop -->
+    <Compile Include="../GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.*" PrivateAssets="all" />
+    <AdditionalFiles Include="../../stylecop.json" Link="stylecop.json" />
+    <Compile Include="../../GlobalSuppressions.cs" Link="GlobalSuppressions.solution.cs" />
+
+  </ItemGroup>
+
+</Project>
