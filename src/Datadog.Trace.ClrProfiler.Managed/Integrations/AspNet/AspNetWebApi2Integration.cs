@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
@@ -254,12 +255,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
+                var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;
                 Uri requestUri = request.RequestUri;
 
                 string host = request.Headers.Host ?? string.Empty;
                 string rawUrl = requestUri?.ToString().ToLowerInvariant() ?? string.Empty;
-                string absoluteUri = requestUri?.AbsoluteUri?.ToLowerInvariant() ?? string.Empty;
                 string method = request.Method.Method?.ToUpperInvariant() ?? "GET";
                 string route = null;
                 try
@@ -270,16 +271,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
-                string resourceName = $"{method} {absoluteUri.ToLowerInvariant()}";
+                string resourceName;
 
                 if (route != null)
                 {
-                    resourceName = $"{method} {route.ToLowerInvariant()}";
+                    resourceName = $"{method} {(newResourceNamesEnabled ? "/" : string.Empty)}{route.ToLowerInvariant()}";
                 }
                 else if (requestUri != null)
                 {
-                    var cleanUri = UriHelpers.GetRelativeUrl(requestUri, tryRemoveIds: true);
+                    var cleanUri = UriHelpers.GetCleanUriPath(requestUri);
                     resourceName = $"{method} {cleanUri.ToLowerInvariant()}";
+                }
+                else
+                {
+                    resourceName = $"{method}";
                 }
 
                 string controller = string.Empty;
@@ -299,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
-                // Fail safe to catch templates in routing values
+                // Replace well-known routing tokens
                 resourceName =
                     resourceName
                        .Replace("{area}", area)
@@ -318,6 +323,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 tags.AspNetController = controller;
                 tags.AspNetArea = area;
                 tags.AspNetRoute = route;
+
+                if (newResourceNamesEnabled)
+                {
+                    // set the resource name in the HttpContext so TracingHttpModule can update root span
+                    var httpContext = System.Web.HttpContext.Current;
+                    if (httpContext is not null)
+                    {
+                        httpContext.Items[SharedConstants.HttpContextPropagatedResourceNameKey] = resourceName;
+                    }
+                }
             }
             catch (Exception ex)
             {

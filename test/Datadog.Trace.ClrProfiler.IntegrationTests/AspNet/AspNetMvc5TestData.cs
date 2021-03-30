@@ -5,8 +5,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class AspNetMvc5TestData
     {
-        public static TheoryData<string, string, int, bool, string, string, SerializableDictionary> Data => new()
+        public static TheoryData<string, string, int, bool, string, string, SerializableDictionary> WithoutFeatureFlag => new()
         {
+            { "/DataDog", "GET /datadog", 200, false, null, null, DatadogAreaTags },
             { "/DataDog/DogHouse", "GET /datadog/doghouse", 200, false, null, null, DatadogAreaTags },
             { "/DataDog/DogHouse/Woof", "GET /datadog/doghouse/woof", 200, false, null, null, DatadogAreaWoofTags },
             { "/", "GET /", 200, false, null, null, HomeIndexTags },
@@ -14,6 +15,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/Home/Index", "GET /home/index", 200, false, null, null, HomeIndexTags },
             { "/Home/Get", "GET /home/get", 500, true, "System.ArgumentException", MissingParameterError, HomeGetTags },
             { "/Home/Get/3", "GET /home/get/?", 200, false, null, null, HomeGetTags },
+            { "/delay/0", "GET /delay/{seconds}", 200, false, null, null, DelayTags },
+            { "/delay-async/0", "GET /delay-async/{seconds}", 200, false, null, null, DelayAsyncTags },
+            { "/delay-optional", "GET /delay-optional/{seconds}", 200, false, null, null, DelayOptionalTags },
+            { "/delay-optional/1", "GET /delay-optional/{seconds}", 200, false, null, null, DelayOptionalTags },
+            { "/badrequest", "GET /badrequest", 500, true, "System.Exception", "Oops, it broke.", BadRequestTags },
+            { "/statuscode/201", "GET /statuscode/{value}", 201, false, null, null, StatusCodeTags },
+            { "/statuscode/503", "GET /statuscode/{value}", 503, true, null, "The HTTP response has status code 503.", StatusCodeTags },
+        };
+
+        public static TheoryData<string, string, int, bool, string, string, SerializableDictionary> WithFeatureFlag => new()
+        {
+            { "/DataDog/", "GET /datadog/doghouse/index", 200, false, null, null, DatadogAreaTags },
+            { "/DataDog/DogHouse", "GET /datadog/doghouse/index", 200, false, null, null, DatadogAreaTags },
+            { "/DataDog/DogHouse/Woof", "GET /datadog/doghouse/woof", 200, false, null, null, DatadogAreaWoofTags },
+            { "/", "GET /home/index", 200, false, null, null, HomeIndexTags },
+            { "/Home", "GET /home/index", 200, false, null, null, HomeIndexTags },
+            { "/Home/Index", "GET /home/index", 200, false, null, null, HomeIndexTags },
+            { "/Home/Get", "GET /home/get", 500, true, "System.ArgumentException", MissingParameterError, HomeGetTags },
+            { "/Home/Get/3", "GET /home/get/{id}", 200, false, null, null, HomeGetTags },
             { "/delay/0", "GET /delay/{seconds}", 200, false, null, null, DelayTags },
             { "/delay-async/0", "GET /delay-async/{seconds}", 200, false, null, null, DelayAsyncTags },
             { "/delay-optional", "GET /delay-optional/{seconds}", 200, false, null, null, DelayOptionalTags },

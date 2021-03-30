@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetWebApi2Integration))]
-        [MemberData(nameof(AspNetWebApi2TestData.Data), MemberType = typeof(AspNetWebApi2TestData))]
+        [MemberData(nameof(AspNetWebApi2TestData.WithoutFeatureFlag), MemberType = typeof(AspNetWebApi2TestData))]
         public async Task SubmitsTraces(
             string path,
             string expectedResourceName,

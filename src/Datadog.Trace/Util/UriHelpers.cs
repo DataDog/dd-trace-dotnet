@@ -7,7 +7,7 @@ namespace Datadog.Trace.Util
     {
         public static string CleanUri(Uri uri, bool removeScheme, bool tryRemoveIds)
         {
-            var path = GetRelativeUrl(uri, tryRemoveIds);
+            var path = tryRemoveIds ? GetCleanUriPath(uri.AbsolutePath) : uri.AbsolutePath;
 
             if (removeScheme)
             {
@@ -21,18 +21,27 @@ namespace Datadog.Trace.Util
             return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
         }
 
+        [Obsolete("This method is deprecated and will be removed. Use GetCleanUriPath() instead. " +
+                  "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
         public static string GetRelativeUrl(Uri uri, bool tryRemoveIds)
-        {
-            return GetRelativeUrl(uri.AbsolutePath, tryRemoveIds);
-        }
+            => GetRelativeUrl(uri.AbsolutePath, tryRemoveIds);
 
+        [Obsolete("This method is deprecated and will be removed. Use GetCleanUriPath() instead. " +
+                  "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
         public static string GetRelativeUrl(string uri, bool tryRemoveIds)
+            => tryRemoveIds ? GetCleanUriPath(uri) : uri;
+
+        [Obsolete("This method is deprecated and will be removed. Use GetCleanUriPath() instead. " +
+                  "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
+        public static string CleanUriSegment(string absolutePath)
+            => GetCleanUriPath(absolutePath);
+
+        public static string GetCleanUriPath(Uri uri)
         {
-            // try to remove segments that look like ids
-            return tryRemoveIds ? CleanUriSegment(uri) : uri;
+            return GetCleanUriPath(uri.AbsolutePath);
         }
 
-        public static string CleanUriSegment(string absolutePath)
+        public static string GetCleanUriPath(string absolutePath)
         {
             if (string.IsNullOrWhiteSpace(absolutePath) || (absolutePath.Length == 1 && absolutePath[0] == '/'))
             {

@@ -4,6 +4,7 @@
 
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,41 +12,42 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetMvc5TestsCallsite : AspNetMvc5Tests
+    public class AspNetMvc4WithFeatureFlagTestsCallsite : AspNetMvc4WithFeatureFlagTests
     {
-        public AspNetMvc5TestsCallsite(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetMvc4WithFeatureFlagTestsCallsite(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, enableCallTarget: false, enableInlining: false)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5TestsCallTargetNoInlining : AspNetMvc5Tests
+    public class AspNetMvc4WithFeatureFlagTestsCallTargetNoInlining : AspNetMvc4WithFeatureFlagTests
     {
-        public AspNetMvc5TestsCallTargetNoInlining(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetMvc4WithFeatureFlagTestsCallTargetNoInlining(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, enableCallTarget: true, enableInlining: false)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5TestsCallTarget : AspNetMvc5Tests
+    public class AspNetMvc4WithFeatureFlagTestsCallTarget : AspNetMvc4WithFeatureFlagTests
     {
-        public AspNetMvc5TestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetMvc4WithFeatureFlagTestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, enableCallTarget: true, enableInlining: true)
         {
         }
     }
 
-    public abstract class AspNetMvc5Tests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetMvc4WithFeatureFlagTests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
 
-        public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool enableInlining)
-            : base("AspNetMvc5", @"test\test-applications\aspnet", output)
+        public AspNetMvc4WithFeatureFlagTests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool enableInlining)
+            : base("AspNetMvc4", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
 
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
@@ -54,15 +56,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [MemberData(nameof(AspNetMvc5TestData.WithoutFeatureFlag), MemberType = typeof(AspNetMvc5TestData))]
-        public async Task SubmitsTraces(
+        [MemberData(nameof(AspNetMvc4TestData.WithFeatureFlag), MemberType = typeof(AspNetMvc4TestData))]
+        public async Task WithNewResourceNames_SubmitsTraces(
             string path,
             string expectedResourceName,
             HttpStatusCode expectedStatusCode,
             bool isError,
             string expectedErrorType,
             string expectedErrorMessage,
-            SerializableDictionary expectedTags)
+            SerializableDictionary tags)
         {
             await AssertWebServerSpan(
                 path,
@@ -76,8 +78,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "aspnet-mvc.request",
                 expectedResourceName,
                 "1.0.0",
-                expectedTags);
+                tags);
         }
     }
 }
+
 #endif
