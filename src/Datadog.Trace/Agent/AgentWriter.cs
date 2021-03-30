@@ -123,8 +123,7 @@ namespace Datadog.Trace.Agent
             var delay = Task.Delay(TimeSpan.FromSeconds(20));
 
             // Internally WhenAny will make a defensive copy of the array
-            // so we reuse the outer one. This way is not threadsafe and could generate race conditions.
-            // but is an internal api and unlikely to happen.
+            // so we reuse the outer one.
             // https://source.dot.net/#System.Private.CoreLib/Task.cs,6028
             // https://referencesource.microsoft.com/#mscorlib/system/threading/Tasks/Task.cs,6478
             Task[] whenAnyArray = new Task[2];
