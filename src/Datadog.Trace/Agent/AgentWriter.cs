@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -326,7 +327,14 @@ namespace Datadog.Trace.Agent
             if (rootSpan is not null)
             {
                 var currentKeepRate = _traceKeepRateCalculator.GetKeepRate();
-                rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
+                if (rootSpan.Tags is CommonTags commonTags)
+                {
+                    commonTags.TracesKeepRate = currentKeepRate;
+                }
+                else
+                {
+                    rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
+                }
             }
 
             // We use a double-buffering mechanism
