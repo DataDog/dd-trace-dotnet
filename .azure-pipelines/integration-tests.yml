@@ -119,7 +119,7 @@ jobs:
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: 'Cobertura'
-      summaryFileLocation: '/project/cover/**/coverage.*.xml'
+      summaryFileLocation: 'cover/coverage.*.xml'
 
   - publish: build_data
     artifact: $(Agent.JobName)_profiler-logs-$(System.JobAttempt)
