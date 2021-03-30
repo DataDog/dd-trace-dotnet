@@ -31,23 +31,22 @@ namespace Datadog.Trace
         {
             var newParent = Active;
             var scope = new Scope(newParent, span, this, finishOnClose);
-            var scopeOpenedArgs = new SpanEventArgs(span);
 
-            if (newParent == null)
+            if (newParent == null && TraceStarted != null)
             {
-                TraceStarted?.Invoke(this, scopeOpenedArgs);
+                TraceStarted(this, new SpanEventArgs(span));
             }
 
-            SpanOpened?.Invoke(this, scopeOpenedArgs);
+            SpanOpened?.Invoke(this, new SpanEventArgs(span));
 
             Active = scope;
 
-            if (newParent != null)
+            if (newParent != null && SpanDeactivated != null)
             {
-                SpanDeactivated?.Invoke(this, new SpanEventArgs(newParent.Span));
+                SpanDeactivated(this, new SpanEventArgs(newParent.Span));
             }
 
-            SpanActivated?.Invoke(this, scopeOpenedArgs);
+            SpanActivated?.Invoke(this, new SpanEventArgs(span));
 
             return scope;
         }
