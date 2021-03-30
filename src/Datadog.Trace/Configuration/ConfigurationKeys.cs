@@ -343,7 +343,7 @@ namespace Datadog.Trace.Configuration
         {
             /// <summary>
             /// Feature Flag: enables updated resource names on `aspnet.request`, `aspnet-mvc.request`,
-            /// `aspnet-webapi.request`, and `aspnet_core.request` spans. Enables `aspnet_core.mvc` spans and
+            /// `aspnet-webapi.request`, and `aspnet_core.request` spans. Enables `aspnet_core_mvc.request` spans and
             /// additional features on `aspnet_core.request` spans.
             /// </summary>
             /// <seealso cref="TracerSettings.RouteTemplateResourceNamesEnabled"/>

@@ -209,9 +209,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
             if (spanCount > 1)
             {
-                trace.Should().Contain(x => x.OperationName == "aspnet_core.mvc");
+                trace.Should().Contain(x => x.OperationName == "aspnet_core_mvc.request");
 
-                var childSpan = trace.First(x => x.OperationName == "aspnet_core.mvc");
+                var childSpan = trace.First(x => x.OperationName == "aspnet_core_mvc.request");
 
                 AssertTagHasValue(childSpan, Tags.InstrumentationName, "aspnet_core");
                 childSpan.Type.Should().Be(SpanTypes.Web);
@@ -229,7 +229,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
                 if (spanCount > 2)
                 {
-                    var childSpan2 = trace.Last(x => x.OperationName == "aspnet_core.mvc");
+                    var childSpan2 = trace.Last(x => x.OperationName == "aspnet_core_mvc.request");
                     childSpan2.Should().NotBe(childSpan);
 
                     AssertTagHasValue(childSpan2, Tags.InstrumentationName, "aspnet_core");
