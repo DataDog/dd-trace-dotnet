@@ -77,7 +77,7 @@
     <!--                                                                                                                                                    -->
     <!--     c:\00\Code\GitHub\                                 <== Root for your code repos                                                                -->
     <!--            DD-DotNet\                                  <== A shared folder collecting one or more repors that "build together" in a group          -->
-    <!--                    .build\                             <== Root folder for build output for ALL repos in this group                                -->
+    <!--                    _build\                             <== Root folder for build output for ALL repos in this group                                -->
     <!--                            bin\                                                                                                                    -->
     <!--                                . . .                                                                                                               -->
     <!--                            obj\                                                                                                                    -->
@@ -100,19 +100,19 @@
         
         <AvoidRedirectingBinaryOutput>false</AvoidRedirectingBinaryOutput>
         
-        <!-- Set ForceBinaryOutputIntoEnlistment to True to redirect all binary output into a ".build\" directory WITHIN the repository root,               -->
+        <!-- Set ForceBinaryOutputIntoEnlistment to True to redirect all binary output into a "_build\" directory WITHIN the repository root,               -->
         <!-- instead of having that directory as a neighbour NEXT TO the repo root.                                                                         -->
         <!-- This is not recommended in general, but it can be useful if repo enlistments are all contained within the same parent directory without the    -->
         <!-- intermediate project monikers described above. In that case, this will ensure that binaries from different repository copies are separated.    -->
         <!-- (This may not work with multi-repo buld-groups.)                                                                                               -->
-        <!-- If you use this option, make sure to add ".build\" to your .gitignore.                                                                         -->
+        <!-- If you use this option, make sure to add "_build\" to your .gitignore.                                                                         -->
         
         <ForceBinaryOutputIntoEnlistment>false</ForceBinaryOutputIntoEnlistment>
         
         <!-- Use BuildOutputFolderName to contril the the name of the folder that contains all the redirected binary output.                                -->
         <!-- It is placed as a sibling of the repo root (default), or directly within the repo root (see the ForceBinaryOutputIntoEnlistment property).     -->
         
-        <BuildOutputFolderName>.build</BuildOutputFolderName>
+        <BuildOutputFolderName>_build</BuildOutputFolderName>
 
         <!-- Set PrintDetailedOutputRedirectionInfo to true/false to control whether detailed output is printed during the build.                           -->
         <!-- Use "false" if the details are too verbose for your needs.                                                                                     -->
@@ -125,7 +125,7 @@
     <PropertyGroup Condition=" '$(AvoidRedirectingBinaryOutput)' != 'True' ">
     
         <!-- EnlistmentRoot is the root folder of the repository. Typically, it is the folder that contains the ".git\" subfolder.                          -->
-        <!-- The binary output root directories ("bin\" and "obj\") will be typically placed placed into a ".build\" directory immediately above it.        -->
+        <!-- The binary output root directories ("bin\" and "obj\") will be typically placed placed into a "_build\" directory immediately above it.        -->
         <!-- You can use ForceBinaryOutputIntoEnlistment to control that behaviour.                                                                         -->
         <EnlistmentRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.EnlistmentRoot.marker'))</EnlistmentRoot>
         
