@@ -9,6 +9,7 @@ namespace Datadog.Trace.Tests.Agent
     public class MovingAverageKeepRateCalculatorTests
     {
         [Theory]
+        [InlineData(0, 0, 0)]
         [InlineData(0, 10, 0)]
         [InlineData(6, 4, 0.6)]
         [InlineData(9, 1, 0.9)]

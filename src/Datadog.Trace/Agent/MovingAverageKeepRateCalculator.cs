@@ -31,17 +31,17 @@ namespace Datadog.Trace.Agent
         private long _latestDrops = 0;
         private long _latestKeeps = 0;
 
-        internal MovingAverageKeepRateCalculator(int size, TimeSpan bucketDuration)
+        internal MovingAverageKeepRateCalculator(int windowSize, TimeSpan bucketDuration)
         {
-            if (size < 0 || size > 100)
+            if (windowSize < 0 || windowSize > 100)
             {
-                throw new ArgumentOutOfRangeException(nameof(size), "Must be a value between 1 and 100");
+                throw new ArgumentOutOfRangeException(nameof(windowSize), windowSize, "Must be a value between 1 and 100");
             }
 
-            _windowSize = size;
+            _windowSize = windowSize;
             _bucketDuration = bucketDuration;
-            _dropped = new uint[size];
-            _created = new uint[size];
+            _dropped = new uint[windowSize];
+            _created = new uint[windowSize];
 
             if (bucketDuration != Timeout.InfiniteTimeSpan)
             {
