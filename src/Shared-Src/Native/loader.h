@@ -90,48 +90,10 @@ namespace shared {
 
 		LoaderResourceMonikerIDs resourceMonikerIDs_;
 
-		void Debug(const std::string& str) {
-			if (log_debug_callback_ != nullptr) {
-				log_debug_callback_(str);
-			}
-		}
-		void Info(const std::string& str) {
-			if (log_info_callback_ != nullptr) {
-				log_info_callback_(str);
-			}
-		}
-		void Warn(const std::string& str) {
-			if (log_warn_callback_ != nullptr) {
-				log_warn_callback_(str);
-			}
-		}
+		static Loader* s_singeltonInstance;
 
-		HRESULT WriteAssembliesStringArray(
-			ILRewriter& rewriter, const ComPtr<IMetaDataEmit2> metadata_emit,
-			const std::vector<WSTRING>& assembly_string_vector,
-			ILInstr* pFirstInstr, mdTypeRef string_type_ref);
-
-		RuntimeInfo GetRuntimeInformation() {
-			COR_PRF_RUNTIME_TYPE runtime_type;
-			USHORT major_version;
-			USHORT minor_version;
-			USHORT build_version;
-			USHORT qfe_version;
-
-			auto hr = info_->GetRuntimeInformation(nullptr, &runtime_type, &major_version, &minor_version, &build_version, &qfe_version, 0, nullptr, nullptr);
-			if (FAILED(hr)) {
-				return {};
-			}
-
-			return { runtime_type, major_version, minor_version, build_version, qfe_version };
-		}
-
-	public:
-		Loader(ICorProfilerInfo4* info,
-			WSTRING* assembly_string_default_appdomain_array,
-			ULONG assembly_string_default_appdomain_array_length,
-			WSTRING* assembly_string_nondefault_appdomain_array,
-			ULONG assembly_string_nondefault_appdomain_array_length,
+		static Loader* CreateNewLoaderInstance(
+			ICorProfilerInfo4* info,
 			std::function<void(const std::string& str)> log_debug_callback,
 			std::function<void(const std::string& str)> log_info_callback,
 			std::function<void(const std::string& str)> log_warn_callback,
@@ -145,57 +107,59 @@ namespace shared {
 			std::function<void(const std::string& str)> log_warn_callback,
 			const LoaderResourceMonikerIDs& resourceMonikerIDs);
 
+		inline void Debug(const std::string& str) {
+			if (log_debug_callback_ != nullptr) {
+				log_debug_callback_(str);
+			}
+		}
+
+		inline void Info(const std::string& str) {
+			if (log_info_callback_ != nullptr) {
+				log_info_callback_(str);
+			}
+		}
+
+		inline void Warn(const std::string& str) {
+			if (log_warn_callback_ != nullptr) {
+				log_warn_callback_(str);
+			}
+		}
+
+		HRESULT WriteAssembliesStringArray(
+			ILRewriter& rewriter, const ComPtr<IMetaDataEmit2> metadata_emit,
+			const std::vector<WSTRING>& assembly_string_vector,
+			ILInstr* pFirstInstr, mdTypeRef string_type_ref);
+
+		inline RuntimeInfo GetRuntimeInformation() {
+			COR_PRF_RUNTIME_TYPE runtime_type;
+			USHORT major_version;
+			USHORT minor_version;
+			USHORT build_version;
+			USHORT qfe_version;
+
+			HRESULT hr = info_->GetRuntimeInformation(nullptr, &runtime_type, &major_version, &minor_version, &build_version, &qfe_version, 0, nullptr, nullptr);
+			if (FAILED(hr)) {
+				return {};
+			}
+
+			return { runtime_type, major_version, minor_version, build_version, qfe_version };
+		}
+
+	public:
+		
+		static void CreateNewSingeltonInstance(ICorProfilerInfo4* pCorProfilerInfo,
+                                               std::function<void(const std::string& str)> logDebugCallback,
+			                                   std::function<void(const std::string& str)> logInfoCallback,
+                                               std::function<void(const std::string& str)> logWarnCallback,
+                                               const LoaderResourceMonikerIDs& resourceMonikerIDs);
+		static Loader* GetSingeltonInstance();
+		static void DeleteSingeltonInstance(void);
+
 		HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
 
 		bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize,
 			void** pSymbolsArray, int* symbolsSize, AppDomainID appDomainId);
-
-		static Loader* CreateLoader(
-			ICorProfilerInfo4* info,
-			std::function<void(const std::string& str)> log_debug_callback,
-			std::function<void(const std::string& str)> log_info_callback,
-			std::function<void(const std::string& str)> log_warn_callback,
-		    const LoaderResourceMonikerIDs& resourceMonikerIDs) {
-
-			std::vector<WSTRING> assembly_string_default_appdomain_vector;
-			std::vector<WSTRING> assembly_string_nondefault_appdomain_vector;
-			
-			WSTRING process_name = GetCurrentProcessName();
-			const bool is_iis = process_name == WStr("w3wp.exe") ||
-				process_name == WStr("iisexpress.exe");
-
-			if (is_iis) {
-
-				assembly_string_default_appdomain_vector = {
-					WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-				};
-				assembly_string_nondefault_appdomain_vector = {
-					WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-				};
-
-			}
-			else {
-
-				assembly_string_default_appdomain_vector = {
-					WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-				};
-				assembly_string_nondefault_appdomain_vector = {
-					WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-				};
-
-			}
-
-			return new Loader(info,
-							  assembly_string_default_appdomain_vector,
-				              assembly_string_nondefault_appdomain_vector,
-				              log_debug_callback,
-				              log_info_callback,
-				              log_warn_callback,
-				              resourceMonikerIDs);
-		}
 	};
-
-	extern Loader* loader;  // global reference to loader
 
 }  // namespace shared
 
