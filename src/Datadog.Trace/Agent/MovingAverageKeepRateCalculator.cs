@@ -8,8 +8,9 @@ namespace Datadog.Trace.Agent
 {
     /// <summary>
     /// Used to calculate the Trace Keep Rate, tracking the number of
-    /// traces kept and dropped that should have been sent to the backend.
-    /// Traces ignored due to sampling are not included in these rates.
+    /// traces kept and dropped that should have been sent to the agent.
+    /// Traces that are subsequently dropped by the agent due to sampling
+    /// will not count as dropped in this rate.
     /// </summary>
     internal class MovingAverageKeepRateCalculator : IKeepRateCalculator
     {
