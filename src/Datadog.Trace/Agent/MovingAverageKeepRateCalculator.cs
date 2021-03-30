@@ -14,7 +14,7 @@ namespace Datadog.Trace.Agent
     /// </summary>
     internal class MovingAverageKeepRateCalculator : IKeepRateCalculator
     {
-        private const int DefaultKeepRate = 10;
+        private const int DefaultWindowSize = 10;
         private static readonly TimeSpan DefaultBucketDuration = TimeSpan.FromSeconds(1);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<MovingAverageKeepRateCalculator>();
 
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Agent
         }
 
         public static MovingAverageKeepRateCalculator CreateDefaultKeepRateCalculator()
-            => new MovingAverageKeepRateCalculator(DefaultKeepRate, DefaultBucketDuration);
+            => new MovingAverageKeepRateCalculator(DefaultWindowSize, DefaultBucketDuration);
 
         /// <summary>
         /// Increment the number of kept traces
