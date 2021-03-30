@@ -1,5 +1,4 @@
 Component,Origin,License,Copyright
-Benchmarks.Trace,https://github.com/JetBrains/profiler-api,Apache-2.0,"Copyright (c) 2019-2020 JetBrains s.r.o."
 Datadog.Trace,https://github.com/neuecc/MessagePack-CSharp,MIT,Copyright (c) 2017 Yoshifumi Kawai and contributors
 Datadog.Trace,https://github.com/damianh/LibLog,MIT,Copyright (C) 2011-2017 Damian Hickey
 Datadog.Trace,https://github.com/serilog/serilog,Apache-2.0,Copyright (c) 2013-2018 Serilog Contributors
