@@ -58,7 +58,7 @@ namespace Datadog.Trace
                 {
                     // find the known version on the list with the largest release number
                     // that is lower than or equal to the release number in the Windows Registry
-                    productVersion = DotNetFrameworkVersionMapping.FirstOrDefault(t => release >= t.Item1)?.Item2;
+                    productVersion = DotNetFrameworkVersionMapping.FirstOrDefault(t => release >= t.Key).Value;
                 }
             }
             catch (Exception e)

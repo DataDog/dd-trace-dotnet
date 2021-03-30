@@ -114,141 +114,145 @@ namespace Datadog.Trace
             var path = metadata.ProcessPath;
             Log.Debug("Starting keep alive for {Process}.", path);
 
-            return Task.Run(
-                async () =>
+            return Task.Factory.StartNew(state => InternalStartProcessWithKeepAlive(state), metadata);
+
+            static async Task InternalStartProcessWithKeepAlive(object state)
+            {
+                var metadata = (ProcessMetadata)state;
+                var path = metadata.ProcessPath;
+
+                try
                 {
-                    try
+                    // Indicate that there is a worker responsible for doing this
+                    // This acts as a lock
+                    metadata.IsBeingManaged = true;
+
+                    while (true)
                     {
-                        // Indicate that there is a worker responsible for doing this
-                        // This acts as a lock
-                        metadata.IsBeingManaged = true;
-
-                        while (true)
+                        if (metadata.SequentialFailures >= MaxFailures)
                         {
-                            if (metadata.SequentialFailures >= MaxFailures)
+                            Log.Error<string, int>("Maximum retries ({ErrorCount}) reached starting {Process}.", path, MaxFailures);
+                            metadata.ProcessState = ProcessState.Faulted;
+                            return;
+                        }
+
+                        try
+                        {
+                            if (metadata.ProcessState == ProcessState.NeverChecked)
                             {
-                                Log.Error<string, int>("Maximum retries ({ErrorCount}) reached starting {Process}.", path, MaxFailures);
-                                metadata.ProcessState = ProcessState.Faulted;
-                                return;
-                            }
+                                // This means we have never tried from this domain
 
-                            try
-                            {
-                                if (metadata.ProcessState == ProcessState.NeverChecked)
+                                if (metadata.ProcessIsHealthy())
                                 {
-                                    // This means we have never tried from this domain
+                                    // This means one of two things:
+                                    // - Another domain has already started this process
+                                    // - The previous instance is in the process of shutting down
+                                    // It is possible that if a pipe is bound it may yet be cleaned up from a previous shutdown
 
-                                    if (metadata.ProcessIsHealthy())
+                                    // Assume healthy to start, but look for problems
+                                    metadata.ProcessState = ProcessState.Healthy;
+
+                                    // Check on a delay to be sure we keep the process available after a shutdown
+                                    var attempts = 7;
+                                    var delay = 50d;
+
+                                    while (--attempts > 0)
                                     {
-                                        // This means one of two things:
-                                        // - Another domain has already started this process
-                                        // - The previous instance is in the process of shutting down
-                                        // It is possible that if a pipe is bound it may yet be cleaned up from a previous shutdown
+                                        await Task.Delay((int)delay).ConfigureAwait(false);
 
-                                        // Assume healthy to start, but look for problems
-                                        metadata.ProcessState = ProcessState.Healthy;
-
-                                        // Check on a delay to be sure we keep the process available after a shutdown
-                                        var attempts = 7;
-                                        var delay = 50d;
-
-                                        while (--attempts > 0)
-                                        {
-                                            await Task.Delay((int)delay).ConfigureAwait(false);
-
-                                            if (metadata.ProcessIsHealthy())
-                                            {
-                                                // Should result in a max delay of ~3.28 seconds before giving up
-                                                delay = delay * 1.75d;
-                                                continue;
-                                            }
-
-                                            // The previous instance is gone, time to start the process
-                                            Log.Information("Recovering from previous {Process} shutdown. Ready for start.", path);
-                                            metadata.ProcessState = ProcessState.ReadyToStart;
-                                            break;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // If no instance exists, just get ready to start
-                                        metadata.ProcessState = ProcessState.ReadyToStart;
-                                    }
-                                }
-                                else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted)
-                                {
-                                    // This means we have tried to start from this domain before
-                                    metadata.ProcessState = metadata.ProcessIsHealthy() ? ProcessState.Healthy : ProcessState.ReadyToStart;
-                                }
-
-                                if (metadata.ProcessState == ProcessState.ReadyToStart)
-                                {
-                                    Log.Information("Attempting to start {Process}.", path);
-
-                                    var startInfo = new ProcessStartInfo
-                                    {
-                                        FileName = path,
-                                        UseShellExecute = false // Force consistency in behavior between Framework and Core
-                                    };
-
-                                    if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
-                                    {
-                                        startInfo.Arguments = metadata.ProcessArguments;
-                                    }
-
-                                    metadata.Process = Process.Start(startInfo);
-                                    var timeout = 2000;
-
-                                    while (timeout > 0)
-                                    {
-                                        // Loop and watch for evidence that the process is up and running
                                         if (metadata.ProcessIsHealthy())
                                         {
-                                            metadata.SequentialFailures = 0;
-                                            metadata.ProcessState = ProcessState.Healthy;
-                                            Log.Information("Successfully started {Process}.", path);
-                                            break;
+                                            // Should result in a max delay of ~3.28 seconds before giving up
+                                            delay = delay * 1.75d;
+                                            continue;
                                         }
 
-                                        if (metadata.Process == null || metadata.Process.HasExited)
-                                        {
-                                            Log.Error("Failed to start {Process}.", path);
-                                            metadata.ProcessState = ProcessState.Faulted;
-                                            break;
-                                        }
-
-                                        await Task.Delay(100).ConfigureAwait(false);
-                                        timeout -= 100;
+                                        // The previous instance is gone, time to start the process
+                                        Log.Information("Recovering from previous {Process} shutdown. Ready for start.", path);
+                                        metadata.ProcessState = ProcessState.ReadyToStart;
+                                        break;
                                     }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                metadata.ProcessState = ProcessState.Faulted;
-                                Log.Error(ex, "Failed to start {Process}.", path);
-                            }
-                            finally
-                            {
-                                if (metadata.ProcessState == ProcessState.Faulted)
-                                {
-                                    metadata.SequentialFailures++;
-                                    // Quicker retry in these cases
-                                    await Task.Delay(ExceptionRetryInterval).ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    // Delay for a reasonable amount of time before we check to see if the process is alive again.
-                                    await Task.Delay(KeepAliveInterval).ConfigureAwait(false);
+                                    // If no instance exists, just get ready to start
+                                    metadata.ProcessState = ProcessState.ReadyToStart;
+                                }
+                            }
+                            else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted)
+                            {
+                                // This means we have tried to start from this domain before
+                                metadata.ProcessState = metadata.ProcessIsHealthy() ? ProcessState.Healthy : ProcessState.ReadyToStart;
+                            }
+
+                            if (metadata.ProcessState == ProcessState.ReadyToStart)
+                            {
+                                Log.Information("Attempting to start {Process}.", path);
+
+                                var startInfo = new ProcessStartInfo
+                                {
+                                    FileName = path,
+                                    UseShellExecute = false // Force consistency in behavior between Framework and Core
+                                };
+
+                                if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
+                                {
+                                    startInfo.Arguments = metadata.ProcessArguments;
+                                }
+
+                                metadata.Process = Process.Start(startInfo);
+                                var timeout = 2000;
+
+                                while (timeout > 0)
+                                {
+                                    // Loop and watch for evidence that the process is up and running
+                                    if (metadata.ProcessIsHealthy())
+                                    {
+                                        metadata.SequentialFailures = 0;
+                                        metadata.ProcessState = ProcessState.Healthy;
+                                        Log.Information("Successfully started {Process}.", path);
+                                        break;
+                                    }
+
+                                    if (metadata.Process == null || metadata.Process.HasExited)
+                                    {
+                                        Log.Error("Failed to start {Process}.", path);
+                                        metadata.ProcessState = ProcessState.Faulted;
+                                        break;
+                                    }
+
+                                    await Task.Delay(100).ConfigureAwait(false);
+                                    timeout -= 100;
                                 }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            metadata.ProcessState = ProcessState.Faulted;
+                            Log.Error(ex, "Failed to start {Process}.", path);
+                        }
+                        finally
+                        {
+                            if (metadata.ProcessState == ProcessState.Faulted)
+                            {
+                                metadata.SequentialFailures++;
+                                // Quicker retry in these cases
+                                await Task.Delay(ExceptionRetryInterval).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                // Delay for a reasonable amount of time before we check to see if the process is alive again.
+                                await Task.Delay(KeepAliveInterval).ConfigureAwait(false);
+                            }
+                        }
                     }
-                    finally
-                    {
-                        Log.Warning("Keep alive is dropping for {Process}.", path);
-                        metadata.IsBeingManaged = false;
-                    }
-                });
+                }
+                finally
+                {
+                    Log.Warning("Keep alive is dropping for {Process}.", path);
+                    metadata.IsBeingManaged = false;
+                }
+            }
         }
 
         internal class ProcessMetadata

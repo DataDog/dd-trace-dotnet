@@ -14,7 +14,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="collection">The name/value collection to wrap.</param>
         /// <returns>An object that implements <see cref="IHeadersCollection"/>.</returns>
-        public static IHeadersCollection Wrap(this NameValueCollection collection)
+        public static NameValueHeadersCollection Wrap(this NameValueCollection collection)
         {
             if (collection == null)
             {

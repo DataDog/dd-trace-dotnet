@@ -1,5 +1,6 @@
 #if NETFRAMEWORK
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.Util;
@@ -41,8 +42,8 @@ namespace Datadog.Trace.RuntimeMetrics
             _memoryCategory = new PerformanceCounterCategory(MemoryCategoryName);
 
             var instanceName = GetInstanceName();
-            _fullInstanceName = instanceName.Item2;
-            _instanceName = instanceName.Item1;
+            _fullInstanceName = instanceName.IsFullName;
+            _instanceName = instanceName.Name;
 
             InitializePerformanceCounters(_instanceName);
         }
@@ -132,50 +133,100 @@ namespace Datadog.Trace.RuntimeMetrics
             lastValue = value;
         }
 
-        private Tuple<string, bool> GetInstanceName()
+        private InstanceName GetInstanceName()
         {
-            var instanceNames = _memoryCategory.GetInstanceNames().Where(n => n.StartsWith(_processName)).ToArray();
+            var allInstances = _memoryCategory.GetInstanceNames();
+            var fullProcessName = $"{_processName}_p{_processId}_r";
 
-            var fullName = instanceNames.FirstOrDefault(n => n.StartsWith($"{_processName}_p{_processId}_r"));
-
-            if (fullName != null)
+            string tmpName = null;
+            foreach (var insName in allInstances)
             {
-                return Tuple.Create(fullName, true);
+                if (insName.StartsWith(fullProcessName))
+                {
+                    // If we have a fullname match we return that
+                    return new InstanceName(insName, true);
+                }
+
+                if (insName.StartsWith(_processName))
+                {
+                    if (tmpName is null)
+                    {
+                        // if is the first relaxed match we store it
+                        tmpName = insName;
+                    }
+                    else
+                    {
+                        // If we have more than 1 relaxed match we call the GetSimpleInstanceName()
+                        return new InstanceName(GetSimpleInstanceName(), false);
+                    }
+                }
             }
 
-            if (instanceNames.Length == 1)
-            {
-                return Tuple.Create(instanceNames[0], false);
-            }
-
-            return Tuple.Create(GetSimpleInstanceName(), false);
+            // if we are here then or we didn't found a relaxed match or we have only 1.
+            return new InstanceName(tmpName, false);
         }
 
         private string GetSimpleInstanceName()
         {
-            var instanceNames = _memoryCategory.GetInstanceNames().Where(n => n.StartsWith(_processName)).ToArray();
-
-            if (instanceNames.Length == 1)
+            var allInstanceNames = _memoryCategory.GetInstanceNames();
+            int count = 0;
+            string tmpInstanceName = null;
+            foreach (var insName in allInstanceNames)
             {
-                return instanceNames[0];
+                if (!insName.StartsWith(_processName))
+                {
+                    continue;
+                }
+
+                if (count == 0)
+                {
+                    // First match
+                    tmpInstanceName = insName;
+                }
+                else
+                {
+                    if (tmpInstanceName is not null)
+                    {
+                        // first we check the first instance name we found if is not already checked.
+                        if (GetInstancePid(tmpInstanceName) == _processId)
+                        {
+                            return tmpInstanceName;
+                        }
+
+                        // If is not the same process id we disable this check for future matches.
+                        tmpInstanceName = null;
+                    }
+
+                    if (GetInstancePid(insName) == _processId)
+                    {
+                        return insName;
+                    }
+                }
+
+                count++;
             }
 
-            foreach (var name in instanceNames)
-            {
-                int instancePid;
+            return count == 1 ? tmpInstanceName : null;
 
+            static int GetInstancePid(string name)
+            {
                 using (var counter = new PerformanceCounter(MemoryCategoryName, "Process ID", name, true))
                 {
-                    instancePid = (int)counter.NextValue();
-                }
-
-                if (instancePid == _processId)
-                {
-                    return name;
+                    return (int)counter.NextValue();
                 }
             }
+        }
 
-            return null;
+        private readonly struct InstanceName
+        {
+            public readonly string Name;
+            public readonly bool IsFullName;
+
+            public InstanceName(string name, bool isFullName)
+            {
+                Name = name;
+                IsFullName = isFullName;
+            }
         }
     }
 }

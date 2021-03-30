@@ -35,11 +35,6 @@ namespace Datadog.Trace.Logging
                 return true;
             }
 
-            // RFC says we should take log context, level, filename and lineNumber into account
-            // but we don't currently set the log context name in IDatadogLogger. FilePath and
-            // lineNumber should generally sufficient to uniquely identify the log given our API anyway
-            var key = new LogRateBucketKey(filePath, lineNumber);
-
 #if NET45
             TimeSpan diff = Clock.UtcNow - _unixEpoch;
             var timestamp = diff.TotalSeconds;
@@ -50,10 +45,21 @@ namespace Datadog.Trace.Logging
             var currentTimeBucket = (int)(timestamp / _secondsBetweenLogs);
             System.Diagnostics.Debug.Assert(currentTimeBucket > 0, $"Time bucket should be greater than 0");
 
+            // RFC says we should take log context, level, filename and lineNumber into account
+            // but we don't currently set the log context name in IDatadogLogger. FilePath and
+            // lineNumber should generally sufficient to uniquely identify the log given our API anyway
+
+            // We include the currentTimeBucket as a state inside the key to remove the closure in a possible hotpath.
+            // the value is not used neither for GetHashCode or Equality comparison, is just a state used in the updateValueFactory
+            // The CLR will use and pass the current calculated key on both factories
+            // https://source.dot.net/#System.Collections.Concurrent/System/Collections/Concurrent/ConcurrentDictionary.cs,1342
+            // https://referencesource.microsoft.com/#mscorlib/system/Collections/Concurrent/ConcurrentDictionary.cs,1206
+            var key = new LogRateBucketKey(filePath, lineNumber, currentTimeBucket);
+
             var newLogInfo = _buckets.AddOrUpdate(
                 key,
                 new LogRateBucketInfo(currentTimeBucket, skipCount: 0, 0),
-                (key, prev) => GetUpdatedLimitInfo(prev, currentTimeBucket));
+                (key, prev) => GetUpdatedLimitInfo(prev, key.State));
 
             skipCount = newLogInfo.PreviousSkipCount;
             return newLogInfo.SkipCount == 0;
@@ -87,15 +93,18 @@ namespace Datadog.Trace.Logging
         {
             public readonly string FilePath;
             public readonly int LineNo;
+            public readonly int State;
 
-            public LogRateBucketKey(string filePath, int lineNo)
+            public LogRateBucketKey(string filePath, int lineNo, int state)
             {
                 FilePath = filePath;
                 LineNo = lineNo;
+                State = state;
             }
 
             public override bool Equals(object obj)
             {
+                // We ignore the state explicitly
                 return obj is LogRateBucketKey key &&
                        FilePath == key.FilePath &&
                        LineNo == key.LineNo;
@@ -103,6 +112,7 @@ namespace Datadog.Trace.Logging
 
             public override int GetHashCode()
             {
+                // We ignore the state explicitly
                 return HashCode.Combine(FilePath, LineNo);
             }
         }

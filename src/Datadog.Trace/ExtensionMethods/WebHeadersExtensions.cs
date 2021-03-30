@@ -16,7 +16,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="headers">The Web headers to wrap.</param>
         /// <returns>An object that implements <see cref="IHeadersCollection"/>.</returns>
-        public static IHeadersCollection Wrap(this WebHeaderCollection headers)
+        public static WebHeadersCollection Wrap(this WebHeaderCollection headers)
         {
             if (headers == null)
             {

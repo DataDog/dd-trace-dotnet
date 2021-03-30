@@ -276,7 +276,8 @@ namespace Datadog.Trace
             return default;
         }
 
-        private static string ParseString(IHeadersCollection headers, string headerName)
+        private static string ParseString<T>(T headers, string headerName)
+            where T : IHeadersCollection
         {
             var headerValues = headers.GetValues(headerName);
 
