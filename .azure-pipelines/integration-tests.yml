@@ -611,16 +611,16 @@ jobs:
   steps:
   - task: DownloadPipelineArtifact@2
     inputs:
-      patterns: '**/coverage.*.xml
+      patterns: '**/coverage.*.xml'
       path: $(Build.SourcesDirectory)/cover
 
   - task: reportgenerator@4
     inputs:
-      reports: $(Build.SourcesDirectory)/cover/coverage.*.xml
-      targetdir: $(Build.SourcesDirectory)/coveragereport
-      reporttypes: Cobertura
+      reports: '$(Build.SourcesDirectory)/cover/coverage.*.xml'
+      targetdir: '$(Build.SourcesDirectory)/coveragereport'
+      reporttypes: 'Cobertura'
 
   - task: PublishCodeCoverageResults@1
     inputs:
-      codeCoverageTool: Cobertura
-      summaryFileLocation: $(Build.SourcesDirectory)/coveragereport/coverage.*.xml
+      codeCoverageTool: 'Cobertura'
+      summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/coverage.*.xml'
