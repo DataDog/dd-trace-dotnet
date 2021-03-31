@@ -617,10 +617,10 @@ jobs:
   - task: reportgenerator@4
     inputs:
       reports: $(Build.SourcesDirectory)/cover/coverage.*.xml
-      targetdir: '$(Build.SourcesDirectory)/coveragereport'
-      reporttypes: 'Cobertura'
+      targetdir: $(Build.SourcesDirectory)/coveragereport
+      reporttypes: Cobertura
 
   - task: PublishCodeCoverageResults@1
     inputs:
-      codeCoverageTool: 'Cobertura'
-      summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/coverage.*.xml'
+      codeCoverageTool: Cobertura
+      summaryFileLocation: $(Build.SourcesDirectory)/coveragereport/coverage.*.xml
