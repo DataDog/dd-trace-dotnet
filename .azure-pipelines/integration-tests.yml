@@ -120,6 +120,7 @@ jobs:
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: 'cover/'
+    continueOnError: true
 
   - publish: build_data
     artifact: $(Agent.JobName)_profiler-logs-$(System.JobAttempt)
@@ -373,6 +374,7 @@ jobs:
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: 'cover/'
+    continueOnError: true
 
   - task: DockerCompose@0
     displayName: docker-compose stop services
