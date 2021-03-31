@@ -279,7 +279,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
                 else if (requestUri != null)
                 {
-                    var cleanUri = UriHelpers.GetCleanUriPath(requestUri);
+                    var cleanUri = UriHelpers.GetCleanUriPath(requestUri, useLegacyIdCleaning: !newResourceNamesEnabled);
                     resourceName = $"{method} {cleanUri.ToLowerInvariant()}";
                 }
                 else

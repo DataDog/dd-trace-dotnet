@@ -101,8 +101,9 @@ namespace Datadog.Trace.ClrProfiler
                     return null;
                 }
 
-                string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
-                string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
+                // TODO: opt-in to the newer ID cleaning algorithm. Likely needs to be behind a feature flag
+                string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true, useLegacyIdCleaning: true) : null;
+                string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false, useLegacyIdCleaning: true) : null;
 
                 tags = new HttpTags();
 

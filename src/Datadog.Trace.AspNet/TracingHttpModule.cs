@@ -168,7 +168,9 @@ namespace Datadog.Trace.AspNet
                     }
                     else
                     {
-                        string path = UriHelpers.GetCleanUriPath(app.Request.Url);
+                        var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
+
+                        string path = UriHelpers.GetCleanUriPath(app.Request.Url, useLegacyIdCleaning: !newResourceNamesEnabled);
                         scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                     }
 
