@@ -48,9 +48,9 @@ namespace Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer
             // Register a code action that will invoke the fix.
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: Resources.ThreadAbortCodeFixTitle,
+                    title: Resources.CodeFixTitle,
                     createChangedDocument: c => AddThrowStatement(context.Document, whileStatement, c),
-                    equivalenceKey: nameof(Resources.ThreadAbortCodeFixTitle)),
+                    equivalenceKey: nameof(ThreadAbortCodeFixProvider)),
                 diagnostic);
         }
 
