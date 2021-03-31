@@ -37,12 +37,13 @@ namespace Datadog.Trace
         /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="headers"/>.</param>
         /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
         /// <typeparam name="T">Type of header collection</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Inject<T>(SpanContext context, T headers)
             where T : IHeadersCollection
         {
-            if (context == null) { throw new ArgumentNullException(nameof(context)); }
+            if (context == null) { ThrowHelper.ArgumentNullException(nameof(context)); }
 
-            if (headers == null) { throw new ArgumentNullException(nameof(headers)); }
+            if (headers == null) { ThrowHelper.ArgumentNullException(nameof(headers)); }
 
             // lock sampling priority when span propagates.
             context.TraceContext?.LockSamplingPriority();
@@ -71,13 +72,14 @@ namespace Datadog.Trace
         /// <param name="carrier">The headers to add to.</param>
         /// <param name="setter">The action that can set a header in the carrier.</param>
         /// <typeparam name="T">Type of header collection</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Inject<T>(SpanContext context, T carrier, Action<T, string, string> setter)
         {
-            if (context == null) { throw new ArgumentNullException(nameof(context)); }
+            if (context == null) { ThrowHelper.ArgumentNullException(nameof(context)); }
 
-            if (carrier == null) { throw new ArgumentNullException(nameof(carrier)); }
+            if (carrier == null) { ThrowHelper.ArgumentNullException(nameof(carrier)); }
 
-            if (setter == null) { throw new ArgumentNullException(nameof(setter)); }
+            if (setter == null) { ThrowHelper.ArgumentNullException(nameof(setter)); }
 
             // lock sampling priority when span propagates.
             context.TraceContext?.LockSamplingPriority();
@@ -102,13 +104,11 @@ namespace Datadog.Trace
         /// <param name="headers">The headers that contain the values to be extracted.</param>
         /// <typeparam name="T">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SpanContext Extract<T>(T headers)
             where T : IHeadersCollection
         {
-            if (headers == null)
-            {
-                throw new ArgumentNullException(nameof(headers));
-            }
+            if (headers == null) { ThrowHelper.ArgumentNullException(nameof(headers)); }
 
             var traceId = ParseUInt64(headers, HttpHeaderNames.TraceId);
 
@@ -132,11 +132,12 @@ namespace Datadog.Trace
         /// <param name="getter">The function that can extract a list of values for a given header name.</param>
         /// <typeparam name="T">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SpanContext Extract<T>(T carrier, Func<T, string, IEnumerable<string>> getter)
         {
-            if (carrier == null) { throw new ArgumentNullException(nameof(carrier)); }
+            if (carrier == null) { ThrowHelper.ArgumentNullException(nameof(carrier)); }
 
-            if (getter == null) { throw new ArgumentNullException(nameof(getter)); }
+            if (getter == null) { ThrowHelper.ArgumentNullException(nameof(getter)); }
 
             var traceId = ParseUInt64(carrier, getter, HttpHeaderNames.TraceId);
 

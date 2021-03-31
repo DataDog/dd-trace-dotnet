@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Specialized;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -14,11 +15,12 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="collection">The name/value collection to wrap.</param>
         /// <returns>An object that implements <see cref="IHeadersCollection"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NameValueHeadersCollection Wrap(this NameValueCollection collection)
         {
             if (collection == null)
             {
-                throw new ArgumentNullException(nameof(collection));
+                ThrowHelper.ArgumentNullException(nameof(collection));
             }
 
             return new NameValueHeadersCollection(collection);

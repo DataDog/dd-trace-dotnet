@@ -2,6 +2,7 @@
 
 using System;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -16,11 +17,12 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="headers">The Web headers to wrap.</param>
         /// <returns>An object that implements <see cref="IHeadersCollection"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static WebHeadersCollection Wrap(this WebHeaderCollection headers)
         {
             if (headers == null)
             {
-                throw new ArgumentNullException(nameof(headers));
+                ThrowHelper.ArgumentNullException(nameof(headers));
             }
 
             return new WebHeadersCollection(headers);

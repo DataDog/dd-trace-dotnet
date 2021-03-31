@@ -40,7 +40,7 @@ namespace Datadog.Trace.Agent
                 if (!_locked)
                 {
                     // Sanity check - headers are written when the buffer is locked
-                    throw new InvalidOperationException("Data was extracted from the buffer without locking");
+                    ThrowHelper.InvalidOperationException("Data was extracted from the buffer without locking");
                 }
 
                 return new ArraySegment<byte>(_buffer, 0, _offset);

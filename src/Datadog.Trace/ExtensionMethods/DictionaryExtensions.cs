@@ -2,16 +2,18 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ExtensionMethods
 {
     internal static class DictionaryExtensions
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
         {
             if (dictionary == null)
             {
-                throw new ArgumentNullException(nameof(dictionary));
+                ThrowHelper.ArgumentNullException(nameof(dictionary));
             }
 
             return dictionary.TryGetValue(key, out var value)
@@ -19,11 +21,12 @@ namespace Datadog.Trace.ExtensionMethods
                        : default;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static TValue GetValueOrDefault<TValue>(this IDictionary dictionary, object key)
         {
             if (dictionary == null)
             {
-                throw new ArgumentNullException(nameof(dictionary));
+                ThrowHelper.ArgumentNullException(nameof(dictionary));
             }
 
             return dictionary.TryGetValue(key, out TValue value)
@@ -31,11 +34,12 @@ namespace Datadog.Trace.ExtensionMethods
                        : default;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryGetValue<TValue>(this IDictionary dictionary, object key, out TValue value)
         {
             if (dictionary == null)
             {
-                throw new ArgumentNullException(nameof(dictionary));
+                ThrowHelper.ArgumentNullException(nameof(dictionary));
             }
 
             object valueObj;
@@ -65,6 +69,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsEmpty<TKey, TValue>(this IDictionary<TKey, TValue> dictionary)
         {
             if (dictionary is ConcurrentDictionary<TKey, TValue> concurrentDictionary)

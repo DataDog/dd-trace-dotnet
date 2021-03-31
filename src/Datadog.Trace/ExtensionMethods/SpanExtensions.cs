@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -17,9 +18,10 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SetTraceSamplingPriority(this Span span, SamplingPriority samplingPriority)
         {
-            if (span == null) { throw new ArgumentNullException(nameof(span)); }
+            if (span == null) { ThrowHelper.ArgumentNullException(nameof(span)); }
 
             if (span.Context.TraceContext != null)
             {
@@ -32,6 +34,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="span">The span to add the tags to.</param>
         /// <param name="command">The db command to get tags values from.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void AddTagsFromDbCommand(this Span span, IDbCommand command)
         {
             span.ResourceName = command.CommandText;
@@ -45,6 +48,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void DecorateWebServerSpan(
             this Span span,
             string resourceName,
@@ -67,6 +71,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer)
         {
             string statusCodeString = ConvertStatusCodeToString(statusCode);
@@ -93,6 +98,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static string ConvertStatusCodeToString(int statusCode)
         {
             if (statusCode == 200)
