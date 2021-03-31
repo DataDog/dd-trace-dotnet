@@ -464,6 +464,7 @@ services:
     - RABBITMQ_HOST=rabbitmq
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
+    - TEST_COVERAGE=1
     depends_on:
     - servicestackredis
     - stackexchangeredis

@@ -10,8 +10,10 @@ mkdir -p /var/log/datadog/dotnet
 
 mkdir -p /var/log/datadog/cover
 
-dotnet tool install -g coverlet.console
-export PATH="$PATH:/root/.dotnet/tools"
+if [[ ! -z "$TEST_COVERAGE" ]]; then
+  dotnet tool install -g coverlet.console
+  export PATH="$PATH:/root/.dotnet/tools" 
+fi
 
 #https://docs.microsoft.com/en-us/dotnet/core/diagnostics/dumps#collecting-dumps-on-crash
 export COMPlus_DbgEnableMiniDump=1

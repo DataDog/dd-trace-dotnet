@@ -358,6 +358,8 @@ jobs:
         test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
         test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
       arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform)
+    env:
+      TEST_COVERAGE: 1
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -365,6 +367,8 @@ jobs:
       command: test
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
+    env:
+      TEST_COVERAGE: 1
 
   - task: PublishPipelineArtifact@1
     inputs:

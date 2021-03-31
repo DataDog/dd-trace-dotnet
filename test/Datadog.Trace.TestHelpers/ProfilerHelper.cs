@@ -29,6 +29,14 @@ namespace Datadog.Trace.TestHelpers
                 throw new ArgumentNullException(nameof(integrationPaths));
             }
 
+            if (useCodeCoverage)
+            {
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TEST_COVERAGE")))
+                {
+                    useCodeCoverage = false;
+                }
+            }
+
             // clear all relevant environment variables to start with a clean slate
             EnvironmentHelper.ClearProfilerEnvironmentVariables();
 
