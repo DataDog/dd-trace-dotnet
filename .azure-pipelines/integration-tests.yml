@@ -116,10 +116,10 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
 
-  - task: PublishCodeCoverageResults@1
+
+  - task: PublishPipelineArtifact@1
     inputs:
-      codeCoverageTool: 'Cobertura'
-      summaryFileLocation: 'cover/coverage.*.xml'
+      targetPath: 'cover/'
 
   - publish: build_data
     artifact: $(Agent.JobName)_profiler-logs-$(System.JobAttempt)
@@ -366,10 +366,9 @@ jobs:
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
 
-  - task: PublishCodeCoverageResults@1
+  - task: PublishPipelineArtifact@1
     inputs:
-      codeCoverageTool: 'Cobertura'
-      summaryFileLocation: '**/coverage.*.xml'
+      targetPath: 'cover/'
 
   - task: DockerCompose@0
     displayName: docker-compose stop services
@@ -599,3 +598,29 @@ jobs:
       testResultsFormat: VSTest
       testResultsFiles: test/**/*.trx
     condition: succeededOrFailed()
+    
+- job: Code_coverage
+  dependsOn:
+  - Windows
+  - Linux
+  condition: succeeded()
+  
+  pool:
+    vmImage: windows-2019
+    
+  steps:
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      patterns: '**/coverage.*.xml
+      path: $(Build.SourcesDirectory)/cover
+
+  - task: reportgenerator@4
+    inputs:
+      reports: '$(Build.SourcesDirectory)/cover/coverage.*.xml'
+      targetdir: '$(Build.SourcesDirectory)/coveragereport'
+      reporttypes: 'Cobertura'
+
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: 'Cobertura'
+      summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/coverage.*.xml'
