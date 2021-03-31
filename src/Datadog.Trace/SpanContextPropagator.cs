@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -152,6 +153,7 @@ namespace Datadog.Trace
             return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap)
             where T : IHeadersCollection
         {
@@ -166,6 +168,7 @@ namespace Datadog.Trace
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong ParseUInt64<T>(T headers, string headerName)
             where T : IHeadersCollection
         {
@@ -173,14 +176,30 @@ namespace Datadog.Trace
 
             bool hasValue = false;
 
-            foreach (string headerValue in headerValues)
+            if (headerValues is string[] headerValuesArray)
             {
-                if (ulong.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
+                for (var i = 0; i < headerValuesArray.Length; i++)
                 {
-                    return result;
-                }
+                    var headerValue = headerValuesArray[i];
+                    if (ulong.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
+                    {
+                        return result;
+                    }
 
-                hasValue = true;
+                    hasValue = true;
+                }
+            }
+            else
+            {
+                foreach (string headerValue in headerValues)
+                {
+                    if (ulong.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
+                    {
+                        return result;
+                    }
+
+                    hasValue = true;
+                }
             }
 
             if (hasValue)
@@ -191,6 +210,7 @@ namespace Datadog.Trace
             return 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong ParseUInt64<T>(T carrier, Func<T, string, IEnumerable<string>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
@@ -215,6 +235,7 @@ namespace Datadog.Trace
             return 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static SamplingPriority? ParseSamplingPriority<T>(T headers, string headerName)
             where T : IHeadersCollection
         {
@@ -246,6 +267,7 @@ namespace Datadog.Trace
             return default;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static SamplingPriority? ParseSamplingPriority<T>(T carrier, Func<T, string, IEnumerable<string>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
@@ -276,10 +298,25 @@ namespace Datadog.Trace
             return default;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static string ParseString<T>(T headers, string headerName)
             where T : IHeadersCollection
         {
             var headerValues = headers.GetValues(headerName);
+
+            if (headerValues is string[] headerValuesArray)
+            {
+                for (var i = 0; i < headerValuesArray.Length; i++)
+                {
+                    var headerValue = headerValuesArray[i];
+                    if (!string.IsNullOrEmpty(headerValue))
+                    {
+                        return headerValue;
+                    }
+                }
+
+                return null;
+            }
 
             foreach (string headerValue in headerValues)
             {
@@ -292,6 +329,7 @@ namespace Datadog.Trace
             return null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static string ParseString<T>(T carrier, Func<T, string, IEnumerable<string>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
