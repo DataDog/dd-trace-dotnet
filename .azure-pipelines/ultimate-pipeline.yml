@@ -48,33 +48,17 @@ stages:
         packageType: sdk
         version: $(dotnetCoreSdk5Version)
 
-    - task: MSBuild@1
-      displayName: Build all managed projects
-      inputs:
-        solution: Datadog.Trace.proj
-        configuration: $(buildConfiguration)
-        msbuildArguments: /t:BuildCsharp
-        maximumCpuCount: true
+    - script: build.cmd CreateRequiredDirectories --skip
+      displayName: Create required directories
 
-    - task: MSBuild@1
-      displayName: Publish managed profiler to tracer home for Windows and Linux builds
-      inputs:
-        solution: Datadog.Trace.proj
-        configuration: $(buildConfiguration)
-        msbuildArguments: /t:PublishManagedProfilerOnDisk
-        maximumCpuCount: true
+    - script: build.cmd RestoreNuGet --skip
+      displayName: NuGet Restore 
 
-    - task: DotNetCoreCLI@2
-      displayName: Create NuGet packages
-      inputs:
-        command: pack
-        nobuild: true
-        packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
-        packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
+    - script: build.cmd CompileManagedSrc --skip
+      displayName: Compile Managed src 
 
-    - publish: $(System.DefaultWorkingDirectory)/nuget-output
-      displayName: Upload NuGet packages
-      artifact: nuget-packages
+    - script: build.cmd PublishManagedProfiler --skip
+      displayName: Publish Managed Profiler 
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
@@ -100,34 +84,20 @@ stages:
         packageType: sdk
         version: $(dotnetCoreSdk5Version)
 
-    # This is only here because the msi build later causes a restore error...not sure why
-    - task: DotNetCoreCLI@2
-      displayName: dotnet restore
-      inputs:
-        command: restore
-        projects: src/**/*.csproj
+    - script: build.cmd CompileNativeSrcWindows --skip
+      displayName: Compile native src 
 
-    - task: NuGetToolInstaller@1
-      displayName: install nuget
+    - script: build.cmd PublishNativeProfilerWindows --skip
+      displayName: Publish native profilter 
 
-    - task: NuGetCommand@2
-      displayName: nuget restore
-      inputs:
-        restoreSolution: Datadog.Trace.Native.sln
-        verbosityRestore: Normal
+    - script: build.cmd CopyIntegrationsJson --skip
+      displayName: Copy integrations.json 
 
-    # this triggers a dependency chain that builds all the managed, x64, and x86 dlls, and the zip and msi files
-    # Outputs include:
-    # - Windows Datadog.Trace.ClrProfiler.Native.dll (x86 and x64)
-    # - Windows MSI (x86 and x64)
-    # - Windows tracer home directory
-    - task: MSBuild@1
-      displayName: build both msi
-      inputs:
-        solution: Datadog.Trace.proj
-        configuration: $(buildConfiguration)
-        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;RunWixToolsOutOfProc=true /p:TracerHomeDirectory=$(tracerHome)
-        maximumCpuCount: true
+    - script: build.cmd ZipTracerHome --skip
+      displayName: Zip tracer home directory 
+
+    - script: build.cmd BuildMsi --skip
+      displayName: Build the msi 
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload repo after windows build
