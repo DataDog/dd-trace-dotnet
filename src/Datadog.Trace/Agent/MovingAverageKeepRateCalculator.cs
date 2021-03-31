@@ -131,6 +131,10 @@ namespace Datadog.Trace.Agent
 
         private async Task UpdateBucketTaskLoopAsync()
         {
+#if !NET5_0_OR_GREATER
+            var tasks = new Task[2];
+            tasks[0] = _processExit.Task;
+#endif
             while (true)
             {
                 if (_processExit.Task.IsCompleted)
@@ -140,10 +144,16 @@ namespace Datadog.Trace.Agent
 
                 UpdateBucket();
 
+#if NET5_0_OR_GREATER
+                // .NET 5.0 has an explicit overload for this
                 await Task.WhenAny(
                                Task.Delay(_bucketDuration),
                                _processExit.Task)
                           .ConfigureAwait(false);
+#else
+                tasks[1] = Task.Delay(_bucketDuration);
+                await Task.WhenAny(tasks).ConfigureAwait(false);
+#endif
             }
         }
 
