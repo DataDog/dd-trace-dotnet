@@ -16,7 +16,7 @@
 
 namespace shared {
     
-    Loader* loader = nullptr;
+    Loader* Loader::s_singeltonInstance = nullptr;
 
 #ifdef _WIN32
     const WSTRING native_profiler_file_win64                    = WStr("Datadog.AutoInstrumentation.Profiler.Native.x64.dll");
@@ -82,36 +82,81 @@ namespace shared {
             WStr("System.Web.ApplicationServices"),
     };
 
-    Loader::Loader(
+    void Loader::CreateNewSingeltonInstance(ICorProfilerInfo4* pCorProfilerInfo,
+                                            std::function<void(const std::string& str)> logDebugCallback,
+                                            std::function<void(const std::string& str)> logInfoCallback,
+                                            std::function<void(const std::string& str)> logWarnCallback,
+                                            const LoaderResourceMonikerIDs& resourceMonikerIDs)
+    {
+        Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo, logDebugCallback, logInfoCallback, logWarnCallback, resourceMonikerIDs);
+
+        Loader::DeleteSingeltonInstance();
+        Loader::s_singeltonInstance = newSingeltonInstance;
+    }
+
+    Loader* Loader::GetSingeltonInstance()
+    {
+        Loader* singeltonInstance = Loader::s_singeltonInstance;
+        if (singeltonInstance != nullptr)
+        {
+            return singeltonInstance;
+        }
+
+        throw std::logic_error("No singelton instance of Loader has been created, or it has already been deleted.");
+    }
+
+    void Loader::DeleteSingeltonInstance(void)
+    {
+        Loader* singeltonInstance = Loader::s_singeltonInstance;
+        if (singeltonInstance != nullptr)
+        {
+            Loader::s_singeltonInstance = nullptr;
+            delete singeltonInstance;
+        }
+    }
+
+    Loader* Loader::CreateNewLoaderInstance(
         ICorProfilerInfo4* info,
-        WSTRING* assembly_string_default_appdomain_array,
-        ULONG assembly_string_default_appdomain_array_length,
-        WSTRING* assembly_string_nondefault_appdomain_array,
-        ULONG assembly_string_nondefault_appdomain_array_length,
         std::function<void(const std::string& str)> log_debug_callback,
         std::function<void(const std::string& str)> log_info_callback,
         std::function<void(const std::string& str)> log_warn_callback,
         const LoaderResourceMonikerIDs& resourceMonikerIDs) {
 
-        resourceMonikerIDs_ = LoaderResourceMonikerIDs(resourceMonikerIDs);
-        info_ = info;
-        if (assembly_string_default_appdomain_array != nullptr &&
-            assembly_string_default_appdomain_array_length > 0) {
-            assembly_string_default_appdomain_vector_.assign(
-                assembly_string_default_appdomain_array,
-                assembly_string_default_appdomain_array + assembly_string_default_appdomain_array_length);
+        std::vector<WSTRING> assembly_string_default_appdomain_vector;
+        std::vector<WSTRING> assembly_string_nondefault_appdomain_vector;
+
+        WSTRING process_name = GetCurrentProcessName();
+        const bool is_iis = process_name == WStr("w3wp.exe") ||
+            process_name == WStr("iisexpress.exe");
+
+        if (is_iis) {
+
+            assembly_string_default_appdomain_vector = {
+                WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
+            };
+            assembly_string_nondefault_appdomain_vector = {
+                WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
+            };
+
         }
-        if (assembly_string_nondefault_appdomain_array != nullptr &&
-            assembly_string_nondefault_appdomain_array_length > 0) {
-            assembly_string_nondefault_appdomain_vector_.assign(
-                assembly_string_nondefault_appdomain_array,
-                assembly_string_nondefault_appdomain_array + assembly_string_nondefault_appdomain_array_length);
+        else {
+
+            assembly_string_default_appdomain_vector = {
+                WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
+            };
+            assembly_string_nondefault_appdomain_vector = {
+                WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
+            };
+
         }
-        log_debug_callback_ = log_debug_callback;
-        log_info_callback_ = log_info_callback;
-        log_warn_callback_ = log_warn_callback;
-        runtime_information_ = GetRuntimeInformation();
-        loader = this;
+
+        return new Loader(info,
+            assembly_string_default_appdomain_vector,
+            assembly_string_nondefault_appdomain_vector,
+            log_debug_callback,
+            log_info_callback,
+            log_warn_callback,
+            resourceMonikerIDs);
     }
 
     Loader::Loader(
@@ -131,7 +176,6 @@ namespace shared {
         log_info_callback_ = log_info_callback;
         log_warn_callback_ = log_warn_callback;
         runtime_information_ = GetRuntimeInformation();
-        loader = this;
     }
 
     HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
