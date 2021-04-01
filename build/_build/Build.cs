@@ -566,9 +566,9 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             var directories = RootDirectory.GlobDirectories(
-                $"**/src/**/bin/{Configuration}",
-                $"**/test/Datadog.Trace.TestHelpers/**/bin/{Configuration}",
-                $"**/test/test-applications/integrations/dependency-libs/**/bin/{Configuration}"
+                $"**/bin/bin/src/**/{Configuration}",
+                $"**/bin/bin/test/Datadog.Trace.TestHelpers/**/{Configuration}",
+                $"**/bin/bin/test/test-applications/integrations/dependency-libs/**/{Configuration}"
             );
             directories.ForEach(source =>
             {
