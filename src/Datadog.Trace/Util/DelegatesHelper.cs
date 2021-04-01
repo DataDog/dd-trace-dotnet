@@ -17,7 +17,7 @@ namespace Datadog.Trace.Util
         {
             // This methods tries to get the internal delegte for the process exit event.
 
-#if NETCOREAPP || NET5_0_OR_GREATER
+#if NETSTANDARD2_0 || NETCOREAPP || NETCOREAPP3_1_OR_GREATER
             // code for netcoreapp2.1, netcoreapp3.1, net5.0
             var appContextProcessExit = typeof(AppContext).GetField("ProcessExit", BindingFlags.NonPublic | BindingFlags.Static);
             if (appContextProcessExit != null)
