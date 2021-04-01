@@ -19,4 +19,5 @@ wait-for-it mongo:27017 -- \
 wait-for-it postgres:5432 -- \
 dotnet vstest test/Datadog.Trace.ClrProfiler.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/publish/Datadog.Trace.ClrProfiler.IntegrationTests.dll --logger:trx --ResultsDirectory:test/Datadog.Trace.ClrProfiler.IntegrationTests/results
 
-cp /var/log/datadog/dotnet/dotnet-tracer-native*.log /project/
+mkdir /project/logs
+cp /var/log/datadog/dotnet/dotnet-tracer-native*.log /project/logs
