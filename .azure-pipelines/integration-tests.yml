@@ -622,8 +622,8 @@ jobs:
 
   - task: reportgenerator@4
     inputs:
-      reports: '$(Build.SourcesDirectory)/cover/coverage.*.xml'
-      targetdir: '$(Build.SourcesDirectory)/coveragereport'
+      reports: '$(Build.SourcesDirectory)\cover\coverage.*.xml'
+      targetdir: '$(Build.SourcesDirectory)\coveragereport'
       reporttypes: 'Cobertura'
 
   - task: PublishCodeCoverageResults@1
