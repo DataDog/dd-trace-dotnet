@@ -224,7 +224,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
-                if (request != null)
+                if (request != null && tracer.ActiveScope == null)
                 {
                     try
                     {
@@ -232,7 +232,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         var headers = request.Headers;
                         var headersCollection = new HttpHeadersCollection(headers);
 
-                        propagatedContext = tracer.ActiveScope == null ? SpanContextPropagator.Instance.Extract(headersCollection) : null;
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
                         tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headersCollection, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                     catch (Exception ex)
