@@ -114,7 +114,7 @@ namespace Datadog.Trace
             var path = metadata.ProcessPath;
             Log.Debug("Starting keep alive for {Process}.", path);
 
-            return Task.Factory.StartNew(state => InternalStartProcessWithKeepAlive(state), metadata);
+            return Task.Factory.StartNew(state => InternalStartProcessWithKeepAlive(state), metadata).Unwrap();
 
             static async Task InternalStartProcessWithKeepAlive(object state)
             {
