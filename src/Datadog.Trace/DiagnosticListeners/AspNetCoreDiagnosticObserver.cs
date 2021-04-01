@@ -498,7 +498,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 httpContext.Features.Set(new RequestTrackingFeature
                 {
                     HttpMethod = httpMethod,
-                    Url = url,
+                    OriginalUrl = url,
                 });
 
                 string absolutePath = request.Path.Value;
@@ -562,7 +562,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     trackingFeature.IsFirstPipelineExecution = false;
                     var url = GetUrl(httpContext.Request);
-                    if (!string.Equals(url, trackingFeature.Url))
+                    if (!string.Equals(url, trackingFeature.OriginalUrl))
                     {
                         // URL has changed from original, so treat this execution as a "subsequent" request
                         // Typically occurs for 404s for example
@@ -681,7 +681,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     trackingFeature.IsFirstPipelineExecution = false;
 
                     var url = GetUrl(httpContext.Request);
-                    if (!string.Equals(url, trackingFeature.Url))
+                    if (!string.Equals(url, trackingFeature.OriginalUrl))
                     {
                         // URL has changed from original, so treat this execution as a "subsequent" request
                         // Typically occurs for 404s for example
@@ -982,7 +982,7 @@ namespace Datadog.Trace.DiagnosticListeners
             /// <summary>
             /// Gets or Sets the original URL received by the pipeline
             /// </summary>
-            public string Url { get; set; }
+            public string OriginalUrl { get; set; }
         }
     }
 }
