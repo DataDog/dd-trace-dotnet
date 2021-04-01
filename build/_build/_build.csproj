@@ -17,4 +17,10 @@
     <PackageReference Include="Nuke.Common" Version="5.0.2" />
     <PackageReference Include="Colorful.Console" Version="1.2.15" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\.azure-pipelines\ultimate-pipeline.yml">
+      <Link>ci\ultimate-pipeline.yml</Link>
+    </Content>
+  </ItemGroup>
 </Project>
