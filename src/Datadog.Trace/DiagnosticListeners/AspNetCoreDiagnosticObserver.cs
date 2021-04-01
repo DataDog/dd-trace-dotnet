@@ -692,6 +692,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
                 //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
 
+                if (EndpointFeatureType is null)
+                {
+                    return;
+                }
+
                 var rawEndpointFeature = httpContext.Features[EndpointFeatureType];
                 if (rawEndpointFeature is null)
                 {
