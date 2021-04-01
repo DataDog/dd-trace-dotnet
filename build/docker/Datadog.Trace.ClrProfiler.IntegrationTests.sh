@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euxo pipefail
+set -exo pipefail
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"/../../
 
@@ -10,7 +10,7 @@ mkdir -p /var/log/datadog/dotnet
 
 mkdir -p /var/log/datadog/cover
 
-if [[ ! -v "$TEST_COVERAGE" ]] And [[ ! -z "$TEST_COVERAGE" ]]
+if [[ ! -z "$TEST_COVERAGE" ]]
 then
   dotnet tool install -g coverlet.console
   export PATH="$PATH:/root/.dotnet/tools" 
