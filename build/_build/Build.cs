@@ -205,9 +205,21 @@ partial class Build : NukeBuild
             Make.Value();
         });
 
+    Target CompileNativeSrcMacOs => _ => _
+        .Unlisted()
+        .DependsOn(CompileManagedSrc)
+        .OnlyWhenStatic(() => IsOsx)
+        .Executes(() =>
+        {
+            var nativeProjectDirectory = Solution.GetProject(NativeProfilerProject).Directory;
+            CMake.Value(arguments: ".", workingDirectory: nativeProjectDirectory);
+            Make.Value(workingDirectory: nativeProjectDirectory);
+        });
+
     Target CompileNativeSrc => _ => _
         .Description("Compiles the native loader")
         .DependsOn(CompileNativeSrcWindows)
+        .DependsOn(CompileNativeSrcMacOs)
         .DependsOn(CompileNativeSrcLinux);
 
 
@@ -293,7 +305,22 @@ partial class Build : NukeBuild
                 CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
             }
         });
-    
+
+    Target PublishNativeProfilerMacOs => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsOsx)
+        .DependsOn(CompileNativeSrcMacOs)
+        .Executes(() =>
+        {
+            GlobFiles(NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.*")
+                .ForEach(source =>
+                {
+                    var dest = TracerHomeDirectory / $"macos";
+                    CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
+
+                });
+        });
+
     Target CopyIntegrationsJson => _ => _
         .After(Clean)
         .DependsOn(CreateRequiredDirectories)
@@ -430,6 +457,7 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedProfiler)
         .DependsOn(PublishNativeProfilerWindows)
         .DependsOn(PublishNativeProfilerLinux)
+        .DependsOn(PublishNativeProfilerMacOs)
         .DependsOn(CopyIntegrationsJson);
     
     Target ZipTracerHome => _ => _
