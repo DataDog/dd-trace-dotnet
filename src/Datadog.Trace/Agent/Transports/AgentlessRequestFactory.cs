@@ -7,7 +7,7 @@ namespace Datadog.Trace.Agent.Transports
     {
         public AgentlessRequestFactory()
         {
-            Task.Factory.StartNew(AgentlessInterop.Init, TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(AgentlessInterop.InitializeTraceAgent, TaskCreationOptions.LongRunning);
         }
 
         public string Info(Uri endpoint) => endpoint.ToString();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -37,7 +38,7 @@ namespace Datadog.Trace
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
         {
-            TraceAgentMetadata,
+            // TraceAgentMetadata,
             DogStatsDMetadata
         };
 
@@ -55,6 +56,8 @@ namespace Datadog.Trace
         {
             try
             {
+                AgentlessInterop.LoadAgentless();
+
                 if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                 {
                     return;
