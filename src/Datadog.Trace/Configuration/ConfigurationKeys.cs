@@ -303,6 +303,18 @@ namespace Datadog.Trace.Configuration
         public const string HttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
 
         /// <summary>
+        /// Configuration key to enable sending partial traces to the agent
+        /// </summary>
+        /// <seealso cref="TracerSettings.PartialFlushEnabled"/>
+        public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
+
+        /// <summary>
+        /// Configuration key to set the minimum number of closed spans in a trace before it's partially flushed
+        /// </summary>
+        /// <seealso cref="TracerSettings.PartialFlushMinSpans"/>
+        public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations

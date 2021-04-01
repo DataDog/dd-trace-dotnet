@@ -78,13 +78,14 @@ namespace Datadog.Trace
                     }
                 }
 
-                _spans.Add(span);
                 _openSpans++;
             }
         }
 
         public void CloseSpan(Span span)
         {
+            bool ShouldTriggerPartialFlush() => Tracer.Settings.PartialFlushEnabled && _spans.Count >= Tracer.Settings.PartialFlushMinSpans;
+
             if (span == RootSpan)
             {
                 // lock sampling priority and set metric when root span finishes
@@ -104,9 +105,10 @@ namespace Datadog.Trace
 
             lock (_spans)
             {
+                _spans.Add(span);
                 _openSpans--;
 
-                if (_openSpans == 0)
+                if (_openSpans == 0 || ShouldTriggerPartialFlush())
                 {
                     spansToWrite = _spans.ToArray();
                     _spans.Clear();
