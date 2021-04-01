@@ -18,6 +18,7 @@ variables:
   buildConfiguration: Release
   dotnetCoreSdk5Version: 5.0.201
   tracerHome: $(System.DefaultWorkingDirectory)/src/bin/tracer-home
+  artifacts: $(System.DefaultWorkingDirectory)/src/bin/artifacts
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   DD_DOTNET_TRACER_MSBUILD:
@@ -68,8 +69,6 @@ stages:
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
     pool:
       vmImage: windows-2019
-    variables:
-      msiHome: $(System.DefaultWorkingDirectory)/src/WindowsInstaller/bin/$(buildConfiguration)
     steps:
     - checkout: none
 
@@ -103,11 +102,11 @@ stages:
       displayName: Upload repo after windows build
       artifact: build-repo-managed-native-windows
 
-    - publish: $(msiHome)/x86/en-us
+    - publish: $(artifacts)/x86/en-us
       displayName: Upload Windows x86 MSI
       artifact: windows-msi-x86
 
-    - publish: $(msiHome)/x64/en-us
+    - publish: $(artifacts)/x64/en-us
       displayName: Upload Windows x64 MSI
       artifact: windows-msi-x64
 
@@ -115,7 +114,7 @@ stages:
       displayName: Upload Windows tracer home directory
       artifact: build-windows-tracer-home
 
-    - publish: $(tracerHome).zip
+    - publish: $(artifacts)/tracer-home.zip
       displayName: Upload Windows tracer home zip
       artifact: windows-tracer-home
 
