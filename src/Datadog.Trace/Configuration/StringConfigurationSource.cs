@@ -28,7 +28,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
         /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
-        internal static IDictionary<string, string> ParseCustomKeyValues(string data, bool allowOptionalMappings = false)
+        public static IDictionary<string, string> ParseCustomKeyValues(string data, bool allowOptionalMappings = false)
         {
             var dictionary = new ConcurrentDictionary<string, string>();
 
