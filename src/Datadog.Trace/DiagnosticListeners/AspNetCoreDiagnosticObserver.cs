@@ -748,7 +748,6 @@ namespace Datadog.Trace.DiagnosticListeners
                                       ? raw as string
                                       : null;
 
-                // If we don't have a route, don't overwrite the existing resource name
                 var resourcePathName = SimplifyRoutePattern(
                     routePattern,
                     routeValues,
@@ -762,6 +761,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // But instead we re-extract them in the MVC endpoint as these are MVC
                 // constructs. this is likely marginally less efficient, but simplifies the
                 // already complex logic in the MVC handler
+                // Overwrite the route in the parent span
                 trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
@@ -884,6 +884,10 @@ namespace Datadog.Trace.DiagnosticListeners
             public HttpContext HttpContext;
         }
 
+        /// <summary>
+        /// Proxy for ducktyping IEndpointFeature when the interface is not implemented explictly
+        /// </summary>
+        /// <seealso cref="IEndpointFeature"/>
         [DuckCopy]
         public struct EndpointFeatureStruct
         {
@@ -898,18 +902,28 @@ namespace Datadog.Trace.DiagnosticListeners
             public PathString PathBase;
         }
 
+        /// <summary>
+        /// Proxy for https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternPathSegment.cs
+        /// </summary>
         [DuckCopy]
         public struct RoutePatternPathSegmentStruct
         {
             public IEnumerable Parts;
         }
 
+        /// <summary>
+        /// Proxy for https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternLiteralPart.cs
+        /// and https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternSeparatorPart.cs
+        /// </summary>
         [DuckCopy]
         public struct RoutePatternContentPartStruct
         {
             public string Content;
         }
 
+        /// <summary>
+        /// Proxy for https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternParameterPart.cs
+        /// </summary>
         [DuckCopy]
         public struct RoutePatternParameterPartStruct
         {

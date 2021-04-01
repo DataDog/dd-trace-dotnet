@@ -3,7 +3,9 @@
 namespace Datadog.Trace.DiagnosticListeners
 {
     /// <summary>
-    /// IEndpointFeature for ducktyping HttpContext
+    /// Proxy for ducktyping IEndpointFeature when the interface is implemented
+    /// explicitly, e.g. by https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Servers/Kestrel/Core/src/Internal/Http/HttpProtocol.FeatureCollection.cs
+    /// Also see AspNetCoreDiagnosticObserver.EndpointFeaturesTruct
     /// </summary>
     public interface IEndpointFeature
     {
