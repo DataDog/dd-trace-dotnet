@@ -525,6 +525,126 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
+        private void OnRoutingEndpointMatched(object arg)
+        {
+            var tracer = _tracer ?? Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+                !tracer.Settings.RouteTemplateResourceNamesEnabled)
+            {
+                return;
+            }
+
+            Span span = tracer.ActiveScope?.Span;
+
+            if (span != null)
+            {
+                var tags = span.Tags as AspNetCoreTags;
+                if (tags is null || !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
+                {
+                    // Shouldn't happen in normal execution
+                    return;
+                }
+
+                HttpContext httpContext = typedArg.HttpContext;
+                var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
+                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
+                if (isFirstExecution)
+                {
+                    trackingFeature.IsUsingEndpointRouting = true;
+                    trackingFeature.IsFirstPipelineExecution = false;
+
+                    var url = GetUrl(httpContext.Request);
+                    if (!string.Equals(url, trackingFeature.OriginalUrl))
+                    {
+                        // URL has changed from original, so treat this execution as a "subsequent" request
+                        // Typically occurs for 404s for example
+                        isFirstExecution = false;
+                    }
+                }
+
+                // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
+                //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
+
+                if (EndpointFeatureType is null)
+                {
+                    return;
+                }
+
+                var rawEndpointFeature = httpContext.Features[EndpointFeatureType];
+                if (rawEndpointFeature is null)
+                {
+                    return;
+                }
+
+                RouteEndpoint? endpoint = null;
+
+                if (rawEndpointFeature.TryDuckCast<IEndpointFeature>(out var endpointFeatureInterface))
+                {
+                    endpoint = endpointFeatureInterface.GetEndpoint();
+                }
+
+                if (endpoint is null && rawEndpointFeature.TryDuckCast<EndpointFeatureStruct>(out var endpointFeatureStruct))
+                {
+                    endpoint = endpointFeatureStruct.Endpoint;
+                }
+
+                if (endpoint is null)
+                {
+                    // Unable to cast to either type
+                    return;
+                }
+
+                if (isFirstExecution)
+                {
+                    tags.AspNetCoreEndpoint = endpoint.Value.DisplayName;
+                }
+
+                var routePattern = endpoint.Value.RoutePattern;
+
+                // Have to pass this value through to the MVC span, as not available there
+                var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
+                trackingFeature.Route = normalizedRoute;
+
+                var request = httpContext.Request.DuckCast<HttpRequestStruct>();
+                RouteValueDictionary routeValues = request.RouteValues;
+
+                // No need to ToLowerInvariant() these strings, as we lower case
+                // the whole route later
+                object raw;
+                string controllerName = routeValues.TryGetValue("controller", out raw)
+                                        ? raw as string
+                                        : null;
+                string actionName = routeValues.TryGetValue("action", out raw)
+                                        ? raw as string
+                                        : null;
+                string areaName = routeValues.TryGetValue("area", out raw)
+                                      ? raw as string
+                                      : null;
+
+                var resourcePathName = SimplifyRoutePattern(
+                    routePattern,
+                    routeValues,
+                    areaName: areaName,
+                    controllerName: controllerName,
+                    actionName: actionName);
+
+                var resourceName = $"{trackingFeature.HttpMethod} {request.PathBase}{resourcePathName}";
+
+                // NOTE: We could set the controller/action/area tags on the parent span
+                // But instead we re-extract them in the MVC endpoint as these are MVC
+                // constructs. this is likely marginally less efficient, but simplifies the
+                // already complex logic in the MVC handler
+                // Overwrite the route in the parent span
+                trackingFeature.ResourceName = resourceName;
+                if (isFirstExecution)
+                {
+                    span.ResourceName = resourceName;
+                    tags.AspNetCoreRoute = normalizedRoute;
+                }
+            }
+        }
+
         private void OnMvcBeforeAction(object arg)
         {
             var tracer = _tracer ?? Tracer.Instance;
@@ -647,126 +767,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
 
                     parentSpan.ResourceName = span.ResourceName;
-                }
-            }
-        }
-
-        private void OnRoutingEndpointMatched(object arg)
-        {
-            var tracer = _tracer ?? Tracer.Instance;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
-                !tracer.Settings.RouteTemplateResourceNamesEnabled)
-            {
-                return;
-            }
-
-            Span span = tracer.ActiveScope?.Span;
-
-            if (span != null)
-            {
-                var tags = span.Tags as AspNetCoreTags;
-                if (tags is null || !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
-                {
-                    // Shouldn't happen in normal execution
-                    return;
-                }
-
-                HttpContext httpContext = typedArg.HttpContext;
-                var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
-                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
-                if (isFirstExecution)
-                {
-                    trackingFeature.IsUsingEndpointRouting = true;
-                    trackingFeature.IsFirstPipelineExecution = false;
-
-                    var url = GetUrl(httpContext.Request);
-                    if (!string.Equals(url, trackingFeature.OriginalUrl))
-                    {
-                        // URL has changed from original, so treat this execution as a "subsequent" request
-                        // Typically occurs for 404s for example
-                        isFirstExecution = false;
-                    }
-                }
-
-                // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
-                //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
-
-                if (EndpointFeatureType is null)
-                {
-                    return;
-                }
-
-                var rawEndpointFeature = httpContext.Features[EndpointFeatureType];
-                if (rawEndpointFeature is null)
-                {
-                    return;
-                }
-
-                RouteEndpoint? endpoint = null;
-
-                if (rawEndpointFeature.TryDuckCast<IEndpointFeature>(out var endpointFeatureInterface))
-                {
-                    endpoint = endpointFeatureInterface.GetEndpoint();
-                }
-
-                if (endpoint is null && rawEndpointFeature.TryDuckCast<EndpointFeatureStruct>(out var endpointFeatureStruct))
-                {
-                    endpoint = endpointFeatureStruct.Endpoint;
-                }
-
-                if (endpoint is null)
-                {
-                    // Unable to cast to either type
-                    return;
-                }
-
-                if (isFirstExecution)
-                {
-                    tags.AspNetCoreEndpoint = endpoint.Value.DisplayName;
-                }
-
-                var routePattern = endpoint.Value.RoutePattern;
-
-                // Have to pass this value through to the MVC span, as not available there
-                var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
-                trackingFeature.Route = normalizedRoute;
-
-                var request = httpContext.Request.DuckCast<HttpRequestStruct>();
-                RouteValueDictionary routeValues = request.RouteValues;
-
-                // No need to ToLowerInvariant() these strings, as we lower case
-                // the whole route later
-                object raw;
-                string controllerName = routeValues.TryGetValue("controller", out raw)
-                                        ? raw as string
-                                        : null;
-                string actionName = routeValues.TryGetValue("action", out raw)
-                                        ? raw as string
-                                        : null;
-                string areaName = routeValues.TryGetValue("area", out raw)
-                                      ? raw as string
-                                      : null;
-
-                var resourcePathName = SimplifyRoutePattern(
-                    routePattern,
-                    routeValues,
-                    areaName: areaName,
-                    controllerName: controllerName,
-                    actionName: actionName);
-
-                var resourceName = $"{trackingFeature.HttpMethod} {request.PathBase}{resourcePathName}";
-
-                // NOTE: We could set the controller/action/area tags on the parent span
-                // But instead we re-extract them in the MVC endpoint as these are MVC
-                // constructs. this is likely marginally less efficient, but simplifies the
-                // already complex logic in the MVC handler
-                // Overwrite the route in the parent span
-                trackingFeature.ResourceName = resourceName;
-                if (isFirstExecution)
-                {
-                    span.ResourceName = resourceName;
-                    tags.AspNetCoreRoute = normalizedRoute;
                 }
             }
         }
