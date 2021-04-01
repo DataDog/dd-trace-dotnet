@@ -615,7 +615,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                     if (routeTemplate is not null)
                     {
-                        // If we don't have a route, don't overwrite the existing resource name
+                        // If we have a route, overwrite the existing resource name
                         var resourcePathName = SimplifyRoutePattern(
                             routeTemplate,
                             routeValues,
