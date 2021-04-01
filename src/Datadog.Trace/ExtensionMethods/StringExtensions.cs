@@ -97,7 +97,7 @@ namespace Datadog.Trace.ExtensionMethods
                 return false;
             }
 
-            string trimmedValue = value?.Trim();
+            string trimmedValue = value.Trim();
             if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
             {
                 normalizedTagName = null;

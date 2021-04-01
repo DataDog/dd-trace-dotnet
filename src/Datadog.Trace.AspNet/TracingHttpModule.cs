@@ -184,10 +184,7 @@ namespace Datadog.Trace.AspNet
 
                 if (httpContext.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    if (httpContext != null)
-                    {
-                        scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                    }
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
 
                     if (exception != null && !is404)
                     {

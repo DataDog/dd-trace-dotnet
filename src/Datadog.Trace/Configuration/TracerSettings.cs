@@ -135,7 +135,7 @@ namespace Datadog.Trace.Configuration
 
             var inputHeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags, allowOptionalMappings: true) ??
                          // default value (empty)
-                         new ConcurrentDictionary<string, string>();
+                         new Dictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespace
             HeaderTags = InitializeHeaderTags(inputHeaderTags);
@@ -495,7 +495,8 @@ namespace Datadog.Trace.Configuration
 
         internal IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary)
         {
-            IDictionary<string, string> headerTags = new Dictionary<string, string>();
+            var headerTags = new Dictionary<string, string>();
+
             foreach (KeyValuePair<string, string> kvp in configurationDictionary)
             {
                 if (!string.IsNullOrWhiteSpace(kvp.Key) && string.IsNullOrWhiteSpace(kvp.Value))
