@@ -620,6 +620,12 @@ jobs:
       patterns: '**/coverage.*.xml'
       path: $(Build.SourcesDirectory)/cover
 
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)'
+      Contents: '**'
+      TargetFolder: 'project'
+
   - task: reportgenerator@4
     inputs:
       reports: '$(Build.SourcesDirectory)\cover\*\coverage.*.xml'
