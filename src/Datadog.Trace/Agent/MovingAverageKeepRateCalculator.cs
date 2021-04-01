@@ -23,7 +23,6 @@ namespace Datadog.Trace.Agent
         private readonly uint[] _dropped;
         private readonly uint[] _created;
 
-        private readonly CancellationTokenSource _cts = new();
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
         private int _index = 0;
