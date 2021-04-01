@@ -86,7 +86,6 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
                     Thread.Sleep(200);
                 }
-                
             }
 
             var trace = Assert.Single(writer.Traces);
