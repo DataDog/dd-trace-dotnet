@@ -629,4 +629,4 @@ jobs:
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: 'Cobertura'
-      summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/coverage.*.xml'
+      summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/Cobertura.xml'
