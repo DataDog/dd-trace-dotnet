@@ -201,8 +201,15 @@ partial class Build : NukeBuild
                 {"CXX", "clang++"},
                 {"CC", "clang"},
             };
-            CMake.Value(arguments: ".", environmentVariables: envVars);
-            Make.Value();
+
+            var buildDirectory = NativeProfilerProject.Directory / "build";
+            EnsureExistingDirectory(buildDirectory);
+
+            CMake.Value(
+                arguments: "../ -DCMAKE_BUILD_TYPE=Release",
+                environmentVariables: envVars,
+                workingDirectory: buildDirectory);
+            Make.Value(workingDirectory: buildDirectory);
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -211,7 +218,7 @@ partial class Build : NukeBuild
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            var nativeProjectDirectory = Solution.GetProject(NativeProfilerProject).Directory;
+            var nativeProjectDirectory = NativeProfilerProject.Directory;
             CMake.Value(arguments: ".", workingDirectory: nativeProjectDirectory);
             Make.Value(workingDirectory: nativeProjectDirectory);
         });

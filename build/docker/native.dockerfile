@@ -12,3 +12,5 @@ RUN apt-get update && \
         gcc
 ENV CXX=clang++
 ENV CC=clang
+
+RUN ./build.sh CompileNativeSrcLinux --skip
