@@ -74,17 +74,19 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
                 // The diagnostic observer runs on a separate thread
                 // This gives time for the Stop event to run and to be flushed to the writer
-                var iterations = 10;
-                while (iterations > 0)
+                const int timeoutInMilliseconds = 10000;
+
+                var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
+                while (DateTime.Now < deadline)
                 {
                     if (writer.Traces.Count > 0)
                     {
                         break;
                     }
 
-                    Thread.Sleep(10);
-                    iterations--;
+                    Thread.Sleep(200);
                 }
+                
             }
 
             var trace = Assert.Single(writer.Traces);
