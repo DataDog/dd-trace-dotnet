@@ -671,7 +671,39 @@ namespace Datadog.Trace
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
-            RunShutdownTasks();
+            // This handles a grateful shutdown or a SIGTERM
+            // Multiple delegates can be registered to this event. (eg. IHostApplicationLifetime instances)
+            // So we must be sure we are the last handler of the event to ensure we are flushing all the
+            // possible traces we are generating.
+
+            // For this, we try to get the internal ProcessExit delegate from the event.
+            var processExitDelegate = DelegatesHelper.GetInternalProcessExitDelegate();
+            if (processExitDelegate != null)
+            {
+                // With the internal MulticastDelegate we first create the delegate instance
+                // we want to run at last of the event handler.
+
+                // Sets the final delegate to be executed by the ProcessExit event.
+                var lastDelegate = new EventHandler((s, earg) =>
+                {
+                    RunShutdownTasks();
+                });
+
+                // Try to modify the MulticastDelegate invocation list and set the last delegate.
+                if (!DelegatesHelper.TrySetLastDelegate(processExitDelegate, lastDelegate))
+                {
+                    // This means we are in the last delegate already
+                    // or we were unable to set the last delegate, in
+                    // any case we fallback by running the delegate now.
+                    lastDelegate(sender, e);
+                }
+            }
+            else
+            {
+                // If we were unable to extract the internal delegate of the event then
+                // we just fallback and run the code here.
+                RunShutdownTasks();
+            }
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -682,7 +714,17 @@ namespace Datadog.Trace
 
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-            RunShutdownTasks();
+            // Console Cancel KeyPress is raised on SIGINT and SIGQUIT signal,
+            // here we ensure we flush and not close the writer.
+            // There's a possibility of a graceful shutdown handled by ProcessExit.
+            try
+            {
+                _agentWriter.FlushTracesAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error flushing traces on shutdown.");
+            }
         }
 
         private void CurrentDomain_DomainUnload(object sender, EventArgs e)
