@@ -90,6 +90,8 @@ namespace shared {
 
 		LoaderResourceMonikerIDs resourceMonikerIDs_;
 
+		WCHAR const* native_profiler_library_filename_;
+
 		static Loader* s_singeltonInstance;
 
 		static Loader* CreateNewLoaderInstance(
@@ -97,7 +99,8 @@ namespace shared {
 			std::function<void(const std::string& str)> log_debug_callback,
 			std::function<void(const std::string& str)> log_info_callback,
 			std::function<void(const std::string& str)> log_warn_callback,
-			const LoaderResourceMonikerIDs& resourceMonikerIDs);
+			const LoaderResourceMonikerIDs& resourceMonikerIDs,
+			WCHAR const* native_profiler_library_filename);
 
 		Loader(ICorProfilerInfo4* info,
 			std::vector<WSTRING> assembly_string_default_appdomain_vector,
@@ -105,7 +108,8 @@ namespace shared {
 			std::function<void(const std::string& str)> log_debug_callback,
 			std::function<void(const std::string& str)> log_info_callback,
 			std::function<void(const std::string& str)> log_warn_callback,
-			const LoaderResourceMonikerIDs& resourceMonikerIDs);
+			const LoaderResourceMonikerIDs& resourceMonikerIDs,
+			WCHAR const* native_profiler_library_filename);
 
 		inline void Debug(const std::string& str) {
 			if (log_debug_callback_ != nullptr) {
@@ -151,7 +155,8 @@ namespace shared {
                                                std::function<void(const std::string& str)> logDebugCallback,
 			                                   std::function<void(const std::string& str)> logInfoCallback,
                                                std::function<void(const std::string& str)> logWarnCallback,
-                                               const LoaderResourceMonikerIDs& resourceMonikerIDs);
+                                               const LoaderResourceMonikerIDs& resourceMonikerIDs,
+			                                   WCHAR const * native_profiler_library_filename);
 		static Loader* GetSingeltonInstance();
 		static void DeleteSingeltonInstance(void);
 
