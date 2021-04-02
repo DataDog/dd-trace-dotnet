@@ -87,7 +87,7 @@ namespace Datadog.Trace.Util
                     // The internal count is saved as a IntPtr but contains an int value, so we cast.
                     int invocationCount = (int)invocationCountPtr;
 
-                    if (invocationCount > 1)
+                    if (invocationCount > 1 && invocationCount <= invocationList.Length)
                     {
                         Delegate oldDelegate = (Delegate)invocationList[invocationCount - 1];
                         // Here we assume the caller of this method is the one is handling the event,

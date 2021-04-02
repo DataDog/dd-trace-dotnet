@@ -18,12 +18,13 @@ namespace Datadog.Trace.Tests
         public void SetLastDelegateTest()
         {
             var lstEvents = new List<int>();
+            var targetObject = new TargetObject();
 
-            TargetObject.MyEvent += TargetObject_MyEvent;
-            TargetObject.MyEvent += TargetObject_MyEvent2;
-            TargetObject.FireEvent();
-            TargetObject.MyEvent -= TargetObject_MyEvent;
-            TargetObject.MyEvent -= TargetObject_MyEvent2;
+            targetObject.MyEvent += TargetObject_MyEvent;
+            targetObject.MyEvent += TargetObject_MyEvent2;
+            targetObject.FireEvent();
+            targetObject.MyEvent -= TargetObject_MyEvent;
+            targetObject.MyEvent -= TargetObject_MyEvent2;
 
             Assert.Equal(1, lstEvents[0]);
             Assert.Equal(2, lstEvents[1]);
@@ -33,7 +34,7 @@ namespace Datadog.Trace.Tests
             {
                 lstEvents.Add(1);
 
-                var targetDelegate = TargetObject.GetDelegate();
+                var targetDelegate = targetObject.GetDelegate();
 
                 var lastDelegate = new EventHandler((s, eArgs) =>
                 {
@@ -53,12 +54,13 @@ namespace Datadog.Trace.Tests
         public void SetLastDelegateInversedTest()
         {
             var lstEvents = new List<int>();
+            var targetObject = new TargetObject();
 
-            TargetObject.MyEvent += TargetObject_MyEvent2;
-            TargetObject.MyEvent += TargetObject_MyEvent;
-            TargetObject.FireEvent();
-            TargetObject.MyEvent -= TargetObject_MyEvent2;
-            TargetObject.MyEvent -= TargetObject_MyEvent;
+            targetObject.MyEvent += TargetObject_MyEvent2;
+            targetObject.MyEvent += TargetObject_MyEvent;
+            targetObject.FireEvent();
+            targetObject.MyEvent -= TargetObject_MyEvent2;
+            targetObject.MyEvent -= TargetObject_MyEvent;
 
             Assert.Equal(2, lstEvents[0]);
             Assert.Equal(1, lstEvents[1]);
@@ -68,7 +70,7 @@ namespace Datadog.Trace.Tests
             {
                 lstEvents.Add(1);
 
-                var targetDelegate = TargetObject.GetDelegate();
+                var targetDelegate = targetObject.GetDelegate();
 
                 var lastDelegate = new EventHandler((s, eArgs) =>
                 {
@@ -85,17 +87,18 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetLastDelegaten3HandlersTest()
+        public void SetLastDelegate3HandlersTest()
         {
             var lstEvents = new List<int>();
+            var targetObject = new TargetObject();
 
-            TargetObject.MyEvent += TargetObject_MyEvent2;
-            TargetObject.MyEvent += TargetObject_MyEvent;
-            TargetObject.MyEvent += TargetObject_MyEvent2;
-            TargetObject.FireEvent();
-            TargetObject.MyEvent -= TargetObject_MyEvent2;
-            TargetObject.MyEvent -= TargetObject_MyEvent;
-            TargetObject.MyEvent -= TargetObject_MyEvent2;
+            targetObject.MyEvent += TargetObject_MyEvent2;
+            targetObject.MyEvent += TargetObject_MyEvent;
+            targetObject.MyEvent += TargetObject_MyEvent2;
+            targetObject.FireEvent();
+            targetObject.MyEvent -= TargetObject_MyEvent2;
+            targetObject.MyEvent -= TargetObject_MyEvent;
+            targetObject.MyEvent -= TargetObject_MyEvent2;
 
             Assert.Equal(2, lstEvents[0]);
             Assert.Equal(1, lstEvents[1]);
@@ -106,7 +109,7 @@ namespace Datadog.Trace.Tests
             {
                 lstEvents.Add(1);
 
-                var targetDelegate = TargetObject.GetDelegate();
+                var targetDelegate = targetObject.GetDelegate();
 
                 var lastDelegate = new EventHandler((s, eArgs) =>
                 {
@@ -122,13 +125,39 @@ namespace Datadog.Trace.Tests
             void TargetObject_MyEvent2(object sender, EventArgs e) => lstEvents.Add(2);
         }
 
-        internal static class TargetObject
+        [Fact]
+        public void DuplicateDelegateTest()
         {
-            public static event EventHandler MyEvent;
+            var lstEvents = new List<int>();
+            var targetObject = new TargetObject();
 
-            public static EventHandler GetDelegate() => MyEvent;
+            targetObject.MyEvent += TargetObject_MyEvent;
+            targetObject.FireEvent();
+            targetObject.MyEvent -= TargetObject_MyEvent;
 
-            public static void FireEvent()
+            Assert.Equal(1, lstEvents[0]);
+            Assert.Equal(2, lstEvents[1]);
+
+            void TargetObject_MyEvent(object sender, EventArgs e)
+            {
+                lstEvents.Add(1);
+
+                var targetDelegate = targetObject.GetDelegate();
+
+                if (!DelegatesHelper.TrySetLastDelegate(targetDelegate, new EventHandler(TargetObject_MyEvent)))
+                {
+                    lstEvents.Add(2);
+                }
+            }
+        }
+
+        internal class TargetObject
+        {
+            public event EventHandler MyEvent;
+
+            public EventHandler GetDelegate() => MyEvent;
+
+            public void FireEvent()
             {
                 MyEvent?.Invoke(null, EventArgs.Empty);
             }

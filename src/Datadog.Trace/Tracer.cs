@@ -695,7 +695,7 @@ namespace Datadog.Trace
                     // This means we are in the last delegate already
                     // or we were unable to set the last delegate, in
                     // any case we fallback by running the delegate now.
-                    lastDelegate(sender, e);
+                    RunShutdownTasks();
                 }
             }
             else
