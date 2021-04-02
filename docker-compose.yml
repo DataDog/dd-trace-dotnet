@@ -464,7 +464,7 @@ services:
     - RABBITMQ_HOST=rabbitmq
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
-    - TEST_COVERAGE=1
+    - TEST_COVERAGE_PATH=/var/log/datadog/cover
     depends_on:
     - servicestackredis
     - stackexchangeredis

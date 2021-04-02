@@ -116,10 +116,15 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
 
+  - task: reportgenerator@4
+    inputs:
+      reports: 'cover/coverage.*.xml'
+      targetdir: 'coverresult'
+      reporttypes: 'Cobertura'
 
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: 'cover/'
+      targetPath: 'coverresult/Cobertura.xml'
     continueOnError: true
 
   - publish: build_data
@@ -360,7 +365,7 @@ jobs:
         test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
       arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform)
     env:
-      TEST_COVERAGE: 1
+      TEST_COVERAGE_PATH: $(Build.SourcesDirectory)\cover
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
@@ -369,11 +374,18 @@ jobs:
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
     env:
-      TEST_COVERAGE: 1
+      TEST_COVERAGE_PATH: $(Build.SourcesDirectory)\cover
 
+  - task: reportgenerator@4
+    inputs:
+      reports: '$(Build.SourcesDirectory)\cover\coverage.*.xml'
+      targetdir: '$(Build.SourcesDirectory)\cover'
+      reporttypes: 'Cobertura'
+    continueOnError: true
+   
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: 'cover/'
+      targetPath: '$(Build.SourcesDirectory)\cover\Cobertura.xml'
     continueOnError: true
 
   - task: DockerCompose@0
@@ -617,7 +629,7 @@ jobs:
   steps:
   - task: DownloadPipelineArtifact@2
     inputs:
-      patterns: '**/coverage.*.xml'
+      patterns: '**/Cobertura.xml'
       path: $(Build.SourcesDirectory)/cover
 
   - task: CopyFiles@2
@@ -628,7 +640,7 @@ jobs:
 
   - task: reportgenerator@4
     inputs:
-      reports: '$(Build.SourcesDirectory)\cover\*\coverage.*.xml'
+      reports: '$(Build.SourcesDirectory)\cover\*\Cobertura.xml'
       targetdir: '$(Build.SourcesDirectory)\coveragereport'
       reporttypes: 'Cobertura'
 

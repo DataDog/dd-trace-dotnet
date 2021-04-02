@@ -10,7 +10,7 @@ mkdir -p /var/log/datadog/dotnet
 
 mkdir -p /var/log/datadog/cover
 
-if [[ ! -z "$TEST_COVERAGE" ]]
+if [[ ! -z "$TEST_COVERAGE_PATH" ]]
 then
   dotnet tool install -g coverlet.console
   export PATH="$PATH:/root/.dotnet/tools" 
