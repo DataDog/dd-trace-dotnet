@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -31,9 +33,53 @@ namespace Datadog.Trace.DuckTyping
         private static readonly MethodInfo _methodBuilderGetToken = typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static ModuleBuilder _moduleBuilder = null;
+        private static readonly Dictionary<Assembly, ModuleBuilder> ActiveBuilders = new Dictionary<Assembly, ModuleBuilder>();
+
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static AssemblyBuilder _assemblyBuilder = null;
+        private static long _assemblyCount = 0;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static long _typeCount = 0;
+
+        internal static long AssemblyCount => _assemblyCount;
+
+        internal static long TypeCount => _typeCount;
+
+        /// <summary>
+        /// Gets the ModuleBuilder instance from a target type.  (.NET Framework / Non AssemblyLoadContext version)
+        /// </summary>
+        /// <param name="targetType">Target type for ducktyping</param>
+        /// <returns>ModuleBuilder instance</returns>
+        private static ModuleBuilder GetModuleBuilder(Type targetType)
+        {
+            Assembly targetAssembly = targetType.Assembly ?? typeof(DuckType).Assembly;
+
+            if (targetType.IsGenericType)
+            {
+                foreach (var type in targetType.GetGenericArguments())
+                {
+                    if (type.Assembly != targetAssembly)
+                    {
+                        return CreateModuleBuilder($"DuckTypeGenericTypeAssembly.{targetType.Name}", targetAssembly);
+                    }
+                }
+            }
+
+            if (!ActiveBuilders.TryGetValue(targetAssembly, out var moduleBuilder))
+            {
+                moduleBuilder = CreateModuleBuilder($"DuckTypeAssembly.{targetType.Assembly?.GetName().Name}", targetAssembly);
+                ActiveBuilders.Add(targetAssembly, moduleBuilder);
+            }
+
+            return moduleBuilder;
+
+            static ModuleBuilder CreateModuleBuilder(string name, Assembly targetAssembly)
+            {
+                var assemblyName = new AssemblyName(name + $"_{++_assemblyCount}");
+                assemblyName.Version = targetAssembly.GetName().Version;
+                var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+                return assemblyBuilder.DefineDynamicModule("MainModule");
+            }
+        }
 
         /// <summary>
         /// DynamicMethods delegates cache
