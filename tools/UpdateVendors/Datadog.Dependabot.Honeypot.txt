@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>##PACKAGE_REFS##
+  </ItemGroup>
+
+</Project>
