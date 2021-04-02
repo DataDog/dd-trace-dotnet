@@ -170,7 +170,8 @@ namespace shared {
 
         if (native_profiler_library_filename == nullptr)
         {
-            throw std::logic_error("No native profiler library filename was provided. You must pass one to the loader.");
+            log_warn_callback("No native profiler library filename was provided. You must pass one to the loader.");
+            throw std::runtime_error("No native profiler library filename was provided. You must pass one to the loader.");
         }
 
         resourceMonikerIDs_ = LoaderResourceMonikerIDs(resourceMonikerIDs);
@@ -366,6 +367,8 @@ namespace shared {
         }
 
         WSTRING native_profiler_file = native_profiler_library_filename_;
+
+        Debug("Loader::InjectLoaderToModuleInitializer: Setting the PInvoke native profiler library path to " + ToString(native_profiler_file));
 
         mdModuleRef profiler_ref;
         hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
