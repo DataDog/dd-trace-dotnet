@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // note: ignore the INFO command because it's timing is unpredictable (on Linux?)
                 var spans = agent.WaitForSpans(11)
-                                 .Where(s => s.Type == "redis" && s.Resource != "INFO")
+                                 .Where(s => s.Type == "redis" && s.Resource != "INFO" && s.Resource != "ROLE" && s.Resource != "QUIT")
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
@@ -61,9 +61,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
-                var expected = new TupleList<string, string>
+                var expectedFromOneRun = new TupleList<string, string>
                 {
-                    { "ROLE", "ROLE" },
                     { "SET", $"SET {TestPrefix}ServiceStack.Redis.INCR 0" },
                     { "PING", "PING" },
                     { "DDCUSTOM", "DDCUSTOM COMMAND" },
@@ -74,6 +73,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "TIME", "TIME" },
                     { "SELECT", "SELECT 0" },
                 };
+
+                var expected = new TupleList<string, string>();
+                expected.AddRange(expectedFromOneRun);
+                expected.AddRange(expectedFromOneRun);
+#if NETCOREAPP3_1 || NET5_0
+                expected.AddRange(expectedFromOneRun); // On .NET Core 3.1 and .NET 5 we run the routine a third time
+#endif
+
+                Assert.Equal(expected.Count, spans.Count);
 
                 for (int i = 0; i < expected.Count; i++)
                 {
