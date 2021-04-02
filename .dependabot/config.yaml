@@ -1,7 +1,7 @@
 version: 1
 update_configs:
   - package_manager: "dotnet:nuget"
-    directory: "/"
+    directory: "/honeypot"
     update_schedule: "daily"
     default_labels:
       - "vendors"
