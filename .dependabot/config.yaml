@@ -4,5 +4,4 @@ update_configs:
     directory: "/"
     update_schedule: "daily"
     default_labels:
-      - "dependencies"
-      - "dependabot"
+      - "vendors"
