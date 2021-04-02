@@ -36,7 +36,7 @@ namespace UpdateVendors
 
         private static string GetHoneyPotProjTemplate()
         {
-            var templateName = "Datadog.Dependabot.Honeypot.txt";
+            var templateName = "Datadog.Dependabot.Honeypot.template";
             var directory = Directory.GetCurrentDirectory();
             string template = null;
             var levelLimit = 4;
