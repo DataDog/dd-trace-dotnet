@@ -89,7 +89,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
         /// <param name="convertPeriodsToUnderscores">A flag determining whether periods should also be converted to underscores</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedTagName(this string value, out string normalizedTagName, bool convertPeriodsToUnderscores = false)
+        public static bool TryConvertToNormalizedTagName(this string value, out string normalizedTagName, bool convertPeriodsToUnderscores)
         {
             if (string.IsNullOrWhiteSpace(value))
             {

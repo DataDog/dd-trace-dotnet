@@ -121,7 +121,7 @@ namespace Datadog.Trace.Configuration
         /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
         public IDictionary<string, string> GetDictionary(string key)
         {
-            return GetDictionaryInternal(key, false);
+            return GetDictionaryInternal(key, allowOptionalMappings: false);
         }
 
         /// <summary>

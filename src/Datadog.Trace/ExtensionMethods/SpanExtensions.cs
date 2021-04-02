@@ -77,7 +77,6 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 try
                 {
-                    // extract propagation details from http headers
                     var tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, defaultTagPrefix);
                     foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
                     {
