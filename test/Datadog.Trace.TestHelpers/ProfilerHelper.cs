@@ -47,16 +47,17 @@ namespace Datadog.Trace.TestHelpers
                 // .NET Core
                 if (codeCoveragePath != null)
                 {
-                    var applicationFolder = Path.GetDirectoryName(applicationPath);
-                    var profilerFolder = Path.Combine(applicationFolder, @"profiler-lib");
+                    var profilerPath = Path.GetDirectoryName(environmentHelper.GetProfilerPath());
+
                     var reportFile = Path.Combine(codeCoveragePath, $"coverage.{Guid.NewGuid():N}.xml");
 
-                    var folders = string.Join(
-                        ",",
-                        new[] { "netcoreapp3.1", "netstandard2.0", "net461", "net45" }
-                           .Select(f => Path.Combine(profilerFolder, f)));
+#if NETCOREAPP3_1_OR_GREATER
+                    var assemblyFolders = Path.Combine(profilerPath, "netcoreapp3.1");
+#else
+                    var assemblyFolders = Path.Combine(profilerPath, "netstandard2.0");
+#endif
 
-                    startInfo = new ProcessStartInfo("coverlet", $"\"{applicationPath}\" --format cobertura --output \"{reportFile}\" --exclude \"[*]Datadog.Trace.Vendors.*\" --include-directory \"{folders}\" --target dotnet --targetargs \"{applicationPath} {arguments ?? string.Empty}\"");
+                    startInfo = new ProcessStartInfo("coverlet", $"\"{applicationPath}\" --format cobertura --output \"{reportFile}\" --exclude \"[*]Datadog.Trace.Vendors.*\" --include-directory \"{assemblyFolders}\" --target dotnet --targetargs \"{applicationPath} {arguments ?? string.Empty}\"");
                 }
                 else
                 {
