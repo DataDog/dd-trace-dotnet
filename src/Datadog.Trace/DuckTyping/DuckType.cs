@@ -130,8 +130,14 @@ namespace Datadog.Trace.DuckTyping
                         interfaceTypes = new[] { typeof(IDuckType) };
                     }
 
-                    // Gets the module builder
-                    var moduleBuilder = GetModuleBuilder(targetType);
+                    // Ensures the module builder
+                    if (_moduleBuilder is null)
+                    {
+                        var id = Guid.NewGuid().ToString("N");
+                        AssemblyName aName = new AssemblyName("DuckTypeAssembly._" + id);
+                        _assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.Run);
+                        _moduleBuilder = _assemblyBuilder.DefineDynamicModule("MainModule");
+                    }
 
                     string assembly = string.Empty;
                     if (targetType.Assembly != null)
@@ -145,10 +151,10 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
-                    string proxyTypeName = $"{assembly}.{targetType.FullName.Replace(".", "_").Replace("+", "__")}.{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}_{++_typeCount}";
+                    string proxyTypeName = $"{assembly}.{targetType.FullName.Replace(".", "_").Replace("+", "__")}.{proxyDefinitionType.FullName.Replace(".", "_").Replace("+", "__")}";
 
                     // Create Type
-                    TypeBuilder proxyTypeBuilder = moduleBuilder.DefineType(
+                    TypeBuilder proxyTypeBuilder = _moduleBuilder.DefineType(
                         proxyTypeName,
                         typeAttributes,
                         parentType,
