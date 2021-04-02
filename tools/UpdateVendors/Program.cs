@@ -29,7 +29,7 @@ namespace UpdateVendors
 
             var honeypotProjTemplate = GetHoneyPotProjTemplate();
             honeypotProjTemplate = honeypotProjTemplate.Replace("##PACKAGE_REFS##", fakeRefs);
-            var projLocation = Path.Combine(EnvironmentHelper.GetSolutionDirectory(), "Datadog.Dependeabot.Honeypot.csproj");
+            var projLocation = Path.Combine(EnvironmentHelper.GetSolutionDirectory(), "Datadog.Dependabot.Honeypot.csproj");
             File.WriteAllText(projLocation, honeypotProjTemplate);
         }
 
