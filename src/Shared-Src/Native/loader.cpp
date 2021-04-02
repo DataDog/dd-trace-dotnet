@@ -17,17 +17,13 @@
 namespace shared {
     
     Loader* Loader::s_singeltonInstance = nullptr;
-
-#ifdef _WIN32
-    const WSTRING native_profiler_file_win64                    = WStr("Datadog.AutoInstrumentation.Profiler.Native.x64.dll");
-#elif LINUX
+    
+#ifdef LINUX
     extern uint8_t dll_start[]                                  asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_start");
     extern uint8_t dll_end[]                                    asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_end");
 
     extern uint8_t pdb_start[]                                  asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_pdb_start");
     extern uint8_t pdb_end[]                                    asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_pdb_end");
-#elif MACOS
-    const std::string native_profiler_file_macos                = "Datadog.AutoInstrumentation.Profiler.Native.dylib";
 #endif
     
     const WSTRING managed_loader_assembly_name                  = WStr("Datadog.AutoInstrumentation.ManagedLoader");
@@ -86,9 +82,10 @@ namespace shared {
                                             std::function<void(const std::string& str)> logDebugCallback,
                                             std::function<void(const std::string& str)> logInfoCallback,
                                             std::function<void(const std::string& str)> logWarnCallback,
-                                            const LoaderResourceMonikerIDs& resourceMonikerIDs)
+                                            const LoaderResourceMonikerIDs& resourceMonikerIDs,
+                                            WCHAR const * native_profiler_library_filename)
     {
-        Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo, logDebugCallback, logInfoCallback, logWarnCallback, resourceMonikerIDs);
+        Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo, logDebugCallback, logInfoCallback, logWarnCallback, resourceMonikerIDs, native_profiler_library_filename);
 
         Loader::DeleteSingeltonInstance();
         Loader::s_singeltonInstance = newSingeltonInstance;
@@ -120,7 +117,8 @@ namespace shared {
         std::function<void(const std::string& str)> log_debug_callback,
         std::function<void(const std::string& str)> log_info_callback,
         std::function<void(const std::string& str)> log_warn_callback,
-        const LoaderResourceMonikerIDs& resourceMonikerIDs) {
+        const LoaderResourceMonikerIDs& resourceMonikerIDs,
+        WCHAR const* native_profiler_library_filename) {
 
         std::vector<WSTRING> assembly_string_default_appdomain_vector;
         std::vector<WSTRING> assembly_string_nondefault_appdomain_vector;
@@ -156,7 +154,8 @@ namespace shared {
             log_debug_callback,
             log_info_callback,
             log_warn_callback,
-            resourceMonikerIDs);
+            resourceMonikerIDs,
+            native_profiler_library_filename);
     }
 
     Loader::Loader(
@@ -166,8 +165,8 @@ namespace shared {
         std::function<void(const std::string& str)> log_debug_callback,
         std::function<void(const std::string& str)> log_info_callback,
         std::function<void(const std::string& str)> log_warn_callback,
-        const LoaderResourceMonikerIDs& resourceMonikerIDs) {
-
+        const LoaderResourceMonikerIDs& resourceMonikerIDs,
+        WCHAR const * native_profiler_library_filename) {
         resourceMonikerIDs_ = LoaderResourceMonikerIDs(resourceMonikerIDs);
         info_ = info;
         assembly_string_default_appdomain_vector_ = assembly_string_default_appdomain_vector;
@@ -176,6 +175,13 @@ namespace shared {
         log_info_callback_ = log_info_callback;
         log_warn_callback_ = log_warn_callback;
         runtime_information_ = GetRuntimeInformation();
+        native_profiler_library_filename_ = native_profiler_library_filename;
+
+        if (native_profiler_library_filename == nullptr)
+        {
+            Warn("No native profiler library filename was provided. You must pass one to the loader.");
+            throw std::runtime_error("No native profiler library filename was provided. You must pass one to the loader.");
+        }
     }
 
     HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
@@ -359,18 +365,9 @@ namespace shared {
             return hr;
         }
 
-#ifdef _WIN32
-        WSTRING native_profiler_file = native_profiler_file_win64;
-#else  // _WIN32
+        WSTRING native_profiler_file = native_profiler_library_filename_;
 
-#ifdef BIT64
-        WSTRING native_profiler_file = profiler_path_64 == empty_string ? profiler_path : profiler_path_64;
-#else   // BIT64
-        WSTRING native_profiler_file = profiler_path_32 == empty_string ? profiler_path : profiler_path_32;
-#endif  // BIT64
         Debug("Loader::InjectLoaderToModuleInitializer: Setting the PInvoke native profiler library path to " + ToString(native_profiler_file));
-
-#endif  // _WIN32
 
         mdModuleRef profiler_ref;
         hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
@@ -1207,6 +1204,7 @@ namespace shared {
 #elif MACOS
         const unsigned int imgCount = _dyld_image_count();
 
+        std::string native_profiler_file_macos = native_profiler_library_filename_;
         for(auto i = 0; i < imgCount; i++) {
             const std::string name = std::string(_dyld_get_image_name(i));
 
