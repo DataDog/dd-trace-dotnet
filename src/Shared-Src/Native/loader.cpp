@@ -167,13 +167,6 @@ namespace shared {
         std::function<void(const std::string& str)> log_warn_callback,
         const LoaderResourceMonikerIDs& resourceMonikerIDs,
         WCHAR const * native_profiler_library_filename) {
-
-        if (native_profiler_library_filename == nullptr)
-        {
-            log_warn_callback("No native profiler library filename was provided. You must pass one to the loader.");
-            throw std::runtime_error("No native profiler library filename was provided. You must pass one to the loader.");
-        }
-
         resourceMonikerIDs_ = LoaderResourceMonikerIDs(resourceMonikerIDs);
         info_ = info;
         assembly_string_default_appdomain_vector_ = assembly_string_default_appdomain_vector;
@@ -183,6 +176,12 @@ namespace shared {
         log_warn_callback_ = log_warn_callback;
         runtime_information_ = GetRuntimeInformation();
         native_profiler_library_filename_ = native_profiler_library_filename;
+
+        if (native_profiler_library_filename == nullptr)
+        {
+            Warn("No native profiler library filename was provided. You must pass one to the loader.");
+            throw std::runtime_error("No native profiler library filename was provided. You must pass one to the loader.");
+        }
     }
 
     HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID module_id) {
