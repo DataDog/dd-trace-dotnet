@@ -671,7 +671,7 @@ namespace Datadog.Trace
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
-            // This handles a grateful shutdown or a SIGTERM
+            // This handles a graceful shutdown or a SIGTERM
             // Multiple delegates can be registered to this event. (eg. IHostApplicationLifetime instances)
             // So we must be sure we are the last handler of the event to ensure we are flushing all the
             // possible traces we are generating.
