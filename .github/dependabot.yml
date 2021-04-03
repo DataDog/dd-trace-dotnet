@@ -1,7 +1,9 @@
 version: 2
-update_configs:
-  - package_manager: "nuget"
+updates:
+  # Maintain dependencies for vendors
+  - package-ecosystem: "nuget"
     directory: "/honeypot"
-    update_schedule: "daily"
-    default_labels:
+    schedule:
+      interval: "daily"
+    labels:
       - "vendors"
