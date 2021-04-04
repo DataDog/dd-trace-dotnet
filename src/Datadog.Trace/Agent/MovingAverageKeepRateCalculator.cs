@@ -108,13 +108,13 @@ namespace Datadog.Trace.Agent
         internal void UpdateBucket()
         {
             var index = _index;
-            var previousDropped = _dropped[_index];
-            var previousCreated = _created[_index];
+            var previousDropped = _dropped[index];
+            var previousCreated = _created[index];
 
             var latestDropped = Math.Min(Interlocked.Exchange(ref _latestDrops, 0), uint.MaxValue);
             var latestCreated = Math.Min(Interlocked.Exchange(ref _latestKeeps, 0) + latestDropped, uint.MaxValue);
 
-            UnpackBits(_totals, out var previousTotalDropped, out var previousTotalCreated);
+            UnpackBits(totals, out var previousTotalDropped, out var previousTotalCreated);
 
             var newTotalDropped = (uint)Math.Min(((long)previousTotalDropped) - previousDropped + latestDropped, uint.MaxValue);
             var newTotalCreated = (uint)Math.Min(((long)previousTotalCreated) - previousCreated + latestCreated, uint.MaxValue);
@@ -123,8 +123,8 @@ namespace Datadog.Trace.Agent
             var packedTotal = PackBits(newTotalDropped, newTotalCreated);
             Interlocked.Exchange(ref _totals, packedTotal);
 
-            _dropped[_index] = (uint)latestDropped;
-            _created[_index] = (uint)latestCreated;
+            _dropped[index] = (uint)latestDropped;
+            _created[index] = (uint)latestCreated;
             _index = (index + 1) % _windowSize;
         }
 
