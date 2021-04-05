@@ -36,9 +36,11 @@ namespace Datadog.Trace.Vendors.Serilog.Data
         /// <param name="state">Operation state.</param>
         /// <param name="scalar">The value to visit.</param>
         /// <returns>The result of visiting <paramref name="scalar"/>.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="scalar"/> is <code>null</code></exception>
         protected override LogEventPropertyValue VisitScalarValue(TState state, ScalarValue scalar)
         {
             if (scalar == null) throw new ArgumentNullException(nameof(scalar));
+
             return scalar;
         }
 
@@ -48,6 +50,7 @@ namespace Datadog.Trace.Vendors.Serilog.Data
         /// <param name="state">Operation state.</param>
         /// <param name="sequence">The value to visit.</param>
         /// <returns>The result of visiting <paramref name="sequence"/>.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="sequence"/> is <code>null</code></exception>
         protected override LogEventPropertyValue VisitSequenceValue(TState state, SequenceValue sequence)
         {
             if (sequence == null) throw new ArgumentNullException(nameof(sequence));
@@ -84,6 +87,7 @@ namespace Datadog.Trace.Vendors.Serilog.Data
         /// <param name="state">Operation state.</param>
         /// <param name="structure">The value to visit.</param>
         /// <returns>The result of visiting <paramref name="structure"/>.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="structure"/> is <code>null</code></exception>
         protected override LogEventPropertyValue VisitStructureValue(TState state, StructureValue structure)
         {
             if (structure == null) throw new ArgumentNullException(nameof(structure));
@@ -121,6 +125,7 @@ namespace Datadog.Trace.Vendors.Serilog.Data
         /// <param name="state">Operation state.</param>
         /// <param name="dictionary">The value to visit.</param>
         /// <returns>The result of visiting <paramref name="dictionary"/>.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="dictionary"/> is <code>null</code></exception>
         protected override LogEventPropertyValue VisitDictionaryValue(TState state, DictionaryValue dictionary)
         {
             if (dictionary == null) throw new ArgumentNullException(nameof(dictionary));

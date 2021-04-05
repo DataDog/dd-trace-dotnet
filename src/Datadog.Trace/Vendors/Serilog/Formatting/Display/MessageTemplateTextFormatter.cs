@@ -45,9 +45,11 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Display
         /// <param name="outputTemplate">A message template describing the
         /// output messages.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
-        public MessageTemplateTextFormatter(string outputTemplate, IFormatProvider formatProvider)
+        /// <exception cref="ArgumentNullException">When <paramref name="outputTemplate"/> is <code>null</code></exception>
+        public MessageTemplateTextFormatter(string outputTemplate, IFormatProvider formatProvider = null)
         {
             if (outputTemplate == null) throw new ArgumentNullException(nameof(outputTemplate));
+
             _outputTemplate = new MessageTemplateParser().Parse(outputTemplate);
             _formatProvider = formatProvider;
         }
@@ -57,6 +59,8 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Display
         /// </summary>
         /// <param name="logEvent">The event to format.</param>
         /// <param name="output">The output.</param>
+        /// <exception cref="ArgumentNullException">When <paramref name="logEvent"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
         public void Format(LogEvent logEvent, TextWriter output)
         {
             if (logEvent == null) throw new ArgumentNullException(nameof(logEvent));
@@ -106,8 +110,7 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Display
                     else
                     {
                         // If a property is missing, don't render anything (message templates render the raw token here).
-                        LogEventPropertyValue propertyValue;
-                        if (!logEvent.Properties.TryGetValue(pt.PropertyName, out propertyValue))
+                        if (!logEvent.Properties.TryGetValue(pt.PropertyName, out var propertyValue))
                             continue;
 
                         // If the value is a scalar string, support some additional formats: 'u' for uppercase

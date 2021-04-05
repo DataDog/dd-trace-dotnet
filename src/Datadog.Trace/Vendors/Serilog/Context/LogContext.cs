@@ -16,7 +16,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 using System;
 using System.ComponentModel;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -91,7 +90,7 @@ namespace Datadog.Trace.Vendors.Serilog.Context
         /// </summary>
         /// <param name="enricher">An enricher to push onto the log context</param>
         /// <returns>A token that must be disposed, in order, to pop properties back off the stack.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="enricher"/> is <code>null</code></exception>
         public static IDisposable Push(ILogEventEnricher enricher)
         {
             if (enricher == null) throw new ArgumentNullException(nameof(enricher));
@@ -113,7 +112,7 @@ namespace Datadog.Trace.Vendors.Serilog.Context
         /// <seealso cref="PropertyEnricher"/>.
         /// <param name="enrichers">Enrichers to push onto the log context</param>
         /// <returns>A token that must be disposed, in order, to pop properties back off the stack.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="enrichers"/> is <code>null</code></exception>
         public static IDisposable Push(params ILogEventEnricher[] enrichers)
         {
             if (enrichers == null) throw new ArgumentNullException(nameof(enrichers));
@@ -170,7 +169,7 @@ namespace Datadog.Trace.Vendors.Serilog.Context
         }
 
         /// <summary>
-        /// Remove all enrichers from <see cref="LogContext"/> for the current async scope. 
+        /// Remove all enrichers from <see cref="LogContext"/> for the current async scope.
         /// </summary>
         public static void Reset()
         {
@@ -242,7 +241,7 @@ namespace Datadog.Trace.Vendors.Serilog.Context
                 {
                     oldHandle.Dispose();
                 }
-                
+
                 CallContext.LogicalSetData(DataSlotName, new DisposableObjectHandle(value));
             }
         }
@@ -251,7 +250,8 @@ namespace Datadog.Trace.Vendors.Serilog.Context
         {
             static readonly ISponsor LifeTimeSponsor = new ClientSponsor();
 
-            public DisposableObjectHandle(object o) : base(o)
+            public DisposableObjectHandle(object o)
+                : base(o)
             {
             }
 

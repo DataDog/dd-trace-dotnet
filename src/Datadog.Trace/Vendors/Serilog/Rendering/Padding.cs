@@ -31,7 +31,7 @@ namespace Datadog.Trace.Vendors.Serilog.Rendering
         /// </summary>
         public static void Apply(TextWriter output, string value, Alignment? alignment)
         {
-            if (!alignment.HasValue || value.Length >= alignment.Value.Width)
+            if (alignment == null || value.Length >= alignment.Value.Width)
             {
                 output.Write(value);
                 return;

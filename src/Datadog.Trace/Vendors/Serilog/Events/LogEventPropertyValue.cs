@@ -43,10 +43,7 @@ namespace Datadog.Trace.Vendors.Serilog.Events
         /// A string that represents the current object.
         /// </returns>
         /// <filterpriority>2</filterpriority>
-        public override string ToString()
-        {
-            return ToString(null, null);
-        }
+        public override string ToString() => ToString(null, null);
 
         /// <summary>
         /// Formats the value of the current instance using the specified format.

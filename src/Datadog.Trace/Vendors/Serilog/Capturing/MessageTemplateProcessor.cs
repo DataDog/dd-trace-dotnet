@@ -16,7 +16,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Generic;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -36,7 +35,7 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
             _propertyBinder = new PropertyBinder(_propertyValueConverter);
         }
 
-        public void Process(string messageTemplate, object[] messageTemplateParameters, out MessageTemplate parsedTemplate, out IEnumerable<LogEventProperty> properties)
+        public void Process(string messageTemplate, object[] messageTemplateParameters, out MessageTemplate parsedTemplate, out EventProperty[] properties)
         {
             parsedTemplate = _parser.Parse(messageTemplate);
             properties = _propertyBinder.ConstructProperties(parsedTemplate, messageTemplateParameters);
@@ -45,6 +44,11 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
         public LogEventProperty CreateProperty(string name, object value, bool destructureObjects = false)
         {
             return _propertyValueConverter.CreateProperty(name, value, destructureObjects);
+        }
+
+        public LogEventPropertyValue CreatePropertyValue(object value, bool destructureObjects = false)
+        {
+            return _propertyValueConverter.CreatePropertyValue(value, destructureObjects);
         }
     }
 }

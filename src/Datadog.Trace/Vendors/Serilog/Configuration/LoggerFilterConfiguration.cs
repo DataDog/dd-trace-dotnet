@@ -35,25 +35,25 @@ namespace Datadog.Trace.Vendors.Serilog.Configuration
             LoggerConfiguration loggerConfiguration,
             Action<ILogEventFilter> addFilter)
         {
-            if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
-            if (addFilter == null) throw new ArgumentNullException(nameof(addFilter));
-            _loggerConfiguration = loggerConfiguration;
-            _addFilter = addFilter;
+            _loggerConfiguration = loggerConfiguration ?? throw new ArgumentNullException(nameof(loggerConfiguration));
+            _addFilter = addFilter ?? throw new ArgumentNullException(nameof(addFilter));
         }
-
 
         /// <summary>
         /// Filter out log events from the stream based on the provided filter.
         /// </summary>
         /// <param name="filters">The filters to apply.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="filters"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentException">When any element of <paramref name="filters"/> is <code>null</code></exception>
         public LoggerConfiguration With(params ILogEventFilter[] filters)
         {
             if (filters == null) throw new ArgumentNullException(nameof(filters));
+
             foreach (var logEventFilter in filters)
             {
-                if (logEventFilter == null)
-                    throw new ArgumentException("Null filter is not allowed.");
+                if (logEventFilter == null) throw new ArgumentException("Null filter is not allowed.");
+
                 _addFilter(logEventFilter);
             }
             return _loggerConfiguration;
@@ -93,4 +93,3 @@ namespace Datadog.Trace.Vendors.Serilog.Configuration
         }
     }
 }
-

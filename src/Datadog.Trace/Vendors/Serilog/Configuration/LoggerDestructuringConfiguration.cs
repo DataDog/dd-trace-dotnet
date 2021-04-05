@@ -43,18 +43,12 @@ namespace Datadog.Trace.Vendors.Serilog.Configuration
             Action<int> setMaximumStringLength,
             Action<int> setMaximumCollectionCount)
         {
-            if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
-            if (addScalar == null) throw new ArgumentNullException(nameof(addScalar));
-            if (addPolicy == null) throw new ArgumentNullException(nameof(addPolicy));
-            if (setMaximumDepth == null) throw new ArgumentNullException(nameof(setMaximumDepth));
-            if (setMaximumStringLength == null) throw new ArgumentNullException(nameof(setMaximumStringLength));
-            if (setMaximumCollectionCount == null) throw new ArgumentNullException(nameof(setMaximumCollectionCount));
-            _loggerConfiguration = loggerConfiguration;
-            _addScalar = addScalar;
-            _addPolicy = addPolicy;
-            _setMaximumDepth = setMaximumDepth;
-            _setMaximumStringLength = setMaximumStringLength;
-            _setMaximumCollectionCount = setMaximumCollectionCount;
+            _loggerConfiguration = loggerConfiguration ?? throw new ArgumentNullException(nameof(loggerConfiguration));
+            _addScalar = addScalar ?? throw new ArgumentNullException(nameof(addScalar));
+            _addPolicy = addPolicy ?? throw new ArgumentNullException(nameof(addPolicy));
+            _setMaximumDepth = setMaximumDepth ?? throw new ArgumentNullException(nameof(setMaximumDepth));
+            _setMaximumStringLength = setMaximumStringLength ?? throw new ArgumentNullException(nameof(setMaximumStringLength));
+            _setMaximumCollectionCount = setMaximumCollectionCount ?? throw new ArgumentNullException(nameof(setMaximumCollectionCount));
         }
 
         /// <summary>
@@ -63,9 +57,11 @@ namespace Datadog.Trace.Vendors.Serilog.Configuration
         /// </summary>
         /// <param name="scalarType">Type to treat as scalar.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="scalarType"/> is <code>null</code></exception>
         public LoggerConfiguration AsScalar(Type scalarType)
         {
             if (scalarType == null) throw new ArgumentNullException(nameof(scalarType));
+
             _addScalar(scalarType);
             return _loggerConfiguration;
         }
@@ -76,24 +72,24 @@ namespace Datadog.Trace.Vendors.Serilog.Configuration
         /// </summary>
         /// <typeparam name="TScalar">Type to treat as scalar.</typeparam>
         /// <returns>Configuration object allowing method chaining.</returns>
-        public LoggerConfiguration AsScalar<TScalar>()
-        {
-            return AsScalar(typeof(TScalar));
-        }
+        public LoggerConfiguration AsScalar<TScalar>() => AsScalar(typeof(TScalar));
 
         /// <summary>
         /// When destructuring objects, transform instances with the provided policies.
         /// </summary>
         /// <param name="destructuringPolicies">Policies to apply when destructuring.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="destructuringPolicies"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentException">When any element of <paramref name="destructuringPolicies"/> is <code>null</code></exception>
         // ReSharper disable once MemberCanBePrivate.Global
         public LoggerConfiguration With(params IDestructuringPolicy[] destructuringPolicies)
         {
             if (destructuringPolicies == null) throw new ArgumentNullException(nameof(destructuringPolicies));
+
             foreach (var destructuringPolicy in destructuringPolicies)
             {
-                if (destructuringPolicy == null)
-                    throw new ArgumentException("Null policy is not allowed.");
+                if (destructuringPolicy == null) throw new ArgumentException("Null policy is not allowed.");
+
                 _addPolicy(destructuringPolicy);
             }
             return _loggerConfiguration;
@@ -118,10 +114,11 @@ namespace Datadog.Trace.Vendors.Serilog.Configuration
         /// to an alternative representation.</param>
         /// <typeparam name="TValue">Type of values to transform.</typeparam>
         /// <returns>Configuration object allowing method chaining.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="transformation"/> is <code>null</code></exception>
         public LoggerConfiguration ByTransforming<TValue>(Func<TValue, object> transformation)
         {
             if (transformation == null) throw new ArgumentNullException(nameof(transformation));
+
             var policy = new ProjectedDestructuringPolicy(t => t == typeof(TValue),
                                                           o => transformation((TValue)o));
             return With(policy);
@@ -138,61 +135,66 @@ namespace Datadog.Trace.Vendors.Serilog.Configuration
         /// to an alternative representation.</param>
         /// <typeparam name="TValue">Type of values to transform.</typeparam>
         /// <returns>Configuration object allowing method chaining.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="predicate"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="transformation"/> is <code>null</code></exception>
         public LoggerConfiguration ByTransformingWhere<TValue>(
             Func<Type, bool> predicate,
             Func<TValue, object> transformation)
         {
+            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
             if (transformation == null) throw new ArgumentNullException(nameof(transformation));
+
             var policy = new ProjectedDestructuringPolicy(predicate,
                                                           o => transformation((TValue)o));
             return With(policy);
         }
 
         /// <summary>
-        /// When destructuring objects, depth will be limited to 5 property traversals deep to
+        /// When destructuring objects, depth will be limited to 10 property traversals deep to
         /// guard against ballooning space when recursive/cyclic structures are accidentally passed. To
-        /// increase this limit pass a higher value.
+        /// change this limit pass a new maximum depth.
         /// </summary>
         /// <param name="maximumDestructuringDepth">The maximum depth to use.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <exception cref="ArgumentOutOfRangeException">When <paramref name="maximumDestructuringDepth"/> is negative</exception>
         public LoggerConfiguration ToMaximumDepth(int maximumDestructuringDepth)
         {
-            if (maximumDestructuringDepth < 0) throw new ArgumentOutOfRangeException(nameof(maximumDestructuringDepth));
+            if (maximumDestructuringDepth < 0) throw new ArgumentOutOfRangeException(nameof(maximumDestructuringDepth), "Maximum destructuring depth must be positive.");
+
             _setMaximumDepth(maximumDestructuringDepth);
             return _loggerConfiguration;
         }
 
         /// <summary>
         /// When destructuring objects, string values can be restricted to specified length
-        /// thus avoiding bloating payload. Limit is applied to each value separately, 
+        /// thus avoiding bloating payload. Limit is applied to each value separately,
         /// sum of length of strings can exceed limit.
         /// </summary>
         /// <param name="maximumStringLength">The maximum string length.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">When passed length is less than 2</exception>
+        /// <exception cref="ArgumentOutOfRangeException">When <paramref name="maximumStringLength"/> is less than 2</exception>
         public LoggerConfiguration ToMaximumStringLength(int maximumStringLength)
         {
             if (maximumStringLength < 2) throw new ArgumentOutOfRangeException(nameof(maximumStringLength), maximumStringLength, "Maximum string length must be at least two.");
+
             _setMaximumStringLength(maximumStringLength);
             return _loggerConfiguration;
         }
 
         /// <summary>
         /// When destructuring objects, collections be restricted to specified count
-        /// thus avoiding bloating payload. Limit is applied to each collection separately, 
+        /// thus avoiding bloating payload. Limit is applied to each collection separately,
         /// sum of length of collection can exceed limit.
         /// Applies limit to all <see cref="IEnumerable"/> including dictionaries.
         /// </summary>
         /// <returns>Configuration object allowing method chaining.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">When passed length is less than 1</exception>
+        /// <exception cref="ArgumentOutOfRangeException">When <paramref name="maximumCollectionCount"/> is less than 1</exception>
         public LoggerConfiguration ToMaximumCollectionCount(int maximumCollectionCount)
         {
             if (maximumCollectionCount < 1) throw new ArgumentOutOfRangeException(nameof(maximumCollectionCount), maximumCollectionCount, "Maximum collection length must be at least one.");
+
             _setMaximumCollectionCount(maximumCollectionCount);
             return _loggerConfiguration;
         }
     }
 }
-

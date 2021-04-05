@@ -60,7 +60,7 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
             string closingDelimiter = null,
             bool renderMessage = false,
             IFormatProvider formatProvider = null)
-            :this(false, closingDelimiter, renderMessage, formatProvider)
+            : this(false, closingDelimiter, renderMessage, formatProvider)
         {
         }
 
@@ -118,6 +118,8 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
         /// </summary>
         /// <param name="logEvent">The event to format.</param>
         /// <param name="output">The output.</param>
+        /// <exception cref="ArgumentNullException">When <paramref name="logEvent"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
         public void Format(LogEvent logEvent, TextWriter output)
         {
             if (logEvent == null) throw new ArgumentNullException(nameof(logEvent));
@@ -165,6 +167,8 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
         /// </summary>
         /// <param name="type">The type of values, which <paramref name="writer" /> handles.</param>
         /// <param name="writer">The function, which writes the values.</param>
+        /// <exception cref="ArgumentNullException">When <paramref name="type"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="writer"/> is <code>null</code></exception>
         [Obsolete(ExtensionPointObsoletionMessage)]
         protected void AddLiteralWriter(Type type, Action<object, TextWriter> writer)
         {
@@ -212,7 +216,7 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
                     WriteJsonProperty("Format", format.Format, ref eldelim, output);
 
                     var sw = new StringWriter();
-                    MessageTemplateRenderer.RenderPropertyToken(format, properties, sw, _formatProvider, true, false);
+                    MessageTemplateRenderer.RenderPropertyToken(format, properties, sw, _formatProvider, isLiteral: true, isJson: false);
                     WriteJsonProperty("Rendering", sw.ToString(), ref eldelim, output);
 
                     output.Write("}");
@@ -334,13 +338,13 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
         {
             output.Write("{");
             var delim = "";
-            foreach (var e in elements)
+            foreach (var element in elements)
             {
                 output.Write(delim);
                 delim = ",";
-                WriteLiteral(e.Key, output, true);
+                WriteLiteral(element.Key, output, forceQuotation: true);
                 output.Write(":");
-                WriteLiteral(e.Value, output);
+                WriteLiteral(element.Value, output);
             }
             output.Write("}");
         }
@@ -367,7 +371,7 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
         [Obsolete(ExtensionPointObsoletionMessage)]
         protected virtual void WriteLiteralValue(object value, TextWriter output)
         {
-            WriteString(value.ToString(), output);
+            WriteString(value.ToString() ?? "", output);
         }
 
         void WriteLiteral(object value, TextWriter output, bool forceQuotation = false)
@@ -378,8 +382,7 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
                 return;
             }
 
-            Action<object, bool, TextWriter> writer;
-            if (_literalWriters.TryGetValue(value.GetType(), out writer))
+            if (_literalWriters.TryGetValue(value.GetType(), out var writer))
             {
                 writer(value, forceQuotation, output);
                 return;
@@ -392,8 +395,7 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
         {
             if (quote) output.Write('"');
 
-            var fmt = number as IFormattable;
-            if (fmt != null)
+            if (number is IFormattable fmt)
                 output.Write(fmt.ToString(null, CultureInfo.InvariantCulture));
             else
                 output.Write(number.ToString());

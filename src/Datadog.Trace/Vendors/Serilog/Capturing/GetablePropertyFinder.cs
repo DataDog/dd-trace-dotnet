@@ -44,7 +44,7 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
                 }
 
                 var baseType = currentTypeInfo.BaseType;
-                if(baseType == null)
+                if (baseType == null)
                 {
                     yield break;
                 }

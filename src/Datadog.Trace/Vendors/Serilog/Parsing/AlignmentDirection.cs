@@ -27,6 +27,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// Text will be left-aligned.
         /// </summary>
         Left,
+
         /// <summary>
         /// Text will be right-aligned.
         /// </summary>
