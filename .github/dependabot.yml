@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Dependency notifications for vendored libraries
+  - package-ecosystem: "nuget"
+    directory: "/honeypot"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "area:vendors"
+  # Core tracer libraries
+  - package-ecosystem: "nuget"
+    directory: "/src"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+  # Test area
+  - package-ecosystem: "nuget"
+    directory: "/test"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "area:tests"
+  # Tools area
+  - package-ecosystem: "nuget"
+    directory: "/tools"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "area:tools"
