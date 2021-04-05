@@ -27,7 +27,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private TimeSpan _previousSystemCpu;
 
         public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay)
-            : this(statsd, delay, null)
+            : this(statsd, delay, InitializeListener)
         {
         }
 
@@ -63,7 +63,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                _listener = initializeListener?.Invoke(statsd, delay) ?? InitializeListener(statsd, delay);
+                _listener = initializeListener.Invoke(statsd, delay);
             }
             catch (Exception ex)
             {

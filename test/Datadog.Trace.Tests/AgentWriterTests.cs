@@ -252,7 +252,7 @@ namespace Datadog.Trace.Tests
         {
             var mutex = new ManualResetEventSlim();
 
-            agent.WriteWatermark(state => ((ManualResetEventSlim)state).Set(), mutex, wakeUpThread);
+            agent.WriteWatermark(() => mutex.Set(), wakeUpThread);
 
             return mutex.Wait(delay);
         }

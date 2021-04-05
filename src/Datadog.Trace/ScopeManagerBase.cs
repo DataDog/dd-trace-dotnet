@@ -32,18 +32,18 @@ namespace Datadog.Trace
             var newParent = Active;
             var scope = new Scope(newParent, span, this, finishOnClose);
 
-            if (newParent == null && TraceStarted != null)
+            if (newParent == null)
             {
-                TraceStarted(this, new SpanEventArgs(span));
+                TraceStarted?.Invoke(this, new SpanEventArgs(span));
             }
 
             SpanOpened?.Invoke(this, new SpanEventArgs(span));
 
             Active = scope;
 
-            if (newParent != null && SpanDeactivated != null)
+            if (newParent != null)
             {
-                SpanDeactivated(this, new SpanEventArgs(newParent.Span));
+                SpanDeactivated?.Invoke(this, new SpanEventArgs(newParent.Span));
             }
 
             SpanActivated?.Invoke(this, new SpanEventArgs(span));

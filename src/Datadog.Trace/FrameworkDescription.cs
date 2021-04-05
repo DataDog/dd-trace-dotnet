@@ -18,16 +18,16 @@ namespace Datadog.Trace
         private static readonly KeyValuePair<int, string>[] DotNetFrameworkVersionMapping =
         {
             // known min value for each framework version
-            new KeyValuePair<int, string>(528040, "4.8"),
-            new KeyValuePair<int, string>(461808, "4.7.2"),
-            new KeyValuePair<int, string>(461308, "4.7.1"),
-            new KeyValuePair<int, string>(460798, "4.7"),
-            new KeyValuePair<int, string>(394802, "4.6.2"),
-            new KeyValuePair<int, string>(394254, "4.6.1"),
-            new KeyValuePair<int, string>(393295, "4.6"),
-            new KeyValuePair<int, string>(379893, "4.5.2"),
-            new KeyValuePair<int, string>(378675, "4.5.1"),
-            new KeyValuePair<int, string>(378389, "4.5"),
+            new(528040, "4.8"),
+            new(461808, "4.7.2"),
+            new(461308, "4.7.1"),
+            new(460798, "4.7"),
+            new(394802, "4.6.2"),
+            new(394254, "4.6.1"),
+            new(393295, "4.6"),
+            new(379893, "4.5.2"),
+            new(378675, "4.5.1"),
+            new(378389, "4.5"),
         };
 
         private FrameworkDescription(

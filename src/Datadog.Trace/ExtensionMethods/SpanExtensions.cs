@@ -71,7 +71,6 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer)
         {
             string statusCodeString = ConvertStatusCodeToString(statusCode);

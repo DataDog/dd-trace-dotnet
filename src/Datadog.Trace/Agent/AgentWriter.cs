@@ -122,6 +122,29 @@ namespace Datadog.Trace.Agent
 
             var delay = Task.Delay(TimeSpan.FromSeconds(20));
 
+#if NET5_0_OR_GREATER
+            var completedTask = await Task.WhenAny(_serializationTask, delay).ConfigureAwait(false);
+
+            if (completedTask != delay)
+            {
+                await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20))).ConfigureAwait(false);
+
+                if (_frontBuffer.TraceCount == 0 && _backBuffer.TraceCount == 0)
+                {
+                    // All good
+                    return;
+                }
+
+                // In some situations, the flush thread can exit before flushing all the threads
+                // Force a flush for the leftover traces
+                completedTask = await Task.WhenAny(Task.Run(() => FlushBuffers(flushAllBuffers: true)), delay).ConfigureAwait(false);
+
+                if (completedTask != delay)
+                {
+                    return;
+                }
+            }
+#else
             // Internally WhenAny will make a defensive copy of the array
             // so we reuse the outer one.
             // https://source.dot.net/#System.Private.CoreLib/Task.cs,6028
@@ -146,7 +169,7 @@ namespace Datadog.Trace.Agent
 
                 // In some situations, the flush thread can exit before flushing all the threads
                 // Force a flush for the leftover traces
-                whenAnyArray[0] = Task.Factory.StartNew(state => ((AgentWriter)state).FlushBuffers(flushAllBuffers: true), this).Unwrap();
+                whenAnyArray[0] = Task.Run(() => FlushBuffers(flushAllBuffers: true));
                 whenAnyArray[1] = delay;
                 completedTask = await Task.WhenAny(whenAnyArray).ConfigureAwait(false);
 
@@ -155,6 +178,7 @@ namespace Datadog.Trace.Agent
                     return;
                 }
             }
+#endif
 
             Log.Warning("Could not flush all traces before process exit");
         }
@@ -167,7 +191,7 @@ namespace Datadog.Trace.Agent
                 // Enqueue a watermark to know when it's done serializing all currently enqueued traces
                 var tcs = new TaskCompletionSource<bool>(TaskOptions);
 
-                WriteWatermark(state => CompleteTaskCompletionSource((TaskCompletionSource<bool>)state), tcs);
+                WriteWatermark(() => CompleteTaskCompletionSource(tcs));
 
                 await tcs.Task.ConfigureAwait(false);
             }
@@ -175,9 +199,9 @@ namespace Datadog.Trace.Agent
             await FlushBuffers().ConfigureAwait(false);
         }
 
-        internal void WriteWatermark(Action<object> watermark, object state, bool wakeUpThread = true)
+        internal void WriteWatermark(Action watermark, bool wakeUpThread = true)
         {
-            _pendingTraces.Enqueue(new WorkItem(watermark, state));
+            _pendingTraces.Enqueue(new WorkItem(watermark));
 
             if (wakeUpThread)
             {
@@ -372,7 +396,7 @@ namespace Datadog.Trace.Agent
                         if (item.Trace == null)
                         {
                             // Found a watermark
-                            item.ExecuteCallback();
+                            item.Callback();
                             continue;
                         }
 
@@ -406,26 +430,18 @@ namespace Datadog.Trace.Agent
         private readonly struct WorkItem
         {
             public readonly Span[] Trace;
-            public readonly Action<object> Callback;
-            public readonly object State;
+            public readonly Action Callback;
 
             public WorkItem(Span[] trace)
             {
                 Trace = trace;
                 Callback = null;
-                State = null;
             }
 
-            public WorkItem(Action<object> callback, object state = null)
+            public WorkItem(Action callback)
             {
                 Trace = null;
                 Callback = callback;
-                State = state;
-            }
-
-            public void ExecuteCallback()
-            {
-                Callback?.Invoke(State);
             }
         }
     }
