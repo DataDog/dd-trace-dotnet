@@ -10,8 +10,15 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetProcessExitDelegateTest()
         {
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             var @delegate = DelegatesHelper.GetInternalProcessExitDelegate();
+            AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
             Assert.NotNull(@delegate);
+
+            void CurrentDomain_ProcessExit(object sender, EventArgs e)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         [Fact]
@@ -19,8 +26,8 @@ namespace Datadog.Trace.Tests
         {
             Console.CancelKeyPress += Console_CancelKeyPress;
             var @delegate = DelegatesHelper.GetInternalCancelKeyPressDelegate();
-            Assert.NotNull(@delegate);
             Console.CancelKeyPress -= Console_CancelKeyPress;
+            Assert.NotNull(@delegate);
 
             void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
             {
