@@ -51,6 +51,8 @@ namespace Datadog.Trace.Configuration
                            // default value
                            true;
 
+            PropagationStyles = source?.GetString(ConfigurationKeys.PropagationStyle)?.Split(',') ?? new[] { "Datadog" };
+
             if (AzureAppServices.Metadata.IsRelevant && AzureAppServices.Metadata.IsUnsafeToTrace)
             {
                 TraceEnabled = false;
@@ -209,6 +211,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
         public bool TraceEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the default PropagationStyle
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.PropagationStyle"/>
+        public string[] PropagationStyles { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether debug is enabled for a tracer.

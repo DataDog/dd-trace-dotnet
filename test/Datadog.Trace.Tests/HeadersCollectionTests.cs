@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.TestHelpers;
@@ -111,6 +112,50 @@ namespace Datadog.Trace.Tests
             Assert.Equal(context.TraceId, resultContext.TraceId);
             Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
             Assert.Equal(context.Origin, resultContext.Origin);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetHeaderCollectionImplementations))]
+        internal void InjectExtract_B3Identity(IHeadersCollection headers)
+        {
+            const int traceId = 9;
+            const int spanId = 7;
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
+            TracerSettings tracerSettings = new TracerSettings();
+            tracerSettings.PropagationStyles = new[] { "B3" };
+            SpanContextPropagator spanContextPropagator = new SpanContextPropagator(tracerSettings);
+
+            var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            spanContextPropagator.Inject(context, headers);
+            var resultContext = spanContextPropagator.Extract(headers);
+
+            Assert.NotNull(resultContext);
+            Assert.Equal(context.SpanId, resultContext.SpanId);
+            Assert.Equal(context.TraceId, resultContext.TraceId);
+            Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetHeaderCollectionImplementations))]
+        internal void InjectExtract_MultipleIdentity(IHeadersCollection headers)
+        {
+            const int traceId = 9;
+            const int spanId = 7;
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
+            TracerSettings tracerSettings = new TracerSettings();
+            tracerSettings.PropagationStyles = new[] { "B3", "Datadog" };
+            SpanContextPropagator spanContextPropagator = new SpanContextPropagator(tracerSettings);
+
+            var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            spanContextPropagator.Inject(context, headers);
+            var resultContext = spanContextPropagator.Extract(headers);
+
+            Assert.NotNull(resultContext);
+            Assert.Equal(context.SpanId, resultContext.SpanId);
+            Assert.Equal(context.TraceId, resultContext.TraceId);
+            Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
         }
 
         [Theory]

@@ -291,6 +291,13 @@ namespace Datadog.Trace.Configuration
         public const string TracesTransport = "DD_TRACE_TRANSPORT";
 
         /// <summary>
+        /// Configuration key for overriding the style to use for communicating span context.
+        /// Default value is <c>Datadog</c>.
+        /// Override options available: <c>B3</c>, <c>DataDog</c>
+        /// </summary>
+        public const string PropagationStyle = "DD_PROPAGATION_STYLE_INJECT";
+
+        /// <summary>
         /// Configuration key for the application's server http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>

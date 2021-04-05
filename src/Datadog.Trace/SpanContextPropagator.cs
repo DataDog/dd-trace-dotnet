@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -17,13 +19,20 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
 
         private static readonly int[] SamplingPriorities;
+        private TracerSettings tracerSettings;
 
         static SpanContextPropagator()
         {
             SamplingPriorities = Enum.GetValues(typeof(SamplingPriority)).Cast<int>().ToArray();
         }
 
+        public SpanContextPropagator(TracerSettings tracerSettings)
+        {
+            this.tracerSettings = tracerSettings;
+        }
+
         private SpanContextPropagator()
+            : this(TracerSettings.FromDefaultSources())
         {
         }
 
@@ -45,21 +54,54 @@ namespace Datadog.Trace
 
             // lock sampling priority when span propagates.
             context.TraceContext?.LockSamplingPriority();
+            var samplingPriority = (SamplingPriority?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
 
-            headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
-            headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
-
-            // avoid writing origin header if not set, keeping the previous behavior.
-            if (context.Origin != null)
+            foreach (var propagationStyle in tracerSettings.PropagationStyles)
             {
-                headers.Set(HttpHeaderNames.Origin, context.Origin);
+                switch (propagationStyle)
+                {
+                    case "B3":
+                        headers.Set(HttpHeaderNames.B3TraceId, context.TraceId.ToString(InvariantCulture));
+                        headers.Set(HttpHeaderNames.B3SpanId, context.SpanId.ToString());
+                        if (context.ParentId != null && context.ParentId > 0)
+                        {
+                            headers.Set(HttpHeaderNames.B3ParentId, context.ParentId.ToString());
+                        }
+
+                        if (samplingPriority != null)
+                        {
+                            switch (samplingPriority.GetValueOrDefault())
+                            {
+                                case SamplingPriority.UserKeep:
+                                    headers.Set(HttpHeaderNames.B3Flags, "1");
+                                    break;
+                                case SamplingPriority.AutoKeep:
+                                    headers.Set(HttpHeaderNames.B3Sampled, "1");
+                                    break;
+                                case SamplingPriority.AutoReject:
+                                case SamplingPriority.UserReject:
+                                    headers.Set(HttpHeaderNames.B3Sampled, "0");
+                                    break;
+                            }
+                        }
+
+                        break;
+                    case "Datadog":
+                    default:
+                        headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
+                        headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
+                        // avoid writing origin header if not set, keeping the previous behavior.
+                        if (context.Origin != null)
+                        {
+                            headers.Set(HttpHeaderNames.Origin, context.Origin);
+                        }
+
+                        headers.Set(
+                            HttpHeaderNames.SamplingPriority,
+                            samplingPriority?.ToString());
+                        break;
+                }
             }
-
-            var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
-
-            headers.Set(
-                HttpHeaderNames.SamplingPriority,
-                samplingPriority?.ToString(InvariantCulture));
         }
 
         /// <summary>
@@ -80,19 +122,53 @@ namespace Datadog.Trace
 
             // lock sampling priority when span propagates.
             context.TraceContext?.LockSamplingPriority();
+            var samplingPriority = (SamplingPriority?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
 
-            setter(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
-            setter(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
-
-            // avoid writing origin header if not set, keeping the previous behavior.
-            if (context.Origin != null)
+            foreach (var propagationStyle in tracerSettings.PropagationStyles)
             {
-                setter(carrier, HttpHeaderNames.Origin, context.Origin);
+                switch (propagationStyle)
+                {
+                    case "B3":
+                        setter(carrier, HttpHeaderNames.B3TraceId, context.TraceId.ToString(InvariantCulture));
+                        setter(carrier, HttpHeaderNames.B3SpanId, context.SpanId.ToString(InvariantCulture));
+                        if (context.ParentId != null && context.ParentId > 0)
+                        {
+                            setter(carrier, HttpHeaderNames.B3ParentId, context.ParentId.ToString());
+                        }
+
+                        if (samplingPriority != null)
+                        {
+                            switch (samplingPriority.GetValueOrDefault())
+                            {
+                                case SamplingPriority.UserKeep:
+                                    setter(carrier, HttpHeaderNames.B3Flags, "1");
+                                    break;
+                                case SamplingPriority.AutoKeep:
+                                    setter(carrier, HttpHeaderNames.B3Sampled, "1");
+                                    break;
+                                case SamplingPriority.AutoReject:
+                                case SamplingPriority.UserReject:
+                                    setter(carrier, HttpHeaderNames.B3Sampled, "0");
+                                    break;
+                            }
+                        }
+
+                        break;
+                    case "Datadog":
+                    default:
+                        setter(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
+                        setter(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
+
+                        // avoid writing origin header if not set, keeping the previous behavior.
+                        if (context.Origin != null)
+                        {
+                            setter(carrier, HttpHeaderNames.Origin, context.Origin);
+                        }
+
+                        setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority?.ToString());
+                        break;
+                }
             }
-
-            var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
-
-            setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority?.ToString(InvariantCulture));
         }
 
         /// <summary>
@@ -109,17 +185,56 @@ namespace Datadog.Trace
                 throw new ArgumentNullException(nameof(headers));
             }
 
-            var traceId = ParseUInt64(headers, HttpHeaderNames.TraceId);
+            ulong parentId = 0;
+            ulong traceId = 0;
+            string origin = null;
+            SamplingPriority? samplingPriority = null;
+            foreach (var propagationStyle in tracerSettings.PropagationStyles)
+            {
+                switch (propagationStyle)
+                {
+                    case "B3":
+                        traceId = ParseUInt64(headers, HttpHeaderNames.B3TraceId);
+                        parentId = ParseUInt64(headers, HttpHeaderNames.B3SpanId);
+                        var sampled = ParseString(headers, HttpHeaderNames.B3Sampled);
+                        var flags = ParseUInt64(headers, HttpHeaderNames.B3Flags);
+                        if (flags % 2 == 1)
+                        {
+                            samplingPriority = SamplingPriority.UserKeep;
+                        }
+                        else if (sampled != null)
+                        {
+                            if (sampled == "0")
+                            {
+                                samplingPriority = SamplingPriority.AutoReject;
+                            }
+                            else if (sampled == "1")
+                            {
+                                samplingPriority = SamplingPriority.AutoKeep;
+                            }
+                        }
+
+                        break;
+                    case "Datadog":
+                    default:
+                        traceId = ParseUInt64(headers, HttpHeaderNames.TraceId);
+                        parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
+                        origin = ParseString(headers, HttpHeaderNames.Origin);
+                        samplingPriority = ParseSamplingPriority(headers, HttpHeaderNames.SamplingPriority);
+                        break;
+                }
+
+                if (traceId != 0)
+                {
+                    break;
+                }
+            }
 
             if (traceId == 0)
             {
                 // a valid traceId is required to use distributed tracing
                 return null;
             }
-
-            var parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
-            var samplingPriority = ParseSamplingPriority(headers, HttpHeaderNames.SamplingPriority);
-            var origin = ParseString(headers, HttpHeaderNames.Origin);
 
             return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
@@ -137,17 +252,56 @@ namespace Datadog.Trace
 
             if (getter == null) { throw new ArgumentNullException(nameof(getter)); }
 
-            var traceId = ParseUInt64(carrier, getter, HttpHeaderNames.TraceId);
+            ulong parentId = 0;
+            ulong traceId = 0;
+            string origin = null;
+            SamplingPriority? samplingPriority = null;
+            foreach (var propagationStyle in tracerSettings.PropagationStyles)
+            {
+                switch (propagationStyle)
+                {
+                    case "B3":
+                        traceId = ParseUInt64(carrier, getter, HttpHeaderNames.B3TraceId);
+                        parentId = ParseUInt64(carrier, getter, HttpHeaderNames.B3SpanId);
+                        var sampled = ParseString(carrier, getter, HttpHeaderNames.B3Sampled);
+                        var flags = ParseUInt64(carrier, getter, HttpHeaderNames.B3Flags);
+                        if (flags % 2 == 1)
+                        {
+                            samplingPriority = SamplingPriority.UserKeep;
+                        }
+                        else if (sampled != null)
+                        {
+                            if (sampled == "0")
+                            {
+                                samplingPriority = SamplingPriority.AutoReject;
+                            }
+                            else if (sampled == "1")
+                            {
+                                samplingPriority = SamplingPriority.AutoKeep;
+                            }
+                        }
+
+                        break;
+                    case "Datadog":
+                    default:
+                        traceId = ParseUInt64(carrier, getter, HttpHeaderNames.TraceId);
+                        parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId);
+                        origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
+                        samplingPriority = ParseSamplingPriority(carrier, getter, HttpHeaderNames.SamplingPriority);
+                        break;
+                }
+
+                if (traceId != 0)
+                {
+                    break;
+                }
+            }
 
             if (traceId == 0)
             {
                 // a valid traceId is required to use distributed tracing
                 return null;
             }
-
-            var parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId);
-            var samplingPriority = ParseSamplingPriority(carrier, getter, HttpHeaderNames.SamplingPriority);
-            var origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
 
             return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
