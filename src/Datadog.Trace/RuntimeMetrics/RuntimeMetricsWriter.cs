@@ -63,7 +63,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                _listener = initializeListener.Invoke(statsd, delay);
+                _listener = initializeListener(statsd, delay);
             }
             catch (Exception ex)
             {
