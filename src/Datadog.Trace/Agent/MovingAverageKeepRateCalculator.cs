@@ -114,6 +114,7 @@ namespace Datadog.Trace.Agent
             var latestDropped = Math.Min(Interlocked.Exchange(ref _latestDrops, 0), uint.MaxValue);
             var latestCreated = Math.Min(Interlocked.Exchange(ref _latestKeeps, 0) + latestDropped, uint.MaxValue);
 
+            var totals = _totals;
             UnpackBits(totals, out var previousTotalDropped, out var previousTotalCreated);
 
             var newTotalDropped = (uint)Math.Min(((long)previousTotalDropped) - previousDropped + latestDropped, uint.MaxValue);
