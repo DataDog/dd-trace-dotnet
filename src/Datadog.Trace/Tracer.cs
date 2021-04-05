@@ -714,16 +714,24 @@ namespace Datadog.Trace
 
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-            // Console Cancel KeyPress is raised on SIGINT and SIGQUIT signal,
-            // here we ensure we flush and not close the writer.
+            // Console Cancel KeyPress is raised when CTRL+C or CTRL+BREAK are pressed in a console windows
+            // On Unix: is registered using SIGINT and SIGQUIT signals.
+            // On Windows: is registered with Kernel32.SetConsoleCtrlHandler.
+            // Here we ensure we flush and not close the writer.
             // There's a possibility of a graceful shutdown handled by ProcessExit.
+            SynchronizationContext context = SynchronizationContext.Current;
             try
             {
+                SynchronizationContext.SetSynchronizationContext(null);
                 _agentWriter.FlushTracesAsync().GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error flushing traces on shutdown.");
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(context);
             }
         }
 
@@ -734,13 +742,19 @@ namespace Datadog.Trace
 
         private void RunShutdownTasks()
         {
+            SynchronizationContext context = SynchronizationContext.Current;
             try
             {
-                _agentWriter.FlushAndCloseAsync().Wait();
+                SynchronizationContext.SetSynchronizationContext(null);
+                _agentWriter.FlushAndCloseAsync().GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error flushing traces on shutdown.");
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(context);
             }
         }
 
