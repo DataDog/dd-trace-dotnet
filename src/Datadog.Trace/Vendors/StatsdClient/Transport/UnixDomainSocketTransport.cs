@@ -4,6 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Mono.Unix;
 
@@ -59,7 +60,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.NoBufferSpaceAvailable)
                 {
-                    Task.Delay(NoBufferSpaceAvailableWait).Wait();
+                    Thread.Sleep(NoBufferSpaceAvailableWait);
                 }
                 catch (SocketException)
                 {
