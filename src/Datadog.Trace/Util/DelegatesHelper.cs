@@ -43,6 +43,26 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
+        /// Tries to get the internal Console.CancelKeyPress delegate from the event using reflection.
+        /// </summary>
+        /// <returns>MulticastDelegate instance or null</returns>
+        public static MulticastDelegate GetInternalCancelKeyPressDelegate()
+        {
+            // This methods tries to get the internal delegte for the Console.CancelKeyPress event.
+
+            FieldInfo consoleCancelCallbacks =
+                typeof(Console).GetField("s_cancelCallbacks", BindingFlags.NonPublic | BindingFlags.Static) ??
+                typeof(Console).GetField("_cancelCallbacks", BindingFlags.NonPublic | BindingFlags.Static);
+
+            if (consoleCancelCallbacks != null)
+            {
+                return consoleCancelCallbacks.GetValue(null) as MulticastDelegate;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Try to set a delegate as the last one from a MulticastDelegate invocation list.
         /// </summary>
         /// <param name="targetDelegate">MulticastDelegate instance target were the invocation list will be modified</param>

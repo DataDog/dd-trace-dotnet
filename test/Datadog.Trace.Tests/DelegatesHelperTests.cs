@@ -15,6 +15,20 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void GetCancelKeyPressDelegateTest()
+        {
+            Console.CancelKeyPress += Console_CancelKeyPress;
+            var @delegate = DelegatesHelper.GetInternalCancelKeyPressDelegate();
+            Assert.NotNull(@delegate);
+            Console.CancelKeyPress -= Console_CancelKeyPress;
+
+            void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [Fact]
         public void SetLastDelegateTest()
         {
             var lstEvents = new List<int>();

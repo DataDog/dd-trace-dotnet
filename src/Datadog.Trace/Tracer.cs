@@ -717,21 +717,65 @@ namespace Datadog.Trace
             // Console Cancel KeyPress is raised when CTRL+C or CTRL+BREAK are pressed in a console windows
             // On Unix: is registered using SIGINT and SIGQUIT signals.
             // On Windows: is registered with Kernel32.SetConsoleCtrlHandler.
-            // Here we ensure we flush and not close the writer.
-            // There's a possibility of a graceful shutdown handled by ProcessExit.
-            SynchronizationContext context = SynchronizationContext.Current;
-            try
+            // ...
+            // If ConsoleCancelEventArgs.Cancel is false then the Process will be exit without calling ProcessExit event. So we shuld flush and close.
+            // If ConsoleCancelEventArgs.Cancel is true the process will not exit so we will only flush.
+            // Because the Cancel property can be modified by the application handlers we should listen at the end of the queue.
+
+            // For this, we try to get the internal CancelKeyPress delegate from the event.
+            var cancelKeyPressDelegate = DelegatesHelper.GetInternalCancelKeyPressDelegate();
+            if (cancelKeyPressDelegate != null)
             {
-                SynchronizationContext.SetSynchronizationContext(null);
-                _agentWriter.FlushTracesAsync().GetAwaiter().GetResult();
+                // With the internal MulticastDelegate we first create the delegate instance
+                // we want to run at last of the event handler.
+
+                // Sets the final delegate to be executed by the CancelKeyPress event.
+                var lastDelegate = new ConsoleCancelEventHandler(HandleCancelKeyPress);
+
+                // Try to modify the MulticastDelegate invocation list and set the last delegate.
+                if (!DelegatesHelper.TrySetLastDelegate(cancelKeyPressDelegate, lastDelegate))
+                {
+                    // This means we are in the last delegate already
+                    // or we were unable to set the last delegate, in
+                    // any case we fallback by running the delegate now.
+                    HandleCancelKeyPress(sender, e);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Log.Error(ex, "Error flushing traces on shutdown.");
+                // If we were unable to extract the internal delegate of the event then
+                // we just fallback and run the code here.
+                HandleCancelKeyPress(sender, e);
             }
-            finally
+
+            void HandleCancelKeyPress(object s, ConsoleCancelEventArgs cEvtArgs)
             {
-                SynchronizationContext.SetSynchronizationContext(context);
+                if (cEvtArgs.Cancel)
+                {
+                    FlushTraces();
+                }
+                else
+                {
+                    RunShutdownTasks();
+                }
+            }
+
+            void FlushTraces()
+            {
+                SynchronizationContext context = SynchronizationContext.Current;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    _agentWriter.FlushTracesAsync().GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error flushing traces on shutdown.");
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(context);
+                }
             }
         }
 
