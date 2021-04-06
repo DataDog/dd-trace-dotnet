@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("/controller/action/", "/controller/action/")]
         public void GetCleanUriPath_WithLegacyIdCleaning_ShouldRemoveIdsFromPaths(string url, string expected)
         {
-            Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(url));
+            Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(url, useLegacyIdCleaning: true));
         }
 
         [Theory]
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("ftp://example.org/controller/action/2022", "/controller/action/?")]
         public void GetCleanUriPath_ByUri_ShouldExtractThePathAndRemoveIds(string url, string expected)
         {
-            Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url)));
+            Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url), useLegacyIdCleaning: true));
         }
     }
 }
