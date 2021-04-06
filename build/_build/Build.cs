@@ -54,8 +54,9 @@ partial class Build : NukeBuild
     [Solution("Datadog.Trace.Native.sln")] readonly Solution NativeSolution;
     AbsolutePath MsBuildProject => RootDirectory / "Datadog.Trace.proj";
 
-    AbsolutePath TracerHomeDirectory => TracerHome ?? (RootDirectory / "bin" / "tracer-home");
-    AbsolutePath ArtifactsDirectory => Artifacts ?? (RootDirectory / "bin" / "artifacts");
+    AbsolutePath OutputDirectory => RootDirectory / "bin";
+    AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
+    AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath TracerHomeZip => ArtifactsDirectory / "tracer-home.zip";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -93,6 +94,7 @@ partial class Build : NukeBuild
         {
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => EnsureCleanDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => EnsureCleanDirectory(x));
+            EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(TracerHomeDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
             DeleteFile(TracerHomeZip);
