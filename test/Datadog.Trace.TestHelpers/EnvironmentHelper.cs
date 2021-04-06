@@ -338,7 +338,7 @@ namespace Datadog.Trace.TestHelpers
         public string GetTestCommandForSampleApplicationPath(string packageVersion = "", string framework = "")
         {
             var appFileName = $"{FullSampleName}.dll";
-            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
+            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework, usePublishFolder: false), appFileName);
             return sampleAppPath;
         }
 
@@ -411,7 +411,7 @@ namespace Datadog.Trace.TestHelpers
             return projectDir;
         }
 
-        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "")
+        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "", bool usePublishFolder = true)
         {
             var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
             var binDir = Path.Combine(
@@ -436,7 +436,7 @@ namespace Datadog.Trace.TestHelpers
                     EnvironmentTools.GetBuildConfiguration(),
                     targetFramework);
             }
-            else
+            else if (usePublishFolder)
             {
                 outputDir = Path.Combine(
                     binDir,
@@ -444,6 +444,14 @@ namespace Datadog.Trace.TestHelpers
                     EnvironmentTools.GetBuildConfiguration(),
                     targetFramework,
                     "publish");
+            }
+            else
+            {
+                outputDir = Path.Combine(
+                    binDir,
+                    packageVersion,
+                    EnvironmentTools.GetBuildConfiguration(),
+                    targetFramework);
             }
 
             return outputDir;
