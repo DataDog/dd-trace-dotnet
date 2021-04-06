@@ -248,10 +248,10 @@ stages:
         artifact: build-managed
         path: $(System.DefaultWorkingDirectory)
 
-    - script: build.cmd CompileNativeSrcMacOS --skip
+    - script: build.sh CompileNativeSrcMacOS --skip
       displayName: Compile native src
 
-    - script: build.cmd PublishNativeProfilerMacOs --skip
+    - script: build.sh PublishNativeProfilerMacOs --skip
       displayName: Compile native src
 
     - publish: $(tracerHome)/macos
