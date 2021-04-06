@@ -64,9 +64,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Output.WriteLine($"Starting Application: {sampleAppPath}");
             string testCli = EnvironmentHelper.GetDotNetTest();
+            string exec = testCli;
+            string appPath = testCli.StartsWith("dotnet") ? $"test {sampleAppPath}" : sampleAppPath;
+            Output.WriteLine("Executable: " + exec);
+            Output.WriteLine("ApplicationPath: " + appPath);
             return ProfilerHelper.StartProcessWithProfiler(
-                testCli,
-                testCli.StartsWith("dotnet") ? $"test {sampleAppPath}" : sampleAppPath,
+                exec,
+                appPath,
                 EnvironmentHelper,
                 integrationPaths,
                 arguments,
