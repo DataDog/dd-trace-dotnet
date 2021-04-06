@@ -27,5 +27,10 @@ namespace Datadog.Trace
         /// Top-level spans have a different service name from their immediate parent or have no parent.
         /// </summary>
         internal const string TopLevelSpan = "_dd.top_level";
+
+        /// <summary>
+        /// Records the keep rate of spans in the tracer, independent of sampling rate
+        /// </summary>
+        internal const string TracesKeepRate = "_dd.tracer_kr";
     }
 }

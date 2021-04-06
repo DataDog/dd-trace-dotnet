@@ -248,6 +248,56 @@ namespace Datadog.Trace.Tests
             return agent.FlushAndCloseAsync();
         }
 
+        [Fact]
+        public async Task AddsTraceKeepRateMetricToRootSpan()
+        {
+            // Traces should be dropped when both buffers are full
+            var calculator = new MovingAverageKeepRateCalculator(windowSize: 10, Timeout.InfiniteTimeSpan);
+
+            var tracer = new Mock<IDatadogTracer>();
+            tracer.Setup(x => x.DefaultServiceName).Returns("Default");
+            var traceContext = new TraceContext(tracer.Object);
+            var rootSpanContext = new SpanContext(null, traceContext, null);
+            var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow);
+            var childSpan = new Span(new SpanContext(rootSpanContext, traceContext, null), DateTimeOffset.UtcNow);
+            traceContext.AddSpan(rootSpan);
+            traceContext.AddSpan(childSpan);
+            var trace = new[] { rootSpan, childSpan };
+            var sizeOfTrace = ComputeSizeOfTrace(trace);
+
+            // Make the buffer size big enough for a single trace
+            var api = new Mock<IApi>();
+            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>()))
+               .ReturnsAsync(() => true);
+            var agent = new AgentWriter(api.Object, statsd: null, calculator, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100);
+
+            // Fill both buffers
+            agent.WriteTrace(trace);
+            agent.WriteTrace(trace);
+
+            // Drop one
+            agent.WriteTrace(trace);
+            await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
+
+            // Write another one
+            agent.WriteTrace(trace);
+            await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
+            api.Verify();
+            api.Invocations.Clear();
+
+            // Write trace and update keep rate
+            calculator.UpdateBucket();
+            agent.WriteTrace(trace);
+            await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
+
+            const double expectedTraceKeepRate = 0.75;
+            rootSpan.SetMetric(Metrics.TracesKeepRate, expectedTraceKeepRate);
+            var expectedData = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+            await agent.FlushAndCloseAsync();
+
+            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData)), It.Is<int>(i => i == 1)), Times.Once);
+        }
+
         private static bool WaitForDequeue(AgentWriter agent, bool wakeUpThread = true, int delay = -1)
         {
             var mutex = new ManualResetEventSlim();
