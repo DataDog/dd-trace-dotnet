@@ -242,10 +242,10 @@ stages:
         artifact: build_managed-bin
         path: $(System.DefaultWorkingDirectory)/bin
 
-    - script: build.sh CompileNativeSrcMacOS --skip
+    - script: ./build.sh CompileNativeSrcMacOS --skip
       displayName: Compile native src
 
-    - script: build.sh PublishNativeProfilerMacOs --skip
+    - script: ./build.sh PublishNativeProfilerMacOs --skip
       displayName: Compile native src
 
     - publish: $(tracerHome)/macos
