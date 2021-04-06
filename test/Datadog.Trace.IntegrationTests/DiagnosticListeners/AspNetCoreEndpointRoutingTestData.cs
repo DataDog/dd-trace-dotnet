@@ -7,11 +7,6 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     public static class AspNetCoreEndpointRoutingTestData
     {
-        private const string IndexEndpointName = "Datadog.Trace.Tests.DiagnosticListeners.HomeController.Index (Datadog.Trace.Tests)";
-        private const string ErrorEndpointName = "Datadog.Trace.Tests.DiagnosticListeners.HomeController.Error (Datadog.Trace.Tests)";
-        private const string MyTestEndpointName = "Datadog.Trace.Tests.DiagnosticListeners.MyTestController.Index (Datadog.Trace.Tests)";
-        // private const string StatusCodeEndpointName = "Datadog.Trace.Tests.DiagnosticListeners.MyTestController.SetStatusCode (Datadog.Trace.Tests)";
-
         /// <summary>
         /// Gets data for Endpoint Routing tests with the feature flags disabled
         /// (URL, isError, Resource, Tags)
@@ -51,93 +46,186 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         };
 
         /// <summary>
-        /// Gets data for Endpoint Routing tests with the feature flags enabled
-        /// (URL, isError, Resource, Tags)
+        /// Gets data for MVC tests with the feature flags enabled
+        /// (URL, StatusCode, isError, Resource, ParentSpanTags, Span Count, ChildSpan1ResourceName, Child1SpanTags, ChildSpan2ResourceName, Child2SpanTags)
         /// </summary>
-        public static TheoryData<string, int, bool, string, SerializableDictionary> WithFeatureFlag => new()
+        public static TheoryData<string, int, bool, string, SerializableDictionary, int, string, SerializableDictionary, string, SerializableDictionary> WithFeatureFlag => new()
         {
-            { "/", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
-            { "/Home", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
-            { "/Home/Index", 200, false, "GET /home/index", ConventionalRouteTags(endpoint: IndexEndpointName) },
-            { "/Api/index", 200, false, "GET /api/index", ApiIndexTags() },
-            { "/Api/Value/3", 200, false, "GET /api/value/{value}", ApiValueTags() },
-            { "/Api/Value/100", 400, false, "GET /api/value/{value}", ApiValueTags() },
-            { "/MyTest", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: MyTestEndpointName) },
-            { "/MyTest/index", 200, false, "GET /mytest/index", ConventionalRouteTags(controller: "mytest", endpoint: MyTestEndpointName) },
-            { "/statuscode", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/statuscode/100", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/statuscode/Oops", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/statuscode/200", 200, false, "GET /statuscode/{value}", StatusCodeTags() },
-            { "/healthz", 200, false, "GET /healthz", HealthCheckTags() },
-            { "/echo", 200, false, "GET /echo", EchoTags() },
-            { "/echo/123", 200, false, "GET /echo/{value?}", EchoTags() },
-            { "/echo/false", 404, false, "GET /echo/false", EmptyTags() },
-            { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
-            { "/Home/Error", 500, true, "GET /home/error", ConventionalRouteTags(action: "error") },
-            { "/Home/UncaughtError", 500, true, "GET /home/uncaughterror", ConventionalRouteTags(action: "uncaughterror") },
-            { "/Home/BadHttpRequest", 400, true, "GET /home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
-            { $"{CustomHandlerPrefix}/Home/Error", 500, true, $"GET {CustomHandlerPrefix}/home/Error", ConventionalRouteTags(action: "error") },
-            { $"{CustomHandlerPrefix}/Home/UncaughtError", 500, true, $"GET {CustomHandlerPrefix}/home/uncaughterror", ConventionalRouteTags(action: "uncaughterror") },
-            { $"{CustomHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {CustomHandlerPrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
-            { $"{ExceptionPagePrefix}/Home/Error", 500, true, $"GET {ExceptionPagePrefix}/home/Error", ConventionalRouteTags(action: "error") },
-            { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
-            { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/Error", ConventionalRouteTags(action: "error") },
-            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", ConventionalRouteTags(action: "badhttprequest") },
+            { "/", 200, false, "GET /home/index", ConventionalParentTags(endpoint: "HomeController.Index"), 2, null, ConventionalChildTags(), null, null },
+            { "/Home", 200, false, "GET /home/index", ConventionalParentTags(endpoint: "HomeController.Index"), 2, null, ConventionalChildTags(), null, null },
+            { "/Home/Index", 200, false, "GET /home/index", ConventionalParentTags(endpoint: "HomeController.Index"), 2, null, ConventionalChildTags(), null, null },
+            { "/Api/index", 200, false, "GET /api/index", ApiIndexParentTags(), 2, null, ApiIndexChildTags(), null, null },
+            { "/Api/Value/3", 200, false, "GET /api/value/{value}", ApiValueParentTags(), 2, null, ApiValueChildTags(), null, null },
+            { "/Api/Value/100", 400, false, "GET /api/value/{value}", ApiValueParentTags(), 2, null, ApiValueChildTags(), null, null },
+            { "/MyTest", 200, false, "GET /mytest/index", ConventionalParentTags(controller: "mytest", endpoint: "MyTestController.Index"), 2, null, ConventionalChildTags(controller: "mytest"), null, null },
+            { "/MyTest/index", 200, false, "GET /mytest/index", ConventionalParentTags(controller: "mytest", endpoint: "MyTestController.Index"), 2, null, ConventionalChildTags(controller: "mytest"), null, null },
+            { "/statuscode", 200, false, "GET /statuscode/{value}", StatusCodeParentTags(), 2, null, StatusCodeChildTags(), null, null },
+            { "/statuscode/401", 401, false, "GET /statuscode/{value}", StatusCodeParentTags(), 2, null, StatusCodeChildTags(), null, null },
+            { "/statuscode/404", 404, false, "GET /statuscode/{value}", StatusCodeParentTags(), 2, null, StatusCodeChildTags(), null, null },
+            { "/statuscode/200", 200, false, "GET /statuscode/{value}", StatusCodeParentTags(), 2, null, StatusCodeChildTags(), null, null },
+            { "/statuscode/201", 201, false, "GET /statuscode/{value}", StatusCodeParentTags(), 2, null, StatusCodeChildTags(), null, null },
+            { "/healthz", 200, false, "GET /healthz", HealthCheckTags(), 1, null, null, null, null },
+            { "/echo", 200, false, "GET /echo", EchoTags(), 1, null, null, null, null },
+            { "/echo/123", 200, false, "GET /echo/{value?}", EchoTags(), 1, null, null, null, null },
+            { "/echo/false", 404, false, "GET /echo/false", EmptyTags(), 1, null, null, null, null },
+            { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags(), 1, null, null, null, null },
+            { "/Home/Error", 500, true, "GET /home/error", ErrorRouteParentTags(), 2, null, ErrorRouteChildTags(), null, null },
+            { "/Home/UncaughtError", 500, true, "GET /home/uncaughterror", UncaughtErrorParentTags(), 2, null, UncaughtErrorChildTags(), null, null },
+            { "/Home/BadHttpRequest", 400, true, "GET /home/badhttprequest", BadHttpRequestParentTags(), 2, null, BadHttpRequestChildTags(), null, null },
+            { $"{CustomHandlerPrefix}/Home/Error", 500, true, $"GET {CustomHandlerPrefix}/home/error", ErrorRouteParentTags(), 2, null, ErrorRouteChildTags(), null, null },
+            { $"{CustomHandlerPrefix}/Home/UncaughtError", 500, true, $"GET {CustomHandlerPrefix}/home/uncaughterror", UncaughtErrorParentTags(), 2, null, UncaughtErrorChildTags(), null, null },
+            { $"{CustomHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {CustomHandlerPrefix}/home/badhttprequest", BadHttpRequestParentTags(), 2, null, BadHttpRequestChildTags(), null, null },
+            { $"{CustomHandlerPrefix}/throws", 500, true, $"GET {CustomHandlerPrefix}/throws", ThrowsTags(), 1, null, null, null, null },
+            { $"{ExceptionPagePrefix}/Home/Error", 500, true, $"GET {ExceptionPagePrefix}/home/error", ErrorRouteParentTags(), 2, null, ErrorRouteChildTags(), null, null },
+            { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/home/badhttprequest", BadHttpRequestParentTags(), 2, null, BadHttpRequestChildTags(), null, null },
+            { $"{ExceptionPagePrefix}/throws", 500, true, $"GET {ExceptionPagePrefix}/throws", ThrowsTags(), 1, null, null, null, null },
+            { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/error", ErrorRouteParentTags(), 3, null, ErrorRouteChildTags(), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
+            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", BadHttpRequestParentTags(), 3, null, BadHttpRequestChildTags(), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
+            { $"{ReExecuteHandlerPrefix}/throws", 500, true, $"GET {ReExecuteHandlerPrefix}/throws", ThrowsTags(), 2, $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags(), null, null },
+            { $"{StatusCodeReExecutePrefix}/I/dont/123/exist/", 404, false, $"GET {StatusCodeReExecutePrefix}/i/dont/?/exist/", EmptyTags(), 2, $"GET {StatusCodeReExecutePrefix}/home/index", ConventionalChildTags(), null, null },
         };
 
         private static SerializableDictionary EmptyTags() => new()
         {
-            { Tags.AspNetRoute, null },
-            { Tags.AspNetController, null },
-            { Tags.AspNetAction, null },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetCoreRoute, null },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
 
-        private static SerializableDictionary ConventionalRouteTags(
+        private static SerializableDictionary ConventionalParentTags(
             string action = "index",
             string controller = "home",
             string endpoint = null) => new()
         {
-            { Tags.AspNetRoute, "{controller=home}/{action=index}/{id?}" },
-            { Tags.AspNetController, controller },
-            { Tags.AspNetAction, action },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetCoreRoute, "{controller=home}/{action=index}/{id?}" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, $"Datadog.Trace.IntegrationTests.DiagnosticListeners.{endpoint} (Datadog.Trace.IntegrationTests)" },
         };
 
-        private static SerializableDictionary StatusCodeTags() => new()
+        private static SerializableDictionary ConventionalChildTags(
+            string action = "index",
+            string controller = "home") => new()
         {
-            { Tags.AspNetRoute, "statuscode/{value=200}" },
-            { Tags.AspNetController, "mytest" },
-            { Tags.AspNetAction, "setstatuscode" },
-            // { Tags.AspNetEndpoint, StatusCodeEndpointName },
+            { Tags.AspNetCoreRoute, "{controller=home}/{action=index}/{id?}" },
+            { Tags.AspNetCoreController, controller },
+            { Tags.AspNetCoreAction, action },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
+        };
+
+        private static SerializableDictionary ErrorRouteParentTags()
+            => ConventionalParentTags(action: "error", endpoint: "HomeController.Error");
+
+        private static SerializableDictionary ErrorRouteChildTags()
+            => ConventionalChildTags(action: "error");
+
+        private static SerializableDictionary BadHttpRequestParentTags()
+            => ConventionalParentTags(action: "badhttprequest", endpoint: "HomeController.BadHttpRequest");
+
+        private static SerializableDictionary BadHttpRequestChildTags()
+            => ConventionalChildTags(action: "badhttprequest");
+
+        private static SerializableDictionary UncaughtErrorParentTags()
+            => ConventionalParentTags(action: "uncaughterror", endpoint: "HomeController.UncaughtError");
+
+        private static SerializableDictionary UncaughtErrorChildTags()
+            => ConventionalChildTags(action: "uncaughterror");
+
+        private static SerializableDictionary StatusCodeParentTags() => new()
+        {
+            { Tags.AspNetCoreRoute, "statuscode/{value=200}" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.MyTestController.SetStatusCode (Datadog.Trace.IntegrationTests)" },
+        };
+
+        private static SerializableDictionary StatusCodeChildTags() => new()
+        {
+            { Tags.AspNetCoreRoute, "statuscode/{value=200}" },
+            { Tags.AspNetCoreController, "mytest" },
+            { Tags.AspNetCoreAction, "setstatuscode" },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
 
         private static SerializableDictionary HealthCheckTags() => new()
         {
-            { Tags.AspNetRoute, "/healthz" },
-            // { Tags.AspNetEndpoint, "Custom Health Check" },
+            { Tags.AspNetCoreRoute, "/healthz" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "Custom Health Check" },
         };
 
         private static SerializableDictionary EchoTags() => new()
         {
-            { Tags.AspNetRoute, "/echo/{value:int?}" },
-            // { Tags.AspNetEndpoint, "/echo/{value:int?} HTTP: GET" },
+            { Tags.AspNetCoreRoute, "/echo/{value:int?}" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "/echo/{value:int?} HTTP: GET" },
         };
 
-        private static SerializableDictionary ApiIndexTags() => new()
+        private static SerializableDictionary ThrowsTags() => new()
         {
-            { Tags.AspNetRoute, "api/index" },
-            { Tags.AspNetController, "api" },
-            { Tags.AspNetAction, "index" },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetCoreRoute, "/throws" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "/throws HTTP: GET" },
         };
 
-        private static SerializableDictionary ApiValueTags() => new()
+        private static SerializableDictionary ApiIndexParentTags() => new()
         {
-            { Tags.AspNetRoute, "api/value/{value}" },
-            { Tags.AspNetController, "api" },
-            { Tags.AspNetAction, "value" },
-            // { Tags.AspNetEndpoint, endpoint },
+            { Tags.AspNetCoreRoute, "api/index" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.ApiController.Index (Datadog.Trace.IntegrationTests)" },
+        };
+
+        private static SerializableDictionary ApiIndexChildTags() => new()
+        {
+            { Tags.AspNetCoreRoute, "api/index" },
+            { Tags.AspNetCoreController, "api" },
+            { Tags.AspNetCoreAction, "index" },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
+        };
+
+        private static SerializableDictionary ApiValueParentTags() => new()
+        {
+            { Tags.AspNetCoreRoute, "api/value/{value}" },
+            { Tags.AspNetCoreController, null },
+            { Tags.AspNetCoreAction, null },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, "Datadog.Trace.IntegrationTests.DiagnosticListeners.ApiController.Value (Datadog.Trace.IntegrationTests)" },
+        };
+
+        private static SerializableDictionary ApiValueChildTags() => new()
+        {
+            { Tags.AspNetCoreRoute, "api/value/{value}" },
+            { Tags.AspNetCoreController, "api" },
+            { Tags.AspNetCoreAction, "value" },
+            { Tags.AspNetCoreArea, null },
+            { Tags.AspNetCorePage, null },
+            { Tags.AspNetCoreEndpoint, null },
         };
     }
 }

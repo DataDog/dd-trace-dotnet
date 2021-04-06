@@ -532,7 +532,7 @@ namespace Datadog.Trace.Configuration
 
         internal bool IsNetStandardFeatureFlagEnabled()
         {
-            var value = EnvironmentHelpers.GetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", string.Empty);
+            var value = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.FeatureFlags.NetStandardEnabled, string.Empty);
 
             return value == "1" || value == "true";
         }

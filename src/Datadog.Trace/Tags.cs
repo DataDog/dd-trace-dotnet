@@ -115,6 +115,36 @@ namespace Datadog.Trace
         public const string AspNetArea = "aspnet.area";
 
         /// <summary>
+        /// The ASP.NET routing template.
+        /// </summary>
+        public const string AspNetCoreRoute = "aspnet_core.route";
+
+        /// <summary>
+        /// The MVC or Web API controller name.
+        /// </summary>
+        public const string AspNetCoreController = "aspnet_core.controller";
+
+        /// <summary>
+        /// The MVC or Web API action name.
+        /// </summary>
+        public const string AspNetCoreAction = "aspnet_core.action";
+
+        /// <summary>
+        /// The MVC or Web API area name.
+        /// </summary>
+        public const string AspNetCoreArea = "aspnet_core.area";
+
+        /// <summary>
+        /// The Razor Pages page name.
+        /// </summary>
+        public const string AspNetCorePage = "aspnet_core.page";
+
+        /// <summary>
+        /// The Endpoint name in ASP.NET Core endpoint routing.
+        /// </summary>
+        public const string AspNetCoreEndpoint = "aspnet_core.endpoint";
+
+        /// <summary>
         /// The hostname of a outgoing server connection.
         /// </summary>
         public const string OutHost = "out.host";

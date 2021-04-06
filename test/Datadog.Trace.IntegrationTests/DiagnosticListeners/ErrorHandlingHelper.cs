@@ -15,6 +15,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         public const string CustomHandlerPrefix = "/custom";
         public const string ReExecuteHandlerPrefix = "/reexecute";
         public const string ExceptionPagePrefix = "/devexeceptions";
+        public const string StatusCodeReExecutePrefix = "/statuscodereexecute";
 
         public static void ThrowBadHttpRequestException()
         {
@@ -59,6 +60,17 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 ReExecuteHandlerPrefix,
                 inner =>
                     inner.UseExceptionHandler("/")
+                         .Apply(remainingMiddleware));
+
+            app.Map(
+                StatusCodeReExecutePrefix,
+                inner =>
+                    inner
+                       .Use((context, next) =>
+                        {
+                            return next();
+                        })
+                       .UseStatusCodePagesWithReExecute("/")
                          .Apply(remainingMiddleware));
 
             app.Map(
