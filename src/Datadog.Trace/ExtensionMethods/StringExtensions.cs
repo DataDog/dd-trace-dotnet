@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -87,9 +88,8 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="value">Input string to convert into tag name</param>
         /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
-        /// <param name="convertPeriodsToUnderscores">A flag determining whether periods should also be converted to underscores</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedTagName(this string value, out string normalizedTagName, bool convertPeriodsToUnderscores)
+        public static bool TryConvertToNormalizedTagName(this string value, out string normalizedTagName)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -104,21 +104,27 @@ namespace Datadog.Trace.ExtensionMethods
                 return false;
             }
 
-            if (convertPeriodsToUnderscores)
+            var sb = new StringBuilder(trimmedValue.ToLowerInvariant());
+
+            for (int x = 0; x < sb.Length; x++)
             {
-                normalizedTagName = Regex.Replace(input: trimmedValue, pattern: "[^a-zA-Z0-9_:/-]", replacement: "_").ToLowerInvariant();
-                return true;
+                switch (sb[x])
+                {
+                    case (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_' or ':' or '/' or '-' or '.':
+                        continue;
+                    default:
+                        sb[x] = '_';
+                        break;
+                }
             }
-            else
-            {
-                normalizedTagName = Regex.Replace(input: trimmedValue, pattern: "[^a-zA-Z0-9_:./-]", replacement: "_").ToLowerInvariant();
-                return true;
-            }
+
+            normalizedTagName = sb.ToString();
+            return true;
         }
 
         /// <summary>
         /// Attempts to convert the input to a valid tag name following the rules
-        /// described in <see cref="TryConvertToNormalizedTagName(string, out string, bool)"/>
+        /// described in <see cref="TryConvertToNormalizedTagName(string, out string)"/>
         ///
         /// Additionally, the resulting tag name replaces any periods with underscores so that
         /// the tag does not create any further object nesting.
@@ -128,7 +134,36 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns>Returns whether the conversion was successful</returns>
         public static bool TryConvertToNormalizedHeaderTagName(this string value, out string normalizedTagName)
         {
-            return value.TryConvertToNormalizedTagName(out normalizedTagName, convertPeriodsToUnderscores: true);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                normalizedTagName = null;
+                return false;
+            }
+
+            string trimmedValue = value.Trim();
+            if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
+            {
+                normalizedTagName = null;
+                return false;
+            }
+
+            var sb = new StringBuilder(trimmedValue.ToLowerInvariant());
+
+            for (int x = 0; x < sb.Length; x++)
+            {
+                switch (sb[x])
+                {
+                    // Notice that the '.' does not match, differing from TryConvertToNormalizedTagName
+                    case (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_' or ':' or '/' or '-':
+                        continue;
+                    default:
+                        sb[x] = '_';
+                        break;
+                }
+            }
+
+            normalizedTagName = sb.ToString();
+            return true;
         }
     }
 }
