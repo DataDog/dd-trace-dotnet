@@ -54,10 +54,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
-            if (!File.Exists(sampleAppPath))
+            /*if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
-            }
+            }*/
 
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
