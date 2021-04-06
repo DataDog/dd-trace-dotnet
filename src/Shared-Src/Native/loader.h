@@ -95,7 +95,7 @@ namespace shared {
 		static Loader* s_singeltonInstance;
 
 		static Loader* CreateNewLoaderInstance(
-			ICorProfilerInfo4* info,
+			ICorProfilerInfo4* pCorProfilerInfo,
 			std::function<void(const std::string& str)> log_debug_callback,
 			std::function<void(const std::string& str)> log_info_callback,
 			std::function<void(const std::string& str)> log_warn_callback,
@@ -152,10 +152,10 @@ namespace shared {
 	public:
 		
 		static void CreateNewSingeltonInstance(ICorProfilerInfo4* pCorProfilerInfo,
-                                               std::function<void(const std::string& str)> logDebugCallback,
-			                                   std::function<void(const std::string& str)> logInfoCallback,
-                                               std::function<void(const std::string& str)> logWarnCallback,
-                                               const LoaderResourceMonikerIDs& resourceMonikerIDs,
+                                               std::function<void(const std::string& str)> log_debug_callback,
+			                                   std::function<void(const std::string& str)> log_info_callback,
+                                               std::function<void(const std::string& str)> log_warn_callback,
+                                               const LoaderResourceMonikerIDs& resource_moniker_ids,
 			                                   WCHAR const * native_profiler_library_filename);
 		static Loader* GetSingeltonInstance();
 		static void DeleteSingeltonInstance(void);

@@ -27,8 +27,6 @@ namespace shared {
 #endif
     
     const WSTRING managed_loader_assembly_name                  = WStr("Datadog.AutoInstrumentation.ManagedLoader");
-    const WSTRING empty_string                                  = WStr("");
-    const WSTRING default_domain_name                           = WStr("DefaultDomain");
 
     const LPCWSTR managed_loader_startup_type                   = WStr("Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader");
     const LPCWSTR module_type_name                              = WStr("<Module>");
@@ -54,10 +52,6 @@ namespace shared {
     const LPCWSTR invoke_name                                   = WStr("Invoke");
     const LPCWSTR run_name                                      = WStr("Run");
     
-    const WSTRING profiler_path_64                              = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
-    const WSTRING profiler_path_32                              = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
-    const WSTRING profiler_path                                 = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-
     // We exclude here the direct references of the loader to avoid a cyclic reference problem.
     // Also well-known assemblies we want to avoid.
     const WSTRING assemblies_exclusion_list_[] = {
@@ -79,13 +73,18 @@ namespace shared {
     };
 
     void Loader::CreateNewSingeltonInstance(ICorProfilerInfo4* pCorProfilerInfo,
-                                            std::function<void(const std::string& str)> logDebugCallback,
-                                            std::function<void(const std::string& str)> logInfoCallback,
-                                            std::function<void(const std::string& str)> logWarnCallback,
-                                            const LoaderResourceMonikerIDs& resourceMonikerIDs,
+                                            std::function<void(const std::string& str)> log_debug_callback,
+                                            std::function<void(const std::string& str)> log_info_callback,
+                                            std::function<void(const std::string& str)> log_warn_callback,
+                                            const LoaderResourceMonikerIDs& resource_moniker_ids,
                                             WCHAR const * native_profiler_library_filename)
     {
-        Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo, logDebugCallback, logInfoCallback, logWarnCallback, resourceMonikerIDs, native_profiler_library_filename);
+        Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo,
+                                                                       log_debug_callback,
+                                                                       log_info_callback, 
+                                                                       log_warn_callback, 
+                                                                       resource_moniker_ids, 
+                                                                       native_profiler_library_filename);
 
         Loader::DeleteSingeltonInstance();
         Loader::s_singeltonInstance = newSingeltonInstance;
@@ -113,7 +112,7 @@ namespace shared {
     }
 
     Loader* Loader::CreateNewLoaderInstance(
-        ICorProfilerInfo4* info,
+        ICorProfilerInfo4* pCorProfilerInfo,
         std::function<void(const std::string& str)> log_debug_callback,
         std::function<void(const std::string& str)> log_info_callback,
         std::function<void(const std::string& str)> log_warn_callback,
@@ -148,7 +147,7 @@ namespace shared {
 
         }
 
-        return new Loader(info,
+        return new Loader(pCorProfilerInfo,
             assembly_string_default_appdomain_vector,
             assembly_string_nondefault_appdomain_vector,
             log_debug_callback,
