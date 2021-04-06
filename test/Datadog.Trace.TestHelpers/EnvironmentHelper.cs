@@ -337,7 +337,9 @@ namespace Datadog.Trace.TestHelpers
 
         public string GetTestCommandForSampleApplicationPath(string packageVersion = "", string framework = "")
         {
-            return GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework);
+            var appFileName = $"{FullSampleName}.dll";
+            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
+            return sampleAppPath;
         }
 
         public string GetSampleExecutionSource()
