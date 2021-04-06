@@ -216,7 +216,7 @@ namespace Datadog.Trace
                         }
                     });
 
-                    if (tagNameResult is null)
+                    if (tagNameResult != null)
                     {
                         yield return new KeyValuePair<string, string>(tagNameResult, headerValue);
                     }
