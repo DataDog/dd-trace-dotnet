@@ -15,8 +15,10 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -449,6 +451,23 @@ namespace Datadog.Trace.Tests
             // Assert
             Assert.True(eventSet);
             Assert.Equal(2, tracker.DisconnectCount);
+        }
+
+        [Theory]
+        [InlineData("7.25.0", true, true)] // Old agent, partial flush enabled
+        [InlineData("7.25.0", false, false)] // Old agent, partial flush disabled
+        [InlineData("7.26.0", true, false)] // New agent, partial flush enabled
+        [InlineData("invalid version", true, true)] // Version check fail, partial flush enabled
+        [InlineData("invalid version", false, false)] // Version check fail, partial flush disabled
+        public void LogPartialFlushWarning(string agentVersion, bool partialFlushEnabled, bool expectedResult)
+        {
+            _tracer.Settings.PartialFlushEnabled = partialFlushEnabled;
+
+            // First call depends on the parameters of the test
+            _tracer.ShouldLogPartialFlushWarning(agentVersion).Should().Be(expectedResult);
+
+            // Second call should always be false
+            _tracer.ShouldLogPartialFlushWarning(agentVersion).Should().BeFalse();
         }
 
         // Static class with static methods that are publicly accessible so new sandbox AppDomain does not need special

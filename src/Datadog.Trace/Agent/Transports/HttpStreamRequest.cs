@@ -56,7 +56,7 @@ namespace Datadog.Trace.Agent.Transports
                 await response.Content.CopyToAsync(buffer).ConfigureAwait(false);
                 responseContentStream.Position = 0;
 
-                return new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream);
+                return new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream, response.Headers);
             }
         }
     }

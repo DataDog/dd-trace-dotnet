@@ -44,6 +44,11 @@ namespace Datadog.Trace
         public const string ComputedTopLevelSpan = "Datadog-Client-Computed-Top-Level";
 
         /// <summary>
+        /// Version reported by the Datadog agent
+        /// </summary>
+        public const string AgentVersion = "Datadog-Agent-Version";
+
+        /// <summary>
         /// Gets the default constant header that should be added to any request to the agent
         /// </summary>
         internal static KeyValuePair<string, string>[] DefaultHeaders { get; } =

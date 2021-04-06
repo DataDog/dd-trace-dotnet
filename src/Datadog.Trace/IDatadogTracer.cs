@@ -20,6 +20,8 @@ namespace Datadog.Trace
 
         Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
 
+        void ReportAgentVersion(string agentVersion);
+
         void Write(Span[] span);
 
         /// <summary>
