@@ -151,7 +151,7 @@ services:
       context: ./
       dockerfile: ./build/docker/native.dockerfile
     image: datadog-native
-    command: /project/build.sh CompileNativeSrcLinux --skip
+    command: ls /project
     volumes:
     - ./:/project
 
