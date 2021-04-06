@@ -257,7 +257,7 @@ stages:
       displayName: Compile native src
 
     - script: ./build.sh PublishNativeProfilerMacOs --skip
-      displayName: Compile native src
+      displayName: Publish native profiler
 
     - publish: $(tracerHome)/macos
       displayName: Uploading macos profiler artifact
