@@ -1,8 +1,6 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +9,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Moq;
@@ -29,66 +26,10 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
         [Theory]
-        [MemberData(nameof(AspNetCoreMvcTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]
-        public async Task DiagnosticObserver_ForMvcEndpoints_WithFeatureFlag_SubmitsSpans(
-            string path,
-            HttpStatusCode statusCode,
-            bool isError,
-            string resourceName,
-            SerializableDictionary expectedTags,
-            int childSpanCount,
-            string childSpan1ResourceName,
-            SerializableDictionary firstChildSpanTags,
-            string childSpan2ResourceName,
-            SerializableDictionary secondChildSpanTags)
-        {
-            await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(
-                path,
-                statusCode,
-                isError,
-                resourceName,
-                expectedTags,
-                featureFlag: true,
-                childSpanCount,
-                childSpan1ResourceName,
-                firstChildSpanTags,
-                childSpan2ResourceName,
-                secondChildSpanTags);
-        }
-
-        [Theory]
         [MemberData(nameof(AspNetCoreRazorPagesTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
         public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(path, statusCode, isError, resourceName, expectedTags);
-        }
-
-        [Theory]
-        [MemberData(nameof(AspNetCoreRazorPagesTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
-        public async Task DiagnosticObserver_ForRazorPages_WithFeatureFlag_SubmitsSpans(
-            string path,
-            HttpStatusCode statusCode,
-            bool isError,
-            string resourceName,
-            SerializableDictionary expectedTags,
-            int childSpanCount,
-            string childSpan1ResourceName,
-            SerializableDictionary firstChildSpanTags,
-            string childSpan2ResourceName,
-            SerializableDictionary secondChildSpanTags)
-        {
-            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(
-                path,
-                statusCode,
-                isError,
-                resourceName,
-                expectedTags,
-                featureFlag: true,
-                childSpanCount,
-                childSpan1ResourceName,
-                firstChildSpanTags,
-                childSpan2ResourceName,
-                secondChildSpanTags);
         }
 
 #if !NETCOREAPP2_1
@@ -98,34 +39,6 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         {
             await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
-
-        [Theory]
-        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForEndpointRouting_WithFeatureFlag_SubmitsSpans(
-            string path,
-            HttpStatusCode statusCode,
-            bool isError,
-            string resourceName,
-            SerializableDictionary expectedTags,
-            int childSpanCount,
-            string childSpan1ResourceName,
-            SerializableDictionary firstChildSpanTags,
-            string childSpan2ResourceName,
-            SerializableDictionary secondChildSpanTags)
-        {
-            await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(
-                path,
-                statusCode,
-                isError,
-                resourceName,
-                expectedTags,
-                featureFlag: true,
-                childSpanCount,
-                childSpan1ResourceName,
-                firstChildSpanTags,
-                childSpan2ResourceName,
-                secondChildSpanTags);
-        }
 #endif
 
         private static async Task AssertDiagnosticObserverSubmitsSpans<T>(
@@ -133,21 +46,11 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             HttpStatusCode statusCode,
             bool isError,
             string resourceName,
-            SerializableDictionary expectedParentSpanTags,
-            bool featureFlag = false,
-            int spanCount = 1,
-            string childSpan1ResourceName = null,
-            SerializableDictionary firstChildSpanTags = null,
-            string childSpan2ResourceName = null,
-            SerializableDictionary secondChildSpanTags = null)
+            SerializableDictionary expectedTags)
             where T : class
         {
             var writer = new AgentWriterStub();
-            var configSource = new NameValueConfigurationSource(new NameValueCollection
-            {
-                { ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, featureFlag.ToString() },
-            });
-            var tracer = GetTracer(writer, configSource);
+            var tracer = GetTracer(writer);
 
             var builder = new WebHostBuilder()
                .UseStartup<T>();
@@ -186,78 +89,29 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             }
 
             var trace = Assert.Single(writer.Traces);
-            trace.Should().HaveCount(spanCount);
+            var span = Assert.Single(trace);
 
-            var parentSpan = trace.Should()
-                                  .ContainSingle(x => x.OperationName == "aspnet_core.request")
-                                  .Subject;
+            Assert.Equal("aspnet_core.request", span.OperationName);
+            Assert.Equal("aspnet_core", span.GetTag(Tags.InstrumentationName));
+            Assert.Equal(SpanTypes.Web, span.Type);
+            Assert.Equal(resourceName, span.ResourceName);
+            Assert.Equal(SpanKinds.Server, span.GetTag(Tags.SpanKind));
+            Assert.Equal(TracerConstants.Language, span.GetTag(Tags.Language));
+            Assert.Equal(((int)statusCode).ToString(), span.GetTag(Tags.HttpStatusCode));
+            Assert.Equal(isError, span.Error);
 
-            AssertTagHasValue(parentSpan, Tags.InstrumentationName, "aspnet_core");
-            parentSpan.Type.Should().Be(SpanTypes.Web);
-            parentSpan.ResourceName.Should().Be(resourceName);
-            AssertTagHasValue(parentSpan, Tags.SpanKind, SpanKinds.Server);
-            AssertTagHasValue(parentSpan, Tags.Language, TracerConstants.Language);
-            AssertTagHasValue(parentSpan, Tags.HttpStatusCode, ((int)statusCode).ToString());
-            parentSpan.Error.Should().Be(isError);
-
-            if (expectedParentSpanTags is not null)
+            if (expectedTags is not null)
             {
-                foreach (var expectedTag in expectedParentSpanTags.Values)
+                foreach (var expectedTag in expectedTags.Values)
                 {
-                    AssertTagHasValue(parentSpan, expectedTag.Key, expectedTag.Value);
-                }
-            }
-
-            if (spanCount > 1)
-            {
-                trace.Should().Contain(x => x.OperationName == "aspnet_core_mvc.request");
-
-                var childSpan = trace.First(x => x.OperationName == "aspnet_core_mvc.request");
-
-                AssertTagHasValue(childSpan, Tags.InstrumentationName, "aspnet_core");
-                childSpan.Type.Should().Be(SpanTypes.Web);
-                childSpan.ResourceName.Should().Be(childSpan1ResourceName ?? resourceName);
-                AssertTagHasValue(childSpan, Tags.SpanKind, SpanKinds.Server);
-                AssertTagHasValue(childSpan, Tags.Language, TracerConstants.Language);
-
-                if (firstChildSpanTags is not null)
-                {
-                    foreach (var expectedTag in firstChildSpanTags.Values)
-                    {
-                        AssertTagHasValue(childSpan, expectedTag.Key, expectedTag.Value);
-                    }
-                }
-
-                if (spanCount > 2)
-                {
-                    var childSpan2 = trace.Last(x => x.OperationName == "aspnet_core_mvc.request");
-                    childSpan2.Should().NotBe(childSpan);
-
-                    AssertTagHasValue(childSpan2, Tags.InstrumentationName, "aspnet_core");
-                    childSpan2.Type.Should().Be(SpanTypes.Web);
-                    childSpan2.ResourceName.Should().Be(childSpan2ResourceName);
-                    AssertTagHasValue(childSpan2, Tags.SpanKind, SpanKinds.Server);
-                    AssertTagHasValue(childSpan2, Tags.Language, TracerConstants.Language);
-
-                    if (secondChildSpanTags is not null)
-                    {
-                        foreach (var expectedTag in secondChildSpanTags.Values)
-                        {
-                            AssertTagHasValue(childSpan2, expectedTag.Key, expectedTag.Value);
-                        }
-                    }
+                    Assert.Equal(expectedTag.Value, span.Tags.GetTag(expectedTag.Key));
                 }
             }
         }
 
-        private static void AssertTagHasValue(Span span, string tagName, string expected)
+        private static Tracer GetTracer(IAgentWriter writer = null)
         {
-            span.GetTag(tagName).Should().Be(expected, $"'{tagName}' should have correct value");
-        }
-
-        private static Tracer GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
-        {
-            var settings = new TracerSettings(configSource);
+            var settings = new TracerSettings();
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
             var samplerMock = new Mock<ISampler>();
 
