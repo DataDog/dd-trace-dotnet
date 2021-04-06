@@ -151,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         // extract propagated http headers
                         var headers = httpContext.Request.Headers.Wrap();
                         propagatedContext = SpanContextPropagator.Instance.Extract(headers);
-                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags);
+                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                     catch (Exception ex)
                     {
@@ -357,6 +357,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (scope != null)
                 {
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
                     scope.Dispose();
                 }
@@ -388,6 +389,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
+            scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();

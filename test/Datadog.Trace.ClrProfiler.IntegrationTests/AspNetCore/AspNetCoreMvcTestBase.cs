@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 
@@ -16,18 +17,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     {
         protected const string TopLevelOperationName = "aspnet_core.request";
 
-        protected const string HeaderName1 = "datadog-header-name";
-        protected const string HeaderName1Upper = "DATADOG-HEADER-NAME";
+        protected const string HeaderName1WithMapping = "datadog-header-name";
+        protected const string HeaderName1UpperWithMapping = "DATADOG-HEADER-NAME";
+        protected const string HeaderTagName1WithMapping = "datadog-header-tag";
         protected const string HeaderValue1 = "asp-net-core";
-        protected const string HeaderTagName1 = "datadog-header-tag";
+        protected const string HeaderName2 = "sample.correlation.identifier";
+        protected const string HeaderValue2 = "0000-0000-0000";
+        protected const string HeaderName3 = "Server";
+        protected const string HeaderValue3 = "Kestrel";
 
         protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output, string serviceVersion)
             : base(sampleAppName, output)
         {
             ServiceVersion = serviceVersion;
             HttpClient = new HttpClient();
-            HttpClient.DefaultRequestHeaders.Add(HeaderName1, HeaderValue1);
-            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1Upper}:{HeaderTagName1}");
+            HttpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
+            HttpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
+            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2},{HeaderName3}");
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-501-234, s342, 500");
 
             SetServiceVersion(ServiceVersion);
@@ -242,7 +248,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                               };
 
             expectation.RegisterDelegateExpectation(additionalCheck);
-            expectation.RegisterTagExpectation(HeaderTagName1, HeaderValue1);
+
+            _ = HeaderTagName1WithMapping.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName1WithMapping);
+            expectation.RegisterTagExpectation(normalizedHeaderTagName1WithMapping, HeaderValue1);
+
+            // For successful requests, assert that a header tag is present in both the request and response, with the prefixes "http.request.headers" and "http.response.headers", respectively
+            _ = HeaderName2.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName2);
+            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpRequestHeadersTagPrefix}.{normalizedHeaderTagName2}", HeaderValue2);
+            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpResponseHeadersTagPrefix}.{normalizedHeaderTagName2}", HeaderValue2, when: (span) => span.Resource != "GET /not-found" && span.Resource != "GET bad-request");
+
+            // Assert that a response header tag is set on successful requests and failing requests
+            _ = HeaderName3.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName3);
+            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpResponseHeadersTagPrefix}.{normalizedHeaderTagName3}", HeaderValue3, when: (span) => span.Resource != "GET bad-request");
 
             Expectations.Add(expectation);
         }

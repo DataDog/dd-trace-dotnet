@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -134,13 +135,12 @@ namespace Datadog.Trace.Configuration
             GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            HeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags) ??
+            var inputHeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags, allowOptionalMappings: true) ??
                          // default value (empty)
-                         new ConcurrentDictionary<string, string>();
+                         new Dictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespace
-            HeaderTags = HeaderTags.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+            HeaderTags = InitializeHeaderTags(inputHeaderTags);
 
             var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                       ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -535,6 +535,25 @@ namespace Datadog.Trace.Configuration
             var value = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.FeatureFlags.NetStandardEnabled, string.Empty);
 
             return value == "1" || value == "true";
+        }
+
+        internal IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary)
+        {
+            var headerTags = new Dictionary<string, string>();
+
+            foreach (KeyValuePair<string, string> kvp in configurationDictionary)
+            {
+                if (!string.IsNullOrWhiteSpace(kvp.Key) && string.IsNullOrWhiteSpace(kvp.Value))
+                {
+                    headerTags.Add(kvp.Key.Trim(), string.Empty);
+                }
+                else if (!string.IsNullOrWhiteSpace(kvp.Key) && kvp.Value.TryConvertToNormalizedHeaderTagName(out string result))
+                {
+                    headerTags.Add(kvp.Key.Trim(), result);
+                }
+            }
+
+            return headerTags;
         }
 
         internal bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)

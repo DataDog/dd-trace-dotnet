@@ -106,5 +106,12 @@ namespace Datadog.Trace.Configuration
             return _sources.Select(source => source.GetDictionary(key))
                         .FirstOrDefault(value => value != null);
         }
+
+        /// <inheritdoc />
+        public IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings)
+        {
+            return _sources.Select(source => source.GetDictionary(key, allowOptionalMappings))
+                        .FirstOrDefault(value => value != null);
+        }
     }
 }

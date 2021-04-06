@@ -304,7 +304,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                     if (requestHeaders != null)
                     {
-                        return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags);
+                        return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                 }
                 catch (Exception ex)
@@ -807,6 +807,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
+                    scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
                 scope.Dispose();
