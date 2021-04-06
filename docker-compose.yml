@@ -151,9 +151,7 @@ services:
       context: ./
       dockerfile: ./build/docker/native.dockerfile
     image: datadog-native
-    environment: 
-    - buildConfiguration=${buildConfiguration}
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+    command: /project/build.sh CompileNativeSrcLinux --skip
     volumes:
     - ./:/project
 
@@ -162,7 +160,7 @@ services:
       context: ./
       dockerfile: ./build/docker/native.alpine.dockerfile
     image: datadog-native-alpine
-    environment: 
+    environment:
     - buildConfiguration=${buildConfiguration}
     command: /project/build/docker/Datadog.Trace.ClrProfiler.Native.sh
     volumes:

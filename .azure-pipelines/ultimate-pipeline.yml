@@ -17,8 +17,8 @@ pr:
 variables:
   buildConfiguration: Release
   dotnetCoreSdk5Version: 5.0.201
-  tracerHome: $(System.DefaultWorkingDirectory)/src/bin/tracer-home
-  artifacts: $(System.DefaultWorkingDirectory)/src/bin/artifacts
+  tracerHome: $(System.DefaultWorkingDirectory)/bin/tracer-home
+  artifacts: $(System.DefaultWorkingDirectory)/bin/artifacts
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   DD_DOTNET_TRACER_MSBUILD:
@@ -61,27 +61,26 @@ stages:
     - script: build.cmd PublishManagedProfiler --skip
       displayName: Publish Managed Profiler 
 
-    - publish: $(System.DefaultWorkingDirectory)
+    - publish: $(System.DefaultWorkingDirectory)/bin
       displayName: Upload working directory after the managed build
-      artifact: build-managed
+      artifact: build_managed-bin
 
   - job: build_native_windows
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
     pool:
       vmImage: windows-2019
     steps:
-    - checkout: none
-
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: build-managed
-        path: $(System.DefaultWorkingDirectory)
 
     - task: UseDotNet@2
       displayName: install dotnet core sdk 5.0
       inputs:
         packageType: sdk
         version: $(dotnetCoreSdk5Version)
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build_managed-bin
+        path: $(System.DefaultWorkingDirectory)/bin
 
     - script: build.cmd CompileNativeSrcWindows --skip
       displayName: Compile native src 
@@ -92,57 +91,49 @@ stages:
     - script: build.cmd CopyIntegrationsJson --skip
       displayName: Copy integrations.json 
 
-    - script: build.cmd ZipTracerHome --skip
-      displayName: Zip tracer home directory 
+    ## TODO: Move these to the package step?
+    ## - script: build.cmd ZipTracerHome --skip
+    ##   displayName: Zip tracer home directory
 
-    - script: build.cmd BuildMsi --skip
-      displayName: Build the msi 
+    ## - script: build.cmd BuildMsi --skip
+    ##   displayName: Build the msi
 
-    - publish: $(System.DefaultWorkingDirectory)
+    - publish: $(System.DefaultWorkingDirectory)/bin
       displayName: Upload repo after windows build
-      artifact: build-repo-managed-native-windows
+      artifact: build_native_windows-bin
 
-    - publish: $(artifacts)/x86/en-us
-      displayName: Upload Windows x86 MSI
-      artifact: windows-msi-x86
+    ## - publish: $(artifacts)/x86/en-us
+    ##   displayName: Upload Windows x86 MSI
+    ##   artifact: windows-msi-x86
 
-    - publish: $(artifacts)/x64/en-us
-      displayName: Upload Windows x64 MSI
-      artifact: windows-msi-x64
+    ## - publish: $(artifacts)/x64/en-us
+    ##   displayName: Upload Windows x64 MSI
+    ##   artifact: windows-msi-x64
 
     - publish: $(tracerHome)
       displayName: Upload Windows tracer home directory
-      artifact: build-windows-tracer-home
+      artifact: tracer-home-windows
 
-    - publish: $(artifacts)/tracer-home.zip
-      displayName: Upload Windows tracer home zip
-      artifact: windows-tracer-home
+    ## - publish: $(artifacts)/tracer-home.zip
+    ##   displayName: Upload Windows tracer home zip
+    ##   artifact: windows-tracer-home
 
   - job: build_native_linux
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
     pool:
       vmImage: ubuntu-20.04
     steps:
-    - checkout: none
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build-managed
-        path: $(System.DefaultWorkingDirectory)
-
-    - script: |
-        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
-      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
+        artifact: build_managed-bin
+        path: $(System.DefaultWorkingDirectory)/bin
 
     - task: DockerCompose@0
       displayName: docker-compose run Profiler
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: run Profiler
-
-    - script: |
-        chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
-      displayName: 'Workaround: Restore wiped executable permission on build/docker/package.sh'
 
     - task: DockerCompose@0
       displayName: docker-compose run package
@@ -241,12 +232,10 @@ stages:
       vmImage: macOS-10.15
     steps:
 
-    - checkout: none
-
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build-managed
-        path: $(System.DefaultWorkingDirectory)
+        artifact: build_managed-bin
+        path: $(System.DefaultWorkingDirectory)/bin
 
     - script: build.sh CompileNativeSrcMacOS --skip
       displayName: Compile native src
@@ -256,7 +245,7 @@ stages:
 
     - publish: $(tracerHome)/macos
       displayName: Uploading macos profiler artifact
-      artifact: build-macos-tracer-home
+      artifact: tracer-home-macos
 
 - stage: unit_tests
   dependsOn: build
