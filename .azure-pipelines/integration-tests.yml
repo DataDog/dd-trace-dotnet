@@ -22,7 +22,7 @@ pool:
 variables:
   buildConfiguration: Release
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
-  dotnetCoreSdk5Version: 5.0.103
+  dotnetCoreSdk5Version: 5.0.201
 
 jobs:
 
