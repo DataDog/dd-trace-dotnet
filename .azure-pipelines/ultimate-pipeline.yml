@@ -66,6 +66,10 @@ stages:
       displayName: Upload working directory after the managed build
       artifact: build_managed-bin
 
+    - publish: $(System.DefaultWorkingDirectory)/packages
+      displayName: Upload NuGet packages
+      artifact: nuget-packages
+
   - job: build_native_windows
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
     pool:
@@ -82,6 +86,13 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
+        displayName: Download NuGet pacakges
+        artifact: nuget-packages
+        path: $(System.DefaultWorkingDirectory)/packages
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        displayName: Download bin folder
         artifact: build_managed-bin
         path: $(System.DefaultWorkingDirectory)/bin
 
