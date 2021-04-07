@@ -107,7 +107,7 @@ namespace Datadog.Trace.Agent
             var previousDropped = _dropped[index];
             var previousCreated = _created[index];
 
-            // Cap at unit.MaxValue events. Very unlikely to reach this value!
+            // Cap at uint.MaxValue events. Very unlikely to reach this value!
             var latestDropped = (uint)Math.Min(Interlocked.Exchange(ref _latestDrops, 0), uint.MaxValue);
             var latestCreated = (uint)Math.Min(Interlocked.Exchange(ref _latestKeeps, 0) + latestDropped, uint.MaxValue);
 
