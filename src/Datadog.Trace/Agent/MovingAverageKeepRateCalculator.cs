@@ -87,7 +87,7 @@ namespace Datadog.Trace.Agent
         public double GetKeepRate()
         {
             // Essentially Interlock.Read(double)
-            return Interlocked.CompareExchange(ref _keepRate, 0, 0);
+            return Volatile.Read(ref _keepRate);
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Agent
                                ? 0
                                : 1 - ((double)newSumDropped / newSumCreated);
 
-            Interlocked.Exchange(ref _keepRate, keepRate);
+            Volatile.Write(ref _keepRate, keepRate);
 
             _sumDrops = newSumDropped;
             _sumCreated = newSumCreated;
