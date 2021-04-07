@@ -281,12 +281,18 @@ stages:
       vmImage: $(imageName)
     steps:
 
+    - template: steps/install-dotnet.yml
+
     - task: DownloadPipelineArtifact@2
       inputs:
         artifact: build_native_windows-bin
         path: $(System.DefaultWorkingDirectory)/bin
 
-    - template: steps/install-dotnet.yml
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        displayName: Download NuGet packages
+        artifact: nuget-packages
+        path: $(System.DefaultWorkingDirectory)/packages
 
     # Ideally we would use the following MSBuild command which can more intelligently parallelize the build
     #    - task: MSBuild@1
