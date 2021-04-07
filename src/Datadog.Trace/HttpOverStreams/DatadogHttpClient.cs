@@ -41,7 +41,7 @@ namespace Datadog.Trace.HttpOverStreams
 
                 // Remove (admittedly really small) sync over async occurrence
                 // by forcing a flush so that System.IO.TextWriter.Dispose() does not block
-                await writer.FlushAsync();
+                await writer.FlushAsync().ConfigureAwait(false);
             }
 
             await request.Content.CopyToAsync(requestStream).ConfigureAwait(false);
