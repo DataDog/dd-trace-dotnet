@@ -26,7 +26,9 @@ namespace Datadog.Trace.Agent
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
         private int _index = 0;
-        private long _totals = 0;
+        private ulong _sumDrops = 0;
+        private ulong _sumCreated = 0;
+        private double _keepRate = 0;
 
         private long _latestDrops = 0;
         private long _latestKeeps = 0;
@@ -84,14 +86,8 @@ namespace Datadog.Trace.Agent
         /// </summary>
         public double GetKeepRate()
         {
-            var totals = Interlocked.Read(ref _totals);
-            UnpackBits(totals, out var totalDropped, out var totalCreated);
-            if (totalCreated == 0)
-            {
-                return 0;
-            }
-
-            return 1 - ((double)totalDropped / totalCreated);
+            // Essentially Interlock.Read(double)
+            return Interlocked.CompareExchange(ref _keepRate, 0, 0);
         }
 
         /// <summary>
@@ -111,21 +107,23 @@ namespace Datadog.Trace.Agent
             var previousDropped = _dropped[index];
             var previousCreated = _created[index];
 
-            var latestDropped = Math.Min(Interlocked.Exchange(ref _latestDrops, 0), uint.MaxValue);
-            var latestCreated = Math.Min(Interlocked.Exchange(ref _latestKeeps, 0) + latestDropped, uint.MaxValue);
+            // Cap at unit.MaxValue events. Very unlikely to reach this value!
+            var latestDropped = (uint)Math.Min(Interlocked.Exchange(ref _latestDrops, 0), uint.MaxValue);
+            var latestCreated = (uint)Math.Min(Interlocked.Exchange(ref _latestKeeps, 0) + latestDropped, uint.MaxValue);
 
-            var totals = _totals;
-            UnpackBits(totals, out var previousTotalDropped, out var previousTotalCreated);
+            var newSumDropped = _sumDrops - previousDropped + latestDropped;
+            var newSumCreated = _sumCreated - previousCreated + latestCreated;
 
-            var newTotalDropped = (uint)Math.Min(((long)previousTotalDropped) - previousDropped + latestDropped, uint.MaxValue);
-            var newTotalCreated = (uint)Math.Min(((long)previousTotalCreated) - previousCreated + latestCreated, uint.MaxValue);
+            var keepRate = newSumCreated == 0
+                               ? 0
+                               : 1 - ((double)newSumDropped / newSumCreated);
 
-            // Pack the totals into a single value we can read and write atomically
-            var packedTotal = PackBits(newTotalDropped, newTotalCreated);
-            Interlocked.Exchange(ref _totals, packedTotal);
+            Interlocked.Exchange(ref _keepRate, keepRate);
 
-            _dropped[index] = (uint)latestDropped;
-            _created[index] = (uint)latestCreated;
+            _sumDrops = newSumDropped;
+            _sumCreated = newSumCreated;
+            _dropped[index] = latestDropped;
+            _created[index] = latestCreated;
             _index = (index + 1) % _windowSize;
         }
 
@@ -155,21 +153,6 @@ namespace Datadog.Trace.Agent
                 await Task.WhenAny(tasks).ConfigureAwait(false);
 #endif
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private long PackBits(uint hits, uint total)
-        {
-            long result = hits;
-            result = result << 32;
-            return result | (long)total;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void UnpackBits(long bits, out uint hits, out uint total)
-        {
-            hits = (uint)(bits >> 32);
-            total = (uint)(bits & 0xffffffffL);
         }
     }
 }
