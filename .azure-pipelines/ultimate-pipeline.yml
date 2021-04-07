@@ -281,12 +281,10 @@ stages:
       vmImage: $(imageName)
     steps:
 
-    - checkout: none
-
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build-managed
-        path: $(System.DefaultWorkingDirectory)
+        artifact: build_native_windows-bin
+        path: $(System.DefaultWorkingDirectory)/bin
 
     - template: steps/install-dotnet.yml
 
@@ -300,28 +298,18 @@ stages:
     #        maximumCpuCount: true
 
     - task: DotNetCoreCLI@2
-      displayName: dotnet restore
+      displayName: CompileManagedUnitTests
       inputs:
-        command: restore
-        projects: test/**/*.Tests.csproj
+        command: run
+        arguments: -- CompileManagedUnitTests --skip
+        projects: build/_build/_build.csproj
 
     - task: DotNetCoreCLI@2
-      displayName: dotnet build
+      displayName: RunManagedUnitTests
       inputs:
-        command: build
-        arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
-        projects: test/**/*.Tests.csproj
-      env:
-        DD_SERVICE: dd-trace-dotnet
-
-    - task: DotNetCoreCLI@2
-      displayName: dotnet test
-      inputs:
-        command: test
-        arguments: --configuration $(buildConfiguration) --no-build
-        projects: test/**/*.Tests.csproj
-      env:
-        DD_SERVICE: dd-trace-dotnet
+        command: run
+        arguments: -- RunManagedUnitTests --skip
+        projects: build/_build/_build.csproj
 
   - job: unit_tests_managed_linux_arm64
     pool: Arm64
@@ -351,51 +339,24 @@ stages:
       vmImage: windows-2019
 
     steps:
-    - checkout: none
-
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build-repo-managed-native-windows
-        path: $(System.DefaultWorkingDirectory)
+        artifact: build_native_windows-bin
+        path: $(System.DefaultWorkingDirectory)/bin
 
-    # Install the .NET SDK so any managed libraries needed for the C++ unit tests can be built
-    - template: steps/install-dotnet.yml
-
-    # This should already be accounted for but unfortunately it is not
     - task: DotNetCoreCLI@2
-      displayName: dotnet build
+      displayName: CompileNativeTestsWindows
       inputs:
-        command: build
-        arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
-        projects: |
-          test/**/Samples.ExampleLibrary*.csproj
+        command: run
+        arguments: -- CompileNativeTestsWindows --skip
+        projects: build/_build/_build.csproj
 
-    - task: MSBuild@1
-      displayName: Build x86 native unit test projects
+    - task: DotNetCoreCLI@2
+      displayName: RunNativeTestsWindows
       inputs:
-        solution: Datadog.Trace.proj
-        platform: x86
-        configuration: $(buildConfiguration)
-        msbuildArguments: /t:BuildCppTests
-        maximumCpuCount: true
-
-    - task: MSBuild@1
-      displayName: Build x64 native unit test projects
-      inputs:
-        solution: Datadog.Trace.proj
-        platform: x64
-        configuration: $(buildConfiguration)
-        msbuildArguments: /t:BuildCppTests
-        maximumCpuCount: true
-
-    - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
-      displayName: run tests
-      workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/x86
-
-    - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
-      displayName: run tests
-      workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/x64
-      condition: succeededOrFailed()
+        command: run
+        arguments: -- RunNativeTestsWindows --skip
+        projects: build/_build/_build.csproj
 
     - task: PublishTestResults@2
       displayName: publish test results
