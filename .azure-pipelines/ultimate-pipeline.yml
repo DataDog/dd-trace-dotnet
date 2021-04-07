@@ -49,6 +49,7 @@ stages:
       inputs:
         packageType: sdk
         version: $(dotnetCoreSdk5Version)
+        installationPath: $(Agent.ToolsDirectory)/dotnet
 
     - script: build.cmd CreateRequiredDirectories --skip
       displayName: Create required directories
@@ -83,6 +84,7 @@ stages:
       inputs:
         packageType: sdk
         version: $(dotnetCoreSdk5Version)
+        installationPath: $(Agent.ToolsDirectory)/dotnet
 
     - task: DownloadPipelineArtifact@2
       inputs:
@@ -840,6 +842,7 @@ stages:
       inputs:
         packageType: sdk
         version: $(dotnetCoreSdk5Version)
+        installationPath: $(Agent.ToolsDirectory)/dotnet
 
     - task: DotNetCoreCLI@2
       displayName: dotnet restore
@@ -938,6 +941,7 @@ stages:
       inputs:
         packageType: sdk
         version: $(dotnetCoreSdk5Version)
+        installationPath: $(Agent.ToolsDirectory)/dotnet
 
     - task: DotNetCoreCLI@2
       displayName: tool build
