@@ -3,6 +3,9 @@ set -euxo pipefail
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"/../../
 
+buildConfiguration=${buildConfiguration:-Debug}
+publishTargetFramework=${publishTargetFramework:-netcoreapp3.1}
+
 mkdir -p /var/log/datadog/dotnet
 
 #https://docs.microsoft.com/en-us/dotnet/core/diagnostics/dumps#collecting-dumps-on-crash

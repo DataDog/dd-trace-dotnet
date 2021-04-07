@@ -69,7 +69,7 @@ jobs:
     displayName: docker-compose run Profiler
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run Profiler
+      dockerComposeCommand: run -e buildConfiguration=Release Profiler
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
     displayName: Uploading linux tracer home artifact
@@ -96,7 +96,7 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
+      configuration: Release
       arguments: /nowarn:netsdk1138
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
@@ -181,7 +181,7 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
+      configuration: Release
       arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: |
         src/**/*.csproj

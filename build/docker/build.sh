@@ -5,7 +5,10 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 cd "$DIR/../.."
 
+buildConfiguration=${buildConfiguration:-Debug}
+publishTargetFramework=${publishTargetFramework:-netcoreapp3.1}
 PUBLISH_OUTPUT="$( pwd )/src/bin/managed-publish"
+
 mkdir -p "$PUBLISH_OUTPUT/netstandard2.0"
 mkdir -p "$PUBLISH_OUTPUT/netcoreapp3.1"
 

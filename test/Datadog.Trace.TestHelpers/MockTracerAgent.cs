@@ -281,6 +281,11 @@ namespace Datadog.Trace.TestHelpers
                 {
                     // the response has been already disposed.
                 }
+                catch (InvalidOperationException)
+                {
+                    // this can occur when setting Response.ContentLength64, with the framework claiming that the response has already been submitted
+                    // for now ignore, and we'll see if this introduces downstream issues
+                }
                 catch (Exception) when (!_listener.IsListening)
                 {
                     // we don't care about any exception when listener is stopped
