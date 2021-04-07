@@ -151,7 +151,7 @@
         <!-- By default, Platform is AnyCPU, but user can (and may) overwrite it.                                                                       -->
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 
-        <!-- ConfigBasedRelativeOutputPath is the relative subdir such as "Debug\x64" or "Release\netcoreapp3.1" or similar within the project              -->
+        <!-- ConfigBasedRelativeOutputPath is the relative subdir such as "Debug-AnyCPU" or "Release-x64" or similar within the project              -->
         <ConfigBasedRelativeOutputPath>$(Configuration)</ConfigBasedRelativeOutputPath>
         <ConfigBasedRelativeOutputPath Condition=" '$(Platform)' != '' ">$(ConfigBasedRelativeOutputPath)-$(Platform)</ConfigBasedRelativeOutputPath>
 
@@ -254,6 +254,7 @@
 
         <Message Text="[$(RdrctOutptMsgPrefix)]     Configuration:                   &quot;$(Configuration)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     Platform:                        &quot;$(Platform)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     PlatformTarget:                  &quot;$(PlatformTarget)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     TargetFramework:                 &quot;$(TargetFramework)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     RuntimeIdentifier:               &quot;$(RuntimeIdentifier)&quot;." Importance="high" />
         <Message Text="[$(RdrctOutptMsgPrefix)]     ConfigBasedRelativeOutputPath:   &quot;$(ConfigBasedRelativeOutputPath)&quot;." Importance="high" />
