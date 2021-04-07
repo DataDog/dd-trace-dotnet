@@ -508,8 +508,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     absolutePath = request.PathBase.Value + absolutePath;
                 }
 
-                var isFeatureFlagEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled;
-                string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath, useLegacyIdCleaning: !isFeatureFlagEnabled)
+                string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
                                                .ToLowerInvariant();
 
                 string resourceName = $"{httpMethod} {resourceUrl}";
