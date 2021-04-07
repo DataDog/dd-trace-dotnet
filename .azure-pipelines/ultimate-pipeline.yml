@@ -69,7 +69,7 @@ stages:
 
     - publish: $(System.DefaultWorkingDirectory)/packages
       displayName: Upload NuGet packages
-      artifact: nuget-packages
+      artifact: build_managed-packages
 
   - job: build_native_windows
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
@@ -88,8 +88,8 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        displayName: Download NuGet pacakges
-        artifact: nuget-packages
+        displayName: Download Restored packages
+        artifact: build_managed-packages
         path: $(System.DefaultWorkingDirectory)/packages
 
     - task: DownloadPipelineArtifact@2
@@ -290,8 +290,8 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        displayName: Download NuGet packages
-        artifact: nuget-packages
+        displayName: Download Restored packages
+        artifact: build_managed-packages
         path: $(System.DefaultWorkingDirectory)/packages
 
     # Ideally we would use the following MSBuild command which can more intelligently parallelize the build

@@ -624,6 +624,18 @@ partial class Build : NukeBuild
             .DependsOn(RunManagedUnitTests)
             .DependsOn(RunIntegrationTests);
 
+    Target WindowsCiBuildStage => _ =>
+        _
+            .Description("Convenience method for running 'build' in the Windows CI build")
+            .DependsOn(Clean)
+            .DependsOn(CreateRequiredDirectories)
+            .DependsOn(RestoreNuGet)
+            .DependsOn(CompileManagedSrc)
+            .DependsOn(PublishManagedProfiler)
+            .DependsOn(CompileNativeSrcWindows)
+            .DependsOn(PublishNativeProfilerWindows)
+            .DependsOn(CopyIntegrationsJson);
+
     Target LinuxFullCiBuild => _ =>
         _
             .Description("Convenience method for running the same build steps as the full Windows CI build")
