@@ -198,20 +198,17 @@ partial class Build : NukeBuild
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var envVars = new Dictionary<string, string>
-            {
-                {"CXX", "clang++"},
-                {"CC", "clang"},
-            };
-
             var buildDirectory = NativeProfilerProject.Directory / "build";
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
                 arguments: "../ -DCMAKE_BUILD_TYPE=Release",
-                environmentVariables: envVars,
                 workingDirectory: buildDirectory);
             Make.Value(workingDirectory: buildDirectory);
+
+            var source = buildDirectory / "bin" / $"{NativeProfilerProject.Name}.so";
+            var dest = TracerHomeDirectory / $"linux-{Platform}";
+            CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
         });
 
     Target CompileNativeSrcMacOs => _ => _

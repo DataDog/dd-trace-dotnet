@@ -132,113 +132,113 @@ stages:
     ##   displayName: Upload Windows tracer home zip
     ##   artifact: windows-tracer-home
 
-  - job: build_native_linux
-    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
-    pool:
-      vmImage: ubuntu-20.04
-    steps:
-
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: build_managed-bin
-        path: $(System.DefaultWorkingDirectory)/bin
-
-    - task: DockerCompose@0
-      displayName: docker-compose run Profiler
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run Profiler
-
-    - task: DockerCompose@0
-      displayName: docker-compose run package
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run package
-
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
-      displayName: Uploading linux tracer home artifact
-      artifact: build-linux-tracer-home
-
-    - publish: $(System.DefaultWorkingDirectory)/deploy/linux
-      displayName: Publish Linux packages
-      artifact: linux-packages
-
-  - job: build_native_alpine_linux
-    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
-    pool:
-      vmImage: ubuntu-20.04
-    steps:
-    - checkout: none
-
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: build-managed
-        path: $(System.DefaultWorkingDirectory)
-
-    - script: |
-        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
-      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
-
-    - task: DockerCompose@0
-      displayName: docker-compose run Profiler.Alpine
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run Profiler.Alpine
-
-    - script: |
-        chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
-      displayName: 'Workaround: Restore wiped executable permission on build/docker/package.sh'
-
-    - task: DockerCompose@0
-      displayName: docker-compose run package.alpine
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run package.alpine
-
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
-      displayName: Uploading alpine linux tracer home artifact
-      artifact: build-alpine-linux-tracer-home
-
-    - publish: $(System.DefaultWorkingDirectory)/deploy/linux
-      displayName: Publish Alpine Linux package
-      artifact: linux-alpine-packages
-
-  - job: build_native_linux_arm64
-    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
-    pool: Arm64
-    workspace:
-      clean: all
-
-    steps:
-    - checkout: none
-
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: build-managed
-        path: $(System.DefaultWorkingDirectory)
-
-    - script: |
-        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
-      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
-
-    - task: DockerCompose@0
-      displayName: docker-compose run Profiler
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run Profiler
-
-    - script: |
-        chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
-      displayName: 'Workaround: Restore wiped executable permission on build/docker/package.sh'
-
-    - task: DockerCompose@0
-      displayName: docker-compose run package
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run package
-
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
-      artifact: build-linux-tracer-home-arm64
+#  - job: build_native_linux
+#    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+#    pool:
+#      vmImage: ubuntu-20.04
+#    steps:
+#
+#    - task: DownloadPipelineArtifact@2
+#      inputs:
+#        artifact: build_managed-bin
+#        path: $(System.DefaultWorkingDirectory)/bin
+#
+#    - task: DockerCompose@0
+#      displayName: docker-compose run Profiler
+#      inputs:
+#        containerregistrytype: Container Registry
+#        dockerComposeCommand: run Profiler
+#
+#    - task: DockerCompose@0
+#      displayName: docker-compose run package
+#      inputs:
+#        containerregistrytype: Container Registry
+#        dockerComposeCommand: run package
+#
+#    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+#      displayName: Uploading linux tracer home artifact
+#      artifact: build-linux-tracer-home
+#
+#    - publish: $(System.DefaultWorkingDirectory)/deploy/linux
+#      displayName: Publish Linux packages
+#      artifact: linux-packages
+#
+#  - job: build_native_alpine_linux
+#    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+#    pool:
+#      vmImage: ubuntu-20.04
+#    steps:
+#    - checkout: none
+#
+#    - task: DownloadPipelineArtifact@2
+#      inputs:
+#        artifact: build-managed
+#        path: $(System.DefaultWorkingDirectory)
+#
+#    - script: |
+#        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+#      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
+#
+#    - task: DockerCompose@0
+#      displayName: docker-compose run Profiler.Alpine
+#      inputs:
+#        containerregistrytype: Container Registry
+#        dockerComposeCommand: run Profiler.Alpine
+#
+#    - script: |
+#        chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
+#      displayName: 'Workaround: Restore wiped executable permission on build/docker/package.sh'
+#
+#    - task: DockerCompose@0
+#      displayName: docker-compose run package.alpine
+#      inputs:
+#        containerregistrytype: Container Registry
+#        dockerComposeCommand: run package.alpine
+#
+#    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+#      displayName: Uploading alpine linux tracer home artifact
+#      artifact: build-alpine-linux-tracer-home
+#
+#    - publish: $(System.DefaultWorkingDirectory)/deploy/linux
+#      displayName: Publish Alpine Linux package
+#      artifact: linux-alpine-packages
+#
+#  - job: build_native_linux_arm64
+#    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+#    pool: Arm64
+#    workspace:
+#      clean: all
+#
+#    steps:
+#    - checkout: none
+#
+#    - task: DownloadPipelineArtifact@2
+#      inputs:
+#        artifact: build-managed
+#        path: $(System.DefaultWorkingDirectory)
+#
+#    - script: |
+#        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+#      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
+#
+#    - task: DockerCompose@0
+#      displayName: docker-compose run Profiler
+#      inputs:
+#        containerregistrytype: Container Registry
+#        dockerComposeCommand: run Profiler
+#
+#    - script: |
+#        chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
+#      displayName: 'Workaround: Restore wiped executable permission on build/docker/package.sh'
+#
+#    - task: DockerCompose@0
+#      displayName: docker-compose run package
+#      inputs:
+#        containerregistrytype: Container Registry
+#        dockerComposeCommand: run package
+#
+#    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+#      artifact: build-linux-tracer-home-arm64
 
   - job: build_native_macos
     dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
