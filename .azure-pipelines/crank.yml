@@ -41,10 +41,10 @@ jobs:
       version: 3.1.x
 
   - task: UseDotNet@2
-    displayName: install dotnet core sdk 5.0
+    displayName: install dotnet core sdk 5.0.103
     inputs:
       packageType: sdk
-      version: 5.0.x
+      version: 5.0.103
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
