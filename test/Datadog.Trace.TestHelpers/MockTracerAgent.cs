@@ -272,11 +272,6 @@ namespace Datadog.Trace.TestHelpers
                     ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                     ctx.Response.Close();
                 }
-                catch (InvalidOperationException)
-                {
-                    // this can occur when setting Response.ContentLength64, with the framework claiming that the response has already been submitted
-                    // for now ignore, and we'll see if this introduces downstream issues
-                }
                 catch (HttpListenerException)
                 {
                     // listener was stopped,
@@ -285,6 +280,11 @@ namespace Datadog.Trace.TestHelpers
                 catch (ObjectDisposedException)
                 {
                     // the response has been already disposed.
+                }
+                catch (InvalidOperationException)
+                {
+                    // this can occur when setting Response.ContentLength64, with the framework claiming that the response has already been submitted
+                    // for now ignore, and we'll see if this introduces downstream issues
                 }
                 catch (Exception) when (!_listener.IsListening)
                 {
