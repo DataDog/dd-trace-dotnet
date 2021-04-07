@@ -363,7 +363,7 @@ namespace Datadog.Trace
         {
             if (ShouldLogPartialFlushWarning(version))
             {
-                Log.Warning("DATADOG TRACER DIAGNOSTICS - Partial flush should only be enabled with agent 7.26.0+ (detected version: {version})", version);
+                Log.Warning("DATADOG TRACER DIAGNOSTICS - Partial flush should only be enabled with agent 7.26.0+ (detected version: {version})", version ?? "{detection failed}");
             }
         }
 

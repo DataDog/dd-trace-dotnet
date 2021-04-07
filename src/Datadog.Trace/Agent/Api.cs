@@ -29,6 +29,7 @@ namespace Datadog.Trace.Agent
         {
         }
 
+        // Internal constructor used for tests
         internal Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IDogStatsd statsd, IDatadogTracer tracer)
         {
             Log.Debug("Creating new Api");
