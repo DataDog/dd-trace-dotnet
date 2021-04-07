@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // This list is currently empty
         };
 
-        public static IEnumerable<object[]> GetWrapperMethodWithInterceptionAttributes()
+        public static IEnumerable<object[]> GetCallSiteMethodsWithInterceptionAttribute()
         {
             var integrationsAssembly = typeof(Instrumentation).Assembly;
 
@@ -21,19 +21,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             {
                 foreach (var interceptionAttribute in wrapperMethod.GetCustomAttributes<InterceptMethodAttribute>(inherit: false))
                 {
-                    yield return new object[] { wrapperMethod, interceptionAttribute };
+                    if (interceptionAttribute.MethodReplacementAction == MethodReplacementActionType.ReplaceTargetMethod)
+                    {
+                        yield return new object[] { wrapperMethod, interceptionAttribute };
+                    }
                 }
             }
         }
 
-        public static IEnumerable<object[]> GetWrapperMethods()
+        public static IEnumerable<object[]> GetCallSiteMethods()
         {
-            return GetWrapperMethodWithInterceptionAttributes().Select(i => new[] { i[0] }).Distinct();
+            return GetCallSiteMethodsWithInterceptionAttribute().Select(i => new[] { i[0] }).Distinct();
         }
 
         [Theory]
-        [MemberData(nameof(GetWrapperMethods))]
-        public void WrapperMethodHasOpCodeArgument(MethodInfo wrapperMethod)
+        [MemberData(nameof(GetCallSiteMethods))]
+        public void CallSiteMethodHasOpCodeArgument(MethodInfo wrapperMethod)
         {
             // all wrapper methods should have an additional Int32
             // parameter for the original method call's opcode
@@ -44,8 +47,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetWrapperMethods))]
-        public void WrapperMethodHasMdTokenArgument(MethodInfo wrapperMethod)
+        [MemberData(nameof(GetCallSiteMethods))]
+        public void CallSiteMethodHasMdTokenArgument(MethodInfo wrapperMethod)
         {
             // all wrapper methods should have an additional Int32
             // parameter for the original method call's mdToken
@@ -56,8 +59,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetWrapperMethods))]
-        public void WrapperMethodHasModuleVersionPtrArgument(MethodInfo wrapperMethod)
+        [MemberData(nameof(GetCallSiteMethods))]
+        public void CallSiteMethodHasModuleVersionPtrArgument(MethodInfo wrapperMethod)
         {
             // all wrapper methods should have an additional Int64
             // parameter for the address of calling module's moduleVersionId
@@ -68,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetWrapperMethodWithInterceptionAttributes))]
+        [MemberData(nameof(GetCallSiteMethodsWithInterceptionAttribute))]
         public void AllMethodsHaveProperlyFormedTargetSignatureTypes(MethodInfo wrapperMethod, InterceptMethodAttribute attribute)
         {
             Assert.True(
