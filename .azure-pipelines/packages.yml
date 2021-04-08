@@ -117,13 +117,13 @@ stages:
         arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(tracerHome)/netcoreapp3.1
 
     - task: DockerCompose@0
-      displayName: docker-compose run Profiler
+      displayName: docker-compose run -e buildConfiguration=$(buildConfiguration) Profiler
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: run Profiler
 
     - task: DockerCompose@0
-      displayName: docker-compose run package
+      displayName: docker-compose run -e buildConfiguration=$(buildConfiguration) package
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: run package
@@ -171,13 +171,13 @@ stages:
         arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(tracerHome)/netcoreapp3.1
 
     - task: DockerCompose@0
-      displayName: docker-compose run Profiler.Alpine
+      displayName: docker-compose run -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: run Profiler.Alpine
 
     - task: DockerCompose@0
-      displayName: docker-compose run package.alpine
+      displayName: docker-compose run -e buildConfiguration=$(buildConfiguration) package.alpine
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: run package.alpine
