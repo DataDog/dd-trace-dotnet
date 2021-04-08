@@ -872,7 +872,7 @@ stages:
         script: 'Start-Sleep -s 120'
 
 - stage: dotnet_tool
-  dependsOn: build_managed
+  dependsOn: [package_windows, build_native_linux, build_native_macos]
   pool:
     vmImage: windows-2019
   jobs:
@@ -884,12 +884,23 @@ stages:
 
     steps:
 
-    - checkout: none
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
+        installationPath: $(Agent.ToolsDirectory)/dotnet
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build-managed
-        path: $(System.DefaultWorkingDirectory)
+        artifact: build_managed-bin
+        path: $(System.DefaultWorkingDirectory)/bin
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        displayName: Download Restored packages
+        artifact: build_managed-packages
+        path: $(NugetPackageDirectory)
 
     - download: current
       artifact: build-windows-tracer-home
@@ -940,13 +951,6 @@ stages:
       displayName: Install profiler latest release
       inputs:
         filePath: ./.azure-pipelines/setup_tracer.ps1
-
-    - task: UseDotNet@2
-      displayName: install dotnet core sdk 5.0
-      inputs:
-        packageType: sdk
-        version: $(dotnetCoreSdk5Version)
-        installationPath: $(Agent.ToolsDirectory)/dotnet
 
     - task: DotNetCoreCLI@2
       displayName: tool build
