@@ -281,7 +281,7 @@ stages:
       displayName: Publish Windows x64 MSI
       artifact: windows-msi-x64
 
-    - publish: $(artifacts)/*.nupkg
+    - publish: $(artifacts)/nuget
       displayName: Publish NuGet packages
       artifact: nuget-packages
 

@@ -165,7 +165,7 @@ partial class Build : NukeBuild
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetConfiguration(Configuration)
-                    .SetOutputDirectory(ArtifactsDirectory)
+                    .SetOutputDirectory(ArtifactsDirectory / "nuget")
                     .CombineWith(NuGetPackages, (x, project) => x
                         .SetProject(project)),
                 degreeOfParallelism: 2);
