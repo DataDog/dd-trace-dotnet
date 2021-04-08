@@ -387,8 +387,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         private static void GetProfilerManagedBinariesDirectories(List<string> binaryDirs)
         {
             // Assumed folder structure
-            // (support both options for now; be aware tha tgis may change while we are still in Alpha):
-            // OPTION A (SxS with Tracer):
+            // (support the below options for now; be aware that this may change while we are still in Alpha):
+            // OPTION A (SxS Profiler & Tracer):
             //  - c:\Program Files\Datadog\.NET Tracer\                                     <= Native Tracer/Profiler loader binary
             //  - c:\Program Files\Datadog\.NET Tracer\                                     <= Also, native Tracer binaries for Win-x64
             //  - c:\Program Files\Datadog\.NET Tracer\net45\                               <= Managed Tracer binaries for Net Fx 4.5
@@ -402,6 +402,10 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             //  - c:\Program Files\Datadog\Some Dir\net45\                                  <= Managed Profiler binaries for Net Fx 4.5
             //  - c:\Program Files\Datadog\Some Dir\netcoreapp3.1\                          <= Managed Profiler binaries for Net Core 3.1 +
             //  - ...
+            // OPTION C (Debug builds only!):
+            //  - Use the relavite path from where our build places the native profiler engine DLL to where the build 
+            //    places the managed profiler engine DLL.
+            //  - This is for F5-running from within VS.
 
             string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir(out bool isCoreFx);
 
@@ -452,8 +456,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
 #if DEBUG
             {
+                // OPTION C (Debug builds only!):
                 // For debug builds only we also support F5-running from within VS.
-                // For that we use the relavite path from where our build places the native profiler engine DLL to where the build process
+                // For that we use the relavite path from where our build places the native profiler engine DLL to where the build
                 // places the managed profiler engine DLL.
                 const string NativeToManagedRelativePath = @"..\..\..\Debug-AnyCPU\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Managed\";
 
@@ -477,7 +482,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     binaryDirs.Add(managedBinariesDirectory);
                 }
             }
-#endif
+#endif  // #if DEBUG
         }
 
         private static string GetRuntimeBasedProductBinariesSubdir()

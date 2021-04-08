@@ -27,8 +27,6 @@ namespace shared {
 #endif
     
     const WSTRING managed_loader_assembly_name                  = WStr("Datadog.AutoInstrumentation.ManagedLoader");
-    const WSTRING empty_string                                  = WStr("");
-    const WSTRING default_domain_name                           = WStr("DefaultDomain");
 
     const LPCWSTR managed_loader_startup_type                   = WStr("Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader");
     const LPCWSTR module_type_name                              = WStr("<Module>");
@@ -54,10 +52,6 @@ namespace shared {
     const LPCWSTR invoke_name                                   = WStr("Invoke");
     const LPCWSTR run_name                                      = WStr("Run");
     
-    const WSTRING profiler_path_64                              = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
-    const WSTRING profiler_path_32                              = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
-    const WSTRING profiler_path                                 = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-
     // We exclude here the direct references of the loader to avoid a cyclic reference problem.
     // Also well-known assemblies we want to avoid.
     const WSTRING assemblies_exclusion_list_[] = {
@@ -79,13 +73,26 @@ namespace shared {
     };
 
     void Loader::CreateNewSingeltonInstance(ICorProfilerInfo4* pCorProfilerInfo,
-                                            std::function<void(const std::string& str)> logDebugCallback,
-                                            std::function<void(const std::string& str)> logInfoCallback,
-                                            std::function<void(const std::string& str)> logWarnCallback,
-                                            const LoaderResourceMonikerIDs& resourceMonikerIDs,
-                                            WCHAR const * native_profiler_library_filename)
+                                            std::function<void(const std::string& str)> log_debug_callback,
+                                            std::function<void(const std::string& str)> log_info_callback,
+                                            std::function<void(const std::string& str)> log_warn_callback,
+                                            const LoaderResourceMonikerIDs& resource_moniker_ids,
+                                            WCHAR const * native_profiler_library_filename,
+                                            const std::vector<WSTRING>& assembliesToLoad_adDefault_procNonIIS,
+                                            const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procNonIIS,
+                                            const std::vector<WSTRING>& assembliesToLoad_adDefault_procIIS,
+                                            const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procIIS)
     {
-        Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo, logDebugCallback, logInfoCallback, logWarnCallback, resourceMonikerIDs, native_profiler_library_filename);
+        Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo,
+                                                                       log_debug_callback,
+                                                                       log_info_callback, 
+                                                                       log_warn_callback, 
+                                                                       resource_moniker_ids, 
+                                                                       native_profiler_library_filename,
+                                                                       assembliesToLoad_adDefault_procNonIIS,
+                                                                       assembliesToLoad_adNonDefault_procNonIIS,
+                                                                       assembliesToLoad_adDefault_procIIS,
+                                                                       assembliesToLoad_adNonDefault_procIIS);
 
         Loader::DeleteSingeltonInstance();
         Loader::s_singeltonInstance = newSingeltonInstance;
@@ -113,44 +120,24 @@ namespace shared {
     }
 
     Loader* Loader::CreateNewLoaderInstance(
-        ICorProfilerInfo4* info,
-        std::function<void(const std::string& str)> log_debug_callback,
-        std::function<void(const std::string& str)> log_info_callback,
-        std::function<void(const std::string& str)> log_warn_callback,
-        const LoaderResourceMonikerIDs& resourceMonikerIDs,
-        WCHAR const* native_profiler_library_filename) {
-
-        std::vector<WSTRING> assembly_string_default_appdomain_vector;
-        std::vector<WSTRING> assembly_string_nondefault_appdomain_vector;
+                ICorProfilerInfo4* pCorProfilerInfo,
+                std::function<void(const std::string& str)> log_debug_callback,
+                std::function<void(const std::string& str)> log_info_callback,
+                std::function<void(const std::string& str)> log_warn_callback,
+                const LoaderResourceMonikerIDs& resourceMonikerIDs,
+                WCHAR const* native_profiler_library_filename,
+                const std::vector<WSTRING>& assembliesToLoad_adDefault_procNonIIS,
+                const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procNonIIS,
+                const std::vector<WSTRING>& assembliesToLoad_adDefault_procIIS,
+                const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procIIS) {
 
         WSTRING process_name = GetCurrentProcessName();
         const bool is_iis = process_name == WStr("w3wp.exe") ||
             process_name == WStr("iisexpress.exe");
 
-        if (is_iis) {
-
-            assembly_string_default_appdomain_vector = {
-                WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-            };
-            assembly_string_nondefault_appdomain_vector = {
-                WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-            };
-
-        }
-        else {
-
-            assembly_string_default_appdomain_vector = {
-                WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-            };
-            assembly_string_nondefault_appdomain_vector = {
-                WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-            };
-
-        }
-
-        return new Loader(info,
-            assembly_string_default_appdomain_vector,
-            assembly_string_nondefault_appdomain_vector,
+        return new Loader(pCorProfilerInfo,
+            is_iis ? assembliesToLoad_adDefault_procIIS : assembliesToLoad_adDefault_procNonIIS,
+            is_iis ? assembliesToLoad_adNonDefault_procIIS : assembliesToLoad_adNonDefault_procNonIIS,
             log_debug_callback,
             log_info_callback,
             log_warn_callback,
@@ -159,14 +146,15 @@ namespace shared {
     }
 
     Loader::Loader(
-        ICorProfilerInfo4* info,
-        std::vector<WSTRING> assembly_string_default_appdomain_vector,
-        std::vector<WSTRING> assembly_string_nondefault_appdomain_vector,
-        std::function<void(const std::string& str)> log_debug_callback,
-        std::function<void(const std::string& str)> log_info_callback,
-        std::function<void(const std::string& str)> log_warn_callback,
-        const LoaderResourceMonikerIDs& resourceMonikerIDs,
-        WCHAR const * native_profiler_library_filename) {
+                ICorProfilerInfo4* info,
+                const std::vector<WSTRING>& assembly_string_default_appdomain_vector,
+                const std::vector<WSTRING>& assembly_string_nondefault_appdomain_vector,
+                std::function<void(const std::string& str)> log_debug_callback,
+                std::function<void(const std::string& str)> log_info_callback,
+                std::function<void(const std::string& str)> log_warn_callback,
+                const LoaderResourceMonikerIDs& resourceMonikerIDs,
+                WCHAR const * native_profiler_library_filename) {
+
         resourceMonikerIDs_ = LoaderResourceMonikerIDs(resourceMonikerIDs);
         info_ = info;
         assembly_string_default_appdomain_vector_ = assembly_string_default_appdomain_vector;
