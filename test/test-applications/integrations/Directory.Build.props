@@ -3,7 +3,7 @@
 
   <!--  Move bin and obj folders to root -->
   <PropertyGroup>
-    <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\..\bin\bin\test\test-applications\integrations\$(MSBuildProjectName)</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\..\bin\obj\test\test-applications\integrations\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\..\bin\bin\test\test-applications\integrations\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\..\bin\obj\test\test-applications\integrations\$(MSBuildProjectName)</BaseIntermediateOutputPath>
   </PropertyGroup>
 </Project>
