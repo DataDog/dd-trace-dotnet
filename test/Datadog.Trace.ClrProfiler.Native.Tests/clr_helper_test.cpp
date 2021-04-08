@@ -234,10 +234,14 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
       L"System.Collections.Generic.IList`1",
       L"System.Collections.Generic.List`1",
       L"System.Diagnostics.DebuggableAttribute",
+#ifdef _DEBUG
       L"System.Diagnostics.DebuggerBrowsableAttribute",
       L"System.Diagnostics.DebuggerBrowsableState",
+#endif
       L"System.Diagnostics.DebuggerHiddenAttribute",
+#ifdef _DEBUG
       L"System.Diagnostics.DebuggerStepThroughAttribute",
+#endif
       L"System.Exception",
       L"System.Func`3",
       L"System.Guid",
