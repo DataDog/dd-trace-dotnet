@@ -568,29 +568,19 @@ partial class Build : NukeBuild
         {
             var directories = RootDirectory.GlobDirectories(
                 $"**/bin/bin/src/**/{Configuration}",
+                $"**/bin/bin/tools/**/{Configuration}",
                 $"**/bin/bin/test/Datadog.Trace.TestHelpers/**/{Configuration}",
                 $"**/bin/bin/test/test-applications/integrations/dependency-libs/**/{Configuration}"
             );
             directories.ForEach(source =>
             {
-                var targetPlatforms = new[]
+                var target = source.Parent / $"{Platform}" / Configuration;
+                if (DirectoryExists(target))
                 {
-                    MSBuildTargetPlatform.x86,
-                    MSBuildTargetPlatform.x64,
-                    MSBuildTargetPlatform.arm,
-                };
-
-                foreach (var platform in targetPlatforms)
-                {
-                    var target = source.Parent / $"{platform}" / Configuration;
-                    if (DirectoryExists(target))
-                    {
-                        Logger.Info($"Skipping '{target}' as already exists");
-                        continue;
-                    }
-
-                    CopyDirectoryRecursively(source, target, DirectoryExistsPolicy.Fail, FileExistsPolicy.Fail);
+                    Logger.Info($"Skipping '{target}' as already exists");
                 }
+
+                CopyDirectoryRecursively(source, target, DirectoryExistsPolicy.Fail, FileExistsPolicy.Fail);
             });
         });
 
