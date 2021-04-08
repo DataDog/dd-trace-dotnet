@@ -37,10 +37,10 @@ resources:
 
 # Stages
 stages:
-- stage: build_managed
+- stage: build_managed # todo: rename
   dependsOn: []
   jobs:
-    - job: build_managed
+    - job: windows
       pool:
         vmImage: windows-2019
       steps:
@@ -63,6 +63,19 @@ stages:
         - script: build.cmd PublishManagedProfiler --skip
           displayName: Publish Managed Profiler
 
+        - script: build.cmd CompileNativeSrcWindows --skip
+          displayName: Compile native src
+
+        - script: build.cmd PublishNativeProfilerWindows --skip
+          displayName: Publish native profiler
+
+        - script: build.cmd CopyIntegrationsJson --skip
+          displayName: Copy integrations.json
+
+        - publish: $(tracerHome)
+          displayName: Upload Windows tracer home directory
+          artifact: tracer-home-windows
+
         - publish: $(System.DefaultWorkingDirectory)/bin
           displayName: Upload working directory after the managed build
           artifact: build_managed-bin
@@ -71,54 +84,12 @@ stages:
           displayName: Upload NuGet packages
           artifact: build_managed-packages
 
-- stage: build_native_windows
-  dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
-  jobs:
-  - job: build
-    pool:
-      vmImage: windows-2019
-    steps:
-    - checkout: self
-      fetchDepth: 1
-
-    - task: UseDotNet@2
-      displayName: install dotnet core sdk 5.0
-      inputs:
-        packageType: sdk
-        version: $(dotnetCoreSdk5Version)
-        installationPath: $(Agent.ToolsDirectory)/dotnet
-
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        displayName: Download Restored packages
-        artifact: build_managed-packages
-        path: $(System.DefaultWorkingDirectory)/packages
-
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        displayName: Download bin folder
-        artifact: build_managed-bin
-        path: $(System.DefaultWorkingDirectory)/bin
-
-    - script: build.cmd CompileNativeSrcWindows --skip
-      displayName: Compile native src 
-
-    - script: build.cmd PublishNativeProfilerWindows --skip
-      displayName: Publish native profilter 
-
-    - script: build.cmd CopyIntegrationsJson --skip
-      displayName: Copy integrations.json 
-
     ## TODO: Move these to the package step?
     ## - script: build.cmd ZipTracerHome --skip
     ##   displayName: Zip tracer home directory
 
     ## - script: build.cmd BuildMsi --skip
     ##   displayName: Build the msi
-
-    - publish: $(System.DefaultWorkingDirectory)/bin
-      displayName: Upload repo after windows build
-      artifact: build_native_windows-bin
 
     ## - publish: $(artifacts)/x86/en-us
     ##   displayName: Upload Windows x86 MSI
@@ -127,10 +98,6 @@ stages:
     ## - publish: $(artifacts)/x64/en-us
     ##   displayName: Upload Windows x64 MSI
     ##   artifact: windows-msi-x64
-
-    - publish: $(tracerHome)
-      displayName: Upload Windows tracer home directory
-      artifact: tracer-home-windows
 
     ## - publish: $(artifacts)/tracer-home.zip
     ##   displayName: Upload Windows tracer home zip
@@ -283,7 +250,7 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build_native_windows-bin
+        artifact: build_managed-bin
         path: $(System.DefaultWorkingDirectory)/bin
 
     - task: DownloadPipelineArtifact@2
@@ -310,7 +277,7 @@ stages:
     steps:
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build_native_windows-bin
+        artifact: build_managed-bin
         path: $(System.DefaultWorkingDirectory)/bin
 
     - task: DotNetCoreCLI@2
@@ -338,14 +305,14 @@ stages:
   pool:
     vmImage: macOS-10.15
   jobs:
-  - job: unit_tests_managed
+  - job: managed
     steps:
 
     - template: steps/install-dotnet.yml
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build_native_windows-bin
+        artifact: build_managed-bin
         path: $(System.DefaultWorkingDirectory)/bin
 
     - task: DownloadPipelineArtifact@2
@@ -370,17 +337,17 @@ stages:
 
 - stage: unit_tests_linux
   dependsOn: build_native_linux
-  pool:
-    vmImage: ubuntu-18.04
   jobs:
   - job: managed
+    pool:
+      vmImage: ubuntu-18.04
     steps:
 
     - template: steps/install-dotnet.yml
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build_native_windows-bin
+        artifact: build_managed-bin
         path: $(System.DefaultWorkingDirectory)/bin
 
     - task: DownloadPipelineArtifact@2
@@ -403,7 +370,7 @@ stages:
         arguments: -- RunManagedUnitTests --skip
         projects: build/_build/_build.csproj
 
-  - job: unit_tests_managed_linux_arm64
+  - job: managed_arm64
     pool: Arm64
     workspace:
       clean: all
@@ -894,11 +861,10 @@ stages:
 
 - stage: dotnet_tool
   dependsOn: build_native_windows
+  pool:
+    vmImage: windows-2019
   jobs:
   - job: build_runner_tool_and_standalone
-
-    pool:
-      vmImage: windows-2019
 
     # Enable the Datadog Agent service for this job
     services:
