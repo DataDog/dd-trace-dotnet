@@ -6,6 +6,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
@@ -25,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
     {
         private const string IntegrationName = nameof(IntegrationIds.MsTestV2);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestMethodRunnerExecuteIntegration));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -100,6 +102,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             }
 
             span.ResetStartTime();
+            Log.Information("Returned Scope");
             return new CallTargetState(scope);
         }
 
@@ -120,11 +123,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             if (scope != null)
             {
                 Array returnValueArray = returnValue as Array;
+                Log.Information("returnValueArray.Length = " + returnValueArray.Length);
                 if (returnValueArray.Length == 1)
                 {
                     object unitTestResultObject = returnValueArray.GetValue(0);
                     if (unitTestResultObject != null && unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
                     {
+                        Log.Information("unitTestResult.Outcome = " + unitTestResult.Outcome);
                         switch (unitTestResult.Outcome)
                         {
                             case UnitTestResultOutcome.Error:
@@ -158,49 +163,71 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         private static Dictionary<string, List<string>> GetTraits(MethodInfo methodInfo)
         {
             Dictionary<string, List<string>> testProperties = null;
-            var testAttributes = methodInfo.GetCustomAttributes(true);
-            foreach (var tattr in testAttributes)
+            try
             {
-                if (tattr?.GetType().Name != "TestCategoryAttribute")
+                var testAttributes = methodInfo.GetCustomAttributes(true);
+
+                foreach (var tattr in testAttributes)
                 {
-                    continue;
+                    var tAttrName = tattr.GetType().Name;
+
+                    if (tAttrName == "TestCategoryAttribute")
+                    {
+                        testProperties ??= new Dictionary<string, List<string>>();
+                        if (!testProperties.TryGetValue("Category", out var categoryList))
+                        {
+                            categoryList = new List<string>();
+                            testProperties["Category"] = categoryList;
+                        }
+
+                        if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
+                        {
+                            categoryList.AddRange(tattrStruct.TestCategories);
+                        }
+                    }
+
+                    if (tAttrName == "TestPropertyAttribute")
+                    {
+                        testProperties ??= new Dictionary<string, List<string>>();
+                        if (tattr.TryDuckCast<TestPropertyAttributeStruct>(out var tattrStruct) && tattrStruct.Name != null)
+                        {
+                            if (!testProperties.TryGetValue(tattrStruct.Name, out var propertyList))
+                            {
+                                propertyList = new List<string>();
+                                testProperties[tattrStruct.Name] = propertyList;
+                            }
+
+                            propertyList.Add(tattrStruct.Value ?? "(empty)");
+                        }
+                    }
                 }
 
-                testProperties ??= new Dictionary<string, List<string>>();
-                if (!testProperties.TryGetValue("Category", out var categoryList))
+                var classCategories = methodInfo.DeclaringType?.GetCustomAttributes(true);
+                if (classCategories is not null)
                 {
-                    categoryList = new List<string>();
-                    testProperties["Category"] = categoryList;
-                }
+                    foreach (var tattr in classCategories)
+                    {
+                        var tAttrName = tattr.GetType().Name;
+                        if (tAttrName == "TestCategoryAttribute")
+                        {
+                            testProperties ??= new Dictionary<string, List<string>>();
+                            if (!testProperties.TryGetValue("Category", out var categoryList))
+                            {
+                                categoryList = new List<string>();
+                                testProperties["Category"] = categoryList;
+                            }
 
-                if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
-                {
-                    categoryList.AddRange(tattrStruct.TestCategories);
+                            if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
+                            {
+                                categoryList.AddRange(tattrStruct.TestCategories);
+                            }
+                        }
+                    }
                 }
             }
-
-            var classCategories = methodInfo.DeclaringType?.GetCustomAttributes(true);
-            if (classCategories is not null)
+            catch (Exception ex)
             {
-                foreach (var tattr in classCategories)
-                {
-                    if (tattr.GetType().Name != "TestCategoryAttribute")
-                    {
-                        continue;
-                    }
-
-                    testProperties ??= new Dictionary<string, List<string>>();
-                    if (!testProperties.TryGetValue("Category", out var categoryList))
-                    {
-                        categoryList = new List<string>();
-                        testProperties["Category"] = categoryList;
-                    }
-
-                    if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
-                    {
-                        categoryList.AddRange(tattrStruct.TestCategories);
-                    }
-                }
+                Log.Error(ex, ex.Message);
             }
 
             return testProperties;
