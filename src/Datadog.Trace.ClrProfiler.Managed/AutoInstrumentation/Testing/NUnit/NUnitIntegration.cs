@@ -9,10 +9,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
-        internal static Scope CreateScope<TContext>(TContext executionContext, Type targetType)
-            where TContext : ITestExecutionContext
+        internal static Scope CreateScope(ITest currentTest, Type targetType)
         {
-            ITest currentTest = executionContext.CurrentTest;
             MethodInfo testMethod = currentTest.Method.MethodInfo;
             object[] testMethodArguments = currentTest.Arguments;
             IPropertyBag testMethodProperties = currentTest.Properties;
@@ -79,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 skipReason = (string)testMethodProperties.Get("_SKIPREASON");
                 foreach (var key in testMethodProperties.Keys)
                 {
-                    if (key == "_SKIPREASON")
+                    if (key == "_SKIPREASON" || key == "_JOINTYPE")
                     {
                         continue;
                     }
@@ -114,10 +112,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             if (skipReason != null)
             {
-                span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                span.SetTag(TestTags.SkipReason, skipReason);
-                span.Finish(new TimeSpan(10));
-                scope.Dispose();
+                FinishSkippedScope(scope, skipReason);
                 scope = null;
             }
 
@@ -155,6 +150,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             else
             {
                 scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+            }
+        }
+
+        internal static void FinishSkippedScope(Scope scope, string skipReason)
+        {
+            var span = scope?.Span;
+            if (span != null)
+            {
+                span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                span.SetTag(TestTags.SkipReason, skipReason ?? string.Empty);
+                span.Finish(new TimeSpan(10));
+                scope.Dispose();
             }
         }
     }

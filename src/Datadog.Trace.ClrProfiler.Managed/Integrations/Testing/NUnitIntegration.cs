@@ -5,7 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -32,6 +34,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         private const string NUnitTestResultType = "NUnit.Framework.Internal.TestResult";
         private const string NUnitTestExecutionContextType = "NUnit.Framework.Internal.TestExecutionContext";
+
+        private const string NUnitCompositeWorkItemType = "NUnit.Framework.Internal.Execution.CompositeWorkItem";
+        private const string NUnitSkipChildrenMethod = "SkipChildren";
+        private const string NUnitTestSuiteType = "NUnit.Framework.Internal.TestSuite";
+        private const string NUnitResultStateType = "NUnit.Framework.Interfaces.ResultState";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
 
@@ -91,7 +98,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 return execute(testMethodCommand, testExecutionContext);
             }
 
-            Scope scope = CreateScope(testExecutionContext, testMethodCommandType);
+            Scope scope = null;
+
+            if (testExecutionContext.TryDuckCast<ITestExecutionContext>(out var testExCtx))
+            {
+                scope = AutoInstrumentation.Testing.NUnit.NUnitIntegration.CreateScope(testExCtx.CurrentTest, testMethodCommandType);
+            }
+
             if (scope is null)
             {
                 return execute(testMethodCommand, testExecutionContext);
@@ -113,185 +126,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 }
                 finally
                 {
-                    FinishScope(scope, testExecutionContext, exception);
+                    AutoInstrumentation.Testing.NUnit.NUnitIntegration.FinishScope(scope, exception);
                 }
 
                 return result;
-            }
-        }
-
-        private static Scope CreateScope(object testExecutionContext, Type testMethodCommandType)
-        {
-            Scope scope = null;
-
-            try
-            {
-                if (testExecutionContext.TryGetPropertyValue<object>("CurrentTest", out object currentTest))
-                {
-                    MethodInfo testMethod = null;
-                    object[] testMethodArguments = null;
-                    object properties = null;
-                    string testCaseName = null;
-
-                    if (currentTest != null)
-                    {
-                        if (currentTest.TryGetPropertyValue<object>("Method", out object method))
-                        {
-                            method?.TryGetPropertyValue<MethodInfo>("MethodInfo", out testMethod);
-                        }
-
-                        currentTest.TryGetPropertyValue<object[]>("Arguments", out testMethodArguments);
-                        currentTest.TryGetPropertyValue<object>("Properties", out properties);
-
-                        currentTest.TryGetPropertyValue<string>("Name", out testCaseName);
-                    }
-
-                    if (testMethod != null)
-                    {
-                        string testFramework = "NUnit " + testMethodCommandType.Assembly.GetName().Version;
-                        string testSuite = testMethod.DeclaringType?.FullName;
-                        string testName = testMethod.Name;
-                        string skipReason = null;
-                        Dictionary<string, List<string>> testTraits = null;
-
-                        // Get test parameters
-                        TestParameters testParameters = null;
-                        ParameterInfo[] methodParameters = testMethod.GetParameters();
-                        if (methodParameters?.Length > 0)
-                        {
-                            testParameters = new TestParameters();
-                            testParameters.Metadata = new Dictionary<string, object>();
-                            testParameters.Arguments = new Dictionary<string, object>();
-                            testParameters.Metadata[TestTags.MetadataTestName] = testCaseName;
-
-                            for (int i = 0; i < methodParameters.Length; i++)
-                            {
-                                if (testMethodArguments != null && i < testMethodArguments.Length)
-                                {
-                                    testParameters.Arguments[methodParameters[i].Name] = testMethodArguments[i]?.ToString() ?? "(null)";
-                                }
-                                else
-                                {
-                                    testParameters.Arguments[methodParameters[i].Name] = "(default)";
-                                }
-                            }
-                        }
-
-                        // Get traits
-                        if (properties != null)
-                        {
-                            properties.TryCallMethod<string, string>("Get", "_SKIPREASON", out skipReason);
-
-                            if (properties.TryGetFieldValue<Dictionary<string, IList>>("inner", out Dictionary<string, IList> traits) && traits.Count > 0)
-                            {
-                                testTraits = new Dictionary<string, List<string>>();
-
-                                foreach (KeyValuePair<string, IList> traitValue in traits)
-                                {
-                                    if (traitValue.Key == "_SKIPREASON")
-                                    {
-                                        continue;
-                                    }
-
-                                    List<string> lstValues = new List<string>();
-                                    if (traitValue.Value != null)
-                                    {
-                                        foreach (object valObj in traitValue.Value)
-                                        {
-                                            if (valObj is null)
-                                            {
-                                                continue;
-                                            }
-
-                                            lstValues.Add(valObj.ToString());
-                                        }
-                                    }
-
-                                    testTraits[traitValue.Key] = lstValues;
-                                }
-                            }
-                        }
-
-                        scope = Common.TestTracer.StartActive("nunit.test", serviceName: Common.ServiceName);
-                        Span span = scope.Span;
-
-                        span.Type = SpanTypes.Test;
-                        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
-                        span.ResourceName = $"{testSuite}.{testName}";
-                        span.SetTag(TestTags.Suite, testSuite);
-                        span.SetTag(TestTags.Name, testName);
-                        span.SetTag(TestTags.Framework, testFramework);
-                        span.SetTag(TestTags.Type, TestTags.TypeTest);
-                        CIEnvironmentValues.DecorateSpan(span);
-
-                        var framework = FrameworkDescription.Instance;
-
-                        span.SetTag(CommonTags.RuntimeName, framework.Name);
-                        span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
-                        span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
-                        span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
-                        span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
-                        span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
-
-                        if (testParameters != null)
-                        {
-                            span.SetTag(TestTags.Parameters, testParameters.ToJSON());
-                        }
-
-                        if (testTraits != null && testTraits.Count > 0)
-                        {
-                            span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(testTraits));
-                        }
-
-                        if (skipReason != null)
-                        {
-                            span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                            span.SetTag(TestTags.SkipReason, skipReason);
-                            span.Finish(TimeSpan.Zero);
-                            scope.Dispose();
-                            scope = null;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
-
-            return scope;
-        }
-
-        private static void FinishScope(Scope scope, object testExecutionContext, Exception ex)
-        {
-            // unwrap the generic NUnitException
-            if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
-            {
-                ex = ex.InnerException;
-            }
-
-            if (ex != null)
-            {
-                string exTypeName = ex.GetType().FullName;
-
-                if (exTypeName == "NUnit.Framework.SuccessException")
-                {
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
-                }
-                else if (exTypeName == "NUnit.Framework.IgnoreException")
-                {
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                    scope.Span.SetTag(TestTags.SkipReason, ex.Message);
-                }
-                else
-                {
-                    scope.Span.SetException(ex);
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                }
-            }
-            else
-            {
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
             }
         }
 
@@ -356,6 +194,78 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             finally
             {
                 SynchronizationContext.SetSynchronizationContext(context);
+            }
+        }
+
+        /// <summary>
+        /// Wrap the original NUnit.Framework.Internal.Execution.CompositeWorkItem.SkipChildren method by adding instrumentation code arount it
+        /// </summary>
+        /// <param name="compositeWorkItem">The CompositeWorkItem instance</param>
+        /// <param name="testSuite">The test suite instance</param>
+        /// <param name="resultState">the result state instance</param>
+        /// <param name="message">The message instance</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            TargetAssembly = NUnitAssembly,
+            TargetType = NUnitCompositeWorkItemType,
+            TargetMethod = NUnitSkipChildrenMethod,
+            TargetMinimumVersion = Major3Minor0,
+            TargetMaximumVersion = Major3,
+            TargetSignatureTypes = new[] { ClrNames.Void, NUnitTestSuiteType, NUnitResultStateType, ClrNames.String })]
+        public static void CompositeWorkItem_SkipChildren(
+            object compositeWorkItem,
+            object testSuite,
+            object resultState,
+            object message,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (compositeWorkItem == null) { throw new ArgumentNullException(nameof(compositeWorkItem)); }
+
+            Type compositeWorkItemType = compositeWorkItem.GetType();
+            Action<object, object, object, object> execute;
+
+            try
+            {
+                execute = MethodBuilder<Action<object, object, object, object>>
+                    .Start(moduleVersionPtr, mdToken, opCode, NUnitSkipChildrenMethod)
+                    .WithConcreteType(compositeWorkItemType)
+                    .WithParameters(testSuite, resultState, message)
+                    .WithNamespaceAndNameFilters(ClrNames.Void, NUnitTestSuiteType, NUnitResultStateType, ClrNames.String)
+                    .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NUnitCompositeWorkItemType,
+                    methodName: NUnitSkipChildrenMethod,
+                    instanceType: compositeWorkItemType.AssemblyQualifiedName);
+                throw;
+            }
+
+            execute(compositeWorkItem, testSuite, resultState, message);
+
+            if (testSuite.TryDuckCast<ITestSuite>(out var tSuite))
+            {
+                var skipMessage = (string)message;
+                const string startString = "OneTimeSetUp:";
+                if (skipMessage?.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    skipMessage = skipMessage.Substring(startString.Length).Trim();
+                }
+
+                foreach (var item in tSuite.Tests)
+                {
+                    Scope scope = AutoInstrumentation.Testing.NUnit.NUnitIntegration.CreateScope(item.DuckCast<ITest>(), compositeWorkItemType);
+                    AutoInstrumentation.Testing.NUnit.NUnitIntegration.FinishSkippedScope(scope, skipMessage);
+                }
             }
         }
     }
