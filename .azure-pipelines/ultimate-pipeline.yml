@@ -259,19 +259,15 @@ stages:
         artifact: build_managed-packages
         path: $(System.DefaultWorkingDirectory)/packages
 
-    - task: DotNetCoreCLI@2
-      displayName: CompileManagedUnitTests
-      inputs:
-        command: run
-        arguments: -- CompileManagedUnitTests --skip
-        projects: build/_build/_build.csproj
+    - script: build.cmd RestoreNuGet --skip
+      displayName: NuGet Restore
 
-    - task: DotNetCoreCLI@2
-      displayName: RunManagedUnitTests
-      inputs:
-        command: run
-        arguments: -- RunManagedUnitTests --skip
-        projects: build/_build/_build.csproj
+    - script: build.cmd CompileManagedUnitTests --skip
+      displayName: NuGet Restore
+
+    - script: build.cmd RunManagedUnitTests --skip
+      displayName: NuGet Restore
+
 
   - job: native
     steps:
@@ -280,19 +276,22 @@ stages:
         artifact: build_managed-bin
         path: $(System.DefaultWorkingDirectory)/bin
 
-    - task: DotNetCoreCLI@2
-      displayName: CompileNativeTestsWindows
+    - task: DownloadPipelineArtifact@2
       inputs:
-        command: run
-        arguments: -- CompileNativeTestsWindows --skip
-        projects: build/_build/_build.csproj
+        displayName: Download Restored packages
+        artifact: build_managed-packages
+        path: $(System.DefaultWorkingDirectory)/packages
 
-    - task: DotNetCoreCLI@2
-      displayName: RunNativeTestsWindows
-      inputs:
-        command: run
-        arguments: -- RunNativeTestsWindows --skip
-        projects: build/_build/_build.csproj
+    - template: steps/install-dotnet.yml
+
+    - script: build.cmd RestoreNuGet --skip
+      displayName: NuGet Restore
+
+    - script: build.cmd CompileNativeTestsWindows --skip
+      displayName: NuGet Restore
+
+    - script: build.cmd RunNativeTestsWindows --skip
+      displayName: NuGet Restore
 
     - task: PublishTestResults@2
       displayName: publish test results
