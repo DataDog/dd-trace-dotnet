@@ -239,6 +239,52 @@ stages:
   #    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
   #      artifact: build-linux-tracer-home-arm64
 
+- stage: package_windows
+  dependsOn: build_managed
+  pool:
+    vmImage: windows-2019
+  jobs:
+  - job: msi and pack
+    steps:
+
+    - template: steps/install-dotnet.yml
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build_managed-bin
+        path: $(System.DefaultWorkingDirectory)/bin
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        displayName: Download Restored packages
+        artifact: build_managed-packages
+        path: $(NugetPackageDirectory)
+
+    - script: build.cmd BuildMsi --skip
+      displayName: Build MSI
+
+    - script: build.cmd ZipTracerHome --skip
+      displayName: ZIP Tracer home directory
+
+    - script: build.cmd PackNuGet --skip
+      displayName: Create NuGet packages
+
+    - publish: $(artifacts)/tracer-home.zip
+      displayName: Publish tracer-home.zip
+      artifact: tracer-home.zip
+
+    - publish: $(artifacts)/x86/en-us
+      displayName: Publish Windows x86 MSI
+      artifact: windows-msi-x86
+
+    - publish: $(artifacts)/x64/en-us
+      displayName: Publish Windows x64 MSI
+      artifact: windows-msi-x64
+
+    - publish: $(artifacts)/*.nupkg
+      displayName: Publish NuGet packages
+      artifact: nuget-packages
+
 - stage: unit_tests_windows
   dependsOn: build_managed
   pool:
@@ -441,6 +487,9 @@ stages:
     - script: build.cmd RunIntegrationTests --skip
       displayName: run integration tests
 
+- stage: integration_tests_windows_iis
+  dependsOn: [build_managed, package_windows]
+  jobs:
   - job: Windows_IIS
     timeoutInMinutes: 100
     strategy:
