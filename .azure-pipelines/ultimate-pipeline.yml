@@ -404,73 +404,42 @@ stages:
 
     steps:
 
-    - checkout: none
+    - template: steps/install-dotnet-sdks.yml
 
     - task: DownloadPipelineArtifact@2
       inputs:
-        artifact: build-repo-managed-native-windows
-        path: $(System.DefaultWorkingDirectory)
+        artifact: build_managed-bin
+        path: $(System.DefaultWorkingDirectory)/bin
 
-    - template: steps/install-dotnet-sdks.yml
-
-    - task: NuGetToolInstaller@1
-      displayName: install nuget
-
-    - task: NuGetCommand@2
-      displayName: nuget restore
+    - task: DownloadPipelineArtifact@2
       inputs:
-        restoreSolution: Datadog.Trace.sln
-        verbosityRestore: Normal
+        displayName: Download Restored packages
+        artifact: build_managed-packages
+        path: $(NugetPackageDirectory)
 
-    - task: MSBuild@1
-      displayName: Build .NET Framework projects (not SDK-based projects)
-      inputs:
-        solution: Datadog.Trace.proj
-        platform: $(buildPlatform)
-        configuration: $(buildConfiguration)
-        msbuildArguments: /t:BuildFrameworkReproductions
-        maximumCpuCount: true
+    - script: build.cmd CompileDependencyLibs --skip
+      displayName: Build dependency libraries
 
-    - task: DotNetCoreCLI@2
-      displayName: dotnet build integration tests
-      inputs:
-        command: build
-        projects: |
-          test/test-applications/regression/**/*.csproj
-          test/*.IntegrationTests/*.IntegrationTests.csproj
-          !test/test-applications/regression/**/ExpenseItDemo*.csproj
-          !test/test-applications/regression/**/EntityFramework6x*.csproj
-          !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
-        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(tracerHome) /nowarn:netsdk1138
+    # The integration tests are built for x86/x64 specifically
+    # which means they either need to rebuild all their dependencies,
+    # or we use this hack
+    - script: build.cmd CopyPlatformlessBuildOutput --skip
+      displayName: Copy AnyCPU libs to x86/x64 folders
 
-    - task: DotNetCoreCLI@2
-      displayName: dotnet build samples
-      inputs:
-        command: build
-        projects: |
-          test/test-applications/integrations/**/*.csproj
-          !test/test-applications/integrations/dependency-libs/**/*.csproj
-        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(tracerHome) -p:BuildInParallel=false /nowarn:netsdk1138 -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true -p:LoadManagedProfilerFromProfilerDirectory=false
+    - script: build.cmd CompileRegressionDependencyLibs --skip
+      displayName: Build regression dependency libraries
 
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the managed build
-      artifact: build-integration-tests-windows-$(buildPlatform)
+    - script: build.cmd CompileFrameworkReproductions --skip
+      displayName: Build .NET Framework projects (non SDK-based projects)
 
-    - task: DotNetCoreCLI@2
-      displayName: dotnet test
-      inputs:
-        command: test
-        projects: |
-          test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
-          test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
-        arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform)
+    - script: build.cmd CompileIntegrationTests --skip
+      displayName: Build integration tests
 
-    - task: DotNetCoreCLI@2
-      displayName: dotnet test
-      inputs:
-        command: test
-        projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-        arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
+    - script: build.cmd CompileSamples --skip
+      displayName: Build samples
+
+    - script: build.cmd RunIntegrationTests --skip
+      displayName: run integration tests
 
   - job: Windows_IIS
     timeoutInMinutes: 100
