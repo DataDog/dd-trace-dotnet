@@ -244,7 +244,7 @@ stages:
   pool:
     vmImage: windows-2019
   jobs:
-  - job: msi and pack
+  - job: msi_and_pack
     steps:
 
     - template: steps/install-dotnet.yml
