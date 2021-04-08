@@ -481,11 +481,11 @@ stages:
     - script: build.cmd CompileFrameworkReproductions --skip
       displayName: Build .NET Framework projects (non SDK-based projects)
 
-    - script: build.cmd CompileIntegrationTests --skip
-      displayName: Build integration tests
-
     - script: build.cmd CompileSamples --skip
       displayName: Build samples
+
+    - script: build.cmd CompileIntegrationTests --skip
+      displayName: Build integration tests
 
     - script: build.cmd RunIntegrationTests --skip
       displayName: run integration tests
