@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests
 
             statsd.Verify(
                 s => s.Increment(TracerMetricNames.Api.Requests, 1, 1, null),
-                Times.Once());
+                Times.AtLeastOnce());
 
             if (requestSuccessful)
             {
