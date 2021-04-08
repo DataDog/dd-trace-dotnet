@@ -94,24 +94,35 @@ namespace Datadog.Trace.Tests
         [Theory]
         [InlineData(3)]
         [InlineData(10)]
-        [InlineData(100)]
+        [InlineData(25)]
         public void Accurate_Duration(int minimumSleepMilliseconds)
         {
             // TODO: refactor how we measure time so we can lower this threshold
-            const int iterations = 10;
-            const int maxDifference = 15;
+            const int iterations = 100;
+            const int maxDifference = 3;
             TimeSpan totalStopwatchTime = TimeSpan.Zero;
             TimeSpan totalSpanTime = TimeSpan.Zero;
             Span span;
+            var warmupStopwatch = new Stopwatch();
             var stopwatch = new Stopwatch();
 
-            // execute once to ensure JIT compilation
-            using (span = _tracer.StartSpan("Operation"))
+            // Perform extra setup per https://www.codeproject.com/Articles/61964/Performance-Tests-Precise-Run-Time-Measurements-wi
+            // It should be fine to set process / thread priority for the xunit runner right?
+            Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(2); // Uses the second Core or Processor for the test
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High; // Prevents "Normal" processes from interrupting Threads
+            Thread.CurrentThread.Priority = ThreadPriority.Highest; // Prevents "Normal" Threads from interrupting this thread
+
+            // Warmup of 1000-1500 ms
+            warmupStopwatch.Reset();
+            while (warmupStopwatch.ElapsedMilliseconds < 1200)
             {
-                stopwatch.Restart();
-                Thread.Sleep(1);
-                var spanMilliseconds = span.Duration.TotalMilliseconds;
-                var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+                using (span = _tracer.StartSpan("Operation"))
+                {
+                    stopwatch.Restart();
+                    Thread.Sleep(1);
+                    var spanMilliseconds = span.Duration.TotalMilliseconds;
+                    var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
+                }
             }
 
             // execute multiple times and average the results
