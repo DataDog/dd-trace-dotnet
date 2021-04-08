@@ -466,6 +466,9 @@ stages:
     - script: build.cmd CompileDependencyLibs --skip
       displayName: Build dependency libraries
 
+    - script: build.cmd CompileManagedUnitTests --skip
+      displayName: Compile Managed Unit Tests (dependencies of integration tests)
+
     # The integration tests are built for x86/x64 specifically
     # which means they either need to rebuild all their dependencies,
     # or we use this hack
@@ -477,9 +480,6 @@ stages:
 
     - script: build.cmd CompileFrameworkReproductions --skip
       displayName: Build .NET Framework projects (non SDK-based projects)
-
-    - script: build.cmd CompileManagedUnitTests --skip
-      displayName: Compile Managed Unit Tests (dependencies of integration tests)
 
     - script: build.cmd CompileIntegrationTests --skip
       displayName: Build integration tests
