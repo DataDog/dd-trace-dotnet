@@ -21,6 +21,7 @@ variables:
   artifacts: $(System.DefaultWorkingDirectory)/bin/artifacts
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+  NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DD_DOTNET_TRACER_MSBUILD:
 
@@ -80,7 +81,7 @@ stages:
           displayName: Upload working directory after the managed build
           artifact: build_managed-bin
 
-        - publish: $(System.DefaultWorkingDirectory)/packages
+        - publish: $(NugetPackageDirectory)
           displayName: Upload NuGet packages
           artifact: build_managed-packages
 
@@ -257,16 +258,13 @@ stages:
       inputs:
         displayName: Download Restored packages
         artifact: build_managed-packages
-        path: $(System.DefaultWorkingDirectory)/packages
-
-    - script: build.cmd RestoreNuGet --skip
-      displayName: NuGet Restore
+        path: $(NugetPackageDirectory)
 
     - script: build.cmd CompileManagedUnitTests --skip
-      displayName: NuGet Restore
+      displayName: Compile Managed Unit Tests
 
     - script: build.cmd RunManagedUnitTests --skip
-      displayName: NuGet Restore
+      displayName: Run managed unit tests
 
 
   - job: native
@@ -280,18 +278,15 @@ stages:
       inputs:
         displayName: Download Restored packages
         artifact: build_managed-packages
-        path: $(System.DefaultWorkingDirectory)/packages
+        path: $(NugetPackageDirectory)
 
     - template: steps/install-dotnet.yml
 
-    - script: build.cmd RestoreNuGet --skip
-      displayName: NuGet Restore
-
     - script: build.cmd CompileNativeTestsWindows --skip
-      displayName: NuGet Restore
+      displayName: Compile Native Unit tests
 
     - script: build.cmd RunNativeTestsWindows --skip
-      displayName: NuGet Restore
+      displayName: Run Native Unit tests
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -318,7 +313,7 @@ stages:
       inputs:
         displayName: Download Restored packages
         artifact: build_managed-packages
-        path: $(System.DefaultWorkingDirectory)/packages
+        path: $(NugetPackageDirectory)
 
     - task: DotNetCoreCLI@2
       displayName: CompileManagedUnitTests
@@ -353,7 +348,7 @@ stages:
       inputs:
         displayName: Download Restored packages
         artifact: build_managed-packages
-        path: $(System.DefaultWorkingDirectory)/packages
+        path: $(NugetPackageDirectory)
 
     - task: DotNetCoreCLI@2
       displayName: CompileManagedUnitTests

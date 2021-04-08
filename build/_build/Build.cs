@@ -48,7 +48,7 @@ partial class Build : NukeBuild
     readonly AbsolutePath Artifacts;
     
     [Parameter("The location to restore Nuget packages (optional) ")]
-    readonly AbsolutePath NugetManagedCacheFolder;
+    readonly AbsolutePath NugetPackageDirectory;
     
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
     [Solution("Datadog.Trace.Native.sln")] readonly Solution NativeSolution;
@@ -115,7 +115,9 @@ partial class Build : NukeBuild
         {
             NuGetTasks.NuGetRestore(s => s
                 .SetTargetPath(Solution)
-                .SetVerbosity(NuGetVerbosity.Normal));
+                .SetVerbosity(NuGetVerbosity.Normal)
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                    o.SetPackagesDirectory(NugetPackageDirectory)));
         });
  
     Target RestoreDotNet => _ => _
@@ -128,8 +130,8 @@ partial class Build : NukeBuild
                 .SetVerbosity(DotNetVerbosity.Normal)
                 .SetTargetPlatform(Platform) // necessary to ensure we restore every project
                 .SetProperty("configuration", Configuration.ToString())
-                .When(!string.IsNullOrEmpty(NugetManagedCacheFolder), o => 
-                        o.SetPackageDirectory(NugetManagedCacheFolder)));
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                        o.SetPackageDirectory(NugetPackageDirectory)));
         });
 
     Target Restore => _ => _
