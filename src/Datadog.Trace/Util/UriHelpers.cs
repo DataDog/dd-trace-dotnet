@@ -1,10 +1,16 @@
 using System;
-using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Util
 {
     internal static class UriHelpers
     {
+        /// <summary>
+        /// Remove the querystring, user information, and fragment from a URL.
+        /// Optionally reduce cardinality by replacing segments that look like IDs with <c>?</c>.
+        /// </summary>
+        /// <param name="uri">The URI to clean</param>
+        /// <param name="removeScheme">Should the scheme be removed?</param>
+        /// <param name="tryRemoveIds">Should IDs be replaced with <c>?</c></param>
         public static string CleanUri(Uri uri, bool removeScheme, bool tryRemoveIds)
         {
             var path = tryRemoveIds ? GetCleanUriPath(uri.AbsolutePath) : uri.AbsolutePath;
@@ -22,17 +28,17 @@ namespace Datadog.Trace.Util
         }
 
         [Obsolete("This method is deprecated and will be removed. Use GetCleanUriPath() instead. " +
-                  "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
+                  "Kept for backwards compatibility where there is a version mismatch between manual and automatic instrumentation")]
         public static string GetRelativeUrl(Uri uri, bool tryRemoveIds)
             => GetRelativeUrl(uri.AbsolutePath, tryRemoveIds);
 
         [Obsolete("This method is deprecated and will be removed. Use GetCleanUriPath() instead. " +
-                  "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
+                  "Kept for backwards compatibility where there is a version mismatch between manual and automatic instrumentation")]
         public static string GetRelativeUrl(string uri, bool tryRemoveIds)
             => tryRemoveIds ? GetCleanUriPath(uri) : uri;
 
         [Obsolete("This method is deprecated and will be removed. Use GetCleanUriPath() instead. " +
-                  "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
+                  "Kept for backwards compatibility where there is a version mismatch between manual and automatic instrumentation")]
         public static string CleanUriSegment(string absolutePath)
             => GetCleanUriPath(absolutePath);
 
@@ -48,33 +54,34 @@ namespace Datadog.Trace.Util
                 return absolutePath;
             }
 
-#if NETCOREAPP
-            ReadOnlySpan<char> absPath = absolutePath.AsSpan();
-
             // Sanitized url will be at worse as long as the original
-            var sb = StringBuilderCache.Acquire(absPath.Length);
+            var sb = StringBuilderCache.Acquire(absolutePath.Length);
 
             int previousIndex = 0;
             int index;
+            int segmentLength;
 
             do
             {
-                ReadOnlySpan<char> nStart = absPath.Slice(previousIndex);
-                index = nStart.IndexOf('/');
-                ReadOnlySpan<char> segment = index == -1 ? nStart : nStart.Slice(0, index);
+                index = absolutePath.IndexOf('/', previousIndex);
 
-                // replace path segments that look like numbers or guid
-                // GUID format N "d85b1407351d4694939203acc5870eb1" length: 32
-                // GUID format D "d85b1407-351d-4694-9392-03acc5870eb1" length: 36 with dashes in indices 8, 13, 18 and 23.
-                if (long.TryParse(segment, out _) ||
-                    (segment.Length == 32 && IsAGuid(segment, "N")) ||
-                    (segment.Length == 36 && IsAGuid(segment, "D")))
+                if (index == -1)
+                {
+                    // Last segment
+                    segmentLength = absolutePath.Length - previousIndex;
+                }
+                else
+                {
+                    segmentLength = index - previousIndex;
+                }
+
+                if (IsIdentifierSegment(absolutePath, previousIndex, segmentLength))
                 {
                     sb.Append('?');
                 }
                 else
                 {
-                    sb.Append(segment);
+                    sb.Append(absolutePath, previousIndex, segmentLength);
                 }
 
                 if (index != -1)
@@ -82,65 +89,51 @@ namespace Datadog.Trace.Util
                     sb.Append('/');
                 }
 
-                previousIndex += index + 1;
-            }
-            while (index != -1);
-
-            return StringBuilderCache.GetStringAndRelease(sb);
-#else
-            // Sanitized url will be at worse as long as the original
-            var sb = StringBuilderCache.Acquire(absolutePath.Length);
-
-            int previousIndex = 0;
-            int index = 0;
-
-            do
-            {
-                index = absolutePath.IndexOf('/', previousIndex);
-
-                string segment;
-
-                if (index == -1)
-                {
-                    // Last segment
-                    segment = absolutePath.Substring(previousIndex);
-                }
-                else
-                {
-                    segment = absolutePath.Substring(previousIndex, index - previousIndex);
-                }
-
-                // replace path segments that look like numbers or guid
-                // GUID format N "d85b1407351d4694939203acc5870eb1" length: 32
-                // GUID format D "d85b1407-351d-4694-9392-03acc5870eb1" length: 36 with dashes in indices 8, 13, 18 and 23.
-                if (long.TryParse(segment, out _) ||
-                    (segment.Length == 32 && IsAGuid(segment, "N")) ||
-                    (segment.Length == 36 && IsAGuid(segment, "D")))
-                {
-                    segment = "?";
-                }
-
-                sb.Append(segment);
-
-                if (index != -1)
-                {
-                    sb.Append("/");
-                }
-
                 previousIndex = index + 1;
             }
             while (index != -1);
 
             return StringBuilderCache.GetStringAndRelease(sb);
-#endif
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static bool IsAGuid(string segment, string format) => Guid.TryParseExact(segment, format, out _);
+        private static bool IsIdentifierSegment(string absolutePath, int startIndex, int segmentLength)
+        {
+            if (segmentLength == 0)
+            {
+                return false;
+            }
 
-#if NETCOREAPP
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static bool IsAGuid(ReadOnlySpan<char> segment, string format) => Guid.TryParseExact(segment, format, out _);
-#endif
+            int lastIndex = startIndex + segmentLength;
+            var containsNumber = false;
+
+            for (int index = startIndex; index < lastIndex && index < absolutePath.Length; index++)
+            {
+                char c = absolutePath[index];
+
+                switch (c)
+                {
+                    case >= '0' and <= '9':
+                        containsNumber = true;
+                        continue;
+                    case >= 'a' and <= 'f':
+                    case >= 'A' and <= 'F':
+                        if (segmentLength < 16)
+                        {
+                            // don't be too aggressive replacing
+                            // short hex segments like "/a" or "/cab",
+                            // they are likely not ids
+                            return false;
+                        }
+
+                        continue;
+                    case '-':
+                        continue;
+                    default:
+                        return false;
+                }
+            }
+
+            return containsNumber;
+        }
     }
 }

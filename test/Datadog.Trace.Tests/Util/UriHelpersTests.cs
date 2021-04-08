@@ -9,10 +9,19 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("/", "/")]
         [InlineData("/controller/action/b37855d4bae34bd3b3357fc554ad334e", "/controller/action/?")]
         [InlineData("/controller/action/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d", "/controller/action/?")]
-        [InlineData("/controller/action/14bb2eed-34f0X4aa2-b2c3-09c0e2166d4d", "/controller/action/14bb2eed-34f0X4aa2-b2c3-09c0e2166d4d")]
-        [InlineData("/controller/action/14bb2eed-34f0-4aa2Xb2c3-09c0e2166d4d", "/controller/action/14bb2eed-34f0-4aa2Xb2c3-09c0e2166d4d")]
-        [InlineData("/controller/action/14bb2eed-34f0A4aa2Bb2c3C09c0e2166d4d", "/controller/action/14bb2eed-34f0A4aa2Bb2c3C09c0e2166d4d")]
-        [InlineData("/DataDog/dd-trace-dotnet/blob/e2d83dec7d6862d4181937776ddaf72819e291ce/src/Datadog.Trace/Util/UriHelpers.cs", "/DataDog/dd-trace-dotnet/blob/e2d83dec7d6862d4181937776ddaf72819e291ce/src/Datadog.Trace/Util/UriHelpers.cs")]
+        [InlineData("/controller/action/14bb2eed-34f0X4aa2-b2c3-09c0e2166d4d", "/controller/action/14bb2eed-34f0X4aa2-b2c3-09c0e2166d4d")] // contains non-hex letters
+        [InlineData("/controller/action/14bb2eed-34f0-4aa2Xb2c3-09c0e2166d4d", "/controller/action/14bb2eed-34f0-4aa2Xb2c3-09c0e2166d4d")] // contains non-hex letters
+        [InlineData("/controller/action/14bb2eed-34f0A4aa2Bb2c3C09c0e2166d4d", "/controller/action/?")]
+        [InlineData("/controller/action/12345678901234567890123456789012345678901234567890", "/controller/action/?")]
+        [InlineData("/controller/action/eeeee123", "/controller/action/eeeee123")] // Too short
+        [InlineData("/controller/action/0123456789ABCDE", "/controller/action/0123456789ABCDE")] // Too short
+        [InlineData("/controller/action/01234567890ABCDEFGH", "/controller/action/01234567890ABCDEFGH")] // Contains non-hex letters
+        [InlineData("/controller/action/0123456789ABCDEF", "/controller/action/?")]
+        [InlineData("/controller/action/0123456789ABCDEF0", "/controller/action/?")]
+        [InlineData("/controller/action/01234567_89ABCDEF", "/controller/action/01234567_89ABCDEF")] // only hyphen '-' allowed other than hex
+        [InlineData("/controller/action/123-456-789", "/controller/action/?")]
+        [InlineData("/controller/action/eeeeeeeeeeeeeeeee", "/controller/action/eeeeeeeeeeeeeeeee")] // No numbers
+        [InlineData("/DataDog/dd-trace-dotnet/blob/e2d83dec7d6862d4181937776ddaf72819e291ce/src/Datadog.Trace/Util/UriHelpers.cs", "/DataDog/dd-trace-dotnet/blob/?/src/Datadog.Trace/Util/UriHelpers.cs")]
         [InlineData("/controller/action/2022", "/controller/action/?")]
         [InlineData("/controller/action/", "/controller/action/")]
         public void GetCleanUriPath_ShouldRemoveIdsFromPaths(string url, string expected)
