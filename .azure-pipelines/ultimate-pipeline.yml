@@ -239,7 +239,7 @@ stages:
   #      artifact: build-linux-tracer-home-arm64
 
 - stage: unit_tests_windows
-  dependsOn: build_native_windows
+  dependsOn: build_managed
   pool:
     vmImage: windows-2019
   jobs:
@@ -393,7 +393,7 @@ stages:
         DD_SERVICE: dd-trace-dotnet
 
 - stage: integration_tests_windows
-  dependsOn: build_native_windows
+  dependsOn: build_managed
   jobs:
 
   - job: Windows
@@ -805,7 +805,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: benchmarks
-  dependsOn: build_native_windows
+  dependsOn: build_managed
   condition: and(succeeded(), false)
   jobs:
 
@@ -859,7 +859,7 @@ stages:
         script: 'Start-Sleep -s 120'
 
 - stage: dotnet_tool
-  dependsOn: build_native_windows
+  dependsOn: build_managed
   pool:
     vmImage: windows-2019
   jobs:
@@ -1019,7 +1019,7 @@ stages:
       artifact: runner-dotnet-tool
 
 - stage: upload
-  dependsOn: [build_native_windows, build_native_linux, build_native_macos]
+  dependsOn: [build_managed, build_native_linux, build_native_macos]
   jobs:
   - job: s3_upload
 
