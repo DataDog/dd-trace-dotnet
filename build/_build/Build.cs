@@ -401,6 +401,33 @@ partial class Build : NukeBuild
             );
         });
 
+    Target CompileRegressionSamples => _ => _
+        .DependsOn(Restore)
+        .DependsOn(CompileRegressionDependencyLibs)
+        .Executes(() =>
+        {
+            var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
+                .Directory.Parent;
+            var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
+                .Where(x => !x.Contains("EntityFramework6x.MdTokenLookupFailure")
+                            && !x.Contains("ExpenseItDemo")
+                            && !x.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject")
+                            && !x.Contains("dependency-libs"));
+
+             // Allow restore here, otherwise things go wonky with runtime identifiers
+             // in some target frameworks. No, I don't know why
+             DotNetBuild(x => x
+                 // .EnableNoRestore()
+                 .EnableNoDependencies()
+                 .SetConfiguration(Configuration)
+                 .SetTargetPlatform(Platform)
+                 .SetNoWarnDotNetCore3()
+                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                     o.SetPackageDirectory(NugetPackageDirectory))
+                 .CombineWith(regressionLibs, (x, project) => x
+                     .SetProjectFile(project)));
+        });
+
     Target CompileFrameworkReproductions => _ => _
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileDependencyLibs)
@@ -419,6 +446,7 @@ partial class Build : NukeBuild
     
     Target CompileIntegrationTests => _ => _
         .DependsOn(CompileManagedSrc)
+        .DependsOn(CompileRegressionSamples)
         .DependsOn(CompileFrameworkReproductions)
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
@@ -611,10 +639,7 @@ partial class Build : NukeBuild
             .DependsOn(CompileFrameworkReproductions)
             .DependsOn(CompileIntegrationTests)
             .DependsOn(CompileSamples)
-            .DependsOn(CompileNativeTests)
-            .DependsOn(RunNativeTests)
-            .DependsOn(RunManagedUnitTests)
-            .DependsOn(RunIntegrationTests);
+            .DependsOn(CompileNativeTests);
 
     Target WindowsCiBuildStage => _ =>
         _
