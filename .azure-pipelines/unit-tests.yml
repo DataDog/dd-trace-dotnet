@@ -79,8 +79,7 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
-      arguments: /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+      arguments: /nowarn:netsdk1138 --configuration $(buildConfiguration) #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
@@ -93,7 +92,7 @@ jobs:
     displayName: dotnet test
     inputs:
       command: test
-      configuration: $(buildConfiguration)
+      arguments: --configuration $(buildConfiguration)
       projects: test/**/*.Tests.csproj
     env:
       DD_SERVICE: dd-trace-dotnet
@@ -109,8 +108,7 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
-      arguments: /nowarn:netsdk1138
+      arguments: /nowarn:netsdk1138 --configuration $(buildConfiguration)
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
@@ -123,7 +121,7 @@ jobs:
     displayName: dotnet test
     inputs:
       command: test
-      configuration: $(buildConfiguration)
+      arguments: --configuration $(buildConfiguration)
       projects: test/**/*.Tests.csproj
     env:
       DD_SERVICE: dd-trace-dotnet
@@ -162,8 +160,7 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
-      arguments: /nowarn:netsdk1138
+      arguments: /nowarn:netsdk1138 --configuration $(buildConfiguration)
       projects: |
         src/**/*.csproj
         test/**/*.Tests.csproj
@@ -174,7 +171,7 @@ jobs:
     displayName: dotnet test
     inputs:
       command: test
-      configuration: $(buildConfiguration)
+      arguments: --configuration $(buildConfiguration)
       projects: test/**/*.Tests.csproj
     env:
       DD_SERVICE: dd-trace-dotnet
@@ -208,8 +205,7 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
-      arguments: /nowarn:netsdk1138
+      arguments: /nowarn:netsdk1138 --configuration $(buildConfiguration)
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
         sample-libs/**/Samples.ExampleLibrary*.csproj
@@ -291,8 +287,7 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
-      arguments: /nowarn:netsdk1138
+      arguments: /nowarn:netsdk1138 --configuration $(buildConfiguration)
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
   
@@ -323,8 +318,7 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
-      arguments: /nowarn:netsdk1138
+      arguments: /nowarn:netsdk1138 --configuration $(buildConfiguration)
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
 
