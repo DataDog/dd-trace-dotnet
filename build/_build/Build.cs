@@ -391,9 +391,9 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             // Platform specific
+            // Enabled Restore because _AGAIN_ I couldn't get it to work properly
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
-                .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(Configuration)
                 .SetTargetPlatform(Platform)
