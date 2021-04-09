@@ -72,10 +72,10 @@ else()
     message(STATUS "CLANG++ was found")
 endif()
 
-if (NOT EXISTS ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
-    message(FATAL_ERROR "Datadog.Trace.ClrProfiler.Loader must be built first.")
+if (NOT EXISTS ${CMAKE_SOURCE_DIR}/../../bin/bin/src/Datadog.Trace.ClrProfiler.Managed.Loader/Release/netcoreapp2.0)
+    message(FATAL_ERROR "Datadog.Trace.ClrProfiler.Managed.Loader must be built first.")
 else()
-    message(STATUS "Datadog.Trace.ClrProfiler.Loader was found")
+    message(STATUS "Datadog.Trace.ClrProfiler.Managed.Loader was found")
 endif()
 
 # ******************************************************
@@ -124,7 +124,7 @@ if (NOT EXISTS ${OUTPUT_DEPS_DIR}/fmt)
 endif()
 
 # Set Managed Loader folder
-SET(MANAGED_LOADER_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
+SET(MANAGED_LOADER_DIRECTORY ${CMAKE_SOURCE_DIR}/../../bin/bin/src/Datadog.Trace.ClrProfiler.Managed.Loader/Release/netcoreapp2.0)
 
 # Set specific custom commands to embed the loader
 if (ISMACOS)

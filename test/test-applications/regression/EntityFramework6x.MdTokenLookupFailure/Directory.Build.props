@@ -3,4 +3,10 @@
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <!--  Move bin and obj folders to root -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\bin\bin\test\test-applications\regression\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\bin\obj\test\test-applications\regression\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+  </PropertyGroup>
 </Project>

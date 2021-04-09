@@ -5,4 +5,10 @@
     <TargetFrameworks>net452;net461;netcoreapp2.1</TargetFrameworks>
     <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
   </PropertyGroup>
+
+  <!--  Move bin and obj folders to root -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\bin\bin\test\test-applications\regression\dependency-libs\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\bin\obj\test\test-applications\regression\dependency-libs\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+  </PropertyGroup>
 </Project>

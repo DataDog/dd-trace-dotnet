@@ -3,4 +3,10 @@
   This file intentionally left blank...
   to stop msbuild from looking up the folder hierarchy
   -->
+  
+  <!--  Move bin and obj folders to root -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\..\bin\bin\test\test-applications\regression\dependency-libs\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\..\bin\obj\test\test-applications\regression\dependency-libs\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+  </PropertyGroup>
 </Project>

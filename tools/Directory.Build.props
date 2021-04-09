@@ -6,6 +6,12 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
+  <!--  Move bin and obj folders to parent -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\bin\bin\tools\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\bin\obj\tools\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
   <!-- StyleCop -->
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.tools.cs" />

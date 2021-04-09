@@ -19,6 +19,12 @@
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
   </PropertyGroup>
 
+  <!--  Move bin and obj folders to root -->
+  <PropertyGroup>
+    <BaseOutputPath>..\..\..\bin\bin\test\benchmarks\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>..\..\..\bin\obj\test\benchmarks\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="DuckTyping\DuckTypeMethodBenchmark.cs" />
     <Compile Remove="DuckTyping\DuckTypeStructCopyValueTypePropertyBenchmark.cs" />

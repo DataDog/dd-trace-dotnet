@@ -8,4 +8,10 @@
     <!-- Needed because some of these projects target net20, and the .NET SDK doesn't include them by default   -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
+
+  <!--  Move bin and obj folders to root -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\bin\bin\test\test-applications\integrations\dependency-libs\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\bin\obj\test\test-applications\integrations\dependency-libs\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+  </PropertyGroup>
 </Project>

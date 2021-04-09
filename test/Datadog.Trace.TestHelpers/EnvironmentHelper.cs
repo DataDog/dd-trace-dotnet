@@ -423,8 +423,11 @@ namespace Datadog.Trace.TestHelpers
         {
             var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
             var binDir = Path.Combine(
-                GetSampleProjectDirectory(),
-                "bin");
+                GetSolutionDirectory(),
+                "bin",
+                "bin",
+                _samplesDirectory,
+                FullSampleName);
 
             string outputDir;
 
