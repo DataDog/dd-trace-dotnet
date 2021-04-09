@@ -484,11 +484,14 @@ stages:
     - script: build.cmd CompileSamples --skip
       displayName: Build samples
 
+    - script: build.cmd CompileRegressionSamples --skip
+      displayName: Build regression samples
+
     - script: build.cmd CompileIntegrationTests --skip
       displayName: Build integration tests
 
     - script: build.cmd RunIntegrationTests --skip
-      displayName: run integration tests
+      displayName: Run integration tests
 
 - stage: integration_tests_windows_iis
   dependsOn: [build_managed, package_windows]
