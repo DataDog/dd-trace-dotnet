@@ -21,6 +21,12 @@
     <Authors>Datadog</Authors>
   </PropertyGroup>
 
+  <!--  Move bin and obj folders to parent -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\bin\bin\src\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\bin\obj\src\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- NuGet -->
     <None Include="$(MSBuildThisFileDirectory)\..\datadog-logo-256x256.png" Pack="true" Visible="false" PackagePath="packageIcon.png" />
