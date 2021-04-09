@@ -12,5 +12,6 @@
     public const string OpenTracingIntegrationTests = "Datadog.Trace.OpenTracing.IntegrationTests";
     public const string ClrProfilerIntegrationTests = "Datadog.Trace.ClrProfiler.IntegrationTests";
 
+    public const string ApplicationWithLog4Net = "ApplicationWithLog4Net";
     public const string EntityFramework6xMdTokenLookupFailure = "EntityFramework6x.MdTokenLookupFailure";
 }

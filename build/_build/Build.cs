@@ -391,14 +391,25 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             // Platform specific
-            // Enabled Restore because _AGAIN_ I couldn't get it to work properly
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
+                .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(Configuration)
                 .SetTargetPlatform(Platform)
                 .SetTargets("BuildRegressionDependencyLibs")
             );
+
+            // explicitly build the other dependency (with restore to avoid runtime identifier dependency issues)
+            DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.ApplicationWithLog4Net))
+                // .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(Configuration)
+                .SetTargetPlatform(Platform)
+                .SetNoWarnDotNetCore3()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                    o.SetPackageDirectory(NugetPackageDirectory)));
         });
 
     Target CompileRegressionSamples => _ => _
