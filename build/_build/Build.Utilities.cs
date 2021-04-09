@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
+using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using static Nuke.Common.EnvironmentInfo;
@@ -26,8 +28,11 @@ partial class Build
     
     [Parameter("Additional environment variables, in the format KEY1=Value1 Key2=Value2 to use when running the IIS Sample")] 
     readonly string[] ExtraEnvVars;
-    
-    [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")] 
+
+    [Parameter("The version of the SDK to use for Docker commands")]
+    readonly string DotNetSdkVersion = "5.0.201";
+
+    [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")]
     readonly Lazy<Tool> GacUtil;
     [LazyLocalExecutable(@"C:\Program Files\IIS Express\iisexpress.exe")] 
     readonly Lazy<Tool> IisExpress;
@@ -36,6 +41,8 @@ partial class Build
 
     AbsolutePath IisExpressApplicationConfig =>
         RootDirectory / ".vs" / Solution.Name / "config" / "applicationhost.config";
+
+    string LinuxBaseDockerImage = "dd-trace-dotnet/debian-base";
     
     readonly IEnumerable<string> GacProjects = new []
     {
@@ -174,5 +181,40 @@ partial class Build
                 .SetProperty("platform", Platform)
                 .SetProcessEnvironmentVariables(envVars));
 
+        });
+
+    Target BuildDockerLinuxImage => _ => _
+        .Unlisted()
+        .Executes(() =>
+        {
+            // Using the docker folder as the build context so it's nice and quick
+            // but we can always change that if we need it later
+            DockerTasks.DockerBuild(c => c
+                .SetPath(BuildProjectDirectory / "docker")
+                .SetFile(BuildProjectDirectory / "docker" / "linux.dockerfile")
+                .SetTag(LinuxBaseDockerImage)
+                .SetBuildArg($"DOTNETSDK_VERSION={DotNetSdkVersion}"));
+        });
+
+
+    Target RunInDockerLinux => _ => _
+        .Description("Executes the provided Nuke target in Docker (Ubuntu)")
+        .DependsOn(BuildDockerLinuxImage)
+        .Executes(() =>
+        {
+            var additionalArgs = CommandLineArguments
+                .AsEnumerable()
+                .SkipWhile(x => !string.Equals(x, nameof(RunInDockerLinux), StringComparison.OrdinalIgnoreCase))
+                .Skip(1);
+            var args = string.Join(" ", additionalArgs);
+
+            // Run the already-built executable
+            DockerTasks.DockerRun(c => c
+                .EnableRm()
+                .SetImage(LinuxBaseDockerImage)
+                .SetMount($"type=bind,source=\"{RootDirectory}\",target=/project")
+                // Not using SetCommand as don't want to wrap this in " "
+                .SetProcessArgumentConfigurator(
+                    arg => arg.Add($"dotnet /project/build/_build/bin/Debug/_build.dll {args}")));
         });
 }

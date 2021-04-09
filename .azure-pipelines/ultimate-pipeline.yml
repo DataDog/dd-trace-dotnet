@@ -142,11 +142,8 @@ stages:
         artifact: build_managed-bin
         path: $(System.DefaultWorkingDirectory)/bin
 
-    - task: DockerCompose@0
-      displayName: docker-compose run Profiler
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run Profiler
+    - script: build.sh CompileNativeSrcLinux --skip
+      displayName: Compile native src
 
     - task: DockerCompose@0
       displayName: docker-compose run package

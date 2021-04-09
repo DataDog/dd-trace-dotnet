@@ -27,7 +27,6 @@ using static CustomDotNetTasks;
 // #pragma warning disable SA1400  
 // #pragma warning disable SA1401  
 
-[CheckBuildProjectConfigurations]
 partial class Build : NukeBuild
 {
     /// Support plugins are available for:
