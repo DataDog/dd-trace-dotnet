@@ -18,6 +18,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public long ContentLength => _response.ContentLength;
 
+        public string GetHeader(string headerName) => _response.Headers[headerName];
+
         public async Task<string> ReadAsStringAsync()
         {
             using (var responseStream = _response.GetResponseStream())

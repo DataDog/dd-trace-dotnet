@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -20,14 +19,21 @@ namespace Datadog.Trace.Agent
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IDogStatsd _statsd;
-        private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
         private readonly string _containerId;
         private readonly Uri _tracesEndpoint;
+        private readonly IDatadogTracer _tracer;
         private string _cachedResponse;
 
         public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IDogStatsd statsd)
+            : this(baseEndpoint, apiRequestFactory, statsd, tracer: null)
+        {
+        }
+
+        // Internal constructor used for tests
+        internal Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IDogStatsd statsd, IDatadogTracer tracer)
         {
             Log.Debug("Creating new Api");
+            _tracer = tracer;
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
@@ -188,6 +194,12 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
+                    var version = response.GetHeader(AgentHttpHeaderNames.AgentVersion);
+
+                    var tracer = _tracer ?? Tracer.Instance;
+
+                    tracer.ReportAgentVersion(version);
+
                     if (response.ContentLength != 0 && Tracer.Instance.Sampler != null)
                     {
                         var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
@@ -196,7 +208,7 @@ namespace Datadog.Trace.Agent
                         {
                             var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
 
-                            Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
+                            tracer.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
 
                             _cachedResponse = responseContent;
                         }

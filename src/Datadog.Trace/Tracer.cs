@@ -50,6 +50,8 @@ namespace Datadog.Trace
 
         private readonly IAgentWriter _agentWriter;
 
+        private string _agentVersion;
+
         static Tracer()
         {
             TracingProcessManager.Initialize();
@@ -353,6 +355,18 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// Reports the detected version of the agent
+        /// </summary>
+        /// <param name="version">Version of the agent</param>
+        void IDatadogTracer.ReportAgentVersion(string version)
+        {
+            if (ShouldLogPartialFlushWarning(version))
+            {
+                Log.Warning("DATADOG TRACER DIAGNOSTICS - Partial flush should only be enabled with agent 7.26.0+ (detected version: {version})", version ?? "{detection failed}");
+            }
+        }
+
         internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, bool ignoreActiveScope = false, ulong? spanId = null)
         {
             if (parent == null && !ignoreActiveScope)
@@ -561,6 +575,24 @@ namespace Datadog.Trace
             {
                 Log.Warning(ex, "DATADOG TRACER DIAGNOSTICS - Error fetching configuration");
             }
+        }
+
+        internal bool ShouldLogPartialFlushWarning(string agentVersion)
+        {
+            if (agentVersion != _agentVersion)
+            {
+                _agentVersion = agentVersion;
+
+                if (Settings.PartialFlushEnabled)
+                {
+                    if (!Version.TryParse(agentVersion, out var parsedVersion) || parsedVersion < new Version(7, 26, 0))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

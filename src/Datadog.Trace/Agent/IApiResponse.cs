@@ -9,6 +9,8 @@ namespace Datadog.Trace.Agent
 
         long ContentLength { get; }
 
+        string GetHeader(string headerName);
+
         Task<string> ReadAsStringAsync();
     }
 }
