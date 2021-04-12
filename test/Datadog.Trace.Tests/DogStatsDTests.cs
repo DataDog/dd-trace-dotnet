@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests
 
             statsd.Verify(
                 s => s.Increment(TracerMetricNames.Api.Requests, 1, 1, null),
-                Times.Once());
+                Times.AtLeastOnce());
 
             if (requestSuccessful)
             {
@@ -84,21 +84,13 @@ namespace Datadog.Trace.Tests
                     Times.AtLeastOnce());
             }
 
-            // these methods can be called multiple times with a "0" value (no more traces left)
+            // Remove test flakiness by not requiring the heartbeat metric, which is Timer-based
+            // and not expected to fire when a trace is sent
             /*
-            statsd.Verify(
-                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedTraces, 0, 1, null),
-                Times.AtLeastOnce);
-
-            statsd.Verify(
-                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedSpans, 0, 1, null),
-                Times.AtLeastOnce());
-            */
-
-            // these method can be called multiple times (send heartbeat)
             statsd.Verify(
                 s => s.Gauge(TracerMetricNames.Health.Heartbeat, It.IsAny<double>(), 1, null),
                 Times.AtLeastOnce());
+            */
         }
 
         private static IImmutableList<MockTracerAgent.Span> SendSpan(bool tracerMetricsEnabled, IDogStatsd statsd)
