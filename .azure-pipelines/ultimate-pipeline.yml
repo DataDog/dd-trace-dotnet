@@ -179,7 +179,7 @@ stages:
       displayName: docker-compose run package
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e UNIFIED_PIPELINE=true package
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       displayName: Uploading linux tracer home artifact
@@ -219,7 +219,7 @@ stages:
       displayName: docker-compose run package.alpine
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package.alpine
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e UNIFIED_PIPELINE=true package.alpine
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       displayName: Uploading alpine linux tracer home artifact
@@ -261,7 +261,7 @@ stages:
       displayName: docker-compose run package
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e UNIFIED_PIPELINE=true package
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       artifact: build-linux-tracer-home-arm64
