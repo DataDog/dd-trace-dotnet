@@ -91,51 +91,35 @@ namespace Datadog.Trace.Tests
             Assert.Equal(TimeSpan.Zero, span.Duration);
         }
 
-        [Theory]
-        [InlineData(3)]
-        [InlineData(10)]
-        [InlineData(100)]
-        public void Accurate_Duration(int minimumSleepMilliseconds)
+        [Fact]
+        public void Accurate_Duration()
         {
-            // TODO: refactor how we measure time so we can lower this threshold
+            // Check that span has the same precision as stopwatch
+
             const int iterations = 10;
-            const int maxDifference = 15;
-            TimeSpan totalStopwatchTime = TimeSpan.Zero;
-            TimeSpan totalSpanTime = TimeSpan.Zero;
-            Span span;
             var stopwatch = new Stopwatch();
 
-            // execute once to ensure JIT compilation
-            using (span = _tracer.StartSpan("Operation"))
+            for (int i = 0; i < iterations; i++)
             {
-                stopwatch.Restart();
-                Thread.Sleep(1);
-                var spanMilliseconds = span.Duration.TotalMilliseconds;
-                var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-            }
+                Span span;
 
-            // execute multiple times and average the results
-            for (int x = 0; x < iterations; x++)
-            {
                 using (span = _tracer.StartSpan("Operation"))
                 {
                     stopwatch.Restart();
-                    Thread.Sleep(minimumSleepMilliseconds);
-                    totalStopwatchTime += stopwatch.Elapsed;
+                    stopwatch.Stop();
                 }
 
-                totalSpanTime += span.Duration;
-            }
+                span.Duration.Should().BeGreaterOrEqualTo(stopwatch.Elapsed);
 
-            var avgStopwatch = totalStopwatchTime.TotalMilliseconds / iterations;
-            var avgSpan = totalSpanTime.TotalMilliseconds / iterations;
-            var stopwatchSpanDiff = Math.Abs(avgSpan - avgStopwatch);
-            // The difference should be less than the threshold
-            _output.WriteLine($"Average elapsed time: {avgStopwatch:0.0} ms");
-            _output.WriteLine($"Average span time: {avgSpan:0.0} ms");
-            Assert.True(
-                stopwatchSpanDiff < maxDifference,
-                $"Span duration difference ({stopwatchSpanDiff}ms) outside of allowed threshold {maxDifference}ms. Expected average: {avgStopwatch}ms, actual average: {avgSpan}ms");
+                stopwatch.Restart();
+                using (span = _tracer.StartSpan("Operation"))
+                {
+                }
+
+                stopwatch.Stop();
+
+                span.Duration.Should().BeLessOrEqualTo(stopwatch.Elapsed);
+            }
         }
 
         [Fact]
