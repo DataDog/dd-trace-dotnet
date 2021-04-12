@@ -95,8 +95,23 @@ namespace Datadog.Trace.Tests
         public void Accurate_Duration()
         {
             // Check that span has the same precision as stopwatch
-
+            // The reasoning behind the test is: let's imagine that Span uses DateTime internally, with a 15 ms precision.
+            // Depending on how it's implemented, for a time of 5 ms it will report either 0 ms or 15 ms.
+            // If the former, then the first assertion will fail.If the latter, then the second assertion will fail.
             const int iterations = 10;
+
+            // Sleeps just the right amount of time to be sure we do not exceed the precision of the stopwatch
+            // Not using Thread.Sleep(1) because it has the same precision as DateTime, so it could skew the test
+            static void Sleep()
+            {
+                var timestamp = Stopwatch.GetTimestamp();
+
+                while (timestamp == Stopwatch.GetTimestamp())
+                {
+                    Thread.SpinWait(1);
+                }
+            }
+
             var stopwatch = new Stopwatch();
 
             for (int i = 0; i < iterations; i++)
@@ -106,6 +121,7 @@ namespace Datadog.Trace.Tests
                 using (span = _tracer.StartSpan("Operation"))
                 {
                     stopwatch.Restart();
+                    Sleep();
                     stopwatch.Stop();
                 }
 
@@ -114,6 +130,7 @@ namespace Datadog.Trace.Tests
                 stopwatch.Restart();
                 using (span = _tracer.StartSpan("Operation"))
                 {
+                    Sleep();
                 }
 
                 stopwatch.Stop();
