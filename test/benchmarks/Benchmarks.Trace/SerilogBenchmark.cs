@@ -46,6 +46,7 @@ namespace Benchmarks.Trace
                 .CreateLogger();
 
             Logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
                 .WriteTo.Sink(new NullSink())
                 .CreateLogger();
         }
