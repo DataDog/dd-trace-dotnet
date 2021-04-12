@@ -5,6 +5,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 cd "$DIR/../.."
 
+# TODO Remove this from the native build as it should be logically separate
+# This is unnecessary in the unified pipeline as it's already done via the package.sh script
 PUBLISH_OUTPUT_NET2="$( pwd )/src/bin/managed-publish/netstandard2.0"
 PUBLISH_OUTPUT_NET31="$( pwd )/src/bin/managed-publish/netcoreapp3.1"
 BUILD_TYPE=${buildConfiguration:-Debug}

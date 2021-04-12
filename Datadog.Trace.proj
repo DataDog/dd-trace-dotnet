@@ -2,12 +2,12 @@
   <PropertyGroup>
     <BuildInParallel Condition="'$(BuildInParallel)' == ''">true</BuildInParallel>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)src\bin\tracer-home</TracerHomeDirectory>
+    <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)src\bin\windows-tracer-home</TracerHomeDirectory>
   </PropertyGroup>
 
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Tools.Runner/*.csproj" />
-    <CsharpTestProject Include="test\**\*.csproj"/>
+    <CsharpTestProject Include="test\*\*.csproj" Exclude="test\Datadog.Trace.ClrProfiler.IntegrationTests\*.csproj" />
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <SampleProject Include="test\test-applications\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
@@ -45,12 +45,20 @@
   </Target>
 
   <Target Name="BuildCsharp">
+    <MSBuild Targets="Restore" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
     <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
 
   <Target Name="BuildCsharpTests">
+    <MSBuild Targets="Restore" Projects="@(CsharpTestProject)" Properties="Platform=AnyCPU">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
     <MSBuild Targets="Build" Projects="@(CsharpTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>

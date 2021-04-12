@@ -1,0 +1,1195 @@
+trigger:
+  branches:
+    include:
+      - master # Only run on master for now
+    exclude:
+      - refs/pull/*/head
+  paths:
+    exclude:
+      - docs/*
+      - .github/*
+pr:
+  branches:
+    exclude: # Don't run PR validation for now
+    - '*'
+
+# Global variables
+variables:
+  buildConfiguration: Release
+  dotnetCoreSdk5Version: 5.0.103
+  tracerHome: $(System.DefaultWorkingDirectory)/src/bin/windows-tracer-home
+  ddApiKey: $(DD_API_KEY)
+  isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+  DD_DOTNET_TRACER_MSBUILD:
+
+# Declare the datadog agent as a resource to be used as a pipeline service
+resources:
+  containers:
+  - container: dd_agent
+    image: datadog/agent
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_INSIDE_CI: true
+
+# Stages
+stages:
+- stage: build
+  dependsOn: []
+  jobs:
+  - job: build_managed
+    pool:
+      vmImage: windows-2019
+    steps:
+    - task: UseDotNet@2
+      displayName: Install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
+
+    - task: MSBuild@1
+      displayName: Build all managed projects
+      inputs:
+        solution: Datadog.Trace.proj
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildCsharp
+        maximumCpuCount: true
+
+    - task: MSBuild@1
+      displayName: Publish managed profiler to tracer home for Windows and Linux builds
+      inputs:
+        solution: Datadog.Trace.proj
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:PublishManagedProfilerOnDisk
+        maximumCpuCount: true
+
+    - task: DotNetCoreCLI@2
+      displayName: Create NuGet packages
+      inputs:
+        command: pack
+        nobuild: true
+        packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
+        packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
+
+    - publish: $(System.DefaultWorkingDirectory)/nuget-output
+      displayName: Upload NuGet packages
+      artifact: nuget-packages
+
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
+      artifact: build-managed
+
+  - job: build_native_windows
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool:
+      vmImage: windows-2019
+    variables:
+      msiHome: $(System.DefaultWorkingDirectory)/src/WindowsInstaller/bin/$(buildConfiguration)
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
+
+    # This is only here because the msi build later causes a restore error...not sure why
+    - task: DotNetCoreCLI@2
+      displayName: dotnet restore
+      inputs:
+        command: restore
+        projects: src/**/*.csproj
+
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
+
+    - task: NuGetCommand@2
+      displayName: nuget restore
+      inputs:
+        restoreSolution: Datadog.Trace.Native.sln
+        verbosityRestore: Normal
+
+    # this triggers a dependency chain that builds all the managed, x64, and x86 dlls, and the zip and msi files
+    # Outputs include:
+    # - Windows Datadog.Trace.ClrProfiler.Native.dll (x86 and x64)
+    # - Windows MSI (x86 and x64)
+    # - Windows tracer home directory
+    - task: MSBuild@1
+      displayName: build both msi
+      inputs:
+        solution: Datadog.Trace.proj
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;RunWixToolsOutOfProc=true /p:TracerHomeDirectory=$(tracerHome)
+        maximumCpuCount: true
+
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload repo after windows build
+      artifact: build-repo-managed-native-windows
+
+    - publish: $(msiHome)/x86/en-us
+      displayName: Upload Windows x86 MSI
+      artifact: windows-msi-x86
+
+    - publish: $(msiHome)/x64/en-us
+      displayName: Upload Windows x64 MSI
+      artifact: windows-msi-x64
+
+    - publish: $(tracerHome)
+      displayName: Upload Windows tracer home directory
+      artifact: build-windows-tracer-home
+
+    - publish: $(tracerHome).zip
+      displayName: Upload Windows tracer home zip
+      artifact: windows-tracer-home
+
+  - job: build_native_linux
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool:
+      vmImage: ubuntu-20.04
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run Profiler
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run Profiler
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/package.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run package
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run package
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+      displayName: Uploading linux tracer home artifact
+      artifact: build-linux-tracer-home
+
+    - publish: $(System.DefaultWorkingDirectory)/deploy/linux
+      displayName: Publish Linux packages
+      artifact: linux-packages
+
+  - job: build_native_alpine_linux
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool:
+      vmImage: ubuntu-20.04
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run Profiler.Alpine
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run Profiler.Alpine
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/package.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run package.alpine
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run package.alpine
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+      displayName: Uploading alpine linux tracer home artifact
+      artifact: build-alpine-linux-tracer-home
+
+    - publish: $(System.DefaultWorkingDirectory)/deploy/linux
+      displayName: Publish Alpine Linux package
+      artifact: linux-alpine-packages
+
+  - job: build_native_linux_arm64
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool: Arm64
+    workspace:
+      clean: all
+
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.Native.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run Profiler
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run Profiler
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/package.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run package
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run package
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+      artifact: build-linux-tracer-home-arm64
+
+  - job: build_native_macos
+    dependsOn: build_managed # The native build relies on Datadog.Trace.ClrProfiler.Managed.Loader to be built
+    pool:
+      vmImage: macOS-10.15
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - script: |
+        cd ./src/Datadog.Trace.ClrProfiler.Native
+        cmake .
+        make
+      displayName: build_profiler
+
+    - script: |
+        mkdir -p src/Datadog.Trace.ClrProfiler.Native/bin/netstandard2.0
+        cp src/bin/windows-tracer-home/netstandard2.0/*.dll src/Datadog.Trace.ClrProfiler.Native/bin/netstandard2.0/
+        mkdir -p src/Datadog.Trace.ClrProfiler.Native/bin/netcoreapp3.1
+        cp src/bin/windows-tracer-home/netcoreapp3.1/*.dll src/Datadog.Trace.ClrProfiler.Native/bin/netcoreapp3.1/
+      displayName: Copy files into build-macos-tracer-home
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin
+      displayName: Uploading macos profiler artifact
+      artifact: build-macos-tracer-home
+
+- stage: unit_tests
+  dependsOn: build
+  jobs:
+  - job: unit_tests_managed
+    strategy:
+      matrix:
+        windows:
+          imageName: windows-2019
+        linux:
+          imageName: ubuntu-18.04
+        macos:
+          imageName: macOS-10.15
+    pool:
+      vmImage: $(imageName)
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - template: steps/install-dotnet.yml
+
+    # Ideally we would use the following MSBuild command which can more intelligently parallelize the build
+    #    - task: MSBuild@1
+    #      displayName: Build all managed unit test projects
+    #      inputs:
+    #        solution: Datadog.Trace.proj
+    #        configuration: $(buildConfiguration)
+    #        msbuildArguments: /t:BuildCsharpTests
+    #        maximumCpuCount: true
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet restore
+      inputs:
+        command: restore
+        projects: test/**/*.Tests.csproj
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build
+      inputs:
+        command: build
+        arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
+        projects: test/**/*.Tests.csproj
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test
+      inputs:
+        command: test
+        arguments: --configuration $(buildConfiguration) --no-build
+        projects: test/**/*.Tests.csproj
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+  - job: unit_tests_managed_linux_arm64
+    pool: Arm64
+    workspace:
+      clean: all
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test
+      inputs:
+        command: test
+        arguments: --configuration $(buildConfiguration)
+        projects: test/**/*.Tests.csproj
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+  - job: native_unit_tests_windows
+    pool:
+      vmImage: windows-2019
+
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-repo-managed-native-windows
+        path: $(System.DefaultWorkingDirectory)
+
+    # Install the .NET SDK so any managed libraries needed for the C++ unit tests can be built
+    - template: steps/install-dotnet.yml
+
+    # This should already be accounted for but unfortunately it is not
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build
+      inputs:
+        command: build
+        arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
+        projects: |
+          test/**/Samples.ExampleLibrary*.csproj
+
+    - task: MSBuild@1
+      displayName: Build x86 native unit test projects
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: x86
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildCppTests
+        maximumCpuCount: true
+
+    - task: MSBuild@1
+      displayName: Build x64 native unit test projects
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: x64
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildCppTests
+        maximumCpuCount: true
+
+    - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
+      displayName: run tests
+      workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/x86
+
+    - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
+      displayName: run tests
+      workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/x64
+      condition: succeededOrFailed()
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFiles: test/**/test*.xml
+      condition: succeededOrFailed()
+
+- stage: integration_tests
+  dependsOn: build
+  jobs:
+
+  - job: Windows
+    timeoutInMinutes: 100
+    strategy:
+      matrix:
+        x64:
+          buildPlatform: x64
+        x86:
+          buildPlatform: x86
+    pool:
+      vmImage: windows-2019
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-repo-managed-native-windows
+        path: $(System.DefaultWorkingDirectory)
+
+    - template: steps/install-dotnet-sdks.yml
+
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
+
+    - task: NuGetCommand@2
+      displayName: nuget restore
+      inputs:
+        restoreSolution: Datadog.Trace.sln
+        verbosityRestore: Normal
+
+    - task: MSBuild@1
+      displayName: Build .NET Framework projects (not SDK-based projects)
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: $(buildPlatform)
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildFrameworkReproductions
+        maximumCpuCount: true
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build integration tests
+      inputs:
+        command: build
+        projects: |
+          test/test-applications/regression/**/*.csproj
+          test/*.IntegrationTests/*.IntegrationTests.csproj
+          !test/test-applications/regression/**/ExpenseItDemo*.csproj
+          !test/test-applications/regression/**/EntityFramework6x*.csproj
+          !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(tracerHome) /nowarn:netsdk1138
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build samples
+      inputs:
+        command: build
+        projects: |
+          test/test-applications/integrations/**/*.csproj
+          !test/test-applications/integrations/dependency-libs/**/*.csproj
+        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(tracerHome) -p:BuildInParallel=false /nowarn:netsdk1138 -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true -p:LoadManagedProfilerFromProfilerDirectory=false
+
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
+      artifact: build-integration-tests-windows-$(buildPlatform)
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test
+      inputs:
+        command: test
+        projects: |
+          test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
+          test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
+        arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform)
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test
+      inputs:
+        command: test
+        projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
+
+  - job: Windows_IIS
+    timeoutInMinutes: 100
+    strategy:
+      matrix:
+        x64:
+          buildPlatform: x64
+          enable32bit: false
+        x86:
+          buildPlatform: x86
+          enable32bit: true
+    pool:
+      vmImage: windows-2019
+    variables:
+      msiOutputDirectory: src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-repo-managed-native-windows
+        path: $(System.DefaultWorkingDirectory)
+
+    - template: steps/install-dotnet-sdks.yml
+
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
+
+    - task: NuGetCommand@2
+      displayName: nuget restore
+      inputs:
+        restoreSolution: Datadog.Trace.sln
+        verbosityRestore: Normal
+
+    - task: MSBuild@1
+      displayName: Build .NET Framework projects (not SDK-based projects)
+      inputs:
+        solution: Datadog.Trace.proj
+        platform: $(buildPlatform)
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:BuildFrameworkReproductions
+        maximumCpuCount: true
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build integration tests
+      inputs:
+        command: build
+        projects: |
+          test/test-applications/regression/**/*.csproj
+          test/*.IntegrationTests/*.IntegrationTests.csproj
+          !test/test-applications/regression/**/ExpenseItDemo*.csproj
+          !test/test-applications/regression/**/EntityFramework6x*.csproj
+          !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(tracerHome) /nowarn:netsdk1138
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build samples
+      inputs:
+        command: build
+        projects: |
+          test/test-applications/integrations/**/*.csproj
+          !test/test-applications/integrations/dependency-libs/**/*.csproj
+        arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(tracerHome) -p:BuildInParallel=false /nowarn:netsdk1138 -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true -p:LoadManagedProfilerFromProfilerDirectory=false
+
+    - task: NuGetCommand@2
+      displayName: nuget restore IIS samples
+      inputs:
+        restoreSolution: test/test-applications/aspnet/samples-iis.sln
+        verbosityRestore: Normal
+
+    - task: MSBuild@1
+      displayName: Publish IIS samples
+      inputs:
+        solution: test/test-applications/aspnet/samples-iis.sln
+        configuration: '$(buildConfiguration)'
+        msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml'
+        maximumCpuCount: true
+
+    - task: DockerCompose@0
+      displayName: docker-compose build IIS containers
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: build --build-arg DOTNET_TRACER_MSI=$(msiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationRegKey
+
+    - task: DockerCompose@0
+      displayName: docker-compose start IIS containers
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
+
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
+      artifact: build-integration-tests-windows-iis-$(buildPlatform)
+
+    - powershell: |
+        [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
+        $publish = New-Object System.EnterpriseServices.Internal.Publish
+        Get-ChildItem $(tracerHome)/net45 -Filter *.dll | Foreach-Object { $publish.GacInstall($_.FullName) }
+      displayName: Add net45 Datadog.Trace.ClrProfiler.Managed assets to the GAC
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test --filter LoadFromGAC=True
+      inputs:
+        command: test
+        projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True&IIS!=True" -p:Platform=$(buildPlatform)
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test IIS
+      inputs:
+        command: test
+        projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        arguments: -c $(buildConfiguration) --filter "(IIS=True)" -p:Platform=$(buildPlatform)
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+      condition: succeededOrFailed()
+
+  - job: Linux
+    strategy:
+      matrix:
+        netcoreapp2_1:
+          publishTargetFramework: netcoreapp2.1
+        netcoreapp3_0:
+          publishTargetFramework: netcoreapp3.0
+        netcoreapp3_1:
+          publishTargetFramework: netcoreapp3.1
+        net5_0:
+          publishTargetFramework: net5.0
+
+    variables:
+      TestAllPackageVersions: true
+
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - download: current
+      artifact: build-linux-tracer-home
+
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/build.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/build.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run build
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run IntegrationTests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
+
+    - publish: dotnet-tracer-native.log
+      artifact: $(Agent.JobName)_profiler-logs
+      condition: succeededOrFailed()
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: test/**/*.trx
+      condition: succeededOrFailed()
+
+  - job: Alpine_Linux
+    strategy:
+      matrix:
+        netcoreapp2_1:
+          publishTargetFramework: netcoreapp2.1
+        netcoreapp3_0:
+          publishTargetFramework: netcoreapp3.0
+        netcoreapp3_1:
+          publishTargetFramework: netcoreapp3.1
+        net5_0:
+          publishTargetFramework: net5.0
+
+    variables:
+      TestAllPackageVersions: true
+
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - download: current
+      artifact: build-alpine-linux-tracer-home
+
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-alpine-linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/build.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/build.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run build
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run IntegrationTests.Alpine.Core21
+      condition: eq(variables['publishTargetFramework'], 'netcoreapp2.1')
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core21
+
+    - task: DockerCompose@0
+      displayName: docker-compose run IntegrationTests.Alpine.Core30
+      condition: eq(variables['publishTargetFramework'], 'netcoreapp3.0')
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core30
+
+    - task: DockerCompose@0
+      displayName: docker-compose run IntegrationTests.Alpine.Core31
+      condition: eq(variables['publishTargetFramework'], 'netcoreapp3.1')
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
+
+    - task: DockerCompose@0
+      displayName: docker-compose run IntegrationTests.Alpine.Core50
+      condition: eq(variables['publishTargetFramework'], 'net5.0')
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core50
+
+    - publish: dotnet-tracer-native.log
+      artifact: $(Agent.JobName)_profiler-logs
+      condition: succeededOrFailed()
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: test/**/*.trx
+      condition: succeededOrFailed()
+
+  - job: Linux_arm64
+    pool: Arm64
+    workspace:
+      clean: all
+
+    variables:
+      TestAllPackageVersions: true
+
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - download: current
+      artifact: build-linux-tracer-home-arm64
+
+    - task: CopyFiles@2
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-linux-tracer-home-arm64
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/arm64
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/build.arm64.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/build.arm64.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run build.arm64
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=net5.0 build.arm64
+
+    - script: |
+        chmod +x $(System.DefaultWorkingDirectory)/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh
+      displayName: 'Workaround: Restore wiped executable permission on build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh'
+
+    - task: DockerCompose@0
+      displayName: docker-compose run IntegrationTests.ARM64.Core50
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e TestAllPackageVersions=$(TestAllPackageVersions) -e buildConfiguration=$(buildConfiguration) IntegrationTests.ARM64.Core50
+
+    - publish: dotnet-tracer-native.log
+      artifact: $(Agent.JobName)_profiler-logs
+      condition: succeededOrFailed()
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: test/**/*.trx
+      condition: succeededOrFailed()
+
+- stage: benchmarks
+  dependsOn: build
+  condition: and(succeeded(), false)
+  jobs:
+
+  #### Windows 
+
+  - job: Windows
+    pool: Benchmarks
+    
+    workspace:
+      clean: all
+
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - task: UseDotNet@2
+      displayName: Install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet restore
+      inputs:
+        command: restore
+        projects: src/**/*.csproj
+
+    - task: DotNetCoreCLI@2
+      displayName: Benchmarks
+      inputs:
+        command: 'run'
+        projects: '$(System.DefaultWorkingDirectory)/test/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
+        arguments: '-c $(buildConfiguration) -f netcoreapp3.1 -- -r net472 netcoreapp3.1 -m -f * --iterationTime 2000'
+      env:
+        DD_ENV: CI
+        DD_SERVICE: dd-trace-dotnet
+
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: 'Start-Sleep -s 120'
+
+- stage: dotnet_tool
+  dependsOn: build
+  jobs:
+  - job: build_runner_tool_and_standalone
+
+    pool:
+      vmImage: windows-2019
+
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - download: current
+      artifact: build-windows-tracer-home
+
+    - task: CopyFiles@2
+      displayName: Copying windows tracer home from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-windows-tracer-home
+        Contents: |
+          **/*
+          !**/*.zip
+          !**/*.json
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home
+
+    - download: current
+      artifact: build-linux-tracer-home
+      patterns: '**/*.so'
+
+    - task: CopyFiles@2
+      displayName: Copying native linux binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
+
+    - download: current
+      artifact: build-alpine-linux-tracer-home
+      patterns: '**/*.so'
+
+    - task: CopyFiles@2
+      displayName: Copying native alpine linux binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-alpine-linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-musl-x64
+
+    - download: current
+      artifact: build-macos-tracer-home
+      patterns: '**/*.dylib'
+
+    - task: CopyFiles@2
+      displayName: Copying native macos binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-macos-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/osx-x64
+
+    # Install the tracer latest stable release to attach the profiler to the build and test steps.
+    # The script exposes the required environment variables to the following steps
+    - task: PowerShell@2
+      displayName: Install profiler latest release
+      inputs:
+        filePath: ./.azure-pipelines/setup_tracer.ps1
+
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
+
+    - task: DotNetCoreCLI@2
+      displayName: tool build
+      inputs:
+        command: build
+        arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Tool.csproj
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build win-x86
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime win-x86
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build win-x64
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime win-x64
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build linux-x64
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime linux-x64
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build linux-musl-x64
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime linux-musl-x64
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DotNetCoreCLI@2
+      displayName: standalone build linux-osx-x64
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
+        arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --runtime osx-x64
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DeleteFiles@1
+      displayName: 'Remove unneeded files'
+      inputs:
+        Contents: |
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool/!(*.nupkg)
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64/home*
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x86/home*
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/home*
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64/home*
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool
+      displayName: Uploading runner dotnet tool artifact
+      artifact: runner-dotnet-tool
+
+- stage: upload
+  dependsOn: build
+  jobs:
+  - job: s3_upload
+
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+
+    - download: current
+      artifact: windows-msi-x64
+      patterns: '**/*x64.msi'
+
+    - download: current
+      artifact: linux-packages
+      patterns: '**/*amd64.deb'
+
+    - script: |
+        mkdir s3_upload
+        mv $(Pipeline.Workspace)/windows-msi-x64/*.msi s3_upload/
+        mv $(Pipeline.Workspace)/linux-packages/*.deb s3_upload/
+      displayName: Move deb package and MSI to s3_upload folder
+
+    # for prerelease versions, rename datadog-dotnet-apm-{version}-amd64.deb
+    # to datadog-dotnet-apm-{version}-{tag}-amd64.deb (i.e. add the prerelease tag)
+    # by copying most of the filename from datadog-dotnet-apm-{version}-{tag}-x64.msi
+    - script: |
+        MSI_NAME=$(ls s3_upload/*.msi)
+        PACKAGE_NAME=${MSI_NAME::-8}
+        echo Renaming deb package to $PACKAGE_NAME-amd64.deb
+        mv s3_upload/*.deb $PACKAGE_NAME-amd64.deb
+      displayName: Rename deb package name to match MSI name
+
+    # Create index.txt file with the following format:
+    # BRANCH_NAME
+    # SHA
+    # ARTIFACT WILDCARD (datadog-dotnet-apm-vX.X.X-*)
+    # COMMIT AUTHOR
+    # Note: For the branch name, normalize 'refs/heads/<branch>' to '<branch>' and 'refs/tags/<tag_name>' to 'tags/<tag_name>'
+    - script: |
+        INDEX_FILE=$(pwd)/s3_upload/index.txt
+        echo $(Build.SourceBranch) | sed 's/refs\/heads\///g' | sed 's/refs\/tags\//tags\//g' >> $INDEX_FILE
+        git rev-parse HEAD >> $INDEX_FILE
+        pushd s3_upload && name=$(ls *.deb) && echo "${name::-9}*" >> $INDEX_FILE && popd
+        git show -s --format='%ae' HEAD >> $INDEX_FILE
+        echo Generated index.txt file:
+        cat $INDEX_FILE
+      displayName: Write index.txt
+
+    - script: tree s3_upload
+      displayName: 'tree s3_upload'
+
+    - script: |
+        sudo apt-get install -y unzip python3-setuptools
+        curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+        unzip awscli-bundle.zip
+        sudo python3 ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+        aws --version
+      displayName: Install AWS CLI
+
+    - script: aws configure set aws_access_key_id $SECRET
+      displayName: Authenticate aws_access_key_id
+      env:
+        SECRET: $(AWS_ACCESS_KEY_ID)
+
+    - script: aws configure set aws_secret_access_key $SECRET
+      displayName: Authenticate aws_secret_access_key
+      env:
+        SECRET: $(AWS_SECRET_ACCESS_KEY)
+
+    # by default, run this step on master branch only.
+    # use "push_artifacts_to_s3" to override:
+    #   "true": run this step
+    #   "false": do NOT run this step
+    #   else: run this stage if branch is master
+
+    - script: aws s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive
+      displayName: Upload deb, MSI, index.txt to s3
+      condition: >
+        and(
+          succeeded(),
+          ne(variables['push_artifacts_to_s3'], 'false'),
+          or(
+            eq(variables['push_artifacts_to_s3'], 'true'),
+            eq(variables.isMainBranch, true)
+          )
+        )
+
+- stage: throughput
+  dependsOn: build
+  condition: and(succeeded(), false)
+  jobs:
+
+  #### Linux
+
+  - job: Linux
+    pool: Throughput
+    
+    workspace:
+      clean: all
+
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: build-managed
+        path: $(System.DefaultWorkingDirectory)
+
+    - download: current
+      artifact: build-windows-tracer-home
+      patterns: '**/win-x64/*.dll'
+
+    - task: CopyFiles@2
+      displayName: Copying windows native bindary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-windows-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/
+
+    - download: current
+      artifact: build-linux-tracer-home
+      patterns: '**/*.so'
+
+    - task: CopyFiles@2
+      displayName: Copying native linux binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/build-linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/
+
+    - script: |
+        cd $(System.DefaultWorkingDirectory)/build/crank
+        chmod +x ./run.sh
+        ./run.sh
+      displayName: Crank
+      env:
+        DD_SERVICE: dd-trace-dotnet
