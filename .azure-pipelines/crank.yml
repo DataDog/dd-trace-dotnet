@@ -22,7 +22,7 @@ schedules:
   branches:
     include:
     - master
-    - benchmarks/*
+    - /benchmarks/*
   always: true
 
 jobs:
