@@ -169,7 +169,7 @@ stages:
       displayName: docker-compose run Profiler
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e UNIFIED_PIPELINE=true Profiler
 
     - script: |
         chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
@@ -209,7 +209,7 @@ stages:
       displayName: docker-compose run Profiler.Alpine
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e UNIFIED_PIPELINE=true Profiler.Alpine
 
     - script: |
         chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
@@ -251,7 +251,7 @@ stages:
       displayName: docker-compose run Profiler
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e UNIFIED_PIPELINE=true Profiler
 
     - script: |
         chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh

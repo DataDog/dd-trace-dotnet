@@ -18,10 +18,13 @@ mkdir -p build
 mkdir -p bin/${BUILD_TYPE}/x64
 cp -f build/bin/Datadog.Trace.ClrProfiler.Native.so bin/${BUILD_TYPE}/x64/Datadog.Trace.ClrProfiler.Native.so
 
-mkdir -p bin/${BUILD_TYPE}/x64/netstandard2.0
-cp -f $PUBLISH_OUTPUT_NET2/*.dll bin/${BUILD_TYPE}/x64/netstandard2.0/
-cp -f $PUBLISH_OUTPUT_NET2/*.pdb bin/${BUILD_TYPE}/x64/netstandard2.0/
+# If running the unified pipeline, do not copy managed assets yet. Do so during the package build step
+if [ -z "${UNIFIED_PIPELINE-}" ]; then
+  mkdir -p bin/${BUILD_TYPE}/x64/netstandard2.0
+  cp -f $PUBLISH_OUTPUT_NET2/*.dll bin/${BUILD_TYPE}/x64/netstandard2.0/
+  cp -f $PUBLISH_OUTPUT_NET2/*.pdb bin/${BUILD_TYPE}/x64/netstandard2.0/
 
-mkdir -p bin/${BUILD_TYPE}/x64/netcoreapp3.1
-cp -f $PUBLISH_OUTPUT_NET31/*.dll bin/${BUILD_TYPE}/x64/netcoreapp3.1/
-cp -f $PUBLISH_OUTPUT_NET31/*.pdb bin/${BUILD_TYPE}/x64/netcoreapp3.1/
+  mkdir -p bin/${BUILD_TYPE}/x64/netcoreapp3.1
+  cp -f $PUBLISH_OUTPUT_NET31/*.dll bin/${BUILD_TYPE}/x64/netcoreapp3.1/
+  cp -f $PUBLISH_OUTPUT_NET31/*.pdb bin/${BUILD_TYPE}/x64/netcoreapp3.1/
+fi
