@@ -8,26 +8,32 @@ updates:
     labels:
       - "dependencies"
       - "area:vendors"
-  # Core tracer libraries
+  # Src libraries
   - package-ecosystem: "nuget"
-    directory: "/src"
+    directory: "/src/Datadog.Trace"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
-  # Test area
+      - "area:tracer"
   - package-ecosystem: "nuget"
-    directory: "/test"
+    directory: "/src/Datadog.Trace.ClrProfiler.Managed"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
-      - "area:tests"
-  # Tools area
+      - "area:integrations"
   - package-ecosystem: "nuget"
-    directory: "/tools"
+    directory: "/src/Datadog.Trace.OpenTracing"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
-      - "area:tools"
+      - "area:opentracing"
+  - package-ecosystem: "nuget"
+    directory: "/src/Datadog.Trace.BenchmarkDotNet"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "area:benchmarks"
