@@ -64,9 +64,11 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
         /// <param name="state">Operation state.</param>
         /// <param name="scalar">The value to visit.</param>
         /// <returns>The result of visiting <paramref name="scalar"/>.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="scalar"/> is <code>null</code></exception>
         protected override bool VisitScalarValue(TextWriter state, ScalarValue scalar)
         {
             if (scalar == null) throw new ArgumentNullException(nameof(scalar));
+
             FormatLiteralValue(scalar.Value, state);
             return false;
         }
@@ -77,9 +79,11 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
         /// <param name="state">Operation state.</param>
         /// <param name="sequence">The value to visit.</param>
         /// <returns>The result of visiting <paramref name="sequence"/>.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="sequence"/> is <code>null</code></exception>
         protected override bool VisitSequenceValue(TextWriter state, SequenceValue sequence)
         {
             if (sequence == null) throw new ArgumentNullException(nameof(sequence));
+
             state.Write('[');
             var delim = "";
             for (var i = 0; i < sequence.Elements.Count; i++)
@@ -167,11 +171,10 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
             // Although the linear switch-on-type has apparently worse algorithmic performance than the O(1)
             // dictionary lookup alternative, in practice, it's much to make a few equality comparisons
             // than the hash/bucket dictionary lookup, and since most data will be string (one comparison),
-            // numeric (a handful) or an object (two comparsions) the real-world performance of the code
+            // numeric (a handful) or an object (two comparisons) the real-world performance of the code
             // as written is as fast or faster.
 
-            var str = value as string;
-            if (str != null)
+            if (value is string str)
             {
                 FormatStringValue(str, output);
                 return;
@@ -186,21 +189,21 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
                     return;
                 }
 
-				if (value is double)
-				{
-					FormatDoubleValue((double)value, output);
-					return;
-				}
-
-				if (value is float)
-				{
-					FormatFloatValue((float)value, output);
-					return;
-				}
-
-                if (value is bool)
+                if (value is double d)
                 {
-                    FormatBooleanValue((bool)value, output);
+                    FormatDoubleValue(d, output);
+                    return;
+                }
+
+                if (value is float f)
+                {
+                    FormatFloatValue(f, output);
+                    return;
+                }
+
+                if (value is bool b)
+                {
+                    FormatBooleanValue(b, output);
                     return;
                 }
 
@@ -216,9 +219,9 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
                     return;
                 }
 
-                if (value is TimeSpan)
+                if (value is TimeSpan timeSpan)
                 {
-                    FormatTimeSpanValue((TimeSpan)value, output);
+                    FormatTimeSpanValue(timeSpan, output);
                     return;
                 }
             }
@@ -231,27 +234,27 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
             output.Write(value ? "true" : "false");
         }
 
-		static void FormatFloatValue(float value, TextWriter output)
-		{
-			if (float.IsNaN(value) || float.IsInfinity(value))
-			{
-				FormatStringValue(value.ToString(CultureInfo.InvariantCulture), output);
-				return;
-			}
+        static void FormatFloatValue(float value, TextWriter output)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+            {
+                FormatStringValue(value.ToString(CultureInfo.InvariantCulture), output);
+                return;
+            }
 
-			output.Write(value.ToString("R", CultureInfo.InvariantCulture));
-		}
+            output.Write(value.ToString("R", CultureInfo.InvariantCulture));
+        }
 
-		static void FormatDoubleValue(double value, TextWriter output)
-		{
-			if (double.IsNaN(value) || double.IsInfinity(value))
-			{
-				FormatStringValue(value.ToString(CultureInfo.InvariantCulture), output);
-				return;
-			}
+        static void FormatDoubleValue(double value, TextWriter output)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+            {
+                FormatStringValue(value.ToString(CultureInfo.InvariantCulture), output);
+                return;
+            }
 
-			output.Write(value.ToString("R", CultureInfo.InvariantCulture));
-		}
+            output.Write(value.ToString("R", CultureInfo.InvariantCulture));
+        }
 
         static void FormatExactNumericValue(IFormattable value, TextWriter output)
         {
@@ -275,7 +278,8 @@ namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
         static void FormatLiteralObjectValue(object value, TextWriter output)
         {
             if (value == null) throw new ArgumentNullException(nameof(value));
-            FormatStringValue(value.ToString(), output);
+
+            FormatStringValue(value.ToString() ?? "", output);
         }
 
         static void FormatStringValue(string str, TextWriter output)

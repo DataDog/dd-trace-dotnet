@@ -28,7 +28,7 @@ using Datadog.Trace.Vendors.Serilog.Formatting.Display;
 using Datadog.Trace.Vendors.Serilog.Formatting.Json;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
-// ReSharper disable MethodOverloadWithOptionalParameter
+// ReSharper disable RedundantArgumentDefaultValue, MethodOverloadWithOptionalParameter
 
 namespace Datadog.Trace.Vendors.Serilog
 {
@@ -73,10 +73,8 @@ namespace Datadog.Trace.Vendors.Serilog
             bool shared,
             TimeSpan? flushToDiskInterval)
         {
-            // ReSharper disable once RedundantArgumentDefaultValue
             return File(sinkConfiguration, path, restrictedToMinimumLevel, outputTemplate, formatProvider, fileSizeLimitBytes,
-                levelSwitch, buffered, shared, flushToDiskInterval, RollingInterval.Infinite, false,
-                null, null);
+                levelSwitch, buffered, shared, flushToDiskInterval, RollingInterval.Infinite, false, null, null, null);
         }
 
         /// <summary>
@@ -114,9 +112,8 @@ namespace Datadog.Trace.Vendors.Serilog
             bool shared,
             TimeSpan? flushToDiskInterval)
         {
-            // ReSharper disable once RedundantArgumentDefaultValue
             return File(sinkConfiguration, formatter, path, restrictedToMinimumLevel, fileSizeLimitBytes, levelSwitch,
-                buffered, shared, flushToDiskInterval, RollingInterval.Infinite, false, null, null);
+                buffered, shared, flushToDiskInterval, RollingInterval.Infinite, false, null, null, null);
         }
 
         /// <summary>
@@ -139,37 +136,31 @@ namespace Datadog.Trace.Vendors.Serilog
         /// <param name="shared">Allow the log file to be shared by multiple processes. The default is false.</param>
         /// <param name="flushToDiskInterval">If provided, a full disk flush will be performed periodically at the specified interval.</param>
         /// <param name="rollingInterval">The interval at which logging will roll over to a new file.</param>
-        /// <param name="rollOnFileSizeLimit">If <code>true</code>, a new file will be created when the file size limit is reached. Filenames 
+        /// <param name="rollOnFileSizeLimit">If <code>true</code>, a new file will be created when the file size limit is reached. Filenames
         /// will have a number appended in the format <code>_NNN</code>, with the first filename given no number.</param>
         /// <param name="retainedFileCountLimit">The maximum number of log files that will be retained,
         /// including the current log file. For unlimited retention, pass null. The default is 31.</param>
         /// <param name="encoding">Character encoding used to write the text file. The default is UTF-8 without BOM.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
-        /// <remarks>The file will be written using the UTF-8 character set.</remarks>
+        [Obsolete("New code should not be compiled against this obsolete overload"), EditorBrowsable(EditorBrowsableState.Never)]
         public static LoggerConfiguration File(
             this LoggerSinkConfiguration sinkConfiguration,
             string path,
-            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
-            string outputTemplate = DefaultOutputTemplate,
-            IFormatProvider formatProvider = null,
-            long? fileSizeLimitBytes = DefaultFileSizeLimitBytes,
-            LoggingLevelSwitch levelSwitch = null,
-            bool buffered = false,
-            bool shared = false,
-            TimeSpan? flushToDiskInterval = null,
-            RollingInterval rollingInterval = RollingInterval.Infinite,
-            bool rollOnFileSizeLimit = false,
-            int? retainedFileCountLimit = DefaultRetainedFileCountLimit,
-            Encoding encoding = null)
+            LogEventLevel restrictedToMinimumLevel,
+            string outputTemplate,
+            IFormatProvider formatProvider,
+            long? fileSizeLimitBytes,
+            LoggingLevelSwitch levelSwitch,
+            bool buffered,
+            bool shared,
+            TimeSpan? flushToDiskInterval,
+            RollingInterval rollingInterval,
+            bool rollOnFileSizeLimit,
+            int? retainedFileCountLimit,
+            Encoding encoding)
         {
-            if (sinkConfiguration == null) throw new ArgumentNullException(nameof(sinkConfiguration));
-            if (path == null) throw new ArgumentNullException(nameof(path));
-            if (outputTemplate == null) throw new ArgumentNullException(nameof(outputTemplate));
-
-            var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
-            return File(sinkConfiguration, formatter, path, restrictedToMinimumLevel, fileSizeLimitBytes,
-                levelSwitch, buffered, shared, flushToDiskInterval,
-                rollingInterval, rollOnFileSizeLimit, retainedFileCountLimit, encoding);
+            return File(sinkConfiguration, path, restrictedToMinimumLevel, outputTemplate, formatProvider, fileSizeLimitBytes, levelSwitch, buffered,
+                shared, flushToDiskInterval, rollingInterval, rollOnFileSizeLimit, retainedFileCountLimit, encoding, null);
         }
 
         /// <summary>
@@ -178,7 +169,7 @@ namespace Datadog.Trace.Vendors.Serilog
         /// <param name="sinkConfiguration">Logger sink configuration.</param>
         /// <param name="formatter">A formatter, such as <see cref="JsonFormatter"/>, to convert the log events into
         /// text for the file. If control of regular text formatting is required, use the other
-        /// overload of <see cref="File(LoggerSinkConfiguration, string, LogEventLevel, string, IFormatProvider, long?, LoggingLevelSwitch, bool, bool, TimeSpan?, RollingInterval, bool, int?, Encoding)"/>
+        /// overload of <see cref="File(LoggerSinkConfiguration, string, LogEventLevel, string, IFormatProvider, long?, LoggingLevelSwitch, bool, bool, TimeSpan?, RollingInterval, bool, int?, Encoding, FileLifecycleHooks)"/>
         /// and specify the outputTemplate parameter instead.
         /// </param>
         /// <param name="path">Path to the file.</param>
@@ -194,13 +185,115 @@ namespace Datadog.Trace.Vendors.Serilog
         /// <param name="shared">Allow the log file to be shared by multiple processes. The default is false.</param>
         /// <param name="flushToDiskInterval">If provided, a full disk flush will be performed periodically at the specified interval.</param>
         /// <param name="rollingInterval">The interval at which logging will roll over to a new file.</param>
-        /// <param name="rollOnFileSizeLimit">If <code>true</code>, a new file will be created when the file size limit is reached. Filenames 
+        /// <param name="rollOnFileSizeLimit">If <code>true</code>, a new file will be created when the file size limit is reached. Filenames
         /// will have a number appended in the format <code>_NNN</code>, with the first filename given no number.</param>
         /// <param name="retainedFileCountLimit">The maximum number of log files that will be retained,
         /// including the current log file. For unlimited retention, pass null. The default is 31.</param>
         /// <param name="encoding">Character encoding used to write the text file. The default is UTF-8 without BOM.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
-        /// <remarks>The file will be written using the UTF-8 character set.</remarks>
+        [Obsolete("New code should not be compiled against this obsolete overload"), EditorBrowsable(EditorBrowsableState.Never)]
+        public static LoggerConfiguration File(
+            this LoggerSinkConfiguration sinkConfiguration,
+            ITextFormatter formatter,
+            string path,
+            LogEventLevel restrictedToMinimumLevel,
+            long? fileSizeLimitBytes,
+            LoggingLevelSwitch levelSwitch,
+            bool buffered,
+            bool shared,
+            TimeSpan? flushToDiskInterval,
+            RollingInterval rollingInterval,
+            bool rollOnFileSizeLimit,
+            int? retainedFileCountLimit,
+            Encoding encoding)
+        {
+            return File(sinkConfiguration, formatter, path, restrictedToMinimumLevel, fileSizeLimitBytes, levelSwitch, buffered,
+                shared, flushToDiskInterval, rollingInterval, rollOnFileSizeLimit, retainedFileCountLimit, encoding, null);
+        }
+
+        /// <summary>
+        /// Write log events to the specified file.
+        /// </summary>
+        /// <param name="sinkConfiguration">Logger sink configuration.</param>
+        /// <param name="path">Path to the file.</param>
+        /// <param name="restrictedToMinimumLevel">The minimum level for
+        /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
+        /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+        /// to be changed at runtime.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="outputTemplate">A message template describing the format used to write to the sink.
+        /// the default is "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}".</param>
+        /// <param name="fileSizeLimitBytes">The approximate maximum size, in bytes, to which a log file will be allowed to grow.
+        /// For unrestricted growth, pass null. The default is 1 GB. To avoid writing partial events, the last event within the limit
+        /// will be written in full even if it exceeds the limit.</param>
+        /// <param name="buffered">Indicates if flushing to the output file can be buffered or not. The default
+        /// is false.</param>
+        /// <param name="shared">Allow the log file to be shared by multiple processes. The default is false.</param>
+        /// <param name="flushToDiskInterval">If provided, a full disk flush will be performed periodically at the specified interval.</param>
+        /// <param name="rollingInterval">The interval at which logging will roll over to a new file.</param>
+        /// <param name="rollOnFileSizeLimit">If <code>true</code>, a new file will be created when the file size limit is reached. Filenames
+        /// will have a number appended in the format <code>_NNN</code>, with the first filename given no number.</param>
+        /// <param name="retainedFileCountLimit">The maximum number of log files that will be retained,
+        /// including the current log file. For unlimited retention, pass null. The default is 31.</param>
+        /// <param name="encoding">Character encoding used to write the text file. The default is UTF-8 without BOM.</param>
+        /// <param name="hooks">Optionally enables hooking into log file lifecycle events.</param>
+        /// <returns>Configuration object allowing method chaining.</returns>
+        public static LoggerConfiguration File(
+            this LoggerSinkConfiguration sinkConfiguration,
+            string path,
+            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+            string outputTemplate = DefaultOutputTemplate,
+            IFormatProvider formatProvider = null,
+            long? fileSizeLimitBytes = DefaultFileSizeLimitBytes,
+            LoggingLevelSwitch levelSwitch = null,
+            bool buffered = false,
+            bool shared = false,
+            TimeSpan? flushToDiskInterval = null,
+            RollingInterval rollingInterval = RollingInterval.Infinite,
+            bool rollOnFileSizeLimit = false,
+            int? retainedFileCountLimit = DefaultRetainedFileCountLimit,
+            Encoding encoding = null,
+            FileLifecycleHooks hooks = null)
+        {
+            if (sinkConfiguration == null) throw new ArgumentNullException(nameof(sinkConfiguration));
+            if (path == null) throw new ArgumentNullException(nameof(path));
+            if (outputTemplate == null) throw new ArgumentNullException(nameof(outputTemplate));
+
+            var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
+            return File(sinkConfiguration, formatter, path, restrictedToMinimumLevel, fileSizeLimitBytes,
+                levelSwitch, buffered, shared, flushToDiskInterval,
+                rollingInterval, rollOnFileSizeLimit, retainedFileCountLimit, encoding, hooks);
+        }
+
+        /// <summary>
+        /// Write log events to the specified file.
+        /// </summary>
+        /// <param name="sinkConfiguration">Logger sink configuration.</param>
+        /// <param name="formatter">A formatter, such as <see cref="JsonFormatter"/>, to convert the log events into
+        /// text for the file. If control of regular text formatting is required, use the other
+        /// overload of <see cref="File(LoggerSinkConfiguration, string, LogEventLevel, string, IFormatProvider, long?, LoggingLevelSwitch, bool, bool, TimeSpan?, RollingInterval, bool, int?, Encoding, FileLifecycleHooks)"/>
+        /// and specify the outputTemplate parameter instead.
+        /// </param>
+        /// <param name="path">Path to the file.</param>
+        /// <param name="restrictedToMinimumLevel">The minimum level for
+        /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
+        /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+        /// to be changed at runtime.</param>
+        /// <param name="fileSizeLimitBytes">The approximate maximum size, in bytes, to which a log file will be allowed to grow.
+        /// For unrestricted growth, pass null. The default is 1 GB. To avoid writing partial events, the last event within the limit
+        /// will be written in full even if it exceeds the limit.</param>
+        /// <param name="buffered">Indicates if flushing to the output file can be buffered or not. The default
+        /// is false.</param>
+        /// <param name="shared">Allow the log file to be shared by multiple processes. The default is false.</param>
+        /// <param name="flushToDiskInterval">If provided, a full disk flush will be performed periodically at the specified interval.</param>
+        /// <param name="rollingInterval">The interval at which logging will roll over to a new file.</param>
+        /// <param name="rollOnFileSizeLimit">If <code>true</code>, a new file will be created when the file size limit is reached. Filenames
+        /// will have a number appended in the format <code>_NNN</code>, with the first filename given no number.</param>
+        /// <param name="retainedFileCountLimit">The maximum number of log files that will be retained,
+        /// including the current log file. For unlimited retention, pass null. The default is 31.</param>
+        /// <param name="encoding">Character encoding used to write the text file. The default is UTF-8 without BOM.</param>
+        /// <param name="hooks">Optionally enables hooking into log file lifecycle events.</param>
+        /// <returns>Configuration object allowing method chaining.</returns>
         public static LoggerConfiguration File(
             this LoggerSinkConfiguration sinkConfiguration,
             ITextFormatter formatter,
@@ -214,10 +307,16 @@ namespace Datadog.Trace.Vendors.Serilog
             RollingInterval rollingInterval = RollingInterval.Infinite,
             bool rollOnFileSizeLimit = false,
             int? retainedFileCountLimit = DefaultRetainedFileCountLimit,
-            Encoding encoding = null)
+            Encoding encoding = null,
+            FileLifecycleHooks hooks = null)
         {
+            if (sinkConfiguration == null) throw new ArgumentNullException(nameof(sinkConfiguration));
+            if (formatter == null) throw new ArgumentNullException(nameof(formatter));
+            if (path == null) throw new ArgumentNullException(nameof(path));
+
             return ConfigureFile(sinkConfiguration.Sink, formatter, path, restrictedToMinimumLevel, fileSizeLimitBytes, levelSwitch,
-                buffered, false, shared, flushToDiskInterval, encoding, rollingInterval, rollOnFileSizeLimit, retainedFileCountLimit);
+                buffered, false, shared, flushToDiskInterval, encoding, rollingInterval, rollOnFileSizeLimit,
+                retainedFileCountLimit, hooks);
         }
 
         /// <summary>
@@ -234,20 +333,16 @@ namespace Datadog.Trace.Vendors.Serilog
         /// the default is "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}".</param>
         /// <returns>Configuration object allowing method chaining.</returns>
         /// <remarks>The file will be written using the UTF-8 character set.</remarks>
+        [Obsolete("New code should not be compiled against this obsolete overload"), EditorBrowsable(EditorBrowsableState.Never)]
         public static LoggerConfiguration File(
             this LoggerAuditSinkConfiguration sinkConfiguration,
             string path,
-            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
-            string outputTemplate = DefaultOutputTemplate,
-            IFormatProvider formatProvider = null,
-            LoggingLevelSwitch levelSwitch = null)
+            LogEventLevel restrictedToMinimumLevel,
+            string outputTemplate,
+            IFormatProvider formatProvider,
+            LoggingLevelSwitch levelSwitch)
         {
-            if (sinkConfiguration == null) throw new ArgumentNullException(nameof(sinkConfiguration));
-            if (path == null) throw new ArgumentNullException(nameof(path));
-            if (outputTemplate == null) throw new ArgumentNullException(nameof(outputTemplate));
-
-            var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
-            return File(sinkConfiguration, formatter, path, restrictedToMinimumLevel, levelSwitch);
+            return File(sinkConfiguration, path, restrictedToMinimumLevel, outputTemplate, formatProvider, levelSwitch, null, null);
         }
 
         /// <summary>
@@ -266,15 +361,82 @@ namespace Datadog.Trace.Vendors.Serilog
         /// to be changed at runtime.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
         /// <remarks>The file will be written using the UTF-8 character set.</remarks>
+        [Obsolete("New code should not be compiled against this obsolete overload"), EditorBrowsable(EditorBrowsableState.Never)]
+        public static LoggerConfiguration File(
+            this LoggerAuditSinkConfiguration sinkConfiguration,
+            ITextFormatter formatter,
+            string path,
+            LogEventLevel restrictedToMinimumLevel,
+            LoggingLevelSwitch levelSwitch)
+        {
+            return File(sinkConfiguration, formatter, path, restrictedToMinimumLevel, levelSwitch, null, null);
+        }
+        
+        /// <summary>
+        /// Write audit log events to the specified file.
+        /// </summary>
+        /// <param name="sinkConfiguration">Logger sink configuration.</param>
+        /// <param name="path">Path to the file.</param>
+        /// <param name="restrictedToMinimumLevel">The minimum level for
+        /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
+        /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+        /// to be changed at runtime.</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="outputTemplate">A message template describing the format used to write to the sink.
+        /// the default is "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}".</param>
+        /// <param name="encoding">Character encoding used to write the text file. The default is UTF-8 without BOM.</param>
+        /// <param name="hooks">Optionally enables hooking into log file lifecycle events.</param>
+        /// <returns>Configuration object allowing method chaining.</returns>
+        public static LoggerConfiguration File(
+            this LoggerAuditSinkConfiguration sinkConfiguration,
+            string path,
+            LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+            string outputTemplate = DefaultOutputTemplate,
+            IFormatProvider formatProvider = null,
+            LoggingLevelSwitch levelSwitch = null,
+            Encoding encoding = null,
+            FileLifecycleHooks hooks = null)
+        {
+            if (sinkConfiguration == null) throw new ArgumentNullException(nameof(sinkConfiguration));
+            if (path == null) throw new ArgumentNullException(nameof(path));
+            if (outputTemplate == null) throw new ArgumentNullException(nameof(outputTemplate));
+
+            var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
+            return File(sinkConfiguration, formatter, path, restrictedToMinimumLevel, levelSwitch, encoding, hooks);
+        }
+
+        /// <summary>
+        /// Write audit log events to the specified file.
+        /// </summary>
+        /// <param name="sinkConfiguration">Logger sink configuration.</param>
+        /// <param name="formatter">A formatter, such as <see cref="JsonFormatter"/>, to convert the log events into
+        /// text for the file. If control of regular text formatting is required, use the other
+        /// overload of <see cref="File(LoggerAuditSinkConfiguration, string, LogEventLevel, string, IFormatProvider, LoggingLevelSwitch, Encoding, FileLifecycleHooks)"/>
+        /// and specify the outputTemplate parameter instead.
+        /// </param>
+        /// <param name="path">Path to the file.</param>
+        /// <param name="restrictedToMinimumLevel">The minimum level for
+        /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
+        /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+        /// to be changed at runtime.</param>
+        /// <param name="encoding">Character encoding used to write the text file. The default is UTF-8 without BOM.</param>
+        /// <param name="hooks">Optionally enables hooking into log file lifecycle events.</param>
+        /// <returns>Configuration object allowing method chaining.</returns>
         public static LoggerConfiguration File(
             this LoggerAuditSinkConfiguration sinkConfiguration,
             ITextFormatter formatter,
             string path,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
-            LoggingLevelSwitch levelSwitch = null)
+            LoggingLevelSwitch levelSwitch = null,
+            Encoding encoding = null,
+            FileLifecycleHooks hooks = null)
         {
+            if (sinkConfiguration == null) throw new ArgumentNullException(nameof(sinkConfiguration));
+            if (formatter == null) throw new ArgumentNullException(nameof(formatter));
+            if (path == null) throw new ArgumentNullException(nameof(path));
+
             return ConfigureFile(sinkConfiguration.Sink, formatter, path, restrictedToMinimumLevel, null, levelSwitch, false, true,
-                false, null, null, RollingInterval.Infinite, false, null);
+                false, null, encoding, RollingInterval.Infinite, false, null, hooks);
         }
 
         static LoggerConfiguration ConfigureFile(
@@ -291,7 +453,8 @@ namespace Datadog.Trace.Vendors.Serilog
             Encoding encoding,
             RollingInterval rollingInterval,
             bool rollOnFileSizeLimit,
-            int? retainedFileCountLimit)
+            int? retainedFileCountLimit,
+            FileLifecycleHooks hooks)
         {
             if (addSink == null) throw new ArgumentNullException(nameof(addSink));
             if (formatter == null) throw new ArgumentNullException(nameof(formatter));
@@ -299,27 +462,28 @@ namespace Datadog.Trace.Vendors.Serilog
             if (fileSizeLimitBytes.HasValue && fileSizeLimitBytes < 0) throw new ArgumentException("Negative value provided; file size limit must be non-negative.", nameof(fileSizeLimitBytes));
             if (retainedFileCountLimit.HasValue && retainedFileCountLimit < 1) throw new ArgumentException("At least one file must be retained.", nameof(retainedFileCountLimit));
             if (shared && buffered) throw new ArgumentException("Buffered writes are not available when file sharing is enabled.", nameof(buffered));
+            if (shared && hooks != null) throw new ArgumentException("File lifecycle hooks are not currently supported for shared log files.", nameof(hooks));
 
             ILogEventSink sink;
 
             if (rollOnFileSizeLimit || rollingInterval != RollingInterval.Infinite)
             {
-                sink = new RollingFileSink(path, formatter, fileSizeLimitBytes, retainedFileCountLimit, encoding, buffered, shared, rollingInterval, rollOnFileSizeLimit);
+                sink = new RollingFileSink(path, formatter, fileSizeLimitBytes, retainedFileCountLimit, encoding, buffered, shared, rollingInterval, rollOnFileSizeLimit, hooks);
             }
             else
             {
                 try
                 {
-#pragma warning disable 618
                     if (shared)
                     {
-                        sink = new SharedFileSink(path, formatter, fileSizeLimitBytes);
+#pragma warning disable 618
+                        sink = new SharedFileSink(path, formatter, fileSizeLimitBytes, encoding);
+#pragma warning restore 618
                     }
                     else
                     {
-                        sink = new FileSink(path, formatter, fileSizeLimitBytes, buffered: buffered);
+                        sink = new FileSink(path, formatter, fileSizeLimitBytes, encoding, buffered, hooks);
                     }
-#pragma warning restore 618
                 }
                 catch (Exception ex)
                 {
@@ -334,7 +498,9 @@ namespace Datadog.Trace.Vendors.Serilog
 
             if (flushToDiskInterval.HasValue)
             {
+#pragma warning disable 618
                 sink = new PeriodicFlushToDiskSink(sink, flushToDiskInterval.Value);
+#pragma warning restore 618
             }
 
             return addSink(sink, restrictedToMinimumLevel, levelSwitch);

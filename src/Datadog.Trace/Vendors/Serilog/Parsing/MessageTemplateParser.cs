@@ -38,10 +38,11 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// is not syntactically valid, text tokens will be returned. The parser
         /// will make a best effort to extract valid property tokens even in the
         /// presence of parsing issues.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="messageTemplate"/> is <code>null</code></exception>
         public MessageTemplate Parse(string messageTemplate)
         {
-            if (messageTemplate == null)
-                throw new ArgumentNullException(nameof(messageTemplate));
+            if (messageTemplate == null) throw new ArgumentNullException(nameof(messageTemplate));
+
             return new MessageTemplate(messageTemplate, Tokenize(messageTemplate));
         }
 
@@ -94,8 +95,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
             if (tagContent.Length == 0)
                 return new TextToken(rawText, first);
 
-            string propertyNameAndDestructuring, format, alignment;
-            if (!TrySplitTagContent(tagContent, out propertyNameAndDestructuring, out format, out alignment))
+            if (!TrySplitTagContent(tagContent, out var propertyNameAndDestructuring, out var format, out var alignment))
                 return new TextToken(rawText, first);
 
             var propertyName = propertyNameAndDestructuring;
@@ -137,8 +137,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
                 if (lastDash > 0)
                     return new TextToken(rawText, first);
 
-                var width = 0;
-                if (!int.TryParse(lastDash == -1 ? alignment : alignment.Substring(1), out width) || width == 0)
+                if (!int.TryParse(lastDash == -1 ? alignment : alignment.Substring(1), out var width) || width == 0)
                     return new TextToken(rawText, first);
 
                 var direction = lastDash == -1 ?
@@ -218,10 +217,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
                 c == ':';
         }
 
-        static bool IsValidInPropertyName(char c)
-        {
-            return char.IsLetterOrDigit(c) || c == '_';
-        }
+        static bool IsValidInPropertyName(char c) => char.IsLetterOrDigit(c) || c == '_';
 
         static bool TryGetDestructuringHint(char c, out Destructuring destructuring)
         {
@@ -262,7 +258,8 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
             return c != '}' &&
                 (char.IsLetterOrDigit(c) ||
                  char.IsPunctuation(c) ||
-                 c == ' ');
+                 c == ' ' ||
+                 c == '+');
         }
 
         static TextToken ParseTextToken(int startAt, string messageTemplate, out int next)

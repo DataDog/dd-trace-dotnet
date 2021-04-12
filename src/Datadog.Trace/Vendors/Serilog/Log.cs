@@ -49,15 +49,11 @@ namespace Datadog.Trace.Vendors.Serilog
         /// <summary>
         /// The globally-shared logger.
         /// </summary>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="value"/> is <code>null</code></exception>
         public static ILogger Logger
         {
-            get { return _logger; }
-            set
-            {
-                if (value == null) throw new ArgumentNullException(nameof(value));
-                _logger = value;
-            }
+            get => _logger;
+            set => _logger = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         /// <summary>
@@ -65,7 +61,7 @@ namespace Datadog.Trace.Vendors.Serilog
         /// </summary>
         public static void CloseAndFlush()
         {
-            ILogger logger = Interlocked.Exchange(ref _logger, SilentLogger.Instance);
+            var logger = Interlocked.Exchange(ref _logger, SilentLogger.Instance);
 
             (logger as IDisposable)?.Dispose();
         }
@@ -105,10 +101,7 @@ namespace Datadog.Trace.Vendors.Serilog
         /// </summary>
         /// <typeparam name="TSource">Type generating log messages in the context.</typeparam>
         /// <returns>A logger that will enrich log events as specified.</returns>
-        public static ILogger ForContext<TSource>()
-        {
-            return Logger.ForContext<TSource>();
-        }
+        public static ILogger ForContext<TSource>() => Logger.ForContext<TSource>();
 
         /// <summary>
         /// Create a logger that marks log events as being from the specified
@@ -116,10 +109,7 @@ namespace Datadog.Trace.Vendors.Serilog
         /// </summary>
         /// <param name="source">Type generating log messages in the context.</param>
         /// <returns>A logger that will enrich log events as specified.</returns>
-        public static ILogger ForContext(Type source)
-        {
-            return Logger.ForContext(source);
-        }
+        public static ILogger ForContext(Type source) => Logger.ForContext(source);
 
         /// <summary>
         /// Write an event to the log.
@@ -265,10 +255,7 @@ namespace Datadog.Trace.Vendors.Serilog
         /// </summary>
         /// <param name="level">Level to check.</param>
         /// <returns>True if the level is enabled; otherwise, false.</returns>
-        public static bool IsEnabled(LogEventLevel level)
-        {
-            return Logger.IsEnabled(level);
-        }
+        public static bool IsEnabled(LogEventLevel level) => Logger.IsEnabled(level);
 
         /// <summary>
         /// Write a log event with the <see cref="LogEventLevel.Verbose"/> level.
@@ -743,7 +730,7 @@ namespace Datadog.Trace.Vendors.Serilog
         {
             Write(LogEventLevel.Warning, messageTemplate, propertyValue);
         }
-        
+
         /// <summary>
         /// Write a log event with the <see cref="LogEventLevel.Warning"/> level.
         /// </summary>
@@ -1194,12 +1181,12 @@ namespace Datadog.Trace.Vendors.Serilog
         /// Uses configured scalar conversion and destructuring rules to bind a property value to its captured
         /// representation.
         /// </summary>
-        /// <returns>True if the property could be bound, otherwise false (<summary>ILogger</summary>
         /// <param name="propertyName">The name of the property. Must be non-empty.</param>
         /// <param name="value">The property value.</param>
         /// <param name="destructureObjects">If true, the value will be serialized as a structured
         /// object if possible; if false, the object will be recorded as a scalar or simple array.</param>
         /// <param name="property">The resulting property.</param>
+        /// <returns>True if the property could be bound, otherwise false (<summary>ILogger</summary>
         /// methods never throw exceptions).</returns>
         public static bool BindProperty(string propertyName, object value, bool destructureObjects, out LogEventProperty property)
         {

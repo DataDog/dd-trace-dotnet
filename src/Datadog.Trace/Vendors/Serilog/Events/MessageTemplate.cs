@@ -46,7 +46,7 @@ namespace Datadog.Trace.Vendors.Serilog.Events
         /// <param name="tokens">The text and property tokens defining the template.</param>
         public MessageTemplate(IEnumerable<MessageTemplateToken> tokens)
             // ReSharper disable PossibleMultipleEnumeration
-            : this(string.Join("", tokens), tokens)
+            : this(string.Concat(tokens), tokens)
             // ReSharper enable PossibleMultipleEnumeration
         {
         }
@@ -57,13 +57,12 @@ namespace Datadog.Trace.Vendors.Serilog.Events
         /// <param name="text">The full text of the template; used by Serilog internally to avoid unneeded
         /// string concatenation.</param>
         /// <param name="tokens">The text and property tokens defining the template.</param>
+        /// <exception cref="ArgumentNullException">When <paramref name="text"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="tokens"/> is <code>null</code></exception>
         public MessageTemplate(string text, IEnumerable<MessageTemplateToken> tokens)
         {
-            if (text == null) throw new ArgumentNullException(nameof(text));
-            if (tokens == null) throw new ArgumentNullException(nameof(tokens));
-
-            Text = text;
-            _tokens = tokens.ToArray();
+            Text = text ?? throw new ArgumentNullException(nameof(text));
+            _tokens = (tokens ?? throw new ArgumentNullException(nameof(tokens))).ToArray();
 
             var propertyTokens = GetElementsOfTypeToArray<PropertyToken>(_tokens);
             if (propertyTokens.Length != 0)
@@ -96,13 +95,12 @@ namespace Datadog.Trace.Vendors.Serilog.Events
         /// Similar to <see cref="Enumerable.OfType{TResult}"/>, but faster.
         /// </summary>
         static TResult[] GetElementsOfTypeToArray<TResult>(MessageTemplateToken[] tokens)
-            where TResult: class
+            where TResult : class
         {
             var result = new List<TResult>(tokens.Length / 2);
             for (var i = 0; i < tokens.Length; i++)
             {
-                var token = tokens[i] as TResult;
-                if (token != null)
+                if (tokens[i] is TResult token)
                 {
                     result.Add(token);
                 }
@@ -119,10 +117,7 @@ namespace Datadog.Trace.Vendors.Serilog.Events
         /// Render the template as a string.
         /// </summary>
         /// <returns>The string representation of the template.</returns>
-        public override string ToString()
-        {
-            return Text;
-        }
+        public override string ToString() => Text;
 
         /// <summary>
         /// The tokens parsed from the template.
@@ -144,6 +139,7 @@ namespace Datadog.Trace.Vendors.Serilog.Events
         /// <returns>The message created from the template and properties. If the
         /// properties are mismatched with the template, the template will be
         /// returned with incomplete substitution.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
         public string Render(IReadOnlyDictionary<string, LogEventPropertyValue> properties, IFormatProvider formatProvider = null)
         {
             var writer = new StringWriter(formatProvider);
@@ -160,10 +156,13 @@ namespace Datadog.Trace.Vendors.Serilog.Events
         /// properties are mismatched with the template, the template will be
         /// returned with incomplete substitution.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
         public void Render(IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output, IFormatProvider formatProvider = null)
         {
             if (properties == null) throw new ArgumentNullException(nameof(properties));
             if (output == null) throw new ArgumentNullException(nameof(output));
+
             MessageTemplateRenderer.Render(this, properties, output, null, formatProvider);
         }
     }

@@ -17,7 +17,6 @@
 // limitations under the License.
 
 using System;
-using System.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Vendors.Serilog.Core.Sinks
@@ -29,15 +28,14 @@ namespace Datadog.Trace.Vendors.Serilog.Core.Sinks
     /// <remarks>The properties dictionary is copied, however the values within
     /// the dictionary (of type <see cref="LogEventProperty"/> are expected to
     /// be immutable.</remarks>
-    sealed class SecondaryLoggerSink : ILogEventSink, IDisposable
+    class SecondaryLoggerSink : ILogEventSink, IDisposable
     {
         readonly ILogger _logger;
         readonly bool _attemptDispose;
 
         public SecondaryLoggerSink(ILogger logger, bool attemptDispose = false)
         {
-            if (logger == null) throw new ArgumentNullException(nameof(logger));
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _attemptDispose = attemptDispose;
         }
 
@@ -45,13 +43,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core.Sinks
         {
             if (logEvent == null) throw new ArgumentNullException(nameof(logEvent));
 
-            var copy = new LogEvent(
-                logEvent.Timestamp,
-                logEvent.Level,
-                logEvent.Exception,
-                logEvent.MessageTemplate,
-                logEvent.Properties.Select(p => new LogEventProperty(p.Key, p.Value)));
-
+            var copy = logEvent.Copy();
             _logger.Write(copy);
         }
 

@@ -46,24 +46,21 @@ namespace Datadog.Trace.Vendors.Serilog.Data
         /// <param name="state">Operation state.</param>
         /// <param name="value">The value to visit.</param>
         /// <returns>The result of visiting <paramref name="value"/>.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="value"/> is <code>null</code></exception>
         protected virtual TResult Visit(TState state, LogEventPropertyValue value)
         {
             if (value == null) throw new ArgumentNullException(nameof(value));
 
-            var sv = value as ScalarValue;
-            if (sv != null)
+            if (value is ScalarValue sv)
                 return VisitScalarValue(state, sv);
 
-            var seqv = value as SequenceValue;
-            if (seqv != null)
+            if (value is SequenceValue seqv)
                 return VisitSequenceValue(state, seqv);
 
-            var strv = value as StructureValue;
-            if (strv != null)
+            if (value is StructureValue strv)
                 return VisitStructureValue(state, strv);
-            
-            var dictv = value as DictionaryValue;
-            if (dictv != null)
+
+            if (value is DictionaryValue dictv)
                 return VisitDictionaryValue(state, dictv);
 
             return VisitUnsupportedValue(state, value);
@@ -102,11 +99,13 @@ namespace Datadog.Trace.Vendors.Serilog.Data
         protected abstract TResult VisitDictionaryValue(TState state, DictionaryValue dictionary);
 
         /// <summary>
-        /// Visit a value of an unsupported type.
+        /// Visit a value of an unsupported type. Always throws <see cref="NotSupportedException"/>, when is not overridden.
         /// </summary>
         /// <param name="state">Operation state.</param>
         /// <param name="value">The value to visit.</param>
         /// <returns>The result of visiting <paramref name="value"/>.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="value"/> is <code>null</code></exception>
+        /// <exception cref="NotSupportedException">Always</exception>
         // ReSharper disable once UnusedParameter.Global
         protected virtual TResult VisitUnsupportedValue(TState state, LogEventPropertyValue value)
         {

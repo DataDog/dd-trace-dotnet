@@ -55,7 +55,7 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
         readonly bool _propagateExceptions;
 
         public PropertyValueConverter(
-            int maximumDestructuringDepth, 
+            int maximumDestructuringDepth,
             int maximumStringLength,
             int maximumCollectionCount,
             IEnumerable<Type> additionalScalarTypes,
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
             if (maximumDestructuringDepth < 0) throw new ArgumentOutOfRangeException(nameof(maximumDestructuringDepth));
             if (maximumStringLength < 2) throw new ArgumentOutOfRangeException(nameof(maximumStringLength));
             if (maximumCollectionCount < 1) throw new ArgumentOutOfRangeException(nameof(maximumCollectionCount));
-            
+
             _propagateExceptions = propagateExceptions;
             _maximumStringLength = maximumStringLength;
             _maximumCollectionCount = maximumCollectionCount;
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
             };
 
             _destructuringPolicies = additionalDestructuringPolicies
-                .Concat(new IDestructuringPolicy []
+                .Concat(new IDestructuringPolicy[]
                 {
                     new DelegateDestructuringPolicy(),
                     new ReflectionTypesScalarDestructuringPolicy()
@@ -137,9 +137,6 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
                 return Stringify(value);
             }
 
-            var valueType = value.GetType();
-            _depthLimiter.SetCurrentDepth(depth);
-
             if (destructuring == Destructuring.Destructure)
             {
                 if (value is string stringValue)
@@ -148,11 +145,16 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
                 }
             }
 
+            if (value is string)
+                return new ScalarValue(value);
+
             foreach (var scalarConversionPolicy in _scalarConversionPolicies)
             {
                 if (scalarConversionPolicy.TryConvertToScalar(value, out var converted))
                     return converted;
             }
+
+            DepthLimiter.SetCurrentDepth(depth);
 
             if (destructuring == Destructuring.Destructure)
             {
@@ -163,6 +165,8 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
                 }
             }
 
+            var valueType = value.GetType();
+
             if (TryConvertEnumerable(value, destructuring, valueType, out var enumerableResult))
                 return enumerableResult;
 
@@ -172,8 +176,8 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
             if (TryConvertCompilerGeneratedType(value, destructuring, valueType, out var compilerGeneratedResult))
                 return compilerGeneratedResult;
 
-            return new ScalarValue(value.ToString());
-        }        
+            return new ScalarValue(value.ToString() ?? "");
+        }
 
         bool TryConvertEnumerable(object value, Destructuring destructuring, Type valueType, out LogEventPropertyValue result)
         {
@@ -299,7 +303,7 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
         LogEventPropertyValue Stringify(object value)
         {
             var stringified = value.ToString();
-            var truncated = TruncateIfNecessary(stringified);
+            var truncated = stringified == null ? "" : TruncateIfNecessary(stringified);
             return new ScalarValue(truncated);
         }
 
@@ -313,7 +317,7 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
             return text;
         }
 
-        bool TryGetDictionary(object value, Type valueType, out IDictionary dictionary)
+        static bool TryGetDictionary(object value, Type valueType, out IDictionary dictionary)
         {
             if (valueType.IsConstructedGenericType &&
                 valueType.GetGenericTypeDefinition() == typeof(Dictionary<,>) &&
@@ -327,7 +331,7 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
             return false;
         }
 
-        bool IsValidDictionaryKeyType(Type valueType)
+        static bool IsValidDictionaryKeyType(Type valueType)
         {
             return BuiltInScalarTypes.Contains(valueType) ||
                    valueType.GetTypeInfo().IsEnum;
@@ -368,11 +372,10 @@ namespace Datadog.Trace.Vendors.Serilog.Capturing
             var typeInfo = type.GetTypeInfo();
             var typeName = type.Name;
 
-            //C# Anonymous types always start with "<>" and VB's start with "VB$"
+            // C# Anonymous types always start with "<>" and VB's start with "VB$"
             return typeInfo.IsGenericType && typeInfo.IsSealed && typeInfo.IsNotPublic && type.Namespace == null
                 && (typeName[0] == '<'
                     || (typeName.Length > 2 && typeName[0] == 'V' && typeName[1] == 'B' && typeName[2] == '$'));
         }
     }
 }
-

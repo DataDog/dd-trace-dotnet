@@ -31,20 +31,19 @@ namespace Datadog.Trace.Vendors.Serilog.Configuration
 
         internal LoggerSettingsConfiguration(LoggerConfiguration loggerConfiguration)
         {
-            if (loggerConfiguration == null) throw new ArgumentNullException(nameof(loggerConfiguration));
-            _loggerConfiguration = loggerConfiguration;
+            _loggerConfiguration = loggerConfiguration ?? throw new ArgumentNullException(nameof(loggerConfiguration));
         }
 
         /// <summary>
         /// Apply external settings to the logger configuration.
         /// </summary>
         /// <returns>Configuration object allowing method chaining.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="settings"/> is <code>null</code></exception>
         public LoggerConfiguration Settings(ILoggerSettings settings)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));
 
             settings.Configure(_loggerConfiguration);
-
             return _loggerConfiguration;
         }
 
@@ -54,9 +53,11 @@ namespace Datadog.Trace.Vendors.Serilog.Configuration
         /// <param name="settings">A list of key-value pairs describing logger settings.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
         /// <remarks>In case of duplicate keys, the last value for the key is kept and the previous ones are ignored.</remarks>
+        /// <exception cref="ArgumentNullException">When <paramref name="settings"/> is <code>null</code></exception>
         public LoggerConfiguration KeyValuePairs(IEnumerable<KeyValuePair<string, string>> settings)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));
+
             var uniqueSettings = new Dictionary<string, string>();
             foreach (var kvp in settings)
             {

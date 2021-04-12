@@ -34,8 +34,9 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// </summary>
         /// <param name="text">The text of the token.</param>
         /// <param name="startIndex">The token's start index in the template.</param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public TextToken(string text, int startIndex = -1) : base(startIndex)
+        /// <exception cref="ArgumentNullException">When <paramref name="text"/> is <code>null</code></exception>
+        public TextToken(string text, int startIndex = -1)
+            : base(startIndex)
         {
             Text = text ?? throw new ArgumentNullException(nameof(text));
         }
@@ -51,9 +52,11 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// <param name="properties">Properties that may be represented by the token.</param>
         /// <param name="output">Output for the rendered string.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
         public override void Render(IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output, IFormatProvider formatProvider = null)
         {
             if (output == null) throw new ArgumentNullException(nameof(output));
+
             MessageTemplateRenderer.RenderTextToken(this, output);
         }
 
@@ -66,8 +69,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
         public override bool Equals(object obj)
         {
-            var tt = obj as TextToken;
-            return tt != null && tt.Text == Text;
+            return obj is TextToken tt && tt.Text == Text;
         }
 
         /// <summary>

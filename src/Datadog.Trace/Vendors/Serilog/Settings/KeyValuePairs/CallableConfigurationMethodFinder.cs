@@ -51,7 +51,7 @@ namespace Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs
             if (configType == typeof(LoggerAuditSinkConfiguration))
                 methods.AddRange(SurrogateConfigurationMethods.AuditTo);
 
-            // FromLogContext is an instance method rather than an extension. 
+            // FromLogContext is an instance method rather than an extension.
             if (configType == typeof(LoggerEnrichmentConfiguration))
                 methods.AddRange(SurrogateConfigurationMethods.Enrich);
 

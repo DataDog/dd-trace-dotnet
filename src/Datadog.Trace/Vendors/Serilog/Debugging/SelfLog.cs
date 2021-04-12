@@ -53,6 +53,7 @@ namespace Datadog.Trace.Vendors.Serilog.Debugging
         /// </summary>
         /// <param name="output">A synchronized <see cref="TextWriter"/> to which
         /// self-log messages will be written.</param>
+        /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
         // ReSharper disable once MemberCanBePrivate.Global
         public static void Enable(TextWriter output)
         {
@@ -70,10 +71,10 @@ namespace Datadog.Trace.Vendors.Serilog.Debugging
         /// </summary>
         /// <param name="output">An action to invoke with self-log messages.</param>
         /// // ReSharper disable once MemberCanBePrivate.Global
+        /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
         public static void Enable(Action<string> output)
         {
-            if (output == null) throw new ArgumentNullException(nameof(output));
-            _output = output;
+            _output = output ?? throw new ArgumentNullException(nameof(output));
         }
 
         /// <summary>

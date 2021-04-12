@@ -26,8 +26,8 @@ namespace Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs
 {
     class SettingValueConversions
     {
-        // should match "The.NameSpace.TypeName::MemberName" optionnally followed by
-        // usual assembly qualifiers like : 
+        // should match "The.NameSpace.TypeName::MemberName" optionally followed by
+        // usual assembly qualifiers like :
         // ", MyAssembly, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
         static Regex StaticMemberAccessorRegex = new Regex("^(?<shortTypeName>[^:]+)::(?<memberName>[A-Za-z][A-Za-z0-9]*)(?<typeNameExtraQualifiers>[^:]*)$");
 
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs
             {
                 { typeof(Uri), s => new Uri(s) },
                 { typeof(TimeSpan), s => TimeSpan.Parse(s) },
-                { typeof(Type), s => Type.GetType(s, throwOnError:true) },
+                { typeof(Type), s => Type.GetType(s, throwOnError: true) },
             };
 
         public static object ConvertToType(string value, Type toType)

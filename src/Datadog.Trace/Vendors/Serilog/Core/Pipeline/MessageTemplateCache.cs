@@ -43,8 +43,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core.Pipeline
 
         public MessageTemplateCache(IMessageTemplateParser innerParser)
         {
-            if (innerParser == null) throw new ArgumentNullException(nameof(innerParser));
-            _innerParser = innerParser;
+            _innerParser = innerParser ?? throw new ArgumentNullException(nameof(innerParser));
         }
 
         public MessageTemplate Parse(string messageTemplate)
@@ -62,7 +61,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core.Pipeline
                 return result;
 #else
             MessageTemplate result;
-            lock(_templatesLock)
+            lock (_templatesLock)
                 if (_templates.TryGetValue(messageTemplate, out result))
                     return result;
 #endif

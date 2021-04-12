@@ -26,8 +26,7 @@ namespace Datadog.Trace.Vendors.Serilog.Policies
     {
         public bool TryDestructure(object value, ILogEventPropertyValueFactory propertyValueFactory, out LogEventPropertyValue result)
         {
-            var del = value as Delegate;
-            if (del != null)
+            if (value is Delegate del)
             {
                 result = new ScalarValue(del.ToString());
                 return true;

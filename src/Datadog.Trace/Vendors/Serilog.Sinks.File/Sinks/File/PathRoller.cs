@@ -56,7 +56,8 @@ namespace Datadog.Trace.Vendors.Serilog.Sinks.File
                 "(?<" + PeriodMatchGroup + ">\\d{" + _periodFormat.Length + "})" +
                 "(?<" + SequenceNumberMatchGroup + ">_[0-9]{3,}){0,1}" +
                 Regex.Escape(_filenameSuffix) +
-                "$");
+                "$",
+                RegexOptions.Compiled);
 
             DirectorySearchPattern = $"{_filenamePrefix}*{_filenameSuffix}";
         }

@@ -26,34 +26,19 @@ namespace Datadog.Trace.Vendors.Serilog.Core.Pipeline
     {
         public static readonly ILogger Instance = new SilentLogger();
 
-        private SilentLogger()
+        SilentLogger()
         {
         }
 
-        public ILogger ForContext(ILogEventEnricher enricher)
-        {
-            return this;
-        }
+        public ILogger ForContext(ILogEventEnricher enricher) => this;
 
-        public ILogger ForContext(IEnumerable<ILogEventEnricher> enrichers)
-        {
-            return this;
-        }
+        public ILogger ForContext(IEnumerable<ILogEventEnricher> enrichers) => this;
 
-        public ILogger ForContext(string propertyName, object value, bool destructureObjects = false)
-        {
-            return this;
-        }
+        public ILogger ForContext(string propertyName, object value, bool destructureObjects = false) => this;
 
-        public ILogger ForContext<TSource>()
-        {
-            return this;
-        }
+        public ILogger ForContext<TSource>() => this;
 
-        public ILogger ForContext(Type source)
-        {
-            return this;
-        }
+        public ILogger ForContext(Type source) => this;
 
         public void Write(LogEvent logEvent)
         {
@@ -99,10 +84,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core.Pipeline
         {
         }
 
-        public bool IsEnabled(LogEventLevel level)
-        {
-            return false;
-        }
+        public bool IsEnabled(LogEventLevel level) => false;
 
         public void Verbose(string messageTemplate)
         {

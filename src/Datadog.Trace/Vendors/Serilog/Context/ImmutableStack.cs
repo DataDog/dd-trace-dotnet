@@ -17,6 +17,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 // General-purpose type; not all features are used here.
@@ -36,26 +37,16 @@ namespace Datadog.Trace.Vendors.Serilog.Context
 
         ImmutableStack(ImmutableStack<T> under, T top)
         {
-            if (under == null) throw new ArgumentNullException(nameof(under));
-            _under = under;
+            _under = under ?? throw new ArgumentNullException(nameof(under));
             Count = under.Count + 1;
             _top = top;
         }
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            var next = this;
-            while (!next.IsEmpty)
-            {
-                yield return next.Top;
-                next = next._under;
-            }
-        }
+        public Enumerator GetEnumerator() => new Enumerator(this);
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => new Enumerator(this);
+
+        IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
 
         public int Count { get; }
 
@@ -67,5 +58,41 @@ namespace Datadog.Trace.Vendors.Serilog.Context
 
         public T Top => _top;
 
+        internal struct Enumerator : IEnumerator<T>
+        {
+            readonly ImmutableStack<T> _stack;
+            ImmutableStack<T> _top;
+            T _current;
+
+            public Enumerator(ImmutableStack<T> stack)
+            {
+                _stack = stack;
+                _top = stack;
+                _current = default;
+            }
+
+            public bool MoveNext()
+            {
+                if (_top.IsEmpty)
+                    return false;
+                _current = _top.Top;
+                _top = _top._under;
+                return true;
+            }
+
+            public void Reset()
+            {
+                _top = _stack;
+                _current = default;
+            }
+
+            public T Current => _current;
+
+            object IEnumerator.Current => _current;
+
+            public void Dispose()
+            {
+            }
+        }
     }
 }

@@ -60,7 +60,8 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// <param name="alignment">The alignment applied to the property, if any.</param>
         /// <param name="destructuring">The destructuring strategy applied to the property, if any.</param>
         /// <param name="startIndex">The token's start index in the template.</param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="propertyName"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="rawText"/> is <code>null</code></exception>
         public PropertyToken(string propertyName, string rawText, string format = null, Alignment? alignment = null, Destructuring destructuring = Destructuring.Default, int startIndex = -1)
             : base(startIndex)
         {
@@ -70,8 +71,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
             _rawText = rawText ?? throw new ArgumentNullException(nameof(rawText));
             Alignment = alignment;
 
-            int position;
-            if (int.TryParse(PropertyName, NumberStyles.None, CultureInfo.InvariantCulture, out position) &&
+            if (int.TryParse(PropertyName, NumberStyles.None, CultureInfo.InvariantCulture, out var position) &&
                 position >= 0)
             {
                 _position = position;
@@ -89,12 +89,14 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// <param name="properties">Properties that may be represented by the token.</param>
         /// <param name="output">Output for the rendered string.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
         public override void Render(IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output, IFormatProvider formatProvider = null)
         {
             if (properties == null) throw new ArgumentNullException(nameof(properties));
             if (output == null) throw new ArgumentNullException(nameof(output));
 
-            MessageTemplateRenderer.RenderPropertyToken(this, properties, output, formatProvider, false, false);
+            MessageTemplateRenderer.RenderPropertyToken(this, properties, output, formatProvider, isLiteral: false, isJson: false);
         }
 
         /// <summary>
@@ -150,8 +152,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
         /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
         public override bool Equals(object obj)
         {
-            var pt = obj as PropertyToken;
-            return pt != null &&
+            return obj is PropertyToken pt &&
                 pt.Destructuring == Destructuring &&
                 pt.Format == Format &&
                 pt.PropertyName == PropertyName &&

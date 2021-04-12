@@ -34,10 +34,11 @@ namespace Datadog.Trace.Vendors.Serilog.Events
         /// Create a <see cref="SequenceValue"/> with the provided <paramref name="elements"/>.
         /// </summary>
         /// <param name="elements">The elements of the sequence.</param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException">When <paramref name="elements"/> is <code>null</code></exception>
         public SequenceValue(IEnumerable<LogEventPropertyValue> elements)
         {
             if (elements == null) throw new ArgumentNullException(nameof(elements));
+
             _elements = elements.ToArray();
         }
 
@@ -53,13 +54,14 @@ namespace Datadog.Trace.Vendors.Serilog.Events
         /// <param name="format">A format string applied to the value, or null.</param>
         /// <param name="formatProvider">A format provider to apply to the value, or null to use the default.</param>
         /// <seealso cref="LogEventPropertyValue.ToString(string, IFormatProvider)"/>.
+        /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
         public override void Render(TextWriter output, string format = null, IFormatProvider formatProvider = null)
         {
             if (output == null) throw new ArgumentNullException(nameof(output));
 
             output.Write('[');
             var allButLast = _elements.Length - 1;
-            for (var i = 0; i < allButLast; ++i )
+            for (var i = 0; i < allButLast; ++i)
             {
                 _elements[i].Render(output, format, formatProvider);
                 output.Write(", ");

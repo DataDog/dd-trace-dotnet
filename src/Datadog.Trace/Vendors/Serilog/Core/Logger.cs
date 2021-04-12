@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Vendors.Serilog.Capturing;
 using Datadog.Trace.Vendors.Serilog.Core.Enrichers;
 using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
@@ -36,6 +37,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core
     internal sealed class Logger : ILogger, ILogEventSink, IDisposable
     {
         static readonly object[] NoPropertyValues = new object[0];
+        static readonly LogEventProperty[] NoProperties = new LogEventProperty[0];
 
         readonly MessageTemplateProcessor _messageTemplateProcessor;
         readonly ILogEventSink _sink;
@@ -145,17 +147,15 @@ namespace Datadog.Trace.Vendors.Serilog.Core
             }
 
             // It'd be nice to do the destructuring lazily, but unfortunately `value` may be mutated between
-            // now and the first log event written...
-            // A future optimization opportunity may be to implement ILogEventEnricher on LogEventProperty to
-            // remove one more allocation.
-            var enricher = new FixedPropertyEnricher(_messageTemplateProcessor.CreateProperty(propertyName, value, destructureObjects));
+            // now and the first log event written.
+            var propertyValue = _messageTemplateProcessor.CreatePropertyValue(value, destructureObjects);
+            var enricher = new FixedPropertyEnricher(new EventProperty(propertyName, propertyValue));
 
             var minimumLevel = _minimumLevel;
             var levelSwitch = _levelSwitch;
             if (_overrideMap != null && propertyName == Constants.SourceContextPropertyName)
             {
-                var context = value as string;
-                if (context != null)
+                if (value is string context)
                     _overrideMap.GetEffectiveLevel(context, out minimumLevel, out levelSwitch);
             }
 
@@ -189,10 +189,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core
         /// </summary>
         /// <typeparam name="TSource">Type generating log messages in the context.</typeparam>
         /// <returns>A logger that will enrich log events as specified.</returns>
-        public ILogger ForContext<TSource>()
-        {
-            return ForContext(typeof(TSource));
-        }
+        public ILogger ForContext<TSource>() => ForContext(typeof(TSource));
 
         /// <summary>
         /// Write a log event with the specified level.
@@ -273,7 +270,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core
         }
 
         /// <summary>
-        /// Determine if events at the specified level will be passed through
+        /// Determine if events at the specified level, and higher, will be passed through
         /// to the log sinks.
         /// </summary>
         /// <param name="level">Level to check.</param>
@@ -375,9 +372,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core
                 propertyValues.GetType() != typeof(object[]))
                 propertyValues = new object[] { propertyValues };
 
-            MessageTemplate parsedTemplate;
-            IEnumerable<LogEventProperty> boundProperties;
-            _messageTemplateProcessor.Process(messageTemplate, propertyValues, out parsedTemplate, out boundProperties);
+            _messageTemplateProcessor.Process(messageTemplate, propertyValues, out var parsedTemplate, out var boundProperties);
 
             var logEvent = new LogEvent(DateTimeOffset.Now, level, exception, parsedTemplate, boundProperties);
             Dispatch(logEvent);
@@ -1315,7 +1310,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core
 
         /// <summary>
         /// Uses configured scalar conversion and destructuring rules to bind a set of properties to a
-        /// message template. Returns false if the template or values are invalid (<summary>ILogger</summary>
+        /// message template. Returns false if the template or values are invalid (<c>ILogger</c>
         /// methods never throw exceptions).
         /// </summary>
         /// <param name="messageTemplate">Message template describing an event.</param>
@@ -1343,7 +1338,11 @@ namespace Datadog.Trace.Vendors.Serilog.Core
                 return false;
             }
 
-            _messageTemplateProcessor.Process(messageTemplate, propertyValues, out parsedTemplate, out boundProperties);
+            _messageTemplateProcessor.Process(messageTemplate, propertyValues, out parsedTemplate, out var boundEventProperties);
+            boundProperties = boundEventProperties.Length == 0 ?
+                NoProperties :
+                boundEventProperties.Select(p => new LogEventProperty(p));
+
             return true;
         }
 
@@ -1351,12 +1350,12 @@ namespace Datadog.Trace.Vendors.Serilog.Core
         /// Uses configured scalar conversion and destructuring rules to bind a property value to its captured
         /// representation.
         /// </summary>
-        /// <returns>True if the property could be bound, otherwise false (<summary>ILogger</summary>
         /// <param name="propertyName">The name of the property. Must be non-empty.</param>
         /// <param name="value">The property value.</param>
         /// <param name="destructureObjects">If true, the value will be serialized as a structured
         /// object if possible; if false, the object will be recorded as a scalar or simple array.</param>
         /// <param name="property">The resulting property.</param>
+        /// <returns>True if the property could be bound, otherwise false (<summary>ILogger</summary>
         /// methods never throw exceptions).</returns>
         public bool BindProperty(string propertyName, object value, bool destructureObjects, out LogEventProperty property)
         {
@@ -1377,7 +1376,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core
         {
             _dispose?.Invoke();
         }
-        
+
         /// <summary>
         /// An <see cref="ILogger"/> instance that efficiently ignores all method calls.
         /// </summary>
