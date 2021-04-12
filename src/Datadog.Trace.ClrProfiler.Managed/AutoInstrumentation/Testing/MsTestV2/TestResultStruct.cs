@@ -10,6 +10,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
     public struct TestResultStruct
     {
         /// <summary>
+        /// Gets the outcome enum
+        /// </summary>
+        public UnitTestOutcome Outcome;
+
+        /// <summary>
         /// Test failure exception
         /// </summary>
         public Exception TestFailureException;
