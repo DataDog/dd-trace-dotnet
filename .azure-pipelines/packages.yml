@@ -117,16 +117,16 @@ stages:
         arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(tracerHome)/netcoreapp3.1
 
     - task: DockerCompose@0
-      displayName: docker-compose run -e buildConfiguration=$(buildConfiguration) Profiler
+      displayName: docker-compose run Profiler
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run Profiler
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
 
     - task: DockerCompose@0
-      displayName: docker-compose run -e buildConfiguration=$(buildConfiguration) package
+      displayName: docker-compose run package
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run package
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package
 
     - publish: deploy/linux
       artifact: linux-packages
@@ -171,16 +171,16 @@ stages:
         arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(tracerHome)/netcoreapp3.1
 
     - task: DockerCompose@0
-      displayName: docker-compose run -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
+      displayName: docker-compose run Profiler.Alpine
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run Profiler.Alpine
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
 
     - task: DockerCompose@0
-      displayName: docker-compose run -e buildConfiguration=$(buildConfiguration) package.alpine
+      displayName: docker-compose run package.alpine
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run package.alpine
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package.alpine
 
     - publish: deploy/linux
       artifact: linux-alpine-packages
