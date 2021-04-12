@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                                 }
 
                                 errorMessage = testException.Message;
-                                errorStackTrace = testException.StackTrace;
+                                errorStackTrace = testException.ToString();
                             }
 
                             switch (testResult.Outcome)
