@@ -169,7 +169,7 @@ stages:
       displayName: docker-compose run Profiler
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run Profiler
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
 
     - script: |
         chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
@@ -179,7 +179,7 @@ stages:
       displayName: docker-compose run package
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run package
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       displayName: Uploading linux tracer home artifact
@@ -209,7 +209,7 @@ stages:
       displayName: docker-compose run Profiler.Alpine
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run Profiler.Alpine
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
 
     - script: |
         chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
@@ -219,7 +219,7 @@ stages:
       displayName: docker-compose run package.alpine
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run package.alpine
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package.alpine
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       displayName: Uploading alpine linux tracer home artifact
@@ -251,7 +251,7 @@ stages:
       displayName: docker-compose run Profiler
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run Profiler
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
 
     - script: |
         chmod +x $(System.DefaultWorkingDirectory)/build/docker/package.sh
@@ -261,7 +261,7 @@ stages:
       displayName: docker-compose run package
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run package
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
       artifact: build-linux-tracer-home-arm64
