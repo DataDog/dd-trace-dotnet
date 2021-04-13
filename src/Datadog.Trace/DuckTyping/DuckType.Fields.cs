@@ -31,7 +31,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // Load the field value to the stack
-            if (UseDirectAccessTo(targetType) && targetField.IsPublic)
+            if (UseDirectAccessTo(proxyTypeBuilder, targetType) && targetField.IsPublic)
             {
                 // In case is public is pretty simple
                 il.Emit(targetField.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, targetField);
@@ -41,7 +41,7 @@ namespace Datadog.Trace.DuckTyping
                 // If the instance or the field are non public we need to create a Dynamic method to overpass the visibility checks
                 // we can't access non public types so we have to cast to object type (in the instance object and the return type if is needed).
                 string dynMethodName = $"_getNonPublicField_{targetField.DeclaringType.Name}_{targetField.Name}";
-                returnType = UseDirectAccessTo(targetField.FieldType) ? targetField.FieldType : typeof(object);
+                returnType = UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) ? targetField.FieldType : typeof(object);
 
                 // We create the dynamic method
                 Type[] dynParameters = targetField.IsStatic ? Type.EmptyTypes : new[] { typeof(object) };
@@ -73,7 +73,7 @@ namespace Datadog.Trace.DuckTyping
             // Check if the type can be converted or if we need to enable duck chaining
             if (NeedsDuckChaining(targetField.FieldType, proxyMemberReturnType))
             {
-                if (UseDirectAccessTo(targetField.FieldType) && targetField.FieldType.IsValueType)
+                if (UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) && targetField.FieldType.IsValueType)
                 {
                     il.Emit(OpCodes.Box, targetField.FieldType);
                 }
@@ -136,7 +136,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // We set the field value
-            if (UseDirectAccessTo(targetType) && targetField.IsPublic)
+            if (UseDirectAccessTo(proxyTypeBuilder, targetType) && targetField.IsPublic)
             {
                 // If the instance and the field are public then is easy to set.
                 il.WriteTypeConversion(currentValueType, targetField.FieldType);
@@ -150,7 +150,7 @@ namespace Datadog.Trace.DuckTyping
                 string dynMethodName = $"_setField_{targetField.DeclaringType.Name}_{targetField.Name}";
 
                 // Convert the field type for the dynamic method
-                Type dynValueType = UseDirectAccessTo(targetField.FieldType) ? targetField.FieldType : typeof(object);
+                Type dynValueType = UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) ? targetField.FieldType : typeof(object);
                 il.WriteTypeConversion(currentValueType, dynValueType);
 
                 // Create dynamic method

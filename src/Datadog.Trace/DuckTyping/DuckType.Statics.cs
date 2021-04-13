@@ -40,6 +40,12 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _typeCount = 0;
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static ConstructorInfo _ignoresAccessChecksToAttributeCtor = typeof(IgnoresAccessChecksToAttribute).GetConstructor(new Type[] { typeof(string) });
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static HashSet<string> _ignoresAccessChecksToAssembliesSet = new HashSet<string>();
+
         internal static long AssemblyCount => _assemblyCount;
 
         internal static long TypeCount => _typeCount;

@@ -133,6 +133,10 @@ namespace Datadog.Trace.DuckTyping
                     // Gets the module builder
                     var moduleBuilder = GetModuleBuilder(targetType);
 
+                    // Ensure visibility
+                    EnsureTypeVisibility(moduleBuilder, targetType);
+                    EnsureTypeVisibility(moduleBuilder, proxyDefinitionType);
+
                     string assembly = string.Empty;
                     if (targetType.Assembly != null)
                     {
@@ -200,7 +204,7 @@ namespace Datadog.Trace.DuckTyping
         private static FieldInfo CreateIDuckTypeImplementation(TypeBuilder proxyTypeBuilder, Type targetType)
         {
             Type instanceType = targetType;
-            if (!UseDirectAccessTo(targetType))
+            if (!UseDirectAccessTo(proxyTypeBuilder, targetType))
             {
                 instanceType = typeof(object);
             }
@@ -726,11 +730,12 @@ namespace Datadog.Trace.DuckTyping
             private static CreateTypeResult GetProxySlow(Type targetType)
             {
                 Type proxyTypeDefinition = typeof(T);
+#if NET45
                 if (!proxyTypeDefinition.IsValueType && !UseDirectAccessTo(proxyTypeDefinition))
                 {
                     DuckTypeTypeIsNotPublicException.Throw(proxyTypeDefinition, nameof(proxyTypeDefinition));
                 }
-
+#endif
                 return GetOrCreateProxyType(proxyTypeDefinition, targetType);
             }
         }

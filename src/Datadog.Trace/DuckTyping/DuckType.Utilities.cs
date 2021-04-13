@@ -27,9 +27,28 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
+#if NET45
             if (!proxyType.IsPublic && !proxyType.IsNestedPublic)
             {
                 DuckTypeTypeIsNotPublicException.Throw(proxyType, nameof(proxyType));
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Ensures the visibility access to the type
+        /// </summary>
+        /// <param name="builder">Module builder</param>
+        /// <param name="type">Type to gain internals visibility</param>
+        private static void EnsureTypeVisibility(ModuleBuilder builder, Type type)
+        {
+            string name = type.Assembly.GetName().Name;
+            lock (_ignoresAccessChecksToAssembliesSet)
+            {
+                if (_ignoresAccessChecksToAssembliesSet.Add(name))
+                {
+                    ((AssemblyBuilder)builder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(_ignoresAccessChecksToAttributeCtor, new object[] { name }));
+                }
             }
         }
 
@@ -53,11 +72,43 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Gets if the direct access method should be used or the inderect method (dynamic method)
         /// </summary>
+        /// <param name="builder">Module builder</param>
+        /// <param name="targetType">Target type</param>
+        /// <returns>true for direct method; otherwise, false.</returns>
+        private static bool UseDirectAccessTo(ModuleBuilder builder, Type targetType)
+        {
+#if NET45
+            return targetType.IsPublic || targetType.IsNestedPublic;
+#else
+            if (builder == null)
+            {
+                return targetType.IsPublic || targetType.IsNestedPublic;
+            }
+
+            EnsureTypeVisibility(builder, targetType);
+            return true;
+#endif
+        }
+
+        /// <summary>
+        /// Gets if the direct access method should be used or the inderect method (dynamic method)
+        /// </summary>
+        /// <param name="builder">Type builder</param>
+        /// <param name="targetType">Target type</param>
+        /// <returns>true for direct method; otherwise, false.</returns>
+        private static bool UseDirectAccessTo(TypeBuilder builder, Type targetType)
+        {
+            return UseDirectAccessTo(builder is null ? null : (ModuleBuilder)builder.Module, targetType);
+        }
+
+        /// <summary>
+        /// Gets if the direct access method should be used or the inderect method (dynamic method)
+        /// </summary>
         /// <param name="targetType">Target type</param>
         /// <returns>true for direct method; otherwise, false.</returns>
         private static bool UseDirectAccessTo(Type targetType)
         {
-            return targetType.IsPublic || targetType.IsNestedPublic;
+            return UseDirectAccessTo((ModuleBuilder)null, targetType);
         }
     }
 }
