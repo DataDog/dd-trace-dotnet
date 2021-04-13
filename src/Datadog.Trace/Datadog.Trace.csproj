@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LibLog" Version="5.0.6" PrivateAssets="All" />
+    <PackageReference Include="LibLog" Version="5.0.8" PrivateAssets="All" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->
