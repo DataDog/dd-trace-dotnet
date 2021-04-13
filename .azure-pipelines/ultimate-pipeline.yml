@@ -844,7 +844,6 @@ stages:
 
 - stage: benchmarks
   dependsOn: build
-  condition: and(succeeded(), false)
   jobs:
 
   #### Windows 
@@ -1146,7 +1145,6 @@ stages:
 
 - stage: throughput
   dependsOn: build
-  condition: and(succeeded(), false)
   jobs:
 
   #### Linux
