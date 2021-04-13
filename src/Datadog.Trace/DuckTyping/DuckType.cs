@@ -179,7 +179,7 @@ namespace Datadog.Trace.DuckTyping
 
                         // Create Type
                         Type proxyType = proxyTypeBuilder.CreateTypeInfo().AsType();
-                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, CreateStructCopyMethod(proxyDefinitionType, proxyType, targetType), null);
+                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, CreateStructCopyMethod(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
                     }
                     else
                     {
@@ -191,7 +191,7 @@ namespace Datadog.Trace.DuckTyping
 
                         // Create Type
                         Type proxyType = proxyTypeBuilder.CreateTypeInfo().AsType();
-                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(proxyDefinitionType, proxyType, targetType), null);
+                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
                     }
                 }
                 catch (Exception ex)
@@ -463,7 +463,7 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static Delegate GetCreateProxyInstanceDelegate(Type proxyDefinitionType, Type proxyType, Type targetType)
+        private static Delegate GetCreateProxyInstanceDelegate(ModuleBuilder moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType)
         {
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
 
@@ -475,7 +475,7 @@ namespace Datadog.Trace.DuckTyping
                 true);
             ILGenerator il = createProxyMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
-            if (UseDirectAccessTo(targetType))
+            if (UseDirectAccessTo(moduleBuilder, targetType))
             {
                 if (targetType.IsValueType)
                 {
@@ -499,7 +499,7 @@ namespace Datadog.Trace.DuckTyping
             return createProxyMethod.CreateDelegate(delegateType);
         }
 
-        private static Delegate CreateStructCopyMethod(Type proxyDefinitionType, Type proxyType, Type targetType)
+        private static Delegate CreateStructCopyMethod(ModuleBuilder moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType)
         {
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
 
@@ -518,7 +518,7 @@ namespace Datadog.Trace.DuckTyping
             // We create an instance of the proxy type
             il.Emit(OpCodes.Ldloca_S, proxyLocal.LocalIndex);
             il.Emit(OpCodes.Ldarg_0);
-            if (UseDirectAccessTo(targetType))
+            if (UseDirectAccessTo(moduleBuilder, targetType))
             {
                 if (targetType.IsValueType)
                 {
