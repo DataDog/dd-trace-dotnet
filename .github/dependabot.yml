@@ -16,6 +16,15 @@ updates:
     labels:
       - "dependencies"
       - "area:tracer"
+    ignore:
+      # AspNetCore reference libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "Microsoft.AspNetCore.Hosting.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Mvc.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Routing"
+
+      # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "System.Reflection.Emit"
+      - dependency-name: "System.Reflection.Emit.Lightweight"
   - package-ecosystem: "nuget"
     directory: "/src/Datadog.Trace.ClrProfiler.Managed"
     schedule:
@@ -23,6 +32,13 @@ updates:
     labels:
       - "dependencies"
       - "area:integrations"
+    allow:
+      # Allow only updates for explicitly defined dependencies
+      - dependency-type: "direct"
+    ignore:
+      # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "System.Reflection.Emit"
+      - dependency-name: "System.Reflection.Emit.Lightweight"
   - package-ecosystem: "nuget"
     directory: "/src/Datadog.Trace.OpenTracing"
     schedule:
@@ -30,6 +46,9 @@ updates:
     labels:
       - "dependencies"
       - "area:opentracing"
+    allow:
+      # Allow both direct and indirect updates for all packages
+      - dependency-type: "direct"
   - package-ecosystem: "nuget"
     directory: "/src/Datadog.Trace.BenchmarkDotNet"
     schedule:
@@ -37,3 +56,6 @@ updates:
     labels:
       - "dependencies"
       - "area:benchmarks"
+    allow:
+      # Allow only direct updates for all packages
+      - dependency-type: "direct"
