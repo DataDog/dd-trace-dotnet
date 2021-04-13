@@ -18,6 +18,8 @@ cp -f build/bin/Datadog.Trace.ClrProfiler.Native.so bin/${BUILD_TYPE}/x64/Datado
 
 mkdir -p bin/${BUILD_TYPE}/x64/netstandard2.0
 cp -f $PUBLISH_OUTPUT_NET2/*.dll bin/${BUILD_TYPE}/x64/netstandard2.0/
+cp -f $PUBLISH_OUTPUT_NET2/*.pdb bin/${BUILD_TYPE}/x64/netstandard2.0/
 
 mkdir -p bin/${BUILD_TYPE}/x64/netcoreapp3.1
 cp -f $PUBLISH_OUTPUT_NET31/*.dll bin/${BUILD_TYPE}/x64/netcoreapp3.1/
+cp -f $PUBLISH_OUTPUT_NET31/*.pdb bin/${BUILD_TYPE}/x64/netcoreapp3.1/
