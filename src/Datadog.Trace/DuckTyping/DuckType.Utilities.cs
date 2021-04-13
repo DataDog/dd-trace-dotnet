@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -43,9 +44,15 @@ namespace Datadog.Trace.DuckTyping
         private static void EnsureTypeVisibility(ModuleBuilder builder, Type type)
         {
             string name = type.Assembly.GetName().Name;
-            lock (_ignoresAccessChecksToAssembliesSet)
+            lock (_ignoresAccessChecksToAssembliesSetDictionary)
             {
-                if (_ignoresAccessChecksToAssembliesSet.Add(name))
+                if (!_ignoresAccessChecksToAssembliesSetDictionary.TryGetValue(builder, out var hashSet))
+                {
+                    hashSet = new HashSet<string>();
+                    _ignoresAccessChecksToAssembliesSetDictionary[builder] = hashSet;
+                }
+
+                if (hashSet.Add(name))
                 {
                     ((AssemblyBuilder)builder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(_ignoresAccessChecksToAttributeCtor, new object[] { name }));
                 }

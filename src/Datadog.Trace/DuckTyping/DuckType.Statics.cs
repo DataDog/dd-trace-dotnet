@@ -44,7 +44,7 @@ namespace Datadog.Trace.DuckTyping
         private static ConstructorInfo _ignoresAccessChecksToAttributeCtor = typeof(IgnoresAccessChecksToAttribute).GetConstructor(new Type[] { typeof(string) });
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static HashSet<string> _ignoresAccessChecksToAssembliesSet = new HashSet<string>();
+        private static Dictionary<ModuleBuilder, HashSet<string>> _ignoresAccessChecksToAssembliesSetDictionary = new Dictionary<ModuleBuilder, HashSet<string>>();
 
         internal static long AssemblyCount => _assemblyCount;
 
