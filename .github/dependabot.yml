@@ -17,6 +17,10 @@ updates:
       - "dependencies"
       - "area:tracer"
     ignore:
+      ### Start Datadog.Trace.csproj ignored dependencies
+      # DiagnosticSource is kept at the lowest supported version for widest compatibility
+      - dependency-name: "System.Diagnostics.DiagnosticSource"
+
       # AspNetCore reference libraries are kept at the lowest supported version for compatibility on netstandard2.0
       - dependency-name: "Microsoft.AspNetCore.Hosting.Abstractions"
       - dependency-name: "Microsoft.AspNetCore.Mvc.Abstractions"
@@ -25,6 +29,7 @@ updates:
       # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
       - dependency-name: "System.Reflection.Emit"
       - dependency-name: "System.Reflection.Emit.Lightweight"
+      ### End Datadog.Trace.csproj ignored dependencies
   - package-ecosystem: "nuget"
     directory: "/src/Datadog.Trace.ClrProfiler.Managed"
     schedule:
@@ -32,13 +37,20 @@ updates:
     labels:
       - "dependencies"
       - "area:integrations"
-    allow:
-      # Allow only updates for explicitly defined dependencies
-      - dependency-type: "direct"
     ignore:
+      ### Start Datadog.Trace.csproj ignored dependencies
+      # DiagnosticSource is kept at the lowest supported version for widest compatibility
+      - dependency-name: "System.Diagnostics.DiagnosticSource"
+
+      # AspNetCore reference libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "Microsoft.AspNetCore.Hosting.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Mvc.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Routing"
+
       # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
       - dependency-name: "System.Reflection.Emit"
       - dependency-name: "System.Reflection.Emit.Lightweight"
+      ### End Datadog.Trace.csproj ignored dependencies
   - package-ecosystem: "nuget"
     directory: "/src/Datadog.Trace.OpenTracing"
     schedule:
@@ -46,9 +58,20 @@ updates:
     labels:
       - "dependencies"
       - "area:opentracing"
-    allow:
-      # Allow only updates for explicitly defined dependencies
-      - dependency-type: "direct"
+    ignore:
+      ### Start Datadog.Trace.csproj ignored dependencies
+      # DiagnosticSource is kept at the lowest supported version for widest compatibility
+      - dependency-name: "System.Diagnostics.DiagnosticSource"
+
+      # AspNetCore reference libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "Microsoft.AspNetCore.Hosting.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Mvc.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Routing"
+
+      # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "System.Reflection.Emit"
+      - dependency-name: "System.Reflection.Emit.Lightweight"
+      ### End Datadog.Trace.csproj ignored dependencies
   - package-ecosystem: "nuget"
     directory: "/src/Datadog.Trace.BenchmarkDotNet"
     schedule:
@@ -56,6 +79,17 @@ updates:
     labels:
       - "dependencies"
       - "area:benchmarks"
-    allow:
-      # Allow only updates for explicitly defined dependencies
-      - dependency-type: "direct"
+    ignore:
+      ### Start Datadog.Trace.csproj ignored dependencies
+      # DiagnosticSource is kept at the lowest supported version for widest compatibility
+      - dependency-name: "System.Diagnostics.DiagnosticSource"
+
+      # AspNetCore reference libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "Microsoft.AspNetCore.Hosting.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Mvc.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Routing"
+
+      # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "System.Reflection.Emit"
+      - dependency-name: "System.Reflection.Emit.Lightweight"
+      ### End Datadog.Trace.csproj ignored dependencies
