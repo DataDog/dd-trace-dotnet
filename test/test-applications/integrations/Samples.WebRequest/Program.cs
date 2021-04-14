@@ -45,11 +45,6 @@ namespace Samples.WebRequest
                 Console.WriteLine("Stopping HTTP listener.");
                 listener.Stop();
             }
-
-            // Force process to end, otherwise the background listener thread lives forever in .NET Core.
-            // Apparently listener.GetContext() doesn't throw an exception if listener.Stop() is called,
-            // like it does in .NET Framework.
-            Environment.Exit(0);
         }
 
         public static HttpListener StartHttpListenerWithPortResilience(string port, int retries = 5)
@@ -68,7 +63,7 @@ namespace Samples.WebRequest
                 {
                     listener.Start();
 
-                    listenerThread = new Thread(HandleHttpRequests);
+                    listenerThread = new Thread(HandleHttpRequests) { IsBackground = true };
                     listenerThread.Start(listener);
 
                     return listener;
