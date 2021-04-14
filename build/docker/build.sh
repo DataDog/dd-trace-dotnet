@@ -50,7 +50,8 @@ for sample in DataDogThreadTest HttpMessageHandler.StackOverflowException StackE
     dotnet publish -f $publishTargetFramework -c $buildConfiguration test/test-applications/regression/$sample/$sample.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 done
 
-dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT" -p:TargetFramework=$publishTargetFramework
+dotnet msbuild Datadog.Trace.proj -t:RestoreSamplesForPackageVersions -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT" -p:TargetFramework=$publishTargetFramework
+dotnet msbuild Datadog.Trace.proj -t:PublishSamplesForPackageVersions -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT" -p:TargetFramework=$publishTargetFramework
 
 for proj in Datadog.Trace.IntegrationTests Datadog.Trace.OpenTracing.IntegrationTests Datadog.Trace.ClrProfiler.IntegrationTests ; do
     dotnet publish -f $publishTargetFramework -c $buildConfiguration test/$proj/$proj.csproj
