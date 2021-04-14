@@ -1,4 +1,3 @@
-#if !NET452
 using System;
 using System.IO;
 using System.Threading;
@@ -19,7 +18,12 @@ namespace Datadog.Trace.DuckTyping.Tests
             var resetEvent = new ManualResetEventSlim();
 
             var instance = new LogEventEnricherImpl(resetEvent);
-
+#if NET452
+            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
+            {
+                instance.DuckCast(iLogEventEnricherType);
+            });
+#else
             var proxy = instance.DuckCast(iLogEventEnricherType);
 
             var log = new Vendors.Serilog.LoggerConfiguration()
@@ -31,6 +35,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             log.Information("Hello world");
 
             Assert.True(resetEvent.Wait(5_000));
+#endif
         }
 
         // ************************************************************************************
@@ -109,13 +114,19 @@ namespace Datadog.Trace.DuckTyping.Tests
             var eventInstance = new LogEventPropertyValueImpl(resetEvent);
 
             var type = typeof(Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue);
-
+#if NET452
+            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
+            {
+                eventInstance.DuckCast(type);
+            });
+#else
             var proxy2 = eventInstance.DuckCast(type);
             eventInstance.SetBaseInstance(proxy2);
 
             ((Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
 
             Assert.True(resetEvent.Wait(5_000));
+#endif
         }
 
         // ************************************************************************************
@@ -157,6 +168,28 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         // ************************************************************************************
+
+        [Fact]
+        public void PublicInterfaceReverProxyTest()
+        {
+            var instance = new PublicBaseInterface();
+            var proxyInstance = instance.DuckCast(typeof(IPublicBaseInterface));
+
+            Assert.Equal("Hello world", ((IPublicBaseInterface)proxyInstance).SayHello("world"));
+        }
+
+        public interface IPublicBaseInterface
+        {
+            public string SayHello(string value);
+        }
+
+        public class PublicBaseInterface
+        {
+            [DuckReverseMethod("System.String")]
+            public string SayHello(object value)
+            {
+                return "Hello " + value;
+            }
+        }
     }
 }
-#endif
