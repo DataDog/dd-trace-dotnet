@@ -89,7 +89,14 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public interface ILogEventPropertyFactory
         {
-            object CreateProperty(string name, object value, bool destructureObjects = false);
+            ILogEventProperty CreateProperty(string name, object value, bool destructureObjects = false);
+        }
+
+        public interface ILogEventProperty
+        {
+            public string Name { get; }
+
+            public object Value { get; }
         }
 
         // ************************************************************************************
@@ -110,6 +117,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Assert.True(resetEvent.Wait(5_000));
         }
+
+        // ************************************************************************************
+        // Types for AbstractClassReverseProxyTest
+        // ***
 
         public class LogEventPropertyValueImpl
         {
@@ -144,6 +155,8 @@ namespace Datadog.Trace.DuckTyping.Tests
                 public string ToString(string format, IFormatProvider formatProvider);
             }
         }
+
+        // ************************************************************************************
     }
 }
 #endif
