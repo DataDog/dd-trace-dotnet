@@ -1,11 +1,12 @@
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Datadog.Core.Tools
 {
     public static class DependencyHelpers
     {
-        public static string[] GetTracerBinContent(string frameworkMoniker, string extension = "dll")
+        public static string[] GetTracerBinContent(string frameworkMoniker, string[] extensions)
         {
             var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
             var projectBin =
@@ -19,10 +20,12 @@ namespace Datadog.Core.Tools
 
             var outputFolder = Path.Combine(projectBin, frameworkMoniker);
 
-            var filePaths = Directory.GetFiles(
-                outputFolder,
-                $"*.{extension}",
-                SearchOption.AllDirectories);
+            var filePaths = Directory.EnumerateFiles(
+                                          outputFolder,
+                                          "*.*",
+                                          SearchOption.AllDirectories)
+                                     .Where(f => extensions.Contains(Path.GetExtension(f)))
+                                     .ToArray();
 
             if (filePaths.Length == 0)
             {

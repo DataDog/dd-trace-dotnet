@@ -11,8 +11,18 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Datadog.Trace.ClrProfiler.Managed.Core.pdb"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.ClrProfiler.Managed.Core.pdb"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.ClrProfiler.Managed.dll"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.ClrProfiler.Managed.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Datadog.Trace.ClrProfiler.Managed.pdb"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.ClrProfiler.Managed.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -23,6 +33,16 @@
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.MSBuild.dll"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.MSBuild.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Datadog.Trace.MSBuild.pdb"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.MSBuild.pdb"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Datadog.Trace.pdb"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
