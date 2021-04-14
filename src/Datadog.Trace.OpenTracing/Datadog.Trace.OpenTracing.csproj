@@ -6,12 +6,17 @@
     <Title>Datadog APM - OpenTracing</Title>
     <Description>Provides OpenTracing support for Datadog APM</Description>
     <PackageTags>$(PackageTags);OpenTracing</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
 
     <PackageReference Include="OpenTracing" Version="0.12.1" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' ">

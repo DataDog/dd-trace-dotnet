@@ -71,7 +71,6 @@ stages:
         packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
         packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
         configuration: $(buildConfiguration)
-        arguments: -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
 
     - publish: $(System.DefaultWorkingDirectory)/nuget-output
       artifact: nuget-packages
