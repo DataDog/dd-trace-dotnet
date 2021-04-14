@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Core.Tools;
 using Datadog.Trace;
 
@@ -52,11 +51,6 @@ namespace Samples.WebRequest.NetFramework20
                 Console.WriteLine("Stopping HTTP listener.");
                 listener.Stop();
             }
-
-            // Force process to end, otherwise the background listener thread lives forever in .NET Core.
-            // Apparently listener.GetContext() doesn't throw an exception if listener.Stop() is called,
-            // like it does in .NET Framework.
-            Environment.Exit(0);
         }
 
         public static HttpListener StartHttpListenerWithPortResilience(string port, int retries = 5)
@@ -75,7 +69,7 @@ namespace Samples.WebRequest.NetFramework20
                 {
                     listener.Start();
 
-                    listenerThread = new Thread(HandleHttpRequests);
+                    listenerThread = new Thread(HandleHttpRequests) { IsBackground = true };
                     listenerThread.Start(listener);
 
                     return listener;
@@ -132,14 +126,14 @@ namespace Samples.WebRequest.NetFramework20
                     // listener was stopped,
                     // ignore to let the loop end and the method return
                 }
-                catch (ObjectDisposedException) 
-                { 
+                catch (ObjectDisposedException)
+                {
                     // the response has been already disposed. 
-                } 
-                catch (InvalidOperationException) when (!listener.IsListening) 
-                { 
+                }
+                catch (InvalidOperationException) when (!listener.IsListening)
+                {
                     // looks like it can happen on .NET Core when listener is stopped 
-                } 
+                }
             }
         }
     }
