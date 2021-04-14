@@ -1,3 +1,4 @@
+#if !NET452
 using System;
 using System.IO;
 using System.Threading;
@@ -145,3 +146,4 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
     }
 }
+#endif
