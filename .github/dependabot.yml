@@ -8,6 +8,8 @@ updates:
     labels:
       - "dependencies"
       - "area:vendors"
+    ignore:
+      - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
   # Src libraries
   - package-ecosystem: "nuget"
     directory: "/src/Datadog.Trace"
