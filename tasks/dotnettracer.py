@@ -38,7 +38,7 @@ def build(ctx, vstudio_root=None, arch="All", major_version='7', debug=False):
 
     ctx.run("nuget restore {solution_dir}\\Datadog.Trace.Minimal.sln".format(solution_dir=solution_dir))
 
-    cmd = "msbuild {solution_dir}\\Datadog.Trace.proj /t:{target} /p:Platform={arch} /p:Configuration={config} /p:TracerHomeDirectory={tracer_home} /p:RunWixToolsOutOfProc=true /p:MsiOutputPath={output_path}"
+    cmd = "msbuild {solution_dir}\\Datadog.Trace.proj /t:{target} /p:Platform={arch} /p:Configuration={config} /p:TracerHomeDirectory={tracer_home} /p:RunWixToolsOutOfProc=true /p:MsiOutputPath={output_path} /p:ContinuousIntegrationBuild=true"
 
     ## compile all binaries
     run_cmd = cmd.format(
