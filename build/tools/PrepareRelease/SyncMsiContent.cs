@@ -92,7 +92,9 @@ namespace PrepareRelease
                     "src",
                     "WindowsInstaller");
 
-            var filePaths = DependencyHelpers.GetTracerBinContent(frameworkMoniker, new[] { ".dll", ".pdb" });
+            var extensions = gac == GacStatus.NotInGac ? new[] { ".dll", ".pdb" } : new[] { ".dll" };
+
+            var filePaths = DependencyHelpers.GetTracerBinContent(frameworkMoniker, extensions);
 
             var components = string.Empty;
 
