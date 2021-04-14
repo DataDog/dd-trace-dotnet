@@ -30,7 +30,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             log.Information("Hello world");
 
-            Assert.True(resetEvent.Wait(10_000));
+            Assert.True(resetEvent.Wait(5_000));
         }
 
         // ************************************************************************************
@@ -108,7 +108,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             ((Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
 
-            Assert.True(resetEvent.Wait(10_000));
+            Assert.True(resetEvent.Wait(5_000));
         }
 
         public class LogEventPropertyValueImpl
