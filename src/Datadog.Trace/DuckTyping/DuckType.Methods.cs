@@ -324,14 +324,14 @@ namespace Datadog.Trace.DuckTyping
                         {
                             if (NeedsDuckChaining(proxyParamType, targetParamType))
                             {
-                                // Load the argument and cast it as Duck type
+                                // Load the argument (our proxy type) and cast it as Duck type (the original type)
                                 il.WriteLoadArgument(idx, false);
                                 if (UseDirectAccessTo(proxyTypeBuilder, proxyParamType) && proxyParamType.IsValueType)
                                 {
                                     il.Emit(OpCodes.Box, proxyParamType);
                                 }
 
-                                // We call DuckType.CreateCache<>.Create()
+                                // We call DuckType.CreateCache<>.Create(object instance)
                                 MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
                                     .MakeGenericType(targetParamType).GetMethod("Create");
 
