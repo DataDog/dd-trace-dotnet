@@ -60,18 +60,19 @@ namespace Datadog.Trace.TestHelpers.Docker
             // -t local-iis-test C:\Github\dd-trace-dotnet --no-cache
 
             var sampleProjectDir = _environmentHelper.GetSampleProjectDirectory();
-            var dockerizedProjectDir = sampleProjectDir.Replace(_solutionDir, string.Empty).Replace(@"\", "/");
-            dockerizedProjectDir = $".{dockerizedProjectDir}";
+            var publishDir = Path.Combine(sampleProjectDir, "bin", "app.publish");
+            var dockerizedProjectDir = publishDir.Replace(_solutionDir, string.Empty).Replace(@"\", "/");
+            dockerizedProjectDir = $".{publishDir}";
             var cmd = $"docker build -f {_dockerFile} --build-arg SITE_DIR={dockerizedProjectDir} --build-arg MSI_DIR={_msiDirectory} -t {_imageTag} {_solutionDir} --no-cache";
-            _output.WriteLine("Docker build cmd: {0}", cmd);
+            // _output.WriteLine("Docker build cmd: {0}", cmd);
             RunCmd(cmd);
         }
 
         public void StartContainer()
         {
             var cmd = $"docker run --name {_imageName} -p {_containerPort}:{_containerPort} -v //./pipe/{_tracePipe}://./pipe/{_tracePipe} {_imageTag}";
-            _output.WriteLine("Docker run cmd: {0}", cmd);
             RunCmd(cmd);
+            // _output.WriteLine("Docker run cmd: {0}", cmd);
 
             // try
             // {
@@ -97,8 +98,8 @@ namespace Datadog.Trace.TestHelpers.Docker
         {
             // docker stop local-iis-test; docker rm local-iis-test
             var cmd = $"docker stop {_imageName}; docker rm {_imageName}";
-            _output.WriteLine("Docker stop cmd: {0}", cmd);
             RunCmd(cmd);
+            // _output.WriteLine("Docker stop cmd: {0}", cmd);
         }
 
         private void RunCmd(string cmd)
