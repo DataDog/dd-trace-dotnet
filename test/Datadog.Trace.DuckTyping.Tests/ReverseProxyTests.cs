@@ -11,7 +11,7 @@ namespace Datadog.Trace.DuckTyping.Tests
     public class ReverseProxyTests
     {
         [Fact]
-        public void InterfaceReverseProxyTest()
+        public void PrivateInterfaceReverseProxyTest()
         {
             Type iLogEventEnricherType = typeof(Datadog.Trace.Vendors.Serilog.Core.ILogEventEnricher);
 
@@ -107,7 +107,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         // ************************************************************************************
 
         [Fact]
-        public void AbstractClassReverseProxyTest()
+        public void PrivateAbstractClassReverseProxyTest()
         {
             var resetEvent = new ManualResetEventSlim();
 
@@ -170,7 +170,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         // ************************************************************************************
 
         [Fact]
-        public void PublicInterfaceReverProxyTest()
+        public void PublicInterfaceReverseProxyTest()
         {
             var instance = new PublicBaseInterface();
             var proxyInstance = instance.DuckCast(typeof(IPublicBaseInterface));
