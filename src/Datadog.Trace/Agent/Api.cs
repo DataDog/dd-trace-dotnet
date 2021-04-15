@@ -194,11 +194,14 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    var version = response.GetHeader(AgentHttpHeaderNames.AgentVersion);
-
                     var tracer = _tracer ?? Tracer.Instance;
 
-                    tracer.ReportAgentVersion(version);
+                    if (tracer.AgentVersion == null)
+                    {
+                        var version = response.GetHeader(AgentHttpHeaderNames.AgentVersion);
+
+                        tracer.AgentVersion = version ?? string.Empty;
+                    }
 
                     if (response.ContentLength != 0 && Tracer.Instance.Sampler != null)
                     {

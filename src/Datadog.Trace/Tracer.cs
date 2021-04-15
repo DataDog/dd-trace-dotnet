@@ -228,6 +228,27 @@ namespace Datadog.Trace
         public TracerSettings Settings { get; }
 
         /// <summary>
+        /// Gets or sets the detected version of the agent
+        /// </summary>
+        string IDatadogTracer.AgentVersion
+        {
+            get
+            {
+                return _agentVersion;
+            }
+
+            set
+            {
+                if (ShouldLogPartialFlushWarning(value))
+                {
+                    var detectedVersion = string.IsNullOrEmpty(value) ? "{detection failed}" : value;
+
+                    Log.Warning("DATADOG TRACER DIAGNOSTICS - Partial flush should only be enabled with agent 7.26.0+ (detected version: {version})", detectedVersion);
+                }
+            }
+        }
+
+        /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
         /// </summary>
         IScopeManager IDatadogTracer.ScopeManager => _scopeManager;
@@ -352,18 +373,6 @@ namespace Datadog.Trace
             if (Settings.TraceEnabled)
             {
                 _agentWriter.WriteTrace(trace);
-            }
-        }
-
-        /// <summary>
-        /// Reports the detected version of the agent
-        /// </summary>
-        /// <param name="version">Version of the agent</param>
-        void IDatadogTracer.ReportAgentVersion(string version)
-        {
-            if (ShouldLogPartialFlushWarning(version))
-            {
-                Log.Warning("DATADOG TRACER DIAGNOSTICS - Partial flush should only be enabled with agent 7.26.0+ (detected version: {version})", version ?? "{detection failed}");
             }
         }
 
