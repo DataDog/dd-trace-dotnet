@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using Serilog;
 using Xunit;
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
@@ -17,7 +18,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var resetEvent = new ManualResetEventSlim();
 
-            var instance = new LogEventEnricherImpl(resetEvent);
+            var instance = new InternalLogEventEnricherImpl(resetEvent);
 #if NET452
             Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
             {
@@ -38,15 +39,76 @@ namespace Datadog.Trace.DuckTyping.Tests
 #endif
         }
 
+        [Fact]
+        public void PrivateAbstractClassReverseProxyTest()
+        {
+            var resetEvent = new ManualResetEventSlim();
+
+            var eventInstance = new LogEventPropertyValueImpl(resetEvent);
+
+            var type = typeof(Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue);
+#if NET452
+            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
+            {
+                eventInstance.DuckCast(type);
+            });
+#else
+            var proxy2 = eventInstance.DuckCast(type);
+            eventInstance.SetBaseInstance(proxy2);
+
+            ((Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
+
+            Assert.True(resetEvent.Wait(5_000));
+#endif
+        }
+
+        [Fact]
+        public void PublicInterfaceReverseProxyTest()
+        {
+            Type iLogEventEnricherType = typeof(Serilog.Core.ILogEventEnricher);
+
+            var resetEvent = new ManualResetEventSlim();
+
+            var instance = new PublicLogEventEnricherImpl(resetEvent);
+
+            var proxy = instance.DuckCast(iLogEventEnricherType);
+            var log = new Serilog.LoggerConfiguration()
+                .Enrich.With((Serilog.Core.ILogEventEnricher)proxy)
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .CreateLogger();
+
+            log.Information("Hello world");
+
+            Assert.True(resetEvent.Wait(5_000));
+        }
+
+        [Fact]
+        public void PublicAbstractClassReverseProxyTest()
+        {
+            var resetEvent = new ManualResetEventSlim();
+
+            var eventInstance = new LogEventPropertyValueImpl(resetEvent);
+
+            var type = typeof(Serilog.Events.LogEventPropertyValue);
+
+            var proxy2 = eventInstance.DuckCast(type);
+            eventInstance.SetBaseInstance(proxy2);
+
+            ((Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
+
+            Assert.True(resetEvent.Wait(5_000));
+        }
+
         // ************************************************************************************
         // Types for InterfaceReverseProxyTest
         // ***
 
-        public class LogEventEnricherImpl
+        public class InternalLogEventEnricherImpl
         {
             private ManualResetEventSlim _manualResetEventSlim;
 
-            public LogEventEnricherImpl(ManualResetEventSlim manualResetEventSlim)
+            public InternalLogEventEnricherImpl(ManualResetEventSlim manualResetEventSlim)
             {
                 _manualResetEventSlim = manualResetEventSlim;
             }
@@ -65,6 +127,38 @@ namespace Datadog.Trace.DuckTyping.Tests
                 _manualResetEventSlim.Set();
             }
         }
+
+        // ************************************************************************************
+        // Types for PublicInterfaceReverseProxyTest
+        // ***
+
+        public class PublicLogEventEnricherImpl
+        {
+            private ManualResetEventSlim _manualResetEventSlim;
+
+            public PublicLogEventEnricherImpl(ManualResetEventSlim manualResetEventSlim)
+            {
+                _manualResetEventSlim = manualResetEventSlim;
+            }
+
+            [DuckReverseMethod("Serilog.Events.LogEvent", "Serilog.Core.ILogEventPropertyFactory")]
+            public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+            {
+                Assert.NotNull(logEvent);
+                Assert.NotNull(propertyFactory);
+
+                Assert.Equal(LogEventLevel.Information, logEvent.Level);
+                Assert.NotEqual(DateTimeOffset.MinValue, logEvent.Timestamp);
+                Assert.Null(logEvent.Exception);
+                Assert.Equal("Hello world", logEvent.MessageTemplate.Text);
+
+                _manualResetEventSlim.Set();
+            }
+        }
+
+        // ************************************************************************************
+        // Common Types
+        // ***
 
         public interface ILogEvent
         {
@@ -104,35 +198,6 @@ namespace Datadog.Trace.DuckTyping.Tests
             public object Value { get; }
         }
 
-        // ************************************************************************************
-
-        [Fact]
-        public void PrivateAbstractClassReverseProxyTest()
-        {
-            var resetEvent = new ManualResetEventSlim();
-
-            var eventInstance = new LogEventPropertyValueImpl(resetEvent);
-
-            var type = typeof(Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue);
-#if NET452
-            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
-            {
-                eventInstance.DuckCast(type);
-            });
-#else
-            var proxy2 = eventInstance.DuckCast(type);
-            eventInstance.SetBaseInstance(proxy2);
-
-            ((Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
-
-            Assert.True(resetEvent.Wait(5_000));
-#endif
-        }
-
-        // ************************************************************************************
-        // Types for AbstractClassReverseProxyTest
-        // ***
-
         public class LogEventPropertyValueImpl
         {
             private IBaseClass _base;
@@ -168,28 +233,5 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         // ************************************************************************************
-
-        [Fact]
-        public void PublicInterfaceReverseProxyTest()
-        {
-            var instance = new PublicBaseInterface();
-            var proxyInstance = instance.DuckCast(typeof(IPublicBaseInterface));
-
-            Assert.Equal("Hello world", ((IPublicBaseInterface)proxyInstance).SayHello("world"));
-        }
-
-        public interface IPublicBaseInterface
-        {
-            public string SayHello(string value);
-        }
-
-        public class PublicBaseInterface
-        {
-            [DuckReverseMethod("System.String")]
-            public string SayHello(object value)
-            {
-                return "Hello " + value;
-            }
-        }
     }
 }
