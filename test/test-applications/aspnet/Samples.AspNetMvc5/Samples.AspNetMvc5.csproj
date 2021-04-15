@@ -143,17 +143,13 @@
     <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
+      <Project>{8e1baa6a-47cc-47f0-a7d6-74741118eb7c}</Project>
+      <Name>Datadog.Trace</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\integrations\dependency-libs\Samples.Shared\Samples.Shared.csproj">
       <Project>{b4ae8b0f-c2b2-41df-88bb-d97e267d8964}</Project>
       <Name>Samples.Shared</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-      <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
-      <Name>Datadog.Trace.ClrProfiler.Managed</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
-      <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
-      <Name>Datadog.Trace</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
