@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
 
-            tracer.Verify(t => t.ReportAgentVersion(agentVersion), Times.Once);
+            tracer.VerifySet(t => t.AgentVersion = agentVersion, Times.Once);
         }
     }
 }

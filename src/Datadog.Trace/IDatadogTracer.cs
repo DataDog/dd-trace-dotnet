@@ -8,6 +8,8 @@ namespace Datadog.Trace
     {
         string DefaultServiceName { get; }
 
+        string AgentVersion { get; set; }
+
         IScopeManager ScopeManager { get; }
 
         ISampler Sampler { get; }
@@ -19,8 +21,6 @@ namespace Datadog.Trace
         Span StartSpan(string operationName, ISpanContext parent);
 
         Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
-
-        void ReportAgentVersion(string agentVersion);
 
         void Write(Span[] span);
 
