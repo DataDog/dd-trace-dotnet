@@ -2,7 +2,7 @@
 set -euxo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-VERSION=1.25.2
+VERSION=1.26.0
 BUILD_TYPE=${buildConfiguration:-Debug}
 
 mkdir -p $DIR/../../deploy/linux
