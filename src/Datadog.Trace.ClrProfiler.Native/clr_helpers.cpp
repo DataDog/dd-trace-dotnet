@@ -1586,7 +1586,7 @@ bool FindTypeDefByName(
     }
     instrumentedMethodTypeName = nameParts[1];
 
-  } else if (nameParts.size() > 1) {
+  } else if (nameParts.size() > 2) {
     Warn("Invalid TypeDef-only one layer of nested classes are supported: ",
          instrumentationTargetMethodTypeName, ", Module: ", assemblyName);
     return false;
