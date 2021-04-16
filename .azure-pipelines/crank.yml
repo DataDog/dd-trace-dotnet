@@ -103,10 +103,13 @@ jobs:
       arguments: /nowarn:netsdk1138
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-  
+
   - script: |
       sudo apt-get update
       sudo apt-get install -y llvm clang
+      sudo apt-get remove -y cmake
+      curl -L -o /tmp/cmake.sh https://github.com/Kitware/CMake/releases/download/v3.19.8/cmake-3.19.8-Linux-x86_64.sh
+      sudo sh /tmp/cmake.sh --prefix=/usr/local --exclude-subdir --skip-license
     displayName: install_dependencies
 
   - script: |
