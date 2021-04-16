@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this);
         }
 
-        [Fact(Skip = "This example does not use MVC or WebApi, so we will not generate traces until AspNet is invoked via automatic instrumentation.")]
+        [Theory(Skip = "This example does not use MVC or WebApi, so we will not generate traces until AspNet is invoked via automatic instrumentation.")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
