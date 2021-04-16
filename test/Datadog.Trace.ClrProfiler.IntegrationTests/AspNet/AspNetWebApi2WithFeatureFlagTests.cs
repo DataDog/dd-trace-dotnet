@@ -56,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(AspNetWebApi2TestData.WithFeatureFlag), MemberType = typeof(AspNetWebApi2TestData))]
         public async Task SubmitsTraces(
             string path,
