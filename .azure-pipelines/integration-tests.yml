@@ -340,20 +340,6 @@ jobs:
         !test/test-applications/integrations/dependency-libs/**/*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138 -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true -p:LoadManagedProfilerFromProfilerDirectory=false
 
-  - task: NuGetCommand@2
-    displayName: nuget restore IIS samples
-    inputs:
-      restoreSolution: test/test-applications/aspnet/samples-iis.sln
-      verbosityRestore: Normal
-
-  - task: MSBuild@1
-    displayName: Publish IIS samples
-    inputs:
-      solution: test/test-applications/aspnet/samples-iis.sln
-      configuration: '$(buildConfiguration)'
-      msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=$(System.DefaultWorkingDirectory)/test/test-applications/aspnet/PublishProfiles/FolderProfile.pubxml'
-      maximumCpuCount: true
-
   - task: DotNetCoreCLI@2
     displayName: dotnet test
     inputs:
