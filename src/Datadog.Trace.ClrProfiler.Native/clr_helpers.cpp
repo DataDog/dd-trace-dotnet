@@ -1562,4 +1562,46 @@ HRESULT FunctionMethodSignature::TryParse() {
   return S_OK;
 }
 
+bool FindTypeDefByName(
+    const trace::WSTRING instrumentationTargetMethodTypeName,
+    const trace::WSTRING assemblyName,
+    const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef) {
+  mdTypeDef parentTypeDef = mdTypeDefNil;
+  auto nameParts = Split(instrumentationTargetMethodTypeName, '+');
+  auto instrumentedMethodTypeName = instrumentationTargetMethodTypeName;
+
+  if (nameParts.size() == 2) {
+    // We're instrumenting a nested class, find the parent first
+    auto hr = metadata_import->FindTypeDefByName(nameParts[0].c_str(),
+                                                 mdTokenNil, &parentTypeDef);
+
+    if (FAILED(hr)) {
+      // This can happen between .NET framework and .NET core, not all apis are
+      // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
+      // System.Data
+      Debug("Can't load the parent TypeDef: ", nameParts[0],
+            " for nested class: ", instrumentationTargetMethodTypeName,
+            ", Module: ", assemblyName);
+      return false;
+    }
+    instrumentedMethodTypeName = nameParts[1];
+
+  } else if (nameParts.size() > 1) {
+    Warn("Invalid TypeDef-only one layer of nested classes are supported: ",
+         instrumentationTargetMethodTypeName, ", Module: ", assemblyName);
+    return false;
+  }
+
+  // Find the type we're instrumenting
+  auto hr = metadata_import->FindTypeDefByName(
+      instrumentedMethodTypeName.c_str(), parentTypeDef, &typeDef);
+  if (FAILED(hr)) {
+    // This can happen between .NET framework and .NET core, not all apis are
+    // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
+    // System.Data
+    Debug("Can't load the TypeDef for: ", instrumentedMethodTypeName,
+          ", Module: ", assemblyName);
+    return false;
+  }
+}
 }  // namespace trace
