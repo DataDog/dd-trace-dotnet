@@ -376,7 +376,11 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: down
     condition: succeededOrFailed()
-    
+
+  - publish: $(System.DefaultWorkingDirectory)/test
+    artifact: windows-$(buildPlatform)-artifacts
+    condition: succeededOrFailed()
+
 - job: Windows_IIS
   timeoutInMinutes: 100
   strategy:
