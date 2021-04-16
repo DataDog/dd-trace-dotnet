@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         [InlineData("/Account/Login", "GET /account/login", false)]
         public async Task SubmitsTraces(
             string path,
@@ -52,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact(Skip = "This test requires Elasticsearch to be running on the host, which is not currently enabled in CI.")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public async Task NestedAsyncElasticCallSubmitsTrace()
         {
             var testStart = DateTime.UtcNow;
