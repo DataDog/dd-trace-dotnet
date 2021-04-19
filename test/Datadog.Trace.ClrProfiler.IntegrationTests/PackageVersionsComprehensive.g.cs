@@ -70,6 +70,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.11.4" },
                 new object[] { "2.11.5" },
                 new object[] { "2.11.6" },
+                new object[] { "2.12.0" },
+                new object[] { "2.12.1" },
+                new object[] { "2.12.2" },
 #endif
             };
 
@@ -160,6 +163,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.1.6" },
                 new object[] { "4.1.7" },
                 new object[] { "4.1.8" },
+                new object[] { "4.1.9" },
                 new object[] { "4.1.3.1" },
 #endif
             };
@@ -238,10 +242,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.1.1" },
                 new object[] { "1.1.2" },
                 new object[] { "1.1.3" },
+                new object[] { "1.1.4" },
                 new object[] { "2.0.0" },
                 new object[] { "2.0.1" },
                 new object[] { "2.1.0" },
                 new object[] { "2.1.1" },
+                new object[] { "2.1.2" },
 #endif
             };
 
@@ -445,10 +451,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.1.10" },
                 new object[] { "3.1.11" },
                 new object[] { "3.1.12" },
+                new object[] { "3.1.13" },
+                new object[] { "3.1.14" },
                 new object[] { "5.0.0" },
                 new object[] { "5.0.1" },
                 new object[] { "5.0.2" },
                 new object[] { "5.0.3" },
+                new object[] { "5.0.4" },
+                new object[] { "5.0.5" },
 #endif
             };
 
@@ -472,6 +482,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "19.9.0" },
                 new object[] { "19.10.0" },
                 new object[] { "19.10.1" },
+                new object[] { "19.11.0" },
 #endif
             };
 
@@ -497,6 +508,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.19.91" },
                 new object[] { "2.19.100" },
                 new object[] { "2.19.101" },
+                new object[] { "2.19.110" },
 #endif
             };
 
