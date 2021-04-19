@@ -49,6 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetCallTargetSettings(enableCallTarget, enableInlining);
 
             _iisFixture = iisFixture;
+            EnvironmentHelper.EnableWindowsContainerBasis();
             _iisFixture.TryStartIis(this);
         }
 
