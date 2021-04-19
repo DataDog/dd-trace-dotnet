@@ -5,21 +5,22 @@
 ## Changes
 * Compute top-level spans on the tracer side (#1302, #1303)
 * Add support for flushing partial traces (#1313, #1347)
-    * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
+  * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
 * Enable Service Fabric Service Remoting instrumentation out-of-the-box (#1234)
 * Add log rotation for native logger (#1296, #1329)
 * Disable log rate-limiting by default (#1307)
 * CallTarget refactoring and performance improvements (#1292, #1305, #1279)
 * CIApp: Add a commit check before filling the commiter, author and message data (#1312)
 * Update ASP.NET / MVC / WebApi2 Resource Names (#1288)
-    * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-framework/#experimental-features) for instructions on enabling this feature.
+  * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-framework/#experimental-features) for instructions on enabling this feature.
 * Update ASP.NET Core Resource Names (#1289)
-    * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
-* Report tracer drop-rate the Trace Agent (#1306, #1350, #1406)
+  * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
+* Report tracer drop-rate to the Trace Agent (#1306, #1350, #1406)
 * Update URI "cleaning" algorithm to glob more identifier-like segments and improve performance (#1327)
 * Upgrade Serilog & Serilog.Sinks.File Vendors (#1345)
 * Update OpenTracing dependency from 0.12.0 to 0.12.1 (#1385)
-* Include PDB symbols in MSI installer (#1364)
+* Include PDB symbols in MSI installer, and linux packages (#1364, #1365)
+* Generate NuGet package symbols (#1401)
 * Improve `DD_TRACE_HEADER_TAGS` to decorate web server spans based on response headers (#1301)
 
 ## Fixes
@@ -29,6 +30,7 @@
 * Replace `Thread.Sleep` with `Task.Delay` in dogstatsd (#1326, #1344)
 * Fix double-parsing not using invariant culture (#1349)
 * Fix small sync over async occurrence in DatadogHttpClient (#1348)
+* Delete accidentally pushed log file (#1408)
 
 ## Build / Test
 * Add additional ASP.NET Core tests + fix response code bug (#1269)
@@ -36,7 +38,7 @@
 * Crank importer and pipeline (#1287)
 * Add benchmarks for calltarget (#1300)
 * Define benchmarks scheduled runs in yaml (#1299, #1359)
-* Call a local endpoint in DuplicateTypeProxy test (#1308)
+* Call a local endpoint in DuplicateTypeProxy test (#1308) 
 * Fix components in `LICENSE-3rdparty.csv` file (#1319)
 * Enable JetBrains Tools in the Benchmarks projects (#1318)
 * Started work on a consolidated build pipeline (#1320, #1335)
