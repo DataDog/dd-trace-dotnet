@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent.Transports
@@ -8,6 +9,7 @@ namespace Datadog.Trace.Agent.Transports
         public AgentlessRequestFactory()
         {
             Task.Factory.StartNew(AgentlessInterop.InitializeTraceAgent, TaskCreationOptions.LongRunning);
+            Thread.Sleep(10_000);
         }
 
         public string Info(Uri endpoint) => endpoint.ToString();

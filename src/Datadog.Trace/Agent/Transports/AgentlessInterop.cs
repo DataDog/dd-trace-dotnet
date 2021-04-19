@@ -1,50 +1,77 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent.Transports
 {
     internal class AgentlessInterop
     {
-        private static InitDelegateType _initDelegate;
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentlessInterop>();
 
-        private static SendTracesDelegateType _sendTracesDelegateType;
+        // private static InitDelegateType _initDelegate;
 
-        private delegate void InitDelegateType();
+        // private static SendTracesDelegateType _sendTracesDelegateType;
 
-        private unsafe delegate void SendTracesDelegateType(byte* data, int length);
+        // private delegate void InitDelegateType();
 
-        // [DllImport("agent.dll", CallingConvention = CallingConvention.StdCall)]
-        // public static extern void Init();
-        // [DllImport("agent.dll", CallingConvention = CallingConvention.StdCall)]
-        // public static extern unsafe void SendTraces(byte* data, int length);
+        // private unsafe delegate void SendTracesDelegateType(byte* data, int length);
+
+        [DllImport("agent.dll", CallingConvention = CallingConvention.StdCall)]
+        public static extern void Init();
+
+        [DllImport("agent.dll", CallingConvention = CallingConvention.StdCall)]
+        public static extern unsafe void SendTraces(byte* data, int length);
 
         public static void InitializeTraceAgent()
         {
-            _initDelegate.Invoke();
+            try
+            {
+                Init();
+                // _initDelegate.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Unable to initialize agent library");
+            }
         }
 
-        public static unsafe void SendTraces(byte* data, int length)
+        public static unsafe void MarshalTraces(byte* data, int length)
         {
-            _sendTracesDelegateType.Invoke(data, length);
+            SendTraces(data, length);
+            // _sendTracesDelegateType.Invoke(data, length);
         }
 
         public static void LoadAgentless()
         {
-            var agentLibraryPath = Environment.GetEnvironmentVariable("DD_TRACE_AGENT_DLL_PATH");
-            if (agentLibraryPath != null)
+            try
             {
-                var hModule = LoadLibrary(agentLibraryPath);
-                var functionAddress = GetProcAddress(hModule, "Init");
-                _initDelegate = (InitDelegateType)Marshal.GetDelegateForFunctionPointer(functionAddress, typeof(InitDelegateType));
-                functionAddress = GetProcAddress(hModule, "SendTraces");
-                _sendTracesDelegateType = (SendTracesDelegateType)Marshal.GetDelegateForFunctionPointer(functionAddress, typeof(SendTracesDelegateType));
+                var agentLibraryPath = Environment.GetEnvironmentVariable("DD_TRACE_AGENT_DLL_PATH");
+                if (agentLibraryPath != null)
+                {
+                    var agentModule = LoadLibrary(agentLibraryPath);
+                    if (agentModule == IntPtr.Zero)
+                    {
+                        Log.Warning("Unable to locate agent.dll at {location}", agentLibraryPath);
+                    }
+
+                    // var hModule = LoadLibrary(agentLibraryPath);
+                    // var functionAddress = GetProcAddress(hModule, "Init");
+                    // _initDelegate = (InitDelegateType)Marshal.GetDelegateForFunctionPointer(functionAddress, typeof(InitDelegateType));
+                    // functionAddress = GetProcAddress(hModule, "SendTraces");
+                    // _sendTracesDelegateType = (SendTracesDelegateType)Marshal.GetDelegateForFunctionPointer(functionAddress, typeof(SendTracesDelegateType));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Unable to load agent library");
             }
         }
 
         [DllImport("Kernel32.dll")]
         private static extern IntPtr LoadLibrary(string path);
 
-        [DllImport("Kernel32.dll")]
-        private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+        // [DllImport("Kernel32.dll")]
+        // private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
     }
 }

@@ -50,11 +50,6 @@ namespace Datadog.Trace
 
         private readonly IAgentWriter _agentWriter;
 
-        static Tracer()
-        {
-            TracingProcessManager.Initialize();
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="Tracer"/> class with default settings.
         /// </summary>
@@ -78,6 +73,8 @@ namespace Datadog.Trace
 
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd)
         {
+            TracingProcessManager.Initialize();
+
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
 

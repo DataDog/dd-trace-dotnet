@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent.Transports
@@ -13,7 +13,7 @@ namespace Datadog.Trace.Agent.Transports
         {
             fixed (byte* buffer = traces.Array)
             {
-                AgentlessInterop.SendTraces(buffer + traces.Offset, traces.Count);
+                AgentlessInterop.MarshalTraces(buffer + traces.Offset, traces.Count);
             }
 
             return Task.FromResult<IApiResponse>(new AgentlessApiResponse());
