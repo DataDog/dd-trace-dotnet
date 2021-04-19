@@ -488,6 +488,7 @@ TEST_F(CLRHelperTest, FindNestedTypeDefsByName) {
 
 TEST_F(CLRHelperTest, DoesNotFindDoubleNestedTypeDefsByName) {
   std::vector<std::wstring> expected_types = {
+      L"Samples.ExampleLibrary.NotARealClass",
       L"Samples.ExampleLibrary.FakeClient.Biscuit+Cookie+Raisin"};
 
   for (auto& def : expected_types) {
