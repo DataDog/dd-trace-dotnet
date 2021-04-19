@@ -1,8 +1,57 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
-## [Unreleased]
-### Added
-- New instrumentation for Service Fabric Service Remoting (#1234)
+## [Release 1.26.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.26.0)
+
+## Changes
+* Compute top-level spans on the tracer side (#1302, #1303)
+* Add support for flushing partial traces (#1313, #1347)
+    * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
+* Enable Service Fabric Service Remoting instrumentation out-of-the-box (#1234)
+* Add log rotation for native logger (#1296, #1329)
+* Disable log rate-limiting by default (#1307)
+* CallTarget refactoring and performance improvements (#1292, #1305, #1279)
+* CIApp: Add a commit check before filling the commiter, author and message data (#1312)
+* Update ASP.NET / MVC / WebApi2 Resource Names (#1288)
+    * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-framework/#experimental-features) for instructions on enabling this feature.
+* Update ASP.NET Core Resource Names (#1289)
+    * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
+* Report tracer drop-rate (due to over-full buffer) to the Trace Agent (#1306, #1350, #1406)
+* Update URI "cleaning" algorithm to glob more identifier-like segments and improve performance (#1327)
+* Upgrade Serilog & Serilog.Sinks.File Vendors (#1345)
+* Update OpenTracing dependency from 0.12.0 to 0.12.1 (#1385)
+* Include PDB symbols in MSI installer (#1364)
+* Improve `DD_TRACE_HEADER_TAGS` to decorate web server spans based on response headers (#1301)
+
+## Fixes
+* Fix Container Tagging in Fargate 1.4 (#1286)
+* Increase buffer size to avoid edge cases of span dropping (#1297)
+* Don't set the service name in the span constructor (#1294)
+* Replace `Thread.Sleep` with `Task.Delay` in dogstatsd (#1326, #1344)
+* Fix double-parsing not using invariant culture (#1349)
+* Fix small sync over async occurrence in DatadogHttpClient (#1348)
+
+## Build / Test
+* Add additional ASP.NET Core tests + fix response code bug (#1269)
+* Minor build improvements (#1295, #1352, #1359, #1403)
+* Crank importer and pipeline (#1287)
+* Add benchmarks for calltarget (#1300)
+* Define benchmarks scheduled runs in yaml (#1299, #1359)
+* Call a local endpoint in DuplicateTypeProxy test (#1308)
+* Fix components in `LICENSE-3rdparty.csv` file (#1319)
+* Enable JetBrains Tools in the Benchmarks projects (#1318)
+* Started work on a consolidated build pipeline (#1320, #1335)
+* Add Dependabot for keeping dependencies up to date (#1338, #1361, #1387, #1399, #1404)
+* Improvements to flaky tests (#1271, #1331, #1360, #1400)
+* Add further test resiliency against assembly loading issues (#1337)
+* Additional testing for TagsList behaviour (#1311)
+* Fix native build to allow specifying configuration (#1309, #1355, #1356, #1362)
+* Add benchmark for Serilog log injection (#1351)
+* Fix Datadog.Trace.Tests.DogStatsDTests.Send_metrics_when_enabled (#1358)
+* Don't run Unit test or runner pipelines on all branch pushes (#1354)
+* Add additional test for ContainerID parsing (#1405)
+* Fixes the CMake version 3.19.8 in CMakeLists (#1407)
+
+[Changes since 1.25.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.25.0...v1.26.0)
 
 ## [Release 1.25.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.25.0)
 
