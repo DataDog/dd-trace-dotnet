@@ -2,7 +2,7 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "--help"
+      "commandLineArgs": "--crank-import=\"C:\\temp\\crank\\results.json\""
     }
   }
 }
