@@ -15,7 +15,7 @@
     * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-framework/#experimental-features) for instructions on enabling this feature.
 * Update ASP.NET Core Resource Names (#1289)
     * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
-* Report tracer drop-rate (due to over-full buffer) to the Trace Agent (#1306, #1350, #1406)
+* Report tracer drop-rate the Trace Agent (#1306, #1350, #1406)
 * Update URI "cleaning" algorithm to glob more identifier-like segments and improve performance (#1327)
 * Upgrade Serilog & Serilog.Sinks.File Vendors (#1345)
 * Update OpenTracing dependency from 0.12.0 to 0.12.1 (#1385)
