@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
+
+    <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->
+    <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
   </PropertyGroup>
   
   <ItemGroup>
