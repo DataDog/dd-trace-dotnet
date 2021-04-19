@@ -439,57 +439,61 @@ namespace Datadog.Trace.Ci
             public static bool TryGetFromPackageOffset(GitPackageOffset packageOffset, out GitCommitObject commitObject)
             {
                 commitObject = default;
-
-                string packFile = Path.ChangeExtension(packageOffset.FilePath, ".pack");
-                if (File.Exists(packFile))
+                try
                 {
-                    // packfile format explanation:
-                    // https://codewords.recurse.com/issues/three/unpacking-git-packfiles#:~:text=idx%20file%20contains%20the%20index,pack%20file.&text=Objects%20in%20a%20packfile%20can,of%20storing%20the%20whole%20object.
-
-                    using (var fs = new FileStream(packFile, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    using (var br = new BigEndianBinaryReader(fs))
+                    string packFile = Path.ChangeExtension(packageOffset.FilePath, ".pack");
+                    if (File.Exists(packFile))
                     {
-                        // Move to the offset of the object
-                        fs.Seek(packageOffset.Offset, SeekOrigin.Begin);
-                        byte[] packData = br.ReadBytes(2);
+                        // packfile format explanation:
+                        // https://codewords.recurse.com/issues/three/unpacking-git-packfiles#:~:text=idx%20file%20contains%20the%20index,pack%20file.&text=Objects%20in%20a%20packfile%20can,of%20storing%20the%20whole%20object.
 
-                        // We build the size combining the bits from sizeParts
-                        // using bitwise operations (BigEndian).
-                        // Example:
-                        // - sizeParts = [-100, 53] => [10011100, 00110101]
-                        // - size = 00000000 00000000 00000000 00000000
-                        int size = 0;
-
-                        // Clean first bit and add bits to size using OR.
-                        //    size       00000000 00000000 00000000 00000000
-                        // OR sizePart[1] & 0x7F                    00110101
-                        //    size       00000000 00000000 00000000 00110101
-                        size |= (packData[1] & 0x7F);
-
-                        // Move 4 bits to the left.
-                        // size 00000000 00000000 00000011 01010000
-                        size <<= 4;
-
-                        // Clean four initial bits and add the result to size using OR.
-                        // size            00000000 00000000 00000011 01010000
-                        // OR sizePart[0] & 0x0F                      00001100
-                        // size            00000000 00000000 00000011 01011100
-                        size |= (packData[0] & 0x0F);
-
-                        // Advance 2 bytes to skip the zlib magic number
-                        _ = br.ReadUInt16();
-
-                        // Read the git commit object
-                        using (var defStream = new DeflateStream(br.BaseStream, CompressionMode.Decompress))
+                        using (var fs = new FileStream(packFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        using (var br = new BigEndianBinaryReader(fs))
                         {
-                            byte[] buffer = new byte[size];
-                            int readBytes = defStream.Read(buffer, 0, buffer.Length);
-                            defStream.Close();
-                            string strContent = Encoding.UTF8.GetString(buffer, 0, readBytes);
-                            commitObject = new GitCommitObject(strContent);
-                            return true;
+                            // Move to the offset of the object
+                            fs.Seek(packageOffset.Offset, SeekOrigin.Begin);
+                            byte[] packData = br.ReadBytes(2);
+
+                            int objectSize = (int)(packData[0] & 0x0F);
+
+                            if (packData[0] > 128)
+                            {
+                                objectSize += (packData[1] & 0x7F) * 16;
+                                if (packData[1] > 128)
+                                {
+                                    int multiplier = 128;
+                                    byte pData = br.ReadByte();
+                                    objectSize += (pData & 0x7F) * multiplier;
+                                    while (pData > 128)
+                                    {
+                                        multiplier *= 128;
+                                        pData = br.ReadByte();
+                                        objectSize += (pData & 0x7F) * multiplier;
+                                    }
+                                }
+                            }
+
+                            // Advance 2 bytes to skip the zlib magic number
+                            uint zlibMagicNumber = br.ReadUInt16();
+                            if ((byte)zlibMagicNumber == 0x78)
+                            {
+                                // Read the git commit object
+                                using (var defStream = new DeflateStream(br.BaseStream, CompressionMode.Decompress))
+                                {
+                                    byte[] buffer = new byte[objectSize];
+                                    int readBytes = defStream.Read(buffer, 0, buffer.Length);
+                                    defStream.Close();
+                                    string strContent = Encoding.UTF8.GetString(buffer, 0, readBytes);
+                                    commitObject = new GitCommitObject(strContent);
+                                    return true;
+                                }
+                            }
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    _ = ex;
                 }
 
                 return false;
