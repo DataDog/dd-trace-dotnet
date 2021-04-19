@@ -54,7 +54,6 @@ namespace Datadog.Trace
 
         static Tracer()
         {
-            TracingProcessManager.Initialize();
         }
 
         /// <summary>
@@ -80,6 +79,9 @@ namespace Datadog.Trace
 
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd)
         {
+            // TODO: Here temporarily to allow breakpoints
+            TracingProcessManager.Initialize();
+
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
 

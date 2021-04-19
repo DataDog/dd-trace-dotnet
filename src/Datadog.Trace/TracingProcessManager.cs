@@ -24,7 +24,7 @@ namespace Datadog.Trace
         {
             Name = "datadog-trace-agent",
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
+            // ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
         };
 
@@ -32,13 +32,13 @@ namespace Datadog.Trace
         {
             Name = "dogstatsd",
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
+            // ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
         };
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
         {
-            // TraceAgentMetadata,
+            TraceAgentMetadata,
             DogStatsDMetadata
         };
 
