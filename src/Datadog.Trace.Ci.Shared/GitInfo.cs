@@ -454,6 +454,7 @@ namespace Datadog.Trace.Ci
                             fs.Seek(packageOffset.Offset, SeekOrigin.Begin);
                             byte[] packData = br.ReadBytes(2);
 
+                            // Extract the object size
                             int objectSize = (int)(packData[0] & 0x0F);
 
                             if (packData[0] > 128)
@@ -491,9 +492,8 @@ namespace Datadog.Trace.Ci
                         }
                     }
                 }
-                catch (Exception ex)
+                catch
                 {
-                    _ = ex;
                 }
 
                 return false;
