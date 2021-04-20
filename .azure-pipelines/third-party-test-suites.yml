@@ -9,36 +9,177 @@ schedules:
     - master
   always: true
 
-# Stages
-stages:
-- stage: Linux
+jobs:
+- job: Postgres
+  strategy:
+    matrix:
+      Ubuntu_Major5:
+        imageName: ubuntu-18.04
+        tagName: v5.0.4
+      Windows_Major5:
+        imageName: windows-2019
+        tagName: v5.0.4
+  variables:
+    pg_major: 13
+    postgis_version: 3
   pool:
-    vmImage: ubuntu-18.04
-  jobs:
+    vmImage: $(imageName)
+  steps:
 
-  - job: Postgres
-    strategy:
-      matrix:
-        Major5:
-          tagName: v5.0.4
-        Major4:
-          tagName: v4.1.9
+  - checkout: none
 
-    steps:
+  - script: |
+      git clone https://github.com/npgsql/npgsql.git
+      cd $(System.DefaultWorkingDirectory)/npgsql
+      git checkout $(tagName)
+    displayName: Checkout npgsql at tag $(tagName)
 
-    - checkout: none
+  - script: |
+      # Sourced from https://github.com/npgsql/npgsql/blob/v5.0.4/.github/workflows/build.yml
 
-    - script: |
-        git clone https://github.com/npgsql/npgsql.git
-        cd $(System.DefaultWorkingDirectory)/npgsql
-        git checkout $(tagName)
-      displayName: Checkout npgsql at tag $(tagName)
+      # Find EnterpriseDB version number
+      EDB_VERSION=$(pwsh -c "
+          \$global:progressPreference='silentlyContinue';
+          Invoke-WebRequest -URI https://www.postgresql.org/applications-v2.xml |
+              Select-Object -ExpandProperty Content |
+              Select-Xml -XPath '/applications/application[id=\"postgresql_${{ variables.pg_major }}\" and platform=\"windows-x64\"]/version/text()' |
+              Select-Object -First 1 -ExpandProperty Node |
+              Select-Object -ExpandProperty Value")
 
-    - script: |
-        cd $(System.DefaultWorkingDirectory)/npgsql/.devcontainer
-        docker-compose up -d db
-      displayName: Start dependencies
-    
-    - script: |
-        cd $(System.DefaultWorkingDirectory)/npgsql/test/Npgsql.Tests
-        dotnet test
+      # Install PostgreSQL
+      echo "Installing PostgreSQL (version: ${EDB_VERSION})"
+      curl -o pgsql.zip -L https://get.enterprisedb.com/postgresql/postgresql-${EDB_VERSION}-windows-x64-binaries.zip
+      unzip pgsql.zip -x 'pgsql/include/**' 'pgsql/doc/**' 'pgsql/pgAdmin 4/**' 'pgsql/StackBuilder/**'
+
+      # Match Npgsql CI Docker image and stash one level up
+      cp {$GITHUB_WORKSPACE/.build,pgsql}/server.crt
+      cp {$GITHUB_WORKSPACE/.build,pgsql}/server.key
+
+      # Find OSGEO version number
+      OSGEO_VERSION=$(\
+        curl -Ls https://download.osgeo.org/postgis/windows/pg${{ variables.pg_major }} |
+        sed -n 's/.*>postgis-bundle-pg${{ variables.pg_major }}-\(${{ variables.postgis_version }}.[0-9]*.[0-9]*\)x64.zip<.*/\1/p' |
+        tail -n 1)
+
+      # Install PostGIS
+      echo "Installing PostGIS (version: ${OSGEO_VERSION})"
+      POSTGIS_FILE="postgis-bundle-pg${{ variables.pg_major }}-${OSGEO_VERSION}x64"
+      curl -o postgis.zip -L https://download.osgeo.org/postgis/windows/pg${{ variables.pg_major }}/${POSTGIS_FILE}.zip
+      unzip postgis.zip -d postgis
+      cp -a postgis/$POSTGIS_FILE/. pgsql/
+
+      # Start PostgreSQL
+      pgsql/bin/initdb -D pgsql/PGDATA -E UTF8 -U postgres
+      SOCKET_DIR=$(echo "$LOCALAPPDATA\Temp" | sed 's|\\|/|g')
+      sed -i "s|#unix_socket_directories = ''|unix_socket_directories = '$SOCKET_DIR'|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#wal_level =|wal_level = logical #|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#max_wal_senders =|max_wal_senders = 50 #|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#wal_sender_timeout =|wal_sender_timeout = 3s #|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#synchronous_standby_names =|synchronous_standby_names = 'npgsql_test_sync_standby' #|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#synchronous_commit =|synchronous_commit = local #|" pgsql/PGDATA/postgresql.conf
+      pgsql/bin/pg_ctl -D pgsql/PGDATA -l logfile -o '-c max_prepared_transactions=10 -c ssl=true -c ssl_cert_file=../server.crt -c ssl_key_file=../server.key' start
+
+      # Configure test account
+      pgsql/bin/psql -U postgres -c "CREATE ROLE npgsql_tests SUPERUSER LOGIN PASSWORD 'npgsql_tests'"
+      pgsql/bin/psql -U postgres -c "CREATE DATABASE npgsql_tests OWNER npgsql_tests"
+      pgsql/bin/psql -U postgres -c "CREATE EXTENSION citext" npgsql_tests
+      pgsql/bin/psql -U postgres -c "CREATE EXTENSION hstore" npgsql_tests
+      pgsql/bin/psql -U postgres -c "CREATE EXTENSION ltree" npgsql_tests
+      pgsql/bin/psql -U postgres -c "CREATE EXTENSION postgis" npgsql_tests
+
+      # user 'npgsql_tests_scram' must be created with password encrypted as scram-sha-256 (which only applies after restart)
+      sed -i "s|#password_encryption = md5|password_encryption = scram-sha-256|" pgsql/PGDATA/postgresql.conf
+
+      pgsql/bin/pg_ctl -D pgsql/PGDATA -l logfile -o '-c max_prepared_transactions=10 -c ssl=true -c ssl_cert_file=../server.crt -c ssl_key_file=../server.key' restart
+
+      pgsql/bin/psql -U postgres -c "CREATE ROLE npgsql_tests_scram SUPERUSER LOGIN PASSWORD 'npgsql_tests_scram'"
+
+      # Disable trust authentication except for unix domain sockets, requiring MD5
+      # passwords - some tests must fail if a password isn't provided.
+      if [ ${{ variables.pg_major }} -ge 13 ]; then
+            echo "local all all trust" > pgsql/PGDATA/pg_hba.conf
+            echo "host all npgsql_tests_scram all scram-sha-256" >> pgsql/PGDATA/pg_hba.conf
+      else
+            echo "host all npgsql_tests_scram all scram-sha-256" > pgsql/PGDATA/pg_hba.conf
+      fi
+      echo "host all all all md5" >> pgsql/PGDATA/pg_hba.conf
+      echo "host replication all all md5" >> pgsql/PGDATA/pg_hba.conf
+    displayName: Start PostgreSQL ${{ variables.pg_major }} (Linux)
+    condition: startsWith(variables['imageName'], 'ubuntu')
+
+  - script: |
+      # Sourced from https://github.com/npgsql/npgsql/blob/v5.0.4/.github/workflows/build.yml
+
+      # Find EnterpriseDB version number
+      EDB_VERSION=$(pwsh -c "
+          \$global:progressPreference='silentlyContinue';
+          Invoke-WebRequest -URI https://www.postgresql.org/applications-v2.xml |
+              Select-Object -ExpandProperty Content |
+              Select-Xml -XPath '/applications/application[id=\"postgresql_${{ variables.pg_major }}\" and platform=\"windows-x64\"]/version/text()' |
+              Select-Object -First 1 -ExpandProperty Node |
+              Select-Object -ExpandProperty Value")
+
+      # Install PostgreSQL
+      echo "Installing PostgreSQL (version: ${EDB_VERSION})"
+      curl -o pgsql.zip -L https://get.enterprisedb.com/postgresql/postgresql-${EDB_VERSION}-windows-x64-binaries.zip
+      unzip pgsql.zip -x 'pgsql/include/**' 'pgsql/doc/**' 'pgsql/pgAdmin 4/**' 'pgsql/StackBuilder/**'
+
+      # Match Npgsql CI Docker image and stash one level up
+      cp {$GITHUB_WORKSPACE/.build,pgsql}/server.crt
+      cp {$GITHUB_WORKSPACE/.build,pgsql}/server.key
+
+      # Find OSGEO version number
+      OSGEO_VERSION=$(\
+        curl -Ls https://download.osgeo.org/postgis/windows/pg${{ variables.pg_major }} |
+        sed -n 's/.*>postgis-bundle-pg${{ variables.pg_major }}-\(${{ variables.postgis_version }}.[0-9]*.[0-9]*\)x64.zip<.*/\1/p' |
+        tail -n 1)
+
+      # Install PostGIS
+      echo "Installing PostGIS (version: ${OSGEO_VERSION})"
+      POSTGIS_FILE="postgis-bundle-pg${{ variables.pg_major }}-${OSGEO_VERSION}x64"
+      curl -o postgis.zip -L https://download.osgeo.org/postgis/windows/pg${{ variables.pg_major }}/${POSTGIS_FILE}.zip
+      unzip postgis.zip -d postgis
+      cp -a postgis/$POSTGIS_FILE/. pgsql/
+
+      # Start PostgreSQL
+      pgsql/bin/initdb -D pgsql/PGDATA -E UTF8 -U postgres
+      SOCKET_DIR=$(echo "$LOCALAPPDATA\Temp" | sed 's|\\|/|g')
+      sed -i "s|#unix_socket_directories = ''|unix_socket_directories = '$SOCKET_DIR'|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#wal_level =|wal_level = logical #|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#max_wal_senders =|max_wal_senders = 50 #|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#wal_sender_timeout =|wal_sender_timeout = 3s #|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#synchronous_standby_names =|synchronous_standby_names = 'npgsql_test_sync_standby' #|" pgsql/PGDATA/postgresql.conf
+      sed -i "s|#synchronous_commit =|synchronous_commit = local #|" pgsql/PGDATA/postgresql.conf
+      pgsql/bin/pg_ctl -D pgsql/PGDATA -l logfile -o '-c max_prepared_transactions=10 -c ssl=true -c ssl_cert_file=../server.crt -c ssl_key_file=../server.key' start
+
+      # Configure test account
+      pgsql/bin/psql -U postgres -c "CREATE ROLE npgsql_tests SUPERUSER LOGIN PASSWORD 'npgsql_tests'"
+      pgsql/bin/psql -U postgres -c "CREATE DATABASE npgsql_tests OWNER npgsql_tests"
+      pgsql/bin/psql -U postgres -c "CREATE EXTENSION citext" npgsql_tests
+      pgsql/bin/psql -U postgres -c "CREATE EXTENSION hstore" npgsql_tests
+      pgsql/bin/psql -U postgres -c "CREATE EXTENSION ltree" npgsql_tests
+      pgsql/bin/psql -U postgres -c "CREATE EXTENSION postgis" npgsql_tests
+
+      # user 'npgsql_tests_scram' must be created with password encrypted as scram-sha-256 (which only applies after restart)
+      sed -i "s|#password_encryption = md5|password_encryption = scram-sha-256|" pgsql/PGDATA/postgresql.conf
+
+      pgsql/bin/pg_ctl -D pgsql/PGDATA -l logfile -o '-c max_prepared_transactions=10 -c ssl=true -c ssl_cert_file=../server.crt -c ssl_key_file=../server.key' restart
+
+      pgsql/bin/psql -U postgres -c "CREATE ROLE npgsql_tests_scram SUPERUSER LOGIN PASSWORD 'npgsql_tests_scram'"
+
+      # Disable trust authentication except for unix domain sockets, requiring MD5
+      # passwords - some tests must fail if a password isn't provided.
+      if [ ${{ variables.pg_major }} -ge 13 ]; then
+            echo "local all all trust" > pgsql/PGDATA/pg_hba.conf
+            echo "host all npgsql_tests_scram all scram-sha-256" >> pgsql/PGDATA/pg_hba.conf
+      else
+            echo "host all npgsql_tests_scram all scram-sha-256" > pgsql/PGDATA/pg_hba.conf
+      fi
+      echo "host all all all md5" >> pgsql/PGDATA/pg_hba.conf
+      echo "host replication all all md5" >> pgsql/PGDATA/pg_hba.conf
+    displayName: Start PostgreSQL ${{ variables.pg_major }} (Windows)
+    condition: startsWith(variables['imageName'], 'windows')
+
+  - script: |
+      cd $(System.DefaultWorkingDirectory)/npgsql/test/Npgsql.Tests
+      dotnet test
