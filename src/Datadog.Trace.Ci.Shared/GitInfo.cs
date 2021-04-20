@@ -467,38 +467,49 @@ namespace Datadog.Trace.Ci
 
                             // Extract the object size (https://codewords.recurse.com/images/three/varint.svg)
                             int objectSize = (int)(packData[0] & 0x0F);
-
                             if (packData[0] >= 128)
                             {
-                                objectSize += (packData[1] & 0x7F) * 16;
+                                int shift = 4;
+                                objectSize += (packData[1] & 0x7F) << shift;
                                 if (packData[1] >= 128)
                                 {
-                                    int multiplier = 128;
-                                    byte pData = br.ReadByte();
-                                    objectSize += (pData & 0x7F) * multiplier;
-                                    while (pData >= 128)
+                                    byte pData;
+                                    do
                                     {
-                                        multiplier *= 128;
+                                        shift += 7;
                                         pData = br.ReadByte();
-                                        objectSize += (pData & 0x7F) * multiplier;
+                                        objectSize += (pData & 0x7F) << shift;
                                     }
+                                    while (pData >= 128);
                                 }
                             }
 
-                            // Advance 2 bytes to skip the zlib magic number
-                            uint zlibMagicNumber = br.ReadUInt16();
-                            if ((byte)zlibMagicNumber == 0x78)
+                            // Check if the object size is in the aceptable range
+                            if (objectSize > 0 && objectSize < ushort.MaxValue)
                             {
-                                // Read the git commit object
-                                using (var defStream = new DeflateStream(br.BaseStream, CompressionMode.Decompress))
+                                // Advance 2 bytes to skip the zlib magic number
+                                uint zlibMagicNumber = br.ReadUInt16();
+                                if ((byte)zlibMagicNumber == 0x78)
                                 {
-                                    byte[] buffer = new byte[objectSize];
-                                    int readBytes = defStream.Read(buffer, 0, buffer.Length);
-                                    defStream.Close();
-                                    string strContent = Encoding.UTF8.GetString(buffer, 0, readBytes);
-                                    commitObject = new GitCommitObject(strContent);
-                                    return true;
+                                    // Read the git commit object
+                                    using (var defStream = new DeflateStream(br.BaseStream, CompressionMode.Decompress))
+                                    {
+                                        byte[] buffer = new byte[objectSize];
+                                        int readBytes = defStream.Read(buffer, 0, buffer.Length);
+                                        defStream.Close();
+                                        string strContent = Encoding.UTF8.GetString(buffer, 0, readBytes);
+                                        commitObject = new GitCommitObject(strContent);
+                                        return true;
+                                    }
                                 }
+                                else
+                                {
+                                    Log.Warning("The commit data doesn't have a valid zlib header magic number.");
+                                }
+                            }
+                            else
+                            {
+                                Log.Warning<int>("The object size is outside of an acceptable range: {objectSize}", objectSize);
                             }
                         }
                     }
