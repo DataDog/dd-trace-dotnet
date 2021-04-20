@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 
@@ -7,6 +9,20 @@ namespace Datadog.Trace.Agent.MessagePack
 {
     internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
     {
+        private readonly Func<Span, KeyValuePair<string, double?>>[] _metricsFactories;
+        private readonly Func<Span, KeyValuePair<string, string>>[] _tagsFactories;
+
+        public SpanMessagePackFormatter(IKeepRateCalculator keepRateCalculator)
+        {
+            _metricsFactories = new Func<Span, KeyValuePair<string, double?>>[]
+            {
+                span => new(Metrics.TopLevelSpan, span.IsTopLevel ? 1.0 : null),
+                span => new(Metrics.TracesKeepRate, span.IsTopLevel ? keepRateCalculator.GetKeepRate() : null)
+            };
+
+            _tagsFactories = ArrayHelper.Empty<Func<Span, KeyValuePair<string, string>>>();
+        }
+
         public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
         {
             // First, pack array length (or map length).
@@ -65,7 +81,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteByte(ref bytes, offset, 1);
             }
 
-            offset += value.Tags.SerializeTo(ref bytes, offset, value);
+            offset += value.Tags.SerializeTo(ref bytes, offset, value, _tagsFactories, _metricsFactories);
 
             return offset - originalOffset;
         }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Tagging;
@@ -115,15 +116,15 @@ namespace Datadog.Trace.Tests.Tagging
 
             var buffer = new byte[0];
 
-            var resolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
+            var resolver = new FormatterResolverWrapper(new SpanFormatterResolver(Mock.Of<IKeepRateCalculator>()));
             MessagePackSerializer.Serialize(ref buffer, 0, span, resolver);
 
             var deserializedSpan = MessagePack.MessagePackSerializer.Deserialize<FakeSpan>(buffer);
 
             Assert.Equal(16, deserializedSpan.Tags.Count);
 
-            // For top-level spans, there is one metric added during serialization
-            Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Metrics.Count);
+            // For top-level spans, there are two metrics added during serialization
+            Assert.Equal(topLevelSpan ? 18 : 16, deserializedSpan.Metrics.Count);
 
             Assert.Equal("Overridden Environment", deserializedSpan.Tags[Tags.Env]);
             Assert.Equal(0.75, deserializedSpan.Metrics[Metrics.SamplingLimitDecision]);

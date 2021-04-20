@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -67,7 +66,7 @@ namespace Datadog.Trace.Agent
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
 
-            var formatterResolver = SpanFormatterResolver.Instance;
+            var formatterResolver = new SpanFormatterResolver(traceKeepRateCalculator);
 
             _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
 
@@ -322,24 +321,6 @@ namespace Datadog.Trace.Agent
                 }
 
                 return null;
-            }
-
-            // Add the current keep rate to the root span
-            var rootSpan = trace[0].Context.TraceContext?.RootSpan;
-            if (rootSpan is not null)
-            {
-                _ = _traceKeepRateCalculator.GetKeepRate();
-
-                /*
-                if (rootSpan.Tags is CommonTags commonTags)
-                {
-                    commonTags.TracesKeepRate = currentKeepRate;
-                }
-                else
-                {
-                    rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
-                }
-                */
             }
 
             // We use a double-buffering mechanism

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -170,12 +171,12 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public int SerializeTo(ref byte[] bytes, int offset, Span span)
+        public int SerializeTo(ref byte[] bytes, int offset, Span span, Func<Span, KeyValuePair<string, string>>[] tagFactories, Func<Span, KeyValuePair<string, double?>>[] metricsFactories)
         {
             int originalOffset = offset;
 
-            offset += WriteTags(ref bytes, offset);
-            offset += WriteMetrics(ref bytes, offset, span);
+            offset += WriteTags(ref bytes, offset, span, tagFactories);
+            offset += WriteMetrics(ref bytes, offset, span, metricsFactories);
 
             return offset - originalOffset;
         }
@@ -251,7 +252,7 @@ namespace Datadog.Trace.Tagging
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
         }
 
-        private int WriteTags(ref byte[] bytes, int offset)
+        private int WriteTags(ref byte[] bytes, int offset, Span span, Func<Span, KeyValuePair<string, string>>[] tagFactories)
         {
             int originalOffset = offset;
 
@@ -289,6 +290,17 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
+            foreach (var factory in tagFactories)
+            {
+                var kvp = factory(span);
+
+                if (kvp.Value != null)
+                {
+                    count++;
+                    WriteTag(ref bytes, ref offset, kvp.Key, kvp.Value);
+                }
+            }
+
             if (count > 0)
             {
                 // Back-patch the count
@@ -298,7 +310,7 @@ namespace Datadog.Trace.Tagging
             return offset - originalOffset;
         }
 
-        private int WriteMetrics(ref byte[] bytes, int offset, Span span)
+        private int WriteMetrics(ref byte[] bytes, int offset, Span span, Func<Span, KeyValuePair<string, double?>>[] metricsFactories)
         {
             int originalOffset = offset;
 
@@ -336,10 +348,15 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            if (span.IsTopLevel)
+            foreach (var factory in metricsFactories)
             {
-                count++;
-                WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0);
+                var kvp = factory(span);
+
+                if (kvp.Value != null)
+                {
+                    count++;
+                    WriteMetric(ref bytes, ref offset, kvp.Key, kvp.Value.Value);
+                }
             }
 
             if (count > 0)

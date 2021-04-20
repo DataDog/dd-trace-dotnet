@@ -6,19 +6,18 @@ namespace Datadog.Trace.Agent.MessagePack
 {
     internal class SpanFormatterResolver : IFormatterResolver
     {
-        public static readonly IFormatterResolver Instance = new SpanFormatterResolver();
+        private readonly IMessagePackFormatter<Span> _formatter;
 
-        private static readonly IMessagePackFormatter<Span> Formatter = new SpanMessagePackFormatter();
-
-        private SpanFormatterResolver()
+        internal SpanFormatterResolver(IKeepRateCalculator keepRateCalculator)
         {
+            _formatter = new SpanMessagePackFormatter(keepRateCalculator);
         }
 
         public IMessagePackFormatter<T> GetFormatter<T>()
         {
             if (typeof(T) == typeof(Span))
             {
-                return (IMessagePackFormatter<T>)Formatter;
+                return (IMessagePackFormatter<T>)_formatter;
             }
 
             return StandardResolver.Instance.GetFormatter<T>();

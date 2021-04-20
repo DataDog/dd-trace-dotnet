@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Agent
@@ -16,7 +17,7 @@ namespace Datadog.Trace.Tests.Agent
         [InlineData(50, 50, true)]
         public void SerializeSpans(int traceCount, int spanCount, bool resizeExpected)
         {
-            var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanFormatterResolver(Mock.Of<IKeepRateCalculator>()));
 
             var traces = new List<Span[]>();
 
@@ -59,7 +60,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Overflow()
         {
-            var buffer = new SpanBuffer(10, SpanFormatterResolver.Instance);
+            var buffer = new SpanBuffer(10, new SpanFormatterResolver(Mock.Of<IKeepRateCalculator>()));
 
             Assert.False(buffer.IsFull);
 
@@ -85,7 +86,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void LockingBuffer()
         {
-            var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanFormatterResolver(Mock.Of<IKeepRateCalculator>()));
 
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
 
@@ -103,7 +104,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void ClearingBuffer()
         {
-            var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanFormatterResolver(Mock.Of<IKeepRateCalculator>()));
 
             var trace = new[]
             {
@@ -131,7 +132,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void InvalidSize()
         {
-            Assert.Throws<ArgumentException>(() => new SpanBuffer(4, SpanFormatterResolver.Instance));
+            Assert.Throws<ArgumentException>(() => new SpanBuffer(4, new SpanFormatterResolver(Mock.Of<IKeepRateCalculator>())));
         }
 
         [MessagePack.MessagePackObject]
