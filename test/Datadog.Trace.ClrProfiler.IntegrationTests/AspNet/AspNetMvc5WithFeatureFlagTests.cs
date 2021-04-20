@@ -55,7 +55,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Theory]
         [Trait("Category", "EndToEnd")]
-        [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(AspNetMvc5TestData.WithFeatureFlag), MemberType = typeof(AspNetMvc5TestData))]
         public async Task SubmitsTraces(
             string path,

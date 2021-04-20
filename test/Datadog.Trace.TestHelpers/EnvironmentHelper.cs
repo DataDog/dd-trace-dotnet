@@ -378,7 +378,10 @@ namespace Datadog.Trace.TestHelpers
 
             if (_samplesDirectory.Contains("aspnet"))
             {
-                outputDir = binDir;
+                outputDir = Path.Combine(
+                    binDir,
+                    EnvironmentTools.GetBuildConfiguration(),
+                    "publish");
             }
             else if (EnvironmentTools.GetOS() == "win")
             {

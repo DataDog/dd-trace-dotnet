@@ -464,7 +464,7 @@ jobs:
     inputs:
       solution: test/test-applications/aspnet/samples-iis.sln
       configuration: '$(buildConfiguration)'
-      msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml'
+      msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=$(System.DefaultWorkingDirectory)/test/test-applications/aspnet/PublishProfiles/FolderProfile.pubxml'
       maximumCpuCount: true
 
   - task: DockerCompose@0

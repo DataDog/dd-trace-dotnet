@@ -17,7 +17,8 @@ namespace Samples.AspNetMvc5.Areas.Datadog
             context.MapRoute(
                 "Datadog_default",
                 "Datadog/{controller}/{action}/{id}",
-                new { area = AreaName, action = "Index", id = UrlParameter.Optional }
+                //new { area = AreaName, action = "Index", id = UrlParameter.Optional }
+                new { area = AreaName, controller = "DogHouse", action = "Index", id = UrlParameter.Optional }
             );
         }
     }

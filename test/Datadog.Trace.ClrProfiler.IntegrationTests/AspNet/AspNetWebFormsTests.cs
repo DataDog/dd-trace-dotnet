@@ -26,9 +26,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this);
         }
 
-        [Theory]
+        [Theory(Skip = "This example does not use MVC or WebApi, so we will not generate traces until AspNet is invoked via automatic instrumentation.")]
         [Trait("Category", "EndToEnd")]
-        [Trait("Integration", nameof(AspNetWebFormsTests))]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         [InlineData("/Account/Login", "GET /account/login", false)]
         public async Task SubmitsTraces(
             string path,
@@ -49,9 +50,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "1.0.0");
         }
 
-        [Fact]
+        [Fact(Skip = "This test requires Elasticsearch to be running on the host, which is not currently enabled in CI.")]
         [Trait("Category", "EndToEnd")]
-        [Trait("Integration", nameof(AspNetWebFormsTests))]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public async Task NestedAsyncElasticCallSubmitsTrace()
         {
             var testStart = DateTime.UtcNow;
