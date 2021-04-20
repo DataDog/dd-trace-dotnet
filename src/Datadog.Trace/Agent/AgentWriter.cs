@@ -328,7 +328,9 @@ namespace Datadog.Trace.Agent
             var rootSpan = trace[0].Context.TraceContext?.RootSpan;
             if (rootSpan is not null)
             {
-                var currentKeepRate = _traceKeepRateCalculator.GetKeepRate();
+                _ = _traceKeepRateCalculator.GetKeepRate();
+
+                /*
                 if (rootSpan.Tags is CommonTags commonTags)
                 {
                     commonTags.TracesKeepRate = currentKeepRate;
@@ -337,6 +339,7 @@ namespace Datadog.Trace.Agent
                 {
                     rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
                 }
+                */
             }
 
             // We use a double-buffering mechanism

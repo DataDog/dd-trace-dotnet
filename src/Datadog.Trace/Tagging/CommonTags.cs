@@ -5,8 +5,7 @@ namespace Datadog.Trace.Tagging
         protected static readonly IProperty<double?>[] CommonMetricsProperties =
         {
             new Property<CommonTags, double?>(Trace.Metrics.SamplingLimitDecision, t => t.SamplingLimitDecision, (t, v) => t.SamplingLimitDecision = v),
-            new Property<CommonTags, double?>(Trace.Metrics.SamplingPriority, t => t.SamplingPriority, (t, v) => t.SamplingPriority = v),
-            new Property<CommonTags, double?>(Trace.Metrics.TracesKeepRate, t => t.TracesKeepRate, (t, v) => t.TracesKeepRate = v)
+            new Property<CommonTags, double?>(Trace.Metrics.SamplingPriority, t => t.SamplingPriority, (t, v) => t.SamplingPriority = v)
         };
 
         protected static readonly IProperty<string>[] CommonTagsProperties =
@@ -22,8 +21,6 @@ namespace Datadog.Trace.Tagging
         public double? SamplingPriority { get; set; }
 
         public double? SamplingLimitDecision { get; set; }
-
-        public double? TracesKeepRate { get; set; }
 
         protected override IProperty<double?>[] GetAdditionalMetrics() => CommonMetricsProperties;
 
