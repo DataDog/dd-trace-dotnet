@@ -1,0 +1,44 @@
+trigger: none
+pr: none
+
+schedules:
+- cron: "0 3 * * *"
+  displayName: Daily 3am (UTC) build
+  branches:
+    include:
+    - master
+  always: true
+
+# Stages
+stages:
+- stage: Linux
+  pool:
+    vmImage: ubuntu-18.04
+  jobs:
+
+  - job: Postgres
+    strategy:
+      matrix:
+        Major5:
+          tagName: v5.0.4
+        Major4:
+          tagName: v4.1.9
+
+    steps:
+
+    - checkout: none
+
+    - script: |
+        git clone https://github.com/npgsql/npgsql.git
+        cd $(System.DefaultWorkingDirectory)/npgsql
+        git checkout $(tagName)
+      displayName: Checkout npgsql at tag $(tagName)
+
+    - script: |
+        cd $(System.DefaultWorkingDirectory)/npgsql/.devcontainer
+        docker-compose up -d db
+      displayName: Start dependencies
+    
+    - script: |
+        cd $(System.DefaultWorkingDirectory)/npgsql/test/Npgsql.Tests
+        dotnet test
