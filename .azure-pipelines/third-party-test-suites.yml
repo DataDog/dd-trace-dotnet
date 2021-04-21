@@ -22,6 +22,7 @@ jobs:
   variables:
     pg_major: 13
     postgis_version: 3
+    npgsql_dir: $(System.DefaultWorkingDirectory)/npgsql
   pool:
     vmImage: $(imageName)
   steps:
@@ -94,8 +95,8 @@ jobs:
       unzip pgsql.zip -x 'pgsql/include/**' 'pgsql/doc/**' 'pgsql/pgAdmin 4/**' 'pgsql/StackBuilder/**'
 
       # Match Npgsql CI Docker image and stash one level up
-      cp {$GITHUB_WORKSPACE/.build,pgsql}/server.crt
-      cp {$GITHUB_WORKSPACE/.build,pgsql}/server.key
+      cp {${{ variables.npgsql_dir}}/.build,pgsql}/server.crt
+      cp {${{ variables.npgsql_dir}}/.build,pgsql}/server.key
 
       # Find OSGEO version number
       OSGEO_VERSION=$(\
