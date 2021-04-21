@@ -158,13 +158,13 @@ jobs:
     condition: startsWith(variables['imageName'], 'windows')
 
   - script: |
-      dotnet test npgsql/test/Npgsql.Tests --logger trx --results-directory npgsql/test/results
+      dotnet test npgsql/test/Npgsql.Tests --logger 'trx;LogFileName=npgsql.tests.$(tagName).trx' --results-directory npgsql/test/results
     env:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
     displayName: Test
 
   - script: |
-      dotnet test npgsql/test/Npgsql.PluginTests --logger trx --results-directory npgsql/test/results
+      dotnet test npgsql/test/Npgsql.PluginTests --logger 'trx;LogFileName=npgsql.plugintests.$(tagName).trx' --results-directory npgsql/test/results
     env:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
     displayName: Test Plugins
