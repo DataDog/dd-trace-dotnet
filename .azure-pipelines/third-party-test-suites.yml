@@ -161,3 +161,10 @@ jobs:
     env:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
     displayName: Test Plugins
+
+  - task: PublishTestResults@2
+    displayName: publish test results
+    inputs:
+      testResultsFormat: VSTest
+      testResultsFiles: npgsql/test/**/*.trx
+    condition: succeededOrFailed()
