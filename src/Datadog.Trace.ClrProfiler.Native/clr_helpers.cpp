@@ -204,6 +204,8 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id) {
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                      const mdToken& token) {
   mdToken parent_token = mdTokenNil;
+  TypeInfo* parentTypeInfo = nullptr;
+  mdToken parent_type_token = mdTokenNil;
   WCHAR type_name[kNameMaxSize]{};
   DWORD type_name_len = 0;
   DWORD type_flags;
@@ -220,6 +222,12 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize,
                                             &type_name_len, &type_flags,
                                             &type_extends);
+
+      metadata_import->GetNestedClassProps(token, &parent_type_token);
+      if (parent_type_token != mdTokenNil) {
+        parentTypeInfo = new TypeInfo(GetTypeInfo(metadata_import, parent_type_token));
+      }
+
       if (type_extends != mdTokenNil) {
         extendsInfo = new TypeInfo(GetTypeInfo(metadata_import, type_extends));
         type_valueType = extendsInfo->name == WStr("System.ValueType") ||
@@ -246,12 +254,14 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
         CorSigUncompressToken(&signature[2], &type_token);
         const auto baseType = GetTypeInfo(metadata_import, type_token);
         return {baseType.id, baseType.name, token, token_type,
-                baseType.extend_from, baseType.valueType, baseType.isGeneric};
+                baseType.extend_from,
+                baseType.valueType,
+                baseType.isGeneric,
+                baseType.parent_type};
       }
     } break;
     case mdtModuleRef:
-      metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize,
-                                         &type_name_len);
+      metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize, &type_name_len);
       break;
     case mdtMemberRef:
       return GetFunctionInfo(metadata_import, token).type;
@@ -271,7 +281,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
     type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
   }
 
-  return { token, type_name_string, mdTypeSpecNil, token_type, extendsInfo, type_valueType, type_isGeneric };
+  return { token, type_name_string, mdTypeSpecNil, token_type, extendsInfo, type_valueType, type_isGeneric, parentTypeInfo };
 }
 
 mdAssemblyRef FindAssemblyRef(
