@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci
 {
@@ -13,6 +14,8 @@ namespace Datadog.Trace.Ci
     /// </summary>
     internal class GitInfo
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitInfo));
+
         private GitInfo()
         {
         }
@@ -219,8 +222,9 @@ namespace Datadog.Trace.Ci
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Error(ex, "Error loading git information from directory");
             }
 
             return gitInfo;
@@ -413,24 +417,31 @@ namespace Datadog.Trace.Ci
             public static bool TryGetFromObjectFile(string filePath, out GitCommitObject commitObject)
             {
                 commitObject = default;
-                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                try
                 {
-                    // We skip the 2 bytes zlib header magic number.
-                    fs.Seek(2, SeekOrigin.Begin);
-                    using (var defStream = new DeflateStream(fs, CompressionMode.Decompress))
+                    using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
-                        byte[] buffer = new byte[8192];
-                        int readBytes = defStream.Read(buffer, 0, buffer.Length);
-                        defStream.Close();
-
-                        if (_commitByteArray.SequenceEqual(buffer.Take(_commitByteArray.Length)))
+                        // We skip the 2 bytes zlib header magic number.
+                        fs.Seek(2, SeekOrigin.Begin);
+                        using (var defStream = new DeflateStream(fs, CompressionMode.Decompress))
                         {
-                            string strContent = Encoding.UTF8.GetString(buffer, 0, readBytes);
-                            string dataContent = strContent.Substring(strContent.IndexOf('\0') + 1);
-                            commitObject = new GitCommitObject(dataContent);
-                            return true;
+                            byte[] buffer = new byte[8192];
+                            int readBytes = defStream.Read(buffer, 0, buffer.Length);
+                            defStream.Close();
+
+                            if (_commitByteArray.SequenceEqual(buffer.Take(_commitByteArray.Length)))
+                            {
+                                string strContent = Encoding.UTF8.GetString(buffer, 0, readBytes);
+                                string dataContent = strContent.Substring(strContent.IndexOf('\0') + 1);
+                                commitObject = new GitCommitObject(dataContent);
+                                return true;
+                            }
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error getting commit object from object file");
                 }
 
                 return false;
@@ -439,43 +450,73 @@ namespace Datadog.Trace.Ci
             public static bool TryGetFromPackageOffset(GitPackageOffset packageOffset, out GitCommitObject commitObject)
             {
                 commitObject = default;
-
-                string packFile = Path.ChangeExtension(packageOffset.FilePath, ".pack");
-                if (File.Exists(packFile))
+                try
                 {
-                    // packfile format explanation:
-                    // https://codewords.recurse.com/issues/three/unpacking-git-packfiles#:~:text=idx%20file%20contains%20the%20index,pack%20file.&text=Objects%20in%20a%20packfile%20can,of%20storing%20the%20whole%20object.
-
-                    using (var fs = new FileStream(packFile, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    using (var br = new BigEndianBinaryReader(fs))
+                    string packFile = Path.ChangeExtension(packageOffset.FilePath, ".pack");
+                    if (File.Exists(packFile))
                     {
-                        // Move to the offset of the object
-                        fs.Seek(packageOffset.Offset, SeekOrigin.Begin);
-                        int objectSize;
-                        byte[] packData = br.ReadBytes(2);
+                        // packfile format explanation:
+                        // https://codewords.recurse.com/issues/three/unpacking-git-packfiles#:~:text=idx%20file%20contains%20the%20index,pack%20file.&text=Objects%20in%20a%20packfile%20can,of%20storing%20the%20whole%20object.
 
-                        if (packData[0] < 128)
+                        using (var fs = new FileStream(packFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        using (var br = new BigEndianBinaryReader(fs))
                         {
-                            objectSize = (int)(packData[0] & 0x0f);
-                            packData = br.ReadBytes(objectSize);
-                        }
-                        else
-                        {
-                            objectSize = (((ushort)(packData[1] & 0x7f)) * 16) + ((ushort)(packData[0] & 0x0f));
-                            packData = br.ReadBytes(objectSize * 100);
-                        }
+                            // Move to the offset of the object
+                            fs.Seek(packageOffset.Offset, SeekOrigin.Begin);
+                            byte[] packData = br.ReadBytes(2);
 
-                        using (var ms = new MemoryStream(packData, 2, packData.Length - 2))
-                        using (var defStream = new DeflateStream(ms, CompressionMode.Decompress))
-                        {
-                            byte[] buffer = new byte[8192];
-                            int readBytes = defStream.Read(buffer, 0, buffer.Length);
-                            defStream.Close();
-                            string strContent = Encoding.UTF8.GetString(buffer, 0, readBytes);
-                            commitObject = new GitCommitObject(strContent);
-                            return true;
+                            // Extract the object size (https://codewords.recurse.com/images/three/varint.svg)
+                            int objectSize = (int)(packData[0] & 0x0F);
+                            if (packData[0] >= 128)
+                            {
+                                int shift = 4;
+                                objectSize += (packData[1] & 0x7F) << shift;
+                                if (packData[1] >= 128)
+                                {
+                                    byte pData;
+                                    do
+                                    {
+                                        shift += 7;
+                                        pData = br.ReadByte();
+                                        objectSize += (pData & 0x7F) << shift;
+                                    }
+                                    while (pData >= 128);
+                                }
+                            }
+
+                            // Check if the object size is in the aceptable range
+                            if (objectSize > 0 && objectSize < ushort.MaxValue)
+                            {
+                                // Advance 2 bytes to skip the zlib magic number
+                                uint zlibMagicNumber = br.ReadUInt16();
+                                if ((byte)zlibMagicNumber == 0x78)
+                                {
+                                    // Read the git commit object
+                                    using (var defStream = new DeflateStream(br.BaseStream, CompressionMode.Decompress))
+                                    {
+                                        byte[] buffer = new byte[objectSize];
+                                        int readBytes = defStream.Read(buffer, 0, buffer.Length);
+                                        defStream.Close();
+                                        string strContent = Encoding.UTF8.GetString(buffer, 0, readBytes);
+                                        commitObject = new GitCommitObject(strContent);
+                                        return true;
+                                    }
+                                }
+                                else
+                                {
+                                    Log.Warning("The commit data doesn't have a valid zlib header magic number.");
+                                }
+                            }
+                            else
+                            {
+                                Log.Warning<int>("The object size is outside of an acceptable range: {objectSize}", objectSize);
+                            }
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error loading commit information from package offset");
                 }
 
                 return false;
@@ -504,66 +545,86 @@ namespace Datadog.Trace.Ci
                 int folderIndex = int.Parse(index, System.Globalization.NumberStyles.HexNumber);
                 int previousIndex = folderIndex > 0 ? folderIndex - 1 : folderIndex;
 
-                using (var fs = new FileStream(idxFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                using (var br = new BigEndianBinaryReader(fs))
+                try
                 {
-                    fs.Seek(8, SeekOrigin.Begin);
-
-                    // First layer: 256 4-byte elements, with number of elements per folder
-                    fs.Seek(previousIndex * 4, SeekOrigin.Current);
-                    var numberOfPreviousObjects = br.ReadUInt32();
-                    var numberOfObjectsInIndex = br.ReadUInt32() - numberOfPreviousObjects;
-                    fs.Seek(-8, SeekOrigin.Current);
-
-                    fs.Seek((255 - previousIndex) * 4, SeekOrigin.Current);
-                    var totalNumberOfObjects = br.ReadUInt32();
-
-                    // Second layer: 20-byte elements with the names in order
-                    fs.Seek(20 * (int)numberOfPreviousObjects, SeekOrigin.Current);
-                    uint? indexOfCommit = null;
-                    for (uint i = 0; i < numberOfObjectsInIndex; i++)
+                    using (var fs = new FileStream(idxFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (var br = new BigEndianBinaryReader(fs))
                     {
-                        var str = BitConverter.ToString(br.ReadBytes(20)).Replace("-", string.Empty);
-                        if (str.Equals(commitSha, StringComparison.OrdinalIgnoreCase))
+                        // Skip header and version
+                        fs.Seek(8, SeekOrigin.Begin);
+
+                        // First layer: 256 4-byte elements, with number of elements per folder
+                        uint numberOfObjectsInPreviousIndex = 0;
+                        if (previousIndex > -1)
                         {
-                            indexOfCommit = numberOfPreviousObjects + i;
-                            fs.Seek(-20, SeekOrigin.Current);
-                            break;
+                            // Seek to previous index position and read the number of objects
+                            fs.Seek(previousIndex * 4, SeekOrigin.Current);
+                            numberOfObjectsInPreviousIndex = br.ReadUInt32();
+                        }
+
+                        // In the fanout table, every index has its objects + the previous ones.
+                        // We need to subtract the previous index objects to know the correct
+                        // actual number of objects for this specific index.
+                        uint numberOfObjectsInIndex = br.ReadUInt32() - numberOfObjectsInPreviousIndex;
+
+                        // Seek to last position. The last position contains the number of all objects.
+                        fs.Seek((255 - (folderIndex + 1)) * 4, SeekOrigin.Current);
+                        uint totalNumberOfObjects = br.ReadUInt32();
+
+                        // Second layer: 20-byte elements with the names in order
+                        // Search the sha index in the second layer: the SHA listing.
+                        uint? indexOfCommit = null;
+                        fs.Seek(20 * (int)numberOfObjectsInPreviousIndex, SeekOrigin.Current);
+                        for (uint i = 0; i < numberOfObjectsInIndex; i++)
+                        {
+                            string str = BitConverter.ToString(br.ReadBytes(20)).Replace("-", string.Empty);
+                            if (str.Equals(commitSha, StringComparison.OrdinalIgnoreCase))
+                            {
+                                indexOfCommit = numberOfObjectsInPreviousIndex + i;
+
+                                // If we find the SHA, we skip all SHA listing table.
+                                fs.Seek(20 * (totalNumberOfObjects - (indexOfCommit.Value + 1)), SeekOrigin.Current);
+                                break;
+                            }
+                        }
+
+                        if (indexOfCommit.HasValue)
+                        {
+                            // Third layer: 4 byte CRC for each object. We skip it
+                            fs.Seek(4 * totalNumberOfObjects, SeekOrigin.Current);
+
+                            uint indexOfCommitValue = indexOfCommit.Value;
+
+                            // Fourth layer: 4 byte per object of offset in pack file
+                            fs.Seek(4 * indexOfCommitValue, SeekOrigin.Current);
+                            uint offset = br.ReadUInt32();
+
+                            ulong packOffset;
+                            if (((offset >> 31) & 1) == 0)
+                            {
+                                // offset is in the layer
+                                packOffset = (ulong)offset;
+                            }
+                            else
+                            {
+                                // offset is not in this layer, clear first bit and look at it at the 5th layer
+                                offset &= 0x7FFFFFFF;
+                                // Skip complete fourth layer.
+                                fs.Seek(4 * (totalNumberOfObjects - (indexOfCommitValue + 1)), SeekOrigin.Current);
+                                // Use the offset from fourth layer, to find the actual pack file offset in the fifth layer.
+                                // In this case, the offset is 8 bytes long.
+                                fs.Seek(8 * offset, SeekOrigin.Current);
+                                packOffset = br.ReadUInt64();
+                            }
+
+                            packageOffset = new GitPackageOffset(idxFilePath, (long)packOffset);
+                            return true;
                         }
                     }
-
-                    if (indexOfCommit.HasValue)
-                    {
-                        uint indexOfObject = indexOfCommit.Value;
-                        fs.Seek(20 * (totalNumberOfObjects - indexOfObject), SeekOrigin.Current);
-
-                        // Third layer: 4 byte CRC for each object. We skip it
-                        fs.Seek(4 * totalNumberOfObjects, SeekOrigin.Current);
-
-                        // Fourth layer: 4 byte per object of offset in pack file
-                        fs.Seek(4 * indexOfObject, SeekOrigin.Current);
-                        var offset = br.ReadUInt32();
-                        fs.Seek(-4, SeekOrigin.Current);
-
-                        ulong packOffset;
-                        if ((offset & 0x8000000) == 0)
-                        {
-                            // offset is in the layer
-                            packOffset = (ulong)offset;
-                        }
-                        else
-                        {
-                            // offset is not in this layer, clear first bit and look at it at the 5th layer
-                            offset = offset & 0x7FFFFFFF;
-                            fs.Seek(4 * (totalNumberOfObjects - indexOfObject), SeekOrigin.Current);
-                            fs.Seek(8 * indexOfObject, SeekOrigin.Current);
-                            packOffset = br.ReadUInt64();
-                            fs.Seek(-8, SeekOrigin.Current);
-                        }
-
-                        packageOffset = new GitPackageOffset(idxFilePath, (long)packOffset);
-                        return true;
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error getting package offset");
                 }
 
                 return false;
