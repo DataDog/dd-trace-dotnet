@@ -168,7 +168,7 @@ jobs:
     displayName: Test
 
   - script: |
-      dotnet test npgsql/test/Npgsql.PluginTests --logger "trx;LogFileName=npgsql.plugintests.$(os).$(tagName).trx" --results-directory npgsql/test/results -p
+      dotnet test npgsql/test/Npgsql.PluginTests --logger "trx;LogFileName=npgsql.plugintests.$(os).$(tagName).trx" --results-directory npgsql/test/results
     env:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
     displayName: Test Plugins
