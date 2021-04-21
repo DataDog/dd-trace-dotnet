@@ -19,10 +19,10 @@ jobs:
       Windows_Major5:
         imageName: windows-2019
         tagName: v5.0.4
+        serverDirectory: npgsql/.build
   variables:
     pg_major: 13
     postgis_version: 3
-    npgsql_dir: $(System.DefaultWorkingDirectory)/npgsql
   pool:
     vmImage: $(imageName)
   steps:
@@ -95,8 +95,8 @@ jobs:
       unzip pgsql.zip -x 'pgsql/include/**' 'pgsql/doc/**' 'pgsql/pgAdmin 4/**' 'pgsql/StackBuilder/**'
 
       # Match Npgsql CI Docker image and stash one level up
-      cp {${{ variables.npgsql_dir}}/.build,pgsql}/server.crt
-      cp {${{ variables.npgsql_dir}}/.build,pgsql}/server.key
+      cp {$(serverDirectory),pgsql}/server.crt
+      cp {$(serverDirectory),pgsql}/server.key
 
       # Find OSGEO version number
       OSGEO_VERSION=$(\
@@ -151,7 +151,13 @@ jobs:
     condition: startsWith(variables['imageName'], 'windows')
 
   - script: |
-      cd $(System.DefaultWorkingDirectory)/npgsql/test/Npgsql.Tests
-      dotnet test
+      dotnet test npgsql/test/Npgsql.Tests
     env:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+    displayName: Test
+
+  - script: |
+      dotnet test npgsql/test/Npgsql.PluginTests
+    env:
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+    displayName: Test Plugins
