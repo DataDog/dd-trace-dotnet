@@ -34,7 +34,7 @@ jobs:
       git checkout $(tagName)
     displayName: Checkout npgsql at tag $(tagName)
 
-  - script: |
+  - bash: |
       # Sourced from https://github.com/npgsql/npgsql/blob/v5.0.4/.github/workflows/build.yml
 
       # First uninstall any PostgreSQL installed on the image
@@ -76,7 +76,7 @@ jobs:
     displayName: Start PostgreSQL ${{ variables.pg_major }} (Linux)
     condition: startsWith(variables['imageName'], 'ubuntu')
 
-  - script: |
+  - bash: |
       # Sourced from https://github.com/npgsql/npgsql/blob/v5.0.4/.github/workflows/build.yml
 
       # Find EnterpriseDB version number
