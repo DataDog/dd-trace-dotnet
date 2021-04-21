@@ -20,6 +20,13 @@ jobs:
         imageName: windows-2019
         tagName: v5.0.4
         serverDirectory: npgsql/.build
+      Ubuntu_Major4:
+        imageName: ubuntu-20.04
+        tagName: v4.1.9
+      Windows_Major4:
+        imageName: windows-2019
+        tagName: v4.1.9
+        serverDirectory: npgsql/.build
   variables:
     pg_major: 13
     postgis_version: 3
