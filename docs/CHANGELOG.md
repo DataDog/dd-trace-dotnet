@@ -5,16 +5,16 @@
 ## Changes
 * Compute top-level spans on the tracer side (#1302, #1303)
 * Add support for flushing partial traces (#1313, #1347)
-  * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
+  * See [the documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
 * Enable Service Fabric Service Remoting instrumentation out-of-the-box (#1234)
 * Add log rotation for native logger (#1296, #1329)
 * Disable log rate-limiting by default (#1307)
 * CallTarget refactoring and performance improvements (#1292, #1305, #1279)
 * CIApp: Add a commit check before filling the commiter, author and message data (#1312)
 * Update ASP.NET / MVC / WebApi2 Resource Names (#1288)
-  * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-framework/#experimental-features) for instructions on enabling this feature.
+  * See [the documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-framework/#experimental-features) for instructions on enabling this feature.
 * Update ASP.NET Core Resource Names (#1289)
-  * See [the documentation](https://docs.datadoghq.com//tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
+  * See [the documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/#experimental-features) for instructions on enabling this feature.
 * Report tracer drop-rate to the Trace Agent (#1306, #1350, #1406)
 * Update URI "cleaning" algorithm to glob more identifier-like segments and improve performance (#1327)
 * Upgrade Serilog & Serilog.Sinks.File Vendors (#1345)
