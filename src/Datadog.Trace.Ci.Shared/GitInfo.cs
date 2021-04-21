@@ -224,7 +224,7 @@ namespace Datadog.Trace.Ci
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error loading git information from directory");
             }
 
             return gitInfo;
@@ -441,7 +441,7 @@ namespace Datadog.Trace.Ci
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, ex.Message);
+                    Log.Error(ex, "Error getting commit object from object file");
                 }
 
                 return false;
@@ -516,7 +516,7 @@ namespace Datadog.Trace.Ci
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, ex.Message);
+                    Log.Error(ex, "Error loading commit information from package offset");
                 }
 
                 return false;
@@ -624,7 +624,7 @@ namespace Datadog.Trace.Ci
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, ex.Message);
+                    Log.Error(ex, "Error getting package offset");
                 }
 
                 return false;
