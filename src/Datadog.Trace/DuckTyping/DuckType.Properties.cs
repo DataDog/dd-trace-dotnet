@@ -16,12 +16,12 @@ namespace Datadog.Trace.DuckTyping
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = typeof(object);
             Type[] proxyParameterTypes = Type.EmptyTypes;
-            Type[] targetParametersTypes = GetPropertyGetParametersTypes(targetProperty, true).ToArray();
+            Type[] targetParametersTypes = GetPropertyGetParametersTypes(proxyTypeBuilder, targetProperty, true).ToArray();
 
             if (proxyMember is PropertyInfo proxyProperty)
             {
                 proxyMemberReturnType = proxyProperty.PropertyType;
-                proxyParameterTypes = GetPropertyGetParametersTypes(proxyProperty, true).ToArray();
+                proxyParameterTypes = GetPropertyGetParametersTypes(proxyTypeBuilder, proxyProperty, true).ToArray();
                 if (proxyParameterTypes.Length != targetParametersTypes.Length)
                 {
                     DuckTypePropertyArgumentsLengthException.Throw(proxyProperty);
@@ -77,14 +77,14 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // If the target parameter type is public or if it's by ref we have to actually use the original target type.
-                targetParamType = UseDirectAccessTo(targetParamType) || targetParamType.IsByRef ? targetParamType : typeof(object);
+                targetParamType = UseDirectAccessTo(proxyTypeBuilder, targetParamType) || targetParamType.IsByRef ? targetParamType : typeof(object);
                 il.WriteTypeConversion(proxyParamType, targetParamType);
 
                 targetParametersTypes[pIndex] = targetParamType;
             }
 
             // Call the getter method
-            if (UseDirectAccessTo(targetType))
+            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
             {
                 // If the instance is public we can emit directly without any dynamic method
 
@@ -106,10 +106,10 @@ namespace Datadog.Trace.DuckTyping
                 // we can't access non public types so we have to cast to object type (in the instance object and the return type).
 
                 string dynMethodName = $"_getNonPublicProperty_{targetProperty.DeclaringType.Name}_{targetProperty.Name}";
-                returnType = UseDirectAccessTo(targetProperty.PropertyType) ? targetProperty.PropertyType : typeof(object);
+                returnType = UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType) ? targetProperty.PropertyType : typeof(object);
 
                 // We create the dynamic method
-                Type[] targetParameters = GetPropertyGetParametersTypes(targetProperty, false, !targetMethod.IsStatic).ToArray();
+                Type[] targetParameters = GetPropertyGetParametersTypes(proxyTypeBuilder, targetProperty, false, !targetMethod.IsStatic).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
 
@@ -140,7 +140,7 @@ namespace Datadog.Trace.DuckTyping
             // Check if the type can be converted or if we need to enable duck chaining
             if (NeedsDuckChaining(targetProperty.PropertyType, proxyMemberReturnType))
             {
-                if (UseDirectAccessTo(targetProperty.PropertyType) && targetProperty.PropertyType.IsValueType)
+                if (UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType) && targetProperty.PropertyType.IsValueType)
                 {
                     il.Emit(OpCodes.Box, targetProperty.PropertyType);
                 }
@@ -167,12 +167,12 @@ namespace Datadog.Trace.DuckTyping
         {
             string proxyMemberName = null;
             Type[] proxyParameterTypes = Type.EmptyTypes;
-            Type[] targetParametersTypes = GetPropertySetParametersTypes(targetProperty, true).ToArray();
+            Type[] targetParametersTypes = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, true).ToArray();
 
             if (proxyMember is PropertyInfo proxyProperty)
             {
                 proxyMemberName = proxyProperty.Name;
-                proxyParameterTypes = GetPropertySetParametersTypes(proxyProperty, true).ToArray();
+                proxyParameterTypes = GetPropertySetParametersTypes(proxyTypeBuilder, proxyProperty, true).ToArray();
                 if (proxyParameterTypes.Length != targetParametersTypes.Length)
                 {
                     DuckTypePropertyArgumentsLengthException.Throw(proxyProperty);
@@ -228,14 +228,14 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // If the target parameter type is public or if it's by ref we have to actually use the original target type.
-                targetParamType = UseDirectAccessTo(targetParamType) || targetParamType.IsByRef ? targetParamType : typeof(object);
+                targetParamType = UseDirectAccessTo(proxyTypeBuilder, targetParamType) || targetParamType.IsByRef ? targetParamType : typeof(object);
                 il.WriteTypeConversion(proxyParamType, targetParamType);
 
                 targetParametersTypes[pIndex] = targetParamType;
             }
 
             // Call the setter method
-            if (UseDirectAccessTo(targetType))
+            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
             {
                 // If the instance is public we can emit directly without any dynamic method
 
@@ -258,7 +258,7 @@ namespace Datadog.Trace.DuckTyping
                 string dynMethodName = $"_setNonPublicProperty+{targetProperty.DeclaringType.Name}.{targetProperty.Name}";
 
                 // We create the dynamic method
-                Type[] targetParameters = GetPropertySetParametersTypes(targetProperty, false, !targetMethod.IsStatic).ToArray();
+                Type[] targetParameters = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, false, !targetMethod.IsStatic).ToArray();
                 Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, true);
 
@@ -290,7 +290,7 @@ namespace Datadog.Trace.DuckTyping
             return proxyMethod;
         }
 
-        private static IEnumerable<Type> GetPropertyGetParametersTypes(PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
+        private static IEnumerable<Type> GetPropertyGetParametersTypes(TypeBuilder typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
         {
             if (isDynamicSignature)
             {
@@ -300,7 +300,7 @@ namespace Datadog.Trace.DuckTyping
             ParameterInfo[] idxParams = property.GetIndexParameters();
             foreach (ParameterInfo parameter in idxParams)
             {
-                if (originalTypes || UseDirectAccessTo(parameter.ParameterType))
+                if (originalTypes || UseDirectAccessTo(typeBuilder, parameter.ParameterType))
                 {
                     yield return parameter.ParameterType;
                 }
@@ -311,19 +311,19 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static IEnumerable<Type> GetPropertySetParametersTypes(PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
+        private static IEnumerable<Type> GetPropertySetParametersTypes(TypeBuilder typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
         {
             if (isDynamicSignature)
             {
                 yield return typeof(object);
             }
 
-            foreach (Type indexType in GetPropertyGetParametersTypes(property, originalTypes))
+            foreach (Type indexType in GetPropertyGetParametersTypes(typeBuilder, property, originalTypes))
             {
                 yield return indexType;
             }
 
-            if (originalTypes || UseDirectAccessTo(property.PropertyType))
+            if (originalTypes || UseDirectAccessTo(typeBuilder, property.PropertyType))
             {
                 yield return property.PropertyType;
             }

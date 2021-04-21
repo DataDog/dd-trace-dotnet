@@ -40,6 +40,12 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _typeCount = 0;
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static ConstructorInfo _ignoresAccessChecksToAttributeCtor = typeof(IgnoresAccessChecksToAttribute).GetConstructor(new Type[] { typeof(string) });
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static Dictionary<ModuleBuilder, HashSet<string>> _ignoresAccessChecksToAssembliesSetDictionary = new Dictionary<ModuleBuilder, HashSet<string>>();
+
         internal static long AssemblyCount => _assemblyCount;
 
         internal static long TypeCount => _typeCount;
@@ -48,10 +54,19 @@ namespace Datadog.Trace.DuckTyping
         /// Gets the ModuleBuilder instance from a target type.  (.NET Framework / Non AssemblyLoadContext version)
         /// </summary>
         /// <param name="targetType">Target type for ducktyping</param>
+        /// <param name="isVisible">Is visible boolean</param>
         /// <returns>ModuleBuilder instance</returns>
-        private static ModuleBuilder GetModuleBuilder(Type targetType)
+        private static ModuleBuilder GetModuleBuilder(Type targetType, bool isVisible)
         {
             Assembly targetAssembly = targetType.Assembly ?? typeof(DuckType).Assembly;
+
+            if (!isVisible)
+            {
+                // If the target type is not visible then we create a new module builder.
+                // This is the only way to IgnoresAccessChecksToAttribute to work.
+                // We can't reuse the module builder if the attributes collection changes.
+                return CreateModuleBuilder($"DuckTypeNotVisibleAssembly.{targetType.Name}", targetAssembly);
+            }
 
             if (targetType.IsGenericType)
             {

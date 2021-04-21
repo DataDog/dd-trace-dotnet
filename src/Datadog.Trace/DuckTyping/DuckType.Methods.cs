@@ -14,38 +14,42 @@ namespace Datadog.Trace.DuckTyping
         private static List<MethodInfo> GetMethods(Type baseType)
         {
             List<MethodInfo> selectedMethods = new List<MethodInfo>(GetBaseMethods(baseType));
-            Type[] implementedInterfaces = baseType.GetInterfaces();
-            foreach (Type imInterface in implementedInterfaces)
+            // If the base type is an interface we must make sure we implement all methods, including from other interfaces
+            if (baseType.IsInterface)
             {
-                if (imInterface == typeof(IDuckType))
+                Type[] implementedInterfaces = baseType.GetInterfaces();
+                foreach (Type imInterface in implementedInterfaces)
                 {
-                    continue;
-                }
-
-                foreach (MethodInfo interfaceMethod in imInterface.GetMethods())
-                {
-                    if (interfaceMethod.IsSpecialName)
+                    if (imInterface == typeof(IDuckType))
                     {
                         continue;
                     }
 
-                    string interfaceMethodName = interfaceMethod.ToString();
-                    bool methodAlreadySelected = false;
-                    foreach (MethodInfo currentMethod in selectedMethods)
+                    foreach (MethodInfo interfaceMethod in imInterface.GetMethods())
                     {
-                        if (currentMethod.ToString() == interfaceMethodName)
+                        if (interfaceMethod.IsSpecialName)
                         {
-                            methodAlreadySelected = true;
-                            break;
+                            continue;
                         }
-                    }
 
-                    if (!methodAlreadySelected)
-                    {
-                        MethodInfo prevMethod = baseType.GetMethod(interfaceMethod.Name, DuckAttribute.DefaultFlags, null, interfaceMethod.GetParameters().Select(p => p.ParameterType).ToArray(), null);
-                        if (prevMethod == null || prevMethod.GetCustomAttribute<DuckIgnoreAttribute>() is null)
+                        string interfaceMethodName = interfaceMethod.ToString();
+                        bool methodAlreadySelected = false;
+                        foreach (MethodInfo currentMethod in selectedMethods)
                         {
-                            selectedMethods.Add(interfaceMethod);
+                            if (currentMethod.ToString() == interfaceMethodName)
+                            {
+                                methodAlreadySelected = true;
+                                break;
+                            }
+                        }
+
+                        if (!methodAlreadySelected)
+                        {
+                            MethodInfo prevMethod = baseType.GetMethod(interfaceMethod.Name, DuckAttribute.DefaultFlags, null, interfaceMethod.GetParameters().Select(p => p.ParameterType).ToArray(), null);
+                            if (prevMethod == null || prevMethod.GetCustomAttribute<DuckIgnoreAttribute>() is null)
+                            {
+                                selectedMethods.Add(interfaceMethod);
+                            }
                         }
                     }
                 }
@@ -101,6 +105,9 @@ namespace Datadog.Trace.DuckTyping
                 {
                     DuckTypeTargetMethodNotFoundException.Throw(proxyMethodDefinition);
                 }
+
+                // Check if target method is a reverse method
+                bool isReverse = targetMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null;
 
                 // Gets the proxy method definition generic arguments
                 Type[] proxyMethodDefinitionGenericArguments = proxyMethodDefinition.GetGenericArguments();
@@ -233,7 +240,7 @@ namespace Datadog.Trace.DuckTyping
                                 Type proxyParamTypeElementType = proxyParamType.GetElementType();
                                 Type targetParamTypeElementType = targetParamType.GetElementType();
 
-                                if (!UseDirectAccessTo(targetParamTypeElementType))
+                                if (!UseDirectAccessTo(proxyTypeBuilder, targetParamTypeElementType))
                                 {
                                     targetParamType = typeof(object).MakeByRefType();
                                     targetParamTypeElementType = typeof(object);
@@ -290,7 +297,7 @@ namespace Datadog.Trace.DuckTyping
                                 il.WriteLoadArgument(idx, false);
                             }
                         }
-                        else
+                        else if (!isReverse)
                         {
                             // Check if the type can be converted of if we need to enable duck chaining
                             if (NeedsDuckChaining(targetParamType, proxyParamType))
@@ -308,7 +315,35 @@ namespace Datadog.Trace.DuckTyping
                             }
 
                             // If the target parameter type is public or if it's by ref we have to actually use the original target type.
-                            targetParamType = UseDirectAccessTo(targetParamType) ? targetParamType : typeof(object);
+                            targetParamType = UseDirectAccessTo(proxyTypeBuilder, targetParamType) ? targetParamType : typeof(object);
+                            il.WriteSafeTypeConversion(proxyParamType, targetParamType);
+
+                            targetMethodParametersTypes[idx] = targetParamType;
+                        }
+                        else
+                        {
+                            if (NeedsDuckChaining(proxyParamType, targetParamType))
+                            {
+                                // Load the argument (our proxy type) and cast it as Duck type (the original type)
+                                il.WriteLoadArgument(idx, false);
+                                if (UseDirectAccessTo(proxyTypeBuilder, proxyParamType) && proxyParamType.IsValueType)
+                                {
+                                    il.Emit(OpCodes.Box, proxyParamType);
+                                }
+
+                                // We call DuckType.CreateCache<>.Create(object instance)
+                                MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
+                                    .MakeGenericType(targetParamType).GetMethod("Create");
+
+                                il.Emit(OpCodes.Call, getProxyMethodInfo);
+                            }
+                            else
+                            {
+                                il.WriteLoadArgument(idx, false);
+                            }
+
+                            // If the target parameter type is public or if it's by ref we have to actually use the original target type.
+                            targetParamType = UseDirectAccessTo(proxyTypeBuilder, targetParamType) ? targetParamType : typeof(object);
                             il.WriteSafeTypeConversion(proxyParamType, targetParamType);
 
                             targetMethodParametersTypes[idx] = targetParamType;
@@ -317,7 +352,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Call the target method
-                if (UseDirectAccessTo(targetType))
+                if (UseDirectAccessTo(proxyTypeBuilder, targetType))
                 {
                     // If the instance is public we can emit directly without any dynamic method
 
@@ -351,7 +386,7 @@ namespace Datadog.Trace.DuckTyping
                     // we can't access non public types so we have to cast to object type (in the instance object and the return type).
 
                     string dynMethodName = $"_callMethod_{targetMethod.DeclaringType.Name}_{targetMethod.Name}";
-                    returnType = UseDirectAccessTo(targetMethod.ReturnType) && !targetMethod.ReturnType.IsGenericParameter ? targetMethod.ReturnType : typeof(object);
+                    returnType = UseDirectAccessTo(proxyTypeBuilder, targetMethod.ReturnType) && !targetMethod.ReturnType.IsGenericParameter ? targetMethod.ReturnType : typeof(object);
 
                     // We create the dynamic method
                     Type[] originalTargetParameters = targetMethod.GetParameters().Select(p => p.ParameterType).ToArray();
@@ -438,7 +473,7 @@ namespace Datadog.Trace.DuckTyping
                     // Check if the type can be converted or if we need to enable duck chaining
                     if (NeedsDuckChaining(targetMethod.ReturnType, proxyMethodDefinition.ReturnType))
                     {
-                        if (UseDirectAccessTo(targetMethod.ReturnType) && targetMethod.ReturnType.IsValueType)
+                        if (UseDirectAccessTo(proxyTypeBuilder, targetMethod.ReturnType) && targetMethod.ReturnType.IsValueType)
                         {
                             il.Emit(OpCodes.Box, targetMethod.ReturnType);
                         }
@@ -502,6 +537,32 @@ namespace Datadog.Trace.DuckTyping
                 if (candidateMethod.Name != proxyMethodDuckAttribute.Name)
                 {
                     continue;
+                }
+
+                // Check if the candidate method is a reverse mapped method
+                DuckReverseMethodAttribute reverseMethodAttribute = candidateMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true);
+                if (reverseMethodAttribute?.Arguments is not null)
+                {
+                    string[] arguments = reverseMethodAttribute.Arguments;
+                    if (arguments.Length != proxyMethodParametersTypes.Length)
+                    {
+                        continue;
+                    }
+
+                    bool match = true;
+                    for (var i = 0; i < arguments.Length; i++)
+                    {
+                        if (arguments[i] != proxyMethodParametersTypes[i].FullName && arguments[i] != proxyMethodParametersTypes[i].Name)
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+
+                    if (match)
+                    {
+                        return candidateMethod;
+                    }
                 }
 
                 ParameterInfo[] candidateParameters = candidateMethod.GetParameters();
