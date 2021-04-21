@@ -3,8 +3,9 @@
     "AgentlessTransport": {
       "commandName": "Project",
       "environmentVariables": {
-        "DD_TRACE_AGENT_DLL_PATH": "C:\\Users\\colin.higgins\\Downloads\\artifacts\\package\\Datadog.AzureAppServices.DotNet\\v1_2_0\\Agent\\agent.dll",
+        "DD_TRACE_AGENT_DLL_PATH": "C:\\Github\\datadog-agent\\cmd\\trace-agent\\agent.dll",
         "DD_TRACE_AGENTLESS": "true",
+        "DD_APM_CONFIG_PATH": "C:\\Users\\colin.higgins\\Downloads\\artifacts\\package\\Datadog.AzureAppServices.DotNet\\v1_2_0\\Agent\\datadog.yaml",
         "DD_ENV": "agentless-sample",
         "DD_TRACE_SAMPLE_RATE": "1.0",
         "DD_API_KEY": "API_KEY"
