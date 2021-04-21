@@ -14,7 +14,7 @@ jobs:
   strategy:
     matrix:
       Ubuntu_Major5:
-        imageName: ubuntu-18.04
+        imageName: ubuntu-20.04
         tagName: v5.0.4
       Windows_Major5:
         imageName: windows-2019
@@ -153,3 +153,5 @@ jobs:
   - script: |
       cd $(System.DefaultWorkingDirectory)/npgsql/test/Npgsql.Tests
       dotnet test
+    env:
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
