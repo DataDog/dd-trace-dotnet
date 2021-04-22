@@ -65,6 +65,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
+        private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
+
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
         {
@@ -481,7 +483,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -495,11 +497,15 @@ namespace Datadog.Trace.DiagnosticListeners
                 string host = request.Host.Value;
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
                 string url = GetUrl(request);
-                httpContext.Features.Set(new RequestTrackingFeature
+
+                if (tracer.Settings.RouteTemplateResourceNamesEnabled)
                 {
-                    HttpMethod = httpMethod,
-                    OriginalUrl = url,
-                });
+                    httpContext.Features.Set(new RequestTrackingFeature
+                    {
+                        HttpMethod = httpMethod,
+                        OriginalUrl = url,
+                    });
+                }
 
                 string absolutePath = request.Path.Value;
 
@@ -527,7 +533,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnRoutingEndpointMatched(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
@@ -647,7 +653,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -773,7 +779,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcAfterAction(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
@@ -791,7 +797,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -816,7 +822,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingUnhandledException(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
