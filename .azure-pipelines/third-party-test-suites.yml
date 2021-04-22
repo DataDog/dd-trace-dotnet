@@ -283,11 +283,12 @@ stages:
 
     - checkout: none
 
-    - task: DownloadPipelineArtifact@2
-      displayName:
-      inputs:
-        artifact: runner-dotnet-tool
-        path: $(System.DefaultWorkingDirectory)/tool-download
+    - download: current
+      artifact: runner-dotnet-tool
+      patterns: '**/*.nupkg'
+
+    - script: dotnet tool install --global --add-source $(Pipeline.Workspace)/runner-dotnet-tool dd-trace
+      displayName: Install dd-trace tool
 
     - script: |
         git clone https://github.com/npgsql/npgsql.git
@@ -411,13 +412,13 @@ stages:
       condition: startsWith(variables['imageName'], 'windows')
 
     - script: |
-        dotnet test npgsql/test/Npgsql.Tests --logger "trx;LogFileName=npgsql.tests.$(tagName).trx" --results-directory npgsql/test/results
+        dd-trace --merge-spans --dd-env CI --dd-service npgsql.tests --dd-version v4.1.9 dotnet "test npgsql/test/Npgsql.Tests --logger trx;LogFileName=npgsql.tests.$(tagName).trx --results-directory npgsql/test/results"
       env:
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
       displayName: Test
 
     - script: |
-        dotnet test npgsql/test/Npgsql.PluginTests --logger "trx;LogFileName=npgsql.plugintests.$(os).$(tagName).trx" --results-directory npgsql/test/results
+        dd-trace --merge-spans --dd-env CI --dd-service npgsql.plugintests --dd-version v4.1.9 dotnet "test npgsql/test/Npgsql.PluginTests --logger trx;LogFileName=npgsql.plugintests.$(os).$(tagName).trx --results-directory npgsql/test/results"
       env:
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
       displayName: Test Plugins
