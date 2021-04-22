@@ -11,6 +11,7 @@ schedules:
 
 variables:
   ddApiKey: $(DD_API_KEY)
+  DD_DOTNET_TRACER_MSBUILD:
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -188,8 +189,6 @@ stages:
         arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
         projects: |
           src/**/*.csproj
-          test/**/*.Tests.csproj
-          benchmarks/**/*.csproj
           !src/Datadog.Trace.Tools.Runner/*.csproj
       env:
         DD_SERVICE: dd-trace-dotnet
