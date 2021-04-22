@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -23,7 +24,7 @@ namespace Datadog.Trace
         {
             Name = "datadog-trace-agent",
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
+            // ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
         };
 
@@ -31,7 +32,7 @@ namespace Datadog.Trace
         {
             Name = "dogstatsd",
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
-            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
+            // ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
         };
 
@@ -55,6 +56,8 @@ namespace Datadog.Trace
         {
             try
             {
+                AgentlessInterop.LoadAgentless();
+
                 if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                 {
                     return;
