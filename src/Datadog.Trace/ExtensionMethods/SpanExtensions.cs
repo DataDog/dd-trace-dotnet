@@ -71,7 +71,8 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHeaderTags(this Span span, IHeadersCollection headers, IDictionary<string, string> headerTags, string defaultTagPrefix)
+        internal static void SetHeaderTags<T>(this Span span, T headers, IDictionary<string, string> headerTags, string defaultTagPrefix)
+            where T : IHeadersCollection
         {
             if (headerTags is not null && !headerTags.IsEmpty())
             {
