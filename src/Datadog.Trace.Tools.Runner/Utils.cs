@@ -119,6 +119,11 @@ namespace Datadog.Trace.Tools.Runner
                 envVars["DD_TRACE_AGENT_URL"] = options.AgentUrl;
             }
 
+            if (options.MergeTestSpans)
+            {
+                envVars["DD_TRACE_MERGE_TEST_SPANS"] = "true";
+            }
+
             return envVars;
         }
 
