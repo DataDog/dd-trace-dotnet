@@ -17,6 +17,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         static Common()
         {
+            var settings = TracerSettings.FromDefaultSources();
+            settings.TraceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+
+            TestTracer = new Tracer(settings);
+            ServiceName = TestTracer.DefaultServiceName;
+
+            if (settings.MergeTestSpans)
+            {
+                Tracer.Instance = TestTracer;
+            }
+
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
         }
