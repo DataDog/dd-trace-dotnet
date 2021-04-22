@@ -41,17 +41,14 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryDuckCast<T>(this object instance, out T value)
         {
-            try
+            if (DuckType.CanCreate<T>(instance))
             {
                 value = DuckType.Create<T>(instance);
                 return true;
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                value = default;
-                return false;
-            }
+
+            value = default;
+            return false;
         }
 
         /// <summary>
@@ -64,17 +61,14 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryDuckCast(this object instance, Type targetType, out object value)
         {
-            try
+            if (DuckType.CanCreate(targetType, instance))
             {
                 value = DuckType.Create(targetType, instance);
                 return true;
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-                value = default;
-                return false;
-            }
+
+            value = default;
+            return false;
         }
 
         /// <summary>
