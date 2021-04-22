@@ -9,174 +9,410 @@ schedules:
     - master
   always: true
 
-jobs:
-- job: Postgres
-  strategy:
-    matrix:
-      Ubuntu_Major5:
-        imageName: ubuntu-20.04
-        os: ubuntu
-        tagName: v5.0.4
-      Windows_Major5:
-        imageName: windows-2019
-        os: windows
-        tagName: v5.0.4
-        serverDirectory: npgsql/.build
-      Ubuntu_Major4:
-        imageName: ubuntu-20.04
-        os: ubuntu
-        tagName: v4.1.9
-      Windows_Major4:
-        imageName: windows-2019
-        os: windows
-        tagName: v4.1.9
-        serverDirectory: npgsql/.build
+stages:
+# The job definitions for this stage are copy/pasted from the runner.yml file
+- stage: build_dotnet_tool
   variables:
-    pg_major: 13
-    postgis_version: 3
-  pool:
-    vmImage: $(imageName)
-  steps:
+    publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
+    dotnetCoreSdk5Version: 5.0.103
+  jobs:
 
-  - checkout: none
+  - job: build_linux_profiler
 
-  - script: |
-      git clone https://github.com/npgsql/npgsql.git
-      cd $(System.DefaultWorkingDirectory)/npgsql
-      git checkout $(tagName)
-    displayName: Checkout npgsql at tag $(tagName)
+    steps:
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
+        includePreviewVersions: true
 
-  - bash: |
-      # Sourced from https://github.com/npgsql/npgsql/blob/v5.0.4/.github/workflows/build.yml
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+      inputs:
+        command: build
+        projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        arguments: --configuration Release
 
-      # First uninstall any PostgreSQL installed on the image
-      dpkg-query -W --showformat='${Package}\n' 'postgresql-*' | xargs sudo dpkg -P postgresql
+    - task: DotNetCoreCLI@2
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+        arguments: --configuration Release --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
-      wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-      sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main 13" >> /etc/apt/sources.list.d/pgdg.list'
-      sudo apt-get update -qq
-      sudo apt-get install -qq postgresql-${{ variables.pg_major }}
-      sudo -u postgres psql -c "CREATE USER npgsql_tests SUPERUSER PASSWORD 'npgsql_tests'"
-      sudo -u postgres psql -c "CREATE DATABASE npgsql_tests OWNER npgsql_tests"
-      sudo -u postgres psql -c "CREATE EXTENSION citext" npgsql_tests
-      sudo -u postgres psql -c "CREATE EXTENSION hstore" npgsql_tests
-      sudo -u postgres psql -c "CREATE EXTENSION ltree" npgsql_tests
+    - task: DotNetCoreCLI@2
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+        arguments: --configuration Release --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
+        
+    - task: DockerCompose@0
+      displayName: docker-compose run Profiler
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e buildConfiguration=Release Profiler
 
-      # To disable PostGIS for prereleases (because it usually isn't available until late), surround with the following:
-      # if [ -z "${{ variables.pg_prerelease }}" ]; then
-        sudo apt-get install -qq postgresql-${{ variables.pg_major }}-postgis-${{ variables.postgis_version }}
-        sudo -u postgres psql -c "CREATE EXTENSION postgis" npgsql_tests
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+      displayName: Uploading linux tracer home artifact
+      artifact: linux-tracer-home
 
-      export PGDATA=/etc/postgresql/${{ variables.pg_major }}/main
-      sudo sed -i 's/#ssl = off/ssl = on/' $PGDATA/postgresql.conf
-      sudo sed -i 's/#max_prepared_transactions = 0/max_prepared_transactions = 10/' $PGDATA/postgresql.conf
-      sudo sed -i 's/#password_encryption = md5/password_encryption = scram-sha-256/' $PGDATA/postgresql.conf
-      sudo sed -i 's/#wal_level =/wal_level = logical #/' $PGDATA/postgresql.conf
-      sudo sed -i 's/#max_wal_senders =/max_wal_senders = 50 #/' $PGDATA/postgresql.conf
-      sudo sed -i 's/#wal_sender_timeout =/wal_sender_timeout = 3s #/' $PGDATA/postgresql.conf
-      sudo sed -i "s/#synchronous_standby_names =/synchronous_standby_names = 'npgsql_test_sync_standby' #/" $PGDATA/postgresql.conf
-      sudo sed -i "s/#synchronous_commit =/synchronous_commit = local #/" $PGDATA/postgresql.conf
-      # Disable trust authentication, requiring MD5 passwords - some tests must fail if a password isn't provided.
-      sudo sh -c "echo 'local all all trust' > $PGDATA/pg_hba.conf"
-      sudo sh -c "echo 'host all npgsql_tests_scram all scram-sha-256' >> $PGDATA/pg_hba.conf"
-      sudo sh -c "echo 'host all all all md5' >> $PGDATA/pg_hba.conf"
-      sudo sh -c "echo 'host replication all all md5' >> $PGDATA/pg_hba.conf"
-      sudo pg_ctlcluster ${{ variables.pg_major }} main restart
+  - job: macos_profiler
+    pool:
+      vmImage: macOS-10.15
+    steps:
 
-      # user 'npgsql_tests_scram' must be created with password encrypted as scram-sha-256 (which only applies after restart)
-      sudo -u postgres psql -c "CREATE USER npgsql_tests_scram SUPERUSER PASSWORD 'npgsql_tests_scram'"
-    displayName: Start PostgreSQL ${{ variables.pg_major }} (Linux)
-    condition: startsWith(variables['imageName'], 'ubuntu')
+    - task: UseDotNet@2
+      displayName: install dotnet core runtime 3.1
+      inputs:
+        packageType: runtime
+        version: 3.1.x
 
-  - bash: |
-      # Sourced from https://github.com/npgsql/npgsql/blob/v5.0.4/.github/workflows/build.yml
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
 
-      # Find EnterpriseDB version number
-      EDB_VERSION=$(pwsh -c "
-          \$global:progressPreference='silentlyContinue';
-          Invoke-WebRequest -URI https://www.postgresql.org/applications-v2.xml |
-              Select-Object -ExpandProperty Content |
-              Select-Xml -XPath '/applications/application[id=\"postgresql_${{ variables.pg_major }}\" and platform=\"windows-x64\"]/version/text()' |
-              Select-Object -First 1 -ExpandProperty Node |
-              Select-Object -ExpandProperty Value")
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build
+      inputs:
+        command: build
+        configuration: Release
+        arguments: /nowarn:netsdk1138
+        projects: |
+          src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
 
-      # Install PostgreSQL
-      echo "Installing PostgreSQL (version: ${EDB_VERSION})"
-      curl -o pgsql.zip -L https://get.enterprisedb.com/postgresql/postgresql-${EDB_VERSION}-windows-x64-binaries.zip
-      unzip pgsql.zip -x 'pgsql/include/**' 'pgsql/doc/**' 'pgsql/pgAdmin 4/**' 'pgsql/StackBuilder/**'
+    - script: |
+        cd ./src/Datadog.Trace.ClrProfiler.Native
+        cmake . -DCMAKE_BUILD_TYPE=Release
+        make
+      displayName: build_profiler
 
-      # Match Npgsql CI Docker image and stash one level up
-      cp {$(serverDirectory),pgsql}/server.crt
-      cp {$(serverDirectory),pgsql}/server.key
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin
+      displayName: Uploading macos profiler artifact
+      artifact: macos-profiler
 
-      # Find OSGEO version number
-      OSGEO_VERSION=$(\
-        curl -Ls https://download.osgeo.org/postgis/windows/pg${{ variables.pg_major }} |
-        sed -n 's/.*>postgis-bundle-pg${{ variables.pg_major }}-\(${{ variables.postgis_version }}.[0-9]*.[0-9]*\)x64.zip<.*/\1/p' |
-        tail -n 1)
+  - job: build_runner_tool_and_standalone
+    dependsOn:
+    - build_linux_profiler
+    - macos_profiler
+    condition: succeeded()
 
-      # Install PostGIS
-      echo "Installing PostGIS (version: ${OSGEO_VERSION})"
-      POSTGIS_FILE="postgis-bundle-pg${{ variables.pg_major }}-${OSGEO_VERSION}x64"
-      curl -o postgis.zip -L https://download.osgeo.org/postgis/windows/pg${{ variables.pg_major }}/${POSTGIS_FILE}.zip
-      unzip postgis.zip -d postgis
-      cp -a postgis/$POSTGIS_FILE/. pgsql/
+    pool:
+      vmImage: windows-2019
 
-      # Start PostgreSQL
-      pgsql/bin/initdb -D pgsql/PGDATA -E UTF8 -U postgres
-      SOCKET_DIR=$(echo "$LOCALAPPDATA\Temp" | sed 's|\\|/|g')
-      sed -i "s|#unix_socket_directories = ''|unix_socket_directories = '$SOCKET_DIR'|" pgsql/PGDATA/postgresql.conf
-      sed -i "s|#wal_level =|wal_level = logical #|" pgsql/PGDATA/postgresql.conf
-      sed -i "s|#max_wal_senders =|max_wal_senders = 50 #|" pgsql/PGDATA/postgresql.conf
-      sed -i "s|#wal_sender_timeout =|wal_sender_timeout = 3s #|" pgsql/PGDATA/postgresql.conf
-      sed -i "s|#synchronous_standby_names =|synchronous_standby_names = 'npgsql_test_sync_standby' #|" pgsql/PGDATA/postgresql.conf
-      sed -i "s|#synchronous_commit =|synchronous_commit = local #|" pgsql/PGDATA/postgresql.conf
-      pgsql/bin/pg_ctl -D pgsql/PGDATA -l logfile -o '-c max_prepared_transactions=10 -c ssl=true -c ssl_cert_file=../server.crt -c ssl_key_file=../server.key' start
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
 
-      # Configure test account
-      pgsql/bin/psql -U postgres -c "CREATE ROLE npgsql_tests SUPERUSER LOGIN PASSWORD 'npgsql_tests'"
-      pgsql/bin/psql -U postgres -c "CREATE DATABASE npgsql_tests OWNER npgsql_tests"
-      pgsql/bin/psql -U postgres -c "CREATE EXTENSION citext" npgsql_tests
-      pgsql/bin/psql -U postgres -c "CREATE EXTENSION hstore" npgsql_tests
-      pgsql/bin/psql -U postgres -c "CREATE EXTENSION ltree" npgsql_tests
-      pgsql/bin/psql -U postgres -c "CREATE EXTENSION postgis" npgsql_tests
+    steps:
+    - download: current
+      artifact: linux-tracer-home
+      patterns: '**/*.so'
 
-      # user 'npgsql_tests_scram' must be created with password encrypted as scram-sha-256 (which only applies after restart)
-      sed -i "s|#password_encryption = md5|password_encryption = scram-sha-256|" pgsql/PGDATA/postgresql.conf
+    - task: CopyFiles@2
+      displayName: Copying native linux binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/linux-tracer-home
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
 
-      pgsql/bin/pg_ctl -D pgsql/PGDATA -l logfile -o '-c max_prepared_transactions=10 -c ssl=true -c ssl_cert_file=../server.crt -c ssl_key_file=../server.key' restart
+    - download: current
+      artifact: macos-profiler
+      patterns: '**/*.dylib'
 
-      pgsql/bin/psql -U postgres -c "CREATE ROLE npgsql_tests_scram SUPERUSER LOGIN PASSWORD 'npgsql_tests_scram'"
+    - task: CopyFiles@2
+      displayName: Copying native macos binary from previous job
+      inputs:
+        sourceFolder: $(Pipeline.Workspace)/macos-profiler
+        targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/osx-x64
 
-      # Disable trust authentication except for unix domain sockets, requiring MD5
-      # passwords - some tests must fail if a password isn't provided.
-      if [ ${{ variables.pg_major }} -ge 13 ]; then
-            echo "local all all trust" > pgsql/PGDATA/pg_hba.conf
-            echo "host all npgsql_tests_scram all scram-sha-256" >> pgsql/PGDATA/pg_hba.conf
-      else
-            echo "host all npgsql_tests_scram all scram-sha-256" > pgsql/PGDATA/pg_hba.conf
-      fi
-      echo "host all all all md5" >> pgsql/PGDATA/pg_hba.conf
-      echo "host replication all all md5" >> pgsql/PGDATA/pg_hba.conf
-    displayName: Start PostgreSQL ${{ variables.pg_major }} (Windows)
-    condition: startsWith(variables['imageName'], 'windows')
+    # Install the tracer latest stable release to attach the profiler to the build and test steps.
+    # The script exposes the required environment variables to the following steps
+    - task: PowerShell@2
+      displayName: Install profiler latest release
+      inputs:
+        filePath: ./.azure-pipelines/setup_tracer.ps1
 
-  - script: |
-      dotnet test npgsql/test/Npgsql.Tests --logger "trx;LogFileName=npgsql.tests.$(tagName).trx" --results-directory npgsql/test/results
-    env:
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-    displayName: Test
+    - task: UseDotNet@2
+      displayName: install dotnet core runtime 2.1
+      inputs:
+        packageType: runtime
+        version: 2.1.x
 
-  - script: |
-      dotnet test npgsql/test/Npgsql.PluginTests --logger "trx;LogFileName=npgsql.plugintests.$(os).$(tagName).trx" --results-directory npgsql/test/results
-    env:
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-    displayName: Test Plugins
+    - task: UseDotNet@2
+      displayName: install dotnet core runtime 3.0
+      inputs:
+        packageType: runtime
+        version: 3.0.x
 
-  - task: PublishTestResults@2
-    displayName: publish test results
-    inputs:
-      testResultsFormat: VSTest
-      testResultsFiles: npgsql/test/**/*.trx
-      testRunTitle: Postgres-$(os)-$(tagName)
-    condition: succeededOrFailed()
+    - task: UseDotNet@2
+      displayName: install dotnet core runtime 3.1
+      inputs:
+        packageType: runtime
+        version: 3.1.x
+        
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk 5.0
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdk5Version)
+        includePreviewVersions: true
+        
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build
+      inputs:
+        command: build
+        configuration: Release
+        arguments: -l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+        projects: |
+          src/**/*.csproj
+          test/**/*.Tests.csproj
+          benchmarks/**/*.csproj
+          !src/Datadog.Trace.Tools.Runner/*.csproj
+      env:
+        DD_SERVICE: dd-trace-dotnet
+        
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
+
+    - task: NuGetCommand@2
+      displayName: nuget restore
+      inputs:
+        restoreSolution: Datadog.Trace.Native.sln
+        verbosityRestore: Normal
+
+    - task: MSBuild@1
+      displayName: tool build
+      inputs:
+        solution: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.proj
+        msbuildArguments: /t:BuildTool /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+        maximumCpuCount: true
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: MSBuild@1
+      displayName: standalone build
+      inputs:
+        solution: src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.proj
+        msbuildArguments: /t:BuildStandalone /l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
+        maximumCpuCount: true
+      env:
+        DD_SERVICE: dd-trace-dotnet-runner-tool
+
+    - task: DeleteFiles@1
+      displayName: 'Remove unneeded files'
+      inputs:
+        Contents: |
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/!(*.nupkg)
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64/home*
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86/home*
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64/home*
+          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64/home*
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool
+      displayName: Uploading runner dotnet tool artifact
+      artifact: runner-dotnet-tool
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64
+      displayName: Uploading runner standalone win-x64 artifact
+      artifact: runner-standalone-win-x64
+      
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86
+      displayName: Uploading runner standalone win-x86 artifact
+      artifact: runner-standalone-win-x86
+      
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64
+      displayName: Uploading runner standalone linux-x64 artifact
+      artifact: runner-standalone-linux-x64
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64
+      displayName: Uploading runner standalone osx-x64 artifact
+      artifact: runner-standalone-osx-x64
+
+- stage: run_tests
+  dependsOn: build_dotnet_tool
+  jobs:
+  - job: Postgres
+    strategy:
+      matrix:
+        Ubuntu_Major5:
+          imageName: ubuntu-20.04
+          os: ubuntu
+          tagName: v5.0.4
+        Windows_Major5:
+          imageName: windows-2019
+          os: windows
+          tagName: v5.0.4
+          serverDirectory: npgsql/.build
+        Ubuntu_Major4:
+          imageName: ubuntu-20.04
+          os: ubuntu
+          tagName: v4.1.9
+        Windows_Major4:
+          imageName: windows-2019
+          os: windows
+          tagName: v4.1.9
+          serverDirectory: npgsql/.build
+    variables:
+      pg_major: 13
+      postgis_version: 3
+    pool:
+      vmImage: $(imageName)
+    steps:
+
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      displayName:
+      inputs:
+        artifact: runner-dotnet-tool
+        path: $(System.DefaultWorkingDirectory)/tool-download
+
+    - script: |
+        git clone https://github.com/npgsql/npgsql.git
+        cd $(System.DefaultWorkingDirectory)/npgsql
+        git checkout $(tagName)
+      displayName: Checkout npgsql at tag $(tagName)
+
+    - bash: |
+        # Sourced from https://github.com/npgsql/npgsql/blob/v5.0.4/.github/workflows/build.yml
+
+        # First uninstall any PostgreSQL installed on the image
+        dpkg-query -W --showformat='${Package}\n' 'postgresql-*' | xargs sudo dpkg -P postgresql
+
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main 13" >> /etc/apt/sources.list.d/pgdg.list'
+        sudo apt-get update -qq
+        sudo apt-get install -qq postgresql-${{ variables.pg_major }}
+        sudo -u postgres psql -c "CREATE USER npgsql_tests SUPERUSER PASSWORD 'npgsql_tests'"
+        sudo -u postgres psql -c "CREATE DATABASE npgsql_tests OWNER npgsql_tests"
+        sudo -u postgres psql -c "CREATE EXTENSION citext" npgsql_tests
+        sudo -u postgres psql -c "CREATE EXTENSION hstore" npgsql_tests
+        sudo -u postgres psql -c "CREATE EXTENSION ltree" npgsql_tests
+
+        # To disable PostGIS for prereleases (because it usually isn't available until late), surround with the following:
+        # if [ -z "${{ variables.pg_prerelease }}" ]; then
+          sudo apt-get install -qq postgresql-${{ variables.pg_major }}-postgis-${{ variables.postgis_version }}
+          sudo -u postgres psql -c "CREATE EXTENSION postgis" npgsql_tests
+
+        export PGDATA=/etc/postgresql/${{ variables.pg_major }}/main
+        sudo sed -i 's/#ssl = off/ssl = on/' $PGDATA/postgresql.conf
+        sudo sed -i 's/#max_prepared_transactions = 0/max_prepared_transactions = 10/' $PGDATA/postgresql.conf
+        sudo sed -i 's/#password_encryption = md5/password_encryption = scram-sha-256/' $PGDATA/postgresql.conf
+        sudo sed -i 's/#wal_level =/wal_level = logical #/' $PGDATA/postgresql.conf
+        sudo sed -i 's/#max_wal_senders =/max_wal_senders = 50 #/' $PGDATA/postgresql.conf
+        sudo sed -i 's/#wal_sender_timeout =/wal_sender_timeout = 3s #/' $PGDATA/postgresql.conf
+        sudo sed -i "s/#synchronous_standby_names =/synchronous_standby_names = 'npgsql_test_sync_standby' #/" $PGDATA/postgresql.conf
+        sudo sed -i "s/#synchronous_commit =/synchronous_commit = local #/" $PGDATA/postgresql.conf
+        # Disable trust authentication, requiring MD5 passwords - some tests must fail if a password isn't provided.
+        sudo sh -c "echo 'local all all trust' > $PGDATA/pg_hba.conf"
+        sudo sh -c "echo 'host all npgsql_tests_scram all scram-sha-256' >> $PGDATA/pg_hba.conf"
+        sudo sh -c "echo 'host all all all md5' >> $PGDATA/pg_hba.conf"
+        sudo sh -c "echo 'host replication all all md5' >> $PGDATA/pg_hba.conf"
+        sudo pg_ctlcluster ${{ variables.pg_major }} main restart
+
+        # user 'npgsql_tests_scram' must be created with password encrypted as scram-sha-256 (which only applies after restart)
+        sudo -u postgres psql -c "CREATE USER npgsql_tests_scram SUPERUSER PASSWORD 'npgsql_tests_scram'"
+      displayName: Start PostgreSQL ${{ variables.pg_major }} (Linux)
+      condition: startsWith(variables['imageName'], 'ubuntu')
+
+    - bash: |
+        # Sourced from https://github.com/npgsql/npgsql/blob/v5.0.4/.github/workflows/build.yml
+
+        # Find EnterpriseDB version number
+        EDB_VERSION=$(pwsh -c "
+            \$global:progressPreference='silentlyContinue';
+            Invoke-WebRequest -URI https://www.postgresql.org/applications-v2.xml |
+                Select-Object -ExpandProperty Content |
+                Select-Xml -XPath '/applications/application[id=\"postgresql_${{ variables.pg_major }}\" and platform=\"windows-x64\"]/version/text()' |
+                Select-Object -First 1 -ExpandProperty Node |
+                Select-Object -ExpandProperty Value")
+
+        # Install PostgreSQL
+        echo "Installing PostgreSQL (version: ${EDB_VERSION})"
+        curl -o pgsql.zip -L https://get.enterprisedb.com/postgresql/postgresql-${EDB_VERSION}-windows-x64-binaries.zip
+        unzip pgsql.zip -x 'pgsql/include/**' 'pgsql/doc/**' 'pgsql/pgAdmin 4/**' 'pgsql/StackBuilder/**'
+
+        # Match Npgsql CI Docker image and stash one level up
+        cp {$(serverDirectory),pgsql}/server.crt
+        cp {$(serverDirectory),pgsql}/server.key
+
+        # Find OSGEO version number
+        OSGEO_VERSION=$(\
+          curl -Ls https://download.osgeo.org/postgis/windows/pg${{ variables.pg_major }} |
+          sed -n 's/.*>postgis-bundle-pg${{ variables.pg_major }}-\(${{ variables.postgis_version }}.[0-9]*.[0-9]*\)x64.zip<.*/\1/p' |
+          tail -n 1)
+
+        # Install PostGIS
+        echo "Installing PostGIS (version: ${OSGEO_VERSION})"
+        POSTGIS_FILE="postgis-bundle-pg${{ variables.pg_major }}-${OSGEO_VERSION}x64"
+        curl -o postgis.zip -L https://download.osgeo.org/postgis/windows/pg${{ variables.pg_major }}/${POSTGIS_FILE}.zip
+        unzip postgis.zip -d postgis
+        cp -a postgis/$POSTGIS_FILE/. pgsql/
+
+        # Start PostgreSQL
+        pgsql/bin/initdb -D pgsql/PGDATA -E UTF8 -U postgres
+        SOCKET_DIR=$(echo "$LOCALAPPDATA\Temp" | sed 's|\\|/|g')
+        sed -i "s|#unix_socket_directories = ''|unix_socket_directories = '$SOCKET_DIR'|" pgsql/PGDATA/postgresql.conf
+        sed -i "s|#wal_level =|wal_level = logical #|" pgsql/PGDATA/postgresql.conf
+        sed -i "s|#max_wal_senders =|max_wal_senders = 50 #|" pgsql/PGDATA/postgresql.conf
+        sed -i "s|#wal_sender_timeout =|wal_sender_timeout = 3s #|" pgsql/PGDATA/postgresql.conf
+        sed -i "s|#synchronous_standby_names =|synchronous_standby_names = 'npgsql_test_sync_standby' #|" pgsql/PGDATA/postgresql.conf
+        sed -i "s|#synchronous_commit =|synchronous_commit = local #|" pgsql/PGDATA/postgresql.conf
+        pgsql/bin/pg_ctl -D pgsql/PGDATA -l logfile -o '-c max_prepared_transactions=10 -c ssl=true -c ssl_cert_file=../server.crt -c ssl_key_file=../server.key' start
+
+        # Configure test account
+        pgsql/bin/psql -U postgres -c "CREATE ROLE npgsql_tests SUPERUSER LOGIN PASSWORD 'npgsql_tests'"
+        pgsql/bin/psql -U postgres -c "CREATE DATABASE npgsql_tests OWNER npgsql_tests"
+        pgsql/bin/psql -U postgres -c "CREATE EXTENSION citext" npgsql_tests
+        pgsql/bin/psql -U postgres -c "CREATE EXTENSION hstore" npgsql_tests
+        pgsql/bin/psql -U postgres -c "CREATE EXTENSION ltree" npgsql_tests
+        pgsql/bin/psql -U postgres -c "CREATE EXTENSION postgis" npgsql_tests
+
+        # user 'npgsql_tests_scram' must be created with password encrypted as scram-sha-256 (which only applies after restart)
+        sed -i "s|#password_encryption = md5|password_encryption = scram-sha-256|" pgsql/PGDATA/postgresql.conf
+
+        pgsql/bin/pg_ctl -D pgsql/PGDATA -l logfile -o '-c max_prepared_transactions=10 -c ssl=true -c ssl_cert_file=../server.crt -c ssl_key_file=../server.key' restart
+
+        pgsql/bin/psql -U postgres -c "CREATE ROLE npgsql_tests_scram SUPERUSER LOGIN PASSWORD 'npgsql_tests_scram'"
+
+        # Disable trust authentication except for unix domain sockets, requiring MD5
+        # passwords - some tests must fail if a password isn't provided.
+        if [ ${{ variables.pg_major }} -ge 13 ]; then
+              echo "local all all trust" > pgsql/PGDATA/pg_hba.conf
+              echo "host all npgsql_tests_scram all scram-sha-256" >> pgsql/PGDATA/pg_hba.conf
+        else
+              echo "host all npgsql_tests_scram all scram-sha-256" > pgsql/PGDATA/pg_hba.conf
+        fi
+        echo "host all all all md5" >> pgsql/PGDATA/pg_hba.conf
+        echo "host replication all all md5" >> pgsql/PGDATA/pg_hba.conf
+      displayName: Start PostgreSQL ${{ variables.pg_major }} (Windows)
+      condition: startsWith(variables['imageName'], 'windows')
+
+    - script: |
+        dotnet test npgsql/test/Npgsql.Tests --logger "trx;LogFileName=npgsql.tests.$(tagName).trx" --results-directory npgsql/test/results
+      env:
+        DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      displayName: Test
+
+    - script: |
+        dotnet test npgsql/test/Npgsql.PluginTests --logger "trx;LogFileName=npgsql.plugintests.$(os).$(tagName).trx" --results-directory npgsql/test/results
+      env:
+        DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      displayName: Test Plugins
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: npgsql/test/**/*.trx
+        testRunTitle: Postgres-$(os)-$(tagName)
+      condition: succeededOrFailed()
