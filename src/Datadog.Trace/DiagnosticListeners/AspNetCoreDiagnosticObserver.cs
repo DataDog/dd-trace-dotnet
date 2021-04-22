@@ -522,7 +522,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 SpanContext propagatedContext = ExtractPropagatedContext(request);
                 var tagsFromHeaders = ExtractHeaderTags(request, tracer);
 
-                var tags = new AspNetCoreTags();
+                var tags = tracer.Settings.RouteTemplateResourceNamesEnabled ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
                 var scope = tracer.StartActiveWithTags(HttpRequestInOperationName, propagatedContext, tags: tags);
 
                 scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
@@ -545,7 +545,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null)
             {
-                var tags = span.Tags as AspNetCoreTags;
+                var tags = span.Tags as AspNetCoreEndpointTags;
                 if (tags is null || !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
                 {
                     // Shouldn't happen in normal execution
@@ -674,7 +674,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 // Create a child span for the MVC action
-                var mvcSpanTags = new AspNetCoreTags();
+                var mvcSpanTags = new AspNetCoreEndpointTags();
                 var mvcScope = tracer.StartActiveWithTags(MvcOperationName, parentSpan.Context, tags: mvcSpanTags);
                 var span = mvcScope.Span;
                 span.Type = SpanTypes.Web;
@@ -767,7 +767,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // If we're using endpoint routing or this is a pipeline re-execution,
                     // these will already be set correctly
-                    if (parentSpan.Tags is AspNetCoreTags parentTags)
+                    if (parentSpan.Tags is AspNetCoreEndpointTags parentTags)
                     {
                         parentTags.AspNetCoreRoute = aspNetRoute;
                     }
