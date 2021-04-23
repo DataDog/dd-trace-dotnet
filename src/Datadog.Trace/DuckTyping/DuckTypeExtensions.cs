@@ -73,7 +73,7 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryDuckCast(this object instance, Type targetType, out object value)
         {
-            if (instance is not null)
+            if (instance is not null && targetType is not null)
             {
 #if NET45
                 if (!targetType.IsVisible)
@@ -133,7 +133,7 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static object DuckAs(this object instance, Type targetType)
         {
-            if (instance is not null)
+            if (instance is not null && targetType is not null)
             {
 #if NET45
                 if (!targetType.IsVisible)
@@ -161,6 +161,11 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool DuckIs<T>(this object instance)
         {
+            if (instance is null)
+            {
+                return false;
+            }
+
 #if NET45
             if (!typeof(T).IsVisible)
             {
@@ -180,6 +185,11 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool DuckIs(this object instance, Type targetType)
         {
+            if (instance is null || targetType is null)
+            {
+                return false;
+            }
+
 #if NET45
             if (!targetType.IsVisible)
             {
