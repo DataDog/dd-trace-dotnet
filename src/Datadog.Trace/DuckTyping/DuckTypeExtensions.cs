@@ -43,8 +43,6 @@ namespace Datadog.Trace.DuckTyping
         {
             if (instance is not null)
             {
-                Type targetType = instance.GetType();
-
 #if NET45
                 if (!typeof(T).IsVisible)
                 {
@@ -53,7 +51,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 #endif
 
-                DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(targetType);
+                DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
                 if (proxyResult.Success)
                 {
                     value = proxyResult.CreateInstance<T>(instance);
