@@ -1,5 +1,23 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.26.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.26.1)
+
+## Changes
+* Serialize tags/metrics in a single pass to improve performance (#1416)
+* Add Ducktype reverse proxy for implementing interfaces indirectly (#1402)
+
+## Fixes
+* Don't throw or log exceptions in TryDuckCast methods (#1422)
+* Fix git parser on really big pack files (>2GB) in CIApp (#1413)
+
+## Build / Test
+* Reinstate the consolidated multi-stage build pipeline (#1363)
+* Enable endpoint routing in aspnetcore benchmark (#1418)
+* Re-enable AspNet integration tests in CI (#1414)
+* Update NuGet packages in integration tests, under existing instrumentation version ranges (#1412)
+
+[Changes since 1.26.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.26.0...v1.26.1)
+
 ## [Release 1.26.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.26.0)
 
 ## Changes
