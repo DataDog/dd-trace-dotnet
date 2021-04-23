@@ -463,6 +463,8 @@ stages:
     - task: NuGetToolInstaller@1
       displayName: install nuget
 
+    - template: steps/install-windows-services.yml
+
     - task: NuGetCommand@2
       displayName: nuget restore
       inputs:

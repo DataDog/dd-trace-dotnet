@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Theory]
         [MemberData(nameof(GetNpgsql))]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget, bool enableInlining)
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
@@ -106,6 +107,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [InlineData(true, false)]
         [InlineData(true, true)]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
         {
             SetCallTargetSettings(enableCallTarget, enableInlining);
