@@ -44,7 +44,6 @@
     This reference allows us to build the code without precompiler directives,
     but the logic at runtime will never try to use the Registry if it's not available
     -->
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.6.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.14" />
   </ItemGroup>
 
