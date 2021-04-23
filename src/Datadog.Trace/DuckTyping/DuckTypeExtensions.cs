@@ -43,7 +43,17 @@ namespace Datadog.Trace.DuckTyping
         {
             if (instance is not null)
             {
-                DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
+                Type targetType = instance.GetType();
+
+#if NET45
+                if (!typeof(T).IsVisible)
+                {
+                    value = default;
+                    return false;
+                }
+#endif
+
+                DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(targetType);
                 if (proxyResult.Success)
                 {
                     value = proxyResult.CreateInstance<T>(instance);
@@ -67,7 +77,15 @@ namespace Datadog.Trace.DuckTyping
         {
             if (instance is not null)
             {
-                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyTypeFromInstance(targetType, instance);
+#if NET45
+                if (!targetType.IsVisible)
+                {
+                    value = default;
+                    return false;
+                }
+#endif
+
+                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(targetType, instance.GetType());
                 if (proxyResult.Success)
                 {
                     value = proxyResult.CreateInstance(instance);
@@ -91,6 +109,13 @@ namespace Datadog.Trace.DuckTyping
         {
             if (instance is not null)
             {
+#if NET45
+                if (!typeof(T).IsVisible)
+                {
+                    return null;
+                }
+#endif
+
                 DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
                 if (proxyResult.Success)
                 {
@@ -112,7 +137,14 @@ namespace Datadog.Trace.DuckTyping
         {
             if (instance is not null)
             {
-                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyTypeFromInstance(targetType, instance);
+#if NET45
+                if (!targetType.IsVisible)
+                {
+                    return null;
+                }
+#endif
+
+                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(targetType, instance.GetType());
                 if (proxyResult.Success)
                 {
                     return proxyResult.CreateInstance(instance);
@@ -130,7 +162,16 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>true if the proxy can be created; otherwise, false</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool DuckIs<T>(this object instance)
-            => DuckType.CanCreate<T>(instance);
+        {
+#if NET45
+            if (!typeof(T).IsVisible)
+            {
+                return false;
+            }
+#endif
+
+            return DuckType.CanCreate<T>(instance);
+        }
 
         /// <summary>
         /// Gets if a proxy can be created
@@ -140,6 +181,15 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>true if the proxy can be created; otherwise, false</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool DuckIs(this object instance, Type targetType)
-            => DuckType.CanCreate(targetType, instance);
+        {
+#if NET45
+            if (!targetType.IsVisible)
+            {
+                return false;
+            }
+#endif
+
+            return DuckType.CanCreate(targetType, instance);
+        }
     }
 }

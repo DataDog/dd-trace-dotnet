@@ -42,8 +42,14 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IDuckType Create(Type proxyType, object instance)
         {
+            // Validate arguments
+            EnsureArguments(proxyType, instance);
+
+            // Create Type
+            CreateTypeResult result = GetOrCreateProxyType(proxyType, instance.GetType());
+
             // Create instance
-            return GetOrCreateProxyTypeFromInstance(proxyType, instance).CreateInstance(instance);
+            return result.CreateInstance(instance);
         }
 
         /// <summary>
@@ -67,8 +73,14 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool CanCreate(Type proxyType, object instance)
         {
+            // Validate arguments
+            EnsureArguments(proxyType, instance);
+
+            // Create Type
+            CreateTypeResult result = GetOrCreateProxyType(proxyType, instance.GetType());
+
             // Create instance
-            return GetOrCreateProxyTypeFromInstance(proxyType, instance).CanCreate();
+            return result.CanCreate();
         }
 
         /// <summary>
@@ -83,21 +95,6 @@ namespace Datadog.Trace.DuckTyping
                 new TypesTuple(proxyType, targetType),
                 key => new Lazy<CreateTypeResult>(() => CreateProxyType(key.ProxyDefinitionType, key.TargetType)))
                 .Value;
-        }
-
-        /// <summary>
-        /// Gets or create a new proxy type for ducktyping
-        /// </summary>
-        /// <param name="proxyType">ProxyType interface</param>
-        /// <param name="instance">Instance object</param>
-        /// <returns>CreateTypeResult instance</returns>
-        internal static CreateTypeResult GetOrCreateProxyTypeFromInstance(Type proxyType, object instance)
-        {
-            // Validate arguments
-            EnsureArguments(proxyType, instance);
-
-            // Create Type
-            return GetOrCreateProxyType(proxyType, instance.GetType());
         }
 
         private static CreateTypeResult CreateProxyType(Type proxyDefinitionType, Type targetType)
