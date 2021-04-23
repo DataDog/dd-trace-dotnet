@@ -1,4 +1,4 @@
-﻿#if NET461
+#if NET461
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
@@ -73,10 +73,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.HttpPort,
                 expectedStatusCode,
                 isError,
-                expectedErrorType,
-                expectedErrorMessage,
+                expectedAspNetErrorType: null,
+                expectedAspNetErrorMessage: isError ? $"The HTTP response has status code {(int)expectedStatusCode}." : null,
+                expectedErrorType: expectedErrorType,
+                expectedErrorMessage: expectedErrorMessage,
                 "web",
                 "aspnet-webapi.request",
+                expectedResourceName,
                 expectedResourceName,
                 "1.0.0",
                 expectedTags);

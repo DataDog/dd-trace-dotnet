@@ -58,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(AspNetWebApi2TestData.WithoutFeatureFlag), MemberType = typeof(AspNetWebApi2TestData))]
         public async Task SubmitsTraces(
             string path,
+            string expectedAspNetResourceName,
             string expectedResourceName,
             HttpStatusCode expectedStatusCode,
             bool isError,
@@ -71,10 +72,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.HttpPort,
                 expectedStatusCode,
                 isError,
-                expectedErrorType,
-                expectedErrorMessage,
+                expectedAspNetErrorType: null,
+                expectedAspNetErrorMessage: isError ? $"The HTTP response has status code {(int)expectedStatusCode}." : null,
+                expectedErrorType: expectedErrorType,
+                expectedErrorMessage: expectedErrorMessage,
                 "web",
                 "aspnet-webapi.request",
+                expectedAspNetResourceName,
                 expectedResourceName,
                 "1.0.0",
                 expectedTags);

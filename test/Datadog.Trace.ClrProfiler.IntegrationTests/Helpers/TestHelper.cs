@@ -246,10 +246,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int httpPort,
             HttpStatusCode expectedHttpStatusCode,
             bool isError,
+            string expectedAspNetErrorType,
+            string expectedAspNetErrorMessage,
             string expectedErrorType,
             string expectedErrorMessage,
             string expectedSpanType,
             string expectedOperationName,
+            string expectedAspNetResourceName,
             string expectedResourceName,
             string expectedServiceVersion,
             SerializableDictionary expectedTags = null)
@@ -266,20 +269,95 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Output.WriteLine($"[http] {response.StatusCode} {content}");
                 Assert.Equal(expectedHttpStatusCode, response.StatusCode);
 
+                agent.SpanFilters.Add(IsServerSpan);
+
+                spans = agent.WaitForSpans(
+                    count: 2,
+                    minDateTime: testStart,
+                    returnAllOperations: true);
+
+                Assert.True(spans.Count == 2, $"expected two span, saw {spans.Count}");
+            }
+
+            MockTracerAgent.Span aspnetSpan = spans.Where(s => s.Name == "aspnet.request").FirstOrDefault();
+            MockTracerAgent.Span innerSpan = spans.Where(s => s.Name == expectedOperationName).FirstOrDefault();
+
+            Assert.NotNull(aspnetSpan);
+            Assert.Equal(expectedAspNetResourceName, aspnetSpan.Resource);
+
+            Assert.NotNull(innerSpan);
+            Assert.Equal(expectedResourceName, innerSpan.Resource);
+
+            foreach (MockTracerAgent.Span span in spans)
+            {
+                // base properties
+                Assert.Equal(expectedSpanType, span.Type);
+
+                // errors
+                Assert.Equal(isError, span.Error == 1);
+                if (span == aspnetSpan)
+                {
+                    Assert.Equal(expectedAspNetErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
+                    Assert.Equal(expectedAspNetErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
+                }
+                else if (span == innerSpan)
+                {
+                    Assert.Equal(expectedErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
+                    Assert.Equal(expectedErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
+                }
+
+                // other tags
+                Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
+                Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
+            }
+
+            if (expectedTags?.Values is not null)
+            {
+                foreach (var expectedTag in expectedTags)
+                {
+                    Assert.Equal(expectedTag.Value, innerSpan.Tags.GetValueOrDefault(expectedTag.Key));
+                }
+            }
+        }
+
+        protected async Task AssertAspNetSpanOnly(
+            string path,
+            MockTracerAgent agent,
+            int httpPort,
+            HttpStatusCode expectedHttpStatusCode,
+            bool isError,
+            string expectedErrorType,
+            string expectedErrorMessage,
+            string expectedSpanType,
+            string expectedResourceName,
+            string expectedServiceVersion)
+        {
+            IImmutableList<MockTracerAgent.Span> spans;
+
+            using (var httpClient = new HttpClient())
+            {
+                // disable tracing for this HttpClient request
+                httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                var testStart = DateTime.UtcNow;
+                var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
+                var content = await response.Content.ReadAsStringAsync();
+                Output.WriteLine($"[http] {response.StatusCode} {content}");
+                Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+
                 spans = agent.WaitForSpans(
                     count: 1,
                     minDateTime: testStart,
-                    operationName: expectedOperationName);
+                    operationName: "aspnet.request",
+                    returnAllOperations: true);
 
-                Assert.True(spans.Count == 1, $"expected one span, saw {spans.Count}");
+                Assert.True(spans.Count == 1, $"expected two span, saw {spans.Count}");
             }
 
             MockTracerAgent.Span span = spans[0];
 
             // base properties
-            Assert.Equal(expectedSpanType, span.Type);
-            Assert.Equal(expectedOperationName, span.Name);
             Assert.Equal(expectedResourceName, span.Resource);
+            Assert.Equal(expectedSpanType, span.Type);
 
             // errors
             Assert.Equal(isError, span.Error == 1);
@@ -289,15 +367,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
-
-            if (expectedTags?.Values is not null)
-            {
-                foreach (var expectedTag in expectedTags)
-                {
-                    Assert.Equal(expectedTag.Value, span.Tags.GetValueOrDefault(expectedTag.Key));
-                }
-            }
         }
+
+        private bool IsServerSpan(MockTracerAgent.Span span) =>
+            span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
 
         internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
         {
