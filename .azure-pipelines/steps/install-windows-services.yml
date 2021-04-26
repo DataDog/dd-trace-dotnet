@@ -2,6 +2,9 @@ steps:
 - bash: |
     # Sourced from https://github.com/npgsql/npgsql/blob/v5.0.4/.github/workflows/build.yml
     # Some configuration is tweaked for tests in the npgsql/npgsql repo
+    # Changes from original source:
+    # - Remove usage of SSL certs
+    # - Remove PostGIS
 
     # Find EnterpriseDB version number
     EDB_VERSION=$(pwsh -c "
@@ -16,23 +19,6 @@ steps:
     echo "Installing PostgreSQL (version: ${EDB_VERSION})"
     curl -o pgsql.zip -L https://get.enterprisedb.com/postgresql/postgresql-${EDB_VERSION}-windows-x64-binaries.zip
     unzip pgsql.zip -x 'pgsql/include/**' 'pgsql/doc/**' 'pgsql/pgAdmin 4/**' 'pgsql/StackBuilder/**'
-
-    # Match Npgsql CI Docker image and stash one level up
-    # Datadog: Remove usage of server.crt
-    # Datadog: Remove usage of server.key
-
-    # Find OSGEO version number
-    OSGEO_VERSION=$(\
-      curl -Ls https://download.osgeo.org/postgis/windows/pg13 |
-      sed -n 's/.*>postgis-bundle-pg13-\(3.[0-9]*.[0-9]*\)x64.zip<.*/\1/p' |
-      tail -n 1)
-
-    # Install PostGIS
-    echo "Installing PostGIS (version: ${OSGEO_VERSION})"
-    POSTGIS_FILE="postgis-bundle-pg13-${OSGEO_VERSION}x64"
-    curl -o postgis.zip -L https://download.osgeo.org/postgis/windows/pg13/${POSTGIS_FILE}.zip
-    unzip postgis.zip -d postgis
-    cp -a postgis/$POSTGIS_FILE/. pgsql/
 
     # Start PostgreSQL
     pgsql/bin/initdb -D pgsql/PGDATA -E UTF8 -U postgres
@@ -51,7 +37,6 @@ steps:
     pgsql/bin/psql -U postgres -c "CREATE EXTENSION citext" npgsql_tests
     pgsql/bin/psql -U postgres -c "CREATE EXTENSION hstore" npgsql_tests
     pgsql/bin/psql -U postgres -c "CREATE EXTENSION ltree" npgsql_tests
-    pgsql/bin/psql -U postgres -c "CREATE EXTENSION postgis" npgsql_tests
 
     # user 'npgsql_tests_scram' must be created with password encrypted as scram-sha-256 (which only applies after restart)
     sed -i "s|#password_encryption = md5|password_encryption = scram-sha-256|" pgsql/PGDATA/postgresql.conf
