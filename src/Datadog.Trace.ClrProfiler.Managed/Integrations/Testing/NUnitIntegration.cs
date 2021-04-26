@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// Wrap the original NUnit.Framework.Internal.Execution.CompositeWorkItem.SkipChildren method by adding instrumentation code arount it
         /// </summary>
         /// <param name="compositeWorkItem">The CompositeWorkItem instance</param>
-        /// <param name="testSuite">The test suite instance</param>
+        /// <param name="testSuiteOrCompositeWorkItem">The test suite or CompositeWorkItem instance</param>
         /// <param name="resultState">the result state instance</param>
         /// <param name="message">The message instance</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -213,10 +213,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             TargetMethod = NUnitSkipChildrenMethod,
             TargetMinimumVersion = Major3Minor0,
             TargetMaximumVersion = Major3,
-            TargetSignatureTypes = new[] { ClrNames.Void, NUnitTestSuiteType, NUnitResultStateType, ClrNames.String })]
+            TargetSignatureTypes = new[] { ClrNames.Void, "_", NUnitResultStateType, ClrNames.String })]
         public static void CompositeWorkItem_SkipChildren(
             object compositeWorkItem,
-            object testSuite,
+            object testSuiteOrCompositeWorkItem,
             object resultState,
             object message,
             int opCode,
@@ -224,6 +224,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             long moduleVersionPtr)
         {
             if (compositeWorkItem == null) { throw new ArgumentNullException(nameof(compositeWorkItem)); }
+            if (testSuiteOrCompositeWorkItem == null) { throw new ArgumentNullException(nameof(testSuiteOrCompositeWorkItem)); }
+
+            Type testSuiteOrCompositeWorkItemType = testSuiteOrCompositeWorkItem.GetType();
+            string argTypeName = testSuiteOrCompositeWorkItemType.Name == "CompositeWorkItem" ? NUnitCompositeWorkItemType : NUnitTestSuiteType;
 
             Type compositeWorkItemType = compositeWorkItem.GetType();
             Action<object, object, object, object> execute;
@@ -233,8 +237,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 execute = MethodBuilder<Action<object, object, object, object>>
                     .Start(moduleVersionPtr, mdToken, opCode, NUnitSkipChildrenMethod)
                     .WithConcreteType(compositeWorkItemType)
-                    .WithParameters(testSuite, resultState, message)
-                    .WithNamespaceAndNameFilters(ClrNames.Void, NUnitTestSuiteType, NUnitResultStateType, ClrNames.String)
+                    .WithParameters(testSuiteOrCompositeWorkItem, resultState, message)
+                    .WithNamespaceAndNameFilters(ClrNames.Void, argTypeName, NUnitResultStateType, ClrNames.String)
                     .Build();
             }
             catch (Exception ex)
@@ -250,20 +254,31 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 throw;
             }
 
-            execute(compositeWorkItem, testSuite, resultState, message);
+            execute(compositeWorkItem, testSuiteOrCompositeWorkItem, resultState, message);
 
-            if (testSuite.TryDuckCast<ITestSuite>(out var tSuite))
+            var skipMessage = (string)message;
+            const string startString = "OneTimeSetUp:";
+            if (skipMessage?.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
             {
-                var skipMessage = (string)message;
-                const string startString = "OneTimeSetUp:";
-                if (skipMessage?.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
-                {
-                    skipMessage = skipMessage.Substring(startString.Length).Trim();
-                }
+                skipMessage = skipMessage.Substring(startString.Length).Trim();
+            }
 
+            string typeName = testSuiteOrCompositeWorkItemType.Name;
+            if (typeName == "ParameterizedMethodSuite" && testSuiteOrCompositeWorkItem.TryDuckCast<ITestSuite>(out var tSuite))
+            {
+                // In case the TestSuite is a ParameterizedMethodSuite instance
                 foreach (var item in tSuite.Tests)
                 {
                     Scope scope = AutoInstrumentation.Testing.NUnit.NUnitIntegration.CreateScope(item.DuckCast<ITest>(), compositeWorkItemType);
+                    AutoInstrumentation.Testing.NUnit.NUnitIntegration.FinishSkippedScope(scope, skipMessage);
+                }
+            }
+            else if (typeName == "CompositeWorkItem" && testSuiteOrCompositeWorkItem.TryDuckCast<ICompositeWorkItem>(out var wItem))
+            {
+                // In case we have a CompositeWorkItem
+                foreach (var item in wItem.Children)
+                {
+                    Scope scope = AutoInstrumentation.Testing.NUnit.NUnitIntegration.CreateScope(item.DuckCast<IWorkItem>().Result.Test, compositeWorkItemType);
                     AutoInstrumentation.Testing.NUnit.NUnitIntegration.FinishSkippedScope(scope, skipMessage);
                 }
             }

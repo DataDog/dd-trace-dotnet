@@ -1785,7 +1785,7 @@
           "method": "SkipChildren",
           "signature_types": [
             "System.Void",
-            "NUnit.Framework.Internal.TestSuite",
+            "_",
             "NUnit.Framework.Interfaces.ResultState",
             "System.String"
           ],
@@ -5582,7 +5582,7 @@
           "method": "SkipChildren",
           "signature_types": [
             "System.Void",
-            "NUnit.Framework.Internal.TestSuite",
+            "_",
             "NUnit.Framework.Interfaces.ResultState",
             "System.String"
           ],

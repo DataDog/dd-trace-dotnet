@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         TypeName = "NUnit.Framework.Internal.Execution.CompositeWorkItem",
         MethodName = "SkipChildren",
         ReturnTypeName = ClrNames.Void,
-        ParameterTypeNames = new[] { "NUnit.Framework.Internal.TestSuite", "NUnit.Framework.Interfaces.ResultState", ClrNames.String },
+        ParameterTypeNames = new[] { "_", "NUnit.Framework.Interfaces.ResultState", ClrNames.String },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = IntegrationName)]
@@ -38,12 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TSuite, TResultState>(TTarget instance, TSuite testSuite, TResultState resultState, string message)
         {
-            if (testSuite?.GetType().Name == "ParameterizedMethodSuite")
-            {
-                return new CallTargetState(null, new object[] { testSuite.DuckCast<ITestSuite>(), message });
-            }
-
-            return CallTargetState.GetDefault();
+            return new CallTargetState(null, new object[] { testSuite, message });
         }
 
         /// <summary>
@@ -59,18 +54,39 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             if (state.State != null)
             {
                 object[] stateArray = (object[])state.State;
-                var testSuite = (ITestSuite)stateArray[0];
-                var skipMessage = (string)stateArray[1];
+                string skipMessage = (string)stateArray[1];
                 const string startString = "OneTimeSetUp:";
                 if (skipMessage?.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
                 {
                     skipMessage = skipMessage.Substring(startString.Length).Trim();
                 }
 
-                foreach (var item in testSuite.Tests)
+                object testSuiteOrWorkItem = stateArray[0];
+
+                if (testSuiteOrWorkItem is not null)
                 {
-                    Scope scope = NUnitIntegration.CreateScope(item.DuckCast<ITest>(), typeof(TTarget));
-                    NUnitIntegration.FinishSkippedScope(scope, skipMessage);
+                    string typeName = testSuiteOrWorkItem.GetType().Name;
+
+                    if (typeName == "ParameterizedMethodSuite")
+                    {
+                        // In case the TestSuite is a ParameterizedMethodSuite instance
+                        var testSuite = testSuiteOrWorkItem.DuckCast<ITestSuite>();
+                        foreach (var item in testSuite.Tests)
+                        {
+                            Scope scope = NUnitIntegration.CreateScope(item.DuckCast<ITest>(), typeof(TTarget));
+                            NUnitIntegration.FinishSkippedScope(scope, skipMessage);
+                        }
+                    }
+                    else if (typeName == "CompositeWorkItem")
+                    {
+                        // In case we have a CompositeWorkItem
+                        var compositeWorkItem = testSuiteOrWorkItem.DuckCast<ICompositeWorkItem>();
+                        foreach (var item in compositeWorkItem.Children)
+                        {
+                            Scope scope = NUnitIntegration.CreateScope(item.DuckCast<IWorkItem>().Result.Test, typeof(TTarget));
+                            NUnitIntegration.FinishSkippedScope(scope, skipMessage);
+                        }
+                    }
                 }
             }
 
