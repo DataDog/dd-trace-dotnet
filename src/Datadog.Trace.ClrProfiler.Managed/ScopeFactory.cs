@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -149,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                string dbType = GetDbType(commandType.Name);
+                string dbType = GetDbType(commandType.Namespace, commandType.Name);
 
                 if (dbType == null)
                 {
@@ -191,33 +192,28 @@ namespace Datadog.Trace.ClrProfiler
             return scope;
         }
 
-        public static string GetDbType(string commandTypeName)
+        public static string GetDbType(string namespaceName, string commandTypeName)
         {
-            switch (commandTypeName)
-            {
-                case "SqlCommand":
-                    return "sql-server";
-                case "NpgsqlCommand":
-                    return "postgres";
-                case "MySqlCommand":
-                    return "mysql";
-                case "OracleCommand":
-                    return "oracle";
-                case "SqliteCommand":
-                case "SQLiteCommand":
-                    return "sqlite";
-                case "InterceptableDbCommand":
-                case "ProfiledDbCommand":
-                    // don't create spans for these
-                    return null;
-                default:
-                    const string commandSuffix = "Command";
+            const string commandSuffix = "Command";
 
-                    // remove "Command" suffix if present
-                    return commandTypeName.EndsWith(commandSuffix)
-                               ? commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length).ToLowerInvariant()
-                               : commandTypeName.ToLowerInvariant();
-            }
+            var result =
+                commandTypeName switch
+                {
+                    "SqlCommand" => "sql-server",
+                    "NpgsqlCommand" => "postgres",
+                    "MySqlCommand" => "mysql",
+                    "SqliteCommand" => "sqlite",
+                    "SQLiteCommand" => "sqlite",
+                    "InterceptableDbCommand" => null,
+                    "ProfiledDbCommand" => null,
+                    _ when commandTypeName == commandSuffix =>
+                        namespaceName.Split('.').Last().ToLowerInvariant(),
+                    _ when commandTypeName.EndsWith(commandSuffix) =>
+                        commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length).ToLowerInvariant(),
+                    _ => commandTypeName.ToLowerInvariant()
+                };
+
+            return result;
         }
     }
 }
