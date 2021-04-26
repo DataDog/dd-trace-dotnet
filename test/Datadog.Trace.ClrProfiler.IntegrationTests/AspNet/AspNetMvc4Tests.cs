@@ -59,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(AspNetMvc4TestData.WithoutFeatureFlag), MemberType = typeof(AspNetMvc4TestData))]
         public async Task SubmitsTraces(
             string path,
+            string expectedAspNetResourceName,
             string expectedResourceName,
             HttpStatusCode expectedStatusCode,
             bool isError,
@@ -72,10 +73,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.HttpPort,
                 expectedStatusCode,
                 isError,
-                expectedErrorType,
-                expectedErrorMessage,
+                expectedAspNetErrorType: expectedErrorType,
+                expectedAspNetErrorMessage: expectedErrorMessage,
+                expectedErrorType: expectedErrorType,
+                expectedErrorMessage: expectedErrorMessage,
                 "web",
                 "aspnet-mvc.request",
+                expectedAspNetResourceName,
                 expectedResourceName,
                 "1.0.0",
                 tags);
