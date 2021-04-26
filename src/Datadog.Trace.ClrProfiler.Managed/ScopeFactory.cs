@@ -206,6 +206,8 @@ namespace Datadog.Trace.ClrProfiler
                     "SQLiteCommand" => "sqlite",
                     "InterceptableDbCommand" => null,
                     "ProfiledDbCommand" => null,
+                    _ when namespaceName.Length == 0 && commandTypeName == commandSuffix =>
+                        commandTypeName.ToLowerInvariant(),
                     _ when commandTypeName == commandSuffix =>
                         namespaceName.Split('.').Last().ToLowerInvariant(),
                     _ when commandTypeName.EndsWith(commandSuffix) =>

@@ -96,8 +96,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("", "ProfiledDbCommand", null)]
         [InlineData("", "ExampleCommand", "example")]
         [InlineData("", "Example", "example")]
+        [InlineData("", "Command", "command")]
         [InlineData("Custom.DB", "Command", "db")]
-        public void GetDbType_IgnoresReplacementServiceNameWhenNotProvided(string namespaceName, string commandTypeName, string expected)
+        public void GetDbType_CorrectNameGenerated(string namespaceName, string commandTypeName, string expected)
         {
             var dbType = ScopeFactory.GetDbType(namespaceName, commandTypeName);
             Assert.Equal(expected, dbType);
