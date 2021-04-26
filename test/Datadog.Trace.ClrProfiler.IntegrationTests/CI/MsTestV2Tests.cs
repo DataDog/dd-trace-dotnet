@@ -43,7 +43,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             using (var agent = new MockTracerAgent(agentPort))
             using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(ExpectedSpanCount);
+                var spans = agent.WaitForSpans(ExpectedSpanCount)
+                    .Where(s => !(s.Tags.TryGetValue("http.url", out var sValue) && sValue == "https://dc.services.visualstudio.com/v2/track"))
+                    .ToList();
 
                 // Check the span count
                 Assert.Equal(ExpectedSpanCount, spans.Count);
