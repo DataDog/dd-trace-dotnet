@@ -131,7 +131,7 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // Gets the module builder
-                    var moduleBuilder = GetModuleBuilder(targetType, targetType.IsVisible && proxyDefinitionType.IsVisible);
+                    var moduleBuilder = GetModuleBuilder(targetType, (targetType.IsPublic || targetType.IsNestedPublic) && (proxyDefinitionType.IsPublic || proxyDefinitionType.IsNestedPublic));
 
                     // Ensure visibility
                     EnsureTypeVisibility(moduleBuilder, targetType);
