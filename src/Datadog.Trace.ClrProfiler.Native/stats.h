@@ -1,22 +1,29 @@
 #ifndef DD_CLR_PROFILER_STATS_H_
 #define DD_CLR_PROFILER_STATS_H_
 
-#include "util.h"
 #include <chrono>
+
+#include "util.h"
 
 namespace trace {
 
 class SWStat {
-  std::chrono::nanoseconds *_value;
+  std::chrono::nanoseconds* _value;
+  std::mutex* _mutex;
   std::chrono::steady_clock::time_point _startTime;
 
  public:
-  SWStat(std::chrono::nanoseconds *value) {
-      _value = value;
-      _startTime = std::chrono::steady_clock::now();
+  SWStat(std::chrono::nanoseconds* value, std::mutex* mutex) {
+    _value = value;
+    _mutex = mutex;
+    _startTime = std::chrono::steady_clock::now();
   }
   ~SWStat() {
-    *_value += std::chrono::steady_clock::now() - _startTime;
+    auto increment = std::chrono::steady_clock::now() - _startTime;
+    {
+      std::lock_guard<std::mutex> guard(*_mutex);
+      *_value += increment;
+    }
   }
 };
 
@@ -34,13 +41,23 @@ class Stats : public Singleton<Stats> {
   std::chrono::nanoseconds initialize;
 
   //
-  unsigned int callTargetRequestRejitCount;
-  unsigned int callTargetRewriterCount;
-  unsigned int jitInliningCount;
-  unsigned int jitCompilationStartedCount;
-  unsigned int moduleUnloadStartedCount;
-  unsigned int moduleLoadFinishedCount;
-  unsigned int assemblyLoadFinishedCount;
+  std::atomic_uint callTargetRequestRejitCount = {0};
+  std::atomic_uint callTargetRewriterCount = {0};
+  std::atomic_uint jitInliningCount = {0};
+  std::atomic_uint jitCompilationStartedCount = {0};
+  std::atomic_uint moduleUnloadStartedCount = {0};
+  std::atomic_uint moduleLoadFinishedCount = {0};
+  std::atomic_uint assemblyLoadFinishedCount = {0};
+
+  //
+  std::mutex callTargetRequestRejitMutex;
+  std::mutex callTargetRewriterMutex;
+  std::mutex jitInliningMutex;
+  std::mutex jitCompilationStartedMutex;
+  std::mutex moduleUnloadStartedMutex;
+  std::mutex moduleLoadFinishedMutex;
+  std::mutex assemblyLoadFinishedMutex;
+  std::mutex initializeMutex;
 
  public:
   Stats() {
@@ -61,53 +78,61 @@ class Stats : public Singleton<Stats> {
   }
   SWStat CallTargetRequestRejitMeasure() {
     callTargetRequestRejitCount++;
-    return SWStat(&callTargetRequestRejit);
+
+    return SWStat(&callTargetRequestRejit, &callTargetRequestRejitMutex);
   }
   SWStat CallTargetRewriterCallbackMeasure() {
     callTargetRewriterCount++;
-    return SWStat(&callTargetRewriter);
+    return SWStat(&callTargetRewriter, &callTargetRewriterMutex);
   }
   SWStat JITInliningMeasure() {
     jitInliningCount++;
-    return SWStat(&jitInlining);
+    return SWStat(&jitInlining, &jitInliningMutex);
   }
   SWStat JITCompilationStartedMeasure() {
     jitCompilationStartedCount++;
-    return SWStat(&jitCompilationStarted);
+    return SWStat(&jitCompilationStarted, &jitCompilationStartedMutex);
   }
   SWStat ModuleUnloadStartedMeasure() {
     moduleUnloadStartedCount++;
-    return SWStat(&moduleUnloadStarted);
+    return SWStat(&moduleUnloadStarted, &moduleUnloadStartedMutex);
   }
   SWStat ModuleLoadFinishedMeasure() {
     moduleLoadFinishedCount++;
-    return SWStat(&moduleLoadFinished);
+    return SWStat(&moduleLoadFinished, &moduleLoadFinishedMutex);
   }
   SWStat AssemblyLoadFinishedMeasure() {
     assemblyLoadFinishedCount++;
-    return SWStat(&assemblyLoadFinished);
+    return SWStat(&assemblyLoadFinished, &assemblyLoadFinishedMutex);
   }
   SWStat InitializeMeasure() {
-    return SWStat(&initialize);
+      return SWStat(&initialize, &initializeMutex);
   }
   std::string ToString() {
     std::stringstream ss;
     ss << "[Initialize=";
     ss << initialize.count() / 1000000 << "ms";
     ss << ", ModuleLoadFinished=";
-    ss << moduleLoadFinished.count() / 1000000 << "ms" << "/" << moduleLoadFinishedCount;
+    ss << moduleLoadFinished.count() / 1000000 << "ms"
+       << "/" << moduleLoadFinishedCount;
     ss << ", CallTargetRequestRejit=";
-    ss << callTargetRequestRejit.count() / 1000000 << "ms" << "/" << callTargetRequestRejitCount;
+    ss << callTargetRequestRejit.count() / 1000000 << "ms"
+       << "/" << callTargetRequestRejitCount;
     ss << ", CallTargetRewriter=";
-    ss << callTargetRewriter.count() / 1000000 << "ms" << "/" << callTargetRewriterCount;
+    ss << callTargetRewriter.count() / 1000000 << "ms"
+       << "/" << callTargetRewriterCount;
     ss << ", AssemblyLoadFinished=";
-    ss << assemblyLoadFinished.count() / 1000000 << "ms" << "/" << assemblyLoadFinishedCount;
+    ss << assemblyLoadFinished.count() / 1000000 << "ms"
+       << "/" << assemblyLoadFinishedCount;
     ss << ", ModuleUnloadStarted=";
-    ss << moduleUnloadStarted.count() / 1000000 << "ms" << "/" << moduleUnloadStartedCount;
+    ss << moduleUnloadStarted.count() / 1000000 << "ms"
+       << "/" << moduleUnloadStartedCount;
     ss << ", JitCompilationStarted=";
-    ss << jitCompilationStarted.count() / 1000000 << "ms" << "/" << jitCompilationStartedCount;
+    ss << jitCompilationStarted.count() / 1000000 << "ms"
+       << "/" << jitCompilationStartedCount;
     ss << ", JitInlining=";
-    ss << jitInlining.count() / 1000000 << "ms" << "/" << jitInliningCount;
+    ss << jitInlining.count() / 1000000 << "ms"
+       << "/" << jitInliningCount;
     ss << "]";
     return ss.str();
   }
