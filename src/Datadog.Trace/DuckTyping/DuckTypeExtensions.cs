@@ -46,7 +46,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-            if (typeof(T).IsVisible)
+            if (typeof(T).IsPublic || typeof(T).IsNestedPublic)
             {
                 DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
                 if (proxyResult.Success)
@@ -75,7 +75,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-            if (targetType?.IsVisible == true)
+            if (targetType != null && (targetType.IsPublic || targetType.IsNestedPublic))
             {
                 DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(targetType, instance.GetType());
                 if (proxyResult.Success)
@@ -104,7 +104,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-            if (typeof(T).IsVisible)
+            if (typeof(T).IsPublic || typeof(T).IsNestedPublic)
             {
                 DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
                 if (proxyResult.Success)
@@ -130,7 +130,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-            if (targetType?.IsVisible == true)
+            if (targetType != null && (targetType.IsPublic || targetType.IsNestedPublic))
             {
                 DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(targetType, instance.GetType());
                 if (proxyResult.Success)
@@ -156,7 +156,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-            if (typeof(T).IsVisible)
+            if (typeof(T).IsPublic || typeof(T).IsNestedPublic)
             {
                 return DuckType.CanCreate<T>(instance);
             }
@@ -178,7 +178,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-            if (targetType?.IsVisible == true)
+            if (targetType != null && (targetType.IsPublic || targetType.IsNestedPublic))
             {
                 return DuckType.CanCreate(targetType, instance);
             }
