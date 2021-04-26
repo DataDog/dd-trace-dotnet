@@ -41,16 +41,13 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryDuckCast<T>(this object instance, out T value)
         {
-            if (instance is not null)
+            if (instance is null)
             {
-#if NET45
-                if (!typeof(T).IsVisible)
-                {
-                    value = default;
-                    return false;
-                }
-#endif
+                DuckTypeTargetObjectInstanceIsNull.Throw();
+            }
 
+            if (typeof(T).IsVisible)
+            {
                 DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
                 if (proxyResult.Success)
                 {
@@ -73,16 +70,13 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryDuckCast(this object instance, Type targetType, out object value)
         {
-            if (instance is not null && targetType is not null)
+            if (instance is null)
             {
-#if NET45
-                if (!targetType.IsVisible)
-                {
-                    value = default;
-                    return false;
-                }
-#endif
+                DuckTypeTargetObjectInstanceIsNull.Throw();
+            }
 
+            if (targetType?.IsVisible == true)
+            {
                 DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(targetType, instance.GetType());
                 if (proxyResult.Success)
                 {
@@ -105,15 +99,13 @@ namespace Datadog.Trace.DuckTyping
         public static T DuckAs<T>(this object instance)
             where T : class
         {
-            if (instance is not null)
+            if (instance is null)
             {
-#if NET45
-                if (!typeof(T).IsVisible)
-                {
-                    return null;
-                }
-#endif
+                DuckTypeTargetObjectInstanceIsNull.Throw();
+            }
 
+            if (typeof(T).IsVisible)
+            {
                 DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
                 if (proxyResult.Success)
                 {
@@ -133,15 +125,13 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static object DuckAs(this object instance, Type targetType)
         {
-            if (instance is not null && targetType is not null)
+            if (instance is null)
             {
-#if NET45
-                if (!targetType.IsVisible)
-                {
-                    return null;
-                }
-#endif
+                DuckTypeTargetObjectInstanceIsNull.Throw();
+            }
 
+            if (targetType?.IsVisible == true)
+            {
                 DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(targetType, instance.GetType());
                 if (proxyResult.Success)
                 {
@@ -163,17 +153,15 @@ namespace Datadog.Trace.DuckTyping
         {
             if (instance is null)
             {
-                return false;
+                DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-#if NET45
-            if (!typeof(T).IsVisible)
+            if (typeof(T).IsVisible)
             {
-                return false;
+                return DuckType.CanCreate<T>(instance);
             }
-#endif
 
-            return DuckType.CanCreate<T>(instance);
+            return false;
         }
 
         /// <summary>
@@ -185,19 +173,17 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool DuckIs(this object instance, Type targetType)
         {
-            if (instance is null || targetType is null)
+            if (instance is null)
             {
-                return false;
+                DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-#if NET45
-            if (!targetType.IsVisible)
+            if (targetType?.IsVisible == true)
             {
-                return false;
+                return DuckType.CanCreate(targetType, instance);
             }
-#endif
 
-            return DuckType.CanCreate(targetType, instance);
+            return false;
         }
     }
 }
