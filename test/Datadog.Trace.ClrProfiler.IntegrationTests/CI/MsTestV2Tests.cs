@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(ExpectedSpanCount)
-                    .Where(s => !(s.Tags.TryGetValue("http.url", out var sValue) && sValue == "https://dc.services.visualstudio.com/v2/track"))
+                    .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                     .ToList();
 
                 // Check the span count
