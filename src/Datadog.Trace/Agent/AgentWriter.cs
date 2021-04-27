@@ -273,6 +273,8 @@ namespace Datadog.Trace.Agent
 
                 if (buffer.TraceCount > 0)
                 {
+                    Log.Debug<int, int>("Flushing {spans} spans across {traces} traces", buffer.SpanCount, buffer.TraceCount);
+
                     var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount).ConfigureAwait(false);
 
                     if (success)
