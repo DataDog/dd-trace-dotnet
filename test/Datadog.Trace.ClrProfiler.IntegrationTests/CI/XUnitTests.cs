@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 using (var agent = new MockTracerAgent(agentPort))
                 using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
                 {
-                    var spans = agent.WaitForSpans(ExpectedSpanCount)
+                    spans = agent.WaitForSpans(ExpectedSpanCount)
                         .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                         .ToList();
 
