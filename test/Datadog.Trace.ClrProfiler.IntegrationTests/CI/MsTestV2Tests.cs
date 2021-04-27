@@ -152,7 +152,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private static void WriteSpans(List<MockTracerAgent.Span> spans)
         {
-            if (spans is null)
+            if (spans is null || spans.Count == 0)
             {
                 return;
             }
