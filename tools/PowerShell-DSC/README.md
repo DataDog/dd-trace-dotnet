@@ -1,10 +1,17 @@
+## Preparing the dev environment:
+
+```powershell
+# Install NuGet provider for PowerShellGet
+Install-PackageProvider -Name NuGet
+
+# Install updated DSC resources
+Install-Module -Name PSDscResources -Repository PSGallery -Force
+```
+
 ## Compiling the DSC Configuration:
 
 ```powershell
-# Update DSC resources
-Install-Module PSDscResources
-
-# Add Configuration function to global scope
+# Add the Configuration function to global scope
 . .\DatadogApmDotnet.ps1
 
 # Compile the Configuration by calling the function
