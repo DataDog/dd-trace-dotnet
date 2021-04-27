@@ -37,112 +37,154 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public void SubmitTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
-
-            int agentPort = TcpPortProvider.GetOpenPort();
-
-            using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            List<MockTracerAgent.Span> spans = null;
+            try
             {
-                var spans = agent.WaitForSpans(ExpectedSpanCount)
-                    .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
-                    .ToList();
+                SetCallTargetSettings(enableCallTarget, enableInlining);
 
-                // Check the span count
-                Assert.Equal(ExpectedSpanCount, spans.Count);
+                int agentPort = TcpPortProvider.GetOpenPort();
 
-                foreach (var targetSpan in spans)
+                using (var agent = new MockTracerAgent(agentPort))
+                using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
                 {
-                    // check the name
-                    Assert.Equal("xunit.test", targetSpan.Name);
+                    var spans = agent.WaitForSpans(ExpectedSpanCount)
+                        .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
+                        .ToList();
 
-                    // check the CIEnvironmentValues decoration.
-                    CheckCIEnvironmentValuesDecoration(targetSpan);
+                    // Check the span count
+                    Assert.Equal(ExpectedSpanCount, spans.Count);
 
-                    // check the runtime values
-                    CheckRuntimeValues(targetSpan);
-
-                    // check the suite name
-                    AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
-
-                    // check the test type
-                    AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);
-
-                    // check the test framework
-                    AssertTargetSpanContains(targetSpan, TestTags.Framework, "xUnit");
-
-                    // check the version
-                    AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
-
-                    // check specific test span
-                    switch (targetSpan.Tags[TestTags.Name])
+                    foreach (var targetSpan in spans)
                     {
-                        case "SimplePassTest":
-                            CheckSimpleTestSpan(targetSpan);
-                            break;
+                        // check the name
+                        Assert.Equal("xunit.test", targetSpan.Name);
 
-                        case "SimpleSkipFromAttributeTest":
-                            CheckSimpleSkipFromAttributeTest(targetSpan);
-                            break;
+                        // check the CIEnvironmentValues decoration.
+                        CheckCIEnvironmentValuesDecoration(targetSpan);
 
-                        case "SimpleErrorTest":
-                            CheckSimpleErrorTest(targetSpan);
-                            break;
+                        // check the runtime values
+                        CheckRuntimeValues(targetSpan);
 
-                        case "TraitPassTest":
-                            CheckSimpleTestSpan(targetSpan);
-                            CheckTraitsValues(targetSpan);
-                            break;
+                        // check the suite name
+                        AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
 
-                        case "TraitSkipFromAttributeTest":
-                            CheckSimpleSkipFromAttributeTest(targetSpan);
-                            CheckTraitsValues(targetSpan);
-                            break;
+                        // check the test type
+                        AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);
 
-                        case "TraitErrorTest":
-                            CheckSimpleErrorTest(targetSpan);
-                            CheckTraitsValues(targetSpan);
-                            break;
+                        // check the test framework
+                        AssertTargetSpanContains(targetSpan, TestTags.Framework, "xUnit");
 
-                        case "SimpleParameterizedTest":
-                            CheckSimpleTestSpan(targetSpan);
-                            AssertTargetSpanAnyOf(
-                                targetSpan,
-                                TestTags.Parameters,
-                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
-                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
-                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
-                            break;
+                        // check the version
+                        AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
 
-                        case "SimpleSkipParameterizedTest":
-                            CheckSimpleSkipFromAttributeTest(targetSpan);
-                            // On callsite the parameters tags are being sent with no parameters, this is not required due the whole test is skipped.
-                            // That behavior has changed in calltarget.
-                            if (!enableCallTarget)
-                            {
+                        // check specific test span
+                        switch (targetSpan.Tags[TestTags.Name])
+                        {
+                            case "SimplePassTest":
+                                CheckSimpleTestSpan(targetSpan);
+                                break;
+
+                            case "SimpleSkipFromAttributeTest":
+                                CheckSimpleSkipFromAttributeTest(targetSpan);
+                                break;
+
+                            case "SimpleErrorTest":
+                                CheckSimpleErrorTest(targetSpan);
+                                break;
+
+                            case "TraitPassTest":
+                                CheckSimpleTestSpan(targetSpan);
+                                CheckTraitsValues(targetSpan);
+                                break;
+
+                            case "TraitSkipFromAttributeTest":
+                                CheckSimpleSkipFromAttributeTest(targetSpan);
+                                CheckTraitsValues(targetSpan);
+                                break;
+
+                            case "TraitErrorTest":
+                                CheckSimpleErrorTest(targetSpan);
+                                CheckTraitsValues(targetSpan);
+                                break;
+
+                            case "SimpleParameterizedTest":
+                                CheckSimpleTestSpan(targetSpan);
                                 AssertTargetSpanAnyOf(
                                     targetSpan,
                                     TestTags.Parameters,
-                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleSkipParameterizedTest\"},\"arguments\":{\"xValue\":\"(default)\",\"yValue\":\"(default)\",\"expectedResult\":\"(default)\"}}");
-                            }
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
+                                break;
 
-                            break;
+                            case "SimpleSkipParameterizedTest":
+                                CheckSimpleSkipFromAttributeTest(targetSpan);
+                                // On callsite the parameters tags are being sent with no parameters, this is not required due the whole test is skipped.
+                                // That behavior has changed in calltarget.
+                                if (!enableCallTarget)
+                                {
+                                    AssertTargetSpanAnyOf(
+                                        targetSpan,
+                                        TestTags.Parameters,
+                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleSkipParameterizedTest\"},\"arguments\":{\"xValue\":\"(default)\",\"yValue\":\"(default)\",\"expectedResult\":\"(default)\"}}");
+                                }
 
-                        case "SimpleErrorParameterizedTest":
-                            CheckSimpleErrorTest(targetSpan);
-                            AssertTargetSpanAnyOf(
-                                targetSpan,
-                                TestTags.Parameters,
-                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
-                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
-                                "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
-                            break;
+                                break;
+
+                            case "SimpleErrorParameterizedTest":
+                                CheckSimpleErrorTest(targetSpan);
+                                AssertTargetSpanAnyOf(
+                                    targetSpan,
+                                    TestTags.Parameters,
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
+                                break;
+                        }
+
+                        // check remaining tag (only the name)
+                        Assert.Single(targetSpan.Tags);
                     }
-
-                    // check remaining tag (only the name)
-                    Assert.Single(targetSpan.Tags);
                 }
             }
+            catch
+            {
+                WriteSpans(spans);
+                throw;
+            }
+        }
+
+        private static void WriteSpans(List<MockTracerAgent.Span> spans)
+        {
+            if (spans is null)
+            {
+                return;
+            }
+
+            Console.WriteLine("***********************************");
+
+            int i = 0;
+            foreach (var span in spans)
+            {
+                Console.Write($" {i++}) ");
+                Console.Write($"TraceId={span.TraceId}, ");
+                Console.Write($"SpanId={span.SpanId}, ");
+                Console.Write($"Service={span.Service}, ");
+                Console.Write($"Name={span.Name}, ");
+                Console.Write($"Resource={span.Resource}, ");
+                Console.Write($"Type={span.Type}, ");
+                Console.Write($"Error={span.Error}");
+                Console.WriteLine();
+                Console.WriteLine($"   Tags=");
+                foreach (var kv in span.Tags)
+                {
+                    Console.WriteLine($"       => {kv.Key} = {kv.Value}");
+                }
+
+                Console.WriteLine();
+            }
+
+            Console.WriteLine("***********************************");
         }
 
         private static void AssertTargetSpanAnyOf(MockTracerAgent.Span targetSpan, string key, params string[] values)
