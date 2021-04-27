@@ -19,6 +19,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestMinors
     {
+        public static IEnumerable<object[]> AwsSqs =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "3.1.0.13" },
+                new object[] { "3.3.103.26" },
+#endif
+            };
+
         public static IEnumerable<object[]> MongoDB =>
 
             new List<object[]>
@@ -61,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.5.1" },
                 new object[] { "6.6.0" },
                 new object[] { "6.7.0" },
-                new object[] { "6.8.7" },
+                new object[] { "6.8.8" },
 #endif
             };
 
@@ -187,6 +201,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.8.0" },
                 new object[] { "5.9.2" },
                 new object[] { "5.10.4" },
+                new object[] { "5.11.0" },
 #endif
             };
 
@@ -203,7 +218,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.8.8" },
                 new object[] { "6.9.12" },
                 new object[] { "6.10.9" },
-                new object[] { "8.0.23" },
+                new object[] { "8.0.24" },
 #endif
             };
 

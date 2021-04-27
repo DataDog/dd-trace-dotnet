@@ -25,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static readonly bool IsComprehensive = false;
 #endif
 
+        public static IEnumerable<object[]> AwsSqs => IsComprehensive ? PackageVersionsComprehensive.AwsSqs : PackageVersionsLatestMinors.AwsSqs;
+
         public static IEnumerable<object[]> MongoDB => IsComprehensive ? PackageVersionsComprehensive.MongoDB : PackageVersionsLatestMinors.MongoDB;
 
         public static IEnumerable<object[]> ElasticSearch6 => IsComprehensive ? PackageVersionsComprehensive.ElasticSearch6 : PackageVersionsLatestMinors.ElasticSearch6;

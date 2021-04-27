@@ -1,5 +1,12 @@
 [
   {
+    "IntegrationName": "AwsSqs",
+    "SampleProjectName": "Samples.AWS.Sqs",
+    "NugetPackageSearchName": "AWSSDK.SQS",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "3.4.0"
+  },
+  {
     "IntegrationName": "MongoDB",
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
