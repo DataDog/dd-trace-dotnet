@@ -1,5 +1,10 @@
 version: '3'
 services:
+  aws_sqs:
+    image: softwaremill/elasticmq
+    ports:
+    - "127.0.0.1:9324:9324"
+
   rabbitmq:
     image: rabbitmq:3-management
     command: rabbitmq-server
@@ -168,6 +173,19 @@ services:
     volumes:
     - ./:/project
 
+  Samples.Aws.Sqs:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticmq:9324 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Aws.Sqs/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Aws.Sqs.dll"
+    environment:
+    - AWS_SQS_HOST=elasticmq:9324
+    volumes:
+    - ./:/project
+    depends_on:
+    - aws_sqs
+
   Samples.ServiceStack.Redis:
     build:
       context: ./
@@ -322,6 +340,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp2.1
     depends_on:
@@ -335,6 +354,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
 
   IntegrationTests.Alpine.Core30:
     build:
@@ -357,6 +377,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.0
     depends_on:
@@ -370,6 +391,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
 
   IntegrationTests.Alpine.Core31:
     build:
@@ -392,6 +414,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.1
     depends_on:
@@ -405,6 +428,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
 
   IntegrationTests.Alpine.Core50:
     build:
@@ -427,6 +451,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=net5.0
     depends_on:
@@ -440,6 +465,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
 
   IntegrationTests:
     build:
@@ -462,6 +488,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
     depends_on:
@@ -475,6 +502,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
 
   IntegrationTests.ARM64.Core50:
     build:
@@ -495,6 +523,7 @@ services:
     - MYSQL_HOST=mysql
     - MYSQL_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=net5.0
     depends_on:
@@ -506,3 +535,4 @@ services:
     - postgres
     - mysql
     - rabbitmq
+    - aws_sqs
