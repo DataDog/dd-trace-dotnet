@@ -9,16 +9,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         public AwsSqsExpectation(string serviceName, string resourceName)
         : base(serviceName, resourceName)
         {
-            TagShouldExist(AwsTags.OperationName, Always);
-            TagShouldExist(AwsTags.AgentName, Always);
-            TagShouldExist(AwsTags.ServiceName, Always);
-            TagShouldExist(AwsTags.RequestId, Always);
+            TagShouldExist(Tags.AwsOperationName, Always);
+            TagShouldExist(Tags.AwsAgentName, Always);
+            TagShouldExist(Tags.AwsServiceName, Always);
+            TagShouldExist(Tags.AwsRequestId, Always);
 
             var creatingOrDeletingQueue = new HashSet<string>
             {
                 Commands.CreateQueueRequest
             };
-            TagShouldExist(AwsTags.SqsQueueName, when: span => creatingOrDeletingQueue.Contains(GetTag(span, AwsTags.OperationName)));
+            TagShouldExist(Tags.AwsQueueName, when: span => creatingOrDeletingQueue.Contains(GetTag(span, Tags.AwsOperationName)));
 
             var operationsAgainstQueue = new HashSet<string>
             {
@@ -28,19 +28,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 Commands.DeleteMessageRequest,
                 Commands.DeleteMessageBatchRequest
             };
-            TagShouldExist(AwsTags.SqsQueueUrl, when: span => operationsAgainstQueue.Contains(GetTag(span, AwsTags.OperationName)));
+            TagShouldExist(Tags.AwsQueueUrl, when: span => operationsAgainstQueue.Contains(GetTag(span, Tags.AwsOperationName)));
 
             IsTopLevel = false;
         }
 
-        public string AwsOperation { get; set; }
-
-        public string QueueName { get; set; }
+        public string Operation { get; set; }
 
         public override bool Matches(MockTracerAgent.Span span)
         {
             return
-                GetTag(span, AwsTags.OperationName) == AwsOperation
+                GetTag(span, Tags.AwsOperationName) == Operation
              && base.Matches(span);
         }
     }

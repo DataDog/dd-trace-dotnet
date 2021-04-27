@@ -215,6 +215,36 @@ namespace Datadog.Trace
         public const string MessageSize = "message.size";
 
         /// <summary>
+        /// The agent that instrumented the associated AWS SDK span.
+        /// </summary>
+        public const string AwsAgentName = "aws.agent";
+
+        /// <summary>
+        /// The operation associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsOperationName = "aws.operation";
+
+        /// <summary>
+        /// The request ID associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsRequestId = "aws.requestId";
+
+        /// <summary>
+        /// The service associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsServiceName = "aws.service";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsQueueName = "aws.queue.name";
+
+        /// <summary>
+        /// The queue URL associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsQueueUrl = "aws.queue.url";
+
+        /// <summary>
         /// The sampling priority for the entire trace.
         /// </summary>
         public const string SamplingPriority = "sampling.priority";

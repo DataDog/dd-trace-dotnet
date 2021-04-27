@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
             return new AwsSqsExpectation("Samples.AWS.SQS-aws", awsOperation)
             {
-                AwsOperation = awsOperation,
+                Operation = awsOperation,
             };
         }
     }
