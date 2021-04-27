@@ -1,14 +1,20 @@
-## Preparing the dev environment:
+## Preparing the dev environment
 
 ```powershell
-# Install NuGet provider for PowerShellGet
+
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+# Update PowerShellGet
+Install-Module PowerShellGet
+
+# Update NuGet provider for PowerShellGet
 Install-PackageProvider -Name NuGet
 
 # Install updated DSC resources
 Install-Module -Name PSDscResources -Repository PSGallery -Force
 ```
 
-## Compiling the DSC Configuration:
+## Compiling the DSC Configuration
 
 ```powershell
 # Add the Configuration function to global scope
@@ -18,7 +24,7 @@ Install-Module -Name PSDscResources -Repository PSGallery -Force
 DatadogApmDotnet
 ```
 
-## Applying the DSC Configuration:
+## Applying the DSC Configuration
 
 ```powershell
 # To allow DSC to run, Windows needs to be configured to receive PowerShell remote commands
