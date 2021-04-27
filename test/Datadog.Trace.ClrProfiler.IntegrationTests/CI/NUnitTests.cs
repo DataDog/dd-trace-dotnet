@@ -37,6 +37,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public void SubmitTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
         {
+            if (new Version(FrameworkDescription.Instance.ProductVersion).Major >= 5)
+            {
+                if (new Version(packageVersion) < new Version("3.11"))
+                {
+                    // Ignore due https://github.com/nunit/nunit/issues/3705
+                    return;
+                }
+            }
+
             List<MockTracerAgent.Span> spans = null;
             try
             {
