@@ -1,19 +1,24 @@
+## Compiling the DSC Configuration:
 
 ```powershell
-# update DSC resources
+# Update DSC resources
 Install-Module PSDscResources
 
-# Add function to global scope
-. .\Create-DatadogDotnetTracingConfiguration.ps1
+# Add Configuration function to global scope
+. .\DatadogApmDotnet.ps1
 
-# Compile the configuration
-DatadogDotnetTracingConfiguration
+# Compile the Configuration by calling the function
+DatadogApmDotnet
+```
 
+## Applying the DSC Configuration:
+
+```powershell
 # To allow DSC to run, Windows needs to be configured to receive PowerShell remote commands
 Set-WsManQuickConfig -Force
 
-# Apply the configuration
-Start-DscConfiguration -Force -Wait -Verbose -Path .\DatadogDotnetTracingConfiguration\
+# Apply the Configuration
+Start-DscConfiguration -Force -Wait -Verbose -Path .\DatadogApmDotnet\
 
 # Get the current state of the configuration
 Get-DscConfiguration
@@ -27,9 +32,9 @@ Update-DscConfiguration
 Remove-DscConfigurationDocument -Stage Current -Verbose
 
 # Configure settings in Local Configuration Manager
-Set-DSCLocalConfigurationManager -Path 'c:\metaconfig\localhost.meta.mof' -Verbose
+Set-DSCLocalConfigurationManager -Verbose -Path 'c:\metaconfig\localhost.meta.mof'
 
-# Other
+# Other commands
 Stop-DscConfiguration
 Test-DscConfiguration
 ```
