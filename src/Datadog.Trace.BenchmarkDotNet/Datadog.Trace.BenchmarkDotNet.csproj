@@ -20,14 +20,6 @@
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' ">
-    <!--
-    This reference allows us to build the code without precompiler directives,
-    but the logic at runtime will never try to use the Registry if it's not available
-    -->
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.6.0" PrivateAssets="all" />
-  </ItemGroup>
-
   <Import Project="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
 
 </Project>
