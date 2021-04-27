@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -203,8 +204,17 @@ namespace Datadog.Trace.ClrProfiler
                     "MySqlCommand" => "mysql",
                     "SqliteCommand" => "sqlite",
                     "SQLiteCommand" => "sqlite",
-                    "InterceptableDbCommand" => null,
-                    "ProfiledDbCommand" => null,
+                    _ => null,
+                };
+
+            if (result != null || result == "InterceptableDbCommand" || result == "ProfiledDbCommand")
+            {
+                return result;
+            }
+
+            return
+                commandTypeName switch
+                {
                     _ when namespaceName.Length == 0 && commandTypeName == commandSuffix => "command",
                     _ when namespaceName.Contains('.') && commandTypeName == commandSuffix =>
                         namespaceName.Substring(namespaceName.LastIndexOf('.')).ToLowerInvariant(),
@@ -214,8 +224,6 @@ namespace Datadog.Trace.ClrProfiler
                         commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length).ToLowerInvariant(),
                     _ => commandTypeName.ToLowerInvariant()
                 };
-
-            return result;
         }
     }
 }
