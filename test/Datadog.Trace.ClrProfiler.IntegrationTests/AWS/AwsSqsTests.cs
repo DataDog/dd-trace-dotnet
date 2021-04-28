@@ -10,8 +10,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     public class AwsSqsTests : TestHelper
     {
-        private const string QueueName = "MySQSQueue";
-
         private readonly List<AwsSqsExpectation> _synchronousExpectations = new List<AwsSqsExpectation>();
         private readonly List<AwsSqsExpectation> _asynchronousExpectations = new List<AwsSqsExpectation>();
         private readonly List<AwsSqsExpectation> _expectations = new List<AwsSqsExpectation>();
@@ -48,8 +46,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             _asynchronousExpectations.Add(CreateExpectation("ReceiveMessage"));
             _asynchronousExpectations.Add(CreateExpectation("DeleteMessageBatch"));
             _asynchronousExpectations.Add(CreateExpectation("PurgeQueue"));
-            _asynchronousExpectations.Add(CreateExpectation("DeleteQueue"));
             */
+            _asynchronousExpectations.Add(CreateExpectation(AwsExpectation.Commands.DeleteQueueRequest));
 
             _expectations.AddRange(_asynchronousExpectations);
 #if NETFRAMEWORK

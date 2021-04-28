@@ -6,6 +6,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 {
     public class AwsSqsExpectation : AwsExpectation
     {
+        private const string ExpectedQueueName = "MySQSQueue";
+
         public AwsSqsExpectation(string serviceName, string resourceName)
         : base(serviceName, resourceName)
         {
@@ -18,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             {
                 Commands.CreateQueueRequest
             };
-            TagShouldExist(Tags.AwsQueueName, when: span => creatingOrDeletingQueue.Contains(GetTag(span, Tags.AwsOperationName)));
+            RegisterTagExpectation(key: Tags.AwsQueueName, expected: ExpectedQueueName, when: span => creatingOrDeletingQueue.Contains(GetTag(span, Tags.AwsOperationName)));
 
             var operationsAgainstQueue = new HashSet<string>
             {
@@ -26,9 +28,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 Commands.SendMessageRequest,
                 Commands.SendMessageBatchRequest,
                 Commands.DeleteMessageRequest,
-                Commands.DeleteMessageBatchRequest
+                Commands.DeleteMessageBatchRequest,
+                Commands.DeleteQueueRequest
             };
-            TagShouldExist(Tags.AwsQueueUrl, when: span => operationsAgainstQueue.Contains(GetTag(span, Tags.AwsOperationName)));
+            RegisterTagExpectation(key: Tags.AwsQueueUrl, isExpected: tag => tag.EndsWith(ExpectedQueueName), errorMessage: $"Tag QueueUrl must end with the expected queue name: {ExpectedQueueName}", when: span => operationsAgainstQueue.Contains(GetTag(span, Tags.AwsOperationName)));
 
             IsTopLevel = false;
         }
