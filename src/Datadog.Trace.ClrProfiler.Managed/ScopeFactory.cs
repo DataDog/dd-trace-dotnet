@@ -194,8 +194,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public static string GetDbType(string namespaceName, string commandTypeName)
         {
-            const string commandSuffix = "Command";
-
+            // First we try with the most commons ones. Avoiding the ComputeStringHash
             var result =
                 commandTypeName switch
                 {
@@ -207,17 +206,25 @@ namespace Datadog.Trace.ClrProfiler
                     _ => null,
                 };
 
-            if (result != null || result == "InterceptableDbCommand" || result == "ProfiledDbCommand")
+            // If we add these cases to the previous switch the JIT will apply the ComputeStringHash codegen
+            if (result != null ||
+                commandTypeName == "InterceptableDbCommand" ||
+                commandTypeName == "ProfiledDbCommand")
             {
                 return result;
             }
 
+            const string commandSuffix = "Command";
+
+            // Now the uncommon cases
             return
                 commandTypeName switch
                 {
                     _ when namespaceName.Length == 0 && commandTypeName == commandSuffix => "command",
                     _ when namespaceName.Contains('.') && commandTypeName == commandSuffix =>
-                        namespaceName.Substring(namespaceName.LastIndexOf('.')).ToLowerInvariant(),
+                        // the + 1 could be dangerous and cause IndexOutOfRangeException, but this shouldn't happen
+                        // a period should never be the last character in a namespace
+                        namespaceName.Substring(namespaceName.LastIndexOf('.') + 1).ToLowerInvariant(),
                     _ when commandTypeName == commandSuffix =>
                         namespaceName.ToLowerInvariant(),
                     _ when commandTypeName.EndsWith(commandSuffix) =>
