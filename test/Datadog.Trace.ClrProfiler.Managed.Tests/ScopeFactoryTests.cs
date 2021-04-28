@@ -167,7 +167,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
         {
             // Set up tracer
-            var dbType = ScopeFactory.GetDbType(command.GetType().Name);
+            var t = command.GetType();
+            var dbType = ScopeFactory.GetDbType(t.Namespace, t.Name);
             var collection = new NameValueCollection
             {
                 { ConfigurationKeys.ServiceNameMappings, $"{dbType}:my-custom-type" }

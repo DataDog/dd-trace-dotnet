@@ -52,7 +52,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
         {
             // Set up tracer
-            var dbType = ScopeFactory.GetDbType(command.GetType().Name);
+            var t = command.GetType();
+            var dbType = ScopeFactory.GetDbType(t.Namespace, t.Name);
             var collection = new NameValueCollection
             {
                 { ConfigurationKeys.ServiceNameMappings, $"{dbType}:my-custom-type" }
@@ -86,6 +87,21 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             {
                 Assert.NotEqual("my-custom-type", outerScope.Span.ServiceName);
             }
+        }
+
+        [Theory]
+        [InlineData("System.Data.SqlClient", "SqlCommand", "sql-server")]
+        [InlineData("MySql.Data.MySqlClient", "MySqlCommand", "mysql")]
+        [InlineData("Npgsql", "NpgsqlCommand", "postgres")]
+        [InlineData("", "ProfiledDbCommand", null)]
+        [InlineData("", "ExampleCommand", "example")]
+        [InlineData("", "Example", "example")]
+        [InlineData("", "Command", "command")]
+        [InlineData("Custom.DB", "Command", "db")]
+        public void GetDbType_CorrectNameGenerated(string namespaceName, string commandTypeName, string expected)
+        {
+            var dbType = ScopeFactory.GetDbType(namespaceName, commandTypeName);
+            Assert.Equal(expected, dbType);
         }
 
         private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
