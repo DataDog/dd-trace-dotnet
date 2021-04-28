@@ -2,7 +2,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 {
     public class AwsExpectation : SpanExpectation
     {
-        public const string IntegrationOperationName = "aws.http";
+        public const string IntegrationOperationName = "aws.request";
 
         public AwsExpectation(string serviceName, string resourceName)
             : base(serviceName, serviceVersion: null, IntegrationOperationName, resourceName, SpanTypes.Http)

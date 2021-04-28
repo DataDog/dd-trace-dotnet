@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tagging
 
         public string QueueUrl { get; set; }
 
-        public override string SpanKind => throw new System.NotImplementedException();
+        public override string SpanKind => SpanKinds.Client;
 
         protected override IProperty<string>[] GetAdditionalTags() => AwsSqsTagsProperties;
     }

@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             _synchronousExpectations.Add(CreateExpectation("DeleteQueue"));
             */
 
-            _asynchronousExpectations.Add(CreateExpectation("CreateQueue"));
+            _asynchronousExpectations.Add(CreateExpectation(AwsExpectation.Commands.CreateQueueRequest));
             /*
             _asynchronousExpectations.Add(CreateExpectation("ListQueues"));
             _asynchronousExpectations.Add(CreateExpectation("GetQueueUrl"));
@@ -62,6 +62,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
+            SetCallTargetSettings(enableCallTarget: true, enableMethodInlining: true);
+
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
             using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
@@ -77,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         private static AwsSqsExpectation CreateExpectation(string awsOperation)
         {
-            return new AwsSqsExpectation("Samples.AWS.SQS-aws", awsOperation)
+            return new AwsSqsExpectation("Samples.AWS.SQS-aws-sdk", $"SQS.{awsOperation}")
             {
                 Operation = awsOperation,
             };
