@@ -21,16 +21,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             for (int i = 0; i < 10; i++)
             {
                 bool fastPath = i < 9;
-                yield return new object[] { i, fastPath, false };
-                yield return new object[] { i, fastPath, true };
+                yield return new object[] { i, fastPath };
+                yield return new object[] { i, fastPath };
             }
         }
 
         [Theory]
         [MemberData(nameof(MethodArgumentsData))]
-        public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath, bool inlining)
+        public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
-            SetCallTargetSettings(true, inlining);
+            SetCallTargetSettings(enableCallTarget: true);
             SetEnvironmentVariable("DD_INTEGRATIONS", Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), "integrations.json"));
             int agentPort = TcpPortProvider.GetOpenPort();
 

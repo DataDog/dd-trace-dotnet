@@ -25,18 +25,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (object[] item in PackageVersions.RabbitMQ)
             {
-                yield return item.Concat(new object[] { false, false, }).ToArray();
-                yield return item.Concat(new object[] { true, false, }).ToArray();
-                yield return item.Concat(new object[] { true, true, }).ToArray();
+                yield return item.Concat(new object[] { false, }).ToArray();
+                yield return item.Concat(new object[] { true }).ToArray();
             }
         }
 
         [Theory]
         [MemberData(nameof(GetRabbitMQVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitsTraces(string packageVersion, bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             var expectedSpanCount = 26;
 

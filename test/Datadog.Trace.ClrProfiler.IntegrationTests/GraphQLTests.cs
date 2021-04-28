@@ -65,12 +65,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(false, false)]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
-        public void SubmitsTraces(bool enableCallTarget, bool enableInlining)
+        [InlineData(false)]
+        [InlineData(true)]
+        public void SubmitsTraces(bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int aspNetCorePort = TcpPortProvider.GetOpenPort();

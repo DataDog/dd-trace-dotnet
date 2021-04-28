@@ -3,13 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
-
-#if NETFRAMEWORK
-using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDefault()
-#endif
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -26,18 +23,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (object[] item in PackageVersions.StackExchangeRedis)
             {
-                yield return item.Concat(new object[] { false, false, }).ToArray();
-                yield return item.Concat(new object[] { true, false, }).ToArray();
-                yield return item.Concat(new object[] { true, true, }).ToArray();
+                yield return item.Concat(false);
+                yield return item.Concat(true);
             }
         }
 
         [Theory]
         [MemberData(nameof(GetStackExchangeRedisData))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitsTraces(string packageVersion, bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             int agentPort = TcpPortProvider.GetOpenPort();
 
@@ -278,15 +274,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("redis.command", span.Name);
                     Assert.Equal("Samples.StackExchange.Redis-redis", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
-                    Assert.Equal(host, span.Tags.GetValueOrDefault("out.host"));
-                    Assert.Equal(port, span.Tags.GetValueOrDefault("out.port"));
+                    Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
+                    Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
                 var spanLookup = new Dictionary<Tuple<string, string>, int>();
                 foreach (var span in spans)
                 {
-                    var key = new Tuple<string, string>(span.Resource, span.Tags.GetValueOrDefault("redis.raw_command"));
+                    var key = new Tuple<string, string>(span.Resource, DictionaryExtensions.GetValueOrDefault(span.Tags, "redis.raw_command"));
                     if (spanLookup.ContainsKey(key))
                     {
                         spanLookup[key]++;
