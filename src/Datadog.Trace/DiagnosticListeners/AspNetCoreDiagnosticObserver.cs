@@ -65,6 +65,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
+        private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
+
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
         {
@@ -481,7 +483,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -495,11 +497,15 @@ namespace Datadog.Trace.DiagnosticListeners
                 string host = request.Host.Value;
                 string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
                 string url = GetUrl(request);
-                httpContext.Features.Set(new RequestTrackingFeature
+
+                if (tracer.Settings.RouteTemplateResourceNamesEnabled)
                 {
-                    HttpMethod = httpMethod,
-                    OriginalUrl = url,
-                });
+                    httpContext.Features.Set(new RequestTrackingFeature
+                    {
+                        HttpMethod = httpMethod,
+                        OriginalUrl = url,
+                    });
+                }
 
                 string absolutePath = request.Path.Value;
 
@@ -516,7 +522,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 SpanContext propagatedContext = ExtractPropagatedContext(request);
                 var tagsFromHeaders = ExtractHeaderTags(request, tracer);
 
-                var tags = new AspNetCoreTags();
+                var tags = tracer.Settings.RouteTemplateResourceNamesEnabled ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
                 var scope = tracer.StartActiveWithTags(HttpRequestInOperationName, propagatedContext, tags: tags);
 
                 scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
@@ -527,7 +533,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnRoutingEndpointMatched(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
@@ -539,7 +545,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null)
             {
-                var tags = span.Tags as AspNetCoreTags;
+                var tags = span.Tags as AspNetCoreEndpointTags;
                 if (tags is null || !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
                 {
                     // Shouldn't happen in normal execution
@@ -647,7 +653,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -668,7 +674,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 // Create a child span for the MVC action
-                var mvcSpanTags = new AspNetCoreTags();
+                var mvcSpanTags = new AspNetCoreEndpointTags();
                 var mvcScope = tracer.StartActiveWithTags(MvcOperationName, parentSpan.Context, tags: mvcSpanTags);
                 var span = mvcScope.Span;
                 span.Type = SpanTypes.Web;
@@ -761,7 +767,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // If we're using endpoint routing or this is a pipeline re-execution,
                     // these will already be set correctly
-                    if (parentSpan.Tags is AspNetCoreTags parentTags)
+                    if (parentSpan.Tags is AspNetCoreEndpointTags parentTags)
                     {
                         parentTags.AspNetCoreRoute = aspNetRoute;
                     }
@@ -773,7 +779,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcAfterAction(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
@@ -791,7 +797,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -807,7 +813,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
-                    scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
                 scope.Dispose();
@@ -816,7 +822,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingUnhandledException(object arg)
         {
-            var tracer = _tracer ?? Tracer.Instance;
+            var tracer = CurrentTracer;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
