@@ -13,6 +13,7 @@ namespace Datadog.Trace.Configuration
         AspNetMvc,
         AspNetWebApi2,
         GraphQL,
+        MessageQueue,
         MongoDb,
         XUnit,
         NUnit,

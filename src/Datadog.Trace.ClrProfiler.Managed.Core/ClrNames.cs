@@ -20,10 +20,14 @@ namespace Datadog.Trace.ClrProfiler
         public const string UInt32 = "System.UInt32";
         public const string UInt64 = "System.UInt64";
 
+        public const string TimeSpan = "System.TimeSpan";
+
         public const string Stream = "System.IO.Stream";
 
         public const string Task = "System.Threading.Tasks.Task";
         public const string CancellationToken = "System.Threading.CancellationToken";
+
+        public const string CursorHandle = "System.Messaging.Interop.CursorHandle";
 
         // ReSharper disable once InconsistentNaming
         public const string IAsyncResult = "System.IAsyncResult";
@@ -38,5 +42,10 @@ namespace Datadog.Trace.ClrProfiler
         public const string GenericParameterTask = "System.Threading.Tasks.Task`1<T>";
         public const string ObjectTask = "System.Threading.Tasks.Task`1<System.Object>";
         public const string Int32Task = "System.Threading.Tasks.Task`1<System.Int32>";
+
+        public const string MsmqMessageQueueTransaction = "System.Messaging.MessageQueueTransaction";
+        public const string MsmqMessageQueueTransactionType = "System.Messaging.MessageQueueTransactionType";
+        public const string MsmqMessagePropertyFilter = "System.Messaging.MessagePropertyFilter";
+        public const string MsmqMessage = "System.Messaging.Message";
     }
 }
