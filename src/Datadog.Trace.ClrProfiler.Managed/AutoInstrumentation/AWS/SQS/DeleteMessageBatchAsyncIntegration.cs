@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AwsConstants.IntegrationName)]
-    public class DeleteMessageBatchRequestIntegration
+    public class DeleteMessageBatchAsyncIntegration
     {
         private const string Operation = "DeleteMessageBatch";
 
