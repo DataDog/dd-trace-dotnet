@@ -375,18 +375,17 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
 
   for (auto& i : integration_methods) {
     bool found = false;
-    if (AssemblyMeetsIntegrationRequirements(assembly_metadata,
-                                             i.replacement)) {
+    if (AssemblyMeetsIntegrationRequirements(assembly_metadata, i.replacement)) {
       found = true;
-    }
-    for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
-      const auto metadata_ref =
-          GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
-      // Info(L"-- assembly ref: " , assembly_name , " to " , ref_name);
-      if (AssemblyMeetsIntegrationRequirements(metadata_ref, i.replacement)) {
-        found = true;
+    } else {
+      for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
+        const auto metadata_ref = GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
+        if (AssemblyMeetsIntegrationRequirements(metadata_ref, i.replacement)) {
+          found = true;
+        }
       }
     }
+
     if (found) {
       enabled.push_back(i);
     }

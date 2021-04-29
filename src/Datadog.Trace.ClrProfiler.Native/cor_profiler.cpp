@@ -368,9 +368,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   if (debug_logging_enabled) {
-    Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
-          " AppDomain ", module_info.assembly.app_domain_id, " ",
-          module_info.assembly.app_domain_name);
+    Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name, " AppDomain ", module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
   }
 
   AppDomainID app_domain_id = module_info.assembly.app_domain_id;
@@ -416,8 +414,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // byte array will be loaded into a non-shared AppDomain.
   // In this case, do not insert another startup hook into that non-shared AppDomain
   if (module_info.assembly.name == WStr("Datadog.Trace.ClrProfiler.Managed.Loader")) {
-    Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ",
-          app_domain_id, " ", module_info.assembly.app_domain_name);
+    Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ", app_domain_id, " ", module_info.assembly.app_domain_name);
     first_jit_compilation_app_domains.insert(app_domain_id);
     return S_OK;
   }
@@ -425,8 +422,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (module_info.IsWindowsRuntime()) {
     // We cannot obtain writable metadata interfaces on Windows Runtime modules
     // or instrument their IL.
-    Debug("ModuleLoadFinished skipping Windows Metadata module: ", module_id,
-          " ", module_info.assembly.name);
+    Debug("ModuleLoadFinished skipping Windows Metadata module: ", module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -446,49 +442,38 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     }
   }
 
-  std::vector<IntegrationMethod> filtered_integrations =
-      FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
+  std::vector<IntegrationMethod> filtered_integrations = IsCallTargetEnabled() ?
+      integration_methods_ : FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
 
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Debug("ModuleLoadFinished skipping module (filtered by caller): ",
-          module_id, " ", module_info.assembly.name);
+    Debug("ModuleLoadFinished skipping module (filtered by caller): ", module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
   ComPtr<IUnknown> metadata_interfaces;
-  auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
-                                           IID_IMetaDataImport2,
-                                           metadata_interfaces.GetAddressOf());
+  auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
 
   if (FAILED(hr)) {
-    Warn("ModuleLoadFinished failed to get metadata interface for ", module_id,
-         " ", module_info.assembly.name);
+    Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
-  const auto metadata_import =
-      metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-  const auto metadata_emit =
-      metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
-      IID_IMetaDataAssemblyImport);
-  const auto assembly_emit =
-      metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+  const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+  const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+  const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
   // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
   // subscribe to DiagnosticSource events.
   // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
   // System.Data or System.Data.Common
-  if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") &&
-      module_info.assembly.name != WStr("Dapper")) {
-    filtered_integrations =
-        FilterIntegrationsByTarget(filtered_integrations, assembly_import);
+  if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") && module_info.assembly.name != WStr("Dapper") && !IsCallTargetEnabled()) {
+    filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import);
 
     if (filtered_integrations.empty()) {
       // we don't need to instrument anything in this module, skip it
-      Debug("ModuleLoadFinished skipping module (filtered by target): ",
-            module_id, " ", module_info.assembly.name);
+      Debug("ModuleLoadFinished skipping module (filtered by target): ", module_id, " ", module_info.assembly.name);
       return S_OK;
     }
   }
@@ -496,16 +481,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   mdModule module;
   hr = metadata_import->GetModuleFromScope(&module);
   if (FAILED(hr)) {
-    Warn("ModuleLoadFinished failed to get module metadata token for ",
-         module_id, " ", module_info.assembly.name);
+    Warn("ModuleLoadFinished failed to get module metadata token for ", module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
   GUID module_version_id;
   hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
   if (FAILED(hr)) {
-    Warn("ModuleLoadFinished failed to get module_version_id for ", module_id,
-         " ", module_info.assembly.name);
+    Warn("ModuleLoadFinished failed to get module_version_id for ", module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -633,8 +616,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   ModuleID module_id;
   mdToken function_token = mdTokenNil;
 
-  HRESULT hr = this->info_->GetFunctionInfo(function_id, nullptr, &module_id,
-                                            &function_token);
+  HRESULT hr = this->info_->GetFunctionInfo(function_id, nullptr, &module_id, &function_token);
 
   if (FAILED(hr)) {
     Warn("JITCompilationStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ", function_id);
@@ -656,8 +638,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   }
 
   // get function info
-  const auto caller =
-      GetFunctionInfo(module_metadata->metadata_import, function_token);
+  const auto caller = GetFunctionInfo(module_metadata->metadata_import, function_token);
   if (!caller.IsValid()) {
     return S_OK;
   }
@@ -723,44 +704,46 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     }
   }
 
-  // we don't actually need to instrument anything in
-  // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
-  // hook is called for AspNetCore applications
-  if (module_metadata->assemblyName == WStr("Microsoft.AspNetCore.Hosting")) {
-    return S_OK;
-  }
+  if (!IsCallTargetEnabled()) {
+      // we don't actually need to instrument anything in
+      // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
+      // hook is called for AspNetCore applications
+      if (module_metadata->assemblyName == WStr("Microsoft.AspNetCore.Hosting")) {
+        return S_OK;
+      }
 
-  // Get valid method replacements for this caller method
-  const auto method_replacements =
-      module_metadata->GetMethodReplacementsForCaller(caller);
-  if (method_replacements.empty()) {
-    return S_OK;
-  }
+      // Get valid method replacements for this caller method
+      const auto method_replacements =
+          module_metadata->GetMethodReplacementsForCaller(caller);
+      if (method_replacements.empty()) {
+        return S_OK;
+      }
 
-  // Perform method insertion calls
-  hr = ProcessInsertionCalls(module_metadata,
-                             function_id,
-                             module_id,
-                             function_token,
-                             caller,
-                             method_replacements);
+      // Perform method insertion calls
+      hr = ProcessInsertionCalls(module_metadata,
+                                 function_id,
+                                 module_id,
+                                 function_token,
+                                 caller,
+                                 method_replacements);
 
-  if (FAILED(hr)) {
-    Warn("JITCompilationStarted: Call to ProcessInsertionCalls() failed for ", function_id, " ", module_id, " ", function_token);
-    return S_OK;
-  }
+      if (FAILED(hr)) {
+        Warn("JITCompilationStarted: Call to ProcessInsertionCalls() failed for ", function_id, " ", module_id, " ", function_token);
+        return S_OK;
+      }
 
-  // Perform method replacement calls
-  hr = ProcessReplacementCalls(module_metadata,
-                               function_id,
-                               module_id,
-                               function_token,
-                               caller,
-                               method_replacements);
+      // Perform method replacement calls
+      hr = ProcessReplacementCalls(module_metadata,
+                                   function_id,
+                                   module_id,
+                                   function_token,
+                                   caller,
+                                   method_replacements);
 
-  if (FAILED(hr)) {
-    Warn("JITCompilationStarted: Call to ProcessReplacementCalls() failed for ", function_id, " ", module_id, " ", function_token);
-    return S_OK;
+      if (FAILED(hr)) {
+        Warn("JITCompilationStarted: Call to ProcessReplacementCalls() failed for ", function_id, " ", module_id, " ", function_token);
+        return S_OK;
+      }
   }
 
   return S_OK;
