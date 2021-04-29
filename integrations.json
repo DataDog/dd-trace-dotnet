@@ -478,6 +478,29 @@
         "target": {
           "assembly": "AWSSDK.SQS",
           "type": "Amazon.SQS.AmazonSQSClient",
+          "method": "SendMessageBatch",
+          "signature_types": [
+            "Amazon.SQS.Model.SendMessageBatchResponse",
+            "Amazon.SQS.Model.SendMessageBatchRequest"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "AWSSDK.SQS",
+          "type": "Amazon.SQS.AmazonSQSClient",
           "method": "SendMessage",
           "signature_types": [
             "Amazon.SQS.Model.SendMessageResponse",
