@@ -48,9 +48,9 @@ namespace Samples.AWS.SQS
                 await ListQueuesAsync();
                 await GetQueueUrlAsync();
                 await SendMessageAsync();
-                await ReceiveMessageAsyncAndDeleteMessageAsync();
+                await ReceiveMessageAndDeleteMessageAsync();
                 await SendMessageBatchAsync();
-                await ReceiveMessageBatchAsync();
+                await ReceiveMessagesAndDeleteMessageBatchAsync();
                 await PurgeQueueAsync();
                 await DeleteQueueAsync();
             }
@@ -250,7 +250,7 @@ namespace Samples.AWS.SQS
             Console.WriteLine($"SendMessageAsync HTTP status code: {sendMessageResponse.HttpStatusCode}");
         }
 
-        static async Task ReceiveMessageAsyncAndDeleteMessageAsync()
+        static async Task ReceiveMessageAndDeleteMessageAsync()
         {
             var receiveMessageRequest = new ReceiveMessageRequest();
             receiveMessageRequest.QueueUrl = _queueUrl1;
@@ -286,8 +286,8 @@ namespace Samples.AWS.SQS
                 },
                 QueueUrl = _queueUrl1
             };
-            var sendMessageBatchResponse = await _sqsClient.SendMessageBatchAsync(sendMessageBatchRequest);
-            Console.WriteLine($"SendMessageBatchAsync HTTP status code: {sendMessageBatchResponse.HttpStatusCode}");
+            var response1 = await _sqsClient.SendMessageBatchAsync(sendMessageBatchRequest);
+            Console.WriteLine($"SendMessageBatchAsync HTTP status code: {response1.HttpStatusCode}");
 
             var sendMessageBatchRequestEntryList = new List<SendMessageBatchRequestEntry>
             {
@@ -295,12 +295,13 @@ namespace Samples.AWS.SQS
                 new SendMessageBatchRequestEntry("message2", "SendMessageBatchAsync_SendMessageBatchRequestEntries: SecondMessageContent"),
                 new SendMessageBatchRequestEntry("message3", "SendMessageBatchAsync_SendMessageBatchRequestEntries: ThirdMessageContent")
             };
-            sendMessageBatchResponse = await _sqsClient.SendMessageBatchAsync(_queueUrl1, sendMessageBatchRequestEntryList);
-            Console.WriteLine($"SendMessageBatchAsync HTTP status code: {sendMessageBatchResponse.HttpStatusCode}");
+            var response2 = await _sqsClient.SendMessageBatchAsync(_queueUrl1, sendMessageBatchRequestEntryList);
+            Console.WriteLine($"SendMessageBatchAsync HTTP status code: {response2.HttpStatusCode}");
         }
 
-        static async Task ReceiveMessageBatchAsync()
+        static async Task ReceiveMessagesAndDeleteMessageBatchAsync()
         {
+            // Get the first 3 messages and delete them as a batch
             var receiveMessageRequest = new ReceiveMessageRequest();
             receiveMessageRequest.QueueUrl = _queueUrl1;
             receiveMessageRequest.MaxNumberOfMessages = 3;
@@ -308,14 +309,22 @@ namespace Samples.AWS.SQS
             var receiveMessageResponse = await _sqsClient.ReceiveMessageAsync(receiveMessageRequest);
             Console.WriteLine($"ReceiveMessageAsync HTTP status code: {receiveMessageResponse.HttpStatusCode}");
 
-            // Delete the message batch from the queue
             var deleteMessageBatchRequest = new DeleteMessageBatchRequest()
             {
                 Entries = receiveMessageResponse.Messages.Select(message => new DeleteMessageBatchRequestEntry(message.MessageId, message.ReceiptHandle)).ToList(),
                 QueueUrl = _queueUrl1
             };
-            var deleteMessageBatchResponse = await _sqsClient.DeleteMessageBatchAsync(deleteMessageBatchRequest);
-            Console.WriteLine($"DeleteMessageBatchAsync HTTP status code: {deleteMessageBatchResponse.HttpStatusCode}");
+            var deleteMessageBatchResponse1 = await _sqsClient.DeleteMessageBatchAsync(deleteMessageBatchRequest);
+            Console.WriteLine($"DeleteMessageBatchAsync HTTP status code: {deleteMessageBatchResponse1.HttpStatusCode}");
+
+            // Get the second 3 messages and delete them as a batch
+            // Re-use the already parameterized request object
+            var receiveMessageResponse2 = await _sqsClient.ReceiveMessageAsync(receiveMessageRequest);
+            Console.WriteLine($"ReceiveMessageAsync HTTP status code: {receiveMessageResponse2.HttpStatusCode}");
+
+            var entries = receiveMessageResponse2.Messages.Select(message => new DeleteMessageBatchRequestEntry(message.MessageId, message.ReceiptHandle)).ToList();
+            var deleteMessageBatchResponse2 = await _sqsClient.DeleteMessageBatchAsync(_queueUrl1, entries);
+            Console.WriteLine($"DeleteMessageBatchAsync HTTP status code: {deleteMessageBatchResponse2.HttpStatusCode}");
         }
 
         static async Task PurgeQueueAsync()

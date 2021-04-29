@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     {
         private static List<MockTracerAgent.Span> _expectedSpans = new()
         {
+            // CreateSqsQueueAsync
             AwsSpan.GetDefault()
                     .WithResource("SQS.CreateQueue")
                     .WithTag("aws.operation", "CreateQueue")
@@ -21,24 +22,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     .WithResource("SQS.CreateQueue")
                     .WithTag("aws.operation", "CreateQueue")
                     .WithTag("aws.queue.name", "MySQSQueue2"),
+
+            // SendMessageAsync
             AwsSpan.GetDefault()
                     .WithResource("SQS.SendMessage")
                     .WithTag("aws.operation", "SendMessage"),
             AwsSpan.GetDefault()
                     .WithResource("SQS.SendMessage")
                     .WithTag("aws.operation", "SendMessage"),
+
+            // ReceiveMessageAndDeleteMessageAsync
             AwsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
             AwsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
+
+            // ReceiveMessagesAndDeleteMessageBatchAsync
             AwsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
             AwsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessageBatch")
                     .WithTag("aws.operation", "DeleteMessageBatch"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.ReceiveMessage")
+                    .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessageBatch")
+                    .WithTag("aws.operation", "DeleteMessageBatch"),
+
+            // DeleteQueueAsync
             AwsSpan.GetDefault()
                     .WithResource("SQS.DeleteQueue")
                     .WithTag("aws.operation", "DeleteQueue"),
