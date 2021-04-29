@@ -13,15 +13,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     [InstrumentMethod(
         AssemblyName = "AWSSDK.SQS",
         TypeName = "Amazon.SQS.AmazonSQSClient",
-        MethodName = "DeleteMessageBatchAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteMessageBatchResponse>",
-        ParameterTypeNames = new[] { "Amazon.SQS.Model.DeleteMessageBatchRequest", ClrNames.CancellationToken },
+        MethodName = "DeleteMessageAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteMessageResponse>",
+        ParameterTypeNames = new[] { "Amazon.SQS.Model.DeleteMessageRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AwsConstants.IntegrationName)]
-    public class DeleteMessageBatchRequestIntegration
+    public class DeleteMessageRequestIntegration
     {
-        private const string Operation = "DeleteMessageBatch";
+        private const string Operation = "DeleteMessage";
 
         /// <summary>
         /// OnMethodBegin callback
