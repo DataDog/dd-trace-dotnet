@@ -7,32 +7,32 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     /// <summary>
-    /// AWSSDK.SQS SendMessageAsync calltarget instrumentation
+    /// AWSSDK.SQS ReceiveMessageAsync calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "AWSSDK.SQS",
         TypeName = "Amazon.SQS.AmazonSQSClient",
-        MethodName = "SendMessageAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageResponse>",
-        ParameterTypeNames = new[] { "Amazon.SQS.Model.SendMessageRequest", ClrNames.CancellationToken },
+        MethodName = "ReceiveMessageAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.ReceiveMessageResponse>",
+        ParameterTypeNames = new[] { "Amazon.SQS.Model.ReceiveMessageRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AwsConstants.IntegrationName)]
-    public class SendMessageAsyncIntegration
+    public class ReceiveMessageAsyncIntegration
     {
-        private const string Operation = "SendMessage";
+        private const string Operation = "ReceiveMessage";
 
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TSendMessageRequest">Type of the SendMessage request object</typeparam>
+        /// <typeparam name="TReceiveMessageRequest">Type of the ReceiveMessage request object</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
         /// <param name="request">The request for the CreateQueue operation</param>
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TSendMessageRequest>(TTarget instance, TSendMessageRequest request, CancellationToken cancellationToken)
-            where TSendMessageRequest : ISendMessageRequest, IDuckType
+        public static CallTargetState OnMethodBegin<TTarget, TReceiveMessageRequest>(TTarget instance, TReceiveMessageRequest request, CancellationToken cancellationToken)
+            where TReceiveMessageRequest : IReceiveMessageRequest, IDuckType
         {
             if (request.Instance is null)
             {
@@ -53,12 +53,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="response">SendMessageResponse instance</param>
+        /// <param name="response">ReceiveMessageResponse instance</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, CallTargetState state)
-            where TResponse : ISendMessageResponse
+            where TResponse : IReceiveMessageResponse
         {
             if (state.Scope?.Span.Tags is AwsSqsTags tags)
             {
