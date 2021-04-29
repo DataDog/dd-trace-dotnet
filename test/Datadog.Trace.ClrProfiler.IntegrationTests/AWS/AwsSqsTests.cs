@@ -24,6 +24,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     .WithTag("aws.operation", "CreateQueue")
                     .WithTag("aws.queue.name", "MySQSQueue2"),
 
+            // SendMessageAsync
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.SendMessage")
+                    .WithTag("aws.operation", "SendMessage"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.SendMessage")
+                    .WithTag("aws.operation", "SendMessage"),
+
             // DeleteQueue
             AwsSpan.GetDefault()
                     .WithResource("SQS.DeleteQueue")
