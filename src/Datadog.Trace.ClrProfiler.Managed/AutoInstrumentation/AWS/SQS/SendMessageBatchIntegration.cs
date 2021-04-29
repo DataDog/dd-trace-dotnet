@@ -26,12 +26,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TSendMessageRequest">Type of the SendMessage request object</typeparam>
+        /// <typeparam name="TSendMessageBatchRequest">Type of the SendMessage request object</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
-        /// <param name="request">The request for the CreateQueue operation</param>
+        /// <param name="request">The request for the SQS operation</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TSendMessageRequest>(TTarget instance, TSendMessageRequest request)
-            where TSendMessageRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
+        public static CallTargetState OnMethodBegin<TTarget, TSendMessageBatchRequest>(TTarget instance, TSendMessageBatchRequest request)
+            where TSendMessageBatchRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
         {
             if (request.Instance is null)
             {

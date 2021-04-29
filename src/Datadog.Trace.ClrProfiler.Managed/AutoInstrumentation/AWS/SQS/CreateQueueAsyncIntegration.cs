@@ -26,9 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TCreateQueueRequest">Type of the CreateQueue request object</typeparam>
+        /// <typeparam name="TCreateQueueRequest">Type of the request object</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
-        /// <param name="request">The request for the CreateQueue operation</param>
+        /// <param name="request">The request for the SQS operation</param>
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TCreateQueueRequest>(TTarget instance, TCreateQueueRequest request, CancellationToken cancellationToken)
@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="response">CreateQueueResponse instance</param>
+        /// <param name="response">Response instance</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
