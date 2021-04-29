@@ -2718,6 +2718,8 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
   auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
 
   auto metadata_import = module_metadata->metadata_import;
+  const auto assembly_metadata = GetAssemblyImportMetadata(module_metadata->assembly_import);
+
   std::vector<ModuleID> vtModules;
   std::vector<mdMethodDef> vtMethodDefs;
 
@@ -2730,6 +2732,16 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
 
     // If the integration mode is not CallTarget we skip.
     if (integration.replacement.wrapper_method.action != calltarget_modification_action) {
+      continue;
+    }
+
+    // Check min version
+    if (integration.replacement.target_method.min_version > assembly_metadata.version) {
+      continue;
+    }
+
+    // Check max version
+    if (integration.replacement.target_method.max_version < assembly_metadata.version) {
       continue;
     }
 
