@@ -13,6 +13,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     {
         private static List<MockTracerAgent.Span> _expectedSpans = new()
         {
+#if NETFRAMEWORK
+            // CreateSqsQueue
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.CreateQueue")
+                    .WithTag("aws.operation", "CreateQueue")
+                    .WithTag("aws.queue.name", "MySQSQueue"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.CreateQueue")
+                    .WithTag("aws.operation", "CreateQueue")
+                    .WithTag("aws.queue.name", "MySQSQueue2"),
+
+#endif
             // CreateSqsQueueAsync
             AwsSpan.GetDefault()
                     .WithResource("SQS.CreateQueue")
