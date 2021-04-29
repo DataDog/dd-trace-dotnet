@@ -13,83 +13,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     {
         private static List<MockTracerAgent.Span> _expectedSpans = new()
         {
-            new MockTracerAgent.Span()
-            {
-                Name = "aws.request",
-                Service = "Samples.AWS.SQS-aws-sdk",
-                Resource = "SQS.CreateQueue",
-                Tags = new()
-                {
-                    { "aws.agent", "dotnet-aws-sdk" },
-                    { "aws.operation", "CreateQueue" },
-                    { "aws.queue.name", "MySQSQueue" },
-                    { "aws.service", "SQS" },
-                    { "component", "aws-sdk" },
-                    { "span.kind", "client" },
-                },
-                Metrics = new()
-                {
-                    { "_dd.top_level", 1 }
-                },
-                Type = SpanTypes.Http,
-            },
-            new MockTracerAgent.Span()
-            {
-                Name = "aws.request",
-                Service = "Samples.AWS.SQS-aws-sdk",
-                Resource = "SQS.SendMessage",
-                Tags = new()
-                {
-                    { "aws.agent", "dotnet-aws-sdk" },
-                    { "aws.operation", "SendMessage" },
-                    { "aws.service", "SQS" },
-                    { "component", "aws-sdk" },
-                    { "span.kind", "client" },
-                },
-                Metrics = new()
-                {
-                    { "_dd.top_level", 1 }
-                },
-                Type = SpanTypes.Http,
-            },
-            new MockTracerAgent.Span()
-            {
-                Name = "aws.request",
-                Service = "Samples.AWS.SQS-aws-sdk",
-                Resource = "SQS.SendMessage",
-                Tags = new()
-                {
-                    { "aws.agent", "dotnet-aws-sdk" },
-                    { "aws.operation", "SendMessage" },
-                    { "aws.service", "SQS" },
-                    { "component", "aws-sdk" },
-                    { "span.kind", "client" },
-                },
-                Metrics = new()
-                {
-                    { "_dd.top_level", 1 }
-                },
-                Type = SpanTypes.Http,
-            },
-            new MockTracerAgent.Span()
-            {
-                Name = "aws.request",
-                Service = "Samples.AWS.SQS-aws-sdk",
-                Resource = "SQS.DeleteQueue",
-                Tags = new()
-                {
-                    { "aws.agent", "dotnet-aws-sdk" },
-                    { "aws.operation", "DeleteQueue" },
-                    { "aws.service", "SQS" },
-                    { "component", "aws-sdk" },
-                    { "span.kind", "client" },
-                },
-                Metrics = new()
-                {
-                    { "_dd.top_level", 1 }
-                },
-                Type = SpanTypes.Http,
-            },
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.CreateQueue")
+                    .WithTag("aws.operation", "CreateQueue")
+                    .WithTag("aws.queue.name", "MySQSQueue"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.SendMessage")
+                    .WithTag("aws.operation", "SendMessage"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.SendMessage")
+                    .WithTag("aws.operation", "SendMessage"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.DeleteQueue")
+                    .WithTag("aws.operation", "DeleteQueue"),
         };
 
         private readonly List<AwsSqsExpectation> _synchronousExpectations = new List<AwsSqsExpectation>();
@@ -159,11 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     .WithStrictOrdering()
                     .ExcludingMissingMembers()
                     .ExcludingDefaultSpanProperties()
-                    .Using<Dictionary<string, string>>(ctx =>
-                    {
-                        ctx.Subject.Should().ContainKeys("env", "aws.requestId", "aws.queue.url");
-                        ctx.Subject.ExceptKeys("env", "aws.requestId", "aws.queue.url").Should().Equal(ctx.Expectation);
-                    }).When(info => info.SelectedMemberPath.EndsWith("Tags")));
+                    .AssertTagsMatchAndSpecifiedTagsPresent("env", "aws.requestId", "aws.queue.url"));
             }
         }
 
@@ -173,6 +105,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             {
                 Operation = awsOperation,
             };
+        }
+
+        private class AwsSpan : MockTracerAgent.Span
+        {
+            public static AwsSpan GetDefault()
+            {
+                return new AwsSpan()
+                {
+                    Name = "aws.request",
+                    Service = "Samples.AWS.SQS-aws-sdk",
+                    Tags = new()
+                    {
+                        { "aws.agent", "dotnet-aws-sdk" },
+                        { "aws.service", "SQS" },
+                        { "component", "aws-sdk" },
+                        { "span.kind", "client" },
+                    },
+                    Metrics = new()
+                    {
+                        { "_dd.top_level", 1 }
+                    },
+                    Type = SpanTypes.Http,
+                };
+            }
         }
     }
 }
