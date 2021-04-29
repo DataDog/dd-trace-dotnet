@@ -18,6 +18,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     .WithTag("aws.operation", "CreateQueue")
                     .WithTag("aws.queue.name", "MySQSQueue"),
             AwsSpan.GetDefault()
+                    .WithResource("SQS.CreateQueue")
+                    .WithTag("aws.operation", "CreateQueue")
+                    .WithTag("aws.queue.name", "MySQSQueue2"),
+            AwsSpan.GetDefault()
                     .WithResource("SQS.SendMessage")
                     .WithTag("aws.operation", "SendMessage"),
             AwsSpan.GetDefault()
@@ -32,6 +36,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             AwsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessageBatch")
                     .WithTag("aws.operation", "DeleteMessageBatch"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.DeleteQueue")
+                    .WithTag("aws.operation", "DeleteQueue"),
             AwsSpan.GetDefault()
                     .WithResource("SQS.DeleteQueue")
                     .WithTag("aws.operation", "DeleteQueue"),
