@@ -240,7 +240,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       if (FAILED(hr) || signature_length < 3) {
         return {};
       }
-      
+
       if (signature[0] & ELEMENT_TYPE_GENERICINST) {
         mdToken type_token;
         CorSigUncompressToken(&signature[2], &type_token);
@@ -310,7 +310,7 @@ std::vector<Integration> FilterIntegrationsByName(
 }
 
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations, 
+    const std::vector<Integration>& integrations,
     bool is_calltarget_enabled) {
   std::vector<IntegrationMethod> flattened;
 
@@ -428,46 +428,6 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
     Warn("[DefineMethodSpec] failed to define method spec");
   }
   return spec;
-}
-
-bool DisableOptimizations() {
-  const auto disable_optimizations =
-      GetEnvironmentValue(environment::clr_disable_optimizations);
-
-  if (disable_optimizations == WStr("1") ||
-      disable_optimizations == WStr("true")) {
-    return true;
-  }
-
-  // default to false: don't disable JIT optimizations
-  return false;
-}
-
-bool EnableInlining(bool defaultValue) {
-  const auto enable_inlining =
-      GetEnvironmentValue(environment::clr_enable_inlining);
-
-  if (enable_inlining == WStr("1") || enable_inlining == WStr("true")) {
-    return true;
-  }
-
-  if (enable_inlining == WStr("0") || enable_inlining == WStr("false")) {
-    return false;
-  }
-
-  return defaultValue;
-}
-
-bool IsCallTargetEnabled() {
-  const auto calltarget_enabled =
-      GetEnvironmentValue(environment::calltarget_enabled);
-
-  if (calltarget_enabled == WStr("1") || calltarget_enabled == WStr("true")) {
-    return true;
-  }
-
-  // default to false: calltarget integrations are removed from the integrations.json
-  return false;
 }
 
 TypeInfo RetrieveTypeForSignature(
@@ -1534,10 +1494,10 @@ bool ParseRetType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd) {
   if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD)
     return false;
 
-  if (pbCur >= pbEnd) 
+  if (pbCur >= pbEnd)
       return false;
 
-  if (*pbCur == ELEMENT_TYPE_TYPEDBYREF) 
+  if (*pbCur == ELEMENT_TYPE_TYPEDBYREF)
       return false;
 
   if (*pbCur == ELEMENT_TYPE_VOID) {
@@ -1545,7 +1505,7 @@ bool ParseRetType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd) {
     return true;
   }
 
-  if (*pbCur == ELEMENT_TYPE_BYREF) 
+  if (*pbCur == ELEMENT_TYPE_BYREF)
       pbCur++;
 
   return ParseType(pbCur, pbEnd);

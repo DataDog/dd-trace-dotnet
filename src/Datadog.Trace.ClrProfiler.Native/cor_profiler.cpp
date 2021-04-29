@@ -9,6 +9,7 @@
 #include "dd_profiler_constants.h"
 #include "dllmain.h"
 #include "environment_variables.h"
+#include "environment_variables_util.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
 #include "integration_loader.h"
@@ -38,29 +39,15 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   auto _ = trace::Stats::Instance()->InitializeMeasure();
 
   // check if debug mode is enabled
-  const auto debug_enabled_value =
-      GetEnvironmentValue(environment::debug_enabled);
-
-  if (debug_enabled_value == WStr("1") || debug_enabled_value == WStr("true")) {
-    debug_logging_enabled = true;
-  }
+  debug_logging_enabled = IsDebugEnabled();
 
   // check if dump il rewrite is enabled
-  const auto dump_il_rewrite_enabled_value =
-      GetEnvironmentValue(environment::dump_il_rewrite_enabled);
-
-  if (dump_il_rewrite_enabled_value == WStr("1") ||
-      dump_il_rewrite_enabled_value == WStr("true")) {
-    dump_il_rewrite_enabled = true;
-  }
+  dump_il_rewrite_enabled = IsDumpILRewriteEnabled();
 
   CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
   // check if tracing is completely disabled
-  const WSTRING tracing_enabled =
-      GetEnvironmentValue(environment::tracing_enabled);
-
-  if (tracing_enabled == WStr("0") || tracing_enabled == WStr("false")) {
+  if (IsTracingDisabled()) {
     Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled in ", environment::tracing_enabled);
     return E_FAIL;
   }
@@ -89,15 +76,13 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // get Profiler interface
-  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo4>(
-      &this->info_);
+  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo4>(&this->info_);
   if (FAILED(hr)) {
     Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo4 not found.");
     return E_FAIL;
   }
 
   Info("Environment variables:");
-
   for (auto&& env_var : env_vars_to_display) {
     WSTRING env_var_value = GetEnvironmentValue(env_var);
     if (debug_logging_enabled || !env_var_value.empty()) {
@@ -105,10 +90,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     }
   }
 
-  const WSTRING azure_app_services_value =
-      GetEnvironmentValue(environment::azure_app_services);
-
-  if (azure_app_services_value == WStr("1")) {
+  if (IsAzureAppServices()) {
     Info("Profiler is operating within Azure App Services context.");
     in_azure_app_services = true;
 
@@ -133,8 +115,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // get path to integration definition JSON files
-  const WSTRING integrations_paths =
-      GetEnvironmentValue(environment::integrations_path);
+  const WSTRING integrations_paths = GetEnvironmentValue(environment::integrations_path);
 
   if (integrations_paths.empty()) {
     Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", environment::integrations_path,
@@ -176,14 +157,11 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     Debug("Number of Integrations loaded: ", integration_methods_.size());
   }
 
-  const WSTRING netstandard_enabled =
-      GetEnvironmentValue(environment::netstandard_enabled);
-
   // temporarily skip the calls into netstandard.dll that were added in
   // https://github.com/DataDog/dd-trace-dotnet/pull/753.
   // users can opt-in to the additional instrumentation by setting environment
   // variable DD_TRACE_NETSTANDARD_ENABLED
-  if (netstandard_enabled != WStr("1") && netstandard_enabled != WStr("true")) {
+  if (!IsNetstandardEnabled()) {
     integration_methods_ = FilterIntegrationsByTargetAssemblyName(
         integration_methods_, {WStr("netstandard")});
   }

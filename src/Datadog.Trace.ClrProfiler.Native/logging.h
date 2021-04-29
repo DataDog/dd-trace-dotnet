@@ -45,7 +45,9 @@ std::string LogToString(Args const&... args) {
 
 template <typename... Args>
 void Debug(const Args... args) {
-  Logger::Instance()->Debug(LogToString(args...));
+  if (debug_logging_enabled) {
+    Logger::Instance()->Debug(LogToString(args...));
+  }
 }
 
 template <typename... Args>
