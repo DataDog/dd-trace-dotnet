@@ -3,6 +3,7 @@ using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -10,6 +11,87 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     public class AwsSqsTests : TestHelper
     {
+        private static List<MockTracerAgent.Span> _expectedSpans = new()
+        {
+            new MockTracerAgent.Span()
+            {
+                Name = "aws.request",
+                Service = "Samples.AWS.SQS-aws-sdk",
+                Resource = "SQS.CreateQueue",
+                Tags = new()
+                {
+                    { "aws.agent", "dotnet-aws-sdk" },
+                    { "aws.operation", "CreateQueue" },
+                    { "aws.queue.name", "MySQSQueue" },
+                    { "aws.service", "SQS" },
+                    { "component", "aws-sdk" },
+                    { "span.kind", "client" },
+                },
+                Metrics = new()
+                {
+                    { "_dd.top_level", 1 }
+                },
+                Type = SpanTypes.Http,
+            },
+            new MockTracerAgent.Span()
+            {
+                Name = "aws.request",
+                Service = "Samples.AWS.SQS-aws-sdk",
+                Resource = "SQS.SendMessage",
+                Tags = new()
+                {
+                    { "aws.agent", "dotnet-aws-sdk" },
+                    { "aws.operation", "SendMessage" },
+                    { "aws.service", "SQS" },
+                    { "component", "aws-sdk" },
+                    { "span.kind", "client" },
+                },
+                Metrics = new()
+                {
+                    { "_dd.top_level", 1 }
+                },
+                Type = SpanTypes.Http,
+            },
+            new MockTracerAgent.Span()
+            {
+                Name = "aws.request",
+                Service = "Samples.AWS.SQS-aws-sdk",
+                Resource = "SQS.SendMessage",
+                Tags = new()
+                {
+                    { "aws.agent", "dotnet-aws-sdk" },
+                    { "aws.operation", "SendMessage" },
+                    { "aws.service", "SQS" },
+                    { "component", "aws-sdk" },
+                    { "span.kind", "client" },
+                },
+                Metrics = new()
+                {
+                    { "_dd.top_level", 1 }
+                },
+                Type = SpanTypes.Http,
+            },
+            new MockTracerAgent.Span()
+            {
+                Name = "aws.request",
+                Service = "Samples.AWS.SQS-aws-sdk",
+                Resource = "SQS.DeleteQueue",
+                Tags = new()
+                {
+                    { "aws.agent", "dotnet-aws-sdk" },
+                    { "aws.operation", "DeleteQueue" },
+                    { "aws.service", "SQS" },
+                    { "component", "aws-sdk" },
+                    { "span.kind", "client" },
+                },
+                Metrics = new()
+                {
+                    { "_dd.top_level", 1 }
+                },
+                Type = SpanTypes.Http,
+            },
+        };
+
         private readonly List<AwsSqsExpectation> _synchronousExpectations = new List<AwsSqsExpectation>();
         private readonly List<AwsSqsExpectation> _asynchronousExpectations = new List<AwsSqsExpectation>();
         private readonly List<AwsSqsExpectation> _expectations = new List<AwsSqsExpectation>();
@@ -37,8 +119,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             /*
             _asynchronousExpectations.Add(CreateExpectation("ListQueues"));
             _asynchronousExpectations.Add(CreateExpectation("GetQueueUrl"));
+            */
             _asynchronousExpectations.Add(CreateExpectation("SendMessage"));
             _asynchronousExpectations.Add(CreateExpectation("SendMessage"));
+            /*
             _asynchronousExpectations.Add(CreateExpectation("ReceiveMessage"));
             _asynchronousExpectations.Add(CreateExpectation("DeleteMessage"));
             _asynchronousExpectations.Add(CreateExpectation("SendMessageBatch"));
@@ -71,7 +155,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var spans = agent.WaitForSpans(_expectations.Count, operationName: AwsExpectation.IntegrationOperationName);
                 Assert.True(spans.Count >= _expectations.Count, $"Expecting at least {_expectations.Count} spans, only received {spans.Count}");
 
-                SpanTestHelpers.AssertExpectationsMet(_expectations, spans.ToList());
+                spans.OrderBy(s => s.Start).Should().BeEquivalentTo(_expectedSpans, options => options
+                    .WithStrictOrdering()
+                    .ExcludingMissingMembers()
+                    .ExcludingDefaultSpanProperties()
+                    .Using<Dictionary<string, string>>(ctx =>
+                    {
+                        ctx.Subject.Should().ContainKeys("env", "aws.requestId", "aws.queue.url");
+                        ctx.Subject.ExceptKeys("env", "aws.requestId", "aws.queue.url").Should().Equal(ctx.Expectation);
+                    }).When(info => info.SelectedMemberPath.EndsWith("Tags")));
             }
         }
 
