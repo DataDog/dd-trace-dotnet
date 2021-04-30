@@ -637,6 +637,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     return S_OK;
   }
 
+  // We check if we are in CallTarget mode and the loader was already injected.
+  const bool is_calltarget_enabled = IsCallTargetEnabled();
+  const bool has_loader_injected_in_appdomain =
+      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
+      first_jit_compilation_app_domains.end();
+
+  if (is_calltarget_enabled && has_loader_injected_in_appdomain) {
+      // Loader was already injected in a calltarget scenario, we don't need to do anything else here
+    return S_OK;
+  }
+
   // get function info
   const auto caller = GetFunctionInfo(module_metadata->metadata_import, function_token);
   if (!caller.IsValid()) {
@@ -672,9 +683,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // hook which, at a minimum, must add an AssemblyResolve event so we can find
   // Datadog.Trace.ClrProfiler.Managed.dll and its dependencies on-disk since it
   // is no longer provided in a NuGet package
-  if (valid_startup_hook_callsite &&
-      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
-      first_jit_compilation_app_domains.end()) {
+  if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain) {
     bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded && module_metadata->app_domain_id == corlib_app_domain_id;
     Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
           " token=", function_token, " name=", caller.type.name, ".",
@@ -704,7 +713,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     }
   }
 
-  if (!IsCallTargetEnabled()) {
+  if (!is_calltarget_enabled) {
       // we don't actually need to instrument anything in
       // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
       // hook is called for AspNetCore applications
