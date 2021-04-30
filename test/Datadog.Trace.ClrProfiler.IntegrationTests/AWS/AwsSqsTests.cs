@@ -33,6 +33,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     .WithTag("aws.operation", "SendMessage"),
 
             // ReceiveMessageAndDeleteMessageAsync
+            // AwsSpan.GetDefault()
+            //        .WithResource("SQS.ReceiveMessage")
+            //        .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessage")
+                    .WithTag("aws.operation", "DeleteMessage"),
+            // AwsSpan.GetDefault()
+            //        .WithResource("SQS.ReceiveMessage")
+            //        .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessage")
+                    .WithTag("aws.operation", "DeleteMessage"),
 
             // SendMessageBatchAsync
             AwsSpan.GetDefault()

@@ -382,6 +382,29 @@
         "target": {
           "assembly": "AWSSDK.SQS",
           "type": "Amazon.SQS.AmazonSQSClient",
+          "method": "DeleteMessage",
+          "signature_types": [
+            "Amazon.SQS.Model.DeleteMessageResponse",
+            "Amazon.SQS.Model.DeleteMessageRequest"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "AWSSDK.SQS",
+          "type": "Amazon.SQS.AmazonSQSClient",
           "method": "DeleteQueueAsync",
           "signature_types": [
             "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteQueueResponse>",
