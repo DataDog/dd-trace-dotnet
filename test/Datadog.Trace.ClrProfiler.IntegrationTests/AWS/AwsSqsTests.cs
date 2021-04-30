@@ -15,176 +15,134 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
 #if NETFRAMEWORK
             // CreateSqsQueue
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.CreateQueue")
                     .WithTag("aws.operation", "CreateQueue")
                     .WithTag("aws.queue.name", "MySQSQueue"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.CreateQueue")
                     .WithTag("aws.operation", "CreateQueue")
                     .WithTag("aws.queue.name", "MySQSQueue2"),
 
             // SendMessageAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.SendMessage")
                     .WithTag("aws.operation", "SendMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.SendMessage")
                     .WithTag("aws.operation", "SendMessage"),
 
             // ReceiveMessageAndDeleteMessageAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessage")
                     .WithTag("aws.operation", "DeleteMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessage")
                     .WithTag("aws.operation", "DeleteMessage"),
 
             // SendMessageBatchAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.SendMessageBatch")
                     .WithTag("aws.operation", "SendMessageBatch"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.SendMessageBatch")
                     .WithTag("aws.operation", "SendMessageBatch"),
 
             // ReceiveMessagesAndDeleteMessageBatchAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessageBatch")
                     .WithTag("aws.operation", "DeleteMessageBatch"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessageBatch")
                     .WithTag("aws.operation", "DeleteMessageBatch"),
 
             // DeleteQueue
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteQueue")
                     .WithTag("aws.operation", "DeleteQueue"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteQueue")
                     .WithTag("aws.operation", "DeleteQueue"),
 
 #endif
             // CreateSqsQueueAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.CreateQueue")
                     .WithTag("aws.operation", "CreateQueue")
                     .WithTag("aws.queue.name", "MySQSQueue"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.CreateQueue")
                     .WithTag("aws.operation", "CreateQueue")
                     .WithTag("aws.queue.name", "MySQSQueue2"),
 
             // SendMessageAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.SendMessage")
                     .WithTag("aws.operation", "SendMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.SendMessage")
                     .WithTag("aws.operation", "SendMessage"),
 
             // ReceiveMessageAndDeleteMessageAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessage")
                     .WithTag("aws.operation", "DeleteMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessage")
                     .WithTag("aws.operation", "DeleteMessage"),
 
             // SendMessageBatchAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.SendMessageBatch")
                     .WithTag("aws.operation", "SendMessageBatch"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.SendMessageBatch")
                     .WithTag("aws.operation", "SendMessageBatch"),
 
             // ReceiveMessagesAndDeleteMessageBatchAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessageBatch")
                     .WithTag("aws.operation", "DeleteMessageBatch"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.ReceiveMessage")
                     .WithTag("aws.operation", "ReceiveMessage"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteMessageBatch")
                     .WithTag("aws.operation", "DeleteMessageBatch"),
 
             // DeleteQueueAsync
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteQueue")
                     .WithTag("aws.operation", "DeleteQueue"),
-            AwsSpan.GetDefault()
+            AwsSqsSpan.GetDefault()
                     .WithResource("SQS.DeleteQueue")
                     .WithTag("aws.operation", "DeleteQueue"),
         };
 
-        private readonly List<AwsSqsExpectation> _synchronousExpectations = new List<AwsSqsExpectation>();
-        private readonly List<AwsSqsExpectation> _asynchronousExpectations = new List<AwsSqsExpectation>();
-        private readonly List<AwsSqsExpectation> _expectations = new List<AwsSqsExpectation>();
-
         public AwsSqsTests(ITestOutputHelper output)
             : base("Aws.Sqs", output)
         {
-            /*
-            _synchronousExpectations.Add(CreateExpectation("CreateQueue"));
-            _synchronousExpectations.Add(CreateExpectation("ListQueues"));
-            _synchronousExpectations.Add(CreateExpectation("GetQueueUrl"));
-            _synchronousExpectations.Add(CreateExpectation("SendMessage"));
-            _synchronousExpectations.Add(CreateExpectation("SendMessage"));
-            _synchronousExpectations.Add(CreateExpectation("ReceiveMessage"));
-            _synchronousExpectations.Add(CreateExpectation("DeleteMessage"));
-            _synchronousExpectations.Add(CreateExpectation("SendMessageBatch"));
-            _synchronousExpectations.Add(CreateExpectation("SendMessageBatch"));
-            _synchronousExpectations.Add(CreateExpectation("ReceiveMessage"));
-            _synchronousExpectations.Add(CreateExpectation("DeleteMessageBatch"));
-            _synchronousExpectations.Add(CreateExpectation("PurgeQueue"));
-            _synchronousExpectations.Add(CreateExpectation("DeleteQueue"));
-            */
-
-            _asynchronousExpectations.Add(CreateExpectation(AwsExpectation.Commands.CreateQueueRequest));
-            /*
-            _asynchronousExpectations.Add(CreateExpectation("ListQueues"));
-            _asynchronousExpectations.Add(CreateExpectation("GetQueueUrl"));
-            */
-            _asynchronousExpectations.Add(CreateExpectation("SendMessage"));
-            _asynchronousExpectations.Add(CreateExpectation("SendMessage"));
-            /*
-            _asynchronousExpectations.Add(CreateExpectation("ReceiveMessage"));
-            _asynchronousExpectations.Add(CreateExpectation("DeleteMessage"));
-            _asynchronousExpectations.Add(CreateExpectation("SendMessageBatch"));
-            _asynchronousExpectations.Add(CreateExpectation("SendMessageBatch"));
-            _asynchronousExpectations.Add(CreateExpectation("ReceiveMessage"));
-            _asynchronousExpectations.Add(CreateExpectation("DeleteMessageBatch"));
-            _asynchronousExpectations.Add(CreateExpectation("PurgeQueue"));
-            */
-            _asynchronousExpectations.Add(CreateExpectation(AwsExpectation.Commands.DeleteQueueRequest));
-
-            _expectations.AddRange(_asynchronousExpectations);
-#if NETFRAMEWORK
-            _expectations.AddRange(_synchronousExpectations);
-#endif
         }
 
         [Theory]
@@ -200,8 +158,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
 
-                var spans = agent.WaitForSpans(_expectations.Count, operationName: AwsExpectation.IntegrationOperationName);
-                Assert.True(spans.Count >= _expectations.Count, $"Expecting at least {_expectations.Count} spans, only received {spans.Count}");
+                var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: AwsExpectation.IntegrationOperationName);
+                Assert.True(spans.Count >= _expectedSpans.Count, $"Expecting at least {_expectedSpans.Count} spans, only received {spans.Count}");
 
                 spans.OrderBy(s => s.Start).Should().BeEquivalentTo(_expectedSpans, options => options
                     .WithStrictOrdering()
@@ -211,19 +169,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             }
         }
 
-        private static AwsSqsExpectation CreateExpectation(string awsOperation)
+        private class AwsSqsSpan : MockTracerAgent.Span
         {
-            return new AwsSqsExpectation("Samples.AWS.SQS-aws-sdk", $"SQS.{awsOperation}")
+            public static AwsSqsSpan GetDefault()
             {
-                Operation = awsOperation,
-            };
-        }
-
-        private class AwsSpan : MockTracerAgent.Span
-        {
-            public static AwsSpan GetDefault()
-            {
-                return new AwsSpan()
+                return new AwsSqsSpan()
                 {
                     Name = "aws.request",
                     Service = "Samples.AWS.SQS-aws-sdk",
