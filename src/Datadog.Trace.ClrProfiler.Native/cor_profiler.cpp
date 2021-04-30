@@ -275,9 +275,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
   }
 
-  const auto is_managed_profiler = assembly_info.name == WStr("Datadog.Trace.ClrProfiler.Managed");
+  const auto is_instrumentation_assembly = assembly_info.name == WStr("Datadog.Trace.ClrProfiler.Managed");
 
-  if (is_managed_profiler || debug_logging_enabled) {
+  if (is_instrumentation_assembly || debug_logging_enabled) {
     if (debug_logging_enabled) {
       Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
     }
@@ -286,10 +286,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
 
     if (FAILED(hr)) {
-      Warn("AssemblyLoadFinished failed to get metadata interface for module "
-          "id ",
-          assembly_info.manifest_module_id, " from assembly ",
-          assembly_info.name);
+      Warn("AssemblyLoadFinished failed to get metadata interface for module id ", assembly_info.manifest_module_id, " from assembly ", assembly_info.name);
       return S_OK;
     }
 
@@ -301,7 +298,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
       Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name, " AssemblyVersion=", assembly_metadata.version.str());
     }
 
-    if (is_managed_profiler) {
+    if (is_instrumentation_assembly) {
       // Configure a version string to compare with the profiler version
       std::stringstream ss;
       ss << assembly_metadata.version.major << '.'
@@ -319,18 +316,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
           // Set the managed_profiler_loaded_domain_neutral flag whenever the
           // managed profiler is loaded shared
           if (assembly_info.app_domain_id == corlib_app_domain_id) {
-            Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was "
-                "loaded domain-neutral");
+            Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
             managed_profiler_loaded_domain_neutral = true;
           } else {
-            Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was "
-                "not loaded domain-neutral");
+            Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was not loaded domain-neutral");
           }
         }
       } else {
-        Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v",
-             assembly_version, " did not match profiler version v",
-             PROFILER_VERSION);
+        Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", assembly_version, " did not match profiler version v", PROFILER_VERSION);
       }
     }
   }

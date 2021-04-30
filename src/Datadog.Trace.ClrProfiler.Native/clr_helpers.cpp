@@ -382,6 +382,7 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
         const auto metadata_ref = GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
         if (AssemblyMeetsIntegrationRequirements(metadata_ref, i.replacement)) {
           found = true;
+          break;
         }
       }
     }
