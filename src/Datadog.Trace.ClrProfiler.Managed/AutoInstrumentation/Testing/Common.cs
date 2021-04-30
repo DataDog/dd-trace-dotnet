@@ -13,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             TestTracer = new Tracer(settings);
             ServiceName = TestTracer.DefaultServiceName;
 
+            Tracer.Instance = TestTracer;
+
             // Preload environment variables.
             CIEnvironmentValues.DecorateSpan(null);
         }
