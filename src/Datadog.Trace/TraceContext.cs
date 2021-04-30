@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -97,7 +98,14 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    span.SetMetric(Metrics.SamplingPriority, (int)_samplingPriority);
+                    if (span.Tags is CommonTags tags)
+                    {
+                        tags.SamplingPriority = (int)_samplingPriority;
+                    }
+                    else
+                    {
+                        span.SetMetric(Metrics.SamplingPriority, (int)_samplingPriority);
+                    }
                 }
             }
 
