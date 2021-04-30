@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Sampling
 {
@@ -31,7 +32,17 @@ namespace Datadog.Trace.Sampling
                 return 1;
             }
 
-            var env = span.GetTag(Tags.Env);
+            string env;
+
+            if (span.Tags is CommonTags tags)
+            {
+                env = tags.Environment;
+            }
+            else
+            {
+                env = span.GetTag(Tags.Env);
+            }
+
             var service = span.ServiceName;
 
             var key = new SampleRateKey(service, env);
