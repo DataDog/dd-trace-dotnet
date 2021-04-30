@@ -18,11 +18,15 @@ namespace Samples.Owin.WebApi
             config.MapHttpAttributeRoutes();
 
             // Convention-based routing.
-            config.Routes.MapHttpRoute(
-                name: "DefaultApi",
-                routeTemplate: "api/{controller}/{id}",
-                defaults: new { id = RouteParameter.Optional }
-            );
+            config.Routes.MapHttpRoute( 
+                name: "ApiConventions", 
+                routeTemplate: "api2/{action}/{value}",
+                defaults: new
+                {
+                    controller = "Conventions",
+                    value = RouteParameter.Optional
+                }); 
+
 
             appBuilder.UseWebApi(config);
         }
