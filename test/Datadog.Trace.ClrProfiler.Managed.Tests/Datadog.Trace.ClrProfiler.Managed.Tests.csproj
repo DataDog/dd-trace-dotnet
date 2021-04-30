@@ -3,6 +3,7 @@
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="4.0.10" />
     <PackageReference Include="Mysql.Data" Version="8.0.17" />
+    <PackageReference Include="Confluent.Kafka" Version="1.4.3" />
   </ItemGroup>
 
   <ItemGroup>

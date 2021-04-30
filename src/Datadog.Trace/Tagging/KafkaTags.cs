@@ -1,4 +1,5 @@
-﻿using Datadog.Trace.ExtensionMethods;
+﻿using System;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Tagging
 {
@@ -14,6 +15,15 @@ namespace Datadog.Trace.Tagging
                 new Property<KafkaTags, string>(Trace.Tags.Tombstone, t => t.Tombstone, (t, v) => t.Tombstone = v),
                 new Property<KafkaTags, string>(Trace.Tags.RecordQueueTimeMs, t => t.RecordQueueTimeMs, (t, v) => t.RecordQueueTimeMs = v));
 
+        // For the sake of unit tests, define a default constructor
+        // though the Kafka integration should use the constructor that takes a spanKind
+        // so the setter is only invoked once
+        [Obsolete("Use constructor that takes a SpanKind")]
+        public KafkaTags()
+            : this(SpanKinds.Producer)
+        {
+        }
+
         public KafkaTags(string spanKind)
         {
             SpanKind = spanKind;
@@ -26,8 +36,6 @@ namespace Datadog.Trace.Tagging
         public string Partition { get; set; }
 
         public string Offset { get; set; }
-
-        public string Exchange { get; set; }
 
         public string Tombstone { get; set; }
 
