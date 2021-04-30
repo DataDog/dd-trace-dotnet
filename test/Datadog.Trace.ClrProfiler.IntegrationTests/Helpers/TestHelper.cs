@@ -84,6 +84,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             helper.Drain();
             var exitCode = process.ExitCode;
 
+            Output.WriteLine($"ProcessId: " + process.Id);
+            Output.WriteLine($"Exit Code: " + exitCode);
+
             var standardOutput = helper.StandardOutput;
 
             if (!string.IsNullOrWhiteSpace(standardOutput))
