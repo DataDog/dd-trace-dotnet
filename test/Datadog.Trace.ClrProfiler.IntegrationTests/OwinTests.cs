@@ -1,86 +1,49 @@
 #if NETFRAMEWORK
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class OwinTests : AspNetCoreMvcTestBase
+    [Collection("IisTests")]
+    public class OwinTestsCallsite : OwinTests
     {
-        public OwinTests(ITestOutputHelper output)
-            : base("Owin.WebApi", output, topLevelOperationName: "owin.request", serviceVersion: "1.0.0")
+        public OwinTestsCallsite(ITestOutputHelper output)
+            : base(output, enableCallTarget: false)
         {
-            Expectations.Clear();
+        }
+    }
 
-            CreateTopLevelExpectation(topLevelOperationName: TopLevelOperationName, url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "/", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(topLevelOperationName: TopLevelOperationName, url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "/delay/?", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(topLevelOperationName: TopLevelOperationName, url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "/api/delay/?", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(topLevelOperationName: TopLevelOperationName, url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "/not-found", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(topLevelOperationName: TopLevelOperationName, url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "/status-code/?", serviceVersion: ServiceVersion);
+    [Collection("IisTests")]
+    public class OwinTestsCallTarget : OwinTests
+    {
+        public OwinTestsCallTarget(ITestOutputHelper output)
+            : base(output, enableCallTarget: true)
+        {
+        }
+    }
 
-            CreateTopLevelExpectation(
-                topLevelOperationName: TopLevelOperationName,
-                url: "/status-code/500",
-                httpMethod: "GET",
-                httpStatus: "500",
-                resourceUrl: "/status-code/?",
-                serviceVersion: ServiceVersion,
-                additionalCheck: span =>
-                {
-                    var failures = new List<string>();
+    public abstract class OwinTests : AspNetCoreMvcTestBase
+    {
+        private readonly TheoryData<string, string, string, int, bool, string, string, SerializableDictionary> _testData = AspNetWebApi2TestData.WithoutFeatureFlag;
 
-                    if (span.Error == 0)
-                    {
-                        failures.Add($"Expected Error flag set within {span.Resource}");
-                    }
-
-                    if (SpanExpectation.GetTag(span, Tags.ErrorType) != null)
-                    {
-                        failures.Add($"Did not expect exception type within {span.Resource}");
-                    }
-
-                    var errorMessage = SpanExpectation.GetTag(span, Tags.ErrorMsg);
-
-                    if (errorMessage != "The HTTP response has status code 500.")
-                    {
-                        failures.Add($"Expected specific error message within {span.Resource}. Found \"{errorMessage}\"");
-                    }
-
-                    return failures;
-                });
-
-            CreateTopLevelExpectation(
-                topLevelOperationName: TopLevelOperationName,
-                url: "/bad-request",
-                httpMethod: "GET",
-                httpStatus: "500",
-                resourceUrl: "/bad-request",
-                serviceVersion: ServiceVersion,
-                additionalCheck: span =>
-                {
-                    var failures = new List<string>();
-
-                    if (span.Error == 0)
-                    {
-                        failures.Add($"Expected Error flag set within {span.Resource}");
-                    }
-
-                    var errorMessage = SpanExpectation.GetTag(span, Tags.ErrorMsg);
-
-                    if (errorMessage != "The HTTP response has status code 500.")
-                    {
-                        failures.Add($"Expected specific error message within {span.Resource}. Found \"{errorMessage}\"");
-                    }
-
-                    return failures;
-                });
+        public OwinTests(ITestOutputHelper output, bool enableCallTarget)
+            : base("Owin.WebApi", output,  serviceVersion: "1.0.0")
+        {
+            SetCallTargetSettings(enableCallTarget, enableCallTarget);
         }
 
         [Fact]
@@ -88,8 +51,148 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
-            // No package versions are relevant because this is built-in
-            await RunTraceTestOnSelfHosted(string.Empty);
+            var agentPort = TcpPortProvider.GetOpenPort();
+            var aspNetCorePort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (var process = StartSample(agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: aspNetCorePort))
+            {
+                try
+                {
+                    agent.SpanFilters.Add(IsNotServerLifeCheck);
+
+                    var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
+
+                    process.OutputDataReceived += (sender, args) =>
+                    {
+                        if (args.Data != null)
+                        {
+                            if (args.Data.Contains("Now listening on:") || args.Data.Contains("Unable to start Kestrel"))
+                            {
+                                wh.Set();
+                            }
+
+                            Output.WriteLine($"[webserver][stdout] {args.Data}");
+                        }
+                    };
+                    process.BeginOutputReadLine();
+
+                    process.ErrorDataReceived += (sender, args) =>
+                    {
+                        if (args.Data != null)
+                        {
+                            Output.WriteLine($"[webserver][stderr] {args.Data}");
+                        }
+                    };
+
+                    process.BeginErrorReadLine();
+
+                    wh.WaitOne(5000);
+
+                    var maxMillisecondsToWait = 15_000;
+                    var intervalMilliseconds = 500;
+                    var intervals = maxMillisecondsToWait / intervalMilliseconds;
+                    var serverReady = false;
+
+                    // wait for server to be ready to receive requests
+                    while (intervals-- > 0)
+                    {
+                        try
+                        {
+                            serverReady = await SubmitRequest(aspNetCorePort, "/alive-check") == HttpStatusCode.OK;
+                        }
+                        catch
+                        {
+                            // ignore
+                        }
+
+                        if (serverReady)
+                        {
+                            break;
+                        }
+
+                        Thread.Sleep(intervalMilliseconds);
+                    }
+
+                    if (!serverReady)
+                    {
+                        throw new Exception("Couldn't verify the application is ready to receive requests.");
+                    }
+
+                    var testStart = DateTime.Now;
+                    var testDataArray = _testData.ToArray();
+                    var expectedSpanCount = testDataArray.Length;
+
+                    foreach (var input in testDataArray)
+                    {
+                        string path = (string)input[0];
+                        await SubmitRequest(aspNetCorePort, path);
+                    }
+
+                    var spans =
+                        agent.WaitForSpans(
+                                  count: expectedSpanCount,
+                                  minDateTime: testStart,
+                                  returnAllOperations: true)
+                             .OrderBy(s => s.Start)
+                             .ToList();
+                    Assert.Equal(expectedSpanCount, spans.Count);
+
+                    for (int i = 0; i < testDataArray.Length; i++)
+                    {
+                        object[] input = testDataArray[i];
+                        string expectedAspNetResourceName = (string)input[1];
+                        string expectedResourceName = (string)input[2];
+                        HttpStatusCode expectedStatusCode = (HttpStatusCode)input[3];
+                        bool isError = (bool)input[4];
+                        string expectedErrorType = (string)input[5];
+                        string expectedErrorMessage = (string)input[6];
+                        SerializableDictionary expectedTags = (SerializableDictionary)input[7];
+
+                        MockTracerAgent.Span webApiSpan = spans[i];
+
+                        // base properties
+                        Assert.Equal("aspnet-webapi.request", webApiSpan.Name);
+                        Assert.Equal("web", webApiSpan.Type);
+                        Assert.Equal((string)input[2], webApiSpan.Resource);
+
+                        // errors
+                        Assert.Equal(isError, webApiSpan.Error == 1); // Fix this. Apparently just returning bad error codes from Owin doesn't set a bad error code on WebApi
+                        Assert.Equal(expectedErrorType, webApiSpan.Tags.GetValueOrDefault(Tags.ErrorType));
+                        Assert.Equal(expectedErrorMessage, webApiSpan.Tags.GetValueOrDefault(Tags.ErrorMsg));
+
+                        // other tags
+                        Assert.Equal(SpanKinds.Server, webApiSpan.Tags.GetValueOrDefault(Tags.SpanKind));
+                        Assert.Equal("1.0.0", webApiSpan.Tags.GetValueOrDefault(Tags.Version));
+
+                        if (expectedTags?.Values is not null)
+                        {
+                            foreach (var expectedTag in expectedTags)
+                            {
+                                Assert.Equal(expectedTag.Value, webApiSpan.Tags.GetValueOrDefault(expectedTag.Key));
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    if (!process.HasExited)
+                    {
+                        process.Kill();
+                    }
+                }
+            }
+        }
+
+        private bool IsNotServerLifeCheck(MockTracerAgent.Span span)
+        {
+            var url = SpanExpectation.GetTag(span, Tags.HttpUrl);
+            if (url == null)
+            {
+                return true;
+            }
+
+            return !url.Contains("alive-check");
         }
     }
 }
