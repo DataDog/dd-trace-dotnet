@@ -1,6 +1,6 @@
 ﻿using System.Web.Http;
 
-namespace Samples.Owin.WebApi.Controllers
+namespace Samples.Owin.WebApi2.Controllers
 {
     [RoutePrefix("")]
     public class HomeController : System.Web.Http.ApiController

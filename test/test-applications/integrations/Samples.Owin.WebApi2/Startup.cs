@@ -1,7 +1,7 @@
 using System.Web.Http;
 using Owin;
 
-namespace Samples.Owin.WebApi
+namespace Samples.Owin.WebApi2
 {
     public class Startup
     {

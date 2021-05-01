@@ -431,7 +431,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DuplicateTypeProxy", "test\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreRazorPages", "test\test-applications\integrations\Samples.AspNetCoreRazorPages\Samples.AspNetCoreRazorPages.csproj", "{1B9E6BF4-9D48-4988-9945-248096119E46}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Owin.WebApi", "test\test-applications\integrations\Samples.Owin.WebApi\Samples.Owin.WebApi.csproj", "{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Owin.WebApi2", "test\test-applications\integrations\Samples.Owin.WebApi2\Samples.Owin.WebApi2.csproj", "{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

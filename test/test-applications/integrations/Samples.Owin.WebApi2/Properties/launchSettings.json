@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Samples.Owin.WebApi": {
+    "Samples.Owin.WebApi2": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",

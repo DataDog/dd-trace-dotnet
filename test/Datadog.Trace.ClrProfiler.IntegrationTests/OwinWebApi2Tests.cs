@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,32 +20,36 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class OwinTestsCallsite : OwinTests
+    public class OwinWebApi2TestsCallsite : OwinWebApi2Tests
     {
-        public OwinTestsCallsite(ITestOutputHelper output)
+        public OwinWebApi2TestsCallsite(ITestOutputHelper output)
             : base(output, enableCallTarget: false)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class OwinTestsCallTarget : OwinTests
+    public class OwinWebApi2TestsCallTarget : OwinWebApi2Tests
     {
-        public OwinTestsCallTarget(ITestOutputHelper output)
+        public OwinWebApi2TestsCallTarget(ITestOutputHelper output)
             : base(output, enableCallTarget: true)
         {
         }
     }
 
-    public abstract class OwinTests : AspNetCoreMvcTestBase
+    public abstract class OwinWebApi2Tests : TestHelper
     {
         private readonly TheoryData<string, string, string, int, bool, string, string, SerializableDictionary> _testData = AspNetWebApi2TestData.WithoutFeatureFlag;
 
-        public OwinTests(ITestOutputHelper output, bool enableCallTarget)
-            : base("Owin.WebApi", output,  serviceVersion: "1.0.0")
+        public OwinWebApi2Tests(ITestOutputHelper output, bool enableCallTarget)
+            : base("Owin.WebApi2", output)
         {
+            SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget, enableCallTarget);
+            HttpClient = new HttpClient();
         }
+
+        protected HttpClient HttpClient { get; }
 
         [Fact]
         [Trait("Category", "EndToEnd")]
@@ -154,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         // base properties
                         Assert.Equal("aspnet-webapi.request", webApiSpan.Name);
                         Assert.Equal("web", webApiSpan.Type);
-                        Assert.Equal((string)input[2], webApiSpan.Resource);
+                        Assert.Equal(expectedResourceName, webApiSpan.Resource);
 
                         // errors
                         Assert.Equal(isError, webApiSpan.Error == 1); // Fix this. Apparently just returning bad error codes from Owin doesn't set a bad error code on WebApi
@@ -182,6 +187,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
             }
+        }
+
+        protected async Task<HttpStatusCode> SubmitRequest(int aspNetCorePort, string path)
+        {
+            HttpResponseMessage response = await HttpClient.GetAsync($"http://localhost:{aspNetCorePort}{path}");
+            string responseText = await response.Content.ReadAsStringAsync();
+            Output.WriteLine($"[http] {response.StatusCode} {responseText}");
+            return response.StatusCode;
         }
 
         private bool IsNotServerLifeCheck(MockTracerAgent.Span span)

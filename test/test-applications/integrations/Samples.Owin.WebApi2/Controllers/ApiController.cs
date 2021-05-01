@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 
-namespace Samples.Owin.WebApi.Controllers
+namespace Samples.Owin.WebApi2.Controllers
 {
     [RoutePrefix("api")]
     public class ApiController : System.Web.Http.ApiController
