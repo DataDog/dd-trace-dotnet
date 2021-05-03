@@ -43,10 +43,11 @@ namespace PrepareRelease
             Net461 = 2
         }
 
-        public static void Run(string solutionDirectory)
+        public static void Run(string solutionDirectory, string outputDirectory)
         {
             CreateWixFile(
                 solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Net45.GAC",
                 frameworkMoniker: "net45",
                 groupDirectory: "net45.GAC",
@@ -54,6 +55,7 @@ namespace PrepareRelease
                 GacStatus.Net45);
             CreateWixFile(
                 solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Net461.GAC",
                 frameworkMoniker: "net461",
                 groupDirectory: "net461.GAC",
@@ -61,24 +63,29 @@ namespace PrepareRelease
                 GacStatus.Net461);
             CreateWixFile(
                 solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Net45",
                 frameworkMoniker: "net45");
             CreateWixFile(
                 solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Net461",
                 frameworkMoniker: "net461");
             CreateWixFile(
                 solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.NetStandard20",
                 frameworkMoniker: "netstandard2.0");
             CreateWixFile(
                 solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Netcoreapp31",
                 frameworkMoniker: "netcoreapp3.1");
         }
 
         private static void CreateWixFile(
             string solutionDirectory,
+            string outputDirectory,
             string groupId,
             string frameworkMoniker,
             string groupDirectory = null,
@@ -98,7 +105,7 @@ namespace PrepareRelease
 
             var extensions = gac == GacStatus.NotInGac ? new[] { ".dll", ".pdb" } : new[] { ".dll" };
 
-            var filePaths = GetTracerBinContent(solutionDirectory, frameworkMoniker, extensions);
+            var filePaths = GetTracerBinContent(outputDirectory, frameworkMoniker, extensions);
 
             var components = string.Empty;
 
@@ -137,18 +144,9 @@ namespace PrepareRelease
             Console.WriteLine($"{groupId} Group successfully created.");
         }
 
-        private static string[] GetTracerBinContent(string solutionDirectory, string frameworkMoniker, string[] extensions)
+        private static string[] GetTracerBinContent(string outputDirectory, string frameworkMoniker, string[] extensions)
         {
-            var projectBin =
-                Path.Combine(
-                    solutionDirectory,
-                    "build",
-                    "tools",
-                    "PrepareRelease",
-                    "bin",
-                    "tracer-home");
-
-            var outputFolder = Path.Combine(projectBin, frameworkMoniker);
+            var outputFolder = Path.Combine(outputDirectory, frameworkMoniker);
 
             var filePaths = Directory.EnumerateFiles(
                                           outputFolder,
