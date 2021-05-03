@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 
 namespace PrepareRelease
@@ -93,7 +95,7 @@ namespace PrepareRelease
 
             var extensions = gac == GacStatus.NotInGac ? new[] { ".dll", ".pdb" } : new[] { ".dll" };
 
-            var filePaths = DependencyHelpers.GetTracerBinContent(frameworkMoniker, extensions);
+            var filePaths = GetTracerBinContent(frameworkMoniker, extensions);
 
             var components = string.Empty;
 
@@ -130,6 +132,35 @@ namespace PrepareRelease
             File.WriteAllText(wixFilePath, wixFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
             Console.WriteLine($"{groupId} Group successfully created.");
+        }
+
+        private static string[] GetTracerBinContent(string frameworkMoniker, string[] extensions)
+        {
+            var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
+            var projectBin =
+                Path.Combine(
+                    solutionDirectory,
+                    "build",
+                    "tools",
+                    "PrepareRelease",
+                    "bin",
+                    "tracer-home");
+
+            var outputFolder = Path.Combine(projectBin, frameworkMoniker);
+
+            var filePaths = Directory.EnumerateFiles(
+                                          outputFolder,
+                                          "*.*",
+                                          SearchOption.AllDirectories)
+                                     .Where(f => extensions.Contains(Path.GetExtension(f)))
+                                     .ToArray();
+
+            if (filePaths.Length == 0)
+            {
+                throw new Exception("Be sure to build in release mode before running this tool.");
+            }
+
+            return filePaths;
         }
     }
 }
