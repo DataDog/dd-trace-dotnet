@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text;
-using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 
 namespace PrepareRelease
@@ -81,8 +80,8 @@ namespace PrepareRelease
         {
             Console.WriteLine($"Creating the {groupId} Group");
 
-            groupDirectory = groupDirectory ?? $"{frameworkMoniker}";
-            filePrefix = filePrefix ?? $"{frameworkMoniker.Replace(".", string.Empty)}_";
+            groupDirectory ??= $"{frameworkMoniker}";
+            filePrefix ??= $"{frameworkMoniker.Replace(".", string.Empty)}_";
 
             var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
 
