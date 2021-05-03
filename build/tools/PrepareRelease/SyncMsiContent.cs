@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Datadog.Core.Tools;
-using Datadog.Trace.TestHelpers;
 
 namespace PrepareRelease
 {
@@ -85,7 +84,7 @@ namespace PrepareRelease
             groupDirectory ??= $"{frameworkMoniker}";
             filePrefix ??= $"{frameworkMoniker.Replace(".", string.Empty)}_";
 
-            var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
+            var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
 
             var wixProjectRoot =
                 Path.Combine(
