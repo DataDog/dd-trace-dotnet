@@ -42,7 +42,7 @@ namespace PrepareRelease
                 ExecuteCommand(publishBatch);
 
                 Console.WriteLine("--------------- MSI Job Started ---------------");
-                SyncMsiContent.Run();
+                SyncMsiContent.Run(solutionDir);
                 Console.WriteLine("--------------- MSI Job Complete ---------------");
             }
         }

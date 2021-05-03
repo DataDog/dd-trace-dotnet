@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Datadog.Core.Tools;
 
 namespace PrepareRelease
 {
@@ -44,35 +43,42 @@ namespace PrepareRelease
             Net461 = 2
         }
 
-        public static void Run()
+        public static void Run(string solutionDirectory)
         {
             CreateWixFile(
+                solutionDirectory,
                 groupId: "Files.Managed.Net45.GAC",
                 frameworkMoniker: "net45",
                 groupDirectory: "net45.GAC",
                 filePrefix: "net45_GAC_",
                 GacStatus.Net45);
             CreateWixFile(
+                solutionDirectory,
                 groupId: "Files.Managed.Net461.GAC",
                 frameworkMoniker: "net461",
                 groupDirectory: "net461.GAC",
                 filePrefix: "net461_GAC_",
                 GacStatus.Net461);
             CreateWixFile(
+                solutionDirectory,
                 groupId: "Files.Managed.Net45",
                 frameworkMoniker: "net45");
             CreateWixFile(
+                solutionDirectory,
                 groupId: "Files.Managed.Net461",
                 frameworkMoniker: "net461");
             CreateWixFile(
+                solutionDirectory,
                 groupId: "Files.Managed.NetStandard20",
                 frameworkMoniker: "netstandard2.0");
             CreateWixFile(
+                solutionDirectory,
                 groupId: "Files.Managed.Netcoreapp31",
                 frameworkMoniker: "netcoreapp3.1");
         }
 
         private static void CreateWixFile(
+            string solutionDirectory,
             string groupId,
             string frameworkMoniker,
             string groupDirectory = null,
@@ -83,8 +89,6 @@ namespace PrepareRelease
 
             groupDirectory ??= $"{frameworkMoniker}";
             filePrefix ??= $"{frameworkMoniker.Replace(".", string.Empty)}_";
-
-            var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
 
             var wixProjectRoot =
                 Path.Combine(
