@@ -95,7 +95,7 @@ namespace PrepareRelease
 
             var extensions = gac == GacStatus.NotInGac ? new[] { ".dll", ".pdb" } : new[] { ".dll" };
 
-            var filePaths = GetTracerBinContent(frameworkMoniker, extensions);
+            var filePaths = GetTracerBinContent(solutionDirectory, frameworkMoniker, extensions);
 
             var components = string.Empty;
 
@@ -134,9 +134,8 @@ namespace PrepareRelease
             Console.WriteLine($"{groupId} Group successfully created.");
         }
 
-        private static string[] GetTracerBinContent(string frameworkMoniker, string[] extensions)
+        private static string[] GetTracerBinContent(string solutionDirectory, string frameworkMoniker, string[] extensions)
         {
-            var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
             var projectBin =
                 Path.Combine(
                     solutionDirectory,
