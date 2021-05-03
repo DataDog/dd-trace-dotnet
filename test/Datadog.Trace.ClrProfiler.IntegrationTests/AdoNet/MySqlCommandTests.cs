@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -25,9 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item.Concat(new object[] { false, false, }).ToArray();
-                yield return item.Concat(new object[] { true, false, }).ToArray();
-                yield return item.Concat(new object[] { true, true, }).ToArray();
+                yield return item.Concat(false);
+                yield return item.Concat(true);
             }
         }
 
@@ -40,37 +40,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item.Concat(new object[] { false, false, }).ToArray();
-                yield return item.Concat(new object[] { true, false, }).ToArray();
-                yield return item.Concat(new object[] { true, true, }).ToArray();
+                yield return item.Concat(false);
+                yield return item.Concat(true);
             }
         }
 
         [Theory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandardInMySql8(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitsTracesWithNetStandardInMySql8(string packageVersion, bool enableCallTarget)
         {
-            SubmitsTracesWithNetStandard(packageVersion, enableCallTarget, enableInlining);
+            SubmitsTracesWithNetStandard(packageVersion, enableCallTarget);
         }
 
         [Theory]
         [MemberData(nameof(GetOldMySqlData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTracesWithNetStandardInOldMySql(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitsTracesWithNetStandardInOldMySql(string packageVersion, bool enableCallTarget)
         {
-            SubmitsTracesWithNetStandard(packageVersion, enableCallTarget, enableInlining);
+            SubmitsTracesWithNetStandard(packageVersion, enableCallTarget);
         }
 
         [Theory]
-        [InlineData(false, false)]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
+        [InlineData(false)]
+        [InlineData(true)]
         [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
+        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             var totalSpanCount = 21;
 
@@ -92,9 +90,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        private void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget, bool enableInlining)
+        private void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             // ALWAYS: 75 spans
             // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)

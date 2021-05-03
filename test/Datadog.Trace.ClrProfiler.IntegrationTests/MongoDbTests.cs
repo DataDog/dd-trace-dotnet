@@ -19,18 +19,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var item in PackageVersions.MongoDB)
             {
-                yield return item.Concat(false, false);
-                yield return item.Concat(true, false);
-                yield return item.Concat(true, true);
+                yield return item.Concat(false);
+                yield return item.Concat(true);
             }
         }
 
         [Theory]
         [MemberData(nameof(GetMongoDb))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitsTraces(string packageVersion, bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))

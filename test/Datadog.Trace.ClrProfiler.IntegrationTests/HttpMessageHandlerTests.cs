@@ -25,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             new List<InliningOptions>
             {
                 new InliningOptions(enableCallTarget: false, enableInlining: false),
-                new InliningOptions(enableCallTarget: true, enableInlining: false),
                 new InliningOptions(enableCallTarget: true, enableInlining: true),
             };
 

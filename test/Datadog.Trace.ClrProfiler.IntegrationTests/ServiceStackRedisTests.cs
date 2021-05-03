@@ -21,18 +21,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (object[] item in PackageVersions.ServiceStackRedis)
             {
-                yield return item.Concat(new object[] { false, false, }).ToArray();
-                yield return item.Concat(new object[] { true, false, }).ToArray();
-                yield return item.Concat(new object[] { true, true, }).ToArray();
+                yield return item.Concat(false);
+                yield return item.Concat(true);
             }
         }
 
         [Theory]
         [MemberData(nameof(GetServiceStackRedisData))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitsTraces(string packageVersion, bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             int agentPort = TcpPortProvider.GetOpenPort();
 
