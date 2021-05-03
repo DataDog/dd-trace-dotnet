@@ -210,6 +210,26 @@ namespace Datadog.Trace
         public const string AmqpDeliveryMode = "amqp.delivery_mode";
 
         /// <summary>
+        /// The name of the Msmq queue the message was published to.
+        /// </summary>
+        public const string MsmqQueue = "msmq.queue";
+
+        /// <summary>
+        /// Is the msmq queue supporting transactional messages
+        /// </summary>
+        public const string MsmqIsTransactionalQueue = "msmq.is_transactional_queue";
+
+        /// <summary>
+        /// The name of the Msmq queue the message was published to.
+        /// </summary>
+        public const string MsmqQueueUniqueName = "msmq.queue_unique_name";
+
+        /// <summary>
+        /// A boolean indicating if it's part of a transaction.
+        /// </summary>
+        public const string MsmqTransactionType = "msmq.transaction_type";
+
+        /// <summary>
         /// The size of the message.
         /// </summary>
         public const string MessageSize = "message.size";

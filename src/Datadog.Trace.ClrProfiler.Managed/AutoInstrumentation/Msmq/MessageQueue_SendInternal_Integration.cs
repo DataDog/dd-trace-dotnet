@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
@@ -23,22 +24,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     IntegrationName = IntegrationName)]
     public class MessageQueue_SendInternal_Integration
     {
-        private const string IntegrationName = nameof(IntegrationIds.MessageQueue);
+        private const string IntegrationName = nameof(IntegrationIds.Msmq);
+        private const string Command = "msmq.send";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MessageQueue_SendInternal_Integration));
 
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TMessageQueue">Message queue</typeparam>
+        /// <typeparam name="TMessageQueueTransaction">Message queue transaction: can be null</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="obj">obj</param>
-        /// <param name="args">args</param>
-        /// <param name="args2">args1</param>
+        /// <param name="message">Message itself, can be of any type</param>
+        /// <param name="messageQueueTransaction">Message queue transaction can be null</param>
+        /// <param name="messageQueueTransactionType">Message queue transaction type can be null</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object obj, object args, object args2)
-            {
-            Log.Information("message queue integration");
-            return CallTargetState.GetDefault();
+        public static CallTargetState OnMethodBegin<TMessageQueue, TMessageQueueTransaction>(TMessageQueue instance, object message, TMessageQueueTransaction messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
+            where TMessageQueue : IMessageQueue
+        {
+            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out MsmqTags tags);
+            return new CallTargetState(scope);
         }
 
         /// <summary>
