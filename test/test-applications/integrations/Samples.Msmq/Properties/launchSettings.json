@@ -3,6 +3,7 @@
     "Samples.Msmq": {
       "commandName": "Project",
       "environmentVariables": {
+        "DD_ENV": "Samples.Msmq",
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "COR_ENABLE_PROFILING": "1",
         "CORECLR_ENABLE_PROFILING": "1",

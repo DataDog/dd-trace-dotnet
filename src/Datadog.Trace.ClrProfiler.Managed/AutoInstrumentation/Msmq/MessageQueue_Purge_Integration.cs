@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     IntegrationName = IntegrationName)]
     public class MessageQueue_Purge_Integration
     {
-        private const string IntegrationName = nameof(IntegrationIds.MessageQueue);
+        private const string IntegrationName = nameof(IntegrationIds.Msmq);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MessageQueue_Purge_Integration));
 
         /// <summary>
