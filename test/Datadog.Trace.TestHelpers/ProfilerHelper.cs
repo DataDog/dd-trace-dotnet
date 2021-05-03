@@ -32,10 +32,12 @@ namespace Datadog.Trace.TestHelpers
 
             string codeCoveragePath = null;
 
+            /*
             if (useCodeCoverage)
             {
                 codeCoveragePath = Environment.GetEnvironmentVariable("TEST_COVERAGE_PATH");
             }
+            */
 
             // clear all relevant environment variables to start with a clean slate
             EnvironmentHelper.ClearProfilerEnvironmentVariables();

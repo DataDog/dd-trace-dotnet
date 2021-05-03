@@ -363,7 +363,7 @@ jobs:
       projects: |
         test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
         test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
-      arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform)
+      arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform) 
     env:
       TEST_COVERAGE_PATH: $(Build.SourcesDirectory)\cover
 
@@ -372,7 +372,7 @@ jobs:
     inputs:
       command: test
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
+      arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeDirectory=$(publishOutput)/profiler-lib/netstandard2.0,$(publishOutput)/profiler-lib/netcoreapp3.1,$(publishOutput)/profiler-lib/net461
     env:
       TEST_COVERAGE_PATH: $(Build.SourcesDirectory)\cover
 
