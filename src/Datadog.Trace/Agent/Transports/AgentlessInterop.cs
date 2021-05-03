@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Logging;
 
@@ -8,18 +9,10 @@ namespace Datadog.Trace.Agent.Transports
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentlessInterop>();
 
-        // private static InitDelegateType _initDelegate;
-
-        // private static SendTracesDelegateType _sendTracesDelegateType;
-
-        // private delegate void InitDelegateType();
-
-        // private unsafe delegate void SendTracesDelegateType(byte* data, int length);
-
-        [DllImport("agent.dll", CallingConvention = CallingConvention.StdCall)]
+        [DllImport("trace-agent.dll", CallingConvention = CallingConvention.StdCall)]
         public static extern void Init();
 
-        [DllImport("agent.dll", CallingConvention = CallingConvention.StdCall)]
+        [DllImport("trace-agent.dll", CallingConvention = CallingConvention.StdCall)]
         public static extern unsafe void SendTraces(byte* data, int length);
 
         public static void InitializeTraceAgent()
@@ -27,7 +20,6 @@ namespace Datadog.Trace.Agent.Transports
             try
             {
                 Init();
-                // _initDelegate.Invoke();
             }
             catch (Exception ex)
             {
@@ -40,7 +32,6 @@ namespace Datadog.Trace.Agent.Transports
             try
             {
                 SendTraces(data, length);
-                // _sendTracesDelegateType.Invoke(data, length);
             }
             catch (Exception ex)
             {
@@ -52,21 +43,36 @@ namespace Datadog.Trace.Agent.Transports
         {
             try
             {
-                var agentLibraryPath = Environment.GetEnvironmentVariable("DD_TRACE_AGENT_DLL_PATH");
-                if (agentLibraryPath != null)
-                {
-                    // Assembly.LoadFile(agentLibraryPath);
-                    var agentModule = LoadLibrary(agentLibraryPath);
-                    if (agentModule == IntPtr.Zero)
-                    {
-                        Log.Warning("Unable to locate agent.dll at {location}", agentLibraryPath);
-                    }
+                string agentLibraryDirectory;
 
-                    // var hModule = LoadLibrary(agentLibraryPath);
-                    // var functionAddress = GetProcAddress(hModule, "Init");
-                    // _initDelegate = (InitDelegateType)Marshal.GetDelegateForFunctionPointer(functionAddress, typeof(InitDelegateType));
-                    // functionAddress = GetProcAddress(hModule, "SendTraces");
-                    // _sendTracesDelegateType = (SendTracesDelegateType)Marshal.GetDelegateForFunctionPointer(functionAddress, typeof(SendTracesDelegateType));
+                if (Environment.Is64BitProcess)
+                {
+                    agentLibraryDirectory = Environment.GetEnvironmentVariable("DD_AGENTLESS_DIRECTORY_X64");
+                }
+                else
+                {
+                    agentLibraryDirectory = Environment.GetEnvironmentVariable("DD_AGENTLESS_DIRECTORY_X86");
+                }
+
+                if (string.IsNullOrEmpty(agentLibraryDirectory))
+                {
+                    Log.Error("Agentless environment variable is missing.");
+                    return;
+                }
+
+                // This list can be expanded once more capabilities are added to agentless
+                var librariesToLoad = new[]
+                {
+                    "trace-agent.dll"
+                };
+
+                foreach (var library in librariesToLoad)
+                {
+                    var module = LoadLibrary(Path.Combine(agentLibraryDirectory, library));
+                    if (module == IntPtr.Zero)
+                    {
+                        Log.Warning("Unable to locate {library} at {location}", library, agentLibraryDirectory);
+                    }
                 }
             }
             catch (Exception ex)
@@ -77,8 +83,5 @@ namespace Datadog.Trace.Agent.Transports
 
         [DllImport("Kernel32.dll")]
         private static extern IntPtr LoadLibrary(string path);
-
-        // [DllImport("Kernel32.dll")]
-        // private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
     }
 }

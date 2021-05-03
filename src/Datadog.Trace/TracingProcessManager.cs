@@ -20,25 +20,16 @@ namespace Datadog.Trace
         internal static readonly int ExceptionRetryInterval = 2_000;
         internal static readonly int MaxFailures = 5;
 
-        internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
-        {
-            Name = "datadog-trace-agent",
-            PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName),
-            // ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
-            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
-        };
-
         internal static readonly ProcessMetadata DogStatsDMetadata = new ProcessMetadata
         {
             Name = "dogstatsd",
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
-            // ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
+            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
         };
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
         {
-            TraceAgentMetadata,
             DogStatsDMetadata
         };
 
@@ -58,7 +49,7 @@ namespace Datadog.Trace
             {
                 AgentlessInterop.LoadAgentless();
 
-                if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
+                if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
                 {
                     return;
                 }
@@ -69,9 +60,9 @@ namespace Datadog.Trace
                     return;
                 }
 
-                if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
+                if (!Directory.Exists(DogStatsDMetadata.DirectoryPath))
                 {
-                    Log.Warning("Directory for trace agent does not exist: {Directory}", TraceAgentMetadata.DirectoryPath);
+                    Log.Warning("Directory for dogstatsd does not exist: {Directory}", DogStatsDMetadata.DirectoryPath);
                     return;
                 }
 
