@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             try
             {
                 SetCallTargetSettings(true);
+                SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
 
                 int agentPort = TcpPortProvider.GetOpenPort();
 
