@@ -13,6 +13,12 @@
         public void Add(string key, byte[] val);
 
         /// <summary>
+        ///     Removes all headers for the given key.
+        /// </summary>
+        /// <param name="key">The key to remove all headers for</param>
+        public void Remove(string key);
+
+        /// <summary>
         ///     Try to get the value of the latest header with the specified key.
         /// </summary>
         /// <param name="key">

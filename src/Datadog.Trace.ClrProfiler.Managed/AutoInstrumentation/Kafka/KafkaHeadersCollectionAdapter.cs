@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         public IEnumerable<string> GetValues(string name)
         {
-            // This only returns the _last_ bytes. Accessing other values is harder
+            // This only returns the _last_ bytes. Accessing other values is more expensive and should generally be unneccessary
             if (_headers.TryGetLastBytes(name, out var bytes))
             {
                 try
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         public void Set(string name, string value)
         {
-            // TODO: implement Set Properly by removing existing?
+            Remove(name);
             Add(name, value);
         }
 
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         public void Remove(string name)
         {
-            throw new NotImplementedException();
+            _headers.Remove(name);
         }
     }
 }
