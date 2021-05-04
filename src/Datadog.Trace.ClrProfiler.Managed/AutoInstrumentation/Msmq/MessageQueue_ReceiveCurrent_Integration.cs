@@ -44,11 +44,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             where TMessageQueue : IMessageQueue
         {
             Log.Information("receive on method begin");
-            Console.WriteLine("in receive");
-            Console.ReadLine();
-
-            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, instance.Label, instance.LastModifyTime, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out MsmqTags tags);
-            return new CallTargetState(scope);
+            // var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, instance.Label, instance.LastModifyTime, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out MsmqTags tags);
+            return CallTargetState.GetDefault();
         }
 
         /// <summary>
