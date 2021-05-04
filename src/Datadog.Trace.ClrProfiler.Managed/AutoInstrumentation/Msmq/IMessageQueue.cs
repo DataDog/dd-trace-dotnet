@@ -130,5 +130,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         ///     An error occurred when accessing a Message Queuing method.
         /// </summary>
         string Label { get; }
+
+        /// <summary>
+        ///     Gets the last time the properties of a queue were modified.
+        ///
+        /// Returns:
+        ///     A System.DateTime that indicates when the queue properties were last modified.
+        ///
+        /// Exceptions:
+        ///   T:System.Messaging.MessageQueueException:
+        ///     An error occurred when accessing a Message Queuing method.
+        /// </summary>
+        public DateTime LastModifyTime { get; }
     }
 }

@@ -215,6 +215,16 @@ namespace Datadog.Trace
         public const string MsmqQueue = "msmq.queue";
 
         /// <summary>
+        /// The label of the Msmq queue the message was published to.
+        /// </summary>
+        public const string MsmqQueueLabel = "msmq.queue_label";
+
+        /// <summary>
+        /// The last modified time the msmq queue the message was published to
+        /// </summary>
+        public const string MsmqQueueLastModifiedTime = "msmq.queue_last_modified_time";
+
+        /// <summary>
         /// Is the msmq queue supporting transactional messages
         /// </summary>
         public const string MsmqIsTransactionalQueue = "msmq.is_transactional_queue";

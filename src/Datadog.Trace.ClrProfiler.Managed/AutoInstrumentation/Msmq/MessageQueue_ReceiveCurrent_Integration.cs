@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
@@ -23,25 +24,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     IntegrationName = IntegrationName)]
     public class MessageQueue_ReceiveCurrent_Integration
     {
+        private const string Command = "msmq.receive";
         private const string IntegrationName = nameof(IntegrationIds.Msmq);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MessageQueue_ReceiveCurrent_Integration));
 
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="timeout">obj</param>
+        /// <typeparam name="TMessageQueue">Generic tmessage queue</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method, the message queue</param>
+        /// <param name="timeout">   A System.TimeSpan that indicates the time to wait until a new message is available for inspection.</param>
         /// <param name="action">args</param>
-        /// <param name="cursorHandle">cursorHandle</param>
-        /// <param name="messagePropertyFilter">args1</param>
-        /// <param name="messageQueueTransaction">filter</param>
-        /// <param name="messageQueueTransactionType">internalTransaction</param>
+        /// <param name="cursorHandle">A System.Messaging.Cursor that maintains a specific position in the message queue.</param>
+        /// <param name="messagePropertyFilter"> Controls and selects the properties that are retrieved when peeking or receiving messages from a message queue.</param>2
+        /// <param name="messageQueueTransaction">transaction</param>
+        /// <param name="messageQueueTransactionType">type of transaction</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, TimeSpan timeout, int action, object cursorHandle, object messagePropertyFilter, object messageQueueTransaction, object messageQueueTransactionType)
+        public static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, TimeSpan timeout, int action, object cursorHandle, object messagePropertyFilter, object messageQueueTransaction, object messageQueueTransactionType)
+            where TMessageQueue : IMessageQueue
         {
-            Log.Information("message queue receive current integration");
-            return CallTargetState.GetDefault();
+            Log.Information("receive on method begin");
+            Console.WriteLine("in receive");
+            Console.ReadLine();
+
+            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, instance.Label, instance.LastModifyTime, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out MsmqTags tags);
+            return new CallTargetState(scope);
         }
 
         /// <summary>
