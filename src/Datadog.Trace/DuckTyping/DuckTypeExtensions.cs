@@ -46,7 +46,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-            if (typeof(T).IsPublic || typeof(T).IsNestedPublic)
+            if (DuckType.CreateCache<T>.IsVisible)
             {
                 DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
                 if (proxyResult.Success)
@@ -104,7 +104,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-            if (typeof(T).IsPublic || typeof(T).IsNestedPublic)
+            if (DuckType.CreateCache<T>.IsVisible)
             {
                 DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
                 if (proxyResult.Success)
@@ -156,7 +156,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
 
-            if (typeof(T).IsPublic || typeof(T).IsNestedPublic)
+            if (DuckType.CreateCache<T>.IsVisible)
             {
                 return DuckType.CanCreate<T>(instance);
             }
