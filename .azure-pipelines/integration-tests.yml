@@ -121,6 +121,7 @@ jobs:
       reports: 'cover/coverage.*.xml'
       targetdir: 'coverresult'
       reporttypes: 'Cobertura'
+    continueOnError: true
 
   - task: PublishPipelineArtifact@1
     inputs:
@@ -372,20 +373,20 @@ jobs:
     inputs:
       command: test
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeDirectory=$(publishOutput)/profiler-lib/netstandard2.0,$(publishOutput)/profiler-lib/netcoreapp3.1,$(publishOutput)/profiler-lib/net461
+      arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeDirectory=$(Build.SourcesDirectory)\test\Datadog.Trace.ClrProfiler.IntegrationTests\bin\Release\netcoreapp3.1\profiler-lib\netcoreapp3.1 DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*]Datadog.Trace.Vendors.*      
     env:
       TEST_COVERAGE_PATH: $(Build.SourcesDirectory)\cover
 
-  - task: reportgenerator@4
-    inputs:
-      reports: '$(Build.SourcesDirectory)\cover\coverage.*.xml'
-      targetdir: '$(Build.SourcesDirectory)\cover'
-      reporttypes: 'Cobertura'
-    continueOnError: true
+#  - task: reportgenerator@4
+#    inputs:
+#      reports: '$(Build.SourcesDirectory)\cover\coverage.*.xml'
+#      targetdir: '$(Build.SourcesDirectory)\cover'
+#      reporttypes: 'Cobertura'
+#    continueOnError: true
    
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: '$(Build.SourcesDirectory)\cover\Cobertura.xml'
+      targetPath: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
     continueOnError: true
 
   - task: DockerCompose@0
@@ -629,7 +630,7 @@ jobs:
   steps:
   - task: DownloadPipelineArtifact@2
     inputs:
-      patterns: '**/Cobertura.xml'
+      patterns: '**/coverage.cobertura.xml'
       path: $(Build.SourcesDirectory)/cover
 
   - task: CopyFiles@2
@@ -640,7 +641,7 @@ jobs:
 
   - task: reportgenerator@4
     inputs:
-      reports: '$(Build.SourcesDirectory)\cover\*\Cobertura.xml'
+      reports: '$(Build.SourcesDirectory)\cover\*\coverage.cobertura.xml'
       targetdir: '$(Build.SourcesDirectory)\coveragereport'
       reporttypes: 'Cobertura'
 

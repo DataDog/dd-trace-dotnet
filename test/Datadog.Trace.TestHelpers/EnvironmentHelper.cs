@@ -177,6 +177,8 @@ namespace Datadog.Trace.TestHelpers
                 processName = Path.GetFileName(processPath);
             }
 
+            environmentVariables["COVERLET_ENABLETRACKERLOG"] = "1";
+
             if (DebugModeEnabled)
             {
                 environmentVariables["DD_TRACE_DEBUG"] = "1";

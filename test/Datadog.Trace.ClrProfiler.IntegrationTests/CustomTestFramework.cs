@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -17,6 +18,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
+#if NETCOREAPP3_1
+            var file = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.Location;
+            var baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var finalDirectory = Path.Combine(baseDirectory, "profiler-lib", "netcoreapp3.1");
+            File.Copy(file, Path.Combine(finalDirectory, Path.GetFileName(file)), true);
+            Console.WriteLine("Copied file to " + finalDirectory);
+#endif
         }
 
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
