@@ -6,7 +6,7 @@ namespace Datadog.Trace.ClrProfiler.Helpers
     {
         public static bool ShouldSkipResource(Uri requestUri)
         {
-            var sf = new[]
+            var patternsToSkip = new[]
             {
                 "logs.datadoghq",
                 "services.visualstudio",
@@ -17,11 +17,11 @@ namespace Datadog.Trace.ClrProfiler.Helpers
 
             var url = requestUri.ToString();
 
-            for (var index = 0; index < sf.Length; index++)
+            for (var index = 0; index < patternsToSkip.Length; index++)
             {
-                for (var y = 0; y < sf[index].Length; y++)
+                for (var y = 0; y < patternsToSkip.Length; y++)
                 {
-                    var found = (url.Length - url.Replace(sf[y], string.Empty).Length) / sf[y].Length > 0;
+                    var found = (url.Length - url.Replace(patternsToSkip[y], string.Empty).Length) / patternsToSkip[y].Length > 0;
                     if (found)
                     {
                         return true;
