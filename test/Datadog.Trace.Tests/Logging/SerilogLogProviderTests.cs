@@ -122,16 +122,16 @@ namespace Datadog.Trace.Tests.Logging
             var task2 = Task.Run(() => Thread2(barrier2, tracer));
             barrier2.SignalAndWait(); // Wait until thread2 has created both scopes
 
-            // Stack is: Empty -> outer1 -> Empty -> outer2
+            // Both threads have created a span
 
             barrier1.SignalAndWait(); // Release thread1
             barrier1.SignalAndWait(); // Wait until thread1 has disposed the inner scope
 
-            // Stack is: Empty -> outer1 -> Empty
+            // Thread1 has disposed the inner span, outer span is still open
 
             barrier2.SignalAndWait(); // Release thread2
-            // Thread2 closes the inner span and restores "Empty" from the stack: first log has no span even though it should
-            // Then thread2 closes the outer span and restores "outer1" from the stack: second log has a span even though it shouldn't
+            // Thread2 closes the inner span. If the interleaved operations had no wrong effect, 
+            // the first log should have a span and the second log shouldn't
             task2.Wait();
 
             // Unblock the first thread

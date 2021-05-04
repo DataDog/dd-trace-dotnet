@@ -16,6 +16,9 @@
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <DelaySign>false</DelaySign>
     <NoWarn>1591</NoWarn>
+    
+     <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->
+    <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>   
   </PropertyGroup>
 
   <ItemGroup>
