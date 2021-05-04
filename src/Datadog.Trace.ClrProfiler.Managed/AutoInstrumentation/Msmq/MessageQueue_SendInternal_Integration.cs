@@ -32,16 +32,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TMessageQueue">Message queue</typeparam>
-        /// <typeparam name="TMessageQueueTransaction">Message queue transaction: can be null</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="message">Message itself, can be of any type</param>
         /// <param name="messageQueueTransaction">Message queue transaction can be null</param>
         /// <param name="messageQueueTransactionType">Message queue transaction type can be null</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TMessageQueue, TMessageQueueTransaction>(TMessageQueue instance, object message, TMessageQueueTransaction messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
+        public static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, object message, object messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
             where TMessageQueue : IMessageQueue
         {
-            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out MsmqTags tags);
+            Log.Information("send internal integration");
+            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, instance.Label, instance.LastModifyTime, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out MsmqTags tags);
             return new CallTargetState(scope);
         }
 

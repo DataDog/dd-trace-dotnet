@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsmqCommon));
 
-        internal static Scope CreateScope(Tracer tracer, string command, string spanKind, string queueName, string formatName, bool withinTransaction, string transactionType, bool transactionalQueue, out MsmqTags tags)
+        internal static Scope CreateScope(Tracer tracer, string command, string spanKind, string queueName, string formatName, string queueLabel, DateTime queueLastModifiedTime, bool withinTransaction, string transactionType, bool transactionalQueue, out MsmqTags tags)
         {
             tags = null;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
@@ -32,6 +32,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 tags = new MsmqTags(spanKind)
                 {
                     Queue = queueName,
+                    QueueLabel = queueLabel,
+                    QueueLastModifiedTime = queueLastModifiedTime.ToLongTimeString(),
                     IsTransactionalQueue = transactionalQueue.ToString(),
                     UniqueQueueName = formatName,
                     TransactionType = transactionType,
