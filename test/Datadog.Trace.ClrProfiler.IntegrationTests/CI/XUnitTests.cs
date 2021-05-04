@@ -38,18 +38,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public void SubmitTraces(string packageVersion, bool enableCallTarget)
         {
             List<MockTracerAgent.Span> spans = null;
-            int targetProcessId = 0;
             try
             {
                 SetCallTargetSettings(enableCallTarget);
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+                SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
 
                 int agentPort = TcpPortProvider.GetOpenPort();
 
                 using (var agent = new MockTracerAgent(agentPort))
                 using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
                 {
-                    targetProcessId = processResult.Process.Id;
                     spans = agent.WaitForSpans(ExpectedSpanCount)
                         .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                         .ToList();
@@ -152,8 +151,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
             catch
             {
-                Console.WriteLine("Process Id: " + System.Diagnostics.Process.GetCurrentProcess().Id);
-                Console.WriteLine("Target Process Id: " + targetProcessId);
                 WriteSpans(spans);
                 throw;
             }

@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Starting Application: {sampleAppPath}");
             string testCli = EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
-            string appPath = testCli.StartsWith("dotnet") ? $"test {sampleAppPath} -l \"console;v=d\"" : sampleAppPath;
+            string appPath = testCli.StartsWith("dotnet") ? $"vstest {sampleAppPath} -l \"console;v=d\"" : sampleAppPath;
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine("ApplicationPath: " + appPath);
             return ProfilerHelper.StartProcessWithProfiler(
@@ -89,6 +89,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             process.WaitForExit();
             helper.Drain();
             var exitCode = process.ExitCode;
+
+            Output.WriteLine($"ProcessId: " + process.Id);
+            Output.WriteLine($"Exit Code: " + exitCode);
 
             var standardOutput = helper.StandardOutput;
 
