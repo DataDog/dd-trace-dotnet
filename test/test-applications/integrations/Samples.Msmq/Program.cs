@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Messaging;
 using System.Threading;
 
@@ -9,29 +10,44 @@ namespace Samples.Msmq
         const string PrivateQueuePath = ".\\Private$\\myQueue3";
         public static void Main(string[] args)
         {
+            Debugger.Break();
             var queue = GetOrCreate(PrivateQueuePath);
-
             SendWithTransactionType(queue);
-            Console.WriteLine("message sent");
-            Console.ReadLine();
-            var rec = queue.Receive();
-            Console.WriteLine("first message received"+ rec.ToString());
-            //Console.ReadLine();
+            var message = queue.Receive();
+            Console.WriteLine($"received {message}");
 
-            //SendWithTransactionType(queue);
-            //rec = queue.Receive(TimeSpan.FromSeconds(1));
-            //Console.WriteLine("second message received");
-            //SendWithTransactionType(queue);
+            //void Receive()
+            //{
+            //    queue.ReceiveCompleted += Queue_ReceiveCompleted;
+            //    var rec = queue.Receive();
+            //    Console.WriteLine($"received {rec}");
 
-            //var transQ = SendWithinTransaction(queue);
+            //}
+            //var receiveThread = new Thread(Receive);
+            //receiveThread.Start();
 
-            //rec = queue.Receive(TimeSpan.FromSeconds(2));
-            //Console.WriteLine("third nessage received");
+            //// sending is not thread safe
+            //void SendDifferentWays()
+            //{
+            //    var transQ = SendWithinTransaction(queue);
+            //    SendWithTransactionType(queue);
+            //    SendWithoutTransaction(queue);
+            //    Console.WriteLine("sent within transaction");
+            //}
 
+            //var sendDifferentWaysThread = new Thread(SendDifferentWays);
+            //sendDifferentWaysThread.Start();
+
+            //sendDifferentWaysThread.Join();
+            //receiveThread.Join();
 
             queue.Purge();
 
-            Console.WriteLine("finish");
+        }
+
+        private static void Queue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e)
+        {
+            Debugger.Break();
         }
 
         private static MessageQueue GetOrCreate(string privateQueuePath) => MessageQueue.Exists(privateQueuePath) ? new MessageQueue(privateQueuePath) : MessageQueue.Create(privateQueuePath, true);
