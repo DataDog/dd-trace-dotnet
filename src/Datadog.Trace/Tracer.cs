@@ -99,7 +99,6 @@ namespace Datadog.Trace
 
             if (agentWriter == null)
             {
-                Log.Warning("Using eager agent writer");
                 _agentWriter = new AgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), Statsd, maxBufferSize: Settings.TraceBufferSize);
             }
             else
