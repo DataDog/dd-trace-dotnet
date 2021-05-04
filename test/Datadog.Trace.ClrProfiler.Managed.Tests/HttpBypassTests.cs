@@ -1,6 +1,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Configuration;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
@@ -16,7 +17,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("https://www.google.com", false)]
         public void ShouldBypassUrl(string url, bool shouldBypass)
         {
-            var didBypass = HttpBypassHelper.ShouldSkipResource(new Uri(url));
+            var settings = new TracerSettings();
+            var didBypass = HttpBypassHelper.ShouldSkipResource(new Uri(url), settings.HttpUrlPatternSkips);
             Assert.Equal(expected: shouldBypass, actual: didBypass);
         }
     }

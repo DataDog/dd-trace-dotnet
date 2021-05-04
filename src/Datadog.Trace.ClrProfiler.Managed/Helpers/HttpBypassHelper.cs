@@ -4,17 +4,8 @@ namespace Datadog.Trace.ClrProfiler.Helpers
 {
     internal static class HttpBypassHelper
     {
-        public static bool ShouldSkipResource(Uri requestUri)
+        public static bool ShouldSkipResource(Uri requestUri, string[] patternsToSkip)
         {
-            var patternsToSkip = new[]
-            {
-                "logs.datadoghq",
-                "services.visualstudio",
-                "applicationinsights.azure",
-                "blob.core.windows.net/azure-webjobs",
-                "azurewebsites.net/admin"
-            };
-
             var url = requestUri.ToString();
 
             for (var index = 0; index < patternsToSkip.Length; index++)
