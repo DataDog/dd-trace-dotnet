@@ -28,6 +28,9 @@ namespace PrepareRelease
             SynchronizeVersion(
                 "samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
                 DatadogTraceNugetDependencyVersionReplace);
+            SynchronizeVersion(
+                "samples/ServiceFabricRemoting/DatadogInstall.ps1",
+                text => Regex.Replace(text, $"DD_TRACER_VERSION = '{VersionPattern()}'", $"DD_TRACER_VERSION = '{VersionString()}'"));
 
             // Dockerfile updates
             SynchronizeVersion(

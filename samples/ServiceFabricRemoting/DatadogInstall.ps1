@@ -1,6 +1,6 @@
 # allow overriding defaults using environment variables
 if (Test-Path env:SvcFabDir) { $SvcFabDir = $env:SvcFabDir } else { $SvcFabDir = 'D:\SvcFab' }
-if (Test-Path env:DD_TRACER_VERSION) { $DD_TRACER_VERSION = $env:DD_TRACER_VERSION } else { $DD_TRACER_VERSION = '1.24.0' }
+if (Test-Path env:DD_TRACER_VERSION) { $DD_TRACER_VERSION = $env:DD_TRACER_VERSION } else { $DD_TRACER_VERSION = '1.26.1' }
 if (Test-Path env:DD_TRACER_URL) { $DD_TRACER_URL = $env:DD_TRACER_URL } else { $DD_TRACER_URL = "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$DD_TRACER_VERSION/windows-tracer-home.zip" }
 if (Test-Path env:DD_DOTNET_TRACER_HOME) { $DD_DOTNET_TRACER_HOME = $env:DD_DOTNET_TRACER_HOME } else { $DD_DOTNET_TRACER_HOME = "$SvcFabDir\datadog-dotnet-tracer\v$DD_TRACER_VERSION" }
 
