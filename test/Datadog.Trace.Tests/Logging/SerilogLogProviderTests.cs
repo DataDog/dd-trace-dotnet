@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tests.Logging
             // Thread1 has disposed the inner span, outer span is still open
 
             barrier2.SignalAndWait(); // Release thread2
-            // Thread2 closes the inner span. If the interleaved operations had no wrong effect, 
+            // Thread2 closes the inner span. If the interleaved operations had no wrong effect,
             // the first log should have a span and the second log shouldn't
             task2.Wait();
 
