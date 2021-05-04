@@ -21,26 +21,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetData()
-        {
-            foreach (object[] item in PackageVersions.MSTest)
-            {
-                yield return item.Concat(new object[] { true, false, }).ToArray();
-                yield return item.Concat(new object[] { true, true, }).ToArray();
-            }
-        }
-
         [Theory]
-        [MemberData(nameof(GetData))]
+        [MemberData(nameof(PackageVersions.MSTest), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
-        public void SubmitTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitTraces(string packageVersion)
         {
             List<MockTracerAgent.Span> spans = null;
             int targetProcessId = 0;
             try
             {
-                SetCallTargetSettings(enableCallTarget, enableInlining);
+                SetCallTargetSettings(true);
 
                 int agentPort = TcpPortProvider.GetOpenPort();
 

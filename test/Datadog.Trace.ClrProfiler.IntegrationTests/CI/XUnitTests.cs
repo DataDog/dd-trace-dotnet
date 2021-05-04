@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.Ci;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -25,9 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             foreach (object[] item in PackageVersions.XUnit)
             {
-                yield return item.Concat(new object[] { false, false, }).ToArray();
-                yield return item.Concat(new object[] { true, false, }).ToArray();
-                yield return item.Concat(new object[] { true, true, }).ToArray();
+                yield return item.Concat(false);
+                yield return item.Concat(true);
             }
         }
 
@@ -35,13 +35,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [MemberData(nameof(GetData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
-        public void SubmitTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitTraces(string packageVersion, bool enableCallTarget)
         {
             List<MockTracerAgent.Span> spans = null;
             int targetProcessId = 0;
             try
             {
-                SetCallTargetSettings(enableCallTarget, enableInlining);
+                SetCallTargetSettings(enableCallTarget);
 
                 int agentPort = TcpPortProvider.GetOpenPort();
 
