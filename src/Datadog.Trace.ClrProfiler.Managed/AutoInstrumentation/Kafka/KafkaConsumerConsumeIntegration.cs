@@ -6,7 +6,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
     /// <summary>
-    /// Confluent.Kafka Producer.Produce calltarget instrumentation
+    /// Confluent.Kafka Consumer.Consume calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "Confluent.Kafka",
@@ -17,10 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         MinimumVersion = "1.4.0",
         MaximumVersion = "1.*.*",
         IntegrationName = KafkaConstants.IntegrationName)]
-    public class KafkaConsumerIntegration
+    public class KafkaConsumerConsumeIntegration
     {
-        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<KafkaConsumerIntegration>();
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -30,7 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int millisecondsTimeout)
         {
-            // No guarantee the Consumer.Consume() method will actually fetch a message
+            // If we are already in a consumer scope, close it, and start a new one on method exit.
+            KafkaHelper.CloseConsumerScope(Tracer.Instance);
             return CallTargetState.GetDefault();
         }
 
@@ -60,13 +59,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             if (consumeResult is not null)
             {
+                // This sets the span as active and leaves it open.
+                // It will be disposed on the next call to Consumer.Consume
                 Scope scope = KafkaHelper.CreateConsumerScope(
                     Tracer.Instance,
                     consumeResult.Topic,
                     consumeResult.Partition,
                     consumeResult.Offset,
                     consumeResult.Message);
-                scope?.DisposeWithException(exception);
+
+                if (exception is not null)
+                {
+                    scope?.Span?.SetException(exception);
+                }
             }
 
             return new CallTargetReturn<TResponse>(response);

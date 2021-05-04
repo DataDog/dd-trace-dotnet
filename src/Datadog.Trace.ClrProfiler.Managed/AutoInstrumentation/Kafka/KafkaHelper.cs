@@ -156,6 +156,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return scope;
         }
 
+        internal static void CloseConsumerScope(Tracer tracer)
+        {
+            try
+            {
+                if (!Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+                {
+                    // integration disabled, skip this trace
+                    return;
+                }
+
+                var activeScope = tracer.ActiveScope;
+                var currentSpan = activeScope?.Span;
+                if (currentSpan?.OperationName != KafkaConstants.ConsumeOperationName)
+                {
+                    // Not currently in a consumer operation
+                    return;
+                }
+
+                // TODO: record end-to-end time?
+                activeScope.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error closing Kafka consumer scope");
+            }
+        }
+
         /// <summary>
         /// Try to inject the prop
         /// </summary>
