@@ -2749,10 +2749,11 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
 
     // We are in the right module, so we try to load the mdTypeDef from the integration target type name.
     mdTypeDef typeDef = mdTypeDefNil;
-    auto hr = metadata_import->FindTypeDefByName(integration.replacement.target_method.type_name.c_str(), mdTokenNil, &typeDef);
-    if (FAILED(hr)) {
-      // This can happen between .NET framework and .NET core, not all apis are available in both. Eg: WinHttpHandler, CurlHandler, and some methods in System.Data
-      Debug("Can't load the TypeDef for: ", integration.replacement.target_method.type_name, ", Module: ", module_metadata->assemblyName);
+    auto foundType = FindTypeDefByName(
+        integration.replacement.target_method.type_name,
+        module_metadata->assemblyName, metadata_import, typeDef);
+
+    if (!foundType) {
       continue;
     }
 
@@ -2779,7 +2780,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
 
       // We create a new function info into the heap from the caller functionInfo in the stack, to be used later in the ReJIT process
       auto functionInfo = new FunctionInfo(caller);
-      hr = functionInfo->method_signature.TryParse();
+      auto hr = functionInfo->method_signature.TryParse();
       if (FAILED(hr)) {
         Warn("The method signature: ", functionInfo->method_signature.str(), " cannot be parsed.");
         delete functionInfo;
@@ -3009,7 +3010,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
   // *** Load the method arguments to the stack
   unsigned elementType;
-  if (numArgs <= 8) {
+  if (numArgs < FASTPATH_COUNT) {
     // Load the arguments directly (FastPath)
     for (int i = 0; i < numArgs; i++) {
       reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
@@ -3047,6 +3048,36 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
   }
 
   // *** Emit BeginMethod call
+  if (debug_logging_enabled) {
+      Debug("Caller Type.Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
+      Debug("Caller Type.IsGeneric: ", caller->type.isGeneric);
+      Debug("Caller Type.IsValid: ", caller->type.IsValid());
+      Debug("Caller Type.Name: ", caller->type.name);
+      Debug("Caller Type.TokenType: ", caller->type.token_type);
+      Debug("Caller Type.Spec: ", HexStr(&caller->type.type_spec, sizeof(mdTypeSpec)));
+      Debug("Caller Type.ValueType: ", caller->type.valueType);
+      //
+      if (caller->type.extend_from != nullptr) {
+        Debug("Caller Type Extend From.Id: ", HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
+        Debug("Caller Type Extend From.IsGeneric: ", caller->type.extend_from->isGeneric);
+        Debug("Caller Type Extend From.IsValid: ", caller->type.extend_from->IsValid());
+        Debug("Caller Type Extend From.Name: ", caller->type.extend_from->name);
+        Debug("Caller Type Extend From.TokenType: ", caller->type.extend_from->token_type);
+        Debug("Caller Type Extend From.Spec: ", HexStr(&caller->type.extend_from->type_spec, sizeof(mdTypeSpec)));
+        Debug("Caller Type Extend From.ValueType: ", caller->type.extend_from->valueType);
+      }
+      //
+      if (caller->type.parent_type != nullptr) {
+        Debug("Caller ParentType.Id: ", HexStr(&caller->type.parent_type->id, sizeof(mdToken)));
+        Debug("Caller ParentType.IsGeneric: ", caller->type.parent_type->isGeneric);
+        Debug("Caller ParentType.IsValid: ", caller->type.parent_type->IsValid());
+        Debug("Caller ParentType.Name: ", caller->type.parent_type->name);
+        Debug("Caller ParentType.TokenType: ", caller->type.parent_type->token_type);
+        Debug("Caller ParentType.Spec: ", HexStr(&caller->type.parent_type->type_spec, sizeof(mdTypeSpec)));
+        Debug("Caller ParentType.ValueType: ", caller->type.parent_type->valueType);
+      }
+  }
+
   ILInstr* beginCallInstruction;
   IfFailRet(callTargetTokens->WriteBeginMethod(&reWriterWrapper, wrapper_type_ref, &caller->type, methodArguments, &beginCallInstruction));
   reWriterWrapper.StLocal(callTargetStateIndex);
@@ -3054,9 +3085,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
   // *** BeginMethod call catch
   ILInstr* beginMethodCatchFirstInstr = nullptr;
-  callTargetTokens->WriteLogException(&reWriterWrapper, wrapper_type_ref,
-                                      &caller->type,
-                                      &beginMethodCatchFirstInstr);
+  callTargetTokens->WriteLogException(&reWriterWrapper, wrapper_type_ref, &caller->type, &beginMethodCatchFirstInstr);
   ILInstr* beginMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
   // *** BeginMethod exception handling clause

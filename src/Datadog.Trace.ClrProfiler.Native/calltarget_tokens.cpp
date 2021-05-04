@@ -453,9 +453,18 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(
 mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType) {
   if (currentType->type_spec != mdTypeSpecNil) {
     return currentType->type_spec;
-  } else if (!currentType->isGeneric) {
-    return currentType->id;
   } else {
+
+    TypeInfo* cType = const_cast<TypeInfo*>(currentType);
+    while (!cType->isGeneric) {
+
+      if (cType->parent_type == nullptr) {
+        return cType->id;
+      }
+
+      cType = const_cast<TypeInfo*>(cType->parent_type);
+    }
+
     isValueType = false;
     return objectTypeRef;
   }
@@ -812,7 +821,7 @@ HRESULT CallTargetTokens::WriteBeginMethod(
     auto signatureLength = 6 + (numArguments * 2) + callTargetStateSize;
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
-    
+
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
     signature[offset++] = 0x02 + numArguments;
     signature[offset++] = 0x01 + numArguments;
@@ -830,10 +839,10 @@ HRESULT CallTargetTokens::WriteBeginMethod(
     }
 
     auto hr = module_metadata->metadata_emit->DefineMemberRef(
-        callTargetTypeRef, 
+        callTargetTypeRef,
         managed_profiler_calltarget_beginmethod_name.data(),
-        signature, 
-        signatureLength, 
+        signature,
+        signatureLength,
         &beginMethodFastPathRefs[numArguments]);
     if (FAILED(hr)) {
       Warn("Wrapper beginMethod for ", numArguments," arguments could not be defined.");
