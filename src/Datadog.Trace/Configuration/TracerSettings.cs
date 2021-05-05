@@ -571,7 +571,7 @@ namespace Datadog.Trace.Configuration
 
         internal string[] ParseStringArray(string commaSeparatedValues)
         {
-            return commaSeparatedValues.Replace(" ", string.Empty).Split(',');
+            return commaSeparatedValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         }
 
         internal bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)
