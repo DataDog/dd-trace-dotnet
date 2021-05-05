@@ -76,7 +76,7 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
   //
 
   // {CEC5B60E-C69C-495F-87F6-84D28EE16FFB}
-  const GUID UUID_ICorProfilerCallback10 = {
+  const IID UUID_ICorProfilerCallback10 = {
       0xcec5b60e,
       0xc69c,
       0x495f,
