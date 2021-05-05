@@ -7,13 +7,15 @@
 #include "logging.h"
 #include "version.h"
 
-std::string* ConvertToString(const IID guid) {
-  char szGuid[40] = {0};
-  sprintf_s(szGuid, sizeof(szGuid), "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
-          guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1],
-          guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5],
-          guid.Data4[6], guid.Data4[7]);
-  return new std::string(szGuid);
+std::string GuidToString(GUID guid) {
+  char guid_cstr[39];
+  snprintf(guid_cstr, sizeof(guid_cstr),
+           "{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1,
+           guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2],
+           guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6],
+           guid.Data4[7]);
+
+  return std::string(guid_cstr);
 }
 
 ClassFactory::ClassFactory() : refCount(0) {}
@@ -91,9 +93,9 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
       0x495f,
       {0x87, 0xf6, 0x84, 0xd2, 0x8e, 0xe1, 0x6f, 0xfb}};
 
-  trace::Warn("Current riid: ", *ConvertToString(riid));
+  trace::Warn("Current riid: ", GuidToString(riid));
   trace::Warn("Compare UUID_ICorProfilerCallback10: ",
-              *ConvertToString(UUID_ICorProfilerCallback10));
+              GuidToString(UUID_ICorProfilerCallback10));
   trace::Warn("Equality: ", riid != UUID_ICorProfilerCallback10);
 
   //if (riid != UUID_ICorProfilerCallback10) {
