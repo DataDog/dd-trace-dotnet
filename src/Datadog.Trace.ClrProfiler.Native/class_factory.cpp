@@ -75,7 +75,14 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
   // than .NET 5.0 due in previous versions ReJIT is not fully supported.
   //
 
-  if (riid != __uuidof(ICorProfilerCallback9)) {
+  // {CEC5B60E-C69C-495F-87F6-84D28EE16FFB}
+  const GUID UUID_ICorProfilerCallback10 = {
+      0xcec5b60e,
+      0xc69c,
+      0x495f,
+      {0x87, 0xf6, 0x84, 0xd2, 0x8e, 0xe1, 0x6f, 0xfb}};
+
+  if (riid != UUID_ICorProfilerCallback10) {
     trace::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: This architecture requires .NET 5.0 or greater.");
     return E_NOINTERFACE;
   }
