@@ -2,6 +2,7 @@ using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
@@ -18,19 +19,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     IntegrationName = IntegrationName)]
     public class MessageQueue_Purge_Integration
     {
+        private const string Command = "msmq.purge";
         private const string IntegrationName = nameof(IntegrationIds.Msmq);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MessageQueue_Purge_Integration));
 
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TMessageQueue">Message queue</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        public static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance)
+            where TMessageQueue : IMessageQueue
         {
-            Log.Information("message queue purged");
-            return CallTargetState.GetDefault();
+            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, instance.Label, instance.LastModifyTime, false, string.Empty, instance.Transactional, out MsmqTags tags);
+            return new CallTargetState(scope);
         }
 
         /// <summary>

@@ -10,7 +10,6 @@ namespace Samples.Msmq
         const string PrivateQueuePath = ".\\Private$\\myQueue3";
         public static void Main(string[] args)
         {
-            Debugger.Break();
             var queue = GetOrCreate(PrivateQueuePath);
             SendWithTransactionType(queue);
             var message = queue.Receive();
