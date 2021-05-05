@@ -1,10 +1,24 @@
 using System;
+using System.Collections;
+using System.Diagnostics;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Samples.XUnitTests
 {
     public class TestSuite
     {
+        public TestSuite(ITestOutputHelper output)
+        {
+            output.WriteLine($"Pid: {Process.GetCurrentProcess().Id}");
+            output.WriteLine("Environment Variables:");
+            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+            {
+                output.WriteLine($"  {entry.Key} = {entry.Value}");
+            }
+            output.WriteLine(string.Empty);
+        }
+        
         [Fact]
         public void SimplePassTest()
         {

@@ -1,3 +1,6 @@
+using System;
+using System.Collections;
+using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Samples.MSTestTests
@@ -5,6 +8,18 @@ namespace Samples.MSTestTests
     [TestClass]
     public class TestSuite
     {
+        [AssemblyInitialize]
+        public static void AssemblyInit(TestContext context)
+        {
+            context.WriteLine($"Pid: {Process.GetCurrentProcess().Id}");
+            context.WriteLine("Environment Variables:");
+            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+            {
+                context.WriteLine($"  {entry.Key} = {entry.Value}");
+            }
+            context.WriteLine(string.Empty);
+        }
+        
         [TestMethod]
         public void SimplePassTest()
         {

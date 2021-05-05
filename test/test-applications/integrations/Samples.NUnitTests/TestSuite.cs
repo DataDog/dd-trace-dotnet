@@ -1,9 +1,26 @@
+using System;
+using System.Collections;
+using System.ComponentModel;
+using System.Diagnostics;
 using NUnit.Framework;
 
 namespace Samples.NUnitTests
 {
     public class TestSuite
     {
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            var writer = TestContext.Progress;
+            writer.WriteLine($"Pid: {Process.GetCurrentProcess().Id}");
+            writer.WriteLine("Environment Variables:");
+            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+            {
+                writer.WriteLine($"  {entry.Key} = {entry.Value}");
+            }
+            writer.WriteLine(string.Empty);
+        }
+        
         [Test]
         public void SimplePassTest()
         {
