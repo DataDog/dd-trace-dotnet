@@ -321,6 +321,14 @@ namespace Datadog.Trace.Configuration
         public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
 
         /// <summary>
+        /// Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
+        /// Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
+        /// Default value is <c>true</c> (enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.KafkaCreateConsumerScopeEnabled"/>
+        public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations

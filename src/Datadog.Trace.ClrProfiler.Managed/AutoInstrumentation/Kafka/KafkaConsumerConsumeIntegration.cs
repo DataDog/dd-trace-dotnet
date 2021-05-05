@@ -59,8 +59,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             if (consumeResult is not null)
             {
-                // This sets the span as active and leaves it open.
-                // It will be disposed on the next call to Consumer.Consume
+                // This sets the span as active and either disposes it immediately
+                // or disposes it on the next call to Consumer.Consume()
                 Scope scope = KafkaHelper.CreateConsumerScope(
                     Tracer.Instance,
                     consumeResult.Topic,
@@ -68,7 +68,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     consumeResult.Offset,
                     consumeResult.Message);
 
-                if (exception is not null)
+                if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabled)
+                {
+                    // Close and dispose the scope immediately
+                    scope.DisposeWithException(exception);
+                }
+                else if (exception is not null)
                 {
                     scope?.Span?.SetException(exception);
                 }

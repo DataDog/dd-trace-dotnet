@@ -15,7 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+                var settings = tracer.Settings;
+                if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
                     // integration disabled, don't create a scope/span, skip this trace
                     return null;
@@ -29,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                string serviceName = tracer.Settings.GetServiceName(tracer, KafkaConstants.ServiceName);
+                string serviceName = settings.GetServiceName(tracer, KafkaConstants.ServiceName);
                 var tags = new KafkaTags(SpanKinds.Producer);
 
                 scope = tracer.StartActiveWithTags(
@@ -56,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // Producer spans should always be measured
                 span.SetTag(Tags.Measured, "1");
 
-                tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {
@@ -160,7 +161,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             try
             {
-                if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+                if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
+                    || !tracer.Settings.KafkaCreateConsumerScopeEnabled)
                 {
                     // integration disabled, skip this trace
                     return;
