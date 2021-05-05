@@ -123,15 +123,13 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  const auto is_calltarget_enabled = IsCallTargetEnabled();
-
  #if defined(ARM64) || defined(ARM)
-
   //
   // If the architecture is ARM64 or ARM, we force CallTarget instrumentation
   //
-  is_calltarget_enabled = true;
-
+  const auto is_calltarget_enabled = true;
+#else
+  const auto is_calltarget_enabled = IsCallTargetEnabled();
 #endif
 
   // Initialize ReJIT handler and define the Rewriter Callback
