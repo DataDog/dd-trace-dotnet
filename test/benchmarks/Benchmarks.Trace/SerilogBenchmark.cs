@@ -63,22 +63,6 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void EnrichedLog()
         {
-            LibLogScopeEventSubscriber.UseOptimization = false;
-
-            using (LogInjectionTracer.StartActive("Test"))
-            {
-                using (LogInjectionTracer.StartActive("Child"))
-                {
-                    Logger.Information("Hello");
-                }
-            }
-        }
-
-        [Benchmark]
-        public void EnrichedLogOptim()
-        {
-            LibLogScopeEventSubscriber.UseOptimization = true;
-
             using (LogInjectionTracer.StartActive("Test"))
             {
                 using (LogInjectionTracer.StartActive("Child"))
