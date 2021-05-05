@@ -94,11 +94,12 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
   trace::Warn("Current riid: ", ConvertToString(riid));
   trace::Warn("Compare UUID_ICorProfilerCallback10: ",
               ConvertToString(UUID_ICorProfilerCallback10));
+  trace::Warn("Equality: ", riid != UUID_ICorProfilerCallback10);
 
-  if (riid != UUID_ICorProfilerCallback10) {
-    trace::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: This architecture requires .NET 5.0 or greater.");
-    return E_NOINTERFACE;
-  }
+  //if (riid != UUID_ICorProfilerCallback10) {
+  //  trace::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: This architecture requires .NET 5.0 or greater.");
+  //  return E_NOINTERFACE;
+  //}
 
  #endif
 
