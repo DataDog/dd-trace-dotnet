@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+                if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
                     // integration disabled, don't create a scope/span, skip this trace
                     return null;
@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+                if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
                     // integration disabled, don't create a scope/span, skip this trace
                     return null;
@@ -160,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+                if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
                     // integration disabled, skip this trace
                     return;
