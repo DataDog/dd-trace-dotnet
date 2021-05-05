@@ -1,9 +1,8 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 
-// 
+//
 
 /*============================================================
 **
@@ -29,7 +28,7 @@ PIMAGE_SECTION_HEADER
 Cor_RtlImageRvaToSection(PTR_IMAGE_NT_HEADERS NtHeaders,
                          ULONG Rva,
                          ULONG FileLength);
-    
+
 PIMAGE_SECTION_HEADER
 Cor_RtlImageRvaRangeToSection(PTR_IMAGE_NT_HEADERS NtHeaders,
                               ULONG Rva,

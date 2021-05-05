@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //*****************************************************************************
 //
 // EETwain.h
@@ -32,11 +31,11 @@
 #include "bitvector.h"
 #include "gcinfotypes.h"
 
-#if !defined(_TARGET_X86_)
+#if !defined(TARGET_X86)
 #define USE_GC_INFO_DECODER
 #endif
 
-#if (defined(_TARGET_X86_) && !defined(FEATURE_PAL)) || defined(_TARGET_AMD64_)
+#if (defined(TARGET_X86) && !defined(TARGET_UNIX)) || defined(TARGET_AMD64)
 #define HAS_QUICKUNWIND
 #endif
 
@@ -52,7 +51,7 @@ typedef struct _DAC_SLOT_LOCATION
     int reg;
     int regOffset;
     bool targetPtr;
-    
+
     _DAC_SLOT_LOCATION(int _reg, int _regOffset, bool _targetPtr)
         : reg(_reg), regOffset(_regOffset), targetPtr(_targetPtr)
     {
@@ -160,7 +159,7 @@ enum
 };
 
 #ifndef DACCESS_COMPILE
-#ifndef WIN64EXCEPTIONS
+#ifndef FEATURE_EH_FUNCLETS
 virtual void FixContext(ContextType     ctxType,
                         EHContext      *ctx,
                         EECodeInfo     *pCodeInfo,
@@ -170,10 +169,10 @@ virtual void FixContext(ContextType     ctxType,
                         CodeManState   *pState,
                         size_t       ** ppShadowSP,             // OUT
                         size_t       ** ppEndRegion) = 0;       // OUT
-#endif // !WIN64EXCEPTIONS
+#endif // !FEATURE_EH_FUNCLETS
 #endif // #ifndef DACCESS_COMPILE
 
-#ifdef _TARGET_X86_
+#ifdef TARGET_X86
 /*
     Gets the ambient stack pointer value at the given nesting level within
     the method.
@@ -183,7 +182,7 @@ virtual TADDR GetAmbientSP(PREGDISPLAY     pContext,
                            DWORD           dwRelOffset,
                            DWORD           nestingLevel,
                            CodeManState   *pState) = 0;
-#endif // _TARGET_X86_
+#endif // TARGET_X86
 
 /*
     Get the number of bytes used for stack parameters.
@@ -214,11 +213,11 @@ virtual bool UnwindStackFrame(PREGDISPLAY     pContext,
 virtual bool IsGcSafe(EECodeInfo     *pCodeInfo,
                       DWORD           dwRelOffset) = 0;
 
-#if defined(_TARGET_ARM_) || defined(_TARGET_ARM64_)
+#if defined(TARGET_ARM) || defined(TARGET_ARM64)
 virtual bool HasTailCalls(EECodeInfo *pCodeInfo) = 0;
-#endif // _TARGET_ARM_ || _TARGET_ARM64_
+#endif // TARGET_ARM || TARGET_ARM64
 
-#if defined(_TARGET_AMD64_) && defined(_DEBUG)
+#if defined(TARGET_AMD64) && defined(_DEBUG)
 /*
     Locates the end of the last interruptible region in the given code range.
     Returns 0 if the entire range is uninterruptible.  Returns the end point
@@ -227,7 +226,7 @@ virtual bool HasTailCalls(EECodeInfo *pCodeInfo) = 0;
 virtual unsigned FindEndOfLastInterruptibleRegion(unsigned curOffset,
                                                   unsigned endOffset,
                                                   GCInfoToken gcInfoToken) = 0;
-#endif // _TARGET_AMD64_ && _DEBUG
+#endif // TARGET_AMD64 && _DEBUG
 
 #ifndef CROSSGEN_COMPILE
 /*
@@ -245,23 +244,15 @@ virtual bool EnumGcRefs(PREGDISPLAY     pContext,
                         DWORD           relOffsetOverride = NO_OVERRIDE_OFFSET) = 0;
 #endif // !CROSSGEN_COMPILE
 
-#if !defined(DACCESS_COMPILE) && !defined(CROSSGEN_COMPILE)
-/*
-    Return the address of the local security object reference
-    (if available).
-*/
-virtual OBJECTREF* GetAddrOfSecurityObject(CrawlFrame *pCF) = 0;
-#endif // !DACCESS_COMPILE && !CROSSGEN_COMPILE
-
 #ifndef CROSSGEN_COMPILE
 /*
     For a non-static method, "this" pointer is passed in as argument 0.
-    However, if there is a "ldarga 0" or "starg 0" in the IL, 
+    However, if there is a "ldarga 0" or "starg 0" in the IL,
     JIT will create a copy of arg0 and redirect all "ldarg(a) 0" and "starg 0" to this copy.
     (See Compiler::lvaArg0Var for more details.)
-    
+
     The following method returns the original "this" argument, i.e. the one that is passed in,
-    if it is a non-static method AND the object is still alive. 
+    if it is a non-static method AND the object is still alive.
     Returns NULL in all other cases.
 */
 virtual OBJECTREF GetInstance(PREGDISPLAY     pContext,
@@ -316,10 +307,12 @@ virtual bool IsInSynchronizedRegion(
 virtual size_t GetFunctionSize(GCInfoToken gcInfoToken) = 0;
 
 /*
-Returns the ReturnKind of a given function as reported in the GC info.
+*  Get information necessary for return address hijacking of the method represented by the gcInfoToken.
+*  If it can be hijacked, it sets the returnKind output parameter to the kind of the return value and
+*  returns true.
+*  If hijacking is not possible for some reason, it return false.
 */
-
-virtual ReturnKind GetReturnKind(GCInfoToken gcInfotoken) = 0;
+virtual bool GetReturnAddressHijackInfo(GCInfoToken gcInfoToken, ReturnKind * returnKind) = 0;
 
 #ifndef USE_GC_INFO_DECODER
 /*
@@ -332,7 +325,7 @@ virtual unsigned int GetFrameSize(GCInfoToken gcInfoToken) = 0;
 
 /* Debugger API */
 
-#ifndef WIN64EXCEPTIONS
+#ifndef FEATURE_EH_FUNCLETS
 virtual const BYTE*     GetFinallyReturnAddr(PREGDISPLAY pReg)=0;
 
 virtual BOOL            IsInFilter(GCInfoToken gcInfoToken,
@@ -347,7 +340,7 @@ virtual BOOL            LeaveFinally(GCInfoToken gcInfoToken,
 virtual void            LeaveCatch(GCInfoToken gcInfoToken,
                                    unsigned offset,
                                    PCONTEXT pCtx)=0;
-#endif // WIN64EXCEPTIONS
+#endif // FEATURE_EH_FUNCLETS
 
 #ifdef EnC_SUPPORTED
 
@@ -391,7 +384,7 @@ public:
 
 
 #ifndef DACCESS_COMPILE
-#ifndef WIN64EXCEPTIONS
+#ifndef FEATURE_EH_FUNCLETS
 /*
     Last chance for the runtime support to do fixups in the context
     before execution continues inside a filter, catch handler, or finally
@@ -406,10 +399,10 @@ void FixContext(ContextType     ctxType,
                 CodeManState   *pState,
                 size_t       ** ppShadowSP,             // OUT
                 size_t       ** ppEndRegion);           // OUT
-#endif // !WIN64EXCEPTIONS
+#endif // !FEATURE_EH_FUNCLETS
 #endif // #ifndef DACCESS_COMPILE
 
-#ifdef _TARGET_X86_
+#ifdef TARGET_X86
 /*
     Gets the ambient stack pointer value at the given nesting level within
     the method.
@@ -420,13 +413,13 @@ TADDR GetAmbientSP(PREGDISPLAY     pContext,
                    DWORD           dwRelOffset,
                    DWORD           nestingLevel,
                    CodeManState   *pState);
-#endif // _TARGET_X86_
+#endif // TARGET_X86
 
 /*
     Get the number of bytes used for stack parameters.
     This is currently only used on x86.
 */
-virtual 
+virtual
 ULONG32 GetStackParameterSize(EECodeInfo* pCodeInfo);
 
 #ifndef CROSSGEN_COMPILE
@@ -474,12 +467,12 @@ virtual
 bool IsGcSafe(  EECodeInfo     *pCodeInfo,
                 DWORD           dwRelOffset);
 
-#if defined(_TARGET_ARM_) || defined(_TARGET_ARM64_)
+#if defined(TARGET_ARM) || defined(TARGET_ARM64)
 virtual
 bool HasTailCalls(EECodeInfo *pCodeInfo);
-#endif // _TARGET_ARM_ || _TARGET_ARM64_
+#endif // TARGET_ARM || TARGET_ARM64
 
-#if defined(_TARGET_AMD64_) && defined(_DEBUG)
+#if defined(TARGET_AMD64) && defined(_DEBUG)
 /*
     Locates the end of the last interruptible region in the given code range.
     Returns 0 if the entire range is uninterruptible.  Returns the end point
@@ -489,7 +482,7 @@ virtual
 unsigned FindEndOfLastInterruptibleRegion(unsigned curOffset,
                                           unsigned endOffset,
                                           GCInfoToken gcInfoToken);
-#endif // _TARGET_AMD64_ && _DEBUG
+#endif // TARGET_AMD64 && _DEBUG
 
 #ifndef CROSSGEN_COMPILE
 /*
@@ -518,22 +511,6 @@ bool EnumGcRefsConservative(PREGDISPLAY     pRD,
                             LPVOID          hCallBack);
 #endif // FEATURE_CONSERVATIVE_GC
 
-#ifdef _TARGET_X86_
-/*
-   Return the address of the local security object reference
-   using data that was previously cached before in UnwindStackFrame
-   using StackwalkCacheUnwindInfo
-*/
-static OBJECTREF* GetAddrOfSecurityObjectFromCachedInfo(
-        PREGDISPLAY pRD,
-        StackwalkCacheUnwindInfo * stackwalkCacheUnwindInfo);
-#endif // _TARGET_X86_
-
-#if !defined(DACCESS_COMPILE) && !defined(CROSSGEN_COMPILE)
-virtual
-OBJECTREF* GetAddrOfSecurityObject(CrawlFrame *pCF) DAC_UNEXPECTED();
-#endif // !DACCESS_COMPILE && !CROSSGEN_COMPILE
-
 #ifndef CROSSGEN_COMPILE
 virtual
 OBJECTREF GetInstance(
@@ -555,20 +532,20 @@ PTR_VOID GetParamTypeArg(PREGDISPLAY     pContext,
 virtual GenericParamContextType GetParamContextType(PREGDISPLAY     pContext,
                                                     EECodeInfo *    pCodeInfo);
 
-#if defined(WIN64EXCEPTIONS) && defined(USE_GC_INFO_DECODER) && !defined(CROSSGEN_COMPILE)
+#if defined(FEATURE_EH_FUNCLETS) && defined(USE_GC_INFO_DECODER) && !defined(CROSSGEN_COMPILE)
 /*
     Returns the generics token.  This is used by GetInstance() and GetParamTypeArg() on WIN64.
 */
-static 
+static
 PTR_VOID GetExactGenericsToken(PREGDISPLAY     pContext,
                                EECodeInfo *    pCodeInfo);
 
-static 
+static
 PTR_VOID GetExactGenericsToken(SIZE_T          baseStackSlot,
                                EECodeInfo *    pCodeInfo);
 
 
-#endif // WIN64EXCEPTIONS && USE_GC_INFO_DECODER && !CROSSGEN_COMPILE
+#endif // FEATURE_EH_FUNCLETS && USE_GC_INFO_DECODER && !CROSSGEN_COMPILE
 
 #ifndef CROSSGEN_COMPILE
 /*
@@ -609,9 +586,12 @@ virtual
 size_t GetFunctionSize(GCInfoToken gcInfoToken);
 
 /*
-Returns the ReturnKind of a given function.
+*  Get information necessary for return address hijacking of the method represented by the gcInfoToken.
+*  If it can be hijacked, it sets the returnKind output parameter to the kind of the return value and
+*  returns true.
+*  If hijacking is not possible for some reason, it return false.
 */
-virtual ReturnKind GetReturnKind(GCInfoToken gcInfotoken);
+virtual bool GetReturnAddressHijackInfo(GCInfoToken gcInfoToken, ReturnKind * returnKind);
 
 #ifndef USE_GC_INFO_DECODER
 /*
@@ -623,7 +603,7 @@ unsigned int GetFrameSize(GCInfoToken gcInfoToken);
 
 #ifndef DACCESS_COMPILE
 
-#ifndef WIN64EXCEPTIONS
+#ifndef FEATURE_EH_FUNCLETS
 virtual const BYTE* GetFinallyReturnAddr(PREGDISPLAY pReg);
 virtual BOOL IsInFilter(GCInfoToken gcInfoToken,
                         unsigned offset,
@@ -635,7 +615,7 @@ virtual BOOL LeaveFinally(GCInfoToken gcInfoToken,
 virtual void LeaveCatch(GCInfoToken gcInfoToken,
                          unsigned offset,
                          PCONTEXT pCtx);
-#endif // WIN64EXCEPTIONS
+#endif // FEATURE_EH_FUNCLETS
 
 #ifdef EnC_SUPPORTED
 /*
@@ -654,13 +634,13 @@ HRESULT FixContextForEnC(PCONTEXT        pCtx,
 
 #endif // #ifndef DACCESS_COMPILE
 
-#ifdef WIN64EXCEPTIONS
+#ifdef FEATURE_EH_FUNCLETS
     static void EnsureCallerContextIsValid( PREGDISPLAY pRD, StackwalkCacheEntry* pCacheEntry, EECodeInfo * pCodeInfo = NULL );
     static size_t GetCallerSp( PREGDISPLAY  pRD );
-#ifdef _TARGET_X86_
+#ifdef TARGET_X86
     static size_t GetResumeSp( PCONTEXT  pContext );
-#endif // _TARGET_X86_
-#endif // WIN64EXCEPTIONS
+#endif // TARGET_X86
+#endif // FEATURE_EH_FUNCLETS
 
 #ifdef DACCESS_COMPILE
     virtual void EnumMemoryRegions(CLRDataEnumMemoryFlags flags);
@@ -668,7 +648,7 @@ HRESULT FixContextForEnC(PCONTEXT        pCtx,
 
 };
 
-#ifdef _TARGET_X86_
+#ifdef TARGET_X86
 bool UnwindStackFrame(PREGDISPLAY     pContext,
                       EECodeInfo     *pCodeInfo,
                       unsigned        flags,
@@ -726,13 +706,13 @@ struct hdrInfo
 
     // Size of the epilogs in the method.
     // For methods which use CEE_JMP, some epilogs may end with a "ret" instruction
-    // and some may end with a "jmp". The epilogSize reported should be for the 
+    // and some may end with a "jmp". The epilogSize reported should be for the
     // epilog with the smallest size.
     unsigned int        epilogSize;
 
     unsigned char       epilogCnt;
     bool                epilogEnd;      // is the epilog at the end of the method
-    
+
     bool                ebpFrame;       // locals and arguments addressed relative to EBP
     bool                doubleAlign;    // is the stack double-aligned? locals addressed relative to ESP, and arguments relative to EBP
     bool                interruptible;  // intr. at all times (excluding prolog/epilog), not just call sites
@@ -765,7 +745,7 @@ struct hdrInfo
     unsigned int        revPInvokeOffset; // INVALID_REV_PINVOKE_OFFSET if there is no Reverse PInvoke frame
 
     enum { NOT_IN_PROLOG = -1, NOT_IN_EPILOG = -1 };
-    
+
     int                 prologOffs;     // NOT_IN_PROLOG if not in prolog
     int                 epilogOffs;     // NOT_IN_EPILOG if not in epilog. It is never 0
 

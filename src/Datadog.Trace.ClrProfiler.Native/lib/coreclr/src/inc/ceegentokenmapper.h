@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //*****************************************************************************
 // CeeGenTokenMapper.h
 //
@@ -48,18 +47,18 @@ public:
     };
 
     static int IndexForType(mdToken tk);
-    
+
     CeeGenTokenMapper() : m_pIImport(0), m_cRefs(1), m_pIMapToken(NULL)  { LIMITED_METHOD_CONTRACT; }
     virtual ~CeeGenTokenMapper() {}
 
 //*****************************************************************************
-// IUnknown implementation.  
+// IUnknown implementation.
 //*****************************************************************************
     virtual ULONG STDMETHODCALLTYPE AddRef()
     {LIMITED_METHOD_CONTRACT;  return ++m_cRefs; }
 
     virtual ULONG STDMETHODCALLTYPE Release()
-    {   
+    {
         STATIC_CONTRACT_NOTHROW;
         STATIC_CONTRACT_FORBID_FAULT;
         SUPPORTS_DAC_HOST_ONLY;
@@ -72,7 +71,7 @@ public:
                 m_pIMapToken->Release();
                 m_pIMapToken = NULL;
             }
-            
+
             delete this;
         }
         return cRefs;
@@ -99,7 +98,7 @@ public:
     IUnknown *GetMapTokenIface() const
     { LIMITED_METHOD_CONTRACT; return ((IUnknown *) this); }
 
-    
+
 //*****************************************************************************
 // Hand out a copy of the meta data information.
 //*****************************************************************************
@@ -136,7 +135,7 @@ protected:
     IMetaDataImport *m_pIImport;
     ULONG       m_cRefs;                // Ref count.
     IMapToken  *m_pIMapToken;
-    
+
 };
 
 #endif // __CeeGenTokenMapper_h__

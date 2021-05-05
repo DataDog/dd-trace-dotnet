@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //
 // runtimeselector.h
 //
@@ -44,7 +43,7 @@ public:
 
     // has any useful data
     bool HasUsefulRuntimeInfo();
-    
+
     // is 1st better than 2nd
     static bool IsBetter(const RuntimeInfo& ri1, const RuntimeInfo& ri2);
 };

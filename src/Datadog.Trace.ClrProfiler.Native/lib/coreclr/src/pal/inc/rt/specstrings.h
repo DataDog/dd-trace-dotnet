@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 
 //
@@ -310,8 +309,8 @@ __ANNOTATION(SAL_failureDefault(enum __SAL_failureKind));
 				            __byte_readableTo((expr) ? (size) : (size) * 2)
 #define __post_invalid                      _Post_ __notvalid
 /* integer related macros */
-#define __allocator                         __inner_allocator
 #ifndef PAL_STDCPP_COMPAT
+#define __allocator                         __inner_allocator
 #define __deallocate(kind)                  _Pre_ __notnull __post_invalid
 #define __deallocate_opt(kind)              _Pre_ __maybenull __post_invalid
 #endif
@@ -421,7 +420,7 @@ __inner_analysis_assume_nullterminated_dec
 // A common pattern is to pass an "_Inout_ PCHAR* ppBuf" of size "_Inout_ DWORD* pSize"
 // to a function that writes to **pBuf, incrementing *ppBuf to point to one
 // past the last written byte. Thus the length of the write is
-// (*ppBuf - Old(*ppBuf)). The size of the remaining unwritten capacity 
+// (*ppBuf - Old(*ppBuf)). The size of the remaining unwritten capacity
 // is written to *pSize.
 //
 // This pattern is frequently used when progressively filling a
@@ -463,7 +462,7 @@ __inner_analysis_assume_nullterminated_dec
 // completely accurate approximation, but reasonable.
 //
 #define _Post_equals_last_error_     _Post_satisfies_(_Curr_ != 0)
-                                
+
 #ifdef  __cplusplus
 }
 #endif
@@ -522,7 +521,7 @@ void __pfx_assume(int, const char *);
  as VS11 is the minimum required for SAL 2 support.
 
  If we are in a downlevel environment, we can go ahead and include no_sal2.h
- to make all of SAL 2 no-ops to ensure no build failures. 
+ to make all of SAL 2 no-ops to ensure no build failures.
 */
 #if (!defined(_Outptr_) || _MSC_VER <= 1600) && !( defined( MIDL_PASS ) || defined(__midl) || defined(RC_INVOKED) ) && !( defined( _SDV_ ) ) /*IFSTRIP=IGN*/
 #include <no_sal2.h>

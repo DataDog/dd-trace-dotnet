@@ -1,11 +1,10 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //*****************************************************************************
 // MetaModelPub.h -- header file for Common Language Runtime metadata.
-// 
+//
 
-// 
+//
 //*****************************************************************************
 
 #ifndef _METAMODELPUB_H_
@@ -16,13 +15,14 @@
 #endif
 
 #include <cor.h>
-#include <stgpool.h>
+#include "contract.h"
+
 
 #ifndef lengthof
 # define lengthof(x) (sizeof(x)/sizeof((x)[0]))
 #endif
 
-template<class T> inline T Align4(T p) 
+template<class T> inline T Align4(T p)
 {
     LIMITED_METHOD_CONTRACT;
 
@@ -51,16 +51,16 @@ typedef ULONG RID;
 // Naming is as follows:
 //  Given some table "Xyz":
 //  class XyzRec { public:
-//    SOMETYPE  m_SomeField; 
+//    SOMETYPE  m_SomeField;
 //        // rest of the fixed fields.
-//    enum { COL_Xyz_SomeOtherField, 
+//    enum { COL_Xyz_SomeOtherField,
 //        // rest of the fields, enumerated.
 //        COL_Xyz_COUNT };
 //   };
 //
 // The important features are the class name (XyzRec), the enumerations
 //  (COL_Xyz_FieldName), and the enumeration count (COL_Xyz_COUNT).
-// 
+//
 // THESE NAMING CONVENTIONS ARE CARVED IN STONE!  DON'T TRY TO BE CREATIVE!
 //
 //*****************************************************************************
@@ -455,7 +455,7 @@ public:
     };
 };
 
-class FieldMarshalRec                                                   
+class FieldMarshalRec
 {
 public:
     enum {
@@ -1414,12 +1414,12 @@ METADATA_FIELDS_PROTECTION:
     USHORT      m_Flags;                // index; zero = first var
 public:
     enum {
-      
+
         COL_Number,                     // index; zero = first var
         COL_Flags,                      // flags, for future use
         COL_Owner,                      // typeDef/methodDef
         COL_Name,                       // Purely descriptive, not used for binding purposes
-        COL_COUNT, 
+        COL_COUNT,
         COL_KEY = COL_Owner
     };
 
@@ -1450,7 +1450,7 @@ public:
     }
 };
 
-// @todo: this definition is for reading the old (and wrong) GenericParamRec from a 
+// @todo: this definition is for reading the old (and wrong) GenericParamRec from a
 // Beta1 assembly.
 class GenericParamV1_1Rec
 {
@@ -1459,13 +1459,13 @@ METADATA_FIELDS_PROTECTION:
     USHORT      m_Flags;                // index; zero = first var
 public:
     enum {
-      
+
         COL_Number,                     // index; zero = first var
         COL_Flags,                      // flags, for future use
         COL_Owner,                      // typeDef/methodDef
         COL_Name,                       // Purely descriptive, not used for binding purposes
         COL_Kind,                       // typeDef/Ref/Spec, reserved for future use
-        COL_COUNT, 
+        COL_COUNT,
         COL_KEY = COL_Owner
     };
 
@@ -1512,13 +1512,140 @@ class GenericParamConstraintRec
 {
 public:
     enum {
-      
+
         COL_Owner,                                      // GenericParam
         COL_Constraint,                                 // typeDef/Ref/Spec
-        COL_COUNT, 
+        COL_COUNT,
         COL_KEY = COL_Owner
     };
 };
+
+#ifdef FEATURE_METADATA_EMIT_PORTABLE_PDB
+/* Portable PDB tables */
+// -- Dummy records to fill the gap to 0x30
+class DummyRec
+{
+public:
+    enum {
+        COL_COUNT,
+        COL_KEY
+    };
+};
+class Dummy1Rec : public DummyRec {};
+class Dummy2Rec : public DummyRec {};
+class Dummy3Rec : public DummyRec {};
+
+class DocumentRec
+{
+public:
+    enum {
+        COL_Name,
+        COL_HashAlgorithm,
+        COL_Hash,
+        COL_Language,
+        COL_COUNT,
+        COL_KEY
+    };
+};
+
+class MethodDebugInformationRec
+{
+public:
+    enum {
+        COL_Document,
+        COL_SequencePoints,
+        COL_COUNT,
+        COL_KEY
+    };
+};
+
+class LocalScopeRec
+{
+METADATA_FIELDS_PROTECTION:
+    // [IMPORTANT]: Assigning values directly can override other columns, use PutCol instead
+    ULONG      m_StartOffset;
+    // [IMPORTANT]: Assigning values directly can override other columns, use PutCol instead
+    ULONG      m_Length;
+public:
+    enum {
+        COL_Method,
+        COL_ImportScope,
+        COL_VariableList,
+        COL_ConstantList,
+        COL_StartOffset,
+        COL_Length,
+        COL_COUNT,
+        COL_KEY
+    };
+};
+
+class LocalVariableRec
+{
+METADATA_FIELDS_PROTECTION:
+    USHORT      m_Attributes;
+    USHORT      m_Index;
+public:
+    enum {
+        COL_Attributes,
+        COL_Index,
+        COL_Name,
+        COL_COUNT,
+        COL_KEY
+    };
+
+    USHORT GetAttributes()
+    {
+        LIMITED_METHOD_CONTRACT;
+
+        return GET_UNALIGNED_VAL16(&m_Attributes);
+    }
+    void SetAttributes(USHORT attributes)
+    {
+        LIMITED_METHOD_CONTRACT;
+
+        m_Attributes = VAL16(attributes);
+    }
+
+    USHORT GetIndex()
+    {
+        LIMITED_METHOD_CONTRACT;
+
+        return GET_UNALIGNED_VAL16(&m_Index);
+    }
+    void SetIndex(USHORT index)
+    {
+        LIMITED_METHOD_CONTRACT;
+
+        m_Index = VAL16(index);
+    }
+};
+
+class LocalConstantRec
+{
+public:
+    enum {
+        COL_Name,
+        COL_Signature,
+        COL_COUNT,
+        COL_KEY
+    };
+};
+
+class ImportScopeRec
+{
+public:
+    enum {
+        COL_Parent,
+        COL_Imports,
+        COL_COUNT,
+        COL_KEY
+    };
+};
+
+// TODO:
+// class StateMachineMethodRec
+// class CustomDebugInformationRec
+#endif // FEATURE_METADATA_EMIT_PORTABLE_PDB
 
 #include <poppack.h>
 
@@ -1569,15 +1696,40 @@ public:
     MiniMdTable(NestedClass)    \
     MiniMdTable(GenericParam)     \
     MiniMdTable(MethodSpec)     \
-    MiniMdTable(GenericParamConstraint) \
+    MiniMdTable(GenericParamConstraint)
+
+#ifdef FEATURE_METADATA_EMIT_PORTABLE_PDB
+#define PortablePdbMiniMdTables() \
+    /* Dummy tables to fill the gap to 0x30 */ \
+    MiniMdTable(Dummy1)                             /* 0x2D */ \
+    MiniMdTable(Dummy2)                             /* 0x2E */ \
+    MiniMdTable(Dummy3)                             /* 0x2F */ \
+    /* Actual portable PDB tables */ \
+    MiniMdTable(Document)                           /* 0x30 */ \
+    MiniMdTable(MethodDebugInformation)             /* 0x31 */ \
+    MiniMdTable(LocalScope)                         /* 0x32 */ \
+    MiniMdTable(LocalVariable)                      /* 0x33 */ \
+    MiniMdTable(LocalConstant)                      /* 0x34 */ \
+    MiniMdTable(ImportScope)                        /* 0x35 */ \
+    // TODO:
+    // MiniMdTable(StateMachineMethod)                 /* 0x36 */
+    // MiniMdTable(CustomDebugInformation)             /* 0x37 */
+#endif // FEATURE_METADATA_EMIT_PORTABLE_PDB
 
 #undef MiniMdTable
 #define MiniMdTable(x) TBL_##x,
 enum {
     MiniMdTables()
+#ifdef FEATURE_METADATA_EMIT_PORTABLE_PDB
+    PortablePdbMiniMdTables()
+#endif
     TBL_COUNT,                              // Highest table.
     TBL_COUNT_V1 = TBL_NestedClass + 1,    // Highest table in v1.0 database
+#ifndef FEATURE_METADATA_EMIT_PORTABLE_PDB
     TBL_COUNT_V2 = TBL_GenericParamConstraint + 1 // Highest in v2.0 database
+#else
+    TBL_COUNT_V2 = TBL_ImportScope + 1 // Highest in portable PDB database
+#endif
 };
 #undef MiniMdTable
 
@@ -1637,7 +1789,7 @@ enum MDPools {
     MDPoolUSBlobs,                      // ...the user string pool.
 
     MDPoolCount,                        // Count of pools, for array sizing.
-}; // enum MDPools 
+}; // enum MDPools
 
 
 struct CCodedTokenDef
@@ -1661,7 +1813,7 @@ struct CMiniTableDef
     BYTE        m_iKey;                 // Column which is the key, if any.
     USHORT      m_cbRec;                // Size of the records.
 };
-struct CMiniTableDefEx 
+struct CMiniTableDefEx
 {
     CMiniTableDef   m_Def;              // Table definition.
     const char  * const *m_pColNames;   // Array of column names.

@@ -1,9 +1,8 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 // ---------------------------------------------------------------------------
 // SString.h  (Safe String)
-// 
+//
 
 // ---------------------------------------------------------------------------
 
@@ -45,6 +44,7 @@
 
 #include "utilcode.h"
 #include "sbuffer.h"
+#include "debugmacros.h"
 
 // ==========================================================================================
 // Documentational typedefs: use these to indicate specific representations of 8 bit strings:
@@ -70,7 +70,7 @@ typedef const UTF8 *LPCUTF8;
 
 
 typedef DPTR(class SString) PTR_SString;
-class SString : private SBuffer
+class EMPTY_BASES_DECL SString : private SBuffer
 {
     friend struct _DacGlobals;
 
@@ -208,22 +208,22 @@ private:
     COUNT_T GetCount() const;
     BOOL IsEmpty() const;
 
-    // Return whether a single byte string has all characters which fit in the ASCII set.  
-    // (Note that this will return FALSE if the string has been converted to unicode for any 
+    // Return whether a single byte string has all characters which fit in the ASCII set.
+    // (Note that this will return FALSE if the string has been converted to unicode for any
     // reason.)
     BOOL IsASCII() const;
 
-    // !!!!!!!!!!!!!! WARNING about case insensitive operations !!!!!!!!!!!!!!! 
+    // !!!!!!!!!!!!!! WARNING about case insensitive operations !!!!!!!!!!!!!!!
     //
-    //                 THIS IS NOT SUPPORTED FULLY ON WIN9x  
-    //      SString case-insensitive comparison is based off LCMapString, 
+    //                 THIS IS NOT SUPPORTED FULLY ON WIN9x
+    //      SString case-insensitive comparison is based off LCMapString,
     //      which does not work on characters outside the current OS code page.
     //
-    //      Case insensitive code in SString is primarily targeted at 
-    //      supporting path comparisons, which is supported correctly on 9x, 
+    //      Case insensitive code in SString is primarily targeted at
+    //      supporting path comparisons, which is supported correctly on 9x,
     //      since file system names are limited to the OS code page.
-    // 
-    // !!!!!!!!!!!!!! WARNING about case insensitive operations !!!!!!!!!!!!!!! 
+    //
+    // !!!!!!!!!!!!!! WARNING about case insensitive operations !!!!!!!!!!!!!!!
 
     // Compute a content-based hash value
     ULONG Hash() const;
@@ -320,13 +320,13 @@ private:
     // Iterators:
     // ------------------------------------------------------------------
 
-    // SString splits iterators into two categories.  
+    // SString splits iterators into two categories.
     //
     // CIterator and Iterator are cheap to create, but allow only read-only
-    // access to the string.  
+    // access to the string.
     //
     // UIterator forces a unicode conversion, but allows
-    // assignment to individual string characters.  They are also a bit more 
+    // assignment to individual string characters.  They are also a bit more
     // efficient once created.
 
     // ------------------------------------------------------------------
@@ -335,7 +335,7 @@ private:
 
  protected:
 
-    class UIndex : public SBuffer::Index
+    class EMPTY_BASES_DECL UIndex : public SBuffer::Index
     {
         friend class SString;
         friend class Indexer<WCHAR, UIterator>;
@@ -354,7 +354,7 @@ private:
 
  public:
 
-    class UIterator : public UIndex, public Indexer<WCHAR, UIterator>
+    class EMPTY_BASES_DECL UIterator : public UIndex, public Indexer<WCHAR, UIterator>
     {
         friend class SString;
 
@@ -389,7 +389,7 @@ private:
 
  protected:
 
-    class Index : public SBuffer::Index
+    class EMPTY_BASES_DECL Index : public SBuffer::Index
     {
         friend class SString;
 
@@ -421,7 +421,7 @@ private:
 
  public:
 
-    class CIterator : public Index, public Indexer<const WCHAR, CIterator>
+    class EMPTY_BASES_DECL CIterator : public Index, public Indexer<const WCHAR, CIterator>
     {
         friend class SString;
 
@@ -461,7 +461,7 @@ private:
         WCHAR operator[](int index) const { return Index::operator[](index); }
     };
 
-    class Iterator : public Index, public Indexer<WCHAR, Iterator>
+    class EMPTY_BASES_DECL Iterator : public Index, public Indexer<WCHAR, Iterator>
     {
         friend class SString;
 
@@ -523,10 +523,10 @@ private:
 
     void LowerCase();
     void UpperCase();
-    
+
     // Helper function to convert string in-place to lower-case (no allocation overhead for SString instance)
     static void LowerCase(__inout_z LPWSTR wszString);
-    
+
     // These routines will use the given scratch string if necessary
     // to perform a conversion to the desired representation
 
@@ -626,7 +626,7 @@ private:
     // Instantiate a copy of the raw buffer in the host and return a pointer to it
     void * DacGetRawContent() const;
 
-    // Instantiate a copy of the raw buffer in the host.  Requires that the underlying 
+    // Instantiate a copy of the raw buffer in the host.  Requires that the underlying
     // representation is already unicode.
     const WCHAR * DacGetRawUnicode() const;
 
@@ -737,7 +737,7 @@ private:
  private:
     static int CaseCompareHelperA(const CHAR *buffer1, const CHAR *buffer2, COUNT_T count, BOOL stopOnNull, BOOL stopOnCount);
     static int CaseCompareHelper(const WCHAR *buffer1, const WCHAR *buffer2, COUNT_T count, BOOL stopOnNull, BOOL stopOnCount);
-    
+
     // Internal helpers:
 
     static const BYTE s_EmptyBuffer[2];
@@ -786,13 +786,13 @@ private:
     void ConvertASCIIToUnicode(SString &dest) const;
     void ConvertToUnicode() const;
     void ConvertToUnicode(const CIterator &i) const;
-  
+
     const SString &GetCompatibleString(const SString &s, SString &scratch) const;
     const SString &GetCompatibleString(const SString &s, SString &scratch, const CIterator &i) const;
     BOOL ScanASCII() const;
     void NullTerminate();
 
-    void Resize(COUNT_T count, Representation representation, 
+    void Resize(COUNT_T count, Representation representation,
                 Preserve preserve = DONT_PRESERVE);
 
     void OpenBuffer(Representation representation, COUNT_T countChars);
@@ -805,9 +805,10 @@ private:
 // ===========================================================================
 
 template <COUNT_T MEMSIZE>
-class InlineSString : public SString
+class EMPTY_BASES_DECL InlineSString : public SString
 {
 private:
+    DAC_ALIGNAS(SString)
     BYTE m_inline[SBUFFER_PADDED_SIZE(MEMSIZE)];
 
 public:
@@ -978,7 +979,7 @@ typedef InlineSString<2 * 260> LongPathString;
 // ScratchBuffer classes are used by the GetXXX() routines to allocate scratch space in.
 // ================================================================================
 
-class SString::AbstractScratchBuffer : private SString
+class EMPTY_BASES_DECL SString::AbstractScratchBuffer : private SString
 {
   protected:
     // Do not use this class directly - use
@@ -987,9 +988,10 @@ class SString::AbstractScratchBuffer : private SString
 };
 
 template <COUNT_T MEMSIZE>
-class ScratchBuffer : public SString::AbstractScratchBuffer
+class EMPTY_BASES_DECL ScratchBuffer : public SString::AbstractScratchBuffer
 {
   private:
+    DAC_ALIGNAS(::SString::AbstractScratchBuffer)
     BYTE m_inline[MEMSIZE];
 
   public:

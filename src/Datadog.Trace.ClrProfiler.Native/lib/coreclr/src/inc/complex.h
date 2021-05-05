@@ -1,11 +1,10 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //
 // complex.h
-// 
+//
 
-// 
+//
 // Defines a basic complex number data type.  We cannot use the standard C++ library's
 // complex implementation, because the CLR links to the wrong CRT.
 //
@@ -17,7 +16,7 @@
 
 //
 // Default compilation mode is /fp:precise, which disables fp intrinsics. This causes us to pull in FP stuff (sqrt,etc.) from
-// The CRT, and increases our download size.  We don't need the extra precision this gets us, so let's switch to 
+// The CRT, and increases our download size.  We don't need the extra precision this gets us, so let's switch to
 // the intrinsic versions.
 //
 #ifdef _MSC_VER

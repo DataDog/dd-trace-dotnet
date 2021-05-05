@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 
 /***************************************************************************/
@@ -22,14 +21,14 @@ class ILFormatter {
 public:
 	ILFormatter() : start(0), targetStart(0), stackStart(0) {}
 
-	ILFormatter(IMetaDataImport* aMeta, const BYTE* aStart, 
-                const BYTE* aLimit, unsigned maxStack, const COR_ILMETHOD_SECT_EH* eh) 
+	ILFormatter(IMetaDataImport* aMeta, const BYTE* aStart,
+                const BYTE* aLimit, unsigned maxStack, const COR_ILMETHOD_SECT_EH* eh)
 		: targetStart(0), stackStart(0) {
 		init(aMeta, aStart, aLimit, maxStack, eh);
 		}
     ~ILFormatter() { delete [] stackStart; delete [] targetStart; }
 
-	void init(IMetaDataImport* aMeta, const BYTE* aStart, 
+	void init(IMetaDataImport* aMeta, const BYTE* aStart,
               const BYTE* aLimit, unsigned maxStack, const COR_ILMETHOD_SECT_EH* eh);
 	const BYTE* formatStatement(const BYTE* stmtIL, OutString* out);
 	const BYTE* formatInstr(const BYTE* instrIL, OutString* out);

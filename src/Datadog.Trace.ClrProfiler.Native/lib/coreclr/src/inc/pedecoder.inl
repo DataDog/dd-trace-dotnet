@@ -1,9 +1,8 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 // --------------------------------------------------------------------------------
 // PEDecoder.inl
-// 
+//
 
 // --------------------------------------------------------------------------------
 
@@ -52,14 +51,14 @@ inline BOOL PEDecoder::IsMapped() const
 {
     LIMITED_METHOD_CONTRACT;
     SUPPORTS_DAC;
-    
+
     return (m_flags & FLAG_MAPPED) != 0;
 }
 
 inline BOOL PEDecoder::IsRelocated() const
 {
     LIMITED_METHOD_CONTRACT;
-    
+
     return (m_flags & FLAG_RELOCATED) != 0;
 }
 
@@ -71,7 +70,7 @@ inline void PEDecoder::SetRelocated()
 inline BOOL PEDecoder::IsFlat() const
 {
     LIMITED_METHOD_CONTRACT;
-    
+
     return HasContents() && !IsMapped();
 }
 
@@ -79,7 +78,7 @@ inline BOOL PEDecoder::HasContents() const
 {
     LIMITED_METHOD_CONTRACT;
     SUPPORTS_DAC;
-    
+
     return (m_flags & FLAG_CONTENTS) != 0;
 }
 
@@ -157,7 +156,7 @@ inline void PEDecoder::Init(void *flatBase, COUNT_T size)
         PRECONDITION((size == 0) || CheckPointer(flatBase));
         PRECONDITION(!HasContents());
         NOTHROW;
-        GC_NOTRIGGER;    
+        GC_NOTRIGGER;
     }
     CONTRACTL_END;
 
@@ -262,7 +261,7 @@ inline const void *PEDecoder::GetHeaders(COUNT_T *pSize) const
 
     //even though some data in OptionalHeader is different for 32 and 64, this field is the same
     if (pSize != NULL)
-        *pSize = VAL32(FindNTHeaders()->OptionalHeader.SizeOfHeaders); 
+        *pSize = VAL32(FindNTHeaders()->OptionalHeader.SizeOfHeaders);
 
     RETURN (const void *) m_base;
 }
@@ -742,7 +741,7 @@ inline COUNT_T PEDecoder::RvaToOffset(RVA rva) const
         IMAGE_SECTION_HEADER *section = RvaToSection(rva);
         if (section == NULL)
             return rva;
-    
+
         return rva - VAL32(section->VirtualAddress) + VAL32(section->PointerToRawData);
     }
     else return 0;
@@ -764,7 +763,7 @@ inline RVA PEDecoder::OffsetToRva(COUNT_T fileOffset) const
     {
         IMAGE_SECTION_HEADER *section = OffsetToSection(fileOffset);
         PREFIX_ASSUME (section!=NULL); //TODO: actually it is possible that it si null we need to rethink how we handle this cases and do better there
-    
+
         return fileOffset - VAL32(section->PointerToRawData) + VAL32(section->VirtualAddress);
     }
     else return 0;
@@ -873,7 +872,7 @@ inline CHECK PEDecoder::CheckTls() const
     CHECK(CheckUnderflow(VALPTR(pTlsHeader->EndAddressOfRawData), VALPTR(pTlsHeader->StartAddressOfRawData)));
     CHECK(VALPTR(pTlsHeader->EndAddressOfRawData) - VALPTR(pTlsHeader->StartAddressOfRawData) <= COUNT_T_MAX);
 
-    CHECK(CheckInternalAddress(VALPTR(pTlsHeader->StartAddressOfRawData), 
+    CHECK(CheckInternalAddress(VALPTR(pTlsHeader->StartAddressOfRawData),
         (COUNT_T) (VALPTR(pTlsHeader->EndAddressOfRawData) - VALPTR(pTlsHeader->StartAddressOfRawData))));
 
     CHECK_OK;
@@ -916,7 +915,7 @@ inline UINT32 PEDecoder::GetTlsIndex() const
     CONTRACTL_END;
 
     IMAGE_TLS_DIRECTORY *pTlsHeader = (IMAGE_TLS_DIRECTORY *) GetDirectoryEntryData(IMAGE_DIRECTORY_ENTRY_TLS);
-    
+
     return (UINT32)*PTR_UINT32(GetInternalAddressData((SIZE_T)VALPTR(pTlsHeader->AddressOfIndex)));
 }
 
@@ -1279,8 +1278,8 @@ inline void PEDecoder::GetPEKindAndMachine(DWORD * pdwPEKind, DWORD *pdwMachine)
     {
         dwMachine = GetMachine();
 
-        BOOL fIsPE32Plus = !Has32BitNTHeaders(); 
-        
+        BOOL fIsPE32Plus = !Has32BitNTHeaders();
+
         if (fIsPE32Plus)
             dwKind |= (DWORD)pe32Plus;
 
@@ -1294,7 +1293,7 @@ inline void PEDecoder::GetPEKindAndMachine(DWORD * pdwPEKind, DWORD *pdwMachine)
                 if (dwCorFlags & VAL32(COMIMAGE_FLAGS_ILONLY))
                 {
                     dwKind |= (DWORD)peILonly;
-#ifdef _WIN64
+#ifdef HOST_64BIT
                     // compensate for shim promotion of PE32/ILONLY headers to PE32+ on WIN64
                     if (fIsPE32Plus && (GetMachine() == IMAGE_FILE_MACHINE_I386))
                         dwKind &= ~((DWORD)pe32Plus);
@@ -1323,7 +1322,7 @@ inline void PEDecoder::GetPEKindAndMachine(DWORD * pdwPEKind, DWORD *pdwMachine)
                     dwMachine = IMAGE_FILE_MACHINE_NATIVE;
                 }
 
-                if ((GetReadyToRunHeader()->Flags & READYTORUN_FLAG_PLATFORM_NEUTRAL_SOURCE) != 0)
+                if ((GetReadyToRunHeader()->CoreHeader.Flags & READYTORUN_FLAG_PLATFORM_NEUTRAL_SOURCE) != 0)
                 {
                     // Supply the original PEKind/Machine to the assembly binder to make the full assembly name look like the original
                     dwKind = peILonly;
@@ -1353,6 +1352,21 @@ inline BOOL PEDecoder::IsPlatformNeutral()
     DWORD dwKind, dwMachine;
     GetPEKindAndMachine(&dwKind, &dwMachine);
     return ((dwKind & (peILonly | pe32Plus | pe32BitRequired)) == peILonly) && (dwMachine == IMAGE_FILE_MACHINE_I386);
+}
+
+inline BOOL PEDecoder::IsComponentAssembly() const
+{
+    CONTRACTL
+    {
+        INSTANCE_CHECK;
+        NOTHROW;
+        GC_NOTRIGGER;
+        CANNOT_TAKE_LOCK;
+        SUPPORTS_DAC;
+    }
+    CONTRACTL_END;
+
+    return HasReadyToRunHeader() && (m_pReadyToRunHeader->CoreHeader.Flags & READYTORUN_FLAG_COMPONENT) != 0;
 }
 
 inline BOOL PEDecoder::HasReadyToRunHeader() const

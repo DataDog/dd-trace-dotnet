@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //*****************************************************************************
 // CBlobFetcher - it fetches binary chunks, similar to new, but more controlled
 //
@@ -63,7 +62,7 @@ protected:
     CBlobFetcher& operator=(const CBlobFetcher & src);
 
 public:
-#if defined(_WIN64)
+#if defined(HOST_64BIT)
     // needs to be 64 so that we can purposefully cache align code in ngen'd images
     enum { maxAlign = 64 }; // maximum alignment we support
 #else
@@ -90,7 +89,7 @@ public:
 // Write out the section to memory
     HRESULT WriteMem(void ** pMem);
 
-// Get the total length of all our data (sum of all the pillar's data length's) 
+// Get the total length of all our data (sum of all the pillar's data length's)
 // cached value, so light weight & no computations
     unsigned GetDataLen() const;
 
@@ -138,7 +137,7 @@ inline ULONG32 CBlobFetcher::CPillar::GetOffset(__in char *ptr)
 {
     LIMITED_METHOD_CONTRACT;
     _ASSERTE(Contains(ptr));
-    
+
     return (ULONG32)(ptr - m_dataStart);
 }
 

@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //*****************************************************************************
 // LoaderHeap.h
 //
@@ -215,8 +214,6 @@ private:
 
     size_t              m_dwTotalAlloc;
 
-    size_t *             m_pPrivatePerfCounter_LoaderBytes;
-
     DWORD                m_Options;
 
     LoaderHeapFreeBlock *m_pFirstFreeBlock;
@@ -286,7 +283,6 @@ protected:
                        DWORD dwCommitBlockSize,
                        const BYTE* dwReservedRegionAddress,
                        SIZE_T dwReservedRegionSize,
-                       size_t *pPrivatePerfCounter_LoaderBytes = NULL,
                        RangeList *pRangeList = NULL,
                        BOOL fMakeExecutable = FALSE);
 
@@ -441,20 +437,18 @@ private:
 public:
     LoaderHeap(DWORD dwReserveBlockSize,
                DWORD dwCommitBlockSize,
-               size_t *pPrivatePerfCounter_LoaderBytes = NULL,
                RangeList *pRangeList = NULL,
-               BOOL fMakeExecutable = FALSE
+               BOOL fMakeExecutable = FALSE,
+               BOOL fUnlocked = FALSE
                )
       : UnlockedLoaderHeap(dwReserveBlockSize,
                            dwCommitBlockSize,
                            NULL, 0,
-                           pPrivatePerfCounter_LoaderBytes,
                            pRangeList,
-                           fMakeExecutable)
+                           fMakeExecutable),
+        m_CriticalSection(fUnlocked ? NULL : CreateLoaderHeapLock())
     {
         WRAPPER_NO_CONTRACT;
-        m_CriticalSection = NULL;
-        m_CriticalSection = CreateLoaderHeapLock();
         m_fExplicitControl = FALSE;
     }
 
@@ -463,21 +457,19 @@ public:
                DWORD dwCommitBlockSize,
                const BYTE* dwReservedRegionAddress,
                SIZE_T dwReservedRegionSize,
-               size_t *pPrivatePerfCounter_LoaderBytes = NULL,
                RangeList *pRangeList = NULL,
-               BOOL fMakeExecutable = FALSE
+               BOOL fMakeExecutable = FALSE,
+               BOOL fUnlocked = FALSE
                )
       : UnlockedLoaderHeap(dwReserveBlockSize,
                            dwCommitBlockSize,
                            dwReservedRegionAddress,
                            dwReservedRegionSize,
-                           pPrivatePerfCounter_LoaderBytes,
                            pRangeList,
-                           fMakeExecutable)
+                           fMakeExecutable),
+        m_CriticalSection(fUnlocked ? NULL : CreateLoaderHeapLock())
     {
         WRAPPER_NO_CONTRACT;
-        m_CriticalSection = NULL;
-        m_CriticalSection = CreateLoaderHeapLock();
         m_fExplicitControl = FALSE;
     }
 
@@ -547,7 +539,7 @@ public:
         return RealAllocMemUnsafe_NoThrow(dwSize.Value() COMMA_INDEBUG(szFile) COMMA_INDEBUG(lineNum));
     }
 private:
-    
+
     TaggedMemAllocPtr RealAllocMemUnsafe(size_t dwSize
 #ifdef _DEBUG
                                   ,__in __in_z const char *szFile
@@ -557,7 +549,7 @@ private:
     {
         WRAPPER_NO_CONTRACT;
 
-        
+
         void *pResult;
         TaggedMemAllocPtr tmap;
 
@@ -774,12 +766,10 @@ class ExplicitControlLoaderHeap : public UnlockedLoaderHeap
 {
 #ifndef DACCESS_COMPILE
 public:
-    ExplicitControlLoaderHeap(size_t *pPrivatePerfCounter_LoaderBytes = NULL,
-                              RangeList *pRangeList = NULL,
+    ExplicitControlLoaderHeap(RangeList *pRangeList = NULL,
                               BOOL fMakeExecutable = FALSE
                )
       : UnlockedLoaderHeap(0, 0, NULL, 0,
-                           pPrivatePerfCounter_LoaderBytes,
                            pRangeList,
                            fMakeExecutable)
     {

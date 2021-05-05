@@ -1,13 +1,12 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //
 
 //
 // ===========================================================================
 // File: palrt.h
-// 
-// =========================================================================== 
+//
+// ===========================================================================
 
 /*++
 
@@ -20,7 +19,7 @@ Abstract:
 
 Author:
 
-     
+
 
 Revision History:
 
@@ -180,7 +179,7 @@ inline void *__cdecl operator new(size_t, void *_P)
 #define ARGUMENT_PRESENT(ArgumentPointer)    (\
     (CHAR *)(ArgumentPointer) != (CHAR *)(NULL) )
 
-#if defined(_WIN64)
+#if defined(HOST_64BIT)
 #define MAX_NATURAL_ALIGNMENT sizeof(ULONGLONG)
 #else
 #define MAX_NATURAL_ALIGNMENT sizeof(ULONG)
@@ -223,24 +222,7 @@ inline void *__cdecl operator new(size_t, void *_P)
 #define THIS_
 #define THIS                void
 
-#ifndef _DECLSPEC_DEFINED_
-#define _DECLSPEC_DEFINED_
-
-#if  defined(_MSC_VER)
-#define DECLSPEC_NOVTABLE   __declspec(novtable)
-#define DECLSPEC_IMPORT     __declspec(dllimport)
-#define DECLSPEC_SELECTANY  __declspec(selectany)
-#elif defined(__GNUC__)
 #define DECLSPEC_NOVTABLE
-#define DECLSPEC_IMPORT     
-#define DECLSPEC_SELECTANY  __attribute__((weak))
-#else
-#define DECLSPEC_NOVTABLE
-#define DECLSPEC_IMPORT
-#define DECLSPEC_SELECTANY
-#endif
-
-#endif // !_DECLSPEC_DEFINED_
 
 #define DECLARE_INTERFACE(iface)    interface DECLSPEC_NOVTABLE iface
 #define DECLARE_INTERFACE_(iface, baseiface)    interface DECLSPEC_NOVTABLE iface : public baseiface
@@ -310,66 +292,13 @@ typedef union _ULARGE_INTEGER {
         DWORD LowPart;
         DWORD HighPart;
 #endif
-    } 
+    }
 #ifndef PAL_STDCPP_COMPAT
     u
 #endif // PAL_STDCPP_COMPAT
      ;
     ULONGLONG QuadPart;
 } ULARGE_INTEGER, *PULARGE_INTEGER;
-
-/******************* HRESULT types ****************************************/
-
-#define FACILITY_WINDOWS                 8
-#define FACILITY_URT                     19
-#define FACILITY_UMI                     22
-#define FACILITY_SXS                     23
-#define FACILITY_STORAGE                 3
-#define FACILITY_SSPI                    9
-#define FACILITY_SCARD                   16
-#define FACILITY_SETUPAPI                15
-#define FACILITY_SECURITY                9
-#define FACILITY_RPC                     1
-#define FACILITY_WIN32                   7
-#define FACILITY_CONTROL                 10
-#define FACILITY_NULL                    0
-#define FACILITY_MSMQ                    14
-#define FACILITY_MEDIASERVER             13
-#define FACILITY_INTERNET                12
-#define FACILITY_ITF                     4
-#define FACILITY_DPLAY                   21
-#define FACILITY_DISPATCH                2
-#define FACILITY_COMPLUS                 17
-#define FACILITY_CERT                    11
-#define FACILITY_ACS                     20
-#define FACILITY_AAF                     18
-
-#define NO_ERROR 0L
-
-#define SEVERITY_SUCCESS    0
-#define SEVERITY_ERROR      1
-
-#define SUCCEEDED(Status) ((HRESULT)(Status) >= 0)
-#define FAILED(Status) ((HRESULT)(Status)<0)
-#define IS_ERROR(Status) ((ULONG)(Status) >> 31 == SEVERITY_ERROR) // diff from win32
-#define HRESULT_CODE(hr)    ((hr) & 0xFFFF)
-#define SCODE_CODE(sc)      ((sc) & 0xFFFF)
-#define HRESULT_FACILITY(hr)  (((hr) >> 16) & 0x1fff)
-#define SCODE_FACILITY(sc)    (((sc) >> 16) & 0x1fff)
-#define HRESULT_SEVERITY(hr)  (((hr) >> 31) & 0x1)
-#define SCODE_SEVERITY(sc)    (((sc) >> 31) & 0x1)
-
-// both macros diff from Win32
-#define MAKE_HRESULT(sev,fac,code) \
-    ((HRESULT) (((ULONG)(sev)<<31) | ((ULONG)(fac)<<16) | ((ULONG)(code))) )
-#define MAKE_SCODE(sev,fac,code) \
-    ((SCODE) (((ULONG)(sev)<<31) | ((ULONG)(fac)<<16) | ((LONG)(code))) )
-
-#define FACILITY_NT_BIT                 0x10000000
-#define HRESULT_FROM_WIN32(x) ((HRESULT)(x) <= 0 ? ((HRESULT)(x)) : ((HRESULT) (((x) & 0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000)))
-#define __HRESULT_FROM_WIN32(x) HRESULT_FROM_WIN32(x)
-
-#define HRESULT_FROM_NT(x)      ((HRESULT) ((x) | FACILITY_NT_BIT))
 
 /******************* OLE, BSTR, VARIANT *************************/
 
@@ -501,7 +430,7 @@ enum VARENUM {
     VT_LPWSTR   = 31,
     VT_RECORD   = 36,
     VT_INT_PTR	= 37,
-    VT_UINT_PTR	= 38,  
+    VT_UINT_PTR	= 38,
 
     VT_FILETIME        = 64,
     VT_BLOB            = 65,
@@ -629,7 +558,7 @@ STDAPI_(HRESULT) VariantClear(VARIANT * pvarg);
 #define V_UINTREF(X)     V_UNION(X, puintVal)
 #define V_ARRAY(X)       V_UNION(X, parray)
 
-#ifdef _WIN64
+#ifdef HOST_64BIT
 #define V_INT_PTR(X)        V_UNION(X, llVal)
 #define V_UINT_PTR(X)       V_UNION(X, ullVal)
 #define V_INT_PTRREF(X)     V_UNION(X, pllVal)
@@ -684,7 +613,7 @@ STDAPI CreateStreamOnHGlobal(PVOID hGlobal, BOOL fDeleteOnRelease, interface ISt
 #define STGM_NOSNAPSHOT         0x00200000L
 
 STDAPI IIDFromString(LPOLESTR lpsz, IID* lpiid);
-STDAPI_(int) StringFromGUID2(REFGUID rguid, LPOLESTR lpsz, int cchMax); 
+STDAPI_(int) StringFromGUID2(REFGUID rguid, LPOLESTR lpsz, int cchMax);
 
 /******************* CRYPT **************************************/
 
@@ -714,34 +643,8 @@ typedef unsigned int ALG_ID;
 
 /******************* NLS ****************************************/
 
-typedef 
-enum tagMIMECONTF {
-    MIMECONTF_MAILNEWS  = 0x1,
-    MIMECONTF_BROWSER   = 0x2,
-    MIMECONTF_MINIMAL   = 0x4,
-    MIMECONTF_IMPORT    = 0x8,
-    MIMECONTF_SAVABLE_MAILNEWS  = 0x100,
-    MIMECONTF_SAVABLE_BROWSER   = 0x200,
-    MIMECONTF_EXPORT    = 0x400,
-    MIMECONTF_PRIVCONVERTER = 0x10000,
-    MIMECONTF_VALID = 0x20000,
-    MIMECONTF_VALID_NLS = 0x40000,
-    MIMECONTF_MIME_IE4  = 0x10000000,
-    MIMECONTF_MIME_LATEST   = 0x20000000,
-    MIMECONTF_MIME_REGISTRY = 0x40000000
-    }   MIMECONTF;
-
 #define LCMAP_LOWERCASE           0x00000100
 #define LCMAP_UPPERCASE           0x00000200
-#define LCMAP_SORTKEY             0x00000400
-#define LCMAP_BYTEREV             0x00000800
-
-#define LCMAP_HIRAGANA            0x00100000
-#define LCMAP_KATAKANA            0x00200000
-#define LCMAP_HALFWIDTH           0x00400000
-#define LCMAP_FULLWIDTH           0x00800000
-
-#define LCMAP_LINGUISTIC_CASING   0x01000000
 
 // 8 characters for language
 // 8 characters for region
@@ -751,22 +654,9 @@ enum tagMIMECONTF {
 // 1 null termination
 #define LOCALE_NAME_MAX_LENGTH   85
 
-#define LOCALE_SCOUNTRY           0x00000006
-#define LOCALE_SENGCOUNTRY        0x00001002
-
-#define LOCALE_SLANGUAGE          0x00000002
-#define LOCALE_SENGLANGUAGE       0x00001001
-
-#define LOCALE_SDATE              0x0000001D
-#define LOCALE_STIME              0x0000001E
-
 #define CSTR_LESS_THAN            1
 #define CSTR_EQUAL                2
 #define CSTR_GREATER_THAN         3
-
-#define NORM_IGNORENONSPACE       0x00000002
-
-#define WC_COMPOSITECHECK         0x00000000 // NOTE: diff from winnls.h
 
 /******************* shlwapi ************************************/
 
@@ -836,8 +726,6 @@ Remember to fix the errcode defintion in safecrt.h.
 #define _wfopen_s _wfopen_unsafe
 #define fopen_s _fopen_unsafe
 
-#define _strlwr_s _strlwr_unsafe
-
 #define _vscprintf _vscprintf_unsafe
 
 extern "C++" {
@@ -862,25 +750,7 @@ inline errno_t __cdecl _wcslwr_unsafe(WCHAR *str, size_t sz)
     _wcslwr(copy);
     wcscpy_s(str, sz, copy);
     free(copy);
-	
-    return 0;
-}
-inline errno_t __cdecl _strlwr_unsafe(char *str, size_t sz)
-{
-    char *copy = (char *)malloc(sz);
-    if(copy == nullptr)
-        return 1;
 
-    errno_t retCode = strcpy_s(copy, sz, str);
-    if(retCode) {
-        free(copy);
-        return 1;
-    }
-
-    _strlwr(copy);
-    strcpy_s(str, sz, copy);
-    free(copy);
-	
     return 0;
 }
 
@@ -974,7 +844,7 @@ STDAPI_(void) PathStripPathW (LPWSTR pszPath);
 /******************* misc ***************************************/
 
 #ifdef __cplusplus
-namespace std 
+namespace std
 {
     typedef decltype(nullptr) nullptr_t;
 }
@@ -1020,11 +890,11 @@ typedef VOID (NTAPI *WAITORTIMERCALLBACK)(PVOID, BOOLEAN);
 // usage pattern is:
 //
 // int get_scratch_register() {
-// #if defined(_TARGET_X86_)
+// #if defined(TARGET_X86)
 //     return eax;
-// #elif defined(_TARGET_AMD64_)
+// #elif defined(TARGET_AMD64)
 //     return rax;
-// #elif defined(_TARGET_ARM_)
+// #elif defined(TARGET_ARM)
 //     return r0;
 // #else
 //     PORTABILITY_ASSERT("scratch register");
@@ -1041,7 +911,7 @@ typedef VOID (NTAPI *WAITORTIMERCALLBACK)(PVOID, BOOLEAN);
 // errors. Once they fix all the places that need attention for portability,
 // they can define PORTABILITY_ASSERT and PORTABILITY_WARNING to cause
 // compile-time errors to make sure that they haven't missed anything.
-// 
+//
 // If it is reasonably possible all codepaths containing PORTABILITY_ASSERT
 // should be compilable (e.g. functions should return NULL or something if
 // they are expected to return a value).
@@ -1061,7 +931,7 @@ typedef VOID (NTAPI *WAITORTIMERCALLBACK)(PVOID, BOOLEAN);
 
 #define UNREFERENCED_PARAMETER(P)          (void)(P)
 
-#ifdef BIT64
+#ifdef HOST_64BIT
 #define VALPTR(x) VAL64(x)
 #define GET_UNALIGNED_PTR(x) GET_UNALIGNED_64(x)
 #define GET_UNALIGNED_VALPTR(x) GET_UNALIGNED_VAL64(x)
@@ -1075,7 +945,7 @@ typedef VOID (NTAPI *WAITORTIMERCALLBACK)(PVOID, BOOLEAN);
 #define SET_UNALIGNED_VALPTR(p,x) SET_UNALIGNED_VAL32(p,x)
 #endif
 
-#ifdef _TARGET_AMD64_
+#ifdef TARGET_AMD64
 #define RUNTIME_FUNCTION_INDIRECT 0x1
 #endif
 
@@ -1185,7 +1055,7 @@ interface ITypeInfo;
 interface ITypeLib;
 interface IMoniker;
 
-typedef VOID (WINAPI *LPOVERLAPPED_COMPLETION_ROUTINE)( 
+typedef VOID (WINAPI *LPOVERLAPPED_COMPLETION_ROUTINE)(
     DWORD dwErrorCode,
     DWORD dwNumberOfBytesTransfered,
     LPOVERLAPPED lpOverlapped);
@@ -1289,7 +1159,7 @@ GET_RUNTIME_FUNCTION_CALLBACK (
 typedef GET_RUNTIME_FUNCTION_CALLBACK *PGET_RUNTIME_FUNCTION_CALLBACK;
 
 typedef
-DWORD   
+DWORD
 OUT_OF_PROCESS_FUNCTION_TABLE_CALLBACK (
     HANDLE Process,
     PVOID TableAddress,
@@ -1301,39 +1171,6 @@ typedef OUT_OF_PROCESS_FUNCTION_TABLE_CALLBACK *POUT_OF_PROCESS_FUNCTION_TABLE_C
 #define OUT_OF_PROCESS_FUNCTION_TABLE_CALLBACK_EXPORT_NAME \
     "OutOfProcessFunctionTableCallback"
 
-#if defined(FEATURE_PAL_SXS)
-
-// #if !defined(_TARGET_MAC64)
-// typedef LONG (*PEXCEPTION_ROUTINE)(
-    // IN PEXCEPTION_POINTERS pExceptionPointers,
-    // IN LPVOID lpvParam);
-
-// #define DISPATCHER_CONTEXT    LPVOID
-
-// #else // defined(_TARGET_MAC64)
-
-//
-// Define unwind history table structure.
-//
-
-#define UNWIND_HISTORY_TABLE_SIZE 12
-
-typedef struct _UNWIND_HISTORY_TABLE_ENTRY {
-    DWORD64 ImageBase;
-    PRUNTIME_FUNCTION FunctionEntry;
-} UNWIND_HISTORY_TABLE_ENTRY, *PUNWIND_HISTORY_TABLE_ENTRY;
-
-typedef struct _UNWIND_HISTORY_TABLE {
-    DWORD Count;
-    BYTE  LocalHint;
-    BYTE  GlobalHint;
-    BYTE  Search;
-    BYTE  Once;
-    DWORD64 LowAddress;
-    DWORD64 HighAddress;
-    UNWIND_HISTORY_TABLE_ENTRY Entry[UNWIND_HISTORY_TABLE_SIZE];
-} UNWIND_HISTORY_TABLE, *PUNWIND_HISTORY_TABLE;
-
 typedef
 EXCEPTION_DISPOSITION
 (*PEXCEPTION_ROUTINE) (
@@ -1343,7 +1180,7 @@ EXCEPTION_DISPOSITION
     PVOID DispatcherContext
     );
 
-#if defined(_ARM_)
+#if defined(HOST_ARM)
 
 typedef struct _DISPATCHER_CONTEXT {
     DWORD ControlPc;
@@ -1354,14 +1191,14 @@ typedef struct _DISPATCHER_CONTEXT {
     PCONTEXT ContextRecord;
     PEXCEPTION_ROUTINE LanguageHandler;
     PVOID HandlerData;
-    PUNWIND_HISTORY_TABLE HistoryTable;
+    PVOID HistoryTable;
     DWORD ScopeIndex;
     BOOLEAN ControlPcIsUnwound;
     PBYTE  NonVolatileRegisters;
     DWORD Reserved;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
-#elif defined(_ARM64_)
+#elif defined(HOST_ARM64)
 
 typedef struct _DISPATCHER_CONTEXT {
     ULONG64 ControlPc;
@@ -1372,14 +1209,14 @@ typedef struct _DISPATCHER_CONTEXT {
     PCONTEXT ContextRecord;
     PEXCEPTION_ROUTINE LanguageHandler;
     PVOID HandlerData;
-    PUNWIND_HISTORY_TABLE HistoryTable;
+    PVOID HistoryTable;
     ULONG64 ScopeIndex;
     BOOLEAN ControlPcIsUnwound;
     PBYTE  NonVolatileRegisters;
     ULONG64 Reserved;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
-#elif defined(_AMD64_)
+#elif defined(HOST_AMD64)
 
 typedef struct _DISPATCHER_CONTEXT {
     ULONG64 ControlPc;
@@ -1390,10 +1227,10 @@ typedef struct _DISPATCHER_CONTEXT {
     PCONTEXT ContextRecord;
     PEXCEPTION_ROUTINE LanguageHandler;
     PVOID HandlerData;
-    PUNWIND_HISTORY_TABLE HistoryTable;
+    PVOID HistoryTable;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
-#elif defined(_X86_)
+#elif defined(HOST_X86)
 
 typedef struct _DISPATCHER_CONTEXT {
     DWORD ControlPc;
@@ -1405,7 +1242,7 @@ typedef struct _DISPATCHER_CONTEXT {
     PCONTEXT ContextRecord;
     PEXCEPTION_ROUTINE LanguageHandler;
     PVOID HandlerData;
-    PUNWIND_HISTORY_TABLE HistoryTable;
+    PVOID HistoryTable;
     BOOLEAN ControlPcIsUnwound;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
@@ -1415,15 +1252,13 @@ typedef struct _DISPATCHER_CONTEXT {
 
 #endif
 
-// #endif // !defined(_TARGET_MAC64)
+// #endif // !defined(TARGET_OSX)
 
 typedef DISPATCHER_CONTEXT *PDISPATCHER_CONTEXT;
 
 #define ExceptionContinueSearch     EXCEPTION_CONTINUE_SEARCH
 #define ExceptionStackUnwind        EXCEPTION_EXECUTE_HANDLER
 #define ExceptionContinueExecution  EXCEPTION_CONTINUE_EXECUTION
-
-#endif // FEATURE_PAL_SXS
 
 typedef struct _EXCEPTION_REGISTRATION_RECORD EXCEPTION_REGISTRATION_RECORD;
 typedef EXCEPTION_REGISTRATION_RECORD *PEXCEPTION_REGISTRATION_RECORD;
@@ -1488,7 +1323,7 @@ EXTERN_C HRESULT PALAPI PAL_CoCreateInstance(REFCLSID   rclsid,
                              REFIID     riid,
                              void     **ppv);
 
-// So we can have CoCreateInstance in most of the code base, 
+// So we can have CoCreateInstance in most of the code base,
 // instead of spreading around of if'def FEATURE_PALs for PAL_CoCreateInstance.
 #define CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv) PAL_CoCreateInstance(rclsid, riid, ppv)
 
