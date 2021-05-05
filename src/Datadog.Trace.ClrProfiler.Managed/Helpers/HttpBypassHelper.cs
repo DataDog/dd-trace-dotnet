@@ -4,13 +4,11 @@ namespace Datadog.Trace.ClrProfiler.Helpers
 {
     internal static class HttpBypassHelper
     {
-        public static bool ShouldSkipResource(Uri requestUri, string[] patternsToSkip)
+        public static bool ShouldSkipResource(string requestUri, string[] patternsToSkip)
         {
-            var url = requestUri.ToString();
-
             for (var y = 0; y < patternsToSkip.Length; y++)
             {
-                var found = (url.Length - url.Replace(patternsToSkip[y], string.Empty).Length) / patternsToSkip[y].Length > 0;
+                var found = (requestUri.Length - requestUri.Replace(patternsToSkip[y], string.Empty).Length) / patternsToSkip[y].Length > 0;
                 if (found)
                 {
                     return true;

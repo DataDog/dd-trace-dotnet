@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void ShouldBypassUrl(string url, bool shouldBypass)
         {
             var settings = new TracerSettings();
-            var didBypass = HttpBypassHelper.ShouldSkipResource(new Uri(url), settings.HttpUrlPatternSkips);
+            var didBypass = HttpBypassHelper.ShouldSkipResource(url, settings.HttpUrlPatternSkips);
             Assert.Equal(expected: shouldBypass, actual: didBypass);
         }
     }
