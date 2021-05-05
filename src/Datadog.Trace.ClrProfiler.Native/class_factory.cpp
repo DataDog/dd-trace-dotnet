@@ -9,11 +9,11 @@
 
 std::string ConvertToString(const IID guid) {
   char szGuid[40] = {0};
-  sprintf_s(szGuid, 40, "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
+  sprintf_s(szGuid, sizeof(szGuid), "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
           guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1],
           guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5],
           guid.Data4[6], guid.Data4[7]);
-  return std::string(szGuid, 40);
+  return std::string(szGuid);
 }
 
 ClassFactory::ClassFactory() : refCount(0) {}
