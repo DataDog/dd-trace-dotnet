@@ -7,7 +7,7 @@
 
 namespace trace {
 
-class CorProfilerBase : public ICorProfilerCallback8 {
+class CorProfilerBase : public ICorProfilerCallback10 {
  private:
   std::atomic<int> ref_count_;
 
@@ -188,6 +188,17 @@ class CorProfilerBase : public ICorProfilerCallback8 {
       ULONG cbILHeader) override;
   HRESULT STDMETHODCALLTYPE DynamicMethodJITCompilationFinished(
       FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock) override;
+
+  HRESULT STDMETHODCALLTYPE DynamicMethodUnloaded(FunctionID functionId) override;
+
+  HRESULT STDMETHODCALLTYPE EventPipeEventDelivered(
+      EVENTPIPE_PROVIDER provider, DWORD eventId, DWORD eventVersion,
+      ULONG cbMetadataBlob, LPCBYTE metadataBlob, ULONG cbEventData,
+      LPCBYTE eventData, LPCGUID pActivityId, LPCGUID pRelatedActivityId,
+      ThreadID eventThread, ULONG numStackFrames,
+      UINT_PTR stackFrames[]) override;
+
+  HRESULT STDMETHODCALLTYPE EventPipeProviderCreated(EVENTPIPE_PROVIDER provider) override;
 
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid,
                                            void** ppvObject) override {

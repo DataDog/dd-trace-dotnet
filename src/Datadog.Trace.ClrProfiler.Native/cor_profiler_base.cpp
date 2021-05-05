@@ -475,4 +475,20 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::DynamicMethodJITCompilationFinished(
   return S_OK;
 }
 
+HRESULT STDMETHODCALLTYPE CorProfilerBase::DynamicMethodUnloaded(FunctionID functionId) {
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfilerBase::EventPipeEventDelivered(
+    EVENTPIPE_PROVIDER provider, DWORD eventId, DWORD eventVersion,
+    ULONG cbMetadataBlob, LPCBYTE metadataBlob, ULONG cbEventData,
+    LPCBYTE eventData, LPCGUID pActivityId, LPCGUID pRelatedActivityId,
+    ThreadID eventThread, ULONG numStackFrames, UINT_PTR stackFrames[]) {
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfilerBase::EventPipeProviderCreated(EVENTPIPE_PROVIDER provider) {
+  return S_OK;
+}
+
 }  // namespace trace
