@@ -130,7 +130,7 @@ jobs:
 
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: 'cover'
+      targetPath: 'test/Datadog.Trace.ClrProfiler.IntegrationTests/results/'
     continueOnError: true
 
 
@@ -651,7 +651,7 @@ jobs:
     inputs:
       SourceFolder: '$(Build.SourcesDirectory)'
       Contents: '**'
-      TargetFolder: 'project'
+      TargetFolder: '$(Build.SourcesDirectory)/project'
 
   - task: reportgenerator@4
     inputs:

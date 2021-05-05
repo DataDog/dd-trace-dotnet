@@ -7,14 +7,7 @@ buildConfiguration=${buildConfiguration:-Debug}
 publishTargetFramework=${publishTargetFramework:-netcoreapp3.1}
 
 mkdir -p /var/log/datadog/dotnet
-
 mkdir -p /var/log/datadog/cover
-
-if [[ ! -z "$TEST_COVERAGE_PATH" ]]
-then
-  dotnet tool install -g coverlet.console
-  export PATH="$PATH:/root/.dotnet/tools" 
-fi
 
 #https://docs.microsoft.com/en-us/dotnet/core/diagnostics/dumps#collecting-dumps-on-crash
 export COMPlus_DbgEnableMiniDump=1
@@ -26,7 +19,7 @@ cleanup() {
     mkdir /project/build_data
 
     cp /var/log/datadog/dotnet/* /project/build_data/
-    cp -R /var/log/datadog/cover /project/
+    #cp -R /var/log/datadog/cover /project/
     cp /tmp/coredump* /project/build_data/ 2>/dev/null || :
 }
 
