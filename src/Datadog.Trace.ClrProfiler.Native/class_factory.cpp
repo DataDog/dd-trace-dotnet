@@ -68,6 +68,20 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
   );
   trace::Debug("ClassFactory::CreateInstance");
 
+ #if defined(ARM64) || defined(ARM)
+
+  //
+  // If the architecture is ARM64 or ARM, we check if the runtime is greater
+  // than .NET 5.0 due in previous versions ReJIT is not fully supported.
+  //
+
+  if (riid != __uuidof(ICorProfilerCallback9)) {
+    trace::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: This architecture requires .NET 5.0 or greater.");
+    return E_NOINTERFACE;
+  }
+
+ #endif
+
   auto profiler = new trace::CorProfiler();
   return profiler->QueryInterface(riid, ppvObject);
 }
