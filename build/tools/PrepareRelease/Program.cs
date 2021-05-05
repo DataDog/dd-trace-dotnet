@@ -38,11 +38,15 @@ namespace PrepareRelease
             if (JobShouldRun(Msi, args))
             {
                 Environment.SetEnvironmentVariable("SOLUTION_DIR", solutionDir);
+
+                var outputDir = Path.Combine(solutionDir, "src", "bin", "windows-tracer-home");
+                Environment.SetEnvironmentVariable("OUTPUT_DIR", outputDir);
+
                 var publishBatch = Path.Combine(solutionDir, "build", "tools", "PrepareRelease", "publish-all.bat");
                 ExecuteCommand(publishBatch);
 
                 Console.WriteLine("--------------- MSI Job Started ---------------");
-                SyncMsiContent.Run();
+                SyncMsiContent.Run(solutionDir, outputDir);
                 Console.WriteLine("--------------- MSI Job Complete ---------------");
             }
         }

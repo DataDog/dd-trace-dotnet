@@ -1,8 +1,7 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
-using Datadog.Core.Tools;
-using Datadog.Trace.TestHelpers;
 
 namespace PrepareRelease
 {
@@ -44,35 +43,49 @@ namespace PrepareRelease
             Net461 = 2
         }
 
-        public static void Run()
+        public static void Run(string solutionDirectory, string outputDirectory)
         {
             CreateWixFile(
+                solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Net45.GAC",
                 frameworkMoniker: "net45",
                 groupDirectory: "net45.GAC",
                 filePrefix: "net45_GAC_",
                 GacStatus.Net45);
             CreateWixFile(
+                solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Net461.GAC",
                 frameworkMoniker: "net461",
                 groupDirectory: "net461.GAC",
                 filePrefix: "net461_GAC_",
                 GacStatus.Net461);
             CreateWixFile(
+                solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Net45",
                 frameworkMoniker: "net45");
             CreateWixFile(
+                solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Net461",
                 frameworkMoniker: "net461");
             CreateWixFile(
+                solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.NetStandard20",
                 frameworkMoniker: "netstandard2.0");
             CreateWixFile(
+                solutionDirectory,
+                outputDirectory,
                 groupId: "Files.Managed.Netcoreapp31",
                 frameworkMoniker: "netcoreapp3.1");
         }
 
         private static void CreateWixFile(
+            string solutionDirectory,
+            string outputDirectory,
             string groupId,
             string frameworkMoniker,
             string groupDirectory = null,
@@ -81,10 +94,8 @@ namespace PrepareRelease
         {
             Console.WriteLine($"Creating the {groupId} Group");
 
-            groupDirectory = groupDirectory ?? $"{frameworkMoniker}";
-            filePrefix = filePrefix ?? $"{frameworkMoniker.Replace(".", string.Empty)}_";
-
-            var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
+            groupDirectory ??= $"{frameworkMoniker}";
+            filePrefix ??= $"{frameworkMoniker.Replace(".", string.Empty)}_";
 
             var wixProjectRoot =
                 Path.Combine(
@@ -94,7 +105,7 @@ namespace PrepareRelease
 
             var extensions = gac == GacStatus.NotInGac ? new[] { ".dll", ".pdb" } : new[] { ".dll" };
 
-            var filePaths = DependencyHelpers.GetTracerBinContent(frameworkMoniker, extensions);
+            var filePaths = GetTracerBinContent(outputDirectory, frameworkMoniker, extensions);
 
             var components = string.Empty;
 
@@ -131,6 +142,25 @@ namespace PrepareRelease
             File.WriteAllText(wixFilePath, wixFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
             Console.WriteLine($"{groupId} Group successfully created.");
+        }
+
+        private static string[] GetTracerBinContent(string outputDirectory, string frameworkMoniker, string[] extensions)
+        {
+            var outputFolder = Path.Combine(outputDirectory, frameworkMoniker);
+
+            var filePaths = Directory.EnumerateFiles(
+                                          outputFolder,
+                                          "*.*",
+                                          SearchOption.AllDirectories)
+                                     .Where(f => extensions.Contains(Path.GetExtension(f)))
+                                     .ToArray();
+
+            if (filePaths.Length == 0)
+            {
+                throw new Exception("Be sure to build in release mode before running this tool.");
+            }
+
+            return filePaths;
         }
     }
 }
