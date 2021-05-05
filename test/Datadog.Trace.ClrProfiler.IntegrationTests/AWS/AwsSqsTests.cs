@@ -159,12 +159,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
 
                 var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: AwsExpectation.IntegrationOperationName);
-                Assert.True(spans.Count >= _expectedSpans.Count, $"Expecting at least {_expectedSpans.Count} spans, only received {spans.Count}");
+                spans.Should().HaveCountGreaterOrEqualTo(_expectedSpans.Count);
 
                 spans.OrderBy(s => s.Start).Should().BeEquivalentTo(_expectedSpans, options => options
                     .WithStrictOrdering()
                     .ExcludingMissingMembers()
                     .ExcludingDefaultSpanProperties()
+                    .AssertMetricsMatchExcludingKeys("_dd.tracer_kr", "_sampling_priority_v1")
                     .AssertTagsMatchAndSpecifiedTagsPresent("env", "aws.requestId", "aws.queue.url"));
             }
         }

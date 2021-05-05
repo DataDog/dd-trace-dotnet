@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -23,6 +24,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 ctx.Subject.Should().ContainKeys(presentTags);
                 ctx.Subject.ExceptKeys(presentTags).Should().Equal(ctx.Expectation);
             }).When(info => info.SelectedMemberPath.EndsWith("Tags"));
+        }
+
+        public static EquivalencyAssertionOptions<MockTracerAgent.Span> AssertMetricsMatchExcludingKeys(this EquivalencyAssertionOptions<MockTracerAgent.Span> options, params string[] excludedKeys)
+        {
+            return options.Using<Dictionary<string, double>>(ctx =>
+            {
+                ctx.Subject.ExceptKeys(excludedKeys).Should().Equal(ctx.Expectation);
+            }).When(info => info.SelectedMemberPath.EndsWith("Metrics"));
         }
     }
 }

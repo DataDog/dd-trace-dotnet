@@ -386,6 +386,10 @@ namespace Samples.AWS.SQS
             };
             var response1 = await _sqsClient.SendMessageBatchAsync(sendMessageBatchRequest);
             Console.WriteLine($"SendMessageBatchAsync HTTP status code: {response1.HttpStatusCode}");
+            if (response1.HttpStatusCode == HttpStatusCode.OK)
+            {
+                _queue2MessagesRemaining++;
+            }
 
             var sendMessageBatchRequestEntryList = new List<SendMessageBatchRequestEntry>
             {
@@ -395,6 +399,10 @@ namespace Samples.AWS.SQS
             };
             var response2 = await _sqsClient.SendMessageBatchAsync(_queue2Url, sendMessageBatchRequestEntryList);
             Console.WriteLine($"SendMessageBatchAsync HTTP status code: {response2.HttpStatusCode}");
+            if (response2.HttpStatusCode == HttpStatusCode.OK)
+            {
+                _queue2MessagesRemaining++;
+            }
         }
 
         private static async Task ReceiveMessagesAndDeleteMessageBatchAsync()
