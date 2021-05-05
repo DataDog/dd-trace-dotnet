@@ -141,8 +141,6 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        internal static bool UseOptimization { get; set; } = true;
-
 #if NETFRAMEWORK
         public void OnTraceStarted_RefreshIISState(object sender, SpanEventArgs spanEventArgs)
         {
@@ -227,7 +225,7 @@ namespace Datadog.Trace.Logging
 
         private void RemoveLastCorrelationIdentifierContext()
         {
-            if (UseOptimization && _logProvider is CustomSerilogLogProvider)
+            if (_logProvider is CustomSerilogLogProvider)
             {
                 if (_tracer.ActiveScope == null)
                 {
@@ -310,7 +308,7 @@ namespace Datadog.Trace.Logging
 
             try
             {
-                if (UseOptimization && _logProvider is CustomSerilogLogProvider customSerilogLogProvider)
+                if (_logProvider is CustomSerilogLogProvider customSerilogLogProvider)
                 {
                     var currentEnricher = _currentEnricher.Get();
 
