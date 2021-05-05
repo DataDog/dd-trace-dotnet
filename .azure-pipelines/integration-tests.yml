@@ -116,17 +116,23 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
 
-  - task: reportgenerator@4
-    inputs:
-      reports: 'cover/coverage.*.xml'
-      targetdir: 'coverresult'
-      reporttypes: 'Cobertura'
-    continueOnError: true
+#  - task: reportgenerator@4
+#    inputs:
+#      reports: 'cover/coverage.*.xml'
+#      targetdir: 'coverresult'
+#      reporttypes: 'Cobertura'
+#    continueOnError: true
+
+#  - task: PublishPipelineArtifact@1
+#    inputs:
+#      targetPath: 'coverresult/Cobertura.xml'
+#    continueOnError: true
 
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: 'coverresult/Cobertura.xml'
+      targetPath: 'cover'
     continueOnError: true
+
 
   - publish: build_data
     artifact: $(Agent.JobName)_profiler-logs-$(System.JobAttempt)
@@ -372,8 +378,9 @@ jobs:
     displayName: dotnet test
     inputs:
       command: test
+      publishTestResults: false
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeDirectory=$(Build.SourcesDirectory)\test\Datadog.Trace.ClrProfiler.IntegrationTests\bin\Release\netcoreapp3.1\profiler-lib\netcoreapp3.1 DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*]Datadog.Trace.Vendors.*      
+      arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform) -r $(Common.TestResultsDirectory) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeDirectory=$(Build.SourcesDirectory)\test\Datadog.Trace.ClrProfiler.IntegrationTests\bin\Release\netcoreapp3.1\profiler-lib\netcoreapp3.1 DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*]Datadog.Trace.Vendors.*      
     env:
       TEST_COVERAGE_PATH: $(Build.SourcesDirectory)\cover
 
@@ -384,9 +391,16 @@ jobs:
 #      reporttypes: 'Cobertura'
 #    continueOnError: true
    
+  - task: PublishTestResults@2
+    displayName: publish test results
+    inputs:
+      testResultsFormat: VSTest
+      testResultsFiles: $(Common.TestResultsDirectory)/**/*.trx
+    condition: succeededOrFailed()
+   
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+      targetPath: '$(Common.TestResultsDirectory)'
     continueOnError: true
 
   - task: DockerCompose@0
@@ -641,7 +655,7 @@ jobs:
 
   - task: reportgenerator@4
     inputs:
-      reports: '$(Build.SourcesDirectory)\cover\*\coverage.cobertura.xml'
+      reports: '$(Build.SourcesDirectory)\cover\*\*\coverage.cobertura.xml'
       targetdir: '$(Build.SourcesDirectory)\coveragereport'
       reporttypes: 'Cobertura'
 
