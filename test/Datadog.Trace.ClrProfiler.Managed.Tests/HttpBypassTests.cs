@@ -2,6 +2,7 @@ using System;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.PlatformHelpers;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
@@ -20,11 +21,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("https://apmjunkyardstorage.blob.core.LINUX.net/webjobs-hosts/locks/dd-netcore31-junkyard-parallel-d/JunkyardLoad.JunkyardLoad.JunkyardNetcore31CallTargetFull.Listener", false)]
         [InlineData("https://dd-netcore31-junkyard-baseline.azurewebsites.net/", false)]
         [InlineData("https://DD-NETCORE31-JUNKYARD-BASELINE.AZUREWEBSITES.nNET/", false)]
-        [InlineData("https://www.google.com", false)]
-        public void ShouldBypassUrl(string url, bool shouldBypass)
+        [InlineData("https://www.datadoghq.com", false)]
+        public void ShouldBypassUrlInAzureAppService(string url, bool shouldBypass)
         {
-            var settings = new TracerSettings();
-            var didBypass = HttpBypassHelper.ShouldSkipResource(url, settings.HttpClientExcludedUrlPatterns);
+            var exclusions = AzureAppServices.Metadata.DefaultHttpClientExclusions.Replace(" ", string.Empty).Split(',');
+            var didBypass = HttpBypassHelper.ShouldSkipResource(url, exclusions);
             Assert.Equal(expected: shouldBypass, actual: didBypass);
         }
     }

@@ -168,10 +168,13 @@ namespace Datadog.Trace.Configuration
                                           true;
 
             var urlPatternSkips = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
-                                  // Default value
-                                  "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin";
+                                    // default value
+                                    (AzureAppServices.Metadata.IsRelevant ? AzureAppServices.Metadata.DefaultHttpClientExclusions : null);
 
-            HttpClientExcludedUrlPatterns = ParseUrlStringArray(urlPatternSkips.ToLower());
+            if (urlPatternSkips != null)
+            {
+                HttpClientExcludedUrlPatterns = ParseUrlStringArray(urlPatternSkips.ToLower());
+            }
 
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
                                            // Default value

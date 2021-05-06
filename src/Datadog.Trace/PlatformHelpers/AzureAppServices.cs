@@ -178,6 +178,8 @@ namespace Datadog.Trace.PlatformHelpers
 
         public string Runtime { get; }
 
+        public string DefaultHttpClientExclusions { get; } = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin";
+
         private string CompileResourceId()
         {
             string resourceId = null;
