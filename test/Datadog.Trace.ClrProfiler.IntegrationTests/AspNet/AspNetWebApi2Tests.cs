@@ -20,15 +20,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
-    public class AspNetWebApi2TestsCallTargetNoInlining : AspNetWebApi2Tests
-    {
-        public AspNetWebApi2TestsCallTargetNoInlining(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, enableInlining: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
     public class AspNetWebApi2TestsCallTarget : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)

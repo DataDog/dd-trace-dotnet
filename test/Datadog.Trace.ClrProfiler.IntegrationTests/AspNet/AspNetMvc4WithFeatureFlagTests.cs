@@ -21,15 +21,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc4WithFeatureFlagTestsCallTargetNoInlining : AspNetMvc4WithFeatureFlagTests
-    {
-        public AspNetMvc4WithFeatureFlagTestsCallTargetNoInlining(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, enableInlining: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
     public class AspNetMvc4WithFeatureFlagTestsCallTarget : AspNetMvc4WithFeatureFlagTests
     {
         public AspNetMvc4WithFeatureFlagTestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)
