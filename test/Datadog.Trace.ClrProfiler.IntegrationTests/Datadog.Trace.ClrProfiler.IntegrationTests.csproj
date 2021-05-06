@@ -25,11 +25,19 @@
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
 
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+
+    <!-- Add file nesting for Verify   -->
+    <None Update="**\*.verified.txt" DependentUpon="$([System.String]::Copy('%(Filename)').Split('.').GetValue(0)).cs" />
+    <None Update="**\*.received.txt" DependentUpon="$([System.String]::Copy('%(Filename)').Split('.').GetValue(0)).cs" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net452'">
+    <PackageReference Include="Verify.Xunit" Version="11.12.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
