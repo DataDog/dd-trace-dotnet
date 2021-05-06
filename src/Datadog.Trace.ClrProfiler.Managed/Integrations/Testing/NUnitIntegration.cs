@@ -204,7 +204,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             TargetSignatureTypes = new[] { ClrNames.Bool, ClrNames.Int32 })]
         public static object NUnitTestAssemblyRunner_WaitForCompletion(
             object testAssemblyRunner,
-            object timeout,
+            int timeout,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
@@ -212,11 +212,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             if (testAssemblyRunner == null) { throw new ArgumentNullException(nameof(testAssemblyRunner)); }
 
             Type testAssemblyRunnerType = testAssemblyRunner.GetType();
-            Func<object, object, object> execute;
+            Func<object, int, object> execute;
 
             try
             {
-                execute = MethodBuilder<Func<object, object, object>>
+                execute = MethodBuilder<Func<object, int, object>>
                     .Start(moduleVersionPtr, mdToken, opCode, WaitForCompletionMethod)
                     .WithConcreteType(testAssemblyRunnerType)
                     .WithParameters(timeout)
