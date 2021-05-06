@@ -39,9 +39,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             if (new Version(FrameworkDescription.Instance.ProductVersion).Major >= 5)
             {
-                if (new Version(packageVersion) < new Version("3.11"))
+                if (new Version(packageVersion) < new Version("3.13"))
                 {
-                    // Ignore due https://github.com/nunit/nunit/issues/3705
+                    // Ignore due https://github.com/nunit/nunit/issues/3565#issuecomment-726835235
                     return;
                 }
             }
