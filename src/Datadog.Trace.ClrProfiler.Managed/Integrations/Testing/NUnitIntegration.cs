@@ -32,6 +32,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string NUnitWorkShiftType = "NUnit.Framework.Internal.Execution.WorkShift";
         private const string NUnitShutdownMethod = "ShutDown";
 
+        private const string NUnitTestAssemblyRunnerType = "NUnit.Framework.Api.NUnitTestAssemblyRunner";
+        private const string WaitForCompletionMethod = "WaitForCompletion";
+
         private const string NUnitTestResultType = "NUnit.Framework.Internal.TestResult";
         private const string NUnitTestExecutionContextType = "NUnit.Framework.Internal.TestExecutionContext";
 
@@ -180,21 +183,62 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
 
             execute(workShift);
-            SynchronizationContext context = SynchronizationContext.Current;
+            AutoInstrumentation.Testing.NUnit.NUnitIntegration.FlushSpans();
+        }
+
+        /// <summary>
+        /// NUnit.Framework.Api.NUnitTestAssemblyRunner.WaitForCompletion() instrumentation
+        /// </summary>
+        /// <param name="testAssemblyRunner">The NUnitTestAssembly instance</param>
+        /// <param name="timeout">The timeout</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The original method's return value.</returns>
+        [InterceptMethod(
+            TargetAssembly = NUnitAssembly,
+            TargetType = NUnitTestAssemblyRunnerType,
+            TargetMethod = WaitForCompletionMethod,
+            TargetMinimumVersion = Major3Minor0,
+            TargetMaximumVersion = Major3,
+            TargetSignatureTypes = new[] { ClrNames.Bool, ClrNames.Int32 })]
+        public static object NUnitTestAssemblyRunner_WaitForCompletion(
+            object testAssemblyRunner,
+            object timeout,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (testAssemblyRunner == null) { throw new ArgumentNullException(nameof(testAssemblyRunner)); }
+
+            Type testAssemblyRunnerType = testAssemblyRunner.GetType();
+            Func<object, object, object> execute;
+
             try
             {
-                SynchronizationContext.SetSynchronizationContext(null);
-                // We have to ensure the flush of the buffer after we finish the tests of an assembly.
-                // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
-                // So the last spans in buffer aren't send to the agent.
-                // Other times we reach the 500 items of the buffer in a sec and the tracer start to drop spans.
-                // In a test scenario we must keep all spans.
-                Common.TestTracer.FlushAsync().GetAwaiter().GetResult();
+                execute = MethodBuilder<Func<object, object, object>>
+                    .Start(moduleVersionPtr, mdToken, opCode, WaitForCompletionMethod)
+                    .WithConcreteType(testAssemblyRunnerType)
+                    .WithParameters(timeout)
+                    .WithNamespaceAndNameFilters(ClrNames.Bool, ClrNames.Int32)
+                    .Build();
             }
-            finally
+            catch (Exception ex)
             {
-                SynchronizationContext.SetSynchronizationContext(context);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: NUnitTestAssemblyRunnerType,
+                    methodName: WaitForCompletionMethod,
+                    instanceType: testAssemblyRunnerType.AssemblyQualifiedName);
+                throw;
             }
+
+            object result = execute(testAssemblyRunner, timeout);
+            AutoInstrumentation.Testing.NUnit.NUnitIntegration.FlushSpans();
+            return result;
         }
 
         /// <summary>

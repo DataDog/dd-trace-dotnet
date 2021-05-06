@@ -1851,6 +1851,29 @@
         "caller": {},
         "target": {
           "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Api.NUnitTestAssemblyRunner",
+          "method": "WaitForCompletion",
+          "signature_types": [
+            "System.Boolean",
+            "System.Int32"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAssemblyRunnerWaitForCompletionIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
           "type": "NUnit.Framework.Internal.Commands.TestMethodCommand",
           "method": "Execute",
           "signature_types": [
@@ -5571,6 +5594,31 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
           "method": "WorkShift_ShutDown",
           "signature": "00 04 01 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Api.NUnitTestAssemblyRunner",
+          "method": "WaitForCompletion",
+          "signature_types": [
+            "System.Boolean",
+            "System.Int32"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
+          "method": "NUnitTestAssemblyRunner_WaitForCompletion",
+          "signature": "00 05 1C 1C 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
       },
