@@ -2092,8 +2092,8 @@ inline ULONG CorSigUncompressData(      // return number of bytes of that compre
     return dwSizeOfData;
 }
 
-
-extern const mdToken g_tkCorEncodeToken[];
+const mdToken g_tkCorEncodeToken[4] = {mdtTypeDef, mdtTypeRef, mdtTypeSpec,
+                                       mdtBaseType};
 
 // uncompress a token
 inline mdToken CorSigUncompressToken(   // return the token.
