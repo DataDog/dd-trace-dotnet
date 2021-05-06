@@ -176,7 +176,7 @@ if(ISLINUX)
 endif()
 
 # Sets compiler options
-add_compile_options(-std=c++11 -fPIC -fms-extensions)
+add_compile_options(-std=c++17 -fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wno-c++17-extensions)
 if (ISMACOS)
