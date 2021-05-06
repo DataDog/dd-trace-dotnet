@@ -367,10 +367,11 @@ jobs:
     displayName: dotnet test
     inputs:
       command: test
+      publishTestResults: false
       projects: |
         test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
         test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
-      arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform) 
+      arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform) -r $(Common.TestResultsDirectory) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*]Datadog.Trace.Vendors.*    
     env:
       TEST_COVERAGE_PATH: $(Build.SourcesDirectory)\cover
 
