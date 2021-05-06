@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             where TMessageQueue : IMessageQueue
         {
             Log.Information("send internal integration");
-            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, instance.Label, instance.LastModifyTime, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out MsmqTags tags);
+            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, instance.Label, instance.LastModifyTime, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out _);
             return new CallTargetState(scope);
         }
 

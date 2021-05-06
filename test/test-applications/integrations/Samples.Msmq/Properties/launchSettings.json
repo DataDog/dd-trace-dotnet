@@ -2,8 +2,8 @@
   "profiles": {
     "Samples.Msmq": {
       "commandName": "Project",
+      "commandLineArgs": "30",
       "environmentVariables": {
-        "DD_ENV": "Samples.Msmq",
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "COR_ENABLE_PROFILING": "1",
         "CORECLR_ENABLE_PROFILING": "1",
@@ -11,6 +11,7 @@
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
         "DD_TRACE_CALLTARGET_ENABLED": "1",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
+        "DD_ENV": "Samples.Msmq",
         "CORECLR_PROFILER_PATH": "$(ProjectDir)$(OutputPath)profiler-lib\\Datadog.Trace.ClrProfiler.Native.dll",
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
       },

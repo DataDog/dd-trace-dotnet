@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Messaging;
 using System.Threading;
 
@@ -10,10 +11,16 @@ namespace Samples.Msmq
         const string PrivateQueuePath = ".\\Private$\\myQueue3";
         public static void Main(string[] args)
         {
+            Console.WriteLine("first arg " + args.First());
+
+            var messagesToSend = int.TryParse(args.First(), out int res) ? res : 10;
+            Console.WriteLine("messages to send " + messagesToSend);
             var queue = GetOrCreate(PrivateQueuePath);
-            SendWithTransactionType(queue);
-            var message = queue.Receive();
-            Console.WriteLine($"received {message}");
+            for (int i = 0; i < messagesToSend; i++)
+            {
+                SendWithTransactionType(queue);
+                queue.Receive(TimeSpan.FromSeconds(1));
+            }
 
             //void Receive()
             //{
