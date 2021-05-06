@@ -171,7 +171,7 @@ namespace Datadog.Trace.Configuration
                                   // Default value
                                   "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin";
 
-            HttpUrlPatternSkips = ParseStringArray(urlPatternSkips);
+            HttpClientExcludedUrlPatterns = ParseUrlStringArray(urlPatternSkips.ToLower());
 
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
                                            // Default value
@@ -403,8 +403,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the comma separated list of url patterns to skip tracing.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpUrlPatternSkips"/>
-        internal string[] HttpUrlPatternSkips { get; set; }
+        /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlPatterns"/>
+        internal string[] HttpClientExcludedUrlPatterns { get; set; }
 
         /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for server integrations.
@@ -569,9 +569,9 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        internal string[] ParseStringArray(string commaSeparatedValues)
+        internal string[] ParseUrlStringArray(string commaSeparatedValues)
         {
-            return commaSeparatedValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return commaSeparatedValues.Replace(" ", string.Empty).Split(',');
         }
 
         internal bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)

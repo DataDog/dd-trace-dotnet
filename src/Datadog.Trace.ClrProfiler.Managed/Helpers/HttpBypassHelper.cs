@@ -6,10 +6,10 @@ namespace Datadog.Trace.ClrProfiler.Helpers
     {
         public static bool ShouldSkipResource(string requestUri, string[] patternsToSkip)
         {
-            for (var y = 0; y < patternsToSkip.Length; y++)
+            requestUri = requestUri.ToLower();
+            for (var index = 0; index < patternsToSkip.Length; index++)
             {
-                var found = (requestUri.Length - requestUri.Replace(patternsToSkip[y], string.Empty).Length) / patternsToSkip[y].Length > 0;
-                if (found)
+                if (requestUri.Contains(patternsToSkip[index]))
                 {
                     return true;
                 }
