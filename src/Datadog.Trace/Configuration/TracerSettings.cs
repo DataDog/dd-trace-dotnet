@@ -167,13 +167,13 @@ namespace Datadog.Trace.Configuration
                                           // default value
                                           true;
 
-            var urlPatternSkips = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
+            var urlPortionSkips = source?.GetString(ConfigurationKeys.HttpClientExcludedUrlPortions) ??
                                     // default value
                                     (AzureAppServices.Metadata.IsRelevant ? AzureAppServices.Metadata.DefaultHttpClientExclusions : null);
 
-            if (urlPatternSkips != null)
+            if (urlPortionSkips != null)
             {
-                HttpClientExcludedUrlPatterns = ParseUrlStringArray(urlPatternSkips.ToLower());
+                HttpClientExcludedUrlPortions = ParseUrlStringArray(urlPortionSkips.ToLower());
             }
 
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
@@ -406,8 +406,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the comma separated list of url patterns to skip tracing.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlPatterns"/>
-        internal string[] HttpClientExcludedUrlPatterns { get; set; }
+        /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlPortions"/>
+        internal string[] HttpClientExcludedUrlPortions { get; set; }
 
         /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for server integrations.
@@ -574,7 +574,14 @@ namespace Datadog.Trace.Configuration
 
         internal string[] ParseUrlStringArray(string commaSeparatedValues)
         {
-            return commaSeparatedValues.Replace(" ", string.Empty).Split(',');
+            var values = commaSeparatedValues.Split(',');
+
+            for (var i = 0; i < values.Length; i++)
+            {
+                values[i] = values[i].Trim();
+            }
+
+            return values;
         }
 
         internal bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)
