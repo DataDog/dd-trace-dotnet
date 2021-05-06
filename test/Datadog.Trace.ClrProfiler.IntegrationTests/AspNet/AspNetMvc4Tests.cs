@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc4TestsCallsite : AspNetMvc4Tests
     {
         public AspNetMvc4TestsCallsite(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, enableInlining: false)
+            : base(iisFixture, output, enableCallTarget: false)
         {
         }
     }
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc4TestsCallTarget : AspNetMvc4Tests
     {
         public AspNetMvc4TestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, enableInlining: true)
+            : base(iisFixture, output, enableCallTarget: true)
         {
         }
     }
@@ -33,11 +33,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private readonly IisFixture _iisFixture;
 
-        public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool enableInlining)
+        public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget)
             : base("AspNetMvc4", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);

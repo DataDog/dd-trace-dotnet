@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetWebApi2WithFeatureFlagCallsite : AspNetWebApi2WithFeatureFlagTests
     {
         public AspNetWebApi2WithFeatureFlagCallsite(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, enableInlining: false)
+            : base(iisFixture, output, enableCallTarget: false)
         {
         }
     }
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetWebApi2WithFeatureFlagCallTarget : AspNetWebApi2WithFeatureFlagTests
     {
         public AspNetWebApi2WithFeatureFlagCallTarget(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, enableInlining: true)
+            : base(iisFixture, output, enableCallTarget: true)
         {
         }
     }
@@ -33,11 +33,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private readonly IisFixture _iisFixture;
 
-        public AspNetWebApi2WithFeatureFlagTests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool enableInlining)
+        public AspNetWebApi2WithFeatureFlagTests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
 
             _iisFixture = iisFixture;
