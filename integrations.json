@@ -5618,7 +5618,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
           "method": "NUnitTestAssemblyRunner_WaitForCompletion",
-          "signature": "00 05 1C 1C 1C 08 08 0A",
+          "signature": "00 05 1C 1C 08 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
       },
