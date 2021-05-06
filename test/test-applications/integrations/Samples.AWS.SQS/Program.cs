@@ -162,6 +162,7 @@ namespace Samples.AWS.SQS
                 var receiveMessageRequest = new ReceiveMessageRequest();
                 receiveMessageRequest.QueueUrl = _queue1Url;
                 receiveMessageRequest.MaxNumberOfMessages = 1;
+                receiveMessageRequest.MessageAttributeNames = new List<string> { ".*" };
 
                 var receiveMessageResponse1 = _sqsClient.ReceiveMessage(receiveMessageRequest);
                 Console.WriteLine($"ReceiveMessage(ReceiveMessageRequest) HTTP status code: {receiveMessageResponse1.HttpStatusCode}");
@@ -227,6 +228,7 @@ namespace Samples.AWS.SQS
                 var receiveMessageRequest = new ReceiveMessageRequest();
                 receiveMessageRequest.QueueUrl = _queue2Url;
                 receiveMessageRequest.MaxNumberOfMessages = 3;
+                receiveMessageRequest.MessageAttributeNames = new List<string> { ".*" };
 
                 var receiveMessageResponse = _sqsClient.ReceiveMessage(receiveMessageRequest);
                 Console.WriteLine($"ReceiveMessage HTTP status code: {receiveMessageResponse.HttpStatusCode}");
@@ -350,6 +352,7 @@ namespace Samples.AWS.SQS
                 var receiveMessageRequest = new ReceiveMessageRequest();
                 receiveMessageRequest.QueueUrl = _queue1Url;
                 receiveMessageRequest.MaxNumberOfMessages = 1;
+                receiveMessageRequest.MessageAttributeNames = new List<string> { ".*" };
 
                 var receiveMessageResponse1 = await _sqsClient.ReceiveMessageAsync(receiveMessageRequest);
                 Console.WriteLine($"ReceiveMessageAsync(ReceiveMessageRequest) HTTP status code: {receiveMessageResponse1.HttpStatusCode}");
@@ -415,6 +418,7 @@ namespace Samples.AWS.SQS
                 var receiveMessageRequest = new ReceiveMessageRequest();
                 receiveMessageRequest.QueueUrl = _queue2Url;
                 receiveMessageRequest.MaxNumberOfMessages = 3;
+                receiveMessageRequest.MessageAttributeNames = new List<string> { ".*" };
 
                 var receiveMessageResponse = await _sqsClient.ReceiveMessageAsync(receiveMessageRequest);
                 Console.WriteLine($"ReceiveMessageAsync HTTP status code: {receiveMessageResponse.HttpStatusCode}");

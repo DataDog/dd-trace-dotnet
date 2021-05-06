@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -31,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="request">The request for the SQS operation</param>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TSendMessageRequest>(TTarget instance, TSendMessageRequest request)
-            where TSendMessageRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
+            where TSendMessageRequest : ISendMessageRequest, IDuckType
         {
             if (request.Instance is null)
             {
@@ -42,6 +43,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             tags.Operation = Operation;
             tags.Service = AwsConstants.AwsService;
             tags.QueueUrl = request.QueueUrl;
+
+            if (scope != null)
+            {
+                // add distributed tracing headers to the message
+                if (request.MessageAttributes == null)
+                {
+                    // TODO: Create a new dictionary
+                    // basicProperties.Headers = new Dictionary<string, object>();
+                }
+
+                // SQS allows a maximum of 10 message attributes: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes
+                // Only inject if there's room
+                if (request.MessageAttributes.Count < 10)
+                {
+                    ContextPropagation.Inject(scope.Span.Context, request.MessageAttributes);
+                }
+            }
 
             return new CallTargetState(scope);
         }
