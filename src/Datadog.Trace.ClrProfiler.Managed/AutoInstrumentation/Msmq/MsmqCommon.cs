@@ -11,7 +11,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     internal class MsmqCommon
     {
         internal const string IntegrationName = nameof(IntegrationIds.Msmq);
-        internal const string ServiceName = "msmq";
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsmqCommon));
@@ -31,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             {
                 tags = new MsmqTags(spanKind)
                 {
+                    Command = command,
                     Queue = queueName,
                     QueueLabel = queueLabel,
                     QueueLastModifiedTime = queueLastModifiedTime.ToLongTimeString(),
@@ -39,7 +39,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                     TransactionType = transactionType,
                     InstrumentationName = IntegrationName
                 };
-                scope = tracer.StartActiveWithTags(command, serviceName: ServiceName, tags: tags);
+                var serviceName = tracer.Settings.GetServiceName(tracer, MsmqConstants.ServiceName);
+
+                scope = tracer.StartActiveWithTags(MsmqConstants.OperationName, serviceName: serviceName, tags: tags);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;

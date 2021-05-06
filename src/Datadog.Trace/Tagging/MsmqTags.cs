@@ -10,6 +10,7 @@ namespace Datadog.Trace.Tagging
         protected static readonly IProperty<string>[] MsmqTagsProperties =
            InstrumentationTagsProperties.Concat(
                new Property<MsmqTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName, (t, v) => t.InstrumentationName = v),
+               new Property<MsmqTags, string>(Trace.Tags.MsmqCommand, t => t.Command, (t, v) => t.Command = v),
                new Property<MsmqTags, string>(Trace.Tags.MsmqQueue, t => t.Queue, (t, v) => t.Queue = v),
                new Property<MsmqTags, string>(Trace.Tags.MsmqQueueLabel, t => t.QueueLabel, (t, v) => t.QueueLabel = v),
                new Property<MsmqTags, string>(Trace.Tags.MsmqQueueLastModifiedTime, t => t.QueueLastModifiedTime, (t, v) => t.QueueLastModifiedTime = v),
@@ -22,6 +23,8 @@ namespace Datadog.Trace.Tagging
         /// </summary>
         /// <param name="spanKind">kind of span</param>
         public MsmqTags(string spanKind) => SpanKind = spanKind;
+
+        public string Command { get; set; }
 
         /// <inheritdoc/>
         public override string SpanKind { get; }

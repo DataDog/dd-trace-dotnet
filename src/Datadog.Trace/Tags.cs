@@ -210,6 +210,11 @@ namespace Datadog.Trace
         public const string AmqpDeliveryMode = "amqp.delivery_mode";
 
         /// <summary>
+        /// The name of the Msmq command the message was published to.
+        /// </summary>
+        public const string MsmqCommand = "msmq.command";
+
+        /// <summary>
         /// The name of the Msmq queue the message was published to.
         /// </summary>
         public const string MsmqQueue = "msmq.queue";
