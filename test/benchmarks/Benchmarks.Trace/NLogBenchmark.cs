@@ -1,25 +1,25 @@
+using System.IO;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Serilog;
-using Serilog.Core;
-using Serilog.Events;
-using Serilog.Formatting.Display;
-using Logger = Serilog.Core.Logger;
+using Datadog.Trace.Logging.LogProviders;
+using NLog;
+using NLog.Config;
+using NLog.Targets;
 
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    public class SerilogBenchmark
+    public class NLogBenchmark
     {
-        private static readonly Logger Logger;
-        private static readonly Tracer LogInjectionTracer;
         private static readonly Tracer BaselineTracer;
+        private static readonly Tracer LogInjectionTracer;
+        private static readonly NLog.Logger Logger;
 
-        static SerilogBenchmark()
+        static NLogBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new CustomSerilogLogProvider());
+            LogProvider.SetCurrentLogProvider(new NLogLogProvider());
 
             var logInjectionSettings = new TracerSettings
             {
@@ -41,13 +41,24 @@ namespace Benchmarks.Trace
             };
 
             BaselineTracer = new Tracer(baselineSettings, new DummyAgentWriter(), null, null, null);
-            var formatter = new MessageTemplateTextFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}{Properties}{NewLine}", null);
 
-            Logger = new LoggerConfiguration()
-                // Add Enrich.FromLogContext to emit Datadog properties
-                .Enrich.FromLogContext()
-                .WriteTo.Sink(new NullSink(formatter))
-                .CreateLogger();
+            var config = new LoggingConfiguration();
+
+#if DEBUG
+            var writer = System.Console.Out;
+#else
+            var writer = TextWriter.Null;
+#endif
+
+            var target = new TextWriterTarget(writer)
+            {
+                Layout = "${longdate}|${uppercase:${level}}|${logger}|{dd.env=${mdlc:item=dd.env},dd.service=${mdlc:item=dd.service},dd.version=${mdlc:item=dd.version},dd.trace_id=${mdlc:item=dd.trace_id},dd.span_id=${mdlc:item=dd.span_id}}|${message}"
+            };
+
+            config.AddRuleForAllLevels(target);
+
+            LogManager.Configuration = config;
+            Logger = LogManager.GetCurrentClassLogger();
         }
 
         [Benchmark(Baseline = true)]
@@ -57,7 +68,7 @@ namespace Benchmarks.Trace
             {
                 using (BaselineTracer.StartActive("Child"))
                 {
-                    Logger.Information("Hello");
+                    Logger.Info("Hello");
                 }
             }
         }
@@ -69,27 +80,23 @@ namespace Benchmarks.Trace
             {
                 using (LogInjectionTracer.StartActive("Child"))
                 {
-                    Logger.Information("Hello");
+                    Logger.Info("Hello");
                 }
             }
         }
 
-        private class NullSink : ILogEventSink
+        private class TextWriterTarget : TargetWithLayout
         {
-            private readonly MessageTemplateTextFormatter _formatter;
+            private readonly TextWriter _writer;
 
-            public NullSink(MessageTemplateTextFormatter formatter)
+            public TextWriterTarget(TextWriter textWriter)
             {
-                _formatter = formatter;
+                _writer = textWriter;
             }
 
-            public void Emit(LogEvent logEvent)
+            protected override void Write(LogEventInfo logEvent)
             {
-#if DEBUG
-                _formatter.Format(logEvent, System.Console.Out);
-#else
-                _formatter.Format(logEvent, System.IO.TextWriter.Null);
-#endif
+                _writer.WriteLine(RenderLogEvent(Layout, logEvent));
             }
         }
     }
