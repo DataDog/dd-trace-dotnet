@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId) || HttpBypassHelper.ShouldSkipResource(requestUri.ToString(), tracer.Settings.HttpClientExcludedUrlPatterns))
+            if (!tracer.Settings.IsIntegrationEnabled(integrationId) || HttpBypassHelper.ShouldSkipResource(requestUri, tracer.Settings.HttpClientExcludedUrlPatterns))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
