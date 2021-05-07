@@ -1738,7 +1738,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
     IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
     0,                             // Number of parameters
     ELEMENT_TYPE_VOID,             // Return type
-    ELEMENT_TYPE_OBJECT            // List of parameter types
   };
   hr = metadata_emit->DefineMethod(new_type_def,
                               WStr("__DDVoidMethodCall__"),
@@ -1779,7 +1778,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       IMAGE_CEE_CS_CALLCONV_DEFAULT,
       0,
       ELEMENT_TYPE_BOOLEAN,
-      ELEMENT_TYPE_OBJECT
   };
   mdMethodDef alreadyLoadedMethodToken;
   hr = metadata_emit->DefineMethod(
