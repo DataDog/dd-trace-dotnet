@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Helpers
                 return false;
             }
 
-            var uriString = requestUri.ToString().ToLower();
+            var uriString = requestUri.ToString().ToUpperInvariant();
             for (var index = 0; index < patternsToSkip.Length; index++)
             {
                 if (uriString.Contains(patternsToSkip[index]))

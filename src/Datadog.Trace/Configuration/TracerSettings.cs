@@ -173,7 +173,7 @@ namespace Datadog.Trace.Configuration
 
             if (urlPortionSkips != null)
             {
-                HttpClientExcludedUrlPortions = ParseUrlStringArray(urlPortionSkips.ToLower());
+                HttpClientExcludedUrlPortions = ParseUrlStringArray(urlPortionSkips.ToUpperInvariant());
             }
 
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??

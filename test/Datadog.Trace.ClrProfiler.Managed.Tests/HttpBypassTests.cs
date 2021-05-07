@@ -1,7 +1,5 @@
 using System;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Xunit;
 
