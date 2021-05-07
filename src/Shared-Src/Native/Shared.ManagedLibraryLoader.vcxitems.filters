@@ -7,6 +7,9 @@
     <Filter Include="ManagedLibraryLoader-Dependencies">
       <UniqueIdentifier>{8d6c6869-9b31-498a-9a19-6dbf1dbe9cd2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Logging">
+      <UniqueIdentifier>{741260da-064c-43db-a792-b8c851743d81}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)loader.cpp">
@@ -58,6 +61,9 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)environment_variables.h">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)logging.h">
+      <Filter>Logging</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
