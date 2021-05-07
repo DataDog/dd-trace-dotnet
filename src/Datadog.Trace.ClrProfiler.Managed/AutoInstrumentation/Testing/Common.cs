@@ -46,6 +46,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                 // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
                 // So the last spans in buffer aren't send to the agent.
                 TestTracer.FlushAsync().GetAwaiter().GetResult();
+                // The current agent writer FlushAsync method can return inmediately if a payload is being sent (there is buffer lock)
+                // There is not api in the agent writer that guarantees the send has been sucessfully completed.
+                // Until we change the behavior of the agentwriter we should at least wait 2 seconds before returning.
+                Thread.Sleep(2000);
                 Log.Debug("Integration flushed.");
             }
             finally
