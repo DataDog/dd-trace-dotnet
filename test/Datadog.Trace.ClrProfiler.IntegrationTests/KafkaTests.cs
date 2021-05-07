@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Core.Tools;
@@ -52,7 +53,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var allSpans = agent.WaitForSpans(TotalExpectedSpanCount, timeoutInMilliseconds: 10_000);
             using var assertionScope = new AssertionScope();
-            allSpans.Should().HaveCount(TotalExpectedSpanCount);
+            // We use HaveCountGreaterOrEqualTo because _both_ consumers may handle the message
+            // Due to manual/autocommit behaviour
+            allSpans.Should().HaveCountGreaterOrEqualTo(TotalExpectedSpanCount);
 
             var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();
             var successfulProducerSpans = allProducerSpans.Where(x => x.Error == 0).ToList();
@@ -92,21 +95,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .And.ContainSingle(x => x.Tags[Tags.ErrorType] == "Confluent.Kafka.ProduceException`2[System.String,System.String]") // created by async handler
                               .And.ContainSingle(x => x.Tags[Tags.ErrorType] == "System.Exception"); // created by sync callback handler
 
+            var producerSpanIds = successfulProducerSpans
+                                 .Select(x => x.SpanId)
+                                 .Should()
+                                 .OnlyHaveUniqueItems()
+                                 .And.Subject.ToImmutableHashSet();
+
             VerifyConsumerSpanProperties(allConsumerSpans, GetSuccessfulResourceName("Consume", topic), ExpectedConsumerSpans);
 
             // every consumer span should be a child of a producer span.
-            var producerSpanIds = new HashSet<ulong>(successfulProducerSpans.Select(x => x.SpanId));
-            producerSpanIds.Should().HaveCount(successfulProducerSpans.Count);
             allConsumerSpans
                .Should()
                .OnlyContain(span => span.ParentId.HasValue)
                .And.OnlyContain(span => producerSpanIds.Contains(span.ParentId.Value));
 
+            // HaveCountGreaterOrEqualTo because same message may be consumed by both
             allConsumerSpans
                .Where(span => span.Tags.ContainsKey(Tags.Tombstone))
                .Select(span => span.Tags[Tags.Tombstone])
                .Should()
-               .HaveCount(ExpectedTombstoneProducerSpans)
+               .HaveCountGreaterOrEqualTo(ExpectedTombstoneProducerSpans)
                .And.OnlyContain(tag => tag == "true");
         }
 
@@ -121,8 +129,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private void VerifyConsumerSpanProperties(List<MockTracerAgent.Span> consumerSpans, string resourceName, int expectedCount)
         {
+            // HaveCountGreaterOrEqualTo because same message may be consumed by both
             consumerSpans.Should()
-                         .HaveCount(expectedCount)
+                         .HaveCountGreaterOrEqualTo(expectedCount)
                          .And.OnlyContain(x => x.Service == "Samples.Kafka-kafka")
                          .And.OnlyContain(x => x.Resource == resourceName)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0)
