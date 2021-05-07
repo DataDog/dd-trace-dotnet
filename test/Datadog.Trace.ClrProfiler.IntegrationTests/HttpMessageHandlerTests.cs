@@ -21,13 +21,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        internal static IEnumerable<InliningOptions> InliningOptionsValues =>
-            new List<InliningOptions>
-            {
-                new InliningOptions(enableCallTarget: false, enableInlining: false),
-                new InliningOptions(enableCallTarget: true, enableInlining: true),
-            };
-
         internal static IEnumerable<InstrumentationOptions> InstrumentationOptionsValues =>
             new List<InstrumentationOptions>
             {
@@ -38,20 +31,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 
         public static IEnumerable<object[]> IntegrationConfig() =>
-            from inliningOptions in InliningOptionsValues
+            from enableCallTarget in new[] { true, false }
             from instrumentationOptions in InstrumentationOptionsValues
             from socketHandlerEnabled in new[] { true, false }
-            select new object[] { inliningOptions, instrumentationOptions, socketHandlerEnabled };
+            select new object[] { enableCallTarget, instrumentationOptions, socketHandlerEnabled };
 
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(IntegrationConfig))]
-        public void HttpClient_SubmitsTraces(InliningOptions inlining, InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        public void HttpClient_SubmitsTraces(bool enableCallTarget, InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
-            ConfigureInstrumentation(inlining, instrumentation, enableSocketsHandler);
+            ConfigureInstrumentation(enableCallTarget, instrumentation, enableSocketsHandler);
 
-            var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation, inlining.EnableCallTarget);
+            var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation, enableCallTarget);
             var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
 
             var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
@@ -100,9 +93,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(IntegrationConfig))]
-        public void TracingDisabled_DoesNotSubmitsTraces(InliningOptions inlining, InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        public void TracingDisabled_DoesNotSubmitsTraces(bool enableCallTarget, InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
-            ConfigureInstrumentation(inlining, instrumentation, enableSocketsHandler);
+            ConfigureInstrumentation(enableCallTarget, instrumentation, enableSocketsHandler);
 
             const string expectedOperationName = "http.request";
 
@@ -182,9 +175,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return expectedSpanCount;
         }
 
-        private void ConfigureInstrumentation(InliningOptions inlining, InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        private void ConfigureInstrumentation(bool enableCallTarget, InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
-            SetCallTargetSettings(inlining.EnableCallTarget, inlining.EnableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             // Should HttpClient try to use HttpSocketsHandler
             SetEnvironmentVariable("DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER", enableSocketsHandler ? "1" : "0");
@@ -200,41 +193,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SetEnvironmentVariable("DD_WinHttpHandler_ENABLED", instrumentation.InstrumentWinHttpOrCurlHandler.Value ? "true" : "false");
                 SetEnvironmentVariable("DD_CurlHandler_ENABLED", instrumentation.InstrumentWinHttpOrCurlHandler.Value ? "true" : "false");
             }
-        }
-
-        public class InliningOptions : IXunitSerializable
-        {
-            // ReSharper disable once UnusedMember.Global
-            public InliningOptions()
-            {
-            }
-
-            internal InliningOptions(
-                bool enableCallTarget,
-                bool enableInlining)
-            {
-                EnableCallTarget = enableCallTarget;
-                EnableInlining = enableInlining;
-            }
-
-            internal bool EnableCallTarget { get; private set; }
-
-            internal bool EnableInlining { get; private set; }
-
-            public void Deserialize(IXunitSerializationInfo info)
-            {
-                EnableCallTarget = info.GetValue<bool>(nameof(EnableCallTarget));
-                EnableInlining = info.GetValue<bool>(nameof(EnableInlining));
-            }
-
-            public void Serialize(IXunitSerializationInfo info)
-            {
-                info.AddValue(nameof(EnableCallTarget), EnableCallTarget);
-                info.AddValue(nameof(EnableInlining), EnableInlining);
-            }
-
-            public override string ToString() =>
-                $"EnableCallTarget={EnableCallTarget},EnableInlining={EnableInlining}";
         }
 
         public class InstrumentationOptions : IXunitSerializable
