@@ -173,7 +173,7 @@ namespace Datadog.Trace.Configuration
 
             if (urlPortionSkips != null)
             {
-                HttpClientExcludedUrlPortions = ParseUrlStringArray(urlPortionSkips.ToUpperInvariant());
+                HttpClientExcludedUrlPortions = TrimSplitString(urlPortionSkips.ToUpperInvariant(), ',');
             }
 
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
@@ -572,9 +572,9 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        internal string[] ParseUrlStringArray(string commaSeparatedValues)
+        internal string[] TrimSplitString(string textValues, char separator)
         {
-            var values = commaSeparatedValues.Split(',');
+            var values = textValues.Split(separator);
 
             for (var i = 0; i < values.Length; i++)
             {
