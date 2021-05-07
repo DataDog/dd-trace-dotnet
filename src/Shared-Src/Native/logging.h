@@ -13,7 +13,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
-
+#include <regex>
 
 
 namespace shared {
@@ -86,6 +86,13 @@ namespace shared {
     };
 
 
+    static std::string SanitizeProcessName(std::string const& processName)
+    {
+        const auto process_name_without_extension = processName.substr(0, processName.find_last_of("."));
+        const std::regex dash_or_space_or_tab("-|\\s|\\t");
+        return std::regex_replace(process_name_without_extension, dash_or_space_or_tab, "_");
+    }
+
     template <class TLoggerPolicy>
     Logger<TLoggerPolicy>::Logger()
     {
@@ -100,12 +107,9 @@ namespace shared {
         spdlog::flush_every(std::chrono::seconds(3));
 
         static auto current_process_name = ToString(GetCurrentProcessName());
-        static auto current_process_id = GetPID();
-        static auto current_process_without_extension =
-            current_process_name.substr(0, current_process_name.find_last_of("."));
+        static auto current_process_name_sanitized = SanitizeProcessName(current_process_name);
 
-        static auto file_name_suffix = "-" + current_process_without_extension + "-" +
-            std::to_string(current_process_id);
+        static auto file_name_suffix = "-" + current_process_name_sanitized;
 
         try {
             m_fileout = spdlog::rotating_logger_mt("Logger", GetLogPath(file_name_suffix), 1048576 * 5, 10);
