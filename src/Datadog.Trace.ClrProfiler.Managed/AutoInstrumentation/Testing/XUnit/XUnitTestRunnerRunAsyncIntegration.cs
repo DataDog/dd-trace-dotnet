@@ -1,5 +1,4 @@
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
@@ -14,12 +13,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         ReturnTypeName = "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
         MinimumVersion = "2.2.0",
         MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = XUnitIntegration.IntegrationName)]
     public static class XUnitTestRunnerRunAsyncIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.XUnit);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -28,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            if (Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (XUnitIntegration.IsEnabled)
             {
                 TestRunnerStruct runnerInstance = instance.DuckCast<TestRunnerStruct>();
 

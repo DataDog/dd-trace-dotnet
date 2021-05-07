@@ -2,14 +2,21 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
+        internal const string IntegrationName = nameof(IntegrationIds.NUnit);
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
+
+        internal static bool IsEnabled => Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId);
+
         internal static Scope CreateScope(ITest currentTest, Type targetType)
         {
             MethodInfo testMethod = currentTest.Method.MethodInfo;
@@ -163,23 +170,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 span.SetTag(TestTags.SkipReason, skipReason ?? string.Empty);
                 span.Finish(new TimeSpan(10));
                 scope.Dispose();
-            }
-        }
-
-        internal static void FlushSpans()
-        {
-            SynchronizationContext context = SynchronizationContext.Current;
-            try
-            {
-                SynchronizationContext.SetSynchronizationContext(null);
-                // We have to ensure the flush of the buffer after we finish the tests of an assembly.
-                // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
-                // So the last spans in buffer aren't send to the agent.
-                Common.TestTracer.FlushAsync().GetAwaiter().GetResult();
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(context);
             }
         }
     }

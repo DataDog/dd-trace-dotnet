@@ -1,9 +1,6 @@
 using System;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
@@ -18,13 +15,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         ParameterTypeNames = new[] { "_", "NUnit.Framework.Interfaces.ResultState", ClrNames.String },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = NUnitIntegration.IntegrationName)]
     public class NUnitCompositeWorkItemSkipChildrenIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.NUnit);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitCompositeWorkItemSkipChildrenIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>

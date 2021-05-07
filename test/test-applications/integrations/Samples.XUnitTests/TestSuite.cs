@@ -18,7 +18,7 @@ namespace Samples.XUnitTests
             }
             output.WriteLine(string.Empty);
         }
-        
+
         [Fact]
         public void SimplePassTest()
         {

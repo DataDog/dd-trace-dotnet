@@ -1,9 +1,7 @@
 using System;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
@@ -18,13 +16,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         ParameterTypeNames = new[] { "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod" },
         MinimumVersion = "14.0.0",
         MaximumVersion = "14.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = MsTestIntegration.IntegrationName)]
     public class TestMethodAttributeExecuteIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.MsTestV2);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestMethodAttributeExecuteIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -36,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         public static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
             where TTestMethod : ITestMethod, IDuckType
         {
-            if (!Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!MsTestIntegration.IsEnabled)
             {
                 return CallTargetState.GetDefault();
             }
@@ -57,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            if (Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (MsTestIntegration.IsEnabled)
             {
                 Scope scope = Common.TestTracer.ActiveScope;
                 if (scope != null)

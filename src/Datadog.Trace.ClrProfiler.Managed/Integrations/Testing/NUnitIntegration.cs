@@ -183,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
 
             execute(workShift);
-            AutoInstrumentation.Testing.NUnit.NUnitIntegration.FlushSpans();
+            AutoInstrumentation.Testing.Common.FlushSpans();
         }
 
         /// <summary>
@@ -237,7 +237,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
 
             object result = execute(testAssemblyRunner, timeout);
-            AutoInstrumentation.Testing.NUnit.NUnitIntegration.FlushSpans();
+            AutoInstrumentation.Testing.Common.FlushSpans();
             return result;
         }
 

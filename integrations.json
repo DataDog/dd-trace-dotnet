@@ -3864,6 +3864,50 @@
         "target": {
           "assembly": "xunit.execution.dotnet",
           "type": "Xunit.Sdk.TestAssemblyRunner`1",
+          "method": "RunAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "xunit.execution.desktop",
+          "type": "Xunit.Sdk.TestAssemblyRunner`1",
+          "method": "RunAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "xunit.execution.dotnet",
+          "type": "Xunit.Sdk.TestAssemblyRunner`1",
           "method": "RunTestCollectionAsync",
           "signature_types": [
             "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",

@@ -1,7 +1,5 @@
 using System;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
@@ -15,23 +13,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         ReturnTypeName = ClrNames.Void,
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = NUnitIntegration.IntegrationName)]
     public class NUnitTestAdapterUnloadIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.NUnit);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
-        {
-            return CallTargetState.GetDefault();
-        }
-
         /// <summary>
         /// OnMethodEnd callback
         /// </summary>
@@ -42,11 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// <returns>Return value of the method</returns>
         public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
         {
-            if (Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
-            {
-                NUnitIntegration.FlushSpans();
-            }
-
+            Common.FlushSpans(NUnitIntegration.IntegrationId);
             return CallTargetReturn.GetDefault();
         }
     }

@@ -1,7 +1,5 @@
 using System;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
@@ -16,24 +14,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         ParameterTypeNames = new[] { ClrNames.Int32 },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = NUnitIntegration.IntegrationName)]
     public class NUnitTestAssemblyRunnerWaitForCompletionIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.NUnit);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="timeout">Time to wait in milliseconds.</param>
-        /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int timeout)
-        {
-            return CallTargetState.GetDefault();
-        }
-
         /// <summary>
         /// OnMethodEnd callback
         /// </summary>
@@ -46,11 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// <returns>Return value of the method</returns>
         public static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, CallTargetState state)
         {
-            if (Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
-            {
-                NUnitIntegration.FlushSpans();
-            }
-
+            Common.FlushSpans(NUnitIntegration.IntegrationId);
             return new CallTargetReturn<TResult>(returnValue);
         }
     }
