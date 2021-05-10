@@ -1,13 +1,12 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 //
 
 //
 #pragma once
 /*************************************************************************
-* DEFINITIONS OF NEW TYPES 
+* DEFINITIONS OF NEW TYPES
 *************************************************************************/
 #if !defined(__midl)
 #define __$compname_props \
@@ -51,7 +50,7 @@ void __inline __nothrow __SAL_ValidCompNameW(__out_has_type_adt_props(ValidCompN
 #define __assume_ValidCompNameA(expr) __SAL_ValidCompNameA(expr)
 #define __assume_ValidCompNameW(expr) __SAL_ValidCompNameW(expr)
 #else
-#define __assume_ValidCompNameA(expr) 
+#define __assume_ValidCompNameA(expr)
 #define __assume_ValidCompNameW(expr)
 #endif
 

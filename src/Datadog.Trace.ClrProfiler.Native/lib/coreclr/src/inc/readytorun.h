@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 //
 // readytorun.h
@@ -15,20 +14,16 @@
 
 #define READYTORUN_SIGNATURE 0x00525452 // 'RTR'
 
-#define READYTORUN_MAJOR_VERSION 0x0003
+#define READYTORUN_MAJOR_VERSION 0x0004
 #define READYTORUN_MINOR_VERSION 0x0001
 #define MINIMUM_READYTORUN_MAJOR_VERSION 0x003
-// R2R Version 2.1 adds the READYTORUN_SECTION_INLINING_INFO section
-// R2R Version 2.2 adds the READYTORUN_SECTION_PROFILEDATA_INFO section
+// R2R Version 2.1 adds the InliningInfo section
+// R2R Version 2.2 adds the ProfileDataInfo section
 // R2R Version 3.0 changes calling conventions to correctly handle explicit structures to spec.
 //     R2R 3.0 is not backward compatible with 2.x.
 
-struct READYTORUN_HEADER
+struct READYTORUN_CORE_HEADER
 {
-    DWORD                   Signature;      // READYTORUN_SIGNATURE
-    USHORT                  MajorVersion;   // READYTORUN_VERSION_XXX
-    USHORT                  MinorVersion;
-
     DWORD                   Flags;          // READYTORUN_FLAG_XXX
 
     DWORD                   NumberOfSections;
@@ -37,49 +32,68 @@ struct READYTORUN_HEADER
     // READYTORUN_SECTION   Sections[];
 };
 
-struct READYTORUN_SECTION
+struct READYTORUN_HEADER
 {
-    DWORD                   Type;           // READYTORUN_SECTION_XXX
-    IMAGE_DATA_DIRECTORY    Section;
+    DWORD                   Signature;      // READYTORUN_SIGNATURE
+    USHORT                  MajorVersion;   // READYTORUN_VERSION_XXX
+    USHORT                  MinorVersion;
+
+    READYTORUN_CORE_HEADER  CoreHeader;
+};
+
+struct READYTORUN_COMPONENT_ASSEMBLIES_ENTRY
+{
+    IMAGE_DATA_DIRECTORY CorHeader;
+    IMAGE_DATA_DIRECTORY ReadyToRunCoreHeader;
 };
 
 enum ReadyToRunFlag
 {
-    // Set if the original IL assembly was platform-neutral
-    READYTORUN_FLAG_PLATFORM_NEUTRAL_SOURCE         = 0x00000001,
-    READYTORUN_FLAG_SKIP_TYPE_VALIDATION            = 0x00000002,
-    // Set of methods with native code was determined using profile data
-    READYTORUN_FLAG_PARTIAL                         = 0x00000004,
+    READYTORUN_FLAG_PLATFORM_NEUTRAL_SOURCE     = 0x00000001,   // Set if the original IL assembly was platform-neutral
+    READYTORUN_FLAG_SKIP_TYPE_VALIDATION        = 0x00000002,   // Set of methods with native code was determined using profile data
+    READYTORUN_FLAG_PARTIAL                     = 0x00000004,
+    READYTORUN_FLAG_NONSHARED_PINVOKE_STUBS     = 0x00000008,   // PInvoke stubs compiled into image are non-shareable (no secret parameter)
+    READYTORUN_FLAG_EMBEDDED_MSIL               = 0x00000010,   // MSIL is embedded in the composite R2R executable
+    READYTORUN_FLAG_COMPONENT                   = 0x00000020,   // This is the header describing a component assembly of composite R2R
 };
 
-enum ReadyToRunSectionType
+enum class ReadyToRunSectionType : uint32_t
 {
-    READYTORUN_SECTION_COMPILER_IDENTIFIER          = 100,
-    READYTORUN_SECTION_IMPORT_SECTIONS              = 101,
-    READYTORUN_SECTION_RUNTIME_FUNCTIONS            = 102,
-    READYTORUN_SECTION_METHODDEF_ENTRYPOINTS        = 103,
-    READYTORUN_SECTION_EXCEPTION_INFO               = 104,
-    READYTORUN_SECTION_DEBUG_INFO                   = 105,
-    READYTORUN_SECTION_DELAYLOAD_METHODCALL_THUNKS  = 106,
-    // 107 used by an older format of READYTORUN_SECTION_AVAILABLE_TYPES
-    READYTORUN_SECTION_AVAILABLE_TYPES              = 108,
-    READYTORUN_SECTION_INSTANCE_METHOD_ENTRYPOINTS  = 109,
-    READYTORUN_SECTION_INLINING_INFO                = 110, // Added in V2.1
-    READYTORUN_SECTION_PROFILEDATA_INFO             = 111, // Added in V2.2
-    READYTORUN_SECTION_MANIFEST_METADATA            = 112, // Added in V2.3
-    READYTORUN_SECTION_ATTRIBUTEPRESENCE            = 113, // Added in V3.1
+    CompilerIdentifier          = 100,
+    ImportSections              = 101,
+    RuntimeFunctions            = 102,
+    MethodDefEntryPoints        = 103,
+    ExceptionInfo               = 104,
+    DebugInfo                   = 105,
+    DelayLoadMethodCallThunks   = 106,
+    // 107 used by an older format of AvailableTypes
+    AvailableTypes              = 108,
+    InstanceMethodEntryPoints   = 109,
+    InliningInfo                = 110, // Added in V2.1, deprecated in 4.1
+    ProfileDataInfo             = 111, // Added in V2.2
+    ManifestMetadata            = 112, // Added in V2.3
+    AttributePresence           = 113, // Added in V3.1
+    InliningInfo2               = 114, // Added in V4.1
+    ComponentAssemblies         = 115, // Added in V4.1
+    OwnerCompositeExecutable    = 116, // Added in V4.1
 
-	// If you add a new section consider whether it is a breaking or non-breaking change.
-	// Usually it is non-breaking, but if it is preferable to have older runtimes fail
-	// to load the image vs. ignoring the new section it could be marked breaking.
-	// Increment the READYTORUN_MINOR_VERSION (non-breaking) or READYTORUN_MAJOR_VERSION
-	// (breaking) as appropriate.
+    // If you add a new section consider whether it is a breaking or non-breaking change.
+    // Usually it is non-breaking, but if it is preferable to have older runtimes fail
+    // to load the image vs. ignoring the new section it could be marked breaking.
+    // Increment the READYTORUN_MINOR_VERSION (non-breaking) or READYTORUN_MAJOR_VERSION
+    // (breaking) as appropriate.
+};
+
+struct READYTORUN_SECTION
+{
+    ReadyToRunSectionType   Type;           // READYTORUN_SECTION_XXX
+    IMAGE_DATA_DIRECTORY    Section;
 };
 
 //
 // READYTORUN_IMPORT_SECTION describes image range with references to code or runtime data structures
 //
-// There is number of different types of these ranges: eagerly initialized at image load vs. lazily initialized at method entry 
+// There is number of different types of these ranges: eagerly initialized at image load vs. lazily initialized at method entry
 // vs. lazily initialized on first use; handles vs. code pointers, etc.
 //
 struct READYTORUN_IMPORT_SECTION
@@ -185,7 +199,13 @@ enum ReadyToRunFixupKind
     READYTORUN_FIXUP_DelegateCtor               = 0x2C, /* optimized delegate ctor */
     READYTORUN_FIXUP_DeclaringTypeHandle        = 0x2D,
 
-    READYTORUN_FIXUP_IndirectPInvokeTarget      = 0x2E, /* Target of an inlined pinvoke */
+    READYTORUN_FIXUP_IndirectPInvokeTarget      = 0x2E, /* Target (indirect) of an inlined pinvoke */
+    READYTORUN_FIXUP_PInvokeTarget              = 0x2F, /* Target of an inlined pinvoke */
+
+    READYTORUN_FIXUP_Check_InstructionSetSupport= 0x30, /* Define the set of instruction sets that must be supported/unsupported to use the fixup */
+
+    READYTORUN_FIXUP_Verify_FieldOffset         = 0x31, /* Generate a runtime check to ensure that the field offset matches between compile and runtime. Unlike Check_FieldOffset, this will generate a runtime failure instead of silently dropping the method */
+    READYTORUN_FIXUP_Verify_TypeLayout          = 0x32, /* Generate a runtime check to ensure that the type layout (size, alignment, HFA, reference map) matches between compile and runtime. Unlike Check_TypeLayout, this will generate a runtime failure instead of silently dropping the method */
 };
 
 //
@@ -199,6 +219,7 @@ enum ReadyToRunHelper
     // Not a real helper - handle to current module passed to delay load helpers.
     READYTORUN_HELPER_Module                    = 0x01,
     READYTORUN_HELPER_GSCookie                  = 0x02,
+    READYTORUN_HELPER_IndirectTrapThreads       = 0x03,
 
     //
     // Delay load helpers
@@ -239,6 +260,9 @@ enum ReadyToRunHelper
     // PInvoke helpers
     READYTORUN_HELPER_PInvokeBegin              = 0x42,
     READYTORUN_HELPER_PInvokeEnd                = 0x43,
+    READYTORUN_HELPER_GCPoll                    = 0x44,
+    READYTORUN_HELPER_ReversePInvokeEnter       = 0x45,
+    READYTORUN_HELPER_ReversePInvokeExit        = 0x46,
 
     // Get string handle lazily
     READYTORUN_HELPER_GetString                 = 0x50,
@@ -305,7 +329,7 @@ enum ReadyToRunHelper
     READYTORUN_HELPER_DblRound                  = 0xE2,
     READYTORUN_HELPER_FltRound                  = 0xE3,
 
-#ifdef WIN64EXCEPTIONS
+#ifdef FEATURE_EH_FUNCLETS
     // Personality rountines
     READYTORUN_HELPER_PersonalityRoutine        = 0xF0,
     READYTORUN_HELPER_PersonalityRoutineFilterFunclet = 0xF1,
@@ -335,7 +359,12 @@ enum ReadyToRunHelper
 
     // JIT32 x86-specific exception handling
     READYTORUN_HELPER_EndCatch                  = 0x110,
+
+    // Stack probing helper
+    READYTORUN_HELPER_StackProbe                = 0x111,
 };
+
+#include "readytoruninstructionset.h"
 
 //
 // Exception info
@@ -349,15 +378,30 @@ struct READYTORUN_EXCEPTION_LOOKUP_TABLE_ENTRY
 
 struct READYTORUN_EXCEPTION_CLAUSE
 {
-    CorExceptionFlag    Flags;  
-    DWORD               TryStartPC;    
+    CorExceptionFlag    Flags;
+    DWORD               TryStartPC;
     DWORD               TryEndPC;
-    DWORD               HandlerStartPC;  
-    DWORD               HandlerEndPC;  
+    DWORD               HandlerStartPC;
+    DWORD               HandlerEndPC;
     union {
         mdToken         ClassToken;
         DWORD           FilterOffset;
-    };  
+    };
+};
+
+enum ReadyToRunRuntimeConstants : DWORD
+{
+    READYTORUN_PInvokeTransitionFrameSizeInPointerUnits = 11,
+    READYTORUN_ReversePInvokeTransitionFrameSizeInPointerUnits = 2
+};
+
+enum ReadyToRunHFAElemType : DWORD
+{
+    READYTORUN_HFA_ELEMTYPE_None = 0,
+    READYTORUN_HFA_ELEMTYPE_Float32 = 1,
+    READYTORUN_HFA_ELEMTYPE_Float64 = 2,
+    READYTORUN_HFA_ELEMTYPE_Vector64 = 3,
+    READYTORUN_HFA_ELEMTYPE_Vector128 = 4,
 };
 
 #endif // __READYTORUN_H__

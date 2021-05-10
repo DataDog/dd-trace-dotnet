@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //
 // Provides basic interpreted regular expression matching. This is meant as a debugging tool,
 // and if regular expressions become necessary in a non-debug scenario great care should be
@@ -45,7 +44,7 @@ namespace imp {
     //===================================================================================================
     // Helper for clr::regex::RegExBase. See class definition for clr::regex::RegExBase below for more
     // information.
-    
+
     template <typename ITEM_TRAITS, typename GROUP_CONTAINER>
     class RegExBaseHelper : protected ITEM_TRAITS
     {
@@ -66,7 +65,7 @@ namespace imp {
         // Returns true if the regular expression was successfully matched against the input string;
         // otherwise false.
 
-        RegExBaseHelper(const RegexIterator& regex, 
+        RegExBaseHelper(const RegexIterator& regex,
                         const RegexIterator& regexEnd,
                         const InputIterator& input,
                         const InputIterator& inputEnd,
@@ -97,7 +96,7 @@ namespace imp {
         // The function returns true if a match is found consisting of zero or more items c followed by a
         // successful match of regex on the remaining input; otherwise false is returned. This is a
         // conservative match, so it starts with trying to match zero items followed by regex,
-        // and will then try to match one item followed by regex. 
+        // and will then try to match one item followed by regex.
         bool DoMatchStar(
             const Item& c,
             const RegexIterator& regex,
@@ -141,7 +140,7 @@ namespace imp {
 
     template <typename ITEM_TRAITS, typename GROUP_CONTAINER>
     RegExBaseHelper<ITEM_TRAITS, GROUP_CONTAINER>::RegExBaseHelper(
-        const RegexIterator& regex, 
+        const RegexIterator& regex,
         const RegexIterator& regexEnd,
         const InputIterator& input,
         const InputIterator& inputEnd,
@@ -458,7 +457,7 @@ public:
     Iterator End()
         { WRAPPER_NO_CONTRACT; return m_array.End(); }
 
-    // 
+    //
     COUNT_T Count() const
         { WRAPPER_NO_CONTRACT; return m_array.GetCount(); }
 
@@ -513,7 +512,7 @@ GroupContainer<INPUT_ITERATOR, GROUP_TYPE>::CloseGroup(
 // Reopen a group at the given index, using 'end' to overwrite the current end.
 
 template <typename INPUT_ITERATOR, typename GROUP_TYPE>
-void 
+void
 GroupContainer<INPUT_ITERATOR, GROUP_TYPE>::ReopenGroup(
     COUNT_T i,
     const INPUT_ITERATOR& end)
@@ -586,7 +585,7 @@ public:
 //             PLUS
 //             PAREN_OPEN
 //             PAREN_CLOSE
-//        ItemType may include more values, and may even choose to ignore the above enum types, all of 
+//        ItemType may include more values, and may even choose to ignore the above enum types, all of
 //        which must be recognized by GetItem and MatchItem (see below).
 //     6. static Item GetItem(const RegexIterator& regex,
 //                            const RegexIterator& regexEnd,
@@ -635,7 +634,7 @@ public:
     static const MatchFlags DefaultMatchFlags = ITEM_TRAITS::DefaultMatchFlags;
 
     template <typename GROUP_CONTAINER>
-    static bool Match(RegexIterator    regex, 
+    static bool Match(RegexIterator    regex,
                       RegexIterator    regexEnd,
                       InputIterator    input,
                       InputIterator    inputEnd,
@@ -647,7 +646,7 @@ public:
         return re.Match();
     }
 
-    static bool Matches(RegexIterator    regex, 
+    static bool Matches(RegexIterator    regex,
                         RegexIterator    regexEnd,
                         InputIterator    input,
                         InputIterator    inputEnd,
@@ -965,7 +964,7 @@ CHARItemTraits<ITERATOR_TYPE>::MatchItem(
         return c.GetType() == PARENT_TYPE::DOT || MatchCharacter(c.GetValue(), *input, flags);
 }
 
-} /* namespace regex */ 
+} /* namespace regex */
 } /* namespace clr */
 
 #endif // _DEBUG

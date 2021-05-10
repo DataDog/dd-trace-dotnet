@@ -1,9 +1,8 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 // --------------------------------------------------------------------------------
 // SBuffer.h  (Safe Buffer)
-// 
+//
 
 // --------------------------------------------------------------------------------
 
@@ -11,11 +10,11 @@
 // SBuffer is a relatively safe way to manipulate a dynamically
 // allocated data buffer.  An SBuffer is conceptually a simple array
 // of bytes.  It maintains both a conceptual size and an actual allocated size.
-// 
-// SBuffer provides safe access to the data buffer by providing rich high 
-// level functionality (like insertion, deleteion, copying,  comparison, and 
-// iteration) without exposing direct pointers to its buffers. 
-// 
+//
+// SBuffer provides safe access to the data buffer by providing rich high
+// level functionality (like insertion, deleteion, copying,  comparison, and
+// iteration) without exposing direct pointers to its buffers.
+//
 // For interoperability, SBuffers can expose their buffers - either as readonly
 // by BYTE * or void * cases, or as writable by the OpenRawBuffer/CloseRawBuffer
 // entry points.  Use of these should be limited wherever possible though; as there
@@ -24,7 +23,7 @@
 // To mimimize heap allocations, the InlineSBuffer template will preallocate a fixed
 // size buffer inline with the SBuffer object itself.  It will use this buffer unless
 // it needs a bigger one, in which case it transparently moves on to using the heap.
-// The StackSBuffer class instatiates the InlineSBuffer with a standard heuristic 
+// The StackSBuffer class instatiates the InlineSBuffer with a standard heuristic
 // stack preallocation size.
 //
 // SBuffer is "subclassable" to add content typeing to the buffer. See SArray and
@@ -46,7 +45,7 @@
 // ================================================================================
 
 #define ALIGNMENT(size) \
-    (( (size^(size-1)) >> 1) +1)
+    (( ((size)^((size)-1)) >> 1) +1)
 
 #define ALIGN(size, align) \
     (((size)+((align)-1)) & ~((align)-1))
@@ -71,12 +70,12 @@ class SBuffer
     {
         Immutable
     };
-    
+
     enum PreallocFlag
     {
         Prealloc
     };
-    
+
     //--------------------------------------------------------------------
     // Types
     //--------------------------------------------------------------------
@@ -99,7 +98,7 @@ class SBuffer
     SBuffer(const BYTE *buffer, COUNT_T size);
     explicit SBuffer(const SBuffer &buffer);
 
-    // Immutable constructor should ONLY be used if buffer will 
+    // Immutable constructor should ONLY be used if buffer will
     // NEVER BE FREED OR MODIFIED. PERIOD. .
     SBuffer(ImmutableFlag immutable, const BYTE *buffer, COUNT_T size);
 
@@ -120,7 +119,7 @@ class SBuffer
     // it also has an internal allocation size which may be larger.
     //--------------------------------------------------------------------
 
-    // Get and set size of buffer.  Note that the actual size of the 
+    // Get and set size of buffer.  Note that the actual size of the
     // internally allocated memory block may be bigger.
     COUNT_T GetSize() const;
     void SetSize(COUNT_T count);
@@ -139,7 +138,7 @@ class SBuffer
     // multiple reallocations.  Note this does not change the visible
     // size of the buffer.
     void Preallocate(COUNT_T allocation) const;
-    
+
     // Shrink memory usage of buffer to minimal amount.  Note that
     // this does not change the visible size of the buffer.
     void Trim() const;
@@ -153,18 +152,18 @@ class SBuffer
     void Fill(const Iterator &to, BYTE value, COUNT_T size);
 
     // Internal copy. "Copy" leaves from range as is; "Move"
-    // leaves from range in uninitialized state. 
-    // (This distinction is more important when using from a 
+    // leaves from range in uninitialized state.
+    // (This distinction is more important when using from a
     // typed wrapper than in the base SBuffer class.)
-    // 
+    //
     // NOTE: Copy vs Move is NOT based on whether ranges overlap
     // or not.  Ranges may overlap in either case.
-    // 
+    //
     // Note that both Iterators must be on THIS buffer.
     void Copy(const Iterator &to, const CIterator &from, COUNT_T size);
     void Move(const Iterator &to, const CIterator &from, COUNT_T size);
 
-    // External copy. 
+    // External copy.
     void Copy(const Iterator &i, const SBuffer &source);
     void Copy(const Iterator &i, const void *source, COUNT_T size);
     void Copy(void *dest, const CIterator &i, COUNT_T size);
@@ -213,7 +212,7 @@ class SBuffer
     // Raw buffer access
     //
     // Accessing a raw buffer via pointer is inherently more dangerous than
-    // other uses of this API, and should be avoided if at all possible. 
+    // other uses of this API, and should be avoided if at all possible.
     // It is primarily provided for compatibility with existing APIs.
     //
     // Note that any buffer pointer returned is not
@@ -226,16 +225,16 @@ class SBuffer
     operator const void *() const;
     operator const BYTE *() const;
 
-    // To write directly to the SString's underlying buffer: 
-    // 1) Call OpenRawBuffer() and pass it the count of bytes 
+    // To write directly to the SString's underlying buffer:
+    // 1) Call OpenRawBuffer() and pass it the count of bytes
     // you need.
     // 2) That returns a pointer to the raw buffer which you can write to.
     // 3) When you are done writing to the pointer, call CloseBuffer()
-    // and pass it the count of bytes you actually wrote. 
-    // The pointer from step 1 is now invalid. 
+    // and pass it the count of bytes you actually wrote.
+    // The pointer from step 1 is now invalid.
 
     // example usage:
-    // void GetInfo(SBuffer &buf) 
+    // void GetInfo(SBuffer &buf)
     // {
     //      BYTE *p = buf.OpenRawBuffer(3);
     //      OSGetSomeInfo(p, 3);
@@ -244,22 +243,22 @@ class SBuffer
 
     // You should open the buffer, write the data, and immediately close it.
     // No sbuffer operations are valid while the buffer is opened.
-    //                                                              
+    //
     // In a debug build, Open/Close will do lots of little checks to make sure
     // you don't buffer overflow while it's opened. In a retail build, this
     // is a very streamlined action.
 
     // Open the raw buffer for writing count bytes
     BYTE *OpenRawBuffer(COUNT_T maxCount);
-    
+
     // Call after OpenRawBuffer().
-    
-    // Provide the count of bytes actually used. This will make sure the 
+
+    // Provide the count of bytes actually used. This will make sure the
     // SBuffer's size is correct.
     void CloseRawBuffer(COUNT_T actualCount);
 
     // Close the buffer. Assumes that we completely filled the buffer
-    // that OpenRawBuffer() gave back. 
+    // that OpenRawBuffer() gave back.
     void CloseRawBuffer();
 
     //--------------------------------------------------------------------
@@ -349,7 +348,7 @@ class SBuffer
 
     CHECK CheckBuffer(const BYTE* buffer, COUNT_T allocation) const;
 
-    // Manipulates contents of the buffer via the plugins below, but 
+    // Manipulates contents of the buffer via the plugins below, but
     // adds some debugging checks.  Should always call through here rather
     // than directly calling the extensibility points.
     void DebugMoveBuffer(__out_bcount(size) BYTE *to, BYTE *from, COUNT_T size);
@@ -358,7 +357,7 @@ class SBuffer
     void DebugDestructBuffer(BYTE *buffer, COUNT_T size);
 
     void DebugStompUnusedBuffer(BYTE *buffer, COUNT_T size);
-#ifdef _DEBUG    
+#ifdef _DEBUG
     static BOOL EnsureGarbageCharOnly(const BYTE *buffer, COUNT_T size);
 #endif
     CHECK CheckUnusedBuffer(const BYTE *buffer, COUNT_T size) const;
@@ -374,7 +373,7 @@ public:
         SUPPORTS_DAC;
         PTR_VOID p = dac_cast<PTR_VOID>((TADDR) m_buffer);
         return MemoryRange(p, GetSize());
-    }   
+    }
 
 protected:
 
@@ -384,10 +383,10 @@ protected:
         SUPPORTS_DAC;
 
         // SBuffers are used in DAC in two ways - buffers in the host, and marshalled buffers from the target.
-        // This is a problem - we can't reason about the address space of the buffer statically, and instead rely on 
+        // This is a problem - we can't reason about the address space of the buffer statically, and instead rely on
         // the dynamic usage (i.e. the methods are basically bifurcated into those you can use on host instances,
         // and those you can use on marshalled copies).
-        // Ideally we'll have two versions of the SBuffer code - one that's marshalled (normal DACization) and one 
+        // Ideally we'll have two versions of the SBuffer code - one that's marshalled (normal DACization) and one
         // that isn't (host-only utility).  This is the "dual-mode DAC problem".
         // But this only affects a couple classes, and so for now we'll ignore the problem - causing a bunch of DacCop
         // violations.
@@ -415,7 +414,7 @@ protected:
 
     friend class CheckedIteratorBase<SBuffer>;
 
-    class Index : public CheckedIteratorBase<SBuffer>
+    class EMPTY_BASES_DECL Index : public CheckedIteratorBase<SBuffer>
     {
         friend class SBuffer;
 
@@ -427,7 +426,7 @@ protected:
 
       protected:
         BYTE* m_ptr;
-        
+
         Index();
         Index(SBuffer *container, SCOUNT_T index);
         BYTE &GetAt(SCOUNT_T delta) const;
@@ -441,7 +440,7 @@ protected:
 
   public:
 
-    class CIterator : public Index, public Indexer<const BYTE, CIterator>
+    class EMPTY_BASES_DECL CIterator : public Index, public Indexer<const BYTE, CIterator>
     {
         friend class SBuffer;
 
@@ -456,7 +455,7 @@ protected:
         }
     };
 
-    class Iterator : public Index, public Indexer<BYTE, Iterator>
+    class EMPTY_BASES_DECL Iterator : public Index, public Indexer<BYTE, Iterator>
     {
         friend class SBuffer;
 
@@ -506,12 +505,12 @@ protected:
   protected:
     union {
         BYTE     *m_buffer;
-        wchar_t  *m_asStr;     // For debugging, view as a unicode string
+        WCHAR    *m_asStr;     // For debugging, view as a unicode string
     };
-    
+
 #if _DEBUG
   protected:
-    // We will update the "revision" of the buffer every time it is potentially reallocation, 
+    // We will update the "revision" of the buffer every time it is potentially reallocation,
     // so we can tell when iterators are no longer valid.
     int m_revision;
 #endif
@@ -524,7 +523,7 @@ protected:
 #define BUFFER_ALIGNMENT 4
 
 template <COUNT_T size>
-class InlineSBuffer : public SBuffer
+class EMPTY_BASES_DECL InlineSBuffer : public SBuffer
 {
  private:
 #ifdef _MSC_VER
@@ -563,7 +562,7 @@ typedef InlineSBuffer<STACK_ALLOC> StackSBuffer;
 // Inline definitions
 // ================================================================================
 
-/// a wrapper for templates and such, that use "==". 
+/// a wrapper for templates and such, that use "==".
 /// more expensive than a typical "==", though
 inline BOOL  operator == (const SBuffer& b1,const SBuffer& b2)
 {

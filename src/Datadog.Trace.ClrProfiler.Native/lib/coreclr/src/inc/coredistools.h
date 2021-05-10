@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 //===--------- coredistools.h - Dissassembly tools for CoreClr ------------===//
 //
@@ -70,7 +69,7 @@ typedef bool(__cdecl *OffsetComparator)(const void *UserData, size_t BlockOffset
     uint64_t Offset2);
 
 // The Export/Import definitions for CoreDistools library are defined below.
-// A typedef for each interface function's type is defined in order to aid 
+// A typedef for each interface function's type is defined in order to aid
 // the importer.
 
 // Initialize the disassembler, using default print controls

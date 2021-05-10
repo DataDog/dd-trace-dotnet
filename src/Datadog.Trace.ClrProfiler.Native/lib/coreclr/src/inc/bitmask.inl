@@ -1,8 +1,7 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
-// 
+//
 
 // --------------------------------------------------------------------------------
 // BitMask.inl
@@ -34,7 +33,7 @@ inline COUNT_T BitMask::BitToShift(int bit)
     return (bit+1) & BIT_SIZE_MASK;
 }
 
-// Array access.  Note the first array element is the count of the 
+// Array access.  Note the first array element is the count of the
 // rest of the elements
 
 inline COUNT_T *BitMask::GetMaskArray()
@@ -48,7 +47,7 @@ inline COUNT_T *BitMask::GetMaskArray()
     else
         return &m_mask;
 }
-    
+
 inline COUNT_T BitMask::GetMaskArraySize()
 {
     LIMITED_METHOD_CONTRACT;
@@ -81,7 +80,7 @@ inline void BitMask::GrowArray(COUNT_T newSize)
 
     COUNT_T *newArray = new COUNT_T [newSize+1];
     *newArray = newSize;
-        
+
     CopyMemory(newArray+1, GetMaskArray(), oldSize * sizeof(COUNT_T));
     ZeroMemory(newArray+oldSize+1, (newSize - oldSize) * sizeof(COUNT_T));
 
@@ -90,7 +89,7 @@ inline void BitMask::GrowArray(COUNT_T newSize)
 
     m_maskArray = newArray;
 }
-    
+
 inline BitMask::BitMask()
   : m_mask(1)
 {
@@ -129,7 +128,7 @@ inline void BitMask::SetBit(int bit)
 
     if (index >= GetMaskArraySize())
         GrowArray(index+1);
-            
+
     GetMaskArray()[index] |= (1 << BitToShift(bit));
 }
 
@@ -141,7 +140,7 @@ inline void BitMask::ClearBit(int bit)
 
     if (index >= GetMaskArraySize())
         return;
-            
+
     GetMaskArray()[index] &= ~(1 << BitToShift(bit));
 }
 

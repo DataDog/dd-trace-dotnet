@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 // ===========================================================================
 // File: CORPRIV.H
 //
@@ -24,9 +23,6 @@
 //
 
 interface IAssemblyName;
-
-// PE images loaded through the runtime.
-typedef struct _dummyCOR { BYTE b; } *HCORMODULE;
 
 class UTSemReadWrite;
 
@@ -69,11 +65,6 @@ STDAPI GetAssemblyMDInternalImport(     // Return code.
     LPCWSTR     szFileName,             // [IN] The scope to open.
     REFIID      riid,                   // [IN] The interface desired.
     IUnknown    **ppIUnk);              // [OUT] Return interface on success.
-
-HRESULT GetAssemblyMDInternalImportFromImage(
-    HCORMODULE hImage,                         //[IN] pointer to module handle to get the metadata from.
-    REFIID riid,                               //[IN] The interface desired.
-    IUnknown **ppIUnk);                        //[OUT] Return Interface on success.
 
 STDAPI GetAssemblyMDInternalImportByStream( // Return code.
     IStream     *pIStream,              // [IN] The IStream for the file
@@ -148,7 +139,7 @@ DECLARE_INTERFACE_(IMetaDataHelper, IUnknown)
     // helper functions
     // This function is exposing the ability to translate signature from a given
     // source scope to a given target scope.
-    // 
+    //
     STDMETHOD(TranslateSigWithScope)(
         IMetaDataAssemblyImport *pAssemImport, // [IN] importing assembly interface
         const void  *pbHashValue,           // [IN] Hash Blob for Assembly.
@@ -231,24 +222,20 @@ typedef enum CorElementTypeZapSig
     // by the RID of a GenericParam token, encoded as a compressed integer.
     ELEMENT_TYPE_VAR_ZAPSIG = 0x3b,
 
-    // ZapSig encoding for an array MethodTable to allow it to remain such after decoding
-    // (rather than being transformed into the TypeHandle representing that array)
-    //
-    // The element is always followed by ELEMENT_TYPE_SZARRAY or ELEMENT_TYPE_ARRAY
-    ELEMENT_TYPE_NATIVE_ARRAY_TEMPLATE_ZAPSIG = 0x3c,
+    // UNUSED = 0x3c,
 
     // ZapSig encoding for native value types in IL stubs. IL stub signatures may contain
     // ELEMENT_TYPE_INTERNAL followed by ParamTypeDesc with ELEMENT_TYPE_VALUETYPE element
     // type. It acts like a modifier to the underlying structure making it look like its
     // unmanaged view (size determined by unmanaged layout, blittable, no GC pointers).
-    // 
+    //
     // ELEMENT_TYPE_NATIVE_VALUETYPE_ZAPSIG is used when encoding such types to NGEN images.
     // The signature looks like this: ET_NATIVE_VALUETYPE_ZAPSIG ET_VALUETYPE <token>.
     // See code:ZapSig.GetSignatureForTypeHandle and code:SigPointer.GetTypeHandleThrowing
     // where the encoding/decoding takes place.
     ELEMENT_TYPE_NATIVE_VALUETYPE_ZAPSIG = 0x3d,
-    
-    ELEMENT_TYPE_CANON_ZAPSIG            = 0x3e,     // zapsig encoding for [mscorlib]System.__Canon
+
+    ELEMENT_TYPE_CANON_ZAPSIG            = 0x3e,     // zapsig encoding for System.__Canon
     ELEMENT_TYPE_MODULE_ZAPSIG           = 0x3f,     // zapsig encoding for external module id#
 
 } CorElementTypeZapSig;
@@ -271,16 +258,16 @@ typedef enum CorCallingConventionInternal
 #define ELEMENT_TYPE_VALUEARRAY_UNSUPPORTED ((CorElementType) 0x17)
 #define ELEMENT_TYPE_R_UNSUPPORTED          ((CorElementType) 0x1a)
 
-// Use this guid in the SetOption if Reflection.Emit wants to control size of the initially allocated 
+// Use this guid in the SetOption if Reflection.Emit wants to control size of the initially allocated
 // MetaData. See values: code:CorMetaDataInitialSize.
-// 
+//
 // {2675b6bf-f504-4cb4-a4d5-084eea770ddc}
 EXTERN_GUID(MetaDataInitialSize, 0x2675b6bf, 0xf504, 0x4cb4, 0xa4, 0xd5, 0x08, 0x4e, 0xea, 0x77, 0x0d, 0xdc);
 
 // Allowed values for code:MetaDataInitialSize option.
 typedef enum CorMetaDataInitialSize
 {
-    MDInitialSizeDefault = 0, 
+    MDInitialSizeDefault = 0,
     MDInitialSizeMinimal = 1
 } CorMetaDataInitialSize;
 
@@ -290,7 +277,7 @@ typedef enum CorOpenFlagsInternal
 #ifdef FEATURE_METADATA_LOAD_TRUSTED_IMAGES
     // Flag code:ofTrustedImage is used by mscordbi.dll, therefore defined in file:CorPriv.h
     ofTrustedImage = ofReserved3    // We trust this PE file (we are willing to do a LoadLibrary on it).
-                                    // It is optional and only an (VM) optimization - typically for NGEN images 
+                                    // It is optional and only an (VM) optimization - typically for NGEN images
                                     // opened by debugger.
 #endif
 } CorOpenFlagsInternal;
@@ -306,60 +293,6 @@ typedef enum CorOpenFlagsInternal
 
 #define COR_MODULE_CLASS    "<Module>"
 #define COR_WMODULE_CLASS   W("<Module>")
-
-STDAPI RuntimeOpenImage(LPCWSTR pszFileName, HCORMODULE* hHandle);
-STDAPI RuntimeOpenImageInternal(LPCWSTR pszFileName, HCORMODULE* hHandle,
-                                DWORD *pdwLength, MDInternalImportFlags flags, HANDLE hFile = INVALID_HANDLE_VALUE);
-STDAPI RuntimeOpenImageByStream(IStream* pIStream, UINT64 AssemblyId, DWORD dwModuleId,
-                                HCORMODULE* hHandle, DWORD *pdwLength, MDInternalImportFlags flags);
-
-void   RuntimeAddRefHandle(HCORMODULE hHandle);
-STDAPI RuntimeReleaseHandle(HCORMODULE hHandle);
-STDAPI RuntimeGetImageBase(HCORMODULE hHandle, LPVOID* base, BOOL bMapped, COUNT_T* dwSize);
-STDAPI RuntimeGetImageKind(HCORMODULE hHandle, DWORD* pdwKind, DWORD* pdwMachine);
-STDAPI RuntimeOSHandle(HCORMODULE hHandle, HMODULE* hModule);
-STDAPI RuntimeGetAssemblyStrongNameHashForModule(HCORMODULE       hModule,
-                                                 IMetaDataImport *pMDimport,
-                                                 BYTE            *pbSNHash,
-                                                 DWORD           *pcbSNHash);
-STDAPI RuntimeGetMDInternalImport(HCORMODULE hHandle, 
-                                  MDInternalImportFlags flags,
-                                  IMDInternalImport** ppMDImport);
-
-FORCEINLINE 
-void ReleaseHCorModule(HCORMODULE hModule)
-{
-    HRESULT hr = RuntimeReleaseHandle(hModule);
-    _ASSERTE(SUCCEEDED(hr));
-}
-
-typedef Wrapper<HCORMODULE, DoNothing<HCORMODULE>, ReleaseHCorModule, (UINT_PTR) NULL> HCORMODULEHolder;
-
-
-// ===========================================================================
-// ISNAssemblySignature (similar to IAssemblySignature in V1)
-//
-// This is a private interface that allows querying of the strong name
-// signature.
-// This can be used for (strong-named) assemblies added to the GAC as
-// a unique identifier.
-//
-
-// {848845BC-0C4A-42e3-8915-DC850112443D}
-EXTERN_GUID(IID_ISNAssemblySignature, 0x848845BC, 0x0C4A, 0x42e3, 0x89, 0x15, 0xDC, 0x85, 0x01, 0x12, 0x44, 0x3D);
-        
-#undef  INTERFACE
-#define INTERFACE ISNAssemblySignature
-DECLARE_INTERFACE_(ISNAssemblySignature, IUnknown)
-{
-    // Returns the strong-name signature if the assembly is strong-name-signed
-    // Returns the MVID if the assembly is delay-signed.
-    // Fails if the assembly is not signed at all.
-    STDMETHOD(GetSNAssemblySignature) (
-        BYTE  *pbSig,    // [IN, OUT] Buffer to write signature     
-        DWORD *pcbSig    // [IN, OUT] Size of buffer, bytes written 
-    ) PURE;
-};
 
 //-------------------------------------
 //--- ICeeGenInternal
@@ -380,7 +313,7 @@ DECLARE_INTERFACE_(ICeeGenInternal, IUnknown)
 // Private interface exposed by
 //    AssemblyMDInternalImport - gives us access to the internally stored IMDInternalImport*.
 //
-//    RegMeta, WinMDImport - supports the internal GetMetaDataInternalInterfaceFromPublic() "api".
+//    RegMeta - supports the internal GetMetaDataInternalInterfaceFromPublic() "api".
 //
 // {92B2FEF9-F7F5-420d-AD42-AECEEE10A1EF}
 EXTERN_GUID(IID_IGetIMDInternalImport, 0x92b2fef9, 0xf7f5, 0x420d, 0xad, 0x42, 0xae, 0xce, 0xee, 0x10, 0xa1, 0xef);
@@ -406,7 +339,7 @@ DECLARE_INTERFACE_(IGetIMDInternalImport, IUnknown)
  * NGen logger
  * --------------------------------------------------------------------------- */
  #include "mscorsvc.h"
- 
+
 struct ICorSvcLogger;
 class SvcLogger
 {
@@ -424,7 +357,7 @@ public:
     void Printf(CorSvcLogLevel logLevel, const WCHAR *format, ...);
     void SvcPrintf(const WCHAR *format, ...);
     void Log(const WCHAR *message, CorSvcLogLevel logLevel = LogLevel_Warning);
-    //Need to add this to allocate StackSString, as we don't want static class 
+    //Need to add this to allocate StackSString, as we don't want static class
 
 private:
 
@@ -441,7 +374,7 @@ BOOL       HasSvcLogger();
 #endif // #ifndef DACCESS_COMPILE
 
 // ===========================================================================
-#endif // #ifdef FEATURE_PREJIT 
+#endif // #ifdef FEATURE_PREJIT
 // ===========================================================================
 
 struct CORCOMPILE_ASSEMBLY_SIGNATURE;
@@ -457,17 +390,12 @@ STDAPI GetCORSystemDirectoryInternaL(
     SString& pBuffer
       );
 
-//LONGPATH:TODO: Remove this once Desktop usage has been removed 
+//LONGPATH:TODO: Remove this once Desktop usage has been removed
 STDAPI GetCORSystemDirectoryInternal(
     __out_ecount_part_opt(cchBuffer, *pdwLength) LPWSTR pBuffer,
     DWORD  cchBuffer,
     __out_opt DWORD* pdwLength
     );
-
-STDAPI GetCORVersionInternal(
-    __out_ecount_z_opt(cchBuffer) LPWSTR pBuffer, 
-                                  DWORD  cchBuffer,
-    __out                         DWORD *pdwLength);
 
 #endif  // _CORPRIV_H_
 // EOF =======================================================================

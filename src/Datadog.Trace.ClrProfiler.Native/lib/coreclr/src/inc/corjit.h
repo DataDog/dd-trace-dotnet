@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 /*****************************************************************************\
 *                                                                             *
@@ -20,7 +19,7 @@
 // The JIT/EE interface is versioned. By "interface", we mean mean any and all communication between the
 // JIT and the EE. Any time a change is made to the interface, the JIT/EE interface version identifier
 // must be updated. See code:JITEEVersionIdentifier for more information.
-// 
+//
 // NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,129 +47,6 @@ enum CorJitResult
     CORJIT_RECOVERABLEERROR =  MAKE_HRESULT(SEVERITY_ERROR,FACILITY_NULL, 5),
 };
 
-/*****************************************************************************
-Here is how CORJIT_FLAG_SKIP_VERIFICATION should be interepreted.
-Note that even if any method is inlined, it need not be verified.
-
-if (CORJIT_FLAG_SKIP_VERIFICATION is passed in to ICorJitCompiler::compileMethod())
-{
-    No verification needs to be done.
-    Just compile the method, generating unverifiable code if necessary
-}
-else
-{
-    switch(ICorMethodInfo::isInstantiationOfVerifiedGeneric())
-    {
-    case INSTVER_NOT_INSTANTIATION:
-
-        //
-        // Non-generic case, or open generic instantiation
-        //
-
-        switch(canSkipMethodVerification())
-        {
-        case CORINFO_VERIFICATION_CANNOT_SKIP:
-            {
-                ICorMethodInfo::initConstraintsForVerification(&circularConstraints)
-                if (circularConstraints)
-                {
-                    Just emit code to call CORINFO_HELP_VERIFICATION
-                    The IL will not be compiled
-                }
-                else
-                {
-                    Verify the method.
-                    if (unverifiable code is detected)
-                    {
-                        In place of branches with unverifiable code, emit code to call CORINFO_HELP_VERIFICATION
-                        Mark the method (and any of its instantiations) as unverifiable
-                    }
-                    Compile the rest of the verifiable code
-                }
-            }
-
-        case CORINFO_VERIFICATION_CAN_SKIP:
-            {
-                No verification needs to be done.
-                Just compile the method, generating unverifiable code if necessary
-            }
-
-        case CORINFO_VERIFICATION_RUNTIME_CHECK:
-            {
-                ICorMethodInfo::initConstraintsForVerification(&circularConstraints)
-                if (circularConstraints)
-                {
-                    Just emit code to call CORINFO_HELP_VERIFICATION
-                    The IL will not be compiled
-
-                    TODO: This could be changed to call CORINFO_HELP_VERIFICATION_RUNTIME_CHECK
-                }
-                else
-                {
-                    Verify the method.
-                    if (unverifiable code is detected)
-                    {
-                        In the prolog, emit code to call CORINFO_HELP_VERIFICATION_RUNTIME_CHECK
-                        Mark the method (and any of its instantiations) as unverifiable
-                    }
-                    Compile the method, generating unverifiable code if necessary
-                }
-            }
-        case CORINFO_VERIFICATION_DONT_JIT:
-            {
-                ICorMethodInfo::initConstraintsForVerification(&circularConstraints)
-                if (circularConstraints)
-                {
-                    Just emit code to call CORINFO_HELP_VERIFICATION
-                    The IL will not be compiled
-                }
-                else
-                {
-                    Verify the method.
-                    if (unverifiable code is detected)
-                    {
-                        Fail the jit
-                    }
-                }
-            }
-        }
-
-    case INSTVER_GENERIC_PASSED_VERIFICATION:
-        {
-            This cannot ever happen because the VM would pass in CORJIT_FLAG_SKIP_VERIFICATION.
-        }
-
-    case INSTVER_GENERIC_FAILED_VERIFICATION:
-
-        switch(canSkipMethodVerification())
-        {
-            case CORINFO_VERIFICATION_CANNOT_SKIP:
-                {
-                    This cannot be supported because the compiler does not know which branches should call CORINFO_HELP_VERIFICATION.
-                    The CLR will throw a VerificationException instead of trying to compile this method
-                }
-
-            case CORINFO_VERIFICATION_CAN_SKIP:
-                {
-                    This cannot ever happen because the CLR would pass in CORJIT_FLAG_SKIP_VERIFICATION.
-                }
-
-            case CORINFO_VERIFICATION_RUNTIME_CHECK:
-                {
-                    No verification needs to be done.
-                    In the prolog, emit code to call CORINFO_HELP_VERIFICATION_RUNTIME_CHECK
-                    Compile the method, generating unverifiable code if necessary
-                }
-            case CORINFO_VERIFICATION_DONT_JIT:
-                {
-                    Fail the jit
-                }
-        }
-    }
-}
-
-*/
-
 /*****************************************************************************/
 // These are flags passed to ICorJitInfo::allocMem
 // to guide the memory allocation for the code, readonly data, and read-write data
@@ -179,6 +55,8 @@ enum CorJitAllocMemFlag
     CORJIT_ALLOCMEM_DEFAULT_CODE_ALIGN = 0x00000000, // The code will be use the normal alignment
     CORJIT_ALLOCMEM_FLG_16BYTE_ALIGN   = 0x00000001, // The code will be 16-byte aligned
     CORJIT_ALLOCMEM_FLG_RODATA_16BYTE_ALIGN = 0x00000002, // The read-only data will be 16-byte aligned
+    CORJIT_ALLOCMEM_FLG_32BYTE_ALIGN   = 0x00000004, // The code will be 32-byte aligned
+    CORJIT_ALLOCMEM_FLG_RODATA_32BYTE_ALIGN = 0x00000008, // The read-only data will be 32-byte aligned
 };
 
 inline CorJitAllocMemFlag operator |(CorJitAllocMemFlag a, CorJitAllocMemFlag b)
@@ -210,7 +88,6 @@ extern "C" void __stdcall jitStartup(ICorJitHost* host);
 
 class ICorJitCompiler;
 class ICorJitInfo;
-struct IEEMemoryManager;
 
 extern "C" ICorJitCompiler* __stdcall getJit();
 
@@ -218,9 +95,9 @@ extern "C" ICorJitCompiler* __stdcall getJit();
 // ICorJitCompiler is the interface that the EE uses to get IL bytecode converted to native code. Note that
 // to accomplish this the JIT has to call back to the EE to get symbolic information.  The code:ICorJitInfo
 // type passed as 'comp' to compileMethod is the mechanism to get this information.  This is often the more
-// interesting interface.  
-// 
-// 
+// interesting interface.
+//
+//
 class ICorJitCompiler
 {
 public:
@@ -230,10 +107,10 @@ public:
     // nativeSizeOfCode are just for convenience because the JIT asks the EE for the memory to emit code into
     // (see code:ICorJitInfo.allocMem), so really the EE already knows where the method starts and how big
     // it is (in fact, it could be in more than one chunk).
-    // 
+    //
     // * In the 32 bit jit this is implemented by code:CILJit.compileMethod
     // * For the 64 bit jit this is implemented by code:PreJit.compileMethod
-    // 
+    //
     // Note: Obfuscators that are hacking the JIT depend on this method having __stdcall calling convention
     virtual CorJitResult __stdcall compileMethod (
             ICorJitInfo                 *comp,               /* IN */
@@ -243,21 +120,13 @@ public:
             ULONG                       *nativeSizeOfCode    /* OUT */
             ) = 0;
 
-    // Some JIT compilers (most notably Phoenix), cache information about EE structures from one invocation
-    // of the compiler to the next. This can be a problem when appdomains are unloaded, as some of this
-    // cached information becomes stale. The code:ICorJitCompiler.isCacheCleanupRequired is called by the EE
-    // early first to see if jit needs these notifications, and if so, the EE will call ClearCache is called
-    // whenever the compiler should abandon its cache (eg on appdomain unload)
-    virtual void clearCache() = 0;
-    virtual BOOL isCacheCleanupRequired() = 0;
-
     // Do any appropriate work at process shutdown.  Default impl is to do nothing.
     virtual void ProcessShutdownWork(ICorStaticInfo* info) {};
 
     // The EE asks the JIT for a "version identifier". This represents the version of the JIT/EE interface.
     // If the JIT doesn't implement the same JIT/EE interface expected by the EE (because the JIT doesn't
     // return the version identifier that the EE expects), then the EE fails to load the JIT.
-    // 
+    //
     virtual void getVersionIdentifier(
             GUID*   versionIdentifier   /* OUT */
             ) = 0;
@@ -266,35 +135,23 @@ public:
     // SIMD vector it supports as an intrinsic type.  Zero means that the JIT does not support SIMD
     // intrinsics, so the EE should use the default size (i.e. the size of the IL implementation).
     virtual unsigned getMaxIntrinsicSIMDVectorLength(CORJIT_FLAGS cpuCompileFlags) { return 0; }
-
-    // IL obfuscators sometimes interpose on the EE-JIT interface. This function allows the VM to
-    // tell the JIT to use a particular ICorJitCompiler to implement the methods of this interface,
-    // and not to implement those methods itself. The JIT must not return this method when getJit()
-    // is called. Instead, it must pass along all calls to this interface from within its own
-    // ICorJitCompiler implementation. If 'realJitCompiler' is nullptr, then the JIT should resume
-    // executing all the functions itself.
-    virtual void setRealJit(ICorJitCompiler* realJitCompiler) { }
-
 };
 
 //------------------------------------------------------------------------------------------
 // #JitToEEInterface
-// 
+//
 // ICorJitInfo is the main interface that the JIT uses to call back to the EE and get information. It is
 // the companion to code:ICorJitCompiler#EEToJitInterface. The concrete implementation of this in the
-// runtime is the code:CEEJitInfo type.  There is also a version of this for the NGEN case.  
-// 
-// See code:ICorMethodInfo#EEJitContractDetails for subtle conventions used by this interface.  
-// 
-// There is more information on the JIT in the book of the runtime entry 
+// runtime is the code:CEEJitInfo type.  There is also a version of this for the NGEN case.
+//
+// See code:ICorMethodInfo#EEJitContractDetails for subtle conventions used by this interface.
+//
+// There is more information on the JIT in the book of the runtime entry
 // http://devdiv/sites/CLR/Product%20Documentation/2.0/BookOfTheRuntime/JIT/JIT%20Design.doc
-// 
+//
 class ICorJitInfo : public ICorDynamicInfo
 {
 public:
-    // OBSOLETE: return memory manager that the JIT can use to allocate a regular memory
-    virtual IEEMemoryManager* getMemoryManager() = 0;
-
     // get a block of memory for the code, readonly data, and read-write data
     virtual void allocMem (
             ULONG               hotCodeSize,    /* IN */
@@ -332,7 +189,7 @@ public:
     // Parameters:
     //
     //    pHotCode        main method code buffer, always filled in
-    //    pColdCode       cold code buffer, only filled in if this is cold code, 
+    //    pColdCode       cold code buffer, only filled in if this is cold code,
     //                      null otherwise
     //    startOffset     start of code block, relative to appropriate code buffer
     //                      (e.g. pColdCode if cold, pHotCode if hot).
@@ -359,8 +216,6 @@ public:
             size_t                  size        /* IN */
             ) = 0;
 
-    virtual void yieldExecution() = 0;
-
     // Indicate how many exception handler blocks are to be returned.
     // This is guaranteed to be called before any 'setEHinfo' call.
     // Note that allocMem must be called before this method can be called.
@@ -386,7 +241,7 @@ public:
     // do an assert.  will return true if the code should retry (DebugBreak)
     // returns false, if the assert should be igored.
     virtual int doAssert(const char* szFile, int iLine, const char* szExpr) = 0;
-    
+
     virtual void reportFatalError(CorJitResult result) = 0;
 
     struct BlockCounts  // Also defined by:  CORBBTPROF_BLOCK_DATA
@@ -433,19 +288,11 @@ public:
 
     virtual WORD getRelocTypeHint(void * target) = 0;
 
-    // A callback to identify the range of address known to point to
-    // compiler-generated native entry points that call back into
-    // MSIL.
-    virtual void getModuleNativeEntryPointRange(
-            void ** pStart, /* OUT */
-            void ** pEnd    /* OUT */
-            ) = 0;
-
     // For what machine does the VM expect the JIT to generate code? The VM
     // returns one of the IMAGE_FILE_MACHINE_* values. Note that if the VM
     // is cross-compiling (such as the case for crossgen), it will return a
     // different value than if it was compiling for the host architecture.
-    // 
+    //
     virtual DWORD getExpectedTargetArchitecture() = 0;
 
     // Fetches extended flags for a particular compilation instance. Returns

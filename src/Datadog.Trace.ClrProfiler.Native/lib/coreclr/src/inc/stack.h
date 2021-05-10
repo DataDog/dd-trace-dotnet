@@ -1,9 +1,8 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
 // This is a generic growable stack of T.
 
 #ifndef GENERIC_STACK_H
@@ -75,7 +74,7 @@ class Stack
         return m_elems[m_elemsCount-1];
     }
 
-    // Caller should take care to only side-effect the return reference if he/she is *sure*
+    // Caller should take care to only side-effect the return reference if they are *sure*
     // that the stack will not be popped in the interim!
     T& PeekRef()
     {

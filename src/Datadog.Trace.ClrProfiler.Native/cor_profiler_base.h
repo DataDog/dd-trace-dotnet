@@ -7,7 +7,7 @@
 
 namespace trace {
 
-class CorProfilerBase : public ICorProfilerCallback8 {
+class CorProfilerBase : public ICorProfilerCallback10 {
  private:
   std::atomic<int> ref_count_;
 
@@ -189,16 +189,30 @@ class CorProfilerBase : public ICorProfilerCallback8 {
   HRESULT STDMETHODCALLTYPE DynamicMethodJITCompilationFinished(
       FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock) override;
 
+  HRESULT STDMETHODCALLTYPE DynamicMethodUnloaded(FunctionID functionId) override;
+
+  HRESULT STDMETHODCALLTYPE EventPipeEventDelivered(
+      EVENTPIPE_PROVIDER provider, DWORD eventId, DWORD eventVersion,
+      ULONG cbMetadataBlob, LPCBYTE metadataBlob, ULONG cbEventData,
+      LPCBYTE eventData, LPCGUID pActivityId, LPCGUID pRelatedActivityId,
+      ThreadID eventThread, ULONG numStackFrames,
+      UINT_PTR stackFrames[]) override;
+
+  HRESULT STDMETHODCALLTYPE EventPipeProviderCreated(EVENTPIPE_PROVIDER provider) override;
+
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid,
                                            void** ppvObject) override {
-    if (riid == __uuidof(ICorProfilerCallback8) ||
+    if (riid == __uuidof(ICorProfilerCallback10) ||
+        riid == __uuidof(ICorProfilerCallback9) ||
+        riid == __uuidof(ICorProfilerCallback8) ||
         riid == __uuidof(ICorProfilerCallback7) ||
         riid == __uuidof(ICorProfilerCallback6) ||
         riid == __uuidof(ICorProfilerCallback5) ||
         riid == __uuidof(ICorProfilerCallback4) ||
         riid == __uuidof(ICorProfilerCallback3) ||
         riid == __uuidof(ICorProfilerCallback2) ||
-        riid == __uuidof(ICorProfilerCallback) || riid == IID_IUnknown) {
+        riid == __uuidof(ICorProfilerCallback) ||
+        riid == IID_IUnknown) {
       *ppvObject = this;
       this->AddRef();
       return S_OK;
@@ -218,22 +232,22 @@ class CorProfilerBase : public ICorProfilerCallback8 {
     /*
     * Running netcoreapp2.x we get in similar scenarios as the one described in:
     * https://github.com/dotnet/runtime/issues/11885
-    * 
-    * A crash while profiler is shutting down because one thread can be deleting the 
-    * profiler instance while another thread can be trying to call 
+    *
+    * A crash while profiler is shutting down because one thread can be deleting the
+    * profiler instance while another thread can be trying to call
     * `EEToProfInterfaceImpl::JITCompilationFinished`
     * and crashing here https://github.com/dotnet/coreclr/blob/release/2.1/src/vm/eetoprofinterfaceimpl.cpp#L3220 as
     * seen in several memory dumps.
-    * 
-    * One way to avoid the crash is by skipping the deletion of the profiler, 
+    *
+    * One way to avoid the crash is by skipping the deletion of the profiler,
     * so the pointer doesn't get invalidated. So we are commenting the `delete this;` line.
-    * 
+    *
     * This behavior appears to be fixed in netcoreapp3.x as seen in the commit:
     * https://github.com/dotnet/coreclr/commit/671772c20a27c050df3d7d11391ea4f7de05165c
     * PR:
     * https://github.com/dotnet/coreclr/pull/22712
     */
-    
+
     //if (count <= 0) {
     //  delete this;
     //}

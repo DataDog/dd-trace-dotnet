@@ -1,13 +1,12 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //
 //
 // COM+ IL keywords, symbols and values
 //
 // This is the master table used in ILASM (asmparse.y)
 // and ILDASM (dis.cpp)
-// symbols and values are defined in asmparse.y 
+// symbols and values are defined in asmparse.y
 // and not used in dis.cpp
 //
 
@@ -142,13 +141,14 @@
     KYWD( ".entrypoint",    _ENTRYPOINT,        NO_VALUE )
     KYWD( ".zeroinit",      _ZEROINIT,          NO_VALUE )
     KYWD( ".data",          _DATA,              NO_VALUE )
+    KYWD( ".param",         _PARAM,             NO_VALUE )
 
     KYWD( ".event",         _EVENT,             NO_VALUE )
     KYWD( ".addon",         _ADDON,             NO_VALUE )
     KYWD( ".removeon",      _REMOVEON,          NO_VALUE )
     KYWD( ".fire",          _FIRE,              NO_VALUE )
     KYWD( ".other",         _OTHER,             NO_VALUE )
-    
+
     KYWD( ".property",      _PROPERTY,          NO_VALUE )
     KYWD( ".set",           _SET,               NO_VALUE )
     KYWD( ".get",           _GET,               NO_VALUE )
@@ -172,7 +172,7 @@
     KYWD( "noncasdemand",   NONCASDEMAND_,      NO_VALUE )
     KYWD( "noncaslinkdemand",NONCASLINKDEMAND_, NO_VALUE )
     KYWD( "noncasinheritance",NONCASINHERITANCE_,NO_VALUE )
-        
+
         /* extern debug data specifier */
     KYWD( ".line",          _LINE,              NO_VALUE )
     KYWD( ".language",      _LANGUAGE,          NO_VALUE )
@@ -244,7 +244,6 @@
     KYWD( "in",             IN_,                NO_VALUE )
     KYWD( "out",            OUT_,               NO_VALUE )
     KYWD( "opt",            OPT_,               NO_VALUE )
-    KYWD( ".param",         PARAM_,             NO_VALUE )
         /* Method implementations */
     KYWD( ".override",      _OVERRIDE,          NO_VALUE )
     KYWD( "with",           WITH_,              NO_VALUE )
@@ -285,7 +284,7 @@
     KYWD( ".template",      _TEMPLATE,          NO_VALUE )
     KYWD( ".typelist",      _TYPELIST,          NO_VALUE )
     KYWD( ".mscorlib",      _MSCORLIB,          NO_VALUE )
-        
+
     /* Compilation control keywords  */
     KYWD( "#define",        P_DEFINE,           NO_VALUE )
     KYWD( "#undef",         P_UNDEF,            NO_VALUE )
@@ -294,6 +293,8 @@
     KYWD( "#else",          P_ELSE,             NO_VALUE )
     KYWD( "#endif",         P_ENDIF,            NO_VALUE )
     KYWD( "#include",       P_INCLUDE,          NO_VALUE )
+
+    KYWD( "constraint",     CONSTRAINT_,        NO_VALUE )
 
 
     /* Deprecated keywords */

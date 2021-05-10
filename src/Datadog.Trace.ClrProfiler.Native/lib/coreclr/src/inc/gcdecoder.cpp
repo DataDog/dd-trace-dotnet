@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 /*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -19,7 +18,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 // See: https://github.com/dotnet/diagnostics/blob/master/src/inc/gcdecoder.cpp
 // ******************************************************************************
 
-#ifdef _TARGET_X86_
+#ifdef TARGET_X86
 
 /* This file is shared between the VM and JIT/IL and SOS/Strike directories */
 
@@ -196,7 +195,6 @@ PTR_CBYTE FASTCALL decodeHeader(PTR_CBYTE table, UINT32 version, InfoHdr* header
                 header->syncStartOffset ^= HAS_SYNC_OFFSET;
                 break;
             case FLIP_REV_PINVOKE_FRAME:
-                _ASSERTE(GCInfoEncodesRevPInvokeFrame(version));
                 header->revPInvokeOffset ^= HAS_REV_PINVOKE_FRAME_OFFSET;
                 break;
 
@@ -206,15 +204,8 @@ PTR_CBYTE FASTCALL decodeHeader(PTR_CBYTE table, UINT32 version, InfoHdr* header
                 encoding = nextByte & ADJ_ENCODING_MAX;
                 // encoding here always corresponds to codes in InfoHdrAdjust2 set
 
-                if (encoding < SET_RET_KIND_MAX)
-                {
-                    _ASSERTE(GCInfoEncodesReturnKind(version));
-                    header->returnKind = (ReturnKind)encoding;
-                }
-                else
-                {
-                    assert(!"Unexpected encoding");
-                }
+                _ASSERTE(encoding < SET_RET_KIND_MAX);
+                header->returnKind = (ReturnKind)encoding;
                 break;
             }
         }
@@ -476,7 +467,7 @@ bool InfoHdrSmall::isHeaderMatch(const InfoHdr& target) const
     _ASSERTE(target.untrackedCnt != HAS_UNTRACKED &&
                 target.varPtrTableSize != HAS_VARPTR &&
                 target.gsCookieOffset != HAS_GS_COOKIE_OFFSET &&
-                target.syncStartOffset != HAS_SYNC_OFFSET && 
+                target.syncStartOffset != HAS_SYNC_OFFSET &&
                 target.revPInvokeOffset != HAS_REV_PINVOKE_FRAME_OFFSET);
 #endif
 
@@ -490,7 +481,7 @@ bool InfoHdrSmall::isHeaderMatch(const InfoHdr& target) const
         else if (untrackedCnt != HAS_UNTRACKED)
             return false;
     }
-        
+
     if (varPtrTableSize != target.varPtrTableSize) {
         if ((varPtrTableSize != 0) != (target.varPtrTableSize != 0))
             return false;
@@ -530,7 +521,7 @@ const unsigned callCommonDelta[4] = { 6,8,10,12 };
  *
  *  Note that ARG_MASK is the mask of pushed args that contain GC pointers
  *   since the first two arguments are always passed in registers it is
- *   a fairly rare occurance to push a GC pointer as an argument, since it
+ *   a fairly rare occurrence to push a GC pointer as an argument, since it
  *   only occurs for nested calls, when the third or later argument for the
  *   outer call contains a GC ref.
  *
@@ -621,4 +612,4 @@ const unsigned callPatternTable[80] = {               // # of occurences
     0x07000300, //    1684
 };
 
-#endif // _TARGET_X86_
+#endif // TARGET_X86

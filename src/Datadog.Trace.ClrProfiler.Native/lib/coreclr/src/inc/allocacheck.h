@@ -1,22 +1,21 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 /*********************************************************************/
 /*                           AllocaCheck                             */
 /*********************************************************************/
 
 /* check for alloca overruns (which otherwise are hard to track down
-   and often only repro on optimized builds).  
+   and often only repro on optimized builds).
 
    USAGE:
 
-		void foo() {	
+		void foo() {
 			ALLOCA_CHECK();				// Declare at function level scope
 
 			....
-			void* mem = ALLOCA(size);	// does an alloca, 
+			void* mem = ALLOCA(size);	// does an alloca,
 
-		}	// destructor of ALLOCA_CHECK for buffer overruns.  
+		}	// destructor of ALLOCA_CHECK for buffer overruns.
 */
 
 /*   */
@@ -45,11 +44,11 @@ public:
 
 public:
 	/***************************************************/
-	AllocaCheck() { 
-		sentinals = 0; 
+	AllocaCheck() {
+		sentinals = 0;
 	}
 
-	~AllocaCheck() { 
+	~AllocaCheck() {
 		AllocaSentinal* ptr = sentinals;
 		while (ptr != 0) {
 			if (ptr->check != (int)CheckBytes)
@@ -76,9 +75,9 @@ private:
 
 #else
 
-#define ALLOCA_CHECK() 
+#define ALLOCA_CHECK()
 #define ALLOCA(size)  _alloca(size)
 
 #endif
-	
+
 #endif

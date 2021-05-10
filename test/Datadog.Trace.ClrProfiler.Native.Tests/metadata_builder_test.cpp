@@ -9,7 +9,6 @@ class MetadataBuilderTest : public ::testing::Test {
  protected:
   ModuleMetadata* module_metadata_ = nullptr;
   MetadataBuilder* metadata_builder_ = nullptr;
-  ICLRStrongName* strong_name_ = nullptr;
   IMetaDataDispenser* metadata_dispenser_ = nullptr;
   std::vector<WSTRING> empty_sig_type_;
 
@@ -34,10 +33,6 @@ class MetadataBuilderTest : public ::testing::Test {
     hr =
         latest->GetInterface(CLSID_CorMetaDataDispenser, IID_IMetaDataDispenser,
                              (void**)&metadata_dispenser_);
-    ASSERT_TRUE(SUCCEEDED(hr));
-
-    hr = latest->GetInterface(CLSID_CLRStrongName, IID_ICLRStrongName,
-                              (void**)&strong_name_);
     ASSERT_TRUE(SUCCEEDED(hr));
 
     ComPtr<IUnknown> metadataInterfaces;
