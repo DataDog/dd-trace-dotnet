@@ -4,7 +4,7 @@
 
 ## Changes
 * Reduce overhead when using log injection (`DD_LOGS_INJECTION`)  with Serilog (#1435, #1450)
-* Use the profiler API to register the ASP.NET integration, instead of the DatadogHttpModule (#1280)
+* Use the profiler API instead of the IIS configuration to register the ASP.NET integration (#1280)
 * Various optimizations (#1420, #1425, #1434, #1437, #1448)
 * Allow calltarget instrumentation of nested classes (#1409)
 * Add debug logs to help diagnose partial flush issues (#1432)
