@@ -47,7 +47,14 @@ bool EnableInlining(bool defaultValue) {
 }
 
 bool IsCallTargetEnabled() {
+#if defined(ARM64) || defined(ARM)
+  //
+  // If the architecture is ARM64 or ARM, we force CallTarget instrumentation
+  //
+  return true;
+#else
   CheckIfTrue(GetEnvironmentValue(environment::calltarget_enabled));
+#endif
 }
 
 bool IsDebugEnabled() {
