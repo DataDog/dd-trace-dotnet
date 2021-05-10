@@ -128,6 +128,18 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // If the architecture is ARM64 or ARM, we force CallTarget instrumentation
   //
   const auto is_calltarget_enabled = true;
+
+  //
+  // In ARM64 and ARM, complete ReJIT support is only available from .NET 5.0
+  //
+  ICorProfilerInfo12* info12;
+  HRESULT hrInfo12 = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&info12);
+  if (SUCCEEDED(hrInfo12)) {
+    Info(".NET 5.0 runtime or greater was detected.");
+  } else {
+    Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET 5.0 runtime or greater is required on this architecture.");
+    return E_FAIL;
+  }
 #else
   const auto is_calltarget_enabled = IsCallTargetEnabled();
 #endif
