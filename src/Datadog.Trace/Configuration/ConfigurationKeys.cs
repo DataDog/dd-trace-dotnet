@@ -293,8 +293,8 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for overriding which URLs are skipped by the tracer.
         /// </summary>
-        /// <seealso cref="TracerSettings.HttpClientExcludedUrlPortions"/>
-        public const string HttpClientExcludedUrlPortions = "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_PORTIONS";
+        /// <seealso cref="TracerSettings.HttpClientExcludedUrlSubstrings"/>
+        public const string HttpClientExcludedUrlSubstrings = "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS";
 
         /// <summary>
         /// Configuration key for the application's server http statuses to set spans as errors by.
