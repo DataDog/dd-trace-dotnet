@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [InlineData("a,b,c,d,,f", new[] { "a", "b", "c", "d", "f" })]
-        [InlineData(" a, b ,c,,,f ", new[] { "a", "b", "c", "f" })]
+        [InlineData(" a, b ,c, ,,f ", new[] { "a", "b", "c", "f" })]
         [InlineData("a,b, c ,d,      e      ,f  ", new[] { "a", "b", "c", "d", "e", "f" })]
         [InlineData("a,b,c,d,e,f", new[] { "a", "b", "c", "d", "e", "f" })]
         [InlineData("", new string[0])]
