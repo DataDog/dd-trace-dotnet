@@ -153,7 +153,7 @@ services:
     image: datadog-package
     environment:
     - PKGTYPES=deb rpm tar
-    command: /project/build/docker/package.sh
+    command: /project/build/docker/package.arm64.sh
     volumes:
     - ./:/project
 
