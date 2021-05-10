@@ -28,7 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         private const string CommandPeek = "msmq.peek";
         private const string CommandConsume = "msmq.consume";
         private const string IntegrationName = nameof(IntegrationIds.Msmq);
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MessageQueue_ReceiveCurrent_Integration));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -60,7 +59,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <param name="state">Calltarget state value</param>
         /// <returns>CallTargetReturn</returns>
         public static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult messageResult, Exception exception, CallTargetState state)
-            where TResult : IMessage
         {
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TResult>(messageResult);

@@ -1,8 +1,6 @@
 #if NETFRAMEWORK
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -22,76 +20,88 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Trait("Category", "EndToEnd")]
         [Fact]
-        public void SubmitsTraces()
+        public void SubmitTraces()
         {
-            SetCallTargetSettings(true, true);
+            SetCallTargetSettings(true);
 
-            var expectedSpanCount = 25;
-            const int rounds = 12;
-            const int expectedSendCount = rounds;
-            const int expectedReceiveCount = rounds;
-            const int expectedPurgeCount = 1;
+            const int expectedTransactionalTraces = 12;
+            const int expectedNonTransactionalTracesTraces = 12;
+            const int totalTransactions = expectedTransactionalTraces + expectedNonTransactionalTracesTraces;
+            const int expectedPurgeCount = 2;
+            const int expectedPeekCount = 2;
+            const int expectedSendCount = 10;
+            const int expectedReceiveCount = 10;
+
             var sendCount = 0;
+            var peekCount = 0;
             var receiveCount = 0;
             var purgeCount = 0;
-            var distributedParentSpans = new Dictionary<ulong, int>();
+            var transactionalTraces = 0;
+            var nonTransactionalTraces = 0;
+
             var agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{rounds}"))
+            using var agent = new MockTracerAgent(agentPort);
+            using var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"5 5");
+            Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
+
+            var spans = agent.WaitForSpans(totalTransactions);
+            Assert.True(spans.Count >= totalTransactions, $"Expecting at least {totalTransactions} spans, only received {spans.Count}");
+            var msmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
+            foreach (var span in msmqSpans)
             {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
-
-                var spans = agent.WaitForSpans(expectedSpanCount);
-                Assert.True(spans.Count >= expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
-
-                var msmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
-                var manualSpans = spans.Where(span => !string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
-
-                foreach (var span in msmqSpans)
+                Assert.Equal(SpanTypes.Queue, span.Type);
+                Assert.Equal(span.Service, ExpectedServiceName, true);
+                Assert.Equal("Msmq", span.Tags[Tags.InstrumentationName]);
+                if (span.Tags[Tags.MsmqIsTransactionalQueue] == "True")
                 {
-                    Assert.Equal(SpanTypes.Queue, span.Type);
-                    Assert.Equal("Msmq", span.Tags[Tags.InstrumentationName]);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                    Assert.Equal("msmq.command", span.Name);
-
-                    var command = span.Tags[Tags.MsmqCommand];
-
-                    if (string.Equals(command, "msmq.send", StringComparison.OrdinalIgnoreCase))
-                    {
-                        sendCount++;
-                        Assert.Equal(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
-                    }
-                    else if (string.Equals(command, "msmq.consume", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
-                        receiveCount++;
-                    }
-                    else if (string.Equals(command, "msmq.peek", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
-                        receiveCount++;
-                    }
-                    else if (string.Equals(command, "msmq.purge", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Assert.Equal(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
-                        purgeCount++;
-                    }
-                    else
-                    {
-                        throw new Xunit.Sdk.XunitException($"msmq.command {command} not recognized.");
-                    }
+                    Assert.Equal("Private$\\private-transactional-queue", span.Tags[Tags.MsmqQueue]);
+                    transactionalTraces++;
+                }
+                else
+                {
+                    Assert.Equal("Private$\\private-nontransactional-queue", span.Tags[Tags.MsmqQueue]);
+                    nonTransactionalTraces++;
                 }
 
-                Assert.Equal(expectedSendCount, sendCount);
-                Assert.Equal(expectedPurgeCount, purgeCount);
-                Assert.Equal(expectedReceiveCount, receiveCount);
+                Assert.NotNull(span.Tags[Tags.MsmqQueueLabel]);
+                Assert.NotNull(span.Tags[Tags.MsmqQueueLastModifiedTime]);
+                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
+                Assert.Equal("msmq.command", span.Name);
 
-                foreach (var span in manualSpans)
+                var command = span.Tags[Tags.MsmqCommand];
+
+                if (string.Equals(command, "msmq.send", StringComparison.OrdinalIgnoreCase))
                 {
-                    Assert.Equal("Samples.Msmq", span.Service);
-                    Assert.Equal("1.0.0", span.Tags[Tags.Version]);
+                    Assert.Equal(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
+                    sendCount++;
+                }
+                else if (string.Equals(command, "msmq.consume", StringComparison.OrdinalIgnoreCase))
+                {
+                    Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
+                    receiveCount++;
+                }
+                else if (string.Equals(command, "msmq.peek", StringComparison.OrdinalIgnoreCase))
+                {
+                    Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
+                    peekCount++;
+                }
+                else if (string.Equals(command, "msmq.purge", StringComparison.OrdinalIgnoreCase))
+                {
+                    Assert.Equal(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
+                    purgeCount++;
+                }
+                else
+                {
+                    throw new Xunit.Sdk.XunitException($"msmq.command {command} not recognized.");
                 }
             }
+
+            Assert.Equal(expectedNonTransactionalTracesTraces, nonTransactionalTraces);
+            Assert.Equal(expectedTransactionalTraces, transactionalTraces);
+            Assert.Equal(expectedSendCount, sendCount);
+            Assert.Equal(expectedPurgeCount, purgeCount);
+            Assert.Equal(expectedReceiveCount, receiveCount);
+            Assert.Equal(expectedPeekCount, peekCount);
         }
     }
 }

@@ -1,12 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
@@ -26,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     {
         private const string IntegrationName = nameof(IntegrationIds.Msmq);
         private const string Command = "msmq.send";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MessageQueue_SendInternal_Integration));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -40,7 +34,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         public static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, object message, object messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
             where TMessageQueue : IMessageQueue
         {
-            Log.Information("send internal integration");
             var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, instance.Label, instance.LastModifyTime, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out _);
             return new CallTargetState(scope);
         }

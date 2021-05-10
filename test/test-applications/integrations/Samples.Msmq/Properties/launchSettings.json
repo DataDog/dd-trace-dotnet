@@ -2,7 +2,7 @@
   "profiles": {
     "Samples.Msmq": {
       "commandName": "Project",
-      "commandLineArgs": "30",
+      "commandLineArgs": "5 5",
       "environmentVariables": {
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "COR_ENABLE_PROFILING": "1",

@@ -21,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     {
         private const string Command = "msmq.purge";
         private const string IntegrationName = nameof(IntegrationIds.Msmq);
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MessageQueue_Purge_Integration));
 
         /// <summary>
         /// OnMethodBegin callback

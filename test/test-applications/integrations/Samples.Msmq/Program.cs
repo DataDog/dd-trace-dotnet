@@ -1,80 +1,82 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Messaging;
-using System.Threading;
 
 namespace Samples.Msmq
 {
-    internal class Program
+    public class Program
     {
-        const string PrivateQueuePath = ".\\Private$\\myQueue3";
+        const string PrivateTransactionalQueuePath = ".\\Private$\\private-transactional-queue";
+        const string PrivateNonTransactionalQueuePath = ".\\Private$\\private-nontransactional-queue";
         public static void Main(string[] args)
         {
             Console.WriteLine("first arg " + args.First());
+            Console.WriteLine("second arg " + args[1]);
 
-            var messagesToSend = int.TryParse(args.First(), out int res) ? res : 10;
-            Console.WriteLine("messages to send " + messagesToSend);
-            var queue = GetOrCreate(PrivateQueuePath);
-            for (int i = 0; i < messagesToSend; i++)
+            var transactionalScenarioCount = int.TryParse(args[0], out var transactionalScenarioC) ? transactionalScenarioC : 5;
+            var nonTransactionalScenarioCount = int.TryParse(args[1], out var nonTransactionalScenarioC) ? nonTransactionalScenarioC : 5;
+
+            var transactionalQueue = Create(PrivateTransactionalQueuePath, true);
+            var nonTransactionalQueue = Create(PrivateNonTransactionalQueuePath, false);
+            var counter = Math.Max(transactionalScenarioCount, nonTransactionalScenarioCount);
+            Console.WriteLine("counter " + counter);
+
+            for (var i = 0; i < counter; i++)
             {
-                SendWithTransactionType(queue);
-                queue.Receive(TimeSpan.FromSeconds(1));
+                if (transactionalScenarioCount-- > 0)
+                {
+                    SendWithinTransaction(transactionalQueue);
+                    ReceivePeekOnce(transactionalQueue, i);
+                }
+                if (nonTransactionalScenarioCount-- > 0)
+                {
+                    SendWithoutTransaction(nonTransactionalQueue);
+                    ReceivePeekOnce(nonTransactionalQueue, i);
+                }
             }
 
-            //void Receive()
-            //{
-            //    queue.ReceiveCompleted += Queue_ReceiveCompleted;
-            //    var rec = queue.Receive();
-            //    Console.WriteLine($"received {rec}");
-
-            //}
-            //var receiveThread = new Thread(Receive);
-            //receiveThread.Start();
-
-            //// sending is not thread safe
-            //void SendDifferentWays()
-            //{
-            //    var transQ = SendWithinTransaction(queue);
-            //    SendWithTransactionType(queue);
-            //    SendWithoutTransaction(queue);
-            //    Console.WriteLine("sent within transaction");
-            //}
-
-            //var sendDifferentWaysThread = new Thread(SendDifferentWays);
-            //sendDifferentWaysThread.Start();
-
-            //sendDifferentWaysThread.Join();
-            //receiveThread.Join();
-
-            queue.Purge();
-
+            transactionalQueue.Purge();
+            nonTransactionalQueue.Purge();
         }
 
-        private static void Queue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e)
+        private static void ReceivePeekOnce(MessageQueue queue, int i)
         {
-            Debugger.Break();
+            if (i == 0)
+                queue.Peek(TimeSpan.FromSeconds(1)); //test peek once
+            queue.Receive(TimeSpan.FromSeconds(1));
         }
 
-        private static MessageQueue GetOrCreate(string privateQueuePath) => MessageQueue.Exists(privateQueuePath) ? new MessageQueue(privateQueuePath) : MessageQueue.Create(privateQueuePath, true);
+        private static MessageQueue Create(string privateQueuePath, bool transactional)
+        {
+            if (MessageQueue.Exists(privateQueuePath))
+            {
+                MessageQueue.Delete(privateQueuePath);
+            }
+            return MessageQueue.Create(privateQueuePath, transactional);
+        }
 
         private static MessageQueueTransaction SendWithinTransaction(MessageQueue queue)
         {
-            var transQ = new MessageQueueTransaction();
+            using var transQ = new MessageQueueTransaction();
             transQ.Begin();
-            queue.Send(3, "label3", transQ);
+            queue.Send($"Message no {Guid.NewGuid()}", GetLabel(), transQ);
             transQ.Commit();
             return transQ;
         }
 
         private static void SendWithTransactionType(MessageQueue queue)
         {
-            queue.Send("a message with transaction type", "label2", MessageQueueTransactionType.Single);
+            queue.Send($"Message no {Guid.NewGuid()}", GetLabel(), MessageQueueTransactionType.Single);
         }
 
         private static void SendWithoutTransaction(MessageQueue queue)
         {
-            queue.Send("a message", "label");
+            queue.Send("No transaction message message", GetLabel());
+        }
+
+        private static string GetLabel()
+        {
+            return "label-" + Guid.NewGuid();
         }
     }
 }
