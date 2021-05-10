@@ -27,8 +27,6 @@ namespace Datadog.Trace.ClrProfiler
         public const string Task = "System.Threading.Tasks.Task";
         public const string CancellationToken = "System.Threading.CancellationToken";
 
-        public const string CursorHandle = "System.Messaging.Interop.CursorHandle";
-
         // ReSharper disable once InconsistentNaming
         public const string IAsyncResult = "System.IAsyncResult";
         public const string AsyncCallback = "System.AsyncCallback";
@@ -43,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string ObjectTask = "System.Threading.Tasks.Task`1<System.Object>";
         public const string Int32Task = "System.Threading.Tasks.Task`1<System.Int32>";
 
+        public const string MsmqCursorHandle = "System.Messaging.Interop.CursorHandle";
         public const string MsmqMessageQueueTransaction = "System.Messaging.MessageQueueTransaction";
         public const string MsmqMessageQueueTransactionType = "System.Messaging.MessageQueueTransactionType";
         public const string MsmqMessagePropertyFilter = "System.Messaging.MessagePropertyFilter";

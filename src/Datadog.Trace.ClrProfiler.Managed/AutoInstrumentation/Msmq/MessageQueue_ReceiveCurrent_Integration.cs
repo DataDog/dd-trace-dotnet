@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     TypeName = "System.Messaging.MessageQueue",
     MethodName = "ReceiveCurrent",
     ReturnTypeName = ClrNames.MsmqMessage,
-    ParameterTypeNames = new[] { ClrNames.TimeSpan, ClrNames.Int32, ClrNames.CursorHandle, ClrNames.MsmqMessagePropertyFilter, ClrNames.MsmqMessageQueueTransaction, ClrNames.MsmqMessageQueueTransactionType },
+    ParameterTypeNames = new[] { ClrNames.TimeSpan, ClrNames.Int32, ClrNames.MsmqCursorHandle, ClrNames.MsmqMessagePropertyFilter, ClrNames.MsmqMessageQueueTransaction, ClrNames.MsmqMessageQueueTransactionType },
     MinimumVersion = "4.0.0",
     MaximumVersion = "4.*.*",
     IntegrationName = IntegrationName)]
