@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Datadog.Trace.Tools.Runner
@@ -38,16 +39,44 @@ namespace Datadog.Trace.Tools.Runner
 
             if (platform == Platform.Windows)
             {
-                tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
-                tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
+                if (RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86)
+                {
+                    tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
+                }
+                else
+                {
+                    Console.Error.WriteLine("ERROR: Architecture not supported.");
+                    return null;
+                }
             }
             else if (platform == Platform.Linux)
             {
-                tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
+                if (RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86)
+                {
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
+                }
+                else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                {
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Trace.ClrProfiler.Native.so"));
+                }
+                else
+                {
+                    Console.Error.WriteLine("ERROR: Architecture not supported.");
+                    return null;
+                }
             }
             else if (platform == Platform.MacOS)
             {
-                tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx-x64", "Datadog.Trace.ClrProfiler.Native.dylib"));
+                if (RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86)
+                {
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx-x64", "Datadog.Trace.ClrProfiler.Native.dylib"));
+                }
+                else
+                {
+                    Console.Error.WriteLine("ERROR: Architecture not supported.");
+                    return null;
+                }
             }
 
             var envVars = new Dictionary<string, string>
