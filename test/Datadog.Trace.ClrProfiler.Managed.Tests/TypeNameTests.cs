@@ -38,7 +38,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.GenericParameterTask, "System.Threading.Tasks.Task`1<T>" };
             yield return new object[] { ClrNames.ObjectTask, "System.Threading.Tasks.Task`1<System.Object>" };
             yield return new object[] { ClrNames.Int32Task, "System.Threading.Tasks.Task`1<System.Int32>" };
-    }
+            yield return new object[] { ClrNames.TimeSpan,  "System.TimeSpan" };
+            yield return new object[] { ClrNames.MsmqCursorHandle, "System.Messaging.Interop.CursorHandle" };
+            yield return new object[] { ClrNames.MsmqMessage, "System.Messaging.Message" };
+            yield return new object[] { ClrNames.MsmqMessageQueueTransaction, "System.Messaging.MessageQueueTransaction" };
+            yield return new object[] { ClrNames.MsmqMessageQueueTransactionType, "System.Messaging.MessageQueueTransactionType" };
+            yield return new object[] { ClrNames.MsmqMessagePropertyFilter, "System.Messaging.MessagePropertyFilter" };
+        }
 
         [Fact]
         public void EveryMemberOfTypeNamesIsRepresented()
