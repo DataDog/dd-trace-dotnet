@@ -3,6 +3,6 @@
 
   <!-- StyleCop -->
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.tools.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.tools.cs" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
   </ItemGroup>
 </Project>

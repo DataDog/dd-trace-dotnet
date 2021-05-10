@@ -83,10 +83,10 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: |
-        src/**/*.csproj
-        test/**/*.Tests.csproj
-        test/benchmarks/**/*.csproj
-        !src/Datadog.Trace.Tools.Runner/*.csproj
+        src/**/*.?sproj
+        test/**/*.Tests*.?sproj
+        test/benchmarks/**/*.?sproj
+        !src/Datadog.Trace.Tools.Runner/*.?sproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -95,7 +95,7 @@ jobs:
     inputs:
       command: test
       configuration: $(buildConfiguration)
-      projects: test/**/*.Tests.csproj
+      projects: test/**/*.Tests*.?sproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -113,10 +113,10 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/**/*.csproj
-        test/**/*.Tests.csproj
-        benchmarks/**/*.csproj
-        !src/Datadog.Trace.Tools.Runner/*.csproj
+        src/**/*.?sproj
+        test/**/*.Tests.?sproj
+        benchmarks/**/*.?sproj
+        !src/Datadog.Trace.Tools.Runner/*.?sproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -125,7 +125,7 @@ jobs:
     inputs:
       command: test
       configuration: $(buildConfiguration)
-      projects: test/**/*.Tests.csproj
+      projects: test/**/*.Tests.?sproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -166,17 +166,17 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/**/*.csproj
-        test/**/*.Tests.csproj
-        benchmarks/**/*.csproj
-        !src/Datadog.Trace.Tools.Runner/*.csproj
+        src/**/*.?sproj
+        test/**/*.Tests.?sproj
+        benchmarks/**/*.?sproj
+        !src/Datadog.Trace.Tools.Runner/*.?sproj
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
     inputs:
       command: test
       configuration: $(buildConfiguration)
-      projects: test/**/*.Tests.csproj
+      projects: test/**/*.Tests.?sproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -212,8 +212,8 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-        sample-libs/**/Samples.ExampleLibrary*.csproj
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.?sproj
+        sample-libs/**/Samples.ExampleLibrary*.?sproj
 
   - task: NuGetToolInstaller@1
     displayName: install nuget
@@ -269,7 +269,7 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.?sproj
   
   - script: |
       sudo apt-get update
@@ -296,7 +296,7 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.?sproj
   
   - script: |
       cd ./src/Datadog.Trace.ClrProfiler.Native

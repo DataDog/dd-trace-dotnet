@@ -11,8 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="c:\code\dd-trace-dotnet\GlobalSuppressions.cs" />
-    <Compile Remove="c:\code\dd-trace-dotnet\test\GlobalSuppressions.cs" />
+    <Compile Remove="*.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,10 +22,8 @@
 
   <ItemGroup>
     <PackageReference Include="FsCheck.Xunit" Version="3.0.0-alpha5" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
   </ItemGroup>
 
 </Project>
