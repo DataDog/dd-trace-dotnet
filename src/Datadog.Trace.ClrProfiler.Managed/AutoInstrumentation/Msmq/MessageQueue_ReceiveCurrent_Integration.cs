@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <typeparam name="TMessageQueue">Generic TMessageQueue</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method, the message queue</param>
         /// <param name="timeout">A System.TimeSpan that indicates the time to wait until a new message is available for inspection.</param>
-        /// <param name="action">action type</param>
+        /// <param name="action">If action is 0, it's a peek (message remains in the queue), otherwise it's a receive</param>
         /// <param name="cursorHandle">A System.Messaging.Cursor that maintains a specific position in the message queue.</param>
         /// <param name="messagePropertyFilter"> Controls and selects the properties that are retrieved when peeking or receiving messages from a message queue.</param>2
         /// <param name="messageQueueTransaction">transaction</param>
