@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
@@ -42,7 +43,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             try
             {
                 SynchronizationContext.SetSynchronizationContext(null);
-                InternalFlush().GetAwaiter().GetResult();
+                var flushTask = Task.Run(() => InternalFlush());
+                flushTask.GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Exception occurred when flushing spans.");
             }
             finally
             {
@@ -51,17 +57,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
             static async Task InternalFlush()
             {
-                // We have to ensure the flush of the buffer after we finish the tests of an assembly.
-                // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
-                // So the last spans in buffer aren't send to the agent.
-                Log.Debug("Integration flushing spans.");
-                await TestTracer.FlushAsync().ConfigureAwait(false);
-                // The current agent writer FlushAsync method can return inmediately if a payload is being sent (there is buffer lock)
-                // There is not api in the agent writer that guarantees the send has been sucessfully completed.
-                // Until we change the behavior of the agentwriter we should at least wait 2 seconds before returning.
-                Log.Debug("Waiting 2 seconds to flush.");
-                await Task.Delay(2000).ConfigureAwait(false);
-                Log.Debug("Integration flushed.");
+                try
+                {
+                    // We have to ensure the flush of the buffer after we finish the tests of an assembly.
+                    // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
+                    // So the last spans in buffer aren't send to the agent.
+                    Log.Debug("Integration flushing spans.");
+                    await TestTracer.FlushAsync().ConfigureAwait(false);
+                    // The current agent writer FlushAsync method can return inmediately if a payload is being sent (there is buffer lock)
+                    // There is not api in the agent writer that guarantees the send has been sucessfully completed.
+                    // Until we change the behavior of the agentwriter we should at least wait 2 seconds before returning.
+                    Log.Debug("Waiting 2 seconds to flush.");
+                    await Task.Delay(2000).ConfigureAwait(false);
+                    Log.Debug("Integration flushed.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Exception occurred when flushing spans.");
+                }
             }
         }
     }
