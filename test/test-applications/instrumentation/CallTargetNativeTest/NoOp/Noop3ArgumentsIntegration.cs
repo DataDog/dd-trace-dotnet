@@ -44,7 +44,7 @@ namespace CallTargetNativeTest.NoOp
             where TReturn : IReturnValue
         {
             Console.WriteLine($"ProfilerOK: EndMethodAsync(1)<{typeof(Noop3ArgumentsIntegration)}, {typeof(TTarget)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
-            if (instance.Instance?.GetType().Name.Contains("ThrowOnEnd") == true)
+            if (instance.Instance?.GetType().Name.Contains("ThrowOnAsyncEnd") == true)
             {
                 Console.WriteLine("Exception thrown.");
                 throw new Exception();

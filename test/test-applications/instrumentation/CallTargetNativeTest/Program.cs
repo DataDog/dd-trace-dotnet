@@ -199,6 +199,11 @@ namespace CallTargetNativeTest
             Console.WriteLine($"{typeof(With0ArgumentsThrowOnEnd).FullName}.ReturnGenericMethod<int>");
             RunMethod(() => w0TEnd.ReturnGenericMethod<int>());
             Console.WriteLine();
+            //
+            var w0TAsyncEnd = new With0ArgumentsThrowOnAsyncEnd();
+            Console.WriteLine($"{typeof(With0ArgumentsThrowOnAsyncEnd).FullName}.Wait2Seconds");
+            RunMethod(() => w0TAsyncEnd.Wait2Seconds().Wait());
+            Console.WriteLine();
         }
 
         private static void Argument1()

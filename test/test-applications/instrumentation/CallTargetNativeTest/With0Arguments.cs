@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace CallTargetNativeTest
 {
     // *** With0Arguments
@@ -33,4 +35,8 @@ namespace CallTargetNativeTest
     }
     class With0ArgumentsThrowOnBegin : With0Arguments { }
     class With0ArgumentsThrowOnEnd : With0Arguments { }
+    class With0ArgumentsThrowOnAsyncEnd
+    {
+        public Task Wait2Seconds() => Task.Delay(2000);
+    }
 }

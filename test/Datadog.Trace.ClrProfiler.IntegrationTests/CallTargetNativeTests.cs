@@ -59,9 +59,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".ReturnGenericMethod",
                 };
 
-                Assert.Equal(42, beginMethodCount);
-                Assert.Equal(42, endMethodCount);
-                Assert.Equal(10, exceptionCount);
+                if (numberOfArguments == 0)
+                {
+                    // On number of arguments = 0 the throw exception on integrations async continuation runs.
+                    // So we have 1 more case with an exception being reported from the integration.
+                    Assert.Equal(43, beginMethodCount);
+                    Assert.Equal(43, endMethodCount);
+                    Assert.Equal(11, exceptionCount);
+                }
+                else
+                {
+                    Assert.Equal(42, beginMethodCount);
+                    Assert.Equal(42, endMethodCount);
+                    Assert.Equal(10, exceptionCount);
+                }
+
                 foreach (var typeName in typeNames)
                 {
                     Assert.Contains(typeName, processResult.StandardOutput);
