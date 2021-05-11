@@ -1,1 +1,1 @@
-﻿Here must go the native binaries for linux-x64
+﻿Here must go the native binaries for linux-arm64
