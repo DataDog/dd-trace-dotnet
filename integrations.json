@@ -1797,7 +1797,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSkipChildrenIntegration",
           "action": "CallTargetModification"
         }
@@ -1865,7 +1865,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAssemblyRunnerWaitForCompletionIntegration",
           "action": "CallTargetModification"
         }
@@ -3876,7 +3876,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration",
           "action": "CallTargetModification"
         }
@@ -3898,7 +3898,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration",
           "action": "CallTargetModification"
         }
@@ -5659,7 +5659,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
           "method": "NUnitTestAssemblyRunner_WaitForCompletion",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -5686,7 +5686,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
           "method": "CompositeWorkItem_SkipChildren",
           "signature": "00 07 01 1C 1C 1C 1C 08 08 0A",
