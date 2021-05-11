@@ -215,34 +215,19 @@ namespace Datadog.Trace
         public const string MsmqCommand = "msmq.command";
 
         /// <summary>
-        /// The name of the Msmq queue the message was published to.
-        /// </summary>
-        public const string MsmqQueue = "msmq.queue";
-
-        /// <summary>
-        /// The label of the Msmq queue the message was published to.
-        /// </summary>
-        public const string MsmqQueueLabel = "msmq.queue_label";
-
-        /// <summary>
-        /// The last modified time the msmq queue the message was published to
-        /// </summary>
-        public const string MsmqQueueLastModifiedTime = "msmq.queue_last_modified_time";
-
-        /// <summary>
         /// Is the msmq queue supporting transactional messages
         /// </summary>
         public const string MsmqIsTransactionalQueue = "msmq.is_transactional_queue";
 
         /// <summary>
-        /// The name of the Msmq queue the message was published to.
+        /// The name of the Msmq queue the message was published to, containing host name and path.
         /// </summary>
         public const string MsmqQueueUniqueName = "msmq.queue_unique_name";
 
         /// <summary>
         /// A boolean indicating if it's part of a transaction.
         /// </summary>
-        public const string MsmqTransactionType = "msmq.transaction_type";
+        public const string MsmqMessageWithTransaction = "msmq.message_with_transaction";
 
         /// <summary>
         /// The size of the message.

@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         public static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, object message, object messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
             where TMessageQueue : IMessageQueue
         {
-            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance.QueueName, instance.FormatName, instance.Label, instance.LastModifyTime, messageQueueTransaction != null, messageQueueTransactionType.ToString(), instance.Transactional, out _);
+            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance, messageQueueTransaction != null || messageQueueTransactionType != MessageQueueTransactionType.None);
             return new CallTargetState(scope);
         }
 

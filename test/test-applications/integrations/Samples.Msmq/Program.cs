@@ -19,8 +19,6 @@ namespace Samples.Msmq
             var transactionalQueue = Create(PrivateTransactionalQueuePath, true);
             var nonTransactionalQueue = Create(PrivateNonTransactionalQueuePath, false);
             var counter = Math.Max(transactionalScenarioCount, nonTransactionalScenarioCount);
-            Console.WriteLine("counter " + counter);
-
             for (var i = 0; i < counter; i++)
             {
                 if (transactionalScenarioCount-- > 0)
@@ -32,6 +30,11 @@ namespace Samples.Msmq
                 {
                     SendWithoutTransaction(nonTransactionalQueue);
                     ReceivePeekOnce(nonTransactionalQueue, i);
+                }
+                if (transactionalScenarioCount-- > 0)
+                {
+                    SendWithTransactionType(transactionalQueue);
+                    ReceivePeekOnce(transactionalQueue, i);
                 }
             }
 
@@ -64,19 +67,10 @@ namespace Samples.Msmq
             return transQ;
         }
 
-        private static void SendWithTransactionType(MessageQueue queue)
-        {
-            queue.Send($"Message no {Guid.NewGuid()}", GetLabel(), MessageQueueTransactionType.Single);
-        }
+        private static void SendWithTransactionType(MessageQueue queue) => queue.Send($"Message no {Guid.NewGuid()}", GetLabel(), MessageQueueTransactionType.Single);
 
-        private static void SendWithoutTransaction(MessageQueue queue)
-        {
-            queue.Send("No transaction message message", GetLabel());
-        }
+        private static void SendWithoutTransaction(MessageQueue queue) => queue.Send("Non transactional message", GetLabel());
 
-        private static string GetLabel()
-        {
-            return "label-" + Guid.NewGuid();
-        }
+        private static string GetLabel() => "label-" + Guid.NewGuid();
     }
 }

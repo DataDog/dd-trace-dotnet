@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -24,11 +25,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetCallTargetSettings(true);
 
-            const int expectedTransactionalTraces = 12;
+            const int expectedTransactionalTraces = 13;
             const int expectedNonTransactionalTracesTraces = 12;
             const int totalTransactions = expectedTransactionalTraces + expectedNonTransactionalTracesTraces;
             const int expectedPurgeCount = 2;
-            const int expectedPeekCount = 2;
+            const int expectedPeekCount = 3;
             const int expectedSendCount = 10;
             const int expectedReceiveCount = 10;
 
@@ -49,45 +50,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var msmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
             foreach (var span in msmqSpans)
             {
-                Assert.Equal(SpanTypes.Queue, span.Type);
-                Assert.Equal(span.Service, ExpectedServiceName, true);
-                Assert.Equal("Msmq", span.Tags[Tags.InstrumentationName]);
+                span.Type.Should().Be(SpanTypes.Queue);
+                span.Service.Should().Be(ExpectedServiceName);
+                span.Tags.Should().Contain(new System.Collections.Generic.KeyValuePair<string, string>(Tags.InstrumentationName, "msmq"));
                 if (span.Tags[Tags.MsmqIsTransactionalQueue] == "True")
                 {
-                    Assert.Equal("Private$\\private-transactional-queue", span.Tags[Tags.MsmqQueue]);
+                    span.Tags[Tags.MsmqQueueUniqueName].Should().EndWith("Private$\\private-transactional-queue");
                     transactionalTraces++;
                 }
                 else
                 {
-                    Assert.Equal("Private$\\private-nontransactional-queue", span.Tags[Tags.MsmqQueue]);
+                    span.Tags[Tags.MsmqQueueUniqueName].Should().EndWith("Private$\\private-nontransactional-queue");
                     nonTransactionalTraces++;
                 }
 
-                Assert.NotNull(span.Tags[Tags.MsmqQueueLabel]);
-                Assert.NotNull(span.Tags[Tags.MsmqQueueLastModifiedTime]);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                Assert.Equal("msmq.command", span.Name);
+                span.Name.Should().Be("msmq.command");
+                span.Tags?.ContainsKey(Tags.Version).Should().BeFalse("External service span should not have service version tag.");
 
                 var command = span.Tags[Tags.MsmqCommand];
 
                 if (string.Equals(command, "msmq.send", StringComparison.OrdinalIgnoreCase))
                 {
-                    Assert.Equal(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
+                    span.Tags[Tags.MsmqMessageWithTransaction].Should().Be(span.Tags[Tags.MsmqIsTransactionalQueue], "The program is supposed to send messages within transactions to transactional queues, and outside of transactions to non transactional queues");
+                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Producer);
                     sendCount++;
                 }
                 else if (string.Equals(command, "msmq.consume", StringComparison.OrdinalIgnoreCase))
                 {
-                    Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
+                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Consumer);
                     receiveCount++;
                 }
                 else if (string.Equals(command, "msmq.peek", StringComparison.OrdinalIgnoreCase))
                 {
-                    Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
+                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Consumer);
                     peekCount++;
                 }
                 else if (string.Equals(command, "msmq.purge", StringComparison.OrdinalIgnoreCase))
                 {
-                    Assert.Equal(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
+                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Producer);
                     purgeCount++;
                 }
                 else
@@ -96,12 +96,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             }
 
-            Assert.Equal(expectedNonTransactionalTracesTraces, nonTransactionalTraces);
-            Assert.Equal(expectedTransactionalTraces, transactionalTraces);
-            Assert.Equal(expectedSendCount, sendCount);
-            Assert.Equal(expectedPurgeCount, purgeCount);
-            Assert.Equal(expectedReceiveCount, receiveCount);
-            Assert.Equal(expectedPeekCount, peekCount);
+            nonTransactionalTraces.Should().Be(expectedNonTransactionalTracesTraces);
+            transactionalTraces.Should().Be(expectedTransactionalTraces);
+            sendCount.Should().Be(expectedSendCount);
+            purgeCount.Should().Be(expectedPurgeCount);
+            receiveCount.Should().Be(expectedReceiveCount);
+            peekCount.Should().Be(expectedPeekCount);
         }
     }
 }

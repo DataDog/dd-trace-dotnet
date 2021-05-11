@@ -15,9 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsmqCommon));
 
-        internal static Scope CreateScope(Tracer tracer, string command, string spanKind, string queueName, string formatName, string queueLabel, DateTime queueLastModifiedTime, bool withinTransaction, string transactionType, bool transactionalQueue, out MsmqTags tags)
+        internal static Scope CreateScope(Tracer tracer, string command, string spanKind, IMessageQueue messageQueue, bool? messagePartofTransaction = null)
         {
-            tags = null;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
@@ -28,17 +27,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
             try
             {
-                tags = new MsmqTags(spanKind)
+                var tags = new MsmqTags(spanKind)
                 {
                     Command = command,
-                    Queue = queueName,
-                    QueueLabel = queueLabel,
-                    QueueLastModifiedTime = queueLastModifiedTime.ToLongTimeString(),
-                    IsTransactionalQueue = transactionalQueue.ToString(),
-                    UniqueQueueName = formatName,
-                    TransactionType = transactionType,
-                    InstrumentationName = IntegrationName
+                    IsTransactionalQueue = messageQueue.Transactional.ToString(),
+                    UniqueQueueName = messageQueue.FormatName,
                 };
+                if (messagePartofTransaction.HasValue)
+                {
+                    tags.MessageWithTransaction = messagePartofTransaction.ToString();
+                }
+
                 var serviceName = tracer.Settings.GetServiceName(tracer, MsmqConstants.ServiceName);
 
                 scope = tracer.StartActiveWithTags(MsmqConstants.OperationName, serviceName: serviceName, tags: tags);
