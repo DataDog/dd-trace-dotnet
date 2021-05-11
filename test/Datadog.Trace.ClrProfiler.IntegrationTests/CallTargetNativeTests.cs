@@ -47,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, beginMethodString).Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+                int exceptionCount = Regex.Matches(processResult.StandardOutput, "Exception thrown.").Count;
 
                 string[] typeNames = new string[]
                 {
@@ -58,8 +59,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".ReturnGenericMethod",
                 };
 
-                Assert.Equal(32, beginMethodCount);
-                Assert.Equal(32, endMethodCount);
+                Assert.Equal(42, beginMethodCount);
+                Assert.Equal(42, endMethodCount);
+                Assert.Equal(10, exceptionCount);
                 foreach (var typeName in typeNames)
                 {
                     Assert.Contains(typeName, processResult.StandardOutput);

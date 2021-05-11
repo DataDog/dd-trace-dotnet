@@ -31,5 +31,6 @@ namespace CallTargetNativeTest
         public static string ReturnReferenceMethod() => "Hello World";
         public static T ReturnGenericMethod<T>() => default;
     }
-
+    class With0ArgumentsThrowOnBegin : With0Arguments { }
+    class With0ArgumentsThrowOnEnd : With0Arguments { }
 }
