@@ -28,6 +28,7 @@
     <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x64" />
     <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=win-x86" />
     <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64" />
+    <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-arm64" />
     <MSBuild Targets="Publish" Projects="Datadog.Trace.Tools.Runner.Standalone.csproj" Properties="Configuration=Release;TargetFramework=netcoreapp3.1;RuntimeIdentifier=osx-x64" />
   </Target>
 
@@ -142,9 +143,9 @@
       <Code Type="Fragment" Language="cs">
         <![CDATA[
         ReturnValue = false;
-        foreach (var pName in ProcessNames.Split(';')) 
+        foreach (var pName in ProcessNames.Split(';'))
         {
-            try 
+            try
             {
                 ReturnValue = Process.GetProcessesByName(pName)?.Length > 0;
             }
@@ -152,7 +153,7 @@
             {
                 ReturnValue = false;
             }
-            
+
             if (ReturnValue)
             {
                 break;
