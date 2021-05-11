@@ -1,5 +1,19 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.26.3](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.26.3)
+
+## Fixes
+* Fix crash in the ASP.NET integration when running in IIS in classic mode (#1459)
+* Fixes dynamically emitted methods signatures (#1455, fixes #1232)
+
+
+## Build / Test
+* Add benchmarks for log4net and nlog (#1453)
+* Update CoreCLR headers from dotnet/runtime v5.0.5 tag (#1451)
+* Adds the FeatureTracking tool and CIApp implementation (#1268)
+
+[Changes since 1.26.2](https://github.com/DataDog/dd-trace-dotnet/compare/v1.26.2...v1.26.3)
+
 ## [Release 1.26.2](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.26.2)
 
 ## Changes
@@ -24,7 +38,6 @@
 * Prevent dependabot from opening PR's against the Microsoft.Build.Framework NuGet package (#1427)
 * Remove useless dependency from benchmark project (#1428)
 * Fix a build issue with the MSI (#1423)
-
 
 [Changes since 1.26.1](https://github.com/DataDog/dd-trace-dotnet/compare/v1.26.1...v1.26.2)
 
