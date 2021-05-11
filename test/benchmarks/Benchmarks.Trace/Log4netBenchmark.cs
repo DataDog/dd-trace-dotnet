@@ -1,25 +1,26 @@
+using System.IO;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Serilog;
-using Serilog.Core;
-using Serilog.Events;
-using Serilog.Formatting.Display;
-using Logger = Serilog.Core.Logger;
+using Datadog.Trace.Logging.LogProviders;
+using log4net.Appender;
+using log4net.Core;
+using log4net.Layout;
+using log4net.Repository.Hierarchy;
 
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    public class SerilogBenchmark
+    public class Log4netBenchmark
     {
-        private static readonly Logger Logger;
-        private static readonly Tracer LogInjectionTracer;
         private static readonly Tracer BaselineTracer;
+        private static readonly Tracer LogInjectionTracer;
+        private static readonly log4net.ILog Logger;
 
-        static SerilogBenchmark()
+        static Log4netBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new CustomSerilogLogProvider());
+            LogProvider.SetCurrentLogProvider(new Log4NetLogProvider());
 
             var logInjectionSettings = new TracerSettings
             {
@@ -41,13 +42,25 @@ namespace Benchmarks.Trace
             };
 
             BaselineTracer = new Tracer(baselineSettings, new DummyAgentWriter(), null, null, null);
-            var formatter = new MessageTemplateTextFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}{Properties}{NewLine}", null);
 
-            Logger = new LoggerConfiguration()
-                // Add Enrich.FromLogContext to emit Datadog properties
-                .Enrich.FromLogContext()
-                .WriteTo.Sink(new NullSink(formatter))
-                .CreateLogger();
+            var repository = (Hierarchy)log4net.LogManager.GetRepository();
+            var patternLayout = new PatternLayout { ConversionPattern = "%date [%thread] %-5level %logger {dd.env=%property{dd.env}, dd.service=%property{dd.service}, dd.version=%property{dd.version}, dd.trace_id=%property{dd.trace_id}, dd.span_id=%property{dd.span_id}} - %message%newline" };
+            patternLayout.ActivateOptions();
+
+#if DEBUG
+            var writer = System.Console.Out;
+#else
+            var writer = TextWriter.Null;
+#endif
+
+            var appender = new TextWriterAppender { Layout = patternLayout, Writer = writer };
+
+            repository.Root.AddAppender(appender);
+
+            repository.Root.Level = Level.Info;
+            repository.Configured = true;
+
+            Logger = log4net.LogManager.GetLogger(typeof(Log4netBenchmark));
         }
 
         [Benchmark(Baseline = true)]
@@ -57,7 +70,7 @@ namespace Benchmarks.Trace
             {
                 using (BaselineTracer.StartActive("Child"))
                 {
-                    Logger.Information("Hello");
+                    Logger.Info("Hello");
                 }
             }
         }
@@ -69,27 +82,8 @@ namespace Benchmarks.Trace
             {
                 using (LogInjectionTracer.StartActive("Child"))
                 {
-                    Logger.Information("Hello");
+                    Logger.Info("Hello");
                 }
-            }
-        }
-
-        private class NullSink : ILogEventSink
-        {
-            private readonly MessageTemplateTextFormatter _formatter;
-
-            public NullSink(MessageTemplateTextFormatter formatter)
-            {
-                _formatter = formatter;
-            }
-
-            public void Emit(LogEvent logEvent)
-            {
-#if DEBUG
-                _formatter.Format(logEvent, System.Console.Out);
-#else
-                _formatter.Format(logEvent, System.IO.TextWriter.Null);
-#endif
             }
         }
     }
