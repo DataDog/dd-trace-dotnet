@@ -1176,14 +1176,34 @@ namespace shared {
         std::lock_guard<std::mutex> guard(loaders_loaded_mutex_);
 
         //
+        // gets the current thread id
+        //
+        ThreadID thread_id;
+        HRESULT hr = this->info_->GetCurrentThreadID(&thread_id);
+        if (FAILED(hr)) {
+            Warn("Loader::GetAssemblyAndSymbolsBytes: ThreadId could not be retrieved.");
+        }
+
+        //
+        // gets the current appdomain id
+        //
+        AppDomainID app_domain_id;
+        hr = this->info_->GetThreadAppDomain(thread_id, &app_domain_id);
+        if (FAILED(hr)) {
+            Warn("Loader::GetAssemblyAndSymbolsBytes: AppDomainID could not be retrieved.");
+        }
+
+        std::string trait = "[ManagedAppDomainId=" + ToString(appDomainId) + ", AppDomainId=" + ToString(app_domain_id) + ", ThreadId=" + ToString(thread_id) + "]";
+
+        //
         // check if the loader has been already loaded for this AppDomain
         //
         if (loaders_loaded_.find(appDomainId) != loaders_loaded_.end()) {
-            Debug("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded for AppDomainID=" + ToString(appDomainId));
+            Debug("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded. " + trait);
             return false;
         }
 
-        Info("Loader::GetAssemblyAndSymbolsBytes: Loading loader data for AppDomainID=" + ToString(appDomainId));
+        Info("Loader::GetAssemblyAndSymbolsBytes: Loading loader data. " + trait);
         loaders_loaded_.insert(appDomainId);
 
 #ifdef _WIN32
@@ -1209,7 +1229,7 @@ namespace shared {
         *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
         *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
 
-        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for AppDomainID=" + ToString(appDomainId) + " (platform=_WIN32)."
+        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=_WIN32)."
               " *assemblySize=" + ToString(*assemblySize) + ","
               " *pAssemblyArray=" + ToString(reinterpret_cast<std::uint64_t>(*pAssemblyArray)) + ","
               " *symbolsSize=" + ToString(*symbolsSize) + ","
