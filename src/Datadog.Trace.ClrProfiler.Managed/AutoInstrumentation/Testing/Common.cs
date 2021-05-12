@@ -39,20 +39,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
         internal static void FlushSpans()
         {
-            SynchronizationContext context = SynchronizationContext.Current;
             try
             {
-                SynchronizationContext.SetSynchronizationContext(null);
+                // https://docs.microsoft.com/en-us/archive/msdn-magazine/2015/july/async-programming-brownfield-async-development#the-thread-pool-hack
                 var flushTask = Task.Run(() => InternalFlush());
                 flushTask.GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Exception occurred when flushing spans.");
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(context);
             }
 
             static async Task InternalFlush()
