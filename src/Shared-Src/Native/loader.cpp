@@ -7,7 +7,7 @@
 #include "il_rewriter_wrapper.h"
 //#include "resource.h"
 
-#ifdef MACOS    
+#ifdef MACOS
 #include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
 #endif
@@ -15,9 +15,9 @@
 #define stringMaxSize 1024
 
 namespace shared {
-    
+
     Loader* Loader::s_singeltonInstance = nullptr;
-    
+
 #ifdef LINUX
     extern uint8_t dll_start[]                                  asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_start");
     extern uint8_t dll_end[]                                    asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_end");
@@ -25,7 +25,7 @@ namespace shared {
     extern uint8_t pdb_start[]                                  asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_pdb_start");
     extern uint8_t pdb_end[]                                    asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_pdb_end");
 #endif
-    
+
     const WSTRING managed_loader_assembly_name                  = WStr("Datadog.AutoInstrumentation.ManagedLoader");
 
     const LPCWSTR managed_loader_startup_type                   = WStr("Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader");
@@ -43,6 +43,7 @@ namespace shared {
     const LPCWSTR system_appdomain_name                         = WStr("System.AppDomain");
     const LPCWSTR get_currentdomain_name                        = WStr("get_CurrentDomain");
     const LPCWSTR load_name                                     = WStr("Load");
+    const LPCWSTR getId_name                                    = WStr("get_Id");
     const LPCWSTR gettype_name                                  = WStr("GetType");
     const LPCWSTR loader_method_name                            = WStr("DD_LoadInitializationAssemblies");
 
@@ -51,7 +52,7 @@ namespace shared {
     const LPCWSTR getmethod_name                                = WStr("GetMethod");
     const LPCWSTR invoke_name                                   = WStr("Invoke");
     const LPCWSTR run_name                                      = WStr("Run");
-    
+
     // We exclude here the direct references of the loader to avoid a cyclic reference problem.
     // Also well-known assemblies we want to avoid.
     const WSTRING assemblies_exclusion_list_[] = {
@@ -85,9 +86,9 @@ namespace shared {
     {
         Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo,
                                                                        log_debug_callback,
-                                                                       log_info_callback, 
-                                                                       log_warn_callback, 
-                                                                       resource_moniker_ids, 
+                                                                       log_info_callback,
+                                                                       log_warn_callback,
+                                                                       resource_moniker_ids,
                                                                        native_profiler_library_filename,
                                                                        assembliesToLoad_adDefault_procNonIIS,
                                                                        assembliesToLoad_adNonDefault_procNonIIS,
@@ -178,16 +179,23 @@ namespace shared {
         //
         std::lock_guard<std::mutex> guard(loaders_loaded_mutex_);
 
+        // *****************************************************************************************
         //
         // retrieve AssemblyID from ModuleID
         //
         AssemblyID assembly_id = 0;
-        HRESULT hr = this->info_->GetModuleInfo2(module_id, NULL, 0, NULL, NULL, &assembly_id, NULL);
+        WCHAR module_file_name[stringMaxSize];
+        ULONG module_file_name_len = 0;
+        HRESULT hr = this->info_->GetModuleInfo2(module_id, NULL, stringMaxSize, &module_file_name_len, module_file_name, &assembly_id, NULL);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AssemblyID for ModuleID=" + module_id);
             return hr;
         }
+        auto module_file_name_wstring = WSTRING(module_file_name);
+        auto module_file_name_string = ToString(module_file_name_wstring);
+        // *****************************************************************************************
 
+        // *****************************************************************************************
         //
         // retrieve AppDomainID from AssemblyID
         //
@@ -196,24 +204,19 @@ namespace shared {
         ULONG assembly_name_len = 0;
         hr = this->info_->GetAssemblyInfo(assembly_id, stringMaxSize, &assembly_name_len, assembly_name, &app_domain_id, NULL);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AppDomainID for AssemblyID=" + assembly_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AppDomainID for AssemblyID=" +
+                ToString(assembly_id) + " [Module=" + module_file_name_string + "]");
             return hr;
         }
-
-        auto assembly_name_string = WSTRING(assembly_name);
+        auto assembly_name_wstring = WSTRING(assembly_name);
+        auto assembly_name_string = ToString(assembly_name_wstring);
+        // *****************************************************************************************
 
         //
         // check if the module is not the loader itself
         //
-        if (assembly_name_string == managed_loader_assembly_name) {
+        if (assembly_name_wstring == managed_loader_assembly_name) {
             Debug("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
-            return E_FAIL;
-        }
-
-        //
-        // check if the loader has been already loaded for this AppDomain
-        //
-        if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
             return E_FAIL;
         }
 
@@ -221,10 +224,10 @@ namespace shared {
         // skip libraries from the exclusion list.
         //
         for (const auto asm_name : assemblies_exclusion_list_) {
-            if (assembly_name_string == asm_name) {
-                Debug("Loader::InjectLoaderToModuleInitializer: Skipping " + 
-                    ToString(assembly_name_string) + 
-                    " [AppDomain=" + ToString(app_domain_id) + "]");
+            if (assembly_name_wstring == asm_name) {
+                Debug("Loader::InjectLoaderToModuleInitializer: Skipping " +
+                    assembly_name_string +
+                    " [AppDomainID=" + ToString(app_domain_id) + "]");
                 return E_FAIL;
             }
         }
@@ -240,7 +243,8 @@ namespace shared {
         ComPtr<IUnknown> metadata_interfaces;
         hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=" + module_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=" +
+                ToString(module_id) + " [Module=" + module_file_name_string + "]");
             return hr;
         }
 
@@ -258,7 +262,8 @@ namespace shared {
         mdTypeDef module_type_def = mdTypeDefNil;
         hr = metadata_import->FindTypeDefByName(module_type_name, mdTokenNil, &module_type_def);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching " + ToString(module_type_name) + " (module type) typedef for ModuleID=" + ToString(module_id));
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching " +
+                ToString(module_type_name) + " (module type) typedef for ModuleID=" + ToString(module_id));
             return hr;
         }
 
@@ -275,7 +280,8 @@ namespace shared {
         mdMethodDef cctor_method_def = mdMethodDefNil;
         hr = metadata_import->FindMethod(module_type_def, constructor_name, cctor_signature, sizeof(cctor_signature), &cctor_method_def);
         if (FAILED(hr)) {
-            Debug("Loader::InjectLoaderToModuleInitializer: failed fetching <Module>..ctor methoddef, creating new .ctor for ModuleID=" + ToString(module_id));
+            Debug("Loader::InjectLoaderToModuleInitializer: failed fetching <Module>..ctor mdMethodDef, creating new .ctor [ModuleID=" +
+                ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + ", Module=" + module_file_name_string + "]");
 
             //
             // Define a new ..ctor for the <Module> type
@@ -285,7 +291,8 @@ namespace shared {
                                              sizeof(cctor_signature), 0, 0, &cctor_method_def);
 
             if (FAILED(hr)) {
-              Warn("Loader::InjectLoaderToModuleInitializer: Error creating .cctor for <Module> ModuleID=" + ToString(module_id));
+              Warn("Loader::InjectLoaderToModuleInitializer: Error creating .cctor for <Module> [ModuleID=" +
+                  ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + ", Module=" + module_file_name_string + "]");
                 return hr;
             }
 
@@ -303,7 +310,8 @@ namespace shared {
 
             hr = rewriter.Export();
             if (FAILED(hr)) {
-                Warn("Loader::InjectLoaderToModuleInitializer: ILRewriter.Export failed creating .cctor for <Module> ModuleID=" + ToString(module_id));
+                Warn("Loader::InjectLoaderToModuleInitializer: ILRewriter.Export failed creating .cctor for <Module> [ModuleID=" +
+                    ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + ", Module=" + module_file_name_string + "]");
                 return hr;
             }
         }
@@ -318,55 +326,9 @@ namespace shared {
         //
         // create PInvoke method definition to the native GetAssemblyAndSymbolsBytes method (interop.cpp)
         //
-        // Define a method on the managed side that will PInvoke into the profiler
-        // method: C++: bool GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int*
-        // assemblySize, BYTE** pSymbolsArray, int* symbolsSize, AppDomainID
-        // appDomainId) C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr
-        // assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int
-        // symbolsSize, ulong appDomainId)
         mdMethodDef pinvoke_method_def = mdMethodDefNil;
-        COR_SIGNATURE get_assembly_bytes_signature[] = {
-                IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
-                5,                              // Number of parameters
-                ELEMENT_TYPE_BOOLEAN,           // Return type
-                ELEMENT_TYPE_BYREF,             // List of parameter types
-                ELEMENT_TYPE_I,
-                ELEMENT_TYPE_BYREF,
-                ELEMENT_TYPE_I4,
-                ELEMENT_TYPE_BYREF,
-                ELEMENT_TYPE_I,
-                ELEMENT_TYPE_BYREF,
-                ELEMENT_TYPE_I4,
-                ELEMENT_TYPE_U8,
-        };
-        hr = metadata_emit->DefineMethod(module_type_def, get_assembly_and_symbols_bytes_name,
-                                         mdStatic | mdPinvokeImpl | mdHideBySig, get_assembly_bytes_signature,
-                                         sizeof(get_assembly_bytes_signature), 0, 0, &pinvoke_method_def);
+        hr = GetGetAssemblyAndSymbolsBytesMethodDef(metadata_emit, module_type_def, pinvoke_method_def);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefineMethod for GetAssemblyAndSymbolsBytes failed.");
-            return hr;
-        }
-
-        metadata_emit->SetMethodImplFlags(pinvoke_method_def, miPreserveSig);
-        if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: SetMethodImplFlags for GetAssemblyAndSymbolsBytes failed.");
-            return hr;
-        }
-
-        WSTRING native_profiler_file = native_profiler_library_filename_;
-
-        Debug("Loader::InjectLoaderToModuleInitializer: Setting the PInvoke native profiler library path to " + ToString(native_profiler_file));
-
-        mdModuleRef profiler_ref;
-        hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
-        if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: Failed! DefineModuleRef for " + ToString(native_profiler_file));
-            return hr;
-        }
-
-        hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def, 0, get_assembly_and_symbols_bytes_name, profiler_ref);
-        if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefinePinvokeMap for GetAssemblyAndSymbolsBytes failed");
             return hr;
         }
 
@@ -391,7 +353,7 @@ namespace shared {
             Warn("Loader::InjectLoaderToModuleInitializer: DefineTypeRefByName failed");
             return hr;
         }
-        
+
         //
         // get a TypeRef for System.String
         //
@@ -470,7 +432,7 @@ namespace shared {
             Warn("Loader::InjectLoaderToModuleInitializer: DefineTypeRefByName failed");
             return hr;
         }
-        
+
         //
         // get a TypeRef for System.Reflection.MethodInfo
         //
@@ -480,7 +442,7 @@ namespace shared {
             Warn("Loader::InjectLoaderToModuleInitializer: DefineTypeRefByName failed");
             return hr;
         }
-                
+
         //
         // get a TypeRef for System.Reflection.MethodBase
         //
@@ -498,7 +460,7 @@ namespace shared {
         // get a MemberRef for System.AppDomain.get_CurrentDomain()
         //
         BYTE system_appdomain_type_ref_compressed_token[4];
-        ULONG system_appdomain_type_ref_compressed_token_length = 
+        ULONG system_appdomain_type_ref_compressed_token_length =
             CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
 
         COR_SIGNATURE appdomain_get_current_domain_signature[50];
@@ -544,8 +506,23 @@ namespace shared {
 
         mdMemberRef appdomain_load_member_ref;
         hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref,
-                                            load_name, appdomain_load_signature, 
+                                            load_name, appdomain_load_signature,
                                             offset, &appdomain_load_member_ref);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
+            return hr;
+        }
+
+        //
+        // Create method signature for int AppDomain.get_Id()
+        //
+        COR_SIGNATURE appdomain_getid_signature[] = {
+            IMAGE_CEE_CS_CALLCONV_HASTHIS,
+            0,
+            ELEMENT_TYPE_I4,
+        };
+        mdMemberRef appdomain_getid_member_ref;
+        hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, getId_name, appdomain_getid_signature, 3, &appdomain_getid_member_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
             return hr;
@@ -585,7 +562,7 @@ namespace shared {
         BYTE system_reflection_methodinfo_type_ref_compressed_token[4];
         ULONG system_reflection_methodinfo_type_ref_compressed_token_length =
                 CorSigCompressToken(system_reflection_methodinfo_type_ref, system_reflection_methodinfo_type_ref_compressed_token);
-        
+
         COR_SIGNATURE type_get_method_signature[50];
         offset = 0;
         type_get_method_signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
@@ -627,16 +604,16 @@ namespace shared {
         }
 
         // Create a string representing
-        // "Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader" 
+        // "Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader"
         mdString load_helper_token;
         hr = metadata_emit->DefineUserString(managed_loader_startup_type, (ULONG)WStrLen(managed_loader_startup_type), &load_helper_token);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: DefineUserString failed");
             return hr;
         }
-        
+
         // Create a string representing
-        // "Run" 
+        // "Run"
         mdString run_string_token;
         hr = metadata_emit->DefineUserString(run_name, (ULONG)WStrLen(run_name), &run_string_token);
         if (FAILED(hr)) {
@@ -738,14 +715,20 @@ namespace shared {
         pNewInstr->m_Arg32 = 3;
         rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-        // ldc.i8 appDomainId : Load the AppDomainID to the stack
+        // call System.AppDomain System.AppDomain.CurrentDomain property
         pNewInstr = rewriter_void.NewILInstr();
-        pNewInstr->m_opcode = CEE_LDC_I8;
-        pNewInstr->m_Arg64 = app_domain_id;
+        pNewInstr->m_opcode = CEE_CALL;
+        pNewInstr->m_Arg32 = appdomain_get_current_domain_member_ref;
+        rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+        // callvirt int System.AppDomain.get_Id()
+        pNewInstr = rewriter_void.NewILInstr();
+        pNewInstr->m_opcode = CEE_CALLVIRT;
+        pNewInstr->m_Arg32 = appdomain_getid_member_ref;
         rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
         // call bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int
-        // assemblySize, out IntPtr symbolsPtr, out int symbolsSize, ulong
+        // assemblySize, out IntPtr symbolsPtr, out int symbolsSize, int
         // appDomainID)
         pNewInstr = rewriter_void.NewILInstr();
         pNewInstr->m_opcode = CEE_CALL;
@@ -955,7 +938,7 @@ namespace shared {
         rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
         // create an array of 1 element with the single string[] parameter
-        
+
         // ldc.i4.1 = const int 1 => array length
         pNewInstr = rewriter_void.NewILInstr();
         pNewInstr->m_opcode = CEE_LDC_I4_2;
@@ -978,12 +961,12 @@ namespace shared {
         pNewInstr = rewriter_void.NewILInstr();
         pNewInstr->m_opcode = CEE_LDC_I4_0;
         rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-        
+
         hr = WriteAssembliesStringArray(rewriter_void, metadata_emit, assembly_string_default_appdomain_vector_, pFirstInstr, string_type_ref);
         if (FAILED(hr)) {
           return hr;
         }
-        
+
         // stelem.ref
         pNewInstr = rewriter_void.NewILInstr();
         pNewInstr->m_opcode = CEE_STELEM_REF;
@@ -1000,7 +983,7 @@ namespace shared {
         pNewInstr = rewriter_void.NewILInstr();
         pNewInstr->m_opcode = CEE_LDC_I4_1;
         rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-        
+
         hr = WriteAssembliesStringArray(rewriter_void, metadata_emit, assembly_string_nondefault_appdomain_vector_, pFirstInstr, string_type_ref);
         if (FAILED(hr)) {
           return hr;
@@ -1060,12 +1043,13 @@ namespace shared {
             return hr;
         }
 
-        Info("Loader::InjectLoaderToModuleInitializer [ModuleID=" + ToString(module_id) +
+        Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + ToString(module_id) +
               ", AssemblyID=" + ToString(assembly_id) +
               ", AssemblyName=" + ToString(assembly_name_string) +
               ", AppDomainID=" + ToString(app_domain_id) +
               ", ModuleTypeDef=" + ToString(module_type_def) +
-              ", ModuleCCTORDef=" + ToString(cctor_method_def) + "]");
+              ", ModuleCCTORDef=" + ToString(cctor_method_def) +
+              ", Module=" + module_file_name_string + "]");
         return S_OK;
     }
 
@@ -1124,10 +1108,68 @@ namespace shared {
       return S_OK;
     }
 
+    HRESULT Loader::GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMethodDef& result_method_def) {
+        //
+        // create PInvoke method definition to the native GetAssemblyAndSymbolsBytes method (interop.cpp)
+        //
+        // Define a method on the managed side that will PInvoke into the profiler
+        // method: C++: bool GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int*
+        // assemblySize, BYTE** pSymbolsArray, int* symbolsSize, AppDomainID
+        // appDomainId) C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr
+        // assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int
+        // symbolsSize, int appDomainId)
+        COR_SIGNATURE get_assembly_bytes_signature[] = {
+                IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
+                5,                              // Number of parameters
+                ELEMENT_TYPE_BOOLEAN,           // Return type
+                ELEMENT_TYPE_BYREF,             // List of parameter types
+                ELEMENT_TYPE_I,
+                ELEMENT_TYPE_BYREF,
+                ELEMENT_TYPE_I4,
+                ELEMENT_TYPE_BYREF,
+                ELEMENT_TYPE_I,
+                ELEMENT_TYPE_BYREF,
+                ELEMENT_TYPE_I4,
+                ELEMENT_TYPE_I4,
+        };
+        HRESULT hr = metadata_emit->DefineMethod(module_type_def, get_assembly_and_symbols_bytes_name,
+            mdStatic | mdPinvokeImpl | mdHideBySig, get_assembly_bytes_signature,
+            sizeof(get_assembly_bytes_signature), 0, 0, &result_method_def);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: DefineMethod for GetAssemblyAndSymbolsBytes failed.");
+            return hr;
+        }
+
+        metadata_emit->SetMethodImplFlags(result_method_def, miPreserveSig);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: SetMethodImplFlags for GetAssemblyAndSymbolsBytes failed.");
+            return hr;
+        }
+
+        WSTRING native_profiler_file = native_profiler_library_filename_;
+
+        Debug("Loader::InjectLoaderToModuleInitializer: Setting the PInvoke native profiler library path to " + ToString(native_profiler_file));
+
+        mdModuleRef profiler_ref;
+        hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: Failed! DefineModuleRef for " + ToString(native_profiler_file));
+            return hr;
+        }
+
+        hr = metadata_emit->DefinePinvokeMap(result_method_def, 0, get_assembly_and_symbols_bytes_name, profiler_ref);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: DefinePinvokeMap for GetAssemblyAndSymbolsBytes failed");
+            return hr;
+        }
+
+        return hr;
+    }
+
     bool Loader::GetAssemblyAndSymbolsBytes(void** pAssemblyArray,
                                             int* assemblySize, void** pSymbolsArray,
                                             int* symbolsSize,
-                                            AppDomainID appDomainId) {
+                                            int appDomainId) {
         //
         // global lock
         //
