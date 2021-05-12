@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
-                span.ResourceName = command;
+                span.ResourceName = $"{command} {messageQueue.FormatName}";
             }
             catch (Exception ex)
             {
