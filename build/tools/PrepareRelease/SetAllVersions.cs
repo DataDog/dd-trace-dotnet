@@ -134,6 +134,10 @@ namespace PrepareRelease
                 text => Regex.Replace(text, $"VERSION={VersionPattern()}", $"VERSION={VersionString()}"));
 
             SynchronizeVersion(
+                "build/docker/package.arm64.sh",
+                text => Regex.Replace(text, $"VERSION={VersionPattern()}", $"VERSION={VersionString()}"));
+
+            SynchronizeVersion(
                 "src/WindowsInstaller/WindowsInstaller.wixproj",
                 WixProjReplace);
 
