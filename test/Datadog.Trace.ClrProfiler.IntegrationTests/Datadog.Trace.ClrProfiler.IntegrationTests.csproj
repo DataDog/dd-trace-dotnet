@@ -12,8 +12,12 @@
 
   <ItemGroup>
     <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <None Remove="applicationHost.config" />
     <None Remove="xunit.runner.json" />
     <Content Include="..\..\integrations.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\integrations.json" />
+    <Content Include="applicationHost.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="xunit.runner.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

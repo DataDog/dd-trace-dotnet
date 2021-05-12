@@ -12,19 +12,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [CollectionDefinition("IisTests", DisableParallelization = true)]
     [Collection("IisTests")]
-    public class AspNetMvc4TestsCallsite : AspNetMvc4Tests
+    public class AspNetMvc4TestsCallsiteClassic : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallsite(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false)
+        public AspNetMvc4TestsCallsiteClassic(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: true)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc4TestsCallTarget : AspNetMvc4Tests
+    public class AspNetMvc4TestsCallsiteIntegrated : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true)
+        public AspNetMvc4TestsCallsiteIntegrated(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: false)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc4TestsCallTargetClassic : AspNetMvc4Tests
+    {
+        public AspNetMvc4TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: true)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc4TestsCallTargetIntegrated : AspNetMvc4Tests
+    {
+        public AspNetMvc4TestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: false)
         {
         }
     }
@@ -33,14 +51,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private readonly IisFixture _iisFixture;
 
-        public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget)
+        public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode)
             : base("AspNetMvc4", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget);
 
             _iisFixture = iisFixture;
-            _iisFixture.TryStartIis(this);
+            _iisFixture.TryStartIis(this, classicMode);
         }
 
         [Theory]
