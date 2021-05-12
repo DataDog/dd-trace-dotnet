@@ -104,19 +104,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public Process StartIISExpress(int traceAgentPort, int iisPort)
+        public (Process Process, string ConfigFile) StartIISExpress(int traceAgentPort, int iisPort, bool classicMode)
         {
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
             var exe = EnvironmentHelper.GetSampleExecutionSource();
-            var args = new string[]
+
+            var configTemplate = File.ReadAllText("applicationHost.config");
+
+            var newConfig = Path.GetTempFileName();
+
+            configTemplate = configTemplate
+                            .Replace("[PATH]", EnvironmentHelper.GetSampleProjectDirectory())
+                            .Replace("[PORT]", iisPort.ToString())
+                            .Replace("[POOL]", classicMode ? "Clr4ClassicAppPool" : "Clr4IntegratedAppPool");
+
+            File.WriteAllText(newConfig, configTemplate);
+
+            var args = new[]
                 {
-                    $"/clr:v4.0",
-                    $"/path:{EnvironmentHelper.GetSampleProjectDirectory()}",
-                    $"/systray:false",
-                    $"/port:{iisPort}",
-                    $"/trace:info",
+                    "/site:sample",
+                    $"/config:{newConfig}",
+                    "/systray:false",
+                    "/trace:info"
                 };
 
             Output.WriteLine($"[webserver] starting {exe} {string.Join(" ", args)}");
@@ -180,7 +191,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Thread.Sleep(1500);
             }
 
-            return process;
+            return (process, newConfig);
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockTracerAgent.Span> spans, Func<MockTracerAgent.Span, T> mapper, IEnumerable<T> expected)

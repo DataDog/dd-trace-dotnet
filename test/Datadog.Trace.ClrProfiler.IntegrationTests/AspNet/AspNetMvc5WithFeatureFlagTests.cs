@@ -12,19 +12,37 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetMvc5WithFeatureFlagCallsite : AspNetMvc5WithFeatureFlagTests
+    public class AspNetMvc5WithFeatureFlagCallsiteClassic : AspNetMvc5WithFeatureFlagTests
     {
-        public AspNetMvc5WithFeatureFlagCallsite(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false)
+        public AspNetMvc5WithFeatureFlagCallsiteClassic(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: true)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5WithFeatureFlagCallTarget : AspNetMvc5WithFeatureFlagTests
+    public class AspNetMvc5WithFeatureFlagCallsiteIntegrated : AspNetMvc5WithFeatureFlagTests
     {
-        public AspNetMvc5WithFeatureFlagCallTarget(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true)
+        public AspNetMvc5WithFeatureFlagCallsiteIntegrated(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: false)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5WithFeatureFlagCallTargetClassic : AspNetMvc5WithFeatureFlagTests
+    {
+        public AspNetMvc5WithFeatureFlagCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: true)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5WithFeatureFlagCallTargetIntegrated : AspNetMvc5WithFeatureFlagTests
+    {
+        public AspNetMvc5WithFeatureFlagCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: false)
         {
         }
     }
@@ -33,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private readonly IisFixture _iisFixture;
 
-        public AspNetMvc5WithFeatureFlagTests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget)
+        public AspNetMvc5WithFeatureFlagTests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
@@ -41,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetCallTargetSettings(enableCallTarget);
 
             _iisFixture = iisFixture;
-            _iisFixture.TryStartIis(this);
+            _iisFixture.TryStartIis(this, classicMode);
         }
 
         [Theory]
