@@ -27,8 +27,5 @@
 
     <!-- StyleCop -->
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
-
-    <!-- reference assemblies let us target .NET Framework without the SDK (for example, on non-Windows) -->
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
 </Project>
