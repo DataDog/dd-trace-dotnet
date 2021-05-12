@@ -14,6 +14,9 @@
     <PackageId>dd-trace</PackageId>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
     <OutputPath>bin\$(Configuration)\Tool</OutputPath>
+
+      <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,22 +24,22 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  
+
   <ItemGroup>
     <None Include="..\..\build\docker\linux-build.dockerfile" Link="linux-build.dockerfile" />
     <None Include="Datadog.Trace.Tools.Runner.proj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Content Include="home\**\*.*" Pack="true" PackagePath="\home">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  
+
   <ItemGroup>
     <Content Update="home\**\readme.txt" Pack="false">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
