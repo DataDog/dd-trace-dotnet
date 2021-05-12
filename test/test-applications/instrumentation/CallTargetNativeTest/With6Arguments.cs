@@ -8,11 +8,7 @@ namespace CallTargetNativeTest
     {
         public void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) { }
         public int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => 42;
-        public async Task<string> ReturnReferenceMethod(string arg, int arg21, object arg3, Task arg4, CancellationToken arg5, ulong arg6)
-        {
-            await Task.Delay(4000);
-            return "Hello World";
-        }
+        public string ReturnReferenceMethod(string arg, int arg21, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => "Hello World";
         public T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6) => default;
     }
     class With6ArgumentsGeneric<T>
@@ -38,4 +34,6 @@ namespace CallTargetNativeTest
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6) => default;
     }
+    class With6ArgumentsThrowOnBegin : With6Arguments { }
+    class With6ArgumentsThrowOnEnd : With6Arguments { }
 }

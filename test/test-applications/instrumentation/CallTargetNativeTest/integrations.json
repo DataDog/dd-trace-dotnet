@@ -70,6 +70,22 @@
         "caller": {},
         "target": {
           "assembly": "CallTargetNativeTest",
+          "type": "CallTargetNativeTest.With0ArgumentsThrowOnAsyncEnd",
+          "method": "Wait2Seconds",
+          "signature_types": [
+            "_"
+          ]
+        },
+        "wrapper": {
+          "assembly": "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+          "type": "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "CallTargetNativeTest",
           "type": "CallTargetNativeTest.With0ArgumentsGeneric`1",
           "method": "VoidMethod",
           "signature_types": [
