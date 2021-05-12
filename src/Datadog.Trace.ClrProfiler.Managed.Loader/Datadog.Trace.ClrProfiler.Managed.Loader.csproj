@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler.Managed.Loader</RootNamespace>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;netcoreapp2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net45;netcoreapp2.0</TargetFrameworks>
     <OutputPath>..\bin\ProfilerResources\</OutputPath>
 
     <!-- NuGet -->
