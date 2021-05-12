@@ -12,7 +12,7 @@ ADD test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin
 ARG ENABLE_32_BIT=false
 RUN Remove-WebSite -Name 'Default Web Site'; \
     New-Website -Name 'LoaderOptimizationRegKey' -Port 80 -PhysicalPath 'c:\LoaderOptimizationRegKey'
-RUN c:\Windows\System32\inetsrv\appcmd set apppool /apppool.name:DefaultAppPool /enable32bitapponwin64:$env:ENABLE_32_BIT
+RUN c:\Windows\System32\inetsrv\appcmd set apppool /apppool.name:DefaultAppPool /enable32bitapponwin64:$env:ENABLE_32_BIT /managedPipelineMode:Classic
 
 # Set LoaderOptimization flag to recreate crash condition (both 64-bit and 32-bit)
 RUN New-ItemProperty -Path "HKLM:\Software\Microsoft\.NETFramework" -Name "LoaderOptimization" -Value 1
