@@ -13,7 +13,6 @@ namespace Datadog.Trace.Configuration
         AspNetMvc,
         AspNetWebApi2,
         GraphQL,
-        Kafka,
         MongoDb,
         XUnit,
         NUnit,
@@ -26,6 +25,7 @@ namespace Datadog.Trace.Configuration
         StackExchangeRedis,
         ServiceRemoting,
         RabbitMQ,
-        Msmq
+        Msmq,
+        Kafka,
     }
 }
