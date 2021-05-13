@@ -32,15 +32,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <summary>
         /// Creates a Confluent.Kafka.Headers object and assigns it to an `IMessage` proxy
         /// </summary>
-        /// <param name="messageProxy">The proxied Confluent.Kafka.Message{T1,T2} type</param>
         /// <returns>A proxy for the new Headers object</returns>
-        public static IHeaders CreateAndSetHeaders<TMessageProxy>(TMessageProxy messageProxy)
-            where TMessageProxy : IMessage
+        public static IHeaders CreateHeaders()
         {
             var headers = _activator();
-            var headersProxy = headers.DuckCast<IHeaders>();
-            messageProxy.Headers = headersProxy;
-            return headersProxy;
+            return headers.DuckCast<IHeaders>();
         }
     }
 }

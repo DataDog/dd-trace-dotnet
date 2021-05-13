@@ -202,9 +202,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                var headers = message.Headers ?? CachedMessageHeadersHelper<TTopicPartitionMarker>.CreateAndSetHeaders(message);
+                if (message.Headers is null)
+                {
+                    message.Headers = CachedMessageHeadersHelper<TTopicPartitionMarker>.CreateHeaders();
+                }
 
-                var adapter = new KafkaHeadersCollectionAdapter(headers);
+                var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
 
                 SpanContextPropagator.Instance.Inject(context, adapter);
             }

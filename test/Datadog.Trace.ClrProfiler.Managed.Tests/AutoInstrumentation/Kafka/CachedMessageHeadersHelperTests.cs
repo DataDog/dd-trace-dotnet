@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
         {
             var message = new Message<string, string>();
             var messageProxy = message.DuckCast<IMessage>();
-            var headersProxy = CachedMessageHeadersHelper<TopicPartition>.CreateAndSetHeaders(messageProxy);
+            var headersProxy = CachedMessageHeadersHelper<TopicPartition>.CreateHeaders(messageProxy);
 
             headersProxy.Should().NotBeNull();
             headersProxy.Add("key", Encoding.UTF8.GetBytes("value"));
