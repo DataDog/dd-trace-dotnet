@@ -198,7 +198,7 @@ namespace shared {
         ULONG module_file_name_len = 0;
         HRESULT hr = this->info_->GetModuleInfo2(module_id, NULL, stringMaxSize, &module_file_name_len, module_file_name, &assembly_id, NULL);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AssemblyID for ModuleID=" + module_id);
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AssemblyID for ModuleID=" + ToString(module_id));
             return hr;
         }
         auto module_file_name_wstring = WSTRING(module_file_name);
@@ -1098,7 +1098,7 @@ namespace shared {
         *symbolsSize = pdb_end - pdb_start;
         *pSymbolsArray = (void*)pdb_start;
 
-        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for AppDomainID=" + ToString(appDomainId) + " (platform=LINUX)."
+        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for AppDomainID=" + ToString(app_domain_id) + " (platform=LINUX)."
             " *assemblySize=" + ToString(*assemblySize) + ", "
             " *pAssemblyArray=" + ToString(reinterpret_cast<std::uint64_t>(*pAssemblyArray)) + ", "
             " *symbolsSize=" + ToString(*symbolsSize) + ", "
@@ -1126,7 +1126,7 @@ namespace shared {
             }
         }
 
-        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for AppDomainID=" + ToString(appDomainId) + " (platform=MACOS)."
+        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for AppDomainID=" + ToString(app_domain_id) + " (platform=MACOS)."
             " *assemblySize=" + ToString(*assemblySize) + ", "
             " *pAssemblyArray=" + ToString(reinterpret_cast<std::uint64_t>(*pAssemblyArray)) + ", "
             " *symbolsSize=" + ToString(*symbolsSize) + ", "
