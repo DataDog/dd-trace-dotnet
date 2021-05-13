@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <Platforms>x64;x86</Platforms>
+    <PlatformTarget>$(Platform)</PlatformTarget>
 
     <!--These should be consolidated in a file that can be shared for the tests and samples directories -->
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
@@ -31,7 +32,7 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
-  
+
   <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild">
     <ItemGroup>
       <!-- Subfolders of the output directory should each be a target framework -->
