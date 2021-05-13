@@ -8,18 +8,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     public interface IMessageQueue
     {
         /// <summary>
-        ///     Gets the unique queue name that Message Queuing generated at the time of the
-        ///     queue's creation.
+        ///     Gets the name of the computer where the Message Queuing queue is located.
         ///
         /// Returns:
-        ///     The name for the queue, which is unique on the network.
+        ///     The name of the computer where the queue is located. The Message Queuing default
+        ///     is ".", the local computer.
         ///
         /// Exceptions:
+        ///   T:System.ArgumentException:
+        ///     The System.Messaging.MessageQueue.MachineName is null.-or- The name of the computer
+        ///     is not valid, possibly because the syntax is incorrect.
+        ///
         ///   T:System.Messaging.MessageQueueException:
-        ///     The System.Messaging.MessageQueue.Path is not set. -or- An error occurred when
-        ///     accessing a Message Queuing method.
+        ///     An error occurred when accessing a Message Queuing method.
         /// </summary>
-        string FormatName { get; }
+        string MachineName { get; }
 
         /// <summary>
         ///     Gets a value indicating whether the queue accepts only transactions.
@@ -33,5 +36,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         ///     An error occurred when accessing a Message Queuing method.
         /// </summary>
         bool Transactional { get; }
+
+        /// <summary>
+        ///     Gets the queue's path. Setting the System.Messaging.MessageQueue.Path
+        ///     causes the System.Messaging.MessageQueue to point to a new queue.
+        ///
+        /// Returns:
+        ///     The queue that is referenced by the System.Messaging.MessageQueue. The default
+        ///     depends on which System.Messaging.MessageQueue.#ctor constructor you use; it
+        ///     is either null or is specified by the constructor's path parameter.
+        ///
+        /// Exceptions:
+        ///   T:System.ArgumentException:
+        ///     The path is not valid, possibly because the syntax is not valid.
+        /// </summary>
+        string Path { get; }
     }
 }

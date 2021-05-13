@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 {
                     Command = command,
                     IsTransactionalQueue = messageQueue.Transactional.ToString(),
-                    UniqueQueueName = messageQueue.FormatName,
+                    Path = messageQueue.Path,
                 };
                 if (messagePartofTransaction.HasValue)
                 {
@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
-                span.ResourceName = $"{command} {messageQueue.FormatName}";
+                span.ResourceName = $"{command} {messageQueue.Path}";
             }
             catch (Exception ex)
             {

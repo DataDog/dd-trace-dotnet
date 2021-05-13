@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         [Fact]
         public void SubmitTraces()
         {
@@ -55,12 +56,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 span.Tags.Should().Contain(new System.Collections.Generic.KeyValuePair<string, string>(Tags.InstrumentationName, "msmq"));
                 if (span.Tags[Tags.MsmqIsTransactionalQueue] == "True")
                 {
-                    span.Tags[Tags.MsmqQueueUniqueName].Should().EndWith("Private$\\private-transactional-queue");
+                    span.Tags[Tags.MsmqQueuePath].Should().Be(".\\Private$\\private-transactional-queue");
                     transactionalTraces++;
                 }
                 else
                 {
-                    span.Tags[Tags.MsmqQueueUniqueName].Should().EndWith("Private$\\private-nontransactional-queue");
+                    span.Tags[Tags.MsmqQueuePath].Should().Be(".\\Private$\\private-nontransactional-queue");
                     nonTransactionalTraces++;
                 }
 
@@ -73,30 +74,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     span.Tags[Tags.MsmqMessageWithTransaction].Should().Be(span.Tags[Tags.MsmqIsTransactionalQueue], "The program is supposed to send messages within transactions to transactional queues, and outside of transactions to non transactional queues");
                     span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Producer);
+                    span.Resource.Should().Be($"msmq.send {span.Tags[Tags.MsmqQueuePath]}");
                     sendCount++;
                 }
                 else if (string.Equals(command, "msmq.receive", StringComparison.OrdinalIgnoreCase))
                 {
                     span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Consumer);
+                    span.Resource.Should().Be($"msmq.receive {span.Tags[Tags.MsmqQueuePath]}");
                     receiveCount++;
                 }
                 else if (string.Equals(command, "msmq.peek", StringComparison.OrdinalIgnoreCase))
                 {
                     span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Consumer);
+                    span.Resource.Should().Be($"msmq.peek {span.Tags[Tags.MsmqQueuePath]}");
                     peekCount++;
                 }
                 else if (string.Equals(command, "msmq.purge", StringComparison.OrdinalIgnoreCase))
                 {
-                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Producer);
-
+                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Client);
+                    span.Resource.Should().Be($"msmq.purge {span.Tags[Tags.MsmqQueuePath]}");
                     purgeCount++;
                 }
                 else
                 {
                     throw new Xunit.Sdk.XunitException($"msmq.command {command} not recognized.");
                 }
-
-                span.Resource.Should().Be(command);
             }
 
             nonTransactionalTraces.Should().Be(expectedNonTransactionalTracesTraces);

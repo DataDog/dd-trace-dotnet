@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tagging
            InstrumentationTagsProperties.Concat(
                new ReadOnlyProperty<MsmqTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
                new Property<MsmqTags, string>(Trace.Tags.MsmqCommand, t => t.Command, (t, v) => t.Command = v),
-               new Property<MsmqTags, string>(Trace.Tags.MsmqQueueUniqueName, t => t.UniqueQueueName, (t, v) => t.UniqueQueueName = v),
+               new Property<MsmqTags, string>(Trace.Tags.MsmqQueuePath, t => t.Path, (t, v) => t.Path = v),
                new Property<MsmqTags, string>(Trace.Tags.MsmqIsTransactionalQueue, t => t.IsTransactionalQueue, (t, v) => t.IsTransactionalQueue = v),
                new Property<MsmqTags, string>(Trace.Tags.MsmqMessageWithTransaction, t => t.MessageWithTransaction, (t, v) => t.MessageWithTransaction = v));
 
@@ -28,11 +28,11 @@ namespace Datadog.Trace.Tagging
         /// <inheritdoc/>
         public override string SpanKind { get; }
 
-        public string UniqueQueueName { get; set; }
+        public string InstrumentationName => "msmq";
+
+        public string Path { get; set; }
 
         public string MessageWithTransaction { get; set; }
-
-        public string InstrumentationName => "msmq";
 
         public string IsTransactionalQueue { get; set; }
 

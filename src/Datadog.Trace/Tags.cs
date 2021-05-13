@@ -326,17 +326,17 @@ namespace Datadog.Trace
         /// <summary>
         /// Is the msmq queue supporting transactional messages
         /// </summary>
-        public const string MsmqIsTransactionalQueue = "msmq.is_transactional_queue";
+        public const string MsmqIsTransactionalQueue = "msmq.queue.transactional";
 
         /// <summary>
         /// The name of the Msmq queue the message was published to, containing host name and path.
         /// </summary>
-        public const string MsmqQueueUniqueName = "msmq.queue_unique_name";
+        public const string MsmqQueuePath = "msmq.queue.path";
 
         /// <summary>
         /// A boolean indicating if it's part of a transaction.
         /// </summary>
-        public const string MsmqMessageWithTransaction = "msmq.message_with_transaction";
+        public const string MsmqMessageWithTransaction = "msmq.message.transactional";
 
         internal const string ElasticsearchAction = "elasticsearch.action";
 
