@@ -8,23 +8,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     public interface IMessageQueue
     {
         /// <summary>
-        ///     Gets the name of the computer where the Message Queuing queue is located.
-        ///
-        /// Returns:
-        ///     The name of the computer where the queue is located. The Message Queuing default
-        ///     is ".", the local computer.
-        ///
-        /// Exceptions:
-        ///   T:System.ArgumentException:
-        ///     The System.Messaging.MessageQueue.MachineName is null.-or- The name of the computer
-        ///     is not valid, possibly because the syntax is incorrect.
-        ///
-        ///   T:System.Messaging.MessageQueueException:
-        ///     An error occurred when accessing a Message Queuing method.
-        /// </summary>
-        string MachineName { get; }
-
-        /// <summary>
         ///     Gets a value indicating whether the queue accepts only transactions.
         ///
         /// Returns:
