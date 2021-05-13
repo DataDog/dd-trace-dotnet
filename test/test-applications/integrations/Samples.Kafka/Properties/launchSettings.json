@@ -3,7 +3,7 @@
     "Samples.Kafka": {
       "commandName": "Project",
       "environmentVariables": {
-        "DD_DOTNET_TRACER_HOME": "..\\..\\..\\..\src\\bin\\tracer-home",
+        "DD_DOTNET_TRACER_HOME": "..\\..\\..\\..\\src\\bin\\tracer-home",
         "COR_ENABLE_PROFILING": "1",
         "CORECLR_ENABLE_PROFILING": "1",
         "COR_PROFILER_PATH": "..\\..\\..\\..\\src\\bin\\tracer-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
