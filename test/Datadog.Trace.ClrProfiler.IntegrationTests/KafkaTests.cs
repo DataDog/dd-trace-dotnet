@@ -66,8 +66,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // Only successful spans with a delivery handler will have an offset
             successfulProducerSpans
-               .Where(span => span.Tags.ContainsKey(Tags.Offset))
-               .Select(span => span.Tags[Tags.Offset])
+               .Where(span => span.Tags.ContainsKey(Tags.KafkaOffset))
+               .Select(span => span.Tags[Tags.KafkaOffset])
                .Should()
                .OnlyContain(tag => Regex.IsMatch(tag, @"^[0-9]+$"))
                .And.HaveCount(ExpectedSuccessProducerWithHandlerSpans + ExpectedTombstoneProducerWithHandlerSpans);
@@ -76,15 +76,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Confirm partition is displayed correctly [0], [1]
             // https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/src/Confluent.Kafka/Partition.cs#L217-L224
             successfulProducerSpans
-               .Where(span => span.Tags.ContainsKey(Tags.Partition))
-               .Select(span => span.Tags[Tags.Partition])
+               .Where(span => span.Tags.ContainsKey(Tags.KafkaPartition))
+               .Select(span => span.Tags[Tags.KafkaPartition])
                .Should()
                .OnlyContain(tag => Regex.IsMatch(tag, @"^\[[0-9]+\]$"))
                .And.HaveCount(ExpectedSuccessProducerWithHandlerSpans + ExpectedTombstoneProducerWithHandlerSpans);
 
             allProducerSpans
-               .Where(span => span.Tags.ContainsKey(Tags.Tombstone))
-               .Select(span => span.Tags[Tags.Tombstone])
+               .Where(span => span.Tags.ContainsKey(Tags.KafkaTombstone))
+               .Select(span => span.Tags[Tags.KafkaTombstone])
                .Should()
                .HaveCount(ExpectedTombstoneProducerSpans)
                .And.OnlyContain(tag => tag == "true");
@@ -110,8 +110,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // HaveCountGreaterOrEqualTo because same message may be consumed by both
             allConsumerSpans
-               .Where(span => span.Tags.ContainsKey(Tags.Tombstone))
-               .Select(span => span.Tags[Tags.Tombstone])
+               .Where(span => span.Tags.ContainsKey(Tags.KafkaTombstone))
+               .Select(span => span.Tags[Tags.KafkaTombstone])
                .Should()
                .HaveCountGreaterOrEqualTo(ExpectedTombstoneProducerSpans)
                .And.OnlyContain(tag => tag == "true");
@@ -134,9 +134,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                          .And.OnlyContain(x => x.Service == "Samples.Kafka-kafka")
                          .And.OnlyContain(x => x.Resource == resourceName)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0)
-                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.RecordQueueTimeMs))
-                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.Offset) && Regex.IsMatch(x.Tags[Tags.Offset], @"^[0-9]+$"))
-                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.Partition) && Regex.IsMatch(x.Tags[Tags.Partition], @"^\[[0-9]+\]$"));
+                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.MessageQueueTimeMs))
+                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaOffset) && Regex.IsMatch(x.Tags[Tags.KafkaOffset], @"^[0-9]+$"))
+                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaPartition) && Regex.IsMatch(x.Tags[Tags.KafkaPartition], @"^\[[0-9]+\]$"));
         }
 
         private string GetSuccessfulResourceName(string type, string topic)

@@ -217,22 +217,22 @@ namespace Datadog.Trace
         /// <summary>
         /// The partition associated with a record
         /// </summary>
-        public const string Partition = "partition";
+        public const string KafkaPartition = "kafka.partition";
 
         /// <summary>
         /// The offset inside a partition associated with a record
         /// </summary>
-        public const string Offset = "offset";
+        public const string KafkaOffset = "kafka.offset";
 
         /// <summary>
         /// Whether the record was a "tombstone" record
         /// </summary>
-        public const string Tombstone = "tombstone";
+        public const string KafkaTombstone = "kafka.tombstone";
 
         /// <summary>
         /// The length of time a record has been on the queue
         /// </summary>
-        public const string RecordQueueTimeMs = "record.queue_time_ms";
+        public const string MessageQueueTimeMs = "message.queue_time_ms";
 
         /// <summary>
         /// The sampling priority for the entire trace.
