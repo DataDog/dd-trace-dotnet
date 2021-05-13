@@ -4,6 +4,7 @@ set -euxo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 VERSION=1.26.3
 BUILD_TYPE=${buildConfiguration:-Debug}
+ARCH=${ARCHITECTURE:-x64}
 
 mkdir -p $DIR/../../deploy/linux
 cp $DIR/../../integrations.json $DIR/../../src/Datadog.Trace.ClrProfiler.Native/bin/${BUILD_TYPE}/x64/
@@ -38,7 +39,7 @@ done
 gzip -f datadog-dotnet-apm.tar
 
 if [ -z "${MUSL-}" ]; then
-  mv datadog-dotnet-apm.tar.gz datadog-dotnet-apm-$VERSION.$ARCHITECTURE.tar.gz
+  mv datadog-dotnet-apm.tar.gz datadog-dotnet-apm-$VERSION.$ARCH.tar.gz
 else
-  mv datadog-dotnet-apm.tar.gz datadog-dotnet-apm-$VERSION-musl.$ARCHITECTURE.tar.gz
+  mv datadog-dotnet-apm.tar.gz datadog-dotnet-apm-$VERSION-musl.$ARCH.tar.gz
 fi
