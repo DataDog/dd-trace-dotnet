@@ -122,7 +122,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         {
             Log.Info(LoggingComponentMoniker,
                      "Initializing...",
-                     "Managed Loader Loader build configuration",
+                     "Managed Loader build configuration",
 #if DEBUG
                      "Debug"
 #else
