@@ -5,10 +5,7 @@
     <DefineConstants Condition="$(ApiVersion) >= 6.0.0">$(DefineConstants);RABBITMQ_6_0</DefineConstants>
 
     <!-- override to remove net452 -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
-    <!-- <TargetFrameworks Condition="'$(OS)' == 'Windows_NT' AND $(ApiVersion) &lt; 6.0.0">$(TargetFrameworks);net452</TargetFrameworks> -->
-    <TargetFrameworks Condition="$(MSBuildVersion) >= 16.8.0 AND !$(TargetFrameworks.Contains('net5.0'))">$(TargetFrameworks);net5.0</TargetFrameworks>
-    <DefineConstants Condition="$(ApiVersion) >= 6.0.0">$(DefineConstants);RABBITMQ_6_0</DefineConstants>
+    <TargetFrameworks>net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0</TargetFrameworks>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -18,7 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="RabbitMQ.Client" Version="$(ApiVersion)" />
   </ItemGroup>
