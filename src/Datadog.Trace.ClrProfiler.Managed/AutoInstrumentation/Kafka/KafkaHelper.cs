@@ -195,7 +195,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static void TryInjectHeaders<TTopicPartitionMarker, TMessage>(SpanContext context, TMessage message)
             where TMessage : IMessage
         {
-            // TODO: Allow disabling globally
             if (!_headersInjectionEnabled)
             {
                 return;
