@@ -12,7 +12,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal const string ConsumeResultTypeName = "Confluent.Kafka.ConsumeResult`2[!0,!1]";
         internal const string ActionOfDeliveryReportTypeName = "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]";
         internal const string TaskDeliveryReportTypeName = "System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]";
-        internal const string DeliveryReportOfNullTypeName = "Confluent.Kafka.DeliveryReport`2[Confluent.Kafka.Null,Confluent.Kafka.Null]";
         internal const string ServiceName = "kafka";
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
     }
