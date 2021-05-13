@@ -79,7 +79,7 @@ namespace shared {
         ICorProfilerInfo4* info_;
 
         std::mutex loaders_loaded_mutex_;
-        std::unordered_set<int> loaders_loaded_;
+        std::unordered_set<AppDomainID> loaders_loaded_;
 
         std::vector<WSTRING> assembly_string_default_appdomain_vector_;
         std::vector<WSTRING> assembly_string_nondefault_appdomain_vector_;
@@ -139,7 +139,7 @@ namespace shared {
                 const std::vector<WSTRING>& assembly_string_vector,
                 ILInstr* pFirstInstr, mdTypeRef string_type_ref);
 
-        HRESULT GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMethodDef& result_method_def);
+        HRESULT GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMethodDef* result_method_def);
 
         inline RuntimeInfo GetRuntimeInformation() {
             COR_PRF_RUNTIME_TYPE runtime_type;
@@ -175,8 +175,7 @@ namespace shared {
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
 
-        bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize,
-            void** pSymbolsArray, int* symbolsSize, int appDomainId);
+        bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize);
     };
 
 }  // namespace shared
