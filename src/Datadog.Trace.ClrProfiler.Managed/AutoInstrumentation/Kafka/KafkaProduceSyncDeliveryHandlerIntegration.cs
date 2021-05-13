@@ -55,20 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var newAction = CachedWrapperDelegate<TActionOfDeliveryReport>.CreateWrapper(handler, span);
 
-                Action<ITypedDeliveryHandlerShimAction> updateHandlerAction = inst =>
-                {
-                    try
-                    {
-                        inst.Handler = newAction;
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex, "There was an error updating the delivery report handler to ");
-                        // Not ideal to close the span here immediately, but as we can't trace the result,
-                        // we don't really have a choice
-                        span.Finish();
-                    }
-                };
+                Action<ITypedDeliveryHandlerShimAction> updateHandlerAction = inst => inst.Handler = newAction;
 
                 // store the call to update the handler variable as state
                 // so we update it at the _end_ of the constructor
@@ -94,7 +81,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             if (state.State is Action<ITypedDeliveryHandlerShimAction> updateHandlerAction
              && instance.TryDuckCast<ITypedDeliveryHandlerShimAction>(out var shim))
             {
-                updateHandlerAction.Invoke(shim);
+                try
+                {
+                    updateHandlerAction.Invoke(shim);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "There was an error updating the delivery report handler to ");
+                    // Not ideal to close the span here immediately, but as we can't trace the result,
+                    // we don't really have a choice
+                    state.Scope?.Span.Finish();
+                }
             }
 
             return CallTargetReturn.GetDefault();
