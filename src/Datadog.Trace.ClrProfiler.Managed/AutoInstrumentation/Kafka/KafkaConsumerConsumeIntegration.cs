@@ -44,13 +44,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, CallTargetState state)
+            where TResponse : IConsumeResult, IDuckType
         {
-            IConsumeResult consumeResult = null;
-            if (response is not null)
-            {
-                // Have to do the cast here, not in the method signature, as otherwise response is never null
-                consumeResult = response.DuckAs<IConsumeResult>();
-            }
+            IConsumeResult consumeResult = response.Instance is not null ? response : null;
 
             if (exception is not null && exception.TryDuckCast<IConsumeException>(out var consumeException))
             {
