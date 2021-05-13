@@ -638,7 +638,6 @@ namespace shared {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
                 0,                              // Number of parameters
                 ELEMENT_TYPE_VOID,              // Return type
-                ELEMENT_TYPE_OBJECT             // List of parameter types
         };
 
         mdMethodDef startup_method_def;
@@ -693,7 +692,7 @@ namespace shared {
         ILInstr* pNewInstr = NULL;
 
         // Step 1) Call bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out
-        // int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, ulong appDomainId)
+        // int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, int appDomainId)
 
         // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index
         // 0)
@@ -1121,7 +1120,7 @@ namespace shared {
         //
         // Define a method on the managed side that will PInvoke into the profiler
         // method: C++: bool GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int*
-        // assemblySize, BYTE** pSymbolsArray, int* symbolsSize, AppDomainID
+        // assemblySize, BYTE** pSymbolsArray, int* symbolsSize, int
         // appDomainId) C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr
         // assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int
         // symbolsSize, int appDomainId)
