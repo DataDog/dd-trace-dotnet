@@ -130,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (message is not null && message.Timestamp.Type != TimestampType.NotAvailable)
+                if (message is not null && message.Timestamp.Type != 0)
                 {
                     var consumeTime = span.StartTime.UtcDateTime;
                     var produceTime = message.Timestamp.UtcDateTime;

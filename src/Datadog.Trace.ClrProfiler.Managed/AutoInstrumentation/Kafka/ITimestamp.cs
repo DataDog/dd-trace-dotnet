@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <summary>
         /// Gets the timestamp type
         /// </summary>
-        public TimestampType Type { get; }
+        public int Type { get; }
 
         /// <summary>
         /// Gets the UTC DateTime for the timestamp
