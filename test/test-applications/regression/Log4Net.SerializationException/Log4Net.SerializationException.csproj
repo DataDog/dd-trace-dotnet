@@ -11,10 +11,6 @@
     <ProjectReference Include="..\dependency-libs\ApplicationWithLog4Net\ApplicationWithLog4Net.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />
-  </ItemGroup>
-
   <Target Name="AfterBuildMoveApplicationWithLog4Net" AfterTargets="AfterBuild">
     <ItemGroup>
       <!-- Subfolders of the output directory should each be a target framework -->
