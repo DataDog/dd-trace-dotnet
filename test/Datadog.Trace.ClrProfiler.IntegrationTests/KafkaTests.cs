@@ -34,7 +34,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget: true);
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         }
 
         [Theory]
