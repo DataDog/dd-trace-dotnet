@@ -45,21 +45,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             tags.Service = AwsConstants.AwsService;
             tags.QueueUrl = request.QueueUrl;
 
-            if (scope != null)
+            if (scope?.Span?.Context != null)
             {
-                // add distributed tracing headers to the message
-                if (request.MessageAttributes == null)
-                {
-                    // TODO: Create a new dictionary
-                    // basicProperties.Headers = new Dictionary<string, object>();
-                }
-
-                // SQS allows a maximum of 10 message attributes: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes
-                // Only inject if there's room
-                if (request.MessageAttributes.Count < 10)
-                {
-                    ContextPropagation.Inject(scope.Span.Context, request.MessageAttributes);
-                }
+                ContextPropagation.InjectHeadersIntoMessage(request, scope?.Span?.Context);
             }
 
             return new CallTargetState(scope);
