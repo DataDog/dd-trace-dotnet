@@ -73,29 +73,80 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         private Assembly OnAssemblyResolveCore(AssemblyName assemblyName)
         {
             // Is this an assembly which should be loaded from the product directory?
-            if (MustLoadAssemblyFromProductDirectory(assemblyName) && TryFindAssemblyInProductDirectory(assemblyName, out string assemblyPath))
+            if (! MustLoadAssemblyFromProductDirectory(assemblyName))
             {
-                // Yes, then try loading it:
-                try
+                // No. Log and bail out.
+                if (Log.IsDebugLoggingEnabled)
                 {
-                    Log.Debug(LoggingComponentMoniker, "Loading assembly from product directory", "assemblyName", assemblyName.FullName, "assemblyPath", assemblyPath);
-                    Assembly loadedAssembly = Assembly.LoadFrom(assemblyPath);
-
-                    if (loadedAssembly == null)
-                    {
-                        Log.Debug(LoggingComponentMoniker, "Not able to load assembly from product directory", "assemblyName", assemblyName.FullName, "assemblyPath", assemblyPath);
-                    }
-
-                    return loadedAssembly;
+                    Log.Debug(LoggingComponentMoniker,
+                              "The runtime requested a hint while resolving an assembly;"
+                            + " this handler will NOT participate in the resolution: the assembly is not relevant.",
+                              "assemblyName", assemblyName?.FullName);
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(LoggingComponentMoniker, "Error loading assembly from product directory", ex, "assemblyName", assemblyName.FullName, "assemblyPath", assemblyPath);
-                    return null;
-                }
+
+                return null;
             }
 
-            return null;
+            // Yes, this IS an assembly that should be loaded from the product directory.
+
+            if (Log.IsDebugLoggingEnabled)
+            {
+                Log.Debug(LoggingComponentMoniker,
+                          "The runtime requested a hint while resolving an assembly;"
+                        + " this handler WILL participate in the resolution: the assembly is relevant.",
+                          "assemblyName", assemblyName?.FullName);
+            }
+
+            // Look for the assembly in all the known product directories.
+            if (!TryFindAssemblyInProductDirectory(assemblyName, out string assemblyPath))
+            {
+                // Assembly was not found.
+                if (Log.IsDebugLoggingEnabled)
+                {
+                    Log.Debug(LoggingComponentMoniker,
+                              "The requested assembly was NOT located in any of the known product binaries directories. No resolution hit will be provided.",
+                              "assemblyName", assemblyName.FullName);
+                }
+
+                return null;
+            }
+
+            try
+            {
+                // Assembly was found. Load it:
+                if (Log.IsDebugLoggingEnabled)
+                {
+                    Log.Debug(LoggingComponentMoniker,
+                              "Loading assembly from product directory.",
+                              "assemblyName", assemblyName.FullName,
+                              "assemblyPath", assemblyPath);
+                }
+
+                Assembly loadedAssembly = Assembly.LoadFrom(assemblyPath);
+
+                if (loadedAssembly == null)
+                {
+                    if (Log.IsDebugLoggingEnabled)
+                    {
+                        Log.Debug(LoggingComponentMoniker,
+                                  "Not able to load assembly from product directory.",
+                                  "assemblyName", assemblyName.FullName,
+                                  "assemblyPath", assemblyPath);
+                    }
+                }
+
+                return loadedAssembly;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(LoggingComponentMoniker,
+                          "Error loading assembly from product directory",
+                          ex,
+                          "assemblyName", assemblyName.FullName,
+                          "assemblyPath", assemblyPath);
+
+                return null;
+            }
         }
 
         private bool MustLoadAssemblyFromProductDirectory(AssemblyName assemblyName)

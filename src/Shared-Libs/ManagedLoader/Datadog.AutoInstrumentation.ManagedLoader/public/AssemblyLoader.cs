@@ -120,7 +120,15 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// </summary>
         public void Execute()
         {
-            Log.Info(LoggingComponentMoniker, "Initializing...");
+            Log.Info(LoggingComponentMoniker,
+                     "Initializing...",
+                     "Managed Loader Loader build configuration",
+#if DEBUG
+                     "Debug"
+#else
+                     "Release"
+#endif
+                );
 
             AnalyzeAppDomain();
 
@@ -409,30 +417,30 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
             string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir(out bool isCoreFx);
 
-            string nativeProductBinariesDir;
+            string nativeProfilerLoaderAssemblyFile;
             if (isCoreFx)
             {
-                nativeProductBinariesDir = ReadEnvironmentVariable(Environment.Is64BitProcess ? "CORECLR_PROFILER_PATH_64" : "CORECLR_PROFILER_PATH_32");
-                nativeProductBinariesDir = nativeProductBinariesDir ?? ReadEnvironmentVariable("CORECLR_PROFILER_PATH");
+                nativeProfilerLoaderAssemblyFile = ReadEnvironmentVariable(Environment.Is64BitProcess ? "CORECLR_PROFILER_PATH_64" : "CORECLR_PROFILER_PATH_32");
+                nativeProfilerLoaderAssemblyFile = nativeProfilerLoaderAssemblyFile ?? ReadEnvironmentVariable("CORECLR_PROFILER_PATH");
             }
             else
             {
-                nativeProductBinariesDir = ReadEnvironmentVariable(Environment.Is64BitProcess ? "COR_PROFILER_PATH_64" : "COR_PROFILER_PATH_32");
-                nativeProductBinariesDir = nativeProductBinariesDir ?? ReadEnvironmentVariable("COR_PROFILER_PATH");
+                nativeProfilerLoaderAssemblyFile = ReadEnvironmentVariable(Environment.Is64BitProcess ? "COR_PROFILER_PATH_64" : "COR_PROFILER_PATH_32");
+                nativeProfilerLoaderAssemblyFile = nativeProfilerLoaderAssemblyFile ?? ReadEnvironmentVariable("COR_PROFILER_PATH");
             }
 
             // Be defensive against env var not being set.
-            if (String.IsNullOrWhiteSpace(nativeProductBinariesDir))
+            if (String.IsNullOrWhiteSpace(nativeProfilerLoaderAssemblyFile))
             {
                 return;
             }
 
-            nativeProductBinariesDir = Path.GetDirectoryName(Path.Combine(nativeProductBinariesDir, "."));  // Normalize in respect to final dir separator
+            string nativeProfilerLoaderAssemblyDirectory = Path.GetDirectoryName(nativeProfilerLoaderAssemblyFile);
 
             {
                 // OPTION A from above (SxS with Tracer):
 
-                string tracerHomeDirectory = Path.GetDirectoryName(nativeProductBinariesDir);                   // Shared Tracer/Profiler loader is in Tracer HOME
+                string tracerHomeDirectory = nativeProfilerLoaderAssemblyDirectory;                             // Shared Tracer/Profiler loader is in Tracer HOME
                 string profilerHomeDirectory = Path.Combine(tracerHomeDirectory, "ContinuousProfiler");         // Profiler-HOME is in <Tracer-HOME>/ContinuousProfiler
 
                 string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);   // Managed binaries are in <Profiler-HOME>/net-ver-moniker/
@@ -445,7 +453,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             {
                 // OPTION B from above (Profiler only):
 
-                string profilerHomeDirectory = Path.GetDirectoryName(nativeProductBinariesDir);                 // Profiler-HOME
+                string profilerHomeDirectory = nativeProfilerLoaderAssemblyDirectory;                           // Profiler-HOME
                 string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);   // Managed binaries are in <Profiler-HOME>/net-ver-moniker/
 
                 if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
@@ -462,7 +470,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 // places the managed profiler engine DLL.
                 const string NativeToManagedRelativePath = @"..\..\..\Debug-AnyCPU\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Managed\";
 
-                string profilerHomeDirectory = Path.GetDirectoryName(nativeProductBinariesDir);
+                string profilerHomeDirectory = nativeProfilerLoaderAssemblyDirectory;
                 string managedBinariesRoot = Path.Combine(profilerHomeDirectory, NativeToManagedRelativePath);
 
                 string managedBinariesRootFull;
