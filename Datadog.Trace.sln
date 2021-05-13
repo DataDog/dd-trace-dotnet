@@ -219,7 +219,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD0
 		build\docker\native.alpine.dockerfile = build\docker\native.alpine.dockerfile
 		build\docker\native.dockerfile = build\docker\native.dockerfile
 		build\docker\package.alpine.dockerfile = build\docker\package.alpine.dockerfile
-		build\docker\package.arm64.sh = build\docker\package.arm64.sh
 		build\docker\package.dockerfile = build\docker\package.dockerfile
 		build\docker\package.sh = build\docker\package.sh
 		build\docker\with-profiler-logs.bash = build\docker\with-profiler-logs.bash

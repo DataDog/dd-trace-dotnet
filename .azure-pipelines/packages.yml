@@ -126,7 +126,7 @@ stages:
       displayName: docker-compose run package
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e ARCHITECTURE=x64 package
 
     - publish: deploy/linux
       artifact: linux-packages
@@ -231,7 +231,7 @@ stages:
       displayName: docker-compose run package
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package.arm64
+        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e ARCHITECTURE=arm64 package
 
     - publish: deploy/linux
       artifact: linux-arm64-packages

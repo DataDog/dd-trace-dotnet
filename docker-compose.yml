@@ -130,6 +130,7 @@ services:
     image: datadog-package
     environment:
     - PKGTYPES=deb rpm tar
+    - ARCHITECTURE=${ARCHITECTURE}
     command: /project/build/docker/package.sh
     volumes:
     - ./:/project
@@ -142,18 +143,8 @@ services:
     environment:
     - PKGTYPES=tar
     - MUSL=true
+    - ARCHITECTURE=${ARCHITECTURE}
     command: /project/build/docker/package.sh
-    volumes:
-    - ./:/project
-
-  package.arm64:
-    build:
-      context: ./
-      dockerfile: ./build/docker/package.dockerfile
-    image: datadog-package
-    environment:
-    - PKGTYPES=deb rpm tar
-    command: /project/build/docker/package.arm64.sh
     volumes:
     - ./:/project
 

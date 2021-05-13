@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
                 else
                 {
-                    Console.Error.WriteLine("ERROR: Architecture not supported.");
+                    Console.Error.WriteLine($"ERROR: Windows {RuntimeInformation.OSArchitecture} architecture is not supported.");
                     return null;
                 }
             }
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
                 else
                 {
-                    Console.Error.WriteLine("ERROR: Architecture not supported.");
+                    Console.Error.WriteLine($"ERROR: Linux {RuntimeInformation.OSArchitecture} architecture is not supported.");
                     return null;
                 }
             }
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
                 else
                 {
-                    Console.Error.WriteLine("ERROR: Architecture not supported.");
+                    Console.Error.WriteLine($"ERROR: macOS {RuntimeInformation.OSArchitecture} architecture is not supported.");
                     return null;
                 }
             }
