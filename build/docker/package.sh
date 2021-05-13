@@ -39,13 +39,13 @@ done
 gzip -f datadog-dotnet-apm.tar
 
 if [ -z "${MUSL-}" ]; then
-  if [ "$ARCH" == "x64"]; then
+  if [ "$ARCH" == "x64" ]; then
     mv datadog-dotnet-apm.tar.gz datadog-dotnet-apm-$VERSION.tar.gz
   else
     mv datadog-dotnet-apm.tar.gz datadog-dotnet-apm-$VERSION.$ARCH.tar.gz
   fi
 else
-  if [ "$ARCH" == "x64"]; then
+  if [ "$ARCH" == "x64" ]; then
     mv datadog-dotnet-apm.tar.gz datadog-dotnet-apm-$VERSION-musl.tar.gz
   else
     mv datadog-dotnet-apm.tar.gz datadog-dotnet-apm-$VERSION-musl.$ARCH.tar.gz
