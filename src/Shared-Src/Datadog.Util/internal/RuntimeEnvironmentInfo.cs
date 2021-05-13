@@ -18,6 +18,8 @@ namespace Datadog.Util
         private const string CoreLibName_CoreLib = "System.Private.CoreLib";
         private const string UnknownMoniker = "Unknown";
 
+        #region Nested Types
+
         public class CoreAssembyInformation
         {
             internal CoreAssembyInformation(bool isMscorlib, bool isSysPrivCoreLib, string name)
@@ -32,6 +34,10 @@ namespace Datadog.Util
             public bool IsSysPrivCoreLib { get; }
             public string Name { get; }
         }
+
+        #endregion Nested Types
+
+        #region Static APIs
 
         private static RuntimeEnvironmentInfo s_singeltonInstance = null;
 
@@ -52,26 +58,41 @@ namespace Datadog.Util
 
         private static RuntimeEnvironmentInfo CreateNew()
         {
-            Assembly objectTypeAssembly = (new object()).GetType().Assembly;
-            string objectTypeAssemblyName = objectTypeAssembly.GetName()?.Name ?? UnknownMoniker;
-            var coreAssembyInfo = new CoreAssembyInformation(isMscorlib: CoreLibName_Mscorlib.Equals(objectTypeAssemblyName, StringComparison.OrdinalIgnoreCase),
-                                                             isSysPrivCoreLib: CoreLibName_CoreLib.Equals(objectTypeAssemblyName, StringComparison.OrdinalIgnoreCase),
-                                                             name: objectTypeAssemblyName);
-            
-            string runtimeName = GetRuntimeName(coreAssembyInfo);
-            string runtimeVersion = GetRuntimeVersion(coreAssembyInfo, objectTypeAssembly);
-            string processArchitecture = GetProcessArchitecture();
-            string osPlatform = GetOsPlatform();
-            string osArchitecture = GetOsArchitecture();
-            string osDescription = GetOsDescriptio();
+            try
+            {
+                Assembly objectTypeAssembly = (new object()).GetType().Assembly;
+                string objectTypeAssemblyName = objectTypeAssembly.GetName()?.Name ?? UnknownMoniker;
+                var coreAssembyInfo = new CoreAssembyInformation(isMscorlib: CoreLibName_Mscorlib.Equals(objectTypeAssemblyName, StringComparison.OrdinalIgnoreCase),
+                                                                 isSysPrivCoreLib: CoreLibName_CoreLib.Equals(objectTypeAssemblyName, StringComparison.OrdinalIgnoreCase),
+                                                                 name: objectTypeAssemblyName);
 
-            return new RuntimeEnvironmentInfo(runtimeName,
-                                              runtimeVersion,
-                                              processArchitecture,
-                                              osPlatform,
-                                              osArchitecture,
-                                              osDescription,
-                                              coreAssembyInfo);
+                string runtimeName = GetRuntimeName(coreAssembyInfo);
+                string runtimeVersion = GetRuntimeVersion(coreAssembyInfo, objectTypeAssembly);
+                string processArchitecture = GetProcessArchitecture();
+                string osPlatform = GetOsPlatform();
+                string osArchitecture = GetOsArchitecture();
+                string osDescription = GetOsDescriptio();
+
+                return new RuntimeEnvironmentInfo(runtimeName,
+                                                  runtimeVersion,
+                                                  processArchitecture,
+                                                  osPlatform,
+                                                  osArchitecture,
+                                                  osDescription,
+                                                  coreAssembyInfo);
+            }
+            catch
+            {
+                return new RuntimeEnvironmentInfo(runtimeName: UnknownMoniker,
+                                                  runtimeVersion: UnknownMoniker,
+                                                  processArchitecture: UnknownMoniker,
+                                                  osPlatform: UnknownMoniker,
+                                                  osArchitecture: UnknownMoniker,
+                                                  osDescription: UnknownMoniker,
+                                                  coreAssembyInfo: new CoreAssembyInformation(isMscorlib: false,
+                                                                                              isSysPrivCoreLib: false,
+                                                                                              name: UnknownMoniker));
+            }
         }
 
         private static string GetRuntimeName(CoreAssembyInformation coreAssembyInfo)
@@ -229,6 +250,9 @@ namespace Datadog.Util
             }
         }
 #endif
+        #endregion Static APIs
+
+        #region Non-Static APIs
 
         private string _stringView = null;
         private string _osPlatformMoniker = null;
@@ -304,5 +328,7 @@ namespace Datadog.Util
 
             return osPlatformMoniker;
         }
+
+        #endregion Non-Static APIs
     }
 }
