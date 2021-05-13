@@ -136,6 +136,10 @@ namespace shared {
         const bool is_iis = process_name == WStr("w3wp.exe") ||
             process_name == WStr("iisexpress.exe");
 
+        if (is_iis && log_info_callback != nullptr) {
+            log_info_callback("Loader::InjectLoaderToModuleInitializer: IIS process detected.");
+        }
+
         return new Loader(pCorProfilerInfo,
             is_iis ? assembliesToLoad_adDefault_procIIS : assembliesToLoad_adDefault_procNonIIS,
             is_iis ? assembliesToLoad_adNonDefault_procIIS : assembliesToLoad_adNonDefault_procNonIIS,
@@ -274,7 +278,6 @@ namespace shared {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
                 0,                              // Number of parameters
                 ELEMENT_TYPE_VOID,              // Return type
-                ELEMENT_TYPE_OBJECT             // List of parameter types
         };
 
         mdMethodDef cctor_method_def = mdMethodDefNil;
@@ -330,6 +333,10 @@ namespace shared {
         hr = GetGetAssemblyAndSymbolsBytesMethodDef(metadata_emit, module_type_def, pinvoke_method_def);
         if (FAILED(hr)) {
             return hr;
+        }
+        if (pinvoke_method_def == mdMethodDefNil) {
+            Warn("Loader::InjectLoaderToModuleInitializer: PInvoke Method is null!");
+            return E_FAIL;
         }
 
         //
