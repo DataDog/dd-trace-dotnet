@@ -16,10 +16,10 @@ namespace Datadog.Trace.Tools.Runner
         public static Dictionary<string, string> GetProfilerEnvironmentVariables(string runnerFolder, Platform platform, Options options)
         {
             // In the current nuspec structure RunnerFolder has the following format:
-            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\tools\netcoreapp3.1\any
-            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\tools\netcoreapp2.1\any
+            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\tools\netcoreapp3.1\any
+            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\tools\netcoreapp2.1\any
             // And the Home folder is:
-            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\1.19.3\datadog.trace.tools.runner\1.19.3\home
+            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\home
             // So we have to go up 3 folders.
             string tracerHome = null;
             if (!string.IsNullOrEmpty(options.TracerHomeFolder))
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tools.Runner
             }
             else if (platform == Platform.Linux)
             {
-                if (RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86)
+                if (RuntimeInformation.OSArchitecture == Architecture.X64)
                 {
                     tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
                 }
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tools.Runner
             }
             else if (platform == Platform.MacOS)
             {
-                if (RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86)
+                if (RuntimeInformation.OSArchitecture == Architecture.X64)
                 {
                     tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx-x64", "Datadog.Trace.ClrProfiler.Native.dylib"));
                 }

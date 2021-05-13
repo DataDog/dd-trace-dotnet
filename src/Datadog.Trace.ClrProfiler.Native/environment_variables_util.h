@@ -53,7 +53,7 @@ bool IsCallTargetEnabled() {
   //
   ToBooleanWithDefault(GetEnvironmentValue(environment::calltarget_enabled), true);
 #else
-  CheckIfTrue(GetEnvironmentValue(environment::calltarget_enabled));
+  ToBooleanWithDefault(GetEnvironmentValue(environment::calltarget_enabled), false);
 #endif
 }
 
