@@ -2,8 +2,6 @@
 
   <PropertyGroup>
       <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;net5.0</TargetFrameworks>
-      <Configurations>Debug;Release</Configurations>
-      <Platforms>x64;x86;AnyCPU</Platforms>
   </PropertyGroup>
 
   <PropertyGroup>
