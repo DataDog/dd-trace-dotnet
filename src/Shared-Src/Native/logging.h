@@ -149,8 +149,8 @@ namespace shared {
         {
             program_data = R"(C:\ProgramData)";
         }
-
-        return std::filesystem::path(program_data);
+        
+        return std::filesystem::path(program_data) / R"(Datadog-APM\logs\DotNet)";
 #else
         return std::filesystem::path("/var/log/datadog/dotnet");
 #endif
@@ -174,9 +174,6 @@ namespace shared {
         }
 
         std::filesystem::path log_directory_path = GetProductBaseDirectoryPath();
-#ifdef _WIN32
-        log_directory_path /= TLoggerPolicy::folder_path;
-#endif
         return ToString((log_directory_path / log_file_name).native());
     }
 
