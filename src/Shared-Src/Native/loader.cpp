@@ -34,7 +34,7 @@ namespace shared {
             WStr("netstandard"),
             WStr("System"),
             WStr("System.Core"),
-            WStr("System.Configuration"),
+            /*WStr("System.Configuration"),
             WStr("System.Data"),
             WStr("System.EnterpriseServices"),
             WStr("System.Numerics"),
@@ -43,7 +43,7 @@ namespace shared {
             WStr("System.Transactions"),
             WStr("System.Xml"),
             WStr("System.Web"),
-            WStr("System.Web.ApplicationServices"),
+            WStr("System.Web.ApplicationServices"),*/
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
@@ -228,6 +228,14 @@ namespace shared {
         if (assembly_name_wstring == managed_loader_assembly_name) {
             Debug("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
             return E_FAIL;
+        }
+
+        //
+        // check if the loader has been already loaded for this AppDomain
+        //
+        if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
+            Warn("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded in the AppDomain.  [AppDomainID=" + ToString(app_domain_id) + "]");
+            return false;
         }
 
         //
