@@ -31,9 +31,7 @@ namespace shared {
     // We exclude here the direct references of the loader to avoid a cyclic reference problem.
     // Also well-known assemblies we want to avoid.
     const WSTRING assemblies_exclusion_list_[] = {
-            WStr("mscorlib"),
             WStr("netstandard"),
-            WStr("System.Private.CoreLib"),
             WStr("System"),
             WStr("System.Core"),
             WStr("System.Configuration"),
@@ -143,6 +141,7 @@ namespace shared {
             process_name == WStr("iisexpress.exe");
 
         if (is_iis && log_info_callback != nullptr) {
+            log_info_callback("Loader::InjectLoaderToModuleInitializer: Process name: " + ToString(process_name));
             log_info_callback("Loader::InjectLoaderToModuleInitializer: IIS process detected.");
         }
 
@@ -244,6 +243,62 @@ namespace shared {
 
         // **************************************************************************************************************
         //
+        // Retrieve the metadata interfaces for the ModuleID
+        //
+        ComPtr<IUnknown> metadata_interfaces;
+        hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=" +
+                ToString(module_id) + " [Module=" + module_file_name_string + "]");
+            return hr;
+        }
+
+        //
+        // Extract both IMetaDataImport2 and IMetaDataEmit2 interfaces
+        //
+        const ComPtr<IMetaDataImport2> metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        const ComPtr<IMetaDataEmit2> metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+        const ComPtr<IMetaDataAssemblyImport> assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const ComPtr<IMetaDataAssemblyEmit> assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+        //
+        // Check and store assembly metadata if the corlib is found.
+        //
+        if (assembly_name_wstring == WStr("mscorlib") || assembly_name_wstring == WStr("System.Private.CoreLib")) {
+            Debug("Loader::InjectLoaderToModuleInitializer: extracting metadata of the corlib assembly.");
+
+            mdAssembly corLibAssembly;
+            assembly_import->GetAssemblyFromScope(&corLibAssembly);
+
+            corlib_metadata.module_id = module_id;
+            corlib_metadata.id = assembly_id;
+            corlib_metadata.token = corLibAssembly;
+            corlib_metadata.app_domain_id = app_domain_id;
+
+            WCHAR name[stringMaxSize];
+            DWORD name_len = 0;
+
+            hr = assembly_import->GetAssemblyProps(
+                corlib_metadata.token,
+                &corlib_metadata.public_key,
+                &corlib_metadata.public_key_length,
+                &corlib_metadata.hash_alg_id,
+                name,
+                stringMaxSize,
+                &name_len,
+                &corlib_metadata.metadata,
+                &corlib_metadata.flags);
+            if (FAILED(hr) || assembly_name_wstring != WSTRING(name)) {
+                Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata for corlib assembly.");
+                return hr;
+            }
+
+            corlib_metadata.name = WSTRING(name);
+            return hr;
+        }
+
+        // **************************************************************************************************************
+        //
         // We need to rewrite the <Module> to something like this:
         //
         //  using System;
@@ -282,26 +337,7 @@ namespace shared {
         //
         //  }
         //
-
         // **************************************************************************************************************
-        //
-        // Retrieve the metadata interfaces for the ModuleID
-        //
-        ComPtr<IUnknown> metadata_interfaces;
-        hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
-        if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=" +
-                ToString(module_id) + " [Module=" + module_file_name_string + "]");
-            return hr;
-        }
-
-        //
-        // Extract both IMetaDataImport2 and IMetaDataEmit2 interfaces
-        //
-        const ComPtr<IMetaDataImport2> metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-        const ComPtr<IMetaDataEmit2> metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-        const ComPtr<IMetaDataAssemblyImport> assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-        const ComPtr<IMetaDataAssemblyEmit> assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
         //
         // Gets the mdTypeDef of <Module> type
@@ -342,11 +378,20 @@ namespace shared {
         //
         // create assembly ref to mscorlib
         //
-        const LPCWSTR mscorlib_name = WStr("mscorlib");
+        if (corlib_metadata.token == mdAssemblyNil) {
+            Warn("Loader::InjectLoaderToModuleInitializer: Loader cannot be injected, corlib was not found.");
+            return E_FAIL;
+        }
         mdAssemblyRef mscorlib_ref = mdAssemblyRefNil;
-        ASSEMBLYMETADATA metadata{ 4, 0, 0, 0 };
-        COR_SIGNATURE public_key[] = { 0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89 };
-        hr = assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), mscorlib_name, &metadata, NULL, 0, 0, &mscorlib_ref);
+        hr = assembly_emit->DefineAssemblyRef(
+            corlib_metadata.public_key,
+            corlib_metadata.public_key_length,
+            corlib_metadata.name.c_str(),
+            &corlib_metadata.metadata,
+            NULL,
+            0,
+            corlib_metadata.flags,
+            &mscorlib_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: Error creating assembly reference to mscorlib.");
             return hr;

@@ -73,6 +73,19 @@ namespace shared {
             std::int32_t NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb;
     };
 
+    struct AssemblyMetadata {
+        AppDomainID app_domain_id;
+        ModuleID module_id;
+        AssemblyID id;
+        mdAssembly token = mdAssemblyNil;
+        ASSEMBLYMETADATA metadata{};
+        WSTRING name;
+        DWORD flags;
+        const void* public_key;
+        ULONG public_key_length;
+        ULONG hash_alg_id;
+    };
+
     class Loader {
     private:
         RuntimeInfo runtime_information_;
@@ -80,6 +93,7 @@ namespace shared {
 
         std::mutex loaders_loaded_mutex_;
         std::unordered_set<AppDomainID> loaders_loaded_;
+        AssemblyMetadata corlib_metadata{};
 
         std::vector<WSTRING> assembly_string_default_appdomain_vector_;
         std::vector<WSTRING> assembly_string_nondefault_appdomain_vector_;
