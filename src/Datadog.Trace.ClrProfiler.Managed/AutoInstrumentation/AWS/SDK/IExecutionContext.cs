@@ -6,6 +6,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
     public interface IExecutionContext
     {
         /// <summary>
+        /// Gets the RequestContext
+        /// </summary>
+        IRequestContext RequestContext { get; }
+
+        /// <summary>
         /// Gets the ResponseContext
         /// </summary>
         IResponseContext ResponseContext { get; }
