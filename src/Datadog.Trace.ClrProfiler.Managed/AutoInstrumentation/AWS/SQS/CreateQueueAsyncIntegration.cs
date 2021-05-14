@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
@@ -64,6 +65,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             {
                 tags.RequestId = response.ResponseMetadata.RequestId;
                 tags.QueueUrl = response.QueueUrl;
+
+                state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, isServer: false);
             }
 
             state.Scope.DisposeWithException(exception);

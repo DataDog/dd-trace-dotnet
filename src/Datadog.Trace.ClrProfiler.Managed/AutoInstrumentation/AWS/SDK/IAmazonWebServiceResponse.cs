@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
@@ -14,5 +16,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// Gets the response metadata
         /// </summary>
         IResponseMetadata ResponseMetadata { get; }
+
+        /// <summary>
+        /// Gets the http status code of the AWS request
+        /// </summary>
+        HttpStatusCode HttpStatusCode { get; }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
@@ -71,6 +72,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             if (state.Scope?.Span.Tags is AwsSqsTags tags)
             {
                 tags.RequestId = response.ResponseMetadata.RequestId;
+
+                state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, isServer: false);
             }
 
             state.Scope.DisposeWithException(exception);
