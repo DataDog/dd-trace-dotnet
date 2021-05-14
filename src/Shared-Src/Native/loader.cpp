@@ -44,6 +44,7 @@ namespace shared {
             WStr("System.Xml"),
             WStr("System.Web"),
             WStr("System.Web.ApplicationServices"),
+            WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
     ILInstr* CreateILInstr(ILRewriter& rewriter, ILInstr* firstInstr, unsigned int opcode) {
