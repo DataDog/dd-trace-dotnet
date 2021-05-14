@@ -65,7 +65,7 @@ jobs:
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration Release --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
-      
+
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
     inputs:
@@ -75,6 +75,49 @@ jobs:
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
     displayName: Uploading linux tracer home artifact
     artifact: linux-tracer-home
+
+- job: build_linux_profiler_arm64
+  pool: Arm64
+  workspace:
+    clean: all
+
+  steps:
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+    inputs:
+      command: build
+      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+      arguments: --configuration Release
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
+
+  - task: DockerCompose@0
+    displayName: docker-compose run Profiler
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e buildConfiguration=Release Profiler
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+    artifact: linux-tracer-home_arm64
 
 - job: macos_profiler
   pool:
@@ -137,6 +180,16 @@ jobs:
       targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
 
   - download: current
+    artifact: linux-tracer-home_arm64
+    patterns: '**/*.so'
+
+  - task: CopyFiles@2
+    displayName: Copying native linux arm64 binary from previous job
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/linux-tracer-home_arm64
+      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-arm64
+
+  - download: current
     artifact: macos-profiler
     patterns: '**/*.dylib'
 
@@ -170,14 +223,14 @@ jobs:
     inputs:
       packageType: runtime
       version: 3.1.x
-      
+
   - task: UseDotNet@2
     displayName: install dotnet core sdk 5.0
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdk5Version)
       includePreviewVersions: true
-      
+
   - task: DotNetCoreCLI@2
     displayName: dotnet build
     inputs:
@@ -191,7 +244,7 @@ jobs:
         !src/Datadog.Trace.Tools.Runner/*.csproj
     env:
       DD_SERVICE: dd-trace-dotnet
-      
+
   - task: NuGetToolInstaller@1
     displayName: install nuget
 
@@ -227,6 +280,7 @@ jobs:
         $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64/home*
         $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86/home*
         $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64/home*
+        $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-arm64/home*
         $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64/home*
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Tool
@@ -236,14 +290,18 @@ jobs:
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x64
     displayName: Uploading runner standalone win-x64 artifact
     artifact: runner-standalone-win-x64
-    
+
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/win-x86
     displayName: Uploading runner standalone win-x86 artifact
     artifact: runner-standalone-win-x86
-    
+
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-x64
     displayName: Uploading runner standalone linux-x64 artifact
     artifact: runner-standalone-linux-x64
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/linux-arm64
+    displayName: Uploading runner standalone linux-arm64 artifact
+    artifact: runner-standalone-linux-arm64
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/Release/Console/publish/osx-x64
     displayName: Uploading runner standalone osx-x64 artifact
