@@ -1,49 +1,46 @@
 using System;
-using System.Threading;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
-    /// AWSSDK.SQS DeleteQueueAsync calltarget instrumentation
+    /// AWSSDK.Core InvokeAsync calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = "AWSSDK.SQS",
-        TypeName = "Amazon.SQS.AmazonSQSClient",
-        MethodName = "DeleteQueueAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteQueueResponse>",
-        ParameterTypeNames = new[] { "Amazon.SQS.Model.DeleteQueueRequest", ClrNames.CancellationToken },
+        AssemblyName = "AWSSDK.Core",
+        TypeName = "Amazon.Runtime.Internal.RuntimePipeline",
+        MethodName = "InvokeAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ParameterTypeNames = new[] { "Amazon.Runtime.IExecutionContext" },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AwsConstants.IntegrationName)]
-    public class DeleteQueueAsyncIntegration
+    public class RuntimePipelineInvokeAsyncIntegration
     {
-        private const string Operation = "DeleteQueue";
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TDeleteQueueRequest">Type of the request object</typeparam>
+        /// <typeparam name="TExecutionContext">Type of the execution context object</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
-        /// <param name="request">The request for the SQS operation</param>
-        /// <param name="cancellationToken">CancellationToken value</param>
+        /// <param name="executionContext">The execution context for the AWS SDK operation</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TDeleteQueueRequest>(TTarget instance, TDeleteQueueRequest request, CancellationToken cancellationToken)
-            where TDeleteQueueRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
+        public static CallTargetState OnMethodBegin<TTarget, TExecutionContext>(TTarget instance, TExecutionContext executionContext)
+            where TExecutionContext : IExecutionContext, IDuckType
         {
-            if (request.Instance is null)
+            if (executionContext.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, $"{AwsConstants.AwsService}.{Operation}", out AwsSqsTags tags);
-            tags.Operation = Operation;
-            tags.Service = AwsConstants.AwsService;
-            tags.QueueUrl = request.QueueUrl;
+            var scope = Tracer.Instance.ActiveScope;
+            if (scope is not null)
+            {
+                // fill in later
+            }
 
             return new CallTargetState(scope);
         }
@@ -61,12 +58,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, CallTargetState state)
             where TResponse : IAmazonWebServiceResponse
         {
-            if (state.Scope?.Span.Tags is AwsSqsTags tags)
+            if (state.Scope?.Span.Tags is AwsSdkTags tags)
             {
-                tags.RequestId = response.ResponseMetadata.RequestId;
+                state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, isServer: false);
             }
 
-            state.Scope.DisposeWithException(exception);
+            // Do not dispose the scope (if present) when exiting.
+            // It will be closed by the higher level client instrumentation
             return response;
         }
     }
