@@ -532,7 +532,7 @@ namespace shared {
         // get a MemberRef for System.AppDomain.get_CurrentDomain()
         //
         const LPCWSTR get_currentdomain_name = WStr("get_CurrentDomain");
-        BYTE system_appdomain_type_ref_compressed_token[4];
+        BYTE system_appdomain_type_ref_compressed_token[10];
         ULONG system_appdomain_type_ref_compressed_token_length = CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
 
         COR_SIGNATURE appdomain_get_current_domain_signature[50];
@@ -551,7 +551,7 @@ namespace shared {
             appdomain_get_current_domain_signature, offset,
             &appdomain_get_current_domain_member_ref);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
+            Warn("Loader::InjectLoaderToModuleInitializer: System.AppDomain.get_CurrentDomain() DefineMemberRef failed");
             return hr;
         }
 
@@ -559,7 +559,7 @@ namespace shared {
         // Create method signature for AppDomain.Load(byte[], byte[])
         //
         const LPCWSTR load_name = WStr("Load");
-        BYTE system_reflection_assembly_type_ref_compressed_token[4];
+        BYTE system_reflection_assembly_type_ref_compressed_token[10];
         ULONG system_reflection_assembly_type_ref_compressed_token_length = CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
 
         COR_SIGNATURE appdomain_load_signature[50];
@@ -582,7 +582,7 @@ namespace shared {
             load_name, appdomain_load_signature,
             offset, &appdomain_load_member_ref);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
+            Warn("Loader::InjectLoaderToModuleInitializer: AppDomain.Load(byte[], byte[]) DefineMemberRef failed");
             return hr;
         }
 
@@ -590,7 +590,7 @@ namespace shared {
         // Create method signature for System.Type System.Reflection.Assembly.GetType(string name, bool throwOnError)
         //
         const LPCWSTR gettype_name = WStr("GetType");
-        BYTE system_type_type_ref_compressed_token[4];
+        BYTE system_type_type_ref_compressed_token[10];
         ULONG system_type_type_ref_compressed_token_length = CorSigCompressToken(system_type_type_ref, system_type_type_ref_compressed_token);
 
         COR_SIGNATURE assembly_get_type_signature[50];
@@ -611,7 +611,7 @@ namespace shared {
             gettype_name, assembly_get_type_signature,
             offset, &assembly_get_type_member_ref);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
+            Warn("Loader::InjectLoaderToModuleInitializer: System.Reflection.Assembly.GetType(string name, bool throwOnError) DefineMemberRef failed");
             return hr;
         }
 
@@ -619,7 +619,7 @@ namespace shared {
         // Create method signature for System.Reflection.MethodInfo System.Type.GetMethod(string name)
         //
         const LPCWSTR getmethod_name = WStr("GetMethod");
-        BYTE system_reflection_methodinfo_type_ref_compressed_token[4];
+        BYTE system_reflection_methodinfo_type_ref_compressed_token[10];
         ULONG system_reflection_methodinfo_type_ref_compressed_token_length = CorSigCompressToken(system_reflection_methodinfo_type_ref, system_reflection_methodinfo_type_ref_compressed_token);
 
         COR_SIGNATURE type_get_method_signature[50];
@@ -639,7 +639,7 @@ namespace shared {
             getmethod_name, type_get_method_signature,
             offset, &type_get_method_member_ref);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
+            Warn("Loader::InjectLoaderToModuleInitializer: System.Type.GetMethod(string name) DefineMemberRef failed");
             return hr;
         }
 
@@ -660,7 +660,7 @@ namespace shared {
             invoke_name, methodbase_invoke_signature,
             6, &methodbase_invoke_member_ref);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefineMemberRef failed");
+            Warn("Loader::InjectLoaderToModuleInitializer: System.Reflection.MethodBase.Invoke(object instance, object[] args) DefineMemberRef failed");
             return hr;
         }
 
@@ -676,7 +676,7 @@ namespace shared {
         mdString load_helper_token;
         hr = metadata_emit->DefineUserString(managed_loader_startup_type, (ULONG)WStrLen(managed_loader_startup_type), &load_helper_token);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefineUserString failed");
+            Warn("Loader::InjectLoaderToModuleInitializer: 'Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader' DefineUserString failed");
             return hr;
         }
 
@@ -688,7 +688,7 @@ namespace shared {
         mdString run_string_token;
         hr = metadata_emit->DefineUserString(run_name, (ULONG)WStrLen(run_name), &run_string_token);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: DefineUserString failed");
+            Warn("Loader::InjectLoaderToModuleInitializer: 'Run' DefineUserString failed");
             return hr;
         }
 
@@ -724,7 +724,7 @@ namespace shared {
         //   [5] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
         //
         mdSignature locals_signature_token;
-        COR_SIGNATURE locals_signature[10] = {
+        COR_SIGNATURE locals_signature[] = {
                 IMAGE_CEE_CS_CALLCONV_LOCAL_SIG,  // Calling convention
                 6,                                // Number of variables
                 ELEMENT_TYPE_I,                   // List of variable types
@@ -980,7 +980,7 @@ namespace shared {
       ILInstr* pNewInstr;
 
       // ldc.i4 = const int (array length)
-      CreateILInstrArg64(rewriter_void, pFirstInstr, CEE_LDC_I4, assembly_string_vector.size());
+      CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDC_I4, (INT32)assembly_string_vector.size());
       // newarr System.String
       CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_NEWARR, string_type_ref);
 
@@ -1013,11 +1013,9 @@ namespace shared {
         // create PInvoke method definition to the native GetAssemblyAndSymbolsBytes method (interop.cpp)
         //
         // Define a method on the managed side that will PInvoke into the profiler
-        // method: C++: bool GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int*
-        // assemblySize, BYTE** pSymbolsArray, int* symbolsSize)
-        // C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr
-        // assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int
-        // symbolsSize)
+        // method:
+        // C++: bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize)
+        // C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
         const LPCWSTR get_assembly_and_symbols_bytes_name = WStr("GetAssemblyAndSymbolsBytes");
         COR_SIGNATURE get_assembly_bytes_signature[] = {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
