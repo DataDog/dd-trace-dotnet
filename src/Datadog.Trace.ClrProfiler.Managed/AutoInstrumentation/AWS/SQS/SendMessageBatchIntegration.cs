@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="request">The request for the SQS operation</param>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TSendMessageBatchRequest>(TTarget instance, TSendMessageBatchRequest request)
-            where TSendMessageBatchRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
+            where TSendMessageBatchRequest : ISendMessageBatchRequest, IDuckType
         {
             if (request.Instance is null)
             {
@@ -42,6 +42,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             tags.Operation = Operation;
             tags.Service = AwsConstants.AwsService;
             tags.QueueUrl = request.QueueUrl;
+
+            if (scope?.Span?.Context != null && request.Entries.Count > 0)
+            {
+                for (int i = 0; i < request.Entries.Count; i++)
+                {
+                    var entry = request.Entries[i].DuckCast<IContainsMessageAttributes>();
+                    ContextPropagation.InjectHeadersIntoMessage(entry, scope?.Span?.Context);
+                }
+            }
 
             return new CallTargetState(scope);
         }
