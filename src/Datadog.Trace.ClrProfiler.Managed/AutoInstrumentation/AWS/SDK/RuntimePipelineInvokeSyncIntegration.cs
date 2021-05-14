@@ -60,6 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         {
             if (state.Scope?.Span.Tags is AwsSdkTags tags)
             {
+                tags.RequestId = responseContext.Response.ResponseMetadata.RequestId;
                 state.Scope.Span.SetHttpStatusCode((int)responseContext.Response.HttpStatusCode, isServer: false);
             }
 

@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tagging;
@@ -63,13 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, CallTargetState state)
-            where TResponse : IAmazonWebServiceResponse
         {
-            if (state.Scope?.Span.Tags is AwsSqsTags tags)
-            {
-                tags.RequestId = response.ResponseMetadata.RequestId;
-            }
-
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TResponse>(response);
         }

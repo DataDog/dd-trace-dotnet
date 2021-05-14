@@ -62,7 +62,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         {
             if (state.Scope?.Span.Tags is AwsSqsTags tags)
             {
-                tags.RequestId = response.ResponseMetadata.RequestId;
                 tags.QueueUrl = response.QueueUrl;
             }
 
