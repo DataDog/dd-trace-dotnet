@@ -39,12 +39,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             var scope = Tracer.Instance.ActiveScope;
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
-                return new CallTargetState(scope, state: executionContext);
+                tags.Region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
             }
-            else
-            {
-                return CallTargetState.GetDefault();
-            }
+
+            return new CallTargetState(scope, state: executionContext);
         }
 
         /// <summary>
@@ -64,6 +62,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             {
                 if (state.State is not null)
                 {
+                    // The request object is populated later by the Marshaller,
+                    // so we wait until the method end callback to read it
                     tags.HttpMethod = state.State.DuckCast<IExecutionContext>().RequestContext.Request.HttpMethod.ToUpperInvariant();
                 }
 

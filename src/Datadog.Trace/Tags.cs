@@ -225,6 +225,11 @@ namespace Datadog.Trace
         public const string AwsOperationName = "aws.operation";
 
         /// <summary>
+        /// The region associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsRegion = "aws.region";
+
+        /// <summary>
         /// The request ID associated with the AWS SDK span.
         /// </summary>
         public const string AwsRequestId = "aws.requestId";

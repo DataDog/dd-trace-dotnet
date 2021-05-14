@@ -9,6 +9,7 @@ namespace Datadog.Trace.Tagging
                 new ReadOnlyProperty<AwsSdkTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
                 new ReadOnlyProperty<AwsSdkTags, string>(Trace.Tags.AwsAgentName, t => t.AgentName),
                 new Property<AwsSdkTags, string>(Trace.Tags.AwsOperationName, t => t.Operation, (t, v) => t.Operation = v),
+                new Property<AwsSdkTags, string>(Trace.Tags.AwsRegion, t => t.Region, (t, v) => t.Region = v),
                 new Property<AwsSdkTags, string>(Trace.Tags.AwsRequestId, t => t.RequestId, (t, v) => t.RequestId = v),
                 new Property<AwsSdkTags, string>(Trace.Tags.AwsServiceName, t => t.Service, (t, v) => t.Service = v),
                 new Property<AwsSdkTags, string>(Trace.Tags.HttpMethod, t => t.HttpMethod, (t, v) => t.HttpMethod = v),
@@ -20,6 +21,8 @@ namespace Datadog.Trace.Tagging
         public string AgentName => "dotnet-aws-sdk";
 
         public string Operation { get; set; }
+
+        public string Region { get; set; }
 
         public string RequestId { get; set; }
 

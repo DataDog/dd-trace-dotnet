@@ -6,6 +6,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
     public interface IRequestContext
     {
         /// <summary>
+        /// Gets the client config
+        /// </summary>
+        IClientConfig ClientConfig { get; }
+
+        /// <summary>
         /// Gets the Request
         /// </summary>
         IRequest Request { get; }
