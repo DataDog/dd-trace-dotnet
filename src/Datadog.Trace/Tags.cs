@@ -318,6 +318,26 @@ namespace Datadog.Trace
         /// </summary>
         public const string Measured = "_dd.measured";
 
+        /// <summary>
+        /// The name of the Msmq command the message was published to.
+        /// </summary>
+        public const string MsmqCommand = "msmq.command";
+
+        /// <summary>
+        /// Is the msmq queue supporting transactional messages
+        /// </summary>
+        public const string MsmqIsTransactionalQueue = "msmq.queue.transactional";
+
+        /// <summary>
+        /// The name of the Msmq queue the message was published to, containing host name and path.
+        /// </summary>
+        public const string MsmqQueuePath = "msmq.queue.path";
+
+        /// <summary>
+        /// A boolean indicating if it's part of a transaction.
+        /// </summary>
+        public const string MsmqMessageWithTransaction = "msmq.message.transactional";
+
         internal const string ElasticsearchAction = "elasticsearch.action";
 
         internal const string ElasticsearchMethod = "elasticsearch.method";

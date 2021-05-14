@@ -954,6 +954,86 @@
     ]
   },
   {
+    "name": "Msmq",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Messaging",
+          "type": "System.Messaging.MessageQueue",
+          "method": "Purge",
+          "signature_types": [
+            "System.Void"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_Purge_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Messaging",
+          "type": "System.Messaging.MessageQueue",
+          "method": "ReceiveCurrent",
+          "signature_types": [
+            "System.Messaging.Message",
+            "System.TimeSpan",
+            "System.Int32",
+            "System.Messaging.Interop.CursorHandle",
+            "System.Messaging.MessagePropertyFilter",
+            "System.Messaging.MessageQueueTransaction",
+            "System.Messaging.MessageQueueTransactionType"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_ReceiveCurrent_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Messaging",
+          "type": "System.Messaging.MessageQueue",
+          "method": "SendInternal",
+          "signature_types": [
+            "System.Void",
+            "System.Object",
+            "System.Messaging.MessageQueueTransaction",
+            "System.Messaging.MessageQueueTransactionType"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_SendInternal_Integration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "MsTestV2",
     "method_replacements": [
       {
