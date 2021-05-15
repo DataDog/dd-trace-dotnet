@@ -24,6 +24,46 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     .WithTag("aws.operation", "CreateQueue")
                     .WithTag("aws.queue.name", "MySQSQueue2"),
 
+            // SendMessagesWithInjectedHeaders
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.SendMessage")
+                    .WithTag("aws.operation", "SendMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.ReceiveMessage")
+                    .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessage")
+                    .WithTag("aws.operation", "DeleteMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.SendMessageBatch")
+                    .WithTag("aws.operation", "SendMessageBatch"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.ReceiveMessage")
+                    .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessageBatch")
+                    .WithTag("aws.operation", "DeleteMessageBatch"),
+
+            // SendMessagesWithoutInjectedHeaders
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.SendMessage")
+                    .WithTag("aws.operation", "SendMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.ReceiveMessage")
+                    .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessage")
+                    .WithTag("aws.operation", "DeleteMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.SendMessageBatch")
+                    .WithTag("aws.operation", "SendMessageBatch"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.ReceiveMessage")
+                    .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessageBatch")
+                    .WithTag("aws.operation", "DeleteMessageBatch"),
+
             // SendMessageAsync
             AwsSqsSpan.GetDefault()
                     .WithResource("SQS.SendMessage")
@@ -86,6 +126,46 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     .WithResource("SQS.CreateQueue")
                     .WithTag("aws.operation", "CreateQueue")
                     .WithTag("aws.queue.name", "MySQSQueue2"),
+
+            // SendMessagesWithInjectedHeadersAsync
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.SendMessage")
+                    .WithTag("aws.operation", "SendMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.ReceiveMessage")
+                    .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessage")
+                    .WithTag("aws.operation", "DeleteMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.SendMessageBatch")
+                    .WithTag("aws.operation", "SendMessageBatch"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.ReceiveMessage")
+                    .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessageBatch")
+                    .WithTag("aws.operation", "DeleteMessageBatch"),
+
+            // SendMessagesWithoutInjectedHeadersAsync
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.SendMessage")
+                    .WithTag("aws.operation", "SendMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.ReceiveMessage")
+                    .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessage")
+                    .WithTag("aws.operation", "DeleteMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.SendMessageBatch")
+                    .WithTag("aws.operation", "SendMessageBatch"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.ReceiveMessage")
+                    .WithTag("aws.operation", "ReceiveMessage"),
+            AwsSqsSpan.GetDefault()
+                    .WithResource("SQS.DeleteMessageBatch")
+                    .WithTag("aws.operation", "DeleteMessageBatch"),
 
             // SendMessageAsync
             AwsSqsSpan.GetDefault()

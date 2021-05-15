@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using Datadog.Trace;
+using Newtonsoft.Json;
 
 namespace Samples.AWS.SQS
 {
@@ -22,11 +23,6 @@ namespace Samples.AWS.SQS
 
         public static async Task SendAndReceiveMessages(AmazonSQSClient sqsClient)
         {
-            Console.WriteLine("Starting Async Receive Threads");
-
-            var receiveMessageTask = Task.Run(() => ReceiveMessageAndDeleteMessageAsync(sqsClient)); // Run on separate thread
-            var receiveMessageBatchTask = Task.Run(() => ReceiveMessagesAndDeleteMessageBatchAsync(sqsClient)); // Run on separate thread
-
             Console.WriteLine("Beginning Async methods");
 
             using (var scope = Tracer.Instance.StartActive("async-methods"))
@@ -34,6 +30,21 @@ namespace Samples.AWS.SQS
                 await CreateSqsQueueAsync(sqsClient);
                 await ListQueuesAsync(sqsClient);
                 await GetQueueUrlAsync(sqsClient);
+                await PurgeQueueAsync(sqsClient);
+
+                try
+                {
+                    await RunValidationsWithoutReceiveLoopAsync(sqsClient);
+                }
+                catch
+                {
+                    await PurgeQueueAsync(sqsClient);
+                    await DeleteQueueAsync(sqsClient);
+                    return;
+                }
+
+                var receiveMessageTask = Task.Run(() => ReceiveMessageAndDeleteMessageAsync(sqsClient)); // Run on separate thread
+                var receiveMessageBatchTask = Task.Run(() => ReceiveMessagesAndDeleteMessageBatchAsync(sqsClient)); // Run on separate thread
 
                 await SendMessageAsync(sqsClient);
                 _messsageBarrier.SignalAndWait(); // Start the SingleMessage receive loop
@@ -83,6 +94,117 @@ namespace Samples.AWS.SQS
             var response2 = await sqsClient.GetQueueUrlAsync(BatchedQueue);
             Console.WriteLine($"GetQueueUrlAsync(string) HTTP status code: {response2.HttpStatusCode}");
             _batchedQueueUrl = response2.QueueUrl;
+        }
+
+        private static async Task RunValidationsWithoutReceiveLoopAsync(AmazonSQSClient sqsClient)
+        {
+            // We'll throw eagerly throw exceptions when doing validation
+            // to make it easier to debug later
+            await SendMessagesWithInjectedHeadersAsync(sqsClient);
+            await SendMessagesWithoutInjectedHeadersAsync(sqsClient);
+        }
+
+        private static async Task SendMessagesWithInjectedHeadersAsync(AmazonSQSClient sqsClient)
+        {
+            // Send one message, receive it, and parse it for its headers
+            await sqsClient.SendMessageAsync(_singleQueueUrl, "SendMessageAsync_SendMessageRequest");
+
+            var receiveMessageRequest = new ReceiveMessageRequest()
+            {
+                QueueUrl = _singleQueueUrl,
+                MessageAttributeNames = new List<string>() { ".*" }
+            };
+            var receiveMessageResponse1 = await sqsClient.ReceiveMessageAsync(receiveMessageRequest);
+            await sqsClient.DeleteMessageAsync(_singleQueueUrl, receiveMessageResponse1.Messages.First().ReceiptHandle);
+            Common.AssertDistributedTracingHeaders(receiveMessageResponse1.Messages);
+
+            // Send a batch of messages, receive them, and parse them for headers
+            var sendMessageBatchRequest = new SendMessageBatchRequest
+            {
+                Entries = new List<SendMessageBatchRequestEntry>
+                {
+                    new("message1", "SendMessageBatchAsync: FirstMessageContent"),
+                    new("message2", "SendMessageBatchAsync: SecondMessageContent"),
+                    new("message3", "SendMessageBatchAsync: ThirdMessageContent")
+                },
+                QueueUrl = _batchedQueueUrl
+            };
+            await sqsClient.SendMessageBatchAsync(sendMessageBatchRequest);
+
+            var receiveMessageBatchRequest = new ReceiveMessageRequest()
+            {
+                QueueUrl = _batchedQueueUrl,
+                MessageAttributeNames = new List<string>() { ".*" },
+                MaxNumberOfMessages = 3
+            };
+            var receiveMessageBatchResponse1 = await sqsClient.ReceiveMessageAsync(receiveMessageBatchRequest);
+
+            await sqsClient.DeleteMessageBatchAsync(_singleQueueUrl, receiveMessageResponse1.Messages.Select(m => new DeleteMessageBatchRequestEntry(m.MessageId, m.ReceiptHandle)).ToList());
+            Common.AssertDistributedTracingHeaders(receiveMessageBatchResponse1.Messages);
+        }
+
+        private static async Task SendMessagesWithoutInjectedHeadersAsync(AmazonSQSClient sqsClient)
+        {
+            var commonMessageAttributes = new Dictionary<string, MessageAttributeValue>()
+            {
+                { "attribute1", new MessageAttributeValue(){ DataType = "String", StringValue = "value1" } },
+                { "attribute2", new MessageAttributeValue(){ DataType = "String", StringValue = "value2" } },
+                { "attribute3", new MessageAttributeValue(){ DataType = "String", StringValue = "value3" } },
+                { "attribute4", new MessageAttributeValue(){ DataType = "String", StringValue = "value4" } },
+                { "attribute5", new MessageAttributeValue(){ DataType = "String", StringValue = "value5" } },
+                { "attribute6", new MessageAttributeValue(){ DataType = "String", StringValue = "value6" } },
+                { "attribute7", new MessageAttributeValue(){ DataType = "String", StringValue = "value7" } },
+                { "attribute8", new MessageAttributeValue(){ DataType = "String", StringValue = "value8" } },
+                { "attribute9", new MessageAttributeValue(){ DataType = "String", StringValue = "value9" } },
+                { "attribute10", new MessageAttributeValue(){ DataType = "String", StringValue = "value10" } },
+            };
+
+            // Send one message, receive it, and parse it for its headers
+            var sendRequest = new SendMessageRequest()
+            {
+                QueueUrl = _singleQueueUrl,
+                MessageBody = "SendMessageAsync_SendMessageRequest",
+                MessageAttributes = commonMessageAttributes
+            };
+
+            // Send a message with the SendMessageRequest argument
+            await sqsClient.SendMessageAsync(sendRequest);
+
+            var receiveMessageRequest = new ReceiveMessageRequest()
+            {
+                QueueUrl = _singleQueueUrl,
+                MessageAttributeNames = new List<string>() { ".*" }
+            };
+            var receiveMessageResponse1 = await sqsClient.ReceiveMessageAsync(receiveMessageRequest);
+            await sqsClient.DeleteMessageAsync(_singleQueueUrl, receiveMessageResponse1.Messages.First().ReceiptHandle);
+
+            // Validate that the trace id made it into the message
+            Common.AssertNoDistributedTracingHeaders(receiveMessageResponse1.Messages);
+
+            // Send a batch of messages, receive them, and parse them for headers
+            var sendMessageBatchRequest = new SendMessageBatchRequest
+            {
+                Entries = new List<SendMessageBatchRequestEntry>
+                {
+                    new("message1", "SendMessageBatchAsync: FirstMessageContent") { MessageAttributes = commonMessageAttributes },
+                    new("message2", "SendMessageBatchAsync: SecondMessageContent") { MessageAttributes = commonMessageAttributes },
+                    new("message3", "SendMessageBatchAsync: ThirdMessageContent") { MessageAttributes = commonMessageAttributes }
+                },
+                QueueUrl = _batchedQueueUrl
+            };
+            await sqsClient.SendMessageBatchAsync(sendMessageBatchRequest);
+
+            var receiveMessageBatchRequest = new ReceiveMessageRequest()
+            {
+                QueueUrl = _batchedQueueUrl,
+                MessageAttributeNames = new List<string>() { ".*" },
+                MaxNumberOfMessages = 3
+            };
+            var receiveMessageBatchResponse1 = await sqsClient.ReceiveMessageAsync(receiveMessageBatchRequest);
+            await sqsClient.DeleteMessageBatchAsync(_singleQueueUrl, receiveMessageResponse1.Messages.Select(m => new DeleteMessageBatchRequestEntry(m.MessageId, m.ReceiptHandle)).ToList());
+
+            // Validate that the trace id made it into the messages
+            Common.AssertNoDistributedTracingHeaders(receiveMessageBatchResponse1.Messages);
         }
 
         private static async Task SendMessageAsync(AmazonSQSClient sqsClient)
@@ -138,9 +260,9 @@ namespace Samples.AWS.SQS
             {
                 Entries = new List<SendMessageBatchRequestEntry>
                 {
-                    new SendMessageBatchRequestEntry("message1", "SendMessageBatchAsync: FirstMessageContent"),
-                    new SendMessageBatchRequestEntry("message2", "SendMessageBatchAsync: SecondMessageContent"),
-                    new SendMessageBatchRequestEntry("message3", "SendMessageBatchAsync: ThirdMessageContent")
+                    new("message1", "SendMessageBatchAsync: FirstMessageContent"),
+                    new("message2", "SendMessageBatchAsync: SecondMessageContent"),
+                    new("message3", "SendMessageBatchAsync: ThirdMessageContent")
                 },
                 QueueUrl = _batchedQueueUrl
             };
@@ -149,9 +271,9 @@ namespace Samples.AWS.SQS
 
             var sendMessageBatchRequestEntryList = new List<SendMessageBatchRequestEntry>
             {
-                new SendMessageBatchRequestEntry("message1", "SendMessageBatchAsync_SendMessageBatchRequestEntries: FirstMessageContent"),
-                new SendMessageBatchRequestEntry("message2", "SendMessageBatchAsync_SendMessageBatchRequestEntries: SecondMessageContent"),
-                new SendMessageBatchRequestEntry("message3", "SendMessageBatchAsync_SendMessageBatchRequestEntries: ThirdMessageContent")
+                new("message1", "SendMessageBatchAsync_SendMessageBatchRequestEntries: FirstMessageContent"),
+                new("message2", "SendMessageBatchAsync_SendMessageBatchRequestEntries: SecondMessageContent"),
+                new("message3", "SendMessageBatchAsync_SendMessageBatchRequestEntries: ThirdMessageContent")
             };
             var response2 = await sqsClient.SendMessageBatchAsync(_batchedQueueUrl, sendMessageBatchRequestEntryList);
             Console.WriteLine($"SendMessageBatchAsync HTTP status code: {response2.HttpStatusCode}");
@@ -202,6 +324,9 @@ namespace Samples.AWS.SQS
             };
             var purgeQueueResponse = await sqsClient.PurgeQueueAsync(purgeQueueRequest);
             Console.WriteLine($"PurgeQueueAsync HTTP status code: {purgeQueueResponse.HttpStatusCode}");
+
+            var response2 = await sqsClient.PurgeQueueAsync(_batchedQueueUrl);
+            Console.WriteLine($"PurgeQueueAsync HTTP status code: {response2.HttpStatusCode}");
         }
 
         private static async Task DeleteQueueAsync(AmazonSQSClient sqsClient)
