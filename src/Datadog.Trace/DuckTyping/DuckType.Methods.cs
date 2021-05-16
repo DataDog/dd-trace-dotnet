@@ -366,7 +366,7 @@ namespace Datadog.Trace.DuckTyping
                     if (targetMethod.IsPublic)
                     {
                         // We can emit a normal call if we have a public instance with a public target method.
-                        il.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                        il.EmitCall(targetMethod.IsStatic || targetMethod.DeclaringType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
                     }
                     else
                     {
@@ -411,7 +411,7 @@ namespace Datadog.Trace.DuckTyping
                     // Check if we can emit a normal Call/CallVirt to the target method
                     if (!targetMethod.ContainsGenericParameters)
                     {
-                        dynIL.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                        dynIL.EmitCall(targetMethod.IsStatic || targetMethod.DeclaringType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
                     }
                     else
                     {
