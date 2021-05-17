@@ -16,11 +16,6 @@ ENV COR_PROFILER="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
 ENV CORECLR_ENABLE_PROFILING="1"
 ENV CORECLR_PROFILER=$COR_PROFILER
 
-ENV DD_DOTNET_TRACER_HOME="C:\\Program Files\\Datadog\\.NET Tracer"
-ENV DD_INTEGRATIONS="$DD_DOTNET_TRACER_HOME\\integrations.json"
-ENV COR_PROFILER_PATH="$DD_DOTNET_TRACER_HOME\\Datadog.Trace.ClrProfiler.Native.dll"
-ENV CORECLR_PROFILER_PATH=$COR_PROFILER_PATH
-
 # We recommend always using the latest release and regularly updating: https://github.com/DataDog/dd-trace-dotnet/releases/latest
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 

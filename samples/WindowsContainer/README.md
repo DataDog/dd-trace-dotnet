@@ -10,4 +10,4 @@ This repo contains a(n) example of setting up Datadog .NET automatic tracing for
 - Run `docker-compose up` & navigate to `http://localhost:8000` 
 
 #### Resulting .NET 5 APM traces within Datadog: 
-![flamegraph](https://i.ibb.co/pW419XH/Image-2021-05-17-at-11-30-58-AM.png)
+![trace_view](https://user-images.githubusercontent.com/7599081/118568633-19d91300-b72d-11eb-8ea1-02ee10d388a0.png)
