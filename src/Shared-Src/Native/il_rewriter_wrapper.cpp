@@ -287,4 +287,5 @@ ILInstr* ILRewriterWrapper::LoadStr(mdString string_ref) const {
   pNewInstr->m_opcode = CEE_LDSTR;
   pNewInstr->m_Arg32 = string_ref;
   m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
 }

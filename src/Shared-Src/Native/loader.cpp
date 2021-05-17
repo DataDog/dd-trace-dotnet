@@ -47,37 +47,6 @@ namespace shared {
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
-    ILInstr* CreateILInstr(ILRewriter& rewriter, ILInstr* firstInstr, unsigned int opcode) {
-        ILInstr* instr = rewriter.NewILInstr();
-        instr->m_opcode = opcode;
-        rewriter.InsertBefore(firstInstr, instr);
-        return instr;
-    }
-
-    ILInstr* CreateILInstrArg8(ILRewriter& rewriter, ILInstr* firstInstr, unsigned int opcode, INT8 arg8) {
-        ILInstr* instr = rewriter.NewILInstr();
-        instr->m_opcode = opcode;
-        instr->m_Arg8 = arg8;
-        rewriter.InsertBefore(firstInstr, instr);
-        return instr;
-    }
-
-    ILInstr* CreateILInstrArg32(ILRewriter& rewriter, ILInstr* firstInstr, unsigned int opcode, INT32 arg32) {
-        ILInstr* instr = rewriter.NewILInstr();
-        instr->m_opcode = opcode;
-        instr->m_Arg32 = arg32;
-        rewriter.InsertBefore(firstInstr, instr);
-        return instr;
-    }
-
-    ILInstr* CreateILInstrArg64(ILRewriter& rewriter, ILInstr* firstInstr, unsigned int opcode, INT64 arg64) {
-        ILInstr* instr = rewriter.NewILInstr();
-        instr->m_opcode = opcode;
-        instr->m_Arg64 = arg64;
-        rewriter.InsertBefore(firstInstr, instr);
-        return instr;
-    }
-
     void Loader::CreateNewSingeltonInstance(ICorProfilerInfo4* pCorProfilerInfo,
                                             std::function<void(const std::string& str)> log_debug_callback,
                                             std::function<void(const std::string& str)> log_info_callback,
