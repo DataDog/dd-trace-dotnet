@@ -38,7 +38,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.GenericParameterTask, "System.Threading.Tasks.Task`1<T>" };
             yield return new object[] { ClrNames.ObjectTask, "System.Threading.Tasks.Task`1<System.Object>" };
             yield return new object[] { ClrNames.Int32Task, "System.Threading.Tasks.Task`1<System.Int32>" };
-    }
+            yield return new object[] { ClrNames.TimeSpan, "System.TimeSpan" };
+        }
 
         [Fact]
         public void EveryMemberOfTypeNamesIsRepresented()
