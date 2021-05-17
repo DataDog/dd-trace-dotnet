@@ -100,7 +100,7 @@ namespace PrepareRelease
                                                                    }
                                          };
 
-            // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
+            // find all methods in Datadog.Trace.dll with [InterceptMethod]
             // and create objects that will generate correct JSON schema
             var integrations = from assembly in assemblies
                                from wrapperType in assembly.GetTypes()
