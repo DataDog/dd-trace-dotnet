@@ -44,8 +44,8 @@ namespace shared {
             WStr("System.Xml"),
             WStr("System.Web"),
             WStr("System.Web.ApplicationServices"),*/
-            WStr("Microsoft.Web.Infrastructure"),
-            WStr("Google.Protobuf"),
+            //WStr("Microsoft.Web.Infrastructure"),
+            //WStr("Google.Protobuf"),
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
@@ -734,7 +734,7 @@ namespace shared {
             return hr;
         }
 
-        Debug("Loader::InjectLoaderToModuleInitializer: Creating <Module>.DD_LoadInitializationAssemblies() in ModuleID=" + ToString(module_id));
+        Debug("Loader::InjectLoaderToModuleInitializer: Creating <Module>." + ToString(loader_method_name) + "() in ModuleID=" + ToString(module_id));
 
         //
         // If the loader method cannot be found we create <Module>.DD_LoadInitializationAssemblies() mdMethodDef
