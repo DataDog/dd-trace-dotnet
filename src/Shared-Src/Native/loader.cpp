@@ -47,6 +47,15 @@ namespace shared {
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
+    WSTRING ReplaceString(WSTRING subject, const WSTRING& search, const WSTRING& replace) {
+        size_t pos = 0;
+        while ((pos = subject.find(search, pos)) != std::string::npos) {
+            subject.replace(pos, search.length(), replace);
+            pos += replace.length();
+        }
+        return subject;
+    }
+
     void Loader::CreateNewSingeltonInstance(ICorProfilerInfo4* pCorProfilerInfo,
                                             std::function<void(const std::string& str)> log_debug_callback,
                                             std::function<void(const std::string& str)> log_info_callback,
@@ -202,10 +211,10 @@ namespace shared {
         //
         // check if the loader has been already loaded for this AppDomain
         //
-        if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
-            Warn("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded in the AppDomain.  [AppDomainID=" + ToString(app_domain_id) + "]");
-            return false;
-        }
+        //if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
+        //    Warn("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded in the AppDomain.  [AppDomainID=" + ToString(app_domain_id) + "]");
+        //    return false;
+        //}
 
         //
         // skip libraries from the exclusion list.
@@ -285,8 +294,8 @@ namespace shared {
         //
         //  class <Module> {
         //
-        //      [DllImport("NativeProfilerFile.extension")]
-        //      static extern bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize);
+        //      [DllImport("NativeProfilerFile.extension", CharSet = CharSet.Unicode)]
+        //      static extern bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, string moduleName);
         //
         //      static <Module>() {
         //          DD_LoadInitializationAssemblies();
@@ -294,7 +303,7 @@ namespace shared {
         //
         //      static void DD_LoadInitializationAssemblies()
         //      {
-        //          if (GetAssemblyAndSymbolsBytes(out var assemblyPtr, out var assemblySize, out var symbolsPtr, out var symbolsSize))
+        //          if (GetAssemblyAndSymbolsBytes(out var assemblyPtr, out var assemblySize, out var symbolsPtr, out var symbolsSize, "[ModuleName]"))
         //          {
         //              byte[] assemblyBytes = new byte[assemblySize];
         //              Marshal.Copy(assemblyPtr, assemblyBytes, 0, assemblySize);
@@ -332,14 +341,14 @@ namespace shared {
         //
         // Check if the static void <Module>.DD_LoadInitializationAssemblies() mdMethodDef has been already injected.
         //
-        const LPCWSTR loader_method_name = WStr("DD_LoadInitializationAssemblies");
+        auto loader_method_name = WSTRING(WStr("DD_LoadInitializationAssemblies_")) + ReplaceString(assembly_name_wstring, WStr("."), WStr(""));
         COR_SIGNATURE loader_method_signature[] = {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
                 0,                              // Number of parameters
                 ELEMENT_TYPE_VOID,              // Return type
         };
         mdMethodDef loader_method_method_def;
-        hr = metadata_import->FindMethod(module_type_def, loader_method_name, loader_method_signature, sizeof(loader_method_signature), &loader_method_method_def);
+        hr = metadata_import->FindMethod(module_type_def, loader_method_name.c_str(), loader_method_signature, sizeof(loader_method_signature), &loader_method_method_def);
         if (SUCCEEDED(hr)) {
             Info("Loader::InjectLoaderToModuleInitializer: Loader was already injected in ModuleID=" + ToString(module_id));
             return hr;
@@ -670,6 +679,16 @@ namespace shared {
             return hr;
         }
 
+        //
+        // Create a string representing the assembly name
+        //
+        mdString assembly_name_token;
+        hr = metadata_emit->DefineUserString(assembly_name_wstring.c_str(), (ULONG)assembly_name_wstring.length(), &assembly_name_token);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: AssemblyName DefineUserString failed");
+            return hr;
+        }
+
         // **************************************************************************************************************
 
         //
@@ -686,7 +705,7 @@ namespace shared {
         //
         // If the loader method cannot be found we create <Module>.DD_LoadInitializationAssemblies() mdMethodDef
         //
-        hr = metadata_emit->DefineMethod(module_type_def, loader_method_name, mdStatic, loader_method_signature, sizeof(loader_method_signature), 0, 0, &loader_method_method_def);
+        hr = metadata_emit->DefineMethod(module_type_def, loader_method_name.c_str(), mdStatic, loader_method_signature, sizeof(loader_method_signature), 0, 0, &loader_method_method_def);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: Error creating the loader method.");
             return hr;
@@ -729,7 +748,7 @@ namespace shared {
         ILRewriterWrapper rewriter_wrapper(&rewriter_void);
         rewriter_wrapper.SetILPosition(rewriter_void.GetILList()->m_pNext);
 
-        // Step 1) Call bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, int appDomainId)
+        // Step 1) Call bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, string moduleName)
 
         // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index 0)
         rewriter_wrapper.LoadLocalAddress(0);
@@ -739,7 +758,9 @@ namespace shared {
         rewriter_wrapper.LoadLocalAddress(2);
         // ldloca.s 3 : Load the address of the "symbolsSize" variable (locals index 3)
         rewriter_wrapper.LoadLocalAddress(3);
-        // call bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
+        // ldstr assembly name
+        rewriter_wrapper.LoadStr(assembly_name_token);
+        // call bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, string moduleName)
         rewriter_wrapper.CallMember(pinvoke_method_def, false);
         // check if the return of the method call is true or false
         ILInstr* pBranchFalseInstr = rewriter_wrapper.CreateInstr(CEE_BRFALSE);
@@ -985,12 +1006,12 @@ namespace shared {
         //
         // Define a method on the managed side that will PInvoke into the profiler
         // method:
-        // C++: bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize)
-        // C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
+        // C++: bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize, string moduleName)
+        // C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, string moduleName)
         const LPCWSTR get_assembly_and_symbols_bytes_name = WStr("GetAssemblyAndSymbolsBytes");
         COR_SIGNATURE get_assembly_bytes_signature[] = {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
-                4,                              // Number of parameters
+                5,                              // Number of parameters
                 ELEMENT_TYPE_BOOLEAN,           // Return type
                 ELEMENT_TYPE_BYREF,             // List of parameter types
                 ELEMENT_TYPE_I,
@@ -1000,18 +1021,13 @@ namespace shared {
                 ELEMENT_TYPE_I,
                 ELEMENT_TYPE_BYREF,
                 ELEMENT_TYPE_I4,
+                ELEMENT_TYPE_STRING
         };
         HRESULT hr = metadata_emit->DefineMethod(module_type_def, get_assembly_and_symbols_bytes_name,
             mdStatic | mdPinvokeImpl | mdHideBySig, get_assembly_bytes_signature,
-            sizeof(get_assembly_bytes_signature), 0, 0, result_method_def);
+            sizeof(get_assembly_bytes_signature), 0, miPreserveSig, result_method_def);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: DefineMethod for GetAssemblyAndSymbolsBytes failed.");
-            return hr;
-        }
-
-        metadata_emit->SetMethodImplFlags(*result_method_def, miPreserveSig);
-        if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: SetMethodImplFlags for GetAssemblyAndSymbolsBytes failed.");
             return hr;
         }
 
@@ -1026,7 +1042,7 @@ namespace shared {
             return hr;
         }
 
-        hr = metadata_emit->DefinePinvokeMap(*result_method_def, 0, get_assembly_and_symbols_bytes_name, profiler_ref);
+        hr = metadata_emit->DefinePinvokeMap(*result_method_def, pmCharSetUnicode, get_assembly_and_symbols_bytes_name, profiler_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: DefinePinvokeMap for GetAssemblyAndSymbolsBytes failed");
             return hr;
@@ -1035,11 +1051,16 @@ namespace shared {
         return hr;
     }
 
-    bool Loader::GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize) {
+    bool Loader::GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize, WCHAR* moduleName) {
         //
         // global lock
         //
         std::lock_guard<std::mutex> guard(loaders_loaded_mutex_);
+
+        //
+        // gets module name
+        //
+        WSTRING module_name = WSTRING(moduleName);
 
         //
         // gets the current thread id
@@ -1059,7 +1080,7 @@ namespace shared {
             Warn("Loader::GetAssemblyAndSymbolsBytes: AppDomainID could not be retrieved.");
         }
 
-        std::string trait = "[AppDomainId=" + ToString(app_domain_id) + ", ThreadId=" + ToString(thread_id) + "]";
+        std::string trait = "[AppDomainId=" + ToString(app_domain_id) + ", ThreadId=" + ToString(thread_id) + ", ModuleName=" + ToString(module_name) + "]";
 
         //
         // check if the loader has been already loaded for this AppDomain

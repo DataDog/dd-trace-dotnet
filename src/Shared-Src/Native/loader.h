@@ -191,7 +191,7 @@ namespace shared {
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
 
-        bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize);
+        bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize, WCHAR* moduleName);
     };
 
 }  // namespace shared
