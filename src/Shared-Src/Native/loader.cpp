@@ -44,6 +44,8 @@ namespace shared {
             WStr("System.Xml"),
             WStr("System.Web"),
             WStr("System.Web.ApplicationServices"),*/
+            WStr("Microsoft.Web.Infrastructure"),
+            WStr("Google.Protobuf"),
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
