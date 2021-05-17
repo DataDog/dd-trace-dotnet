@@ -1,6 +1,4 @@
 #if NET461 || NET452
-#pragma warning disable SA1402 // File may only contain a single class
-#pragma warning disable SA1649 // File name must match first type name
 
 using System;
 using System.Linq;
@@ -13,56 +11,19 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetWebFormsTestsCallsiteClassic : AspNetWebFormsTests
-    {
-        public AspNetWebFormsTestsCallsiteClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebFormsTestsCallsiteIntegrated : AspNetWebFormsTests
-    {
-        public AspNetWebFormsTestsCallsiteIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebFormsTestsCallTargetClassic : AspNetWebFormsTests
-    {
-        public AspNetWebFormsTestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebFormsTestsCallTargetIntegrated : AspNetWebFormsTests
-    {
-        public AspNetWebFormsTestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public abstract class AspNetWebFormsTests : TestHelper, IClassFixture<IisFixture>
+    public class AspNetWebFormsTests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
 
         // NOTE: Would pass this in addition to the name/output to the new constructor if we removed the Samples.WebForms copied project in favor of the demo repo source project...
         // $"../dd-trace-demo/dotnet-coffeehouse/Datadog.Coffeehouse.WebForms",
-        public AspNetWebFormsTests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode)
+        public AspNetWebFormsTests(IisFixture iisFixture, ITestOutputHelper output)
             : base("WebForms", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
-            SetCallTargetSettings(enableCallTarget);
 
             _iisFixture = iisFixture;
-            _iisFixture.TryStartIis(this, classicMode);
+            _iisFixture.TryStartIis(this, classicMode: false);
         }
 
         [Theory]
