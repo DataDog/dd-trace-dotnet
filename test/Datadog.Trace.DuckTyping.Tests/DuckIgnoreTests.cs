@@ -37,6 +37,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             Assert.Equal((int)instance.Value, (int)proxy.Value);
             Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValue());
             Assert.Equal(ValuesDuckType.Third.ToString(), ((IGetValue)proxy).GetValueProp);
+            Assert.Equal(42, proxy.GetAnswerToMeaningOfLife());
         }
 
         [Fact]
@@ -47,6 +48,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             Assert.Equal((int)instance.Value, (int)proxy.Value);
             Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValue());
             Assert.Equal(ValuesDuckType.Third.ToString(), ((IGetValue)proxy).GetValueProp);
+            Assert.Equal(42, proxy.GetAnswerToMeaningOfLife());
         }
 
         [DuckCopy]
@@ -82,6 +84,8 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             [DuckIgnore]
             public string GetValue() => Value.ToString();
+
+            public abstract int GetAnswerToMeaningOfLife();
         }
 
         public class VirtualPrivateProxy : IGetValue
@@ -93,11 +97,15 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             [DuckIgnore]
             public string GetValue() => Value.ToString();
+
+            public virtual int GetAnswerToMeaningOfLife() => default;
         }
 
         private readonly struct PrivateStruct
         {
             public readonly Values Value => Values.Third;
+
+            public int GetAnswerToMeaningOfLife() => 42;
         }
 
         public interface IGetValue
