@@ -6,7 +6,7 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
-    internal class MsmqCommon
+    internal static class MsmqCommon
     {
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(MsmqConstants.IntegrationName);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsmqCommon));
