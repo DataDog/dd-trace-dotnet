@@ -155,7 +155,7 @@ namespace shared {
                 const std::vector<WSTRING>& assembly_string_vector,
                 mdTypeRef string_type_ref);
 
-        HRESULT GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMethodDef* result_method_def);
+        HRESULT GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMemberRef securitycriticalattribute_ctor_member_ref, mdMethodDef* result_method_def);
 
         inline RuntimeInfo GetRuntimeInformation() {
             COR_PRF_RUNTIME_TYPE runtime_type;

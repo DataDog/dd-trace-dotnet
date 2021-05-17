@@ -297,12 +297,15 @@ namespace shared {
         //  class <Module> {
         //
         //      [DllImport("NativeProfilerFile.extension", CharSet = CharSet.Unicode)]
+        //      [SecurityCritical]
         //      static extern bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, string moduleName);
         //
+        //      [SecurityCritical]
         //      static <Module>() {
         //          DD_LoadInitializationAssemblies();
         //      }
         //
+        //      [SecurityCritical]
         //      static void DD_LoadInitializationAssemblies()
         //      {
         //          if (GetAssemblyAndSymbolsBytes(out var assemblyPtr, out var assemblySize, out var symbolsPtr, out var symbolsSize, "[ModuleName]"))
@@ -491,6 +494,17 @@ namespace shared {
         }
 
         //
+        // get a TypeRef for System.Security.SecurityCriticalAttribute
+        //
+        const LPCWSTR system_security_securitycriticalattribute_name = WStr("System.Security.SecurityCriticalAttribute");
+        mdTypeRef securitycriticalattribute_type_ref;
+        hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, system_security_securitycriticalattribute_name, &securitycriticalattribute_type_ref);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: DefineTypeRefByName failed");
+            return hr;
+        }
+
+        //
         // MemberRefs
         //
 
@@ -654,6 +668,24 @@ namespace shared {
         }
 
         //
+        // Create method member ref for System.Security.SecurityCriticalAttribute..ctor()
+        const LPCWSTR ctor_name = WStr(".ctor");
+        COR_SIGNATURE ctor_signature[] = {
+                IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
+                0,                              // Number of parameters
+                ELEMENT_TYPE_VOID,              // Return type
+        };
+
+        mdMemberRef securitycriticalattribute_ctor_member_ref;
+        hr = metadata_emit->DefineMemberRef(securitycriticalattribute_type_ref,
+            ctor_name, ctor_signature,
+            sizeof(ctor_signature), &securitycriticalattribute_ctor_member_ref);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: System.Security.SecurityCriticalAttribute..ctor() DefineMemberRef failed");
+            return hr;
+        }
+
+        //
         // UserStrings definitions
         //
 
@@ -697,7 +729,7 @@ namespace shared {
         // create PInvoke method definition to the native GetAssemblyAndSymbolsBytes method.
         //
         mdMethodDef pinvoke_method_def = mdMethodDefNil;
-        hr = GetGetAssemblyAndSymbolsBytesMethodDef(metadata_emit, module_type_def, &pinvoke_method_def);
+        hr = GetGetAssemblyAndSymbolsBytesMethodDef(metadata_emit, module_type_def, securitycriticalattribute_ctor_member_ref, &pinvoke_method_def);
         if (FAILED(hr)) {
             return hr;
         }
@@ -710,6 +742,17 @@ namespace shared {
         hr = metadata_emit->DefineMethod(module_type_def, loader_method_name.c_str(), mdStatic, loader_method_signature, sizeof(loader_method_signature), 0, 0, &loader_method_method_def);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: Error creating the loader method.");
+            return hr;
+        }
+
+        //
+        // Set SecurityCriticalAttribute to the loader method.
+        //
+        BYTE customAttributeData[] = {0x01, 0x00, 0x00, 0x00};
+        mdCustomAttribute security_critical_attribute;
+        hr = metadata_emit->DefineCustomAttribute(loader_method_method_def, securitycriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: Error creating the security critical attribute for the loader method.");
             return hr;
         }
 
@@ -934,6 +977,17 @@ namespace shared {
         }
 
         //
+        // Set SecurityCriticalAttribute to the loader method.
+        //
+        BYTE cctor_customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
+        mdCustomAttribute cctor_security_critical_attribute;
+        hr = metadata_emit->DefineCustomAttribute(cctor_method_def, securitycriticalattribute_ctor_member_ref, cctor_customAttributeData, sizeof(cctor_customAttributeData), &cctor_security_critical_attribute);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: Error creating the security critical attribute for the module ..ctor method.");
+            return hr;
+        }
+
+        //
         // At this point we have a mdTypeDef for <Module> and a mdMethodDef for the ..ctor
         // that we can rewrite to load the loader
         //
@@ -1002,7 +1056,7 @@ namespace shared {
       return S_OK;
     }
 
-    HRESULT Loader::GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMethodDef* result_method_def) {
+    HRESULT Loader::GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMemberRef securitycriticalattribute_ctor_member_ref, mdMethodDef* result_method_def) {
         //
         // create PInvoke method definition to the native GetAssemblyAndSymbolsBytes method (interop.cpp)
         //
@@ -1047,6 +1101,14 @@ namespace shared {
         hr = metadata_emit->DefinePinvokeMap(*result_method_def, pmCharSetUnicode, get_assembly_and_symbols_bytes_name, profiler_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: DefinePinvokeMap for GetAssemblyAndSymbolsBytes failed");
+            return hr;
+        }
+
+        BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
+        mdCustomAttribute security_critical_attribute;
+        hr = metadata_emit->DefineCustomAttribute(*result_method_def, securitycriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: Error creating the security critical attribute for the PInvoke method.");
             return hr;
         }
 
