@@ -1,7 +1,7 @@
 # Datadog_Windows_Container
 ### About Repo: 
 
-This repo contains a(n) example of setting up Datadog .NET automatic tracing for a(n) .NET 5 MVC application running on Windows containers. 
+This repo contains an example of setting up Datadog .NET automatic tracing for a .NET 5 MVC application running in a Windows container. 
 
 ### How to use: 
 
