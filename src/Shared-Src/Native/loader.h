@@ -10,6 +10,7 @@
 
 #include "com_ptr.h"
 #include "il_rewriter.h"
+#include "il_rewriter_wrapper.h"
 #include "string.h"
 #include "pal.h"
 
@@ -149,9 +150,10 @@ namespace shared {
         }
 
         HRESULT WriteAssembliesStringArray(
-                ILRewriter& rewriter, const ComPtr<IMetaDataEmit2> metadata_emit,
+                ILRewriterWrapper& rewriter_wrapper,
+                const ComPtr<IMetaDataEmit2> metadata_emit,
                 const std::vector<WSTRING>& assembly_string_vector,
-                ILInstr* pFirstInstr, mdTypeRef string_type_ref);
+                mdTypeRef string_type_ref);
 
         HRESULT GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMethodDef* result_method_def);
 

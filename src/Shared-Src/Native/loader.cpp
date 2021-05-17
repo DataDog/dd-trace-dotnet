@@ -757,140 +757,135 @@ namespace shared {
         ILRewriter rewriter_void(this->info_, nullptr, module_id, loader_method_method_def);
         rewriter_void.InitializeTiny();
         rewriter_void.SetTkLocalVarSig(locals_signature_token);
-        ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
+        ILRewriterWrapper rewriter_wrapper(&rewriter_void);
+        rewriter_wrapper.SetILPosition(rewriter_void.GetILList()->m_pNext);
 
         // Step 1) Call bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, int appDomainId)
 
         // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index 0)
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDLOCA_S, 0);
+        rewriter_wrapper.LoadLocalAddress(0);
         // ldloca.s 1 : Load the address of the "assemblySize" variable (locals index 1)
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDLOCA_S, 1);
+        rewriter_wrapper.LoadLocalAddress(1);
         // ldloca.s 2 : Load the address of the "symbolsPtr" variable (locals index 2)
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDLOCA_S, 2);
+        rewriter_wrapper.LoadLocalAddress(2);
         // ldloca.s 3 : Load the address of the "symbolsSize" variable (locals index 3)
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDLOCA_S, 3);
+        rewriter_wrapper.LoadLocalAddress(3);
         // call bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_CALL, pinvoke_method_def);
+        rewriter_wrapper.CallMember(pinvoke_method_def, false);
         // check if the return of the method call is true or false
-        ILInstr* pBranchFalseInstr = CreateILInstr(rewriter_void, pFirstInstr, CEE_BRFALSE);
+        ILInstr* pBranchFalseInstr = rewriter_wrapper.CreateInstr(CEE_BRFALSE);
 
         // Step 2) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the managed assembly bytes
 
         // ldloc.1 : Load the "assemblySize" variable (locals index 1)
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDLOC_1);
+        rewriter_wrapper.LoadLocal(1);
         // newarr System.Byte : Create a new Byte[] to hold a managed copy of the assembly data
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_NEWARR, byte_type_ref);
+        rewriter_wrapper.CreateArray(byte_type_ref);
         // stloc.s 4 : Assign the Byte[] to the "assemblyBytes" variable (locals index 4)
-        CreateILInstrArg8(rewriter_void, pFirstInstr, CEE_STLOC_S, 4);
+        rewriter_wrapper.StLocal(4);
         // ldloc.0 : Load the "assemblyPtr" variable (locals index 0)
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDLOC_0);
+        rewriter_wrapper.LoadLocal(0);
         // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4)
-        CreateILInstrArg8(rewriter_void, pFirstInstr, CEE_LDLOC_S, 4);
+        rewriter_wrapper.LoadLocal(4);
         // ldc.i4.0 : Load the integer 0 for the Marshal.Copy startIndex parameter
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDC_I4_0);
+        rewriter_wrapper.LoadInt32(0);
         // ldloc.1 : Load the "assemblySize" variable (locals index 1) for the Marshal.Copy length parameter
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDLOC_1);
+        rewriter_wrapper.LoadLocal(1);
         // call Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length)
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_CALL, marshal_copy_member_ref);
+        rewriter_wrapper.CallMember(marshal_copy_member_ref, false);
 
         // Step 3) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the symbols bytes
 
         // ldloc.3 : Load the "symbolsSize" variable (locals index 3)
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDLOC_3);
+        rewriter_wrapper.LoadLocal(3);
         // newarr System.Byte : Create a new Byte[] to hold a managed copy of the symbols data
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_NEWARR, byte_type_ref);
+        rewriter_wrapper.CreateArray(byte_type_ref);
         // stloc.s 5 : Assign the Byte[] to the "symbolsBytes" variable (locals index 5)
-        CreateILInstrArg8(rewriter_void, pFirstInstr, CEE_STLOC_S, 5);
+        rewriter_wrapper.StLocal(5);
         // ldloc.2 : Load the "symbolsPtr" variables (locals index 2)
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDLOC_2);
+        rewriter_wrapper.LoadLocal(2);
         // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 5)
-        CreateILInstrArg8(rewriter_void, pFirstInstr, CEE_LDLOC_S, 5);
+        rewriter_wrapper.LoadLocal(5);
         // ldc.i4.0 : Load the integer 0 for the Marshal.Copy startIndex parameter
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDC_I4_0);
+        rewriter_wrapper.LoadInt32(0);
         // ldloc.3 : Load the "symbolsSize" variable (locals index 3) for the Marshal.Copy length parameter
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDLOC_3);
+        rewriter_wrapper.LoadLocal(3);
         // call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length)
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_CALL, marshal_copy_member_ref);
+        rewriter_wrapper.CallMember(marshal_copy_member_ref, false);
 
         // Step 4) Call System.Reflection.Assembly System.AppDomain.CurrentDomain.Load(byte[], byte[]))
 
         // call System.AppDomain System.AppDomain.CurrentDomain property
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_CALL, appdomain_get_current_domain_member_ref);
+        rewriter_wrapper.CallMember(appdomain_get_current_domain_member_ref, false);
         // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4) for the first byte[] parameter of AppDomain.Load(byte[], byte[])
-        CreateILInstrArg8(rewriter_void, pFirstInstr, CEE_LDLOC_S, 4);
+        rewriter_wrapper.LoadLocal(4);
         // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 5) for the second byte[] parameter of AppDomain.Load(byte[], byte[])
-        CreateILInstrArg8(rewriter_void, pFirstInstr, CEE_LDLOC_S, 5);
+        rewriter_wrapper.LoadLocal(5);
         // callvirt System.Reflection.Assembly System.AppDomain.Load(uint8[], uint8[])
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_CALLVIRT, appdomain_load_member_ref);
+        rewriter_wrapper.CallMember(appdomain_load_member_ref, true);
 
-        // Step 5) Call instance method
-        // Assembly.GetType("Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader", true)
+        // Step 5) Call instance method Assembly.GetType("Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader", true)
 
         // ldstr "Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader"
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDSTR, load_helper_token);
+        rewriter_wrapper.LoadStr(load_helper_token);
         // ldc.i4.1 load true for boolean type
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDC_I4_1);
+        rewriter_wrapper.LoadInt32(1);
         // callvirt System.Type System.Reflection.Assembly.GetType(string, bool)
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_CALLVIRT, assembly_get_type_member_ref);
+        rewriter_wrapper.CallMember(assembly_get_type_member_ref, true);
 
-        // Step 6) Call instance method
-        // System.Type.GetMethod("Run");
+        // Step 6) Call instance method System.Type.GetMethod("Run");
 
         // ldstr "Run"
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDSTR, run_string_token);
+        rewriter_wrapper.LoadStr(run_string_token);
         // callvirt instance class System.Reflection.MethodInfo [mscorlib]System.Type::GetMethod(string)
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_CALLVIRT, type_get_method_member_ref);
+        rewriter_wrapper.CallMember(type_get_method_member_ref, true);
 
-        // Step 7) Call instance method
-        // System.Reflection.MethodBase.Invoke(null, new object[] { new string[] { "Assembly1" }, new string[] { "Assembly2" } });
+        // Step 7) Call instance method System.Reflection.MethodBase.Invoke(null, new object[] { new string[] { "Assembly1" }, new string[] { "Assembly2" } });
 
         // ldnull
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDNULL);
+        rewriter_wrapper.LoadNull();
         // create an array of 2 elements with two string[] parameter
         // ldc.i4.2 = const int 2 => array length
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDC_I4_2);
         // newarr System.Object
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_NEWARR, system_object_type_ref);
+        rewriter_wrapper.CreateArray(system_object_type_ref, 2);
 
         // *************************************************************************************************************** FIRST PARAMETER
 
         // dup
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_DUP);
         // ldc.i4.0 = const int 0 => array index 0
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDC_I4_0);
+        rewriter_wrapper.BeginLoadValueIntoArray(0);
         // write string array
-        hr = WriteAssembliesStringArray(rewriter_void, metadata_emit, assembly_string_default_appdomain_vector_, pFirstInstr, string_type_ref);
+        hr = WriteAssembliesStringArray(rewriter_wrapper, metadata_emit, assembly_string_default_appdomain_vector_, string_type_ref);
         if (FAILED(hr)) {
             return hr;
         }
         // stelem.ref
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_STELEM_REF);
+        rewriter_wrapper.EndLoadValueIntoArray();
 
         // *************************************************************************************************************** SECOND PARAMETER
 
         // dup
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_DUP);
         // ldc.i4.1 = const int 1 => array index 1
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_LDC_I4_1);
+        rewriter_wrapper.BeginLoadValueIntoArray(1);
         // write string array
-        hr = WriteAssembliesStringArray(rewriter_void, metadata_emit, assembly_string_nondefault_appdomain_vector_, pFirstInstr, string_type_ref);
+        hr = WriteAssembliesStringArray(rewriter_wrapper, metadata_emit, assembly_string_nondefault_appdomain_vector_, string_type_ref);
         if (FAILED(hr)) {
             return hr;
         }
         // stelem.ref
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_STELEM_REF);
+        rewriter_wrapper.EndLoadValueIntoArray();
 
         // ***************************************************************************************************************
 
         // callvirt instance class object System.Reflection.MethodBase::Invoke(object, object[])
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_CALLVIRT, methodbase_invoke_member_ref);
+        rewriter_wrapper.CallMember(methodbase_invoke_member_ref, true);
 
         // Step 8) Pop and return
 
         // pop the returned object
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_POP);
+        rewriter_wrapper.Pop();
         // return
-        pBranchFalseInstr->m_pTarget = CreateILInstr(rewriter_void, pFirstInstr, CEE_RET);
+        pBranchFalseInstr->m_pTarget = rewriter_wrapper.Return();
 
         hr = rewriter_void.Export();
         if (FAILED(hr)) {
@@ -933,12 +928,12 @@ namespace shared {
             //
             // Create a simple method body with only the `ret` opcode instruction.
             //
-            ILRewriter rewriter(this->info_, nullptr, module_id, cctor_method_def);
-            rewriter.InitializeTiny();
-            ILRewriterWrapper rewriter_wrapper(&rewriter);
-            rewriter_wrapper.SetILPosition(rewriter.GetILList()->m_pNext);
-            rewriter_wrapper.Return();
-            hr = rewriter.Export();
+            ILRewriter rewriter_cctor(this->info_, nullptr, module_id, cctor_method_def);
+            rewriter_cctor.InitializeTiny();
+            ILRewriterWrapper rewriter_wrapper_cctor(&rewriter_cctor);
+            rewriter_wrapper_cctor.SetILPosition(rewriter_cctor.GetILList()->m_pNext);
+            rewriter_wrapper_cctor.Return();
+            hr = rewriter_cctor.Export();
             if (FAILED(hr)) {
                 Warn("Loader::InjectLoaderToModuleInitializer: ILRewriter.Export failed creating .cctor for <Module> [ModuleID=" +
                     ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + ", Module=" + module_file_name_string + "]");
@@ -954,17 +949,17 @@ namespace shared {
         //
         // rewrite ..ctor to call the startup loader.
         //
-        ILRewriter rewriter(this->info_, nullptr, module_id, cctor_method_def);
-        hr = rewriter.Import();
+        ILRewriter rewriter_cctor(this->info_, nullptr, module_id, cctor_method_def);
+        hr = rewriter_cctor.Import();
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Import() failed for ModuleID=" + ToString(module_id) +
                  ", CCTORMethodDef" + ToString(cctor_method_def));
             return hr;
         }
-        ILRewriterWrapper rewriter_wrapper(&rewriter);
-        rewriter_wrapper.SetILPosition(rewriter.GetILList()->m_pNext);
-        rewriter_wrapper.CallMember(loader_method_method_def, false);
-        hr = rewriter.Export();
+        ILRewriterWrapper rewriter_wrapper_cctor(&rewriter_cctor);
+        rewriter_wrapper_cctor.SetILPosition(rewriter_cctor.GetILList()->m_pNext);
+        rewriter_wrapper_cctor.CallMember(loader_method_method_def, false);
+        hr = rewriter_cctor.Export();
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + ToString(module_id) +
                  ", CCTORMethodDef" + ToString(cctor_method_def));
@@ -982,23 +977,20 @@ namespace shared {
     }
 
     HRESULT Loader::WriteAssembliesStringArray(
-        ILRewriter& rewriter_void,
+        ILRewriterWrapper& rewriter_wrapper,
         const ComPtr<IMetaDataEmit2> metadata_emit,
         const std::vector<WSTRING>& assembly_string_vector,
-        ILInstr* pFirstInstr, mdTypeRef string_type_ref) {
-      ILInstr* pNewInstr;
+        mdTypeRef string_type_ref) {
 
       // ldc.i4 = const int (array length)
-      CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDC_I4, (INT32)assembly_string_vector.size());
       // newarr System.String
-      CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_NEWARR, string_type_ref);
+      rewriter_wrapper.CreateArray(string_type_ref, (INT32)assembly_string_vector.size());
 
       // loading array index
       for (ULONG i = 0; i < assembly_string_vector.size(); i++) {
         // dup
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_DUP);
         // ldc.i4 = const int array index 0
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDC_I4, i);
+        rewriter_wrapper.BeginLoadValueIntoArray(i);
 
         // Create a string token
         mdString string_token;
@@ -1009,9 +1001,10 @@ namespace shared {
         }
 
         // ldstr assembly index value
-        CreateILInstrArg32(rewriter_void, pFirstInstr, CEE_LDSTR, string_token);
+        rewriter_wrapper.LoadStr(string_token);
+
         // stelem.ref
-        CreateILInstr(rewriter_void, pFirstInstr, CEE_STELEM_REF);
+        rewriter_wrapper.EndLoadValueIntoArray();
       }
 
       return S_OK;
