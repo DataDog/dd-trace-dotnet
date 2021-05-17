@@ -14,7 +14,6 @@ ENV DD_TRACE_ENABLED=true
 FROM mcr.microsoft.com/dotnet/core/sdk:2.1-stretch AS build
 WORKDIR "/src"
 COPY ["reproductions/AutomapperTest/AutomapperTest.csproj", "/src/reproductions/AutomapperTest/"]
-COPY ["src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj", "/src/src/Datadog.Trace.ClrProfiler.Managed/"]
 COPY ["src/Datadog.Trace/Datadog.Trace.csproj", "/src/src/Datadog.Trace/"]
 RUN dotnet restore "/src/reproductions/AutomapperTest/AutomapperTest.csproj"
 COPY . .

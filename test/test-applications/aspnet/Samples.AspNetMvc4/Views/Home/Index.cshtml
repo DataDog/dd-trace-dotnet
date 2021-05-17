@@ -5,10 +5,9 @@
 @{
     ViewBag.Title = "Index";
 
-    var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace.ClrProfiler.Managed");
+    var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace");
     var profilerAttached = instrumentationType?.GetProperty("ProfilerAttached", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ?? false;
-    var tracerAssemblyLocation = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace")?.Assembly.Location ?? "(none)";
-    var clrProfilerAssemblyLocation = instrumentationType?.Assembly.Location ?? "(none)";
+    var tracerAssemblyLocation = instrumentationType?.Assembly.Location ?? "(none)";
 }
 
 <div class="container">
@@ -25,10 +24,6 @@
             <tr>
                 <th scope="row">Datadog.Trace.dll path</th>
                 <td>@tracerAssemblyLocation</td>
-            </tr>
-            <tr>
-                <th scope="row">Datadog.Trace.ClrProfiler.Managed.dll</th>
-                <td>@clrProfilerAssemblyLocation</td>
             </tr>
         </tbody>
     </table>
