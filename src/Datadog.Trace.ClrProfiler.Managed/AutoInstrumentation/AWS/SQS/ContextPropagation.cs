@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -14,8 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     {
         private const string SqsKey = "_datadog";
 
-        private static readonly Func<string, object> CreateMessageAttributeWithString;
-
         public static readonly Func<IDictionary<string, object>, string, IEnumerable<string>> HeadersGetter = ((carrier, key) =>
          {
              if (carrier.TryGetValue(key, out object value) && value is byte[] bytes)
@@ -28,36 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
              }
          });
 
-        static ContextPropagation()
-        {
-            var messageAttributeValueType = Type.GetType("Amazon.SQS.Model.MessageAttributeValue, AWSSDK.SQS");
-            var ctor = messageAttributeValueType.GetConstructor(new Type[0]);
-
-            DynamicMethod createHeadersMethod = new DynamicMethod(
-                $"KafkaCachedMessageHeadersHelpers",
-                messageAttributeValueType,
-                parameterTypes: new Type[] { typeof(string) },
-                typeof(DuckType).Module,
-                true);
-
-            ILGenerator il = createHeadersMethod.GetILGenerator();
-            il.Emit(OpCodes.Newobj, ctor);
-
-            il.Emit(OpCodes.Dup);
-            il.Emit(OpCodes.Ldstr, "String");
-            il.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("DataType").GetSetMethod());
-
-            il.Emit(OpCodes.Dup);
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("StringValue").GetSetMethod());
-            // Set property
-
-            il.Emit(OpCodes.Ret);
-
-            CreateMessageAttributeWithString = (Func<string, object>)createHeadersMethod.CreateDelegate(typeof(Func<string, object>));
-        }
-
-        public static void Inject(SpanContext context, IDictionary messageAttributes)
+        public static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
         {
             /* TODO: Either use the optimized StringBuilder or decide the optimization is not worth it
             StringBuilder sb = new();
@@ -88,10 +57,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             }
 
             var stringRepresentation = stringWriter.ToString();
-            messageAttributes[SqsKey] = CreateMessageAttributeWithString(stringRepresentation);
+            messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stringRepresentation);
         }
 
-        public static void InjectHeadersIntoMessage(IContainsMessageAttributes carrier, SpanContext spanContext)
+        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
@@ -104,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // Only inject if there's room
             if (carrier.MessageAttributes.Count < 10)
             {
-                Inject(spanContext, carrier.MessageAttributes);
+                Inject<TMessageRequest>(spanContext, carrier.MessageAttributes);
             }
         }
     }

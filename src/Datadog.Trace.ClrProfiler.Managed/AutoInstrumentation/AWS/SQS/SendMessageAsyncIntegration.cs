@@ -32,21 +32,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TSendMessageRequest>(TTarget instance, TSendMessageRequest request, CancellationToken cancellationToken)
-            where TSendMessageRequest : ISendMessageRequest, IDuckType
         {
-            if (request.Instance is null)
+            if (request is null)
             {
                 return CallTargetState.GetDefault();
             }
 
+            var requestProxy = request.DuckCast<ISendMessageRequest>();
+
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, $"{AwsConstants.AwsService}.{Operation}", out AwsSqsTags tags);
             tags.Operation = Operation;
             tags.Service = AwsConstants.AwsService;
-            tags.QueueUrl = request.QueueUrl;
+            tags.QueueUrl = requestProxy.QueueUrl;
 
             if (scope?.Span?.Context != null)
             {
-                ContextPropagation.InjectHeadersIntoMessage(request, scope?.Span?.Context);
+                ContextPropagation.InjectHeadersIntoMessage<TSendMessageRequest>(requestProxy, scope?.Span?.Context);
             }
 
             return new CallTargetState(scope);

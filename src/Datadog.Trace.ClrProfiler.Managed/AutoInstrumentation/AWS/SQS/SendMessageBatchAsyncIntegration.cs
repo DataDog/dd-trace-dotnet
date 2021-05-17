@@ -32,24 +32,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TSendMessageBatchRequest>(TTarget instance, TSendMessageBatchRequest request, CancellationToken cancellationToken)
-            where TSendMessageBatchRequest : ISendMessageBatchRequest, IDuckType
         {
-            if (request.Instance is null)
+            if (request is null)
             {
                 return CallTargetState.GetDefault();
             }
 
+            var requestProxy = request.DuckCast<ISendMessageBatchRequest>();
+
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, $"{AwsConstants.AwsService}.{Operation}", out AwsSqsTags tags);
             tags.Operation = Operation;
             tags.Service = AwsConstants.AwsService;
-            tags.QueueUrl = request.QueueUrl;
+            tags.QueueUrl = requestProxy.QueueUrl;
 
-            if (scope?.Span?.Context != null && request.Entries.Count > 0)
+            if (scope?.Span?.Context != null && requestProxy.Entries.Count > 0)
             {
-                for (int i = 0; i < request.Entries.Count; i++)
+                for (int i = 0; i < requestProxy.Entries.Count; i++)
                 {
-                    var entry = request.Entries[i].DuckCast<IContainsMessageAttributes>();
-                    ContextPropagation.InjectHeadersIntoMessage(entry, scope?.Span?.Context);
+                    var entry = requestProxy.Entries[i].DuckCast<IContainsMessageAttributes>();
+                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope?.Span?.Context);
                 }
             }
 
