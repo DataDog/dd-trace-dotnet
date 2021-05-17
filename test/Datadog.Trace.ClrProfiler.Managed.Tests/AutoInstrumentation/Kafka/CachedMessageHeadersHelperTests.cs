@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
     public class CachedMessageHeadersHelperTests
     {
         private static readonly Type TopicPartitionType = typeof(TopicPartition);
+        private static readonly Type MessageType = typeof(Message<,>);
         private static readonly Type CachedMessageHeadersHelperType = typeof(CachedMessageHeadersHelper<>);
 
         [Fact]
@@ -24,28 +25,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
             var headersProxy = CachedMessageHeadersHelper<TopicPartition>.CreateHeaders();
             AssertHeadersProxy(headersProxy);
             messageProxy.Headers = headersProxy;
-            message.Headers.Should().NotBeNull();
 
             // Now use LoadFile to load a second instance and re-run the tests
-            message.Headers = null;
             var loadFileAssembly = Assembly.LoadFile(TopicPartitionType.Assembly.Location);
-            var loadFileCreateHeadersMethod = CreateGenericCreateHeadersMethod(loadFileAssembly);
-
-            var loadFileHeadersProxy = (IHeaders)loadFileCreateHeadersMethod.Invoke(null, null);
+            var loadHeadersDetails = CreateGenericCreateHeadersMethod(loadFileAssembly);
+            var loadFileHeadersProxy = (IHeaders)loadHeadersDetails.CreateHeaders.Invoke(null, null);
             AssertHeadersProxy(loadFileHeadersProxy);
-            messageProxy.Headers = loadFileHeadersProxy;
-            message.Headers.Should().NotBeNull();
+            messageProxy = loadHeadersDetails.Message;
 
 #if NETCOREAPP3_1 || NET5_0
-            message.Headers = null;
             var alc = new System.Runtime.Loader.AssemblyLoadContext($"NewAssemblyLoadContext");
             var loadContextAssembly = alc.LoadFromAssemblyPath(TopicPartitionType.Assembly.Location);
-            var loadContextCreateHeadersMethod = CreateGenericCreateHeadersMethod(loadContextAssembly);
+            var loadContextDetails = CreateGenericCreateHeadersMethod(loadContextAssembly);
 
-            var loadContextHeadersProxy = (IHeaders)loadContextCreateHeadersMethod.Invoke(null, null);
+            var loadContextHeadersProxy = (IHeaders)loadContextDetails.CreateHeaders.Invoke(null, null);
             AssertHeadersProxy(loadContextHeadersProxy);
-            messageProxy.Headers = loadContextHeadersProxy;
-            message.Headers.Should().NotBeNull();
+            messageProxy = loadContextDetails.Message;
 #endif
         }
 
@@ -58,9 +53,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
             Encoding.UTF8.GetString(headerValue).Should().Be("value");
         }
 
-        private static MethodInfo CreateGenericCreateHeadersMethod(Assembly loadFileAssembly)
+        private static (MethodInfo CreateHeaders, IMessage Message) CreateGenericCreateHeadersMethod(Assembly assembly)
         {
-            var topicPartitionType = loadFileAssembly.GetType(TopicPartitionType.FullName);
+            var topicPartitionType = assembly.GetType(TopicPartitionType.FullName);
             topicPartitionType.Should().NotBeNull();
             var helperType = CachedMessageHeadersHelperType.MakeGenericType(topicPartitionType);
             helperType.Should().NotBeNull();
@@ -68,7 +63,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
                 nameof(CachedMessageHeadersHelper<TopicPartition>.CreateHeaders),
                 BindingFlags.Public | BindingFlags.Static);
             createHeadersMethod.Should().NotBeNull();
-            return createHeadersMethod;
+
+            var messageType = assembly.GetType(MessageType.FullName);
+            messageType.Should().NotBeNull();
+            var genericMessage = messageType.MakeGenericType(typeof(string), typeof(string));
+
+            var message = Activator.CreateInstance(genericMessage);
+            var proxy = message.DuckCast<IMessage>();
+
+            return (createHeadersMethod, proxy);
         }
     }
 }
