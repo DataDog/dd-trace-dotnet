@@ -262,8 +262,9 @@ partial class Build
                 ? TargetFrameworks
                 : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
 
+            // Publish Datadog.Trace.MSBuild since we want both Datadog.Trace.MSBuild and its dependency, Datadog.Trace
             DotNetPublish(s => s
-                .SetProject(Solution.GetProject(Projects.ClrProfilerManaged))
+                .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
                 .EnableNoBuild()
