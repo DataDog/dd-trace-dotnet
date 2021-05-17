@@ -44,6 +44,4 @@
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
-  <Import Project="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
-
 </Project>
