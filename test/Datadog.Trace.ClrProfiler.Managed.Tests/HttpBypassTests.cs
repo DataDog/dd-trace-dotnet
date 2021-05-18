@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void ShouldBypassUrlInAzureAppService(string url, bool shouldBypass)
         {
             var exclusions = AzureAppServices.Metadata.DefaultHttpClientExclusions.Replace(" ", string.Empty).Split(',');
-            var didBypass = HttpBypassHelper.ContainsAnyOf(new Uri(url), exclusions);
+            var didBypass = HttpBypassHelper.UriContainsAnyOf(new Uri(url), exclusions);
             Assert.Equal(expected: shouldBypass, actual: didBypass);
         }
     }

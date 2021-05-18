@@ -4,9 +4,9 @@ namespace Datadog.Trace.ClrProfiler.Helpers
 {
     internal static class HttpBypassHelper
     {
-        public static bool ContainsAnyOf(this Uri requestUri, string[] substrings)
+        public static bool UriContainsAnyOf(Uri requestUri, string[] substrings)
         {
-            if (substrings == null || substrings.Length == 0)
+            if (requestUri == null || substrings == null || substrings.Length == 0)
             {
                 return false;
             }
