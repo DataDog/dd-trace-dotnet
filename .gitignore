@@ -270,14 +270,17 @@ BenchmarkDotNet.Artifacts/
 # VSTest results
 *.trx
 
-deploy/linux/
-deploy/AzureAppServices/
-!build/artifacts
-
 # macOS temporal files
 *..DS_Store
 .DS_Store/*
 .DS_Store
 
-# profiler output files
+## Tracer .gitignore settings
+# Tracer deployment artifacts
+tracer/deploy/linux/
+tracer/deploy/AzureAppServices/
+!tracer/build/artifacts
+
+# Datadog.Trace.ClrProfiler.Native output files
 src/Datadog.Trace.ClrProfiler.Native/build/
+tracer/src/Datadog.Trace.ClrProfiler.Native/build/
