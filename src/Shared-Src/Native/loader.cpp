@@ -209,8 +209,8 @@ namespace shared {
         // check if the loader has been already loaded for this AppDomain
         //
         if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
-            Warn("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded in the AppDomain.  [AppDomainID=" + ToString(app_domain_id) + "]");
-            return false;
+            Warn("Loader::InjectLoaderToModuleInitializer: The loader was already loaded in the AppDomain.  [AppDomainID=" + ToString(app_domain_id) + "]");
+            return S_OK;
         }
 
         //
