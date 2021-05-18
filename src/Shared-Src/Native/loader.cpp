@@ -45,7 +45,7 @@ namespace shared {
             WStr("System.Web"),
             WStr("System.Web.ApplicationServices"),*/
             //WStr("Microsoft.Web.Infrastructure"),
-            //WStr("Google.Protobuf"),
+            WStr("System.ComponentModel.DataAnnotations"),
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
@@ -945,6 +945,8 @@ namespace shared {
             Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + ToString(module_id));
             return hr;
         }
+
+        return hr;
     }
 
     HRESULT Loader::GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMemberRef securitycriticalattribute_ctor_member_ref, mdMethodDef* result_method_def) {
