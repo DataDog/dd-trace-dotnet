@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -58,6 +59,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             dictIL.Emit(OpCodes.Ret);
 
             _createDict = (Func<object>)createDictMethod.CreateDelegate(typeof(Func<object>));
+        }
+
+        public static IDictionary CreateMessageAttributes()
+        {
+            return (IDictionary)_createDict();
         }
 
         public static object CreateMessageAttributeValue(string value)

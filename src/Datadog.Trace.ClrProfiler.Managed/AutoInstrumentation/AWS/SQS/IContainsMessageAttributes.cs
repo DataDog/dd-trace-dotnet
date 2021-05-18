@@ -8,8 +8,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     public interface IContainsMessageAttributes
     {
         /// <summary>
-        /// Gets the message attributes
+        /// Gets or sets the message attributes
         /// </summary>
-        IDictionary MessageAttributes { get; }
+        IDictionary MessageAttributes { get; set;  }
     }
 }

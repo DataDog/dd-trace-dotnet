@@ -65,8 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
             {
-                // TODO: Create a new dictionary
-                // basicProperties.Headers = new Dictionary<string, object>();
+                carrier.MessageAttributes = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributes();
             }
 
             // SQS allows a maximum of 10 message attributes: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes

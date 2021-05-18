@@ -212,6 +212,7 @@ namespace Samples.AWS.SQS
             var sendRequest = new SendMessageRequest();
             sendRequest.QueueUrl = _singleQueueUrl;
             sendRequest.MessageBody = "SendMessageAsync_SendMessageRequest";
+            sendRequest.MessageAttributes = null; // Set message attributes to null so we are forced to handle the scenario
 
             // Send a message with the SendMessageRequest argument
             var sendMessageResponse = await sqsClient.SendMessageAsync(sendRequest);
@@ -260,9 +261,9 @@ namespace Samples.AWS.SQS
             {
                 Entries = new List<SendMessageBatchRequestEntry>
                 {
-                    new("message1", "SendMessageBatchAsync: FirstMessageContent"),
-                    new("message2", "SendMessageBatchAsync: SecondMessageContent"),
-                    new("message3", "SendMessageBatchAsync: ThirdMessageContent")
+                    new("message1", "SendMessageBatchAsync: FirstMessageContent") { MessageAttributes = null }, // Set message attributes to null so we are forced to handle the scenario
+                    new("message2", "SendMessageBatchAsync: SecondMessageContent") { MessageAttributes = null }, // Set message attributes to null so we are forced to handle the scenario
+                    new("message3", "SendMessageBatchAsync: ThirdMessageContent") { MessageAttributes = null }, // Set message attributes to null so we are forced to handle the scenario
                 },
                 QueueUrl = _batchedQueueUrl
             };
