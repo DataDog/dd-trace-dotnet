@@ -46,6 +46,7 @@ namespace shared {
             WStr("System.Web.ApplicationServices"),*/
             //WStr("Microsoft.Web.Infrastructure"),
             WStr("System.ComponentModel.DataAnnotations"),
+            WStr("System.Web.RegularExpressions"),
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
