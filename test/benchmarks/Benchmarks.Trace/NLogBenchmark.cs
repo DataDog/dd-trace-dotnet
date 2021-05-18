@@ -3,7 +3,6 @@ using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.LogProviders;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
@@ -15,11 +14,13 @@ namespace Benchmarks.Trace
     {
         private static readonly Tracer BaselineTracer;
         private static readonly Tracer LogInjectionTracer;
-        private static readonly NLog.Logger Logger;
+        private static readonly NLog.Logger BaselineLogger;
+        private static readonly NLog.Logger EnrichedLogger;
 
         static NLogBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new NLogLogProvider());
+            var provider = new CustomNLogLogProvider();
+            provider.RegisterLayoutRenderers();
 
             var logInjectionSettings = new TracerSettings
             {
@@ -42,23 +43,31 @@ namespace Benchmarks.Trace
 
             BaselineTracer = new Tracer(baselineSettings, new DummyAgentWriter(), null, null, null);
 
-            var config = new LoggingConfiguration();
-
 #if DEBUG
             var writer = System.Console.Out;
 #else
             var writer = TextWriter.Null;
 #endif
 
-            var target = new TextWriterTarget(writer)
+            var baselineConfig = new LoggingConfiguration();
+
+            baselineConfig.AddRuleForAllLevels(new TextWriterTarget(writer)
             {
-                Layout = "${longdate}|${uppercase:${level}}|${logger}|{dd.env=${mdlc:item=dd.env},dd.service=${mdlc:item=dd.service},dd.version=${mdlc:item=dd.version},dd.trace_id=${mdlc:item=dd.trace_id},dd.span_id=${mdlc:item=dd.span_id}}|${message}"
-            };
+                Layout = "${longdate}|${uppercase:${level}}|${logger}|{dd.env=,dd.service=,dd.version=,dd.trace_id=,dd.span_id=}|${message}"
+            });
+            
+            baselineConfig.LogFactory.ReconfigExistingLoggers();
+            
+            BaselineLogger = new LogFactory(baselineConfig).GetCurrentClassLogger();
 
-            config.AddRuleForAllLevels(target);
+            var enrichedConfig = new LoggingConfiguration(new LogFactory());
 
-            LogManager.Configuration = config;
-            Logger = LogManager.GetCurrentClassLogger();
+            enrichedConfig.AddRuleForAllLevels(new TextWriterTarget(writer)
+            {
+                Layout = $"${{longdate}}|${{uppercase:${{level}}}}|${{logger}}|{{dd.env=${{{CorrelationIdentifier.EnvKey}}},dd.service=${{{CorrelationIdentifier.ServiceKey}}},dd.version=${{{CorrelationIdentifier.VersionKey}}},dd.trace_id=${{{CorrelationIdentifier.TraceIdKey}}},dd.span_id=${{{CorrelationIdentifier.SpanIdKey}}}}}|${{message}}"
+            });
+
+            EnrichedLogger = new LogFactory(enrichedConfig).GetCurrentClassLogger();
         }
 
         [Benchmark(Baseline = true)]
@@ -68,7 +77,7 @@ namespace Benchmarks.Trace
             {
                 using (BaselineTracer.StartActive("Child"))
                 {
-                    Logger.Info("Hello");
+                    BaselineLogger.Info("Hello");
                 }
             }
         }
@@ -80,7 +89,7 @@ namespace Benchmarks.Trace
             {
                 using (LogInjectionTracer.StartActive("Child"))
                 {
-                    Logger.Info("Hello");
+                    EnrichedLogger.Info("Hello");
                 }
             }
         }

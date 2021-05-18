@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests.Logging
     {
         private const string NLogExpectedStringFormat = "\"{0}\": \"{1}\"";
 
-        private readonly ILogProvider _logProvider;
+        private readonly CustomNLogLogProvider _logProvider;
         private readonly ILog _logger;
         private readonly MemoryTarget _target;
 
@@ -27,6 +27,11 @@ namespace Datadog.Trace.Tests.Logging
             layout.Attributes.Add(new JsonAttribute("time", Layout.FromString("${longdate}")));
             layout.Attributes.Add(new JsonAttribute("level", Layout.FromString("${level:uppercase=true}")));
             layout.Attributes.Add(new JsonAttribute("message", Layout.FromString("${message}")));
+            layout.Attributes.Add(new JsonAttribute("env", Layout.FromString("${dd.env}")));
+            layout.Attributes.Add(new JsonAttribute("service", Layout.FromString("${dd.service}")));
+            layout.Attributes.Add(new JsonAttribute("version", Layout.FromString("${dd.version}")));
+            layout.Attributes.Add(new JsonAttribute("trace_id", Layout.FromString("${dd.trace_id}")));
+            layout.Attributes.Add(new JsonAttribute("span_id", Layout.FromString("${dd.span_id}")));
             _target = new MemoryTarget
             {
                 Layout = layout
@@ -37,7 +42,7 @@ namespace Datadog.Trace.Tests.Logging
             LogManager.Configuration = config;
             SimpleConfigurator.ConfigureForTargetLogging(_target, NLog.LogLevel.Trace);
 
-            _logProvider = new NLogLogProvider();
+            _logProvider = new CustomNLogLogProvider();
             LogProvider.SetCurrentLogProvider(_logProvider);
             _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("test"));
         }
@@ -46,7 +51,7 @@ namespace Datadog.Trace.Tests.Logging
         public void LogsInjectionEnabledAddsParentCorrelationIdentifiers()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -62,7 +67,7 @@ namespace Datadog.Trace.Tests.Logging
         public void LogsInjectionEnabledAddsChildCorrelationIdentifiers()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -78,7 +83,7 @@ namespace Datadog.Trace.Tests.Logging
         public void LogsInjectionEnabledDoesNotAddCorrelationIdentifiersOutsideSpans()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -94,7 +99,7 @@ namespace Datadog.Trace.Tests.Logging
         public void LogsInjectionEnabledUsesTracerServiceName()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -110,7 +115,7 @@ namespace Datadog.Trace.Tests.Logging
         public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);

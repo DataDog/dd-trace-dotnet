@@ -129,6 +129,10 @@ namespace Datadog.Trace.Logging
                         _serilogEnricher = customSerilogLogProvider.CreateEnricher(tracer);
                     }
                 }
+                else if (_logProvider is CustomNLogLogProvider customNLogLogProvider)
+                {
+                    customNLogLogProvider.RegisterLayoutRenderers();
+                }
                 else
                 {
                     _scopeManager.SpanActivated += MapOnSpanActivated;
@@ -216,6 +220,13 @@ namespace Datadog.Trace.Logging
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
                     CustomSerilogLogProvider.IsLoggerAvailable,
                     () => new CustomSerilogLogProvider()));
+
+            // Register the custom NLog provider
+            LogProvider.LogProviderResolvers.Insert(
+                0,
+                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
+                    CustomNLogLogProvider.IsLoggerAvailable,
+                    () => new CustomNLogLogProvider()));
         }
 
         private void SetDefaultValues()
