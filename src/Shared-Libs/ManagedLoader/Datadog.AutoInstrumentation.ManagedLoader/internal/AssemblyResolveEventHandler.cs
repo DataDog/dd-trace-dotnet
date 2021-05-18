@@ -72,6 +72,19 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private Assembly OnAssemblyResolveCore(AssemblyName assemblyName)
         {
+            AppDomain currendAppDomain = null;
+            if (Log.IsDebugLoggingEnabled)
+            {
+                try
+                {
+                    currendAppDomain = AppDomain.CurrentDomain;
+                }
+                catch
+                {
+                    currendAppDomain = null;
+                }
+            }
+
             // Is this an assembly which should be loaded from the product directory?
             if (! MustLoadAssemblyFromProductDirectory(assemblyName))
             {
@@ -81,7 +94,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     Log.Debug(LoggingComponentMoniker,
                               "The runtime requested a hint while resolving an assembly;"
                             + " this handler will NOT participate in the resolution: the assembly is not relevant.",
-                              "assemblyName", assemblyName?.FullName);
+                              "assemblyName", assemblyName?.FullName,
+                             $"{nameof(currendAppDomain)}.{nameof(AppDomain.Id)}", currendAppDomain?.Id,
+                             $"{nameof(currendAppDomain)}.{nameof(AppDomain.FriendlyName)}", currendAppDomain?.FriendlyName);
                 }
 
                 return null;
@@ -94,7 +109,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 Log.Debug(LoggingComponentMoniker,
                           "The runtime requested a hint while resolving an assembly;"
                         + " this handler WILL participate in the resolution: the assembly is relevant.",
-                          "assemblyName", assemblyName?.FullName);
+                          "assemblyName", assemblyName?.FullName,
+                         $"{nameof(currendAppDomain)}.{nameof(AppDomain.Id)}", currendAppDomain?.Id,
+                         $"{nameof(currendAppDomain)}.{nameof(AppDomain.FriendlyName)}", currendAppDomain?.FriendlyName);
             }
 
             // Look for the assembly in all the known product directories.
@@ -104,8 +121,10 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 if (Log.IsDebugLoggingEnabled)
                 {
                     Log.Debug(LoggingComponentMoniker,
-                              "The requested assembly was NOT located in any of the known product binaries directories. No resolution hit will be provided.",
-                              "assemblyName", assemblyName.FullName);
+                              "The requested assembly was NOT located in any of the known product binaries directories. No resolution hint will be provided.",
+                              "assemblyName", assemblyName.FullName,
+                             $"{nameof(currendAppDomain)}.{nameof(AppDomain.Id)}", currendAppDomain?.Id,
+                             $"{nameof(currendAppDomain)}.{nameof(AppDomain.FriendlyName)}", currendAppDomain?.FriendlyName);
                 }
 
                 return null;
@@ -119,7 +138,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     Log.Debug(LoggingComponentMoniker,
                               "Loading assembly from product directory.",
                               "assemblyName", assemblyName.FullName,
-                              "assemblyPath", assemblyPath);
+                              "assemblyPath", assemblyPath,
+                             $"{nameof(currendAppDomain)}.{nameof(AppDomain.Id)}", currendAppDomain?.Id,
+                             $"{nameof(currendAppDomain)}.{nameof(AppDomain.FriendlyName)}", currendAppDomain?.FriendlyName);
                 }
 
                 Assembly loadedAssembly = Assembly.LoadFrom(assemblyPath);
@@ -131,7 +152,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                         Log.Debug(LoggingComponentMoniker,
                                   "Not able to load assembly from product directory.",
                                   "assemblyName", assemblyName.FullName,
-                                  "assemblyPath", assemblyPath);
+                                  "assemblyPath", assemblyPath,
+                                 $"{nameof(currendAppDomain)}.{nameof(AppDomain.Id)}", currendAppDomain?.Id,
+                                 $"{nameof(currendAppDomain)}.{nameof(AppDomain.FriendlyName)}", currendAppDomain?.FriendlyName);
                     }
                 }
 
@@ -143,7 +166,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                           "Error loading assembly from product directory",
                           ex,
                           "assemblyName", assemblyName.FullName,
-                          "assemblyPath", assemblyPath);
+                          "assemblyPath", assemblyPath,
+                         $"{nameof(currendAppDomain)}.{nameof(AppDomain.Id)}", currendAppDomain?.Id,
+                         $"{nameof(currendAppDomain)}.{nameof(AppDomain.FriendlyName)}", currendAppDomain?.FriendlyName);
 
                 return null;
             }
