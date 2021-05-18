@@ -174,15 +174,11 @@ namespace shared {
         // retrieve AssemblyID from ModuleID
         //
         AssemblyID assembly_id = 0;
-        WCHAR module_file_name[stringMaxSize];
-        ULONG module_file_name_len = 0;
-        HRESULT hr = this->info_->GetModuleInfo2(module_id, NULL, stringMaxSize, &module_file_name_len, module_file_name, &assembly_id, NULL);
+        HRESULT hr = this->info_->GetModuleInfo2(module_id, NULL, 0, NULL, NULL, &assembly_id, NULL);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AssemblyID for ModuleID=" + ToString(module_id));
             return hr;
         }
-        auto module_file_name_wstring = WSTRING(module_file_name);
-        auto module_file_name_string = ToString(module_file_name_wstring);
         // *****************************************************************************************
 
         // *****************************************************************************************
@@ -194,8 +190,7 @@ namespace shared {
         ULONG assembly_name_len = 0;
         hr = this->info_->GetAssemblyInfo(assembly_id, stringMaxSize, &assembly_name_len, assembly_name, &app_domain_id, NULL);
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AppDomainID for AssemblyID=" +
-                ToString(assembly_id) + " [Module=" + module_file_name_string + "]");
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching AppDomainID for AssemblyID=" + ToString(assembly_id));
             return hr;
         }
         auto assembly_name_wstring = WSTRING(assembly_name);
@@ -213,10 +208,10 @@ namespace shared {
         //
         // check if the loader has been already loaded for this AppDomain
         //
-        //if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
-        //    Warn("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded in the AppDomain.  [AppDomainID=" + ToString(app_domain_id) + "]");
-        //    return false;
-        //}
+        if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
+            Warn("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded in the AppDomain.  [AppDomainID=" + ToString(app_domain_id) + "]");
+            return false;
+        }
 
         //
         // skip libraries from the exclusion list.
@@ -237,8 +232,7 @@ namespace shared {
         ComPtr<IUnknown> metadata_interfaces;
         hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
         if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=" +
-                ToString(module_id) + " [Module=" + module_file_name_string + "]");
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=" + ToString(module_id));
             return hr;
         }
 
@@ -246,9 +240,7 @@ namespace shared {
         // Extract both IMetaDataImport2 and IMetaDataEmit2 interfaces
         //
         const ComPtr<IMetaDataImport2> metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-        const ComPtr<IMetaDataEmit2> metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
         const ComPtr<IMetaDataAssemblyImport> assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-        const ComPtr<IMetaDataAssemblyEmit> assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
         //
         // Check and store assembly metadata if the corlib is found.
@@ -344,6 +336,56 @@ namespace shared {
         }
 
         //
+        // Emit the <Module>.DD_LoadInitializationAssemblies() mdMethodDef
+        //
+        mdMethodDef loader_method_method_def;
+        mdMemberRef securitycriticalattribute_ctor_member_ref;
+        hr = EmitDDLoadInitializationAssemblies(module_id, module_type_def, assembly_name_wstring, &loader_method_method_def, &securitycriticalattribute_ctor_member_ref);
+        if (FAILED(hr)) {
+            return hr;
+        }
+
+        // ***************************************************************************************************************
+
+        //
+        // Emit the <Module>.cctor() mdMethodDef
+        //
+        hr = EmitModuleCCtor(module_id, module_type_def, app_domain_id, loader_method_method_def, securitycriticalattribute_ctor_member_ref);
+        if (FAILED(hr)) {
+            return hr;
+        }
+
+        Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + ToString(module_id) +
+              ", AssemblyID=" + ToString(assembly_id) +
+              ", AssemblyName=" + ToString(assembly_name_string) +
+              ", AppDomainID=" + ToString(app_domain_id) +
+              ", ModuleTypeDef=" + ToString(module_type_def) + "]");
+        return S_OK;
+    }
+
+    //
+
+    HRESULT Loader::EmitDDLoadInitializationAssemblies(const ModuleID module_id, mdTypeDef type_def, WSTRING assembly_name_wstring, mdMethodDef* loader_method_method_def, mdMemberRef* securitycriticalattribute_ctor_member_ref) {
+
+        // **************************************************************************************************************
+        //
+        // Retrieve the metadata interfaces for the ModuleID
+        //
+        ComPtr<IUnknown> metadata_interfaces;
+        HRESULT hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=" + ToString(module_id));
+            return hr;
+        }
+
+        //
+        // Extract both IMetaDataImport2 and IMetaDataEmit2 interfaces
+        //
+        const ComPtr<IMetaDataImport2> metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        const ComPtr<IMetaDataEmit2> metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+        const ComPtr<IMetaDataAssemblyEmit> assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+        //
         // Check if the static void <Module>.DD_LoadInitializationAssemblies() mdMethodDef has been already injected.
         //
         auto loader_method_name = WSTRING(WStr("DD_LoadInitializationAssemblies_")) + ReplaceString(assembly_name_wstring, WStr("."), WStr(""));
@@ -352,15 +394,13 @@ namespace shared {
                 0,                              // Number of parameters
                 ELEMENT_TYPE_VOID,              // Return type
         };
-        mdMethodDef loader_method_method_def;
-        hr = metadata_import->FindMethod(module_type_def, loader_method_name.c_str(), loader_method_signature, sizeof(loader_method_signature), &loader_method_method_def);
+        hr = metadata_import->FindMethod(type_def, loader_method_name.c_str(), loader_method_signature, sizeof(loader_method_signature), loader_method_method_def);
         if (SUCCEEDED(hr)) {
             Info("Loader::InjectLoaderToModuleInitializer: Loader was already injected in ModuleID=" + ToString(module_id));
             return hr;
         }
 
         Debug("Loader::InjectLoaderToModuleInitializer: Creating all mdTypeRefs and mdMemberRefs required in ModuleID=" + ToString(module_id));
-
 
         // **************************************************************************************************************
         //
@@ -530,7 +570,6 @@ namespace shared {
 
         ULONG offset = 0;
 
-
         //
         // get a MemberRef for System.AppDomain.get_CurrentDomain()
         //
@@ -544,15 +583,11 @@ namespace shared {
         appdomain_get_current_domain_signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
         appdomain_get_current_domain_signature[offset++] = 0;
         appdomain_get_current_domain_signature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&appdomain_get_current_domain_signature[offset],
-            system_appdomain_type_ref_compressed_token,
-            system_appdomain_type_ref_compressed_token_length);
+        memcpy(&appdomain_get_current_domain_signature[offset], system_appdomain_type_ref_compressed_token, system_appdomain_type_ref_compressed_token_length);
         offset += system_appdomain_type_ref_compressed_token_length;
 
         mdMemberRef appdomain_get_current_domain_member_ref;
-        hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, get_currentdomain_name,
-            appdomain_get_current_domain_signature, offset,
-            &appdomain_get_current_domain_member_ref);
+        hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, get_currentdomain_name, appdomain_get_current_domain_signature, offset, &appdomain_get_current_domain_member_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: System.AppDomain.get_CurrentDomain() DefineMemberRef failed");
             return hr;
@@ -571,9 +606,7 @@ namespace shared {
         appdomain_load_signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
         appdomain_load_signature[offset++] = 2;
         appdomain_load_signature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&appdomain_load_signature[offset],
-            system_reflection_assembly_type_ref_compressed_token,
-            system_reflection_assembly_type_ref_compressed_token_length);
+        memcpy(&appdomain_load_signature[offset], system_reflection_assembly_type_ref_compressed_token, system_reflection_assembly_type_ref_compressed_token_length);
         offset += system_reflection_assembly_type_ref_compressed_token_length;
         appdomain_load_signature[offset++] = ELEMENT_TYPE_SZARRAY;
         appdomain_load_signature[offset++] = ELEMENT_TYPE_U1;
@@ -581,9 +614,7 @@ namespace shared {
         appdomain_load_signature[offset++] = ELEMENT_TYPE_U1;
 
         mdMemberRef appdomain_load_member_ref;
-        hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref,
-            load_name, appdomain_load_signature,
-            offset, &appdomain_load_member_ref);
+        hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, load_name, appdomain_load_signature, offset, &appdomain_load_member_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: AppDomain.Load(byte[], byte[]) DefineMemberRef failed");
             return hr;
@@ -602,17 +633,13 @@ namespace shared {
         assembly_get_type_signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
         assembly_get_type_signature[offset++] = 2;
         assembly_get_type_signature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&assembly_get_type_signature[offset],
-            system_type_type_ref_compressed_token,
-            system_type_type_ref_compressed_token_length);
+        memcpy(&assembly_get_type_signature[offset], system_type_type_ref_compressed_token, system_type_type_ref_compressed_token_length);
         offset += system_type_type_ref_compressed_token_length;
         assembly_get_type_signature[offset++] = ELEMENT_TYPE_STRING;
         assembly_get_type_signature[offset++] = ELEMENT_TYPE_BOOLEAN;
 
         mdMemberRef assembly_get_type_member_ref;
-        hr = metadata_emit->DefineMemberRef(system_reflection_assembly_type_ref,
-            gettype_name, assembly_get_type_signature,
-            offset, &assembly_get_type_member_ref);
+        hr = metadata_emit->DefineMemberRef(system_reflection_assembly_type_ref, gettype_name, assembly_get_type_signature, offset, &assembly_get_type_member_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: System.Reflection.Assembly.GetType(string name, bool throwOnError) DefineMemberRef failed");
             return hr;
@@ -631,16 +658,12 @@ namespace shared {
         type_get_method_signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
         type_get_method_signature[offset++] = 1;
         type_get_method_signature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&type_get_method_signature[offset],
-            system_reflection_methodinfo_type_ref_compressed_token,
-            system_reflection_methodinfo_type_ref_compressed_token_length);
+        memcpy(&type_get_method_signature[offset], system_reflection_methodinfo_type_ref_compressed_token, system_reflection_methodinfo_type_ref_compressed_token_length);
         offset += system_reflection_methodinfo_type_ref_compressed_token_length;
         type_get_method_signature[offset++] = ELEMENT_TYPE_STRING;
 
         mdMemberRef type_get_method_member_ref;
-        hr = metadata_emit->DefineMemberRef(system_type_type_ref,
-            getmethod_name, type_get_method_signature,
-            offset, &type_get_method_member_ref);
+        hr = metadata_emit->DefineMemberRef(system_type_type_ref, getmethod_name, type_get_method_signature, offset, &type_get_method_member_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: System.Type.GetMethod(string name) DefineMemberRef failed");
             return hr;
@@ -659,9 +682,7 @@ namespace shared {
             ELEMENT_TYPE_OBJECT,
         };
         mdMemberRef methodbase_invoke_member_ref;
-        hr = metadata_emit->DefineMemberRef(system_reflection_methodbase_type_ref,
-            invoke_name, methodbase_invoke_signature,
-            6, &methodbase_invoke_member_ref);
+        hr = metadata_emit->DefineMemberRef(system_reflection_methodbase_type_ref, invoke_name, methodbase_invoke_signature, 6, &methodbase_invoke_member_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: System.Reflection.MethodBase.Invoke(object instance, object[] args) DefineMemberRef failed");
             return hr;
@@ -676,10 +697,7 @@ namespace shared {
                 ELEMENT_TYPE_VOID,              // Return type
         };
 
-        mdMemberRef securitycriticalattribute_ctor_member_ref;
-        hr = metadata_emit->DefineMemberRef(securitycriticalattribute_type_ref,
-            ctor_name, ctor_signature,
-            sizeof(ctor_signature), &securitycriticalattribute_ctor_member_ref);
+        hr = metadata_emit->DefineMemberRef(securitycriticalattribute_type_ref, ctor_name, ctor_signature, sizeof(ctor_signature), securitycriticalattribute_ctor_member_ref);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: System.Security.SecurityCriticalAttribute..ctor() DefineMemberRef failed");
             return hr;
@@ -729,7 +747,7 @@ namespace shared {
         // create PInvoke method definition to the native GetAssemblyAndSymbolsBytes method.
         //
         mdMethodDef pinvoke_method_def = mdMethodDefNil;
-        hr = GetGetAssemblyAndSymbolsBytesMethodDef(metadata_emit, module_type_def, securitycriticalattribute_ctor_member_ref, &pinvoke_method_def);
+        hr = GetGetAssemblyAndSymbolsBytesMethodDef(metadata_emit, type_def, *securitycriticalattribute_ctor_member_ref, &pinvoke_method_def);
         if (FAILED(hr)) {
             return hr;
         }
@@ -739,7 +757,7 @@ namespace shared {
         //
         // If the loader method cannot be found we create <Module>.DD_LoadInitializationAssemblies() mdMethodDef
         //
-        hr = metadata_emit->DefineMethod(module_type_def, loader_method_name.c_str(), mdStatic, loader_method_signature, sizeof(loader_method_signature), 0, 0, &loader_method_method_def);
+        hr = metadata_emit->DefineMethod(type_def, loader_method_name.c_str(), mdStatic, loader_method_signature, sizeof(loader_method_signature), 0, 0, loader_method_method_def);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: Error creating the loader method.");
             return hr;
@@ -748,9 +766,9 @@ namespace shared {
         //
         // Set SecurityCriticalAttribute to the loader method.
         //
-        BYTE customAttributeData[] = {0x01, 0x00, 0x00, 0x00};
+        BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
         mdCustomAttribute security_critical_attribute;
-        hr = metadata_emit->DefineCustomAttribute(loader_method_method_def, securitycriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
+        hr = metadata_emit->DefineCustomAttribute(*loader_method_method_def, *securitycriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
         if (FAILED(hr)) {
             Warn("Loader::InjectLoaderToModuleInitializer: Error creating the security critical attribute for the loader method.");
             return hr;
@@ -787,7 +805,7 @@ namespace shared {
         //
         // Write method body
         //
-        ILRewriter rewriter_void(this->info_, nullptr, module_id, loader_method_method_def);
+        ILRewriter rewriter_void(this->info_, nullptr, module_id, *loader_method_method_def);
         rewriter_void.InitializeTiny();
         rewriter_void.SetTkLocalVarSig(locals_signature_token);
         ILRewriterWrapper rewriter_wrapper(&rewriter_void);
@@ -927,136 +945,10 @@ namespace shared {
             Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + ToString(module_id));
             return hr;
         }
-
-
-        // ***************************************************************************************************************
-
-        //
-        // Check if the <Module> type has already a ..ctor, if not we create an empty one.
-        //
-        const LPCWSTR constructor_name = WStr(".cctor");
-        COR_SIGNATURE cctor_signature[] = {
-                IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
-                0,                              // Number of parameters
-                ELEMENT_TYPE_VOID,              // Return type
-        };
-
-        mdMethodDef cctor_method_def = mdMethodDefNil;
-        hr = metadata_import->FindMethod(module_type_def, constructor_name, cctor_signature, sizeof(cctor_signature), &cctor_method_def);
-        if (FAILED(hr)) {
-            Debug("Loader::InjectLoaderToModuleInitializer: failed fetching <Module>..ctor mdMethodDef, creating new .ctor [ModuleID=" +
-                ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + ", Module=" + module_file_name_string + "]");
-
-            //
-            // Define a new ..ctor for the <Module> type
-            //
-            hr = metadata_emit->DefineMethod(module_type_def, constructor_name,
-                                             mdPublic | mdStatic | mdRTSpecialName | mdSpecialName, cctor_signature,
-                                             sizeof(cctor_signature), 0, 0, &cctor_method_def);
-
-            if (FAILED(hr)) {
-              Warn("Loader::InjectLoaderToModuleInitializer: Error creating .cctor for <Module> [ModuleID=" +
-                  ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + ", Module=" + module_file_name_string + "]");
-                return hr;
-            }
-
-            //
-            // Create a simple method body with only the `ret` opcode instruction.
-            //
-            ILRewriter rewriter_cctor(this->info_, nullptr, module_id, cctor_method_def);
-            rewriter_cctor.InitializeTiny();
-            ILRewriterWrapper rewriter_wrapper_cctor(&rewriter_cctor);
-            rewriter_wrapper_cctor.SetILPosition(rewriter_cctor.GetILList()->m_pNext);
-            rewriter_wrapper_cctor.Return();
-            hr = rewriter_cctor.Export();
-            if (FAILED(hr)) {
-                Warn("Loader::InjectLoaderToModuleInitializer: ILRewriter.Export failed creating .cctor for <Module> [ModuleID=" +
-                    ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + ", Module=" + module_file_name_string + "]");
-                return hr;
-            }
-        }
-
-        //
-        // Set SecurityCriticalAttribute to the loader method.
-        //
-        BYTE cctor_customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
-        mdCustomAttribute cctor_security_critical_attribute;
-        hr = metadata_emit->DefineCustomAttribute(cctor_method_def, securitycriticalattribute_ctor_member_ref, cctor_customAttributeData, sizeof(cctor_customAttributeData), &cctor_security_critical_attribute);
-        if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: Error creating the security critical attribute for the module ..ctor method.");
-            return hr;
-        }
-
-        //
-        // At this point we have a mdTypeDef for <Module> and a mdMethodDef for the ..ctor
-        // that we can rewrite to load the loader
-        //
-
-        //
-        // rewrite ..ctor to call the startup loader.
-        //
-        ILRewriter rewriter_cctor(this->info_, nullptr, module_id, cctor_method_def);
-        hr = rewriter_cctor.Import();
-        if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Import() failed for ModuleID=" + ToString(module_id) +
-                 ", CCTORMethodDef" + ToString(cctor_method_def));
-            return hr;
-        }
-        ILRewriterWrapper rewriter_wrapper_cctor(&rewriter_cctor);
-        rewriter_wrapper_cctor.SetILPosition(rewriter_cctor.GetILList()->m_pNext);
-        rewriter_wrapper_cctor.CallMember(loader_method_method_def, false);
-        hr = rewriter_cctor.Export();
-        if (FAILED(hr)) {
-            Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + ToString(module_id) +
-                 ", CCTORMethodDef" + ToString(cctor_method_def));
-            return hr;
-        }
-
-        Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + ToString(module_id) +
-              ", AssemblyID=" + ToString(assembly_id) +
-              ", AssemblyName=" + ToString(assembly_name_string) +
-              ", AppDomainID=" + ToString(app_domain_id) +
-              ", ModuleTypeDef=" + ToString(module_type_def) +
-              ", ModuleCCTORDef=" + ToString(cctor_method_def) +
-              ", Module=" + module_file_name_string + "]");
-        return S_OK;
-    }
-
-    HRESULT Loader::WriteAssembliesStringArray(
-        ILRewriterWrapper& rewriter_wrapper,
-        const ComPtr<IMetaDataEmit2> metadata_emit,
-        const std::vector<WSTRING>& assembly_string_vector,
-        mdTypeRef string_type_ref) {
-
-      // ldc.i4 = const int (array length)
-      // newarr System.String
-      rewriter_wrapper.CreateArray(string_type_ref, (INT32)assembly_string_vector.size());
-
-      // loading array index
-      for (ULONG i = 0; i < assembly_string_vector.size(); i++) {
-        // dup
-        // ldc.i4 = const int array index 0
-        rewriter_wrapper.BeginLoadValueIntoArray(i);
-
-        // Create a string token
-        mdString string_token;
-        auto hr = metadata_emit->DefineUserString(assembly_string_vector[i].c_str(), (ULONG)assembly_string_vector[i].size(), &string_token);
-        if (FAILED(hr)) {
-          Warn("Loader::InjectLoaderToModuleInitializer: DefineUserString for string array failed");
-          return hr;
-        }
-
-        // ldstr assembly index value
-        rewriter_wrapper.LoadStr(string_token);
-
-        // stelem.ref
-        rewriter_wrapper.EndLoadValueIntoArray();
-      }
-
-      return S_OK;
     }
 
     HRESULT Loader::GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMemberRef securitycriticalattribute_ctor_member_ref, mdMethodDef* result_method_def) {
+
         //
         // create PInvoke method definition to the native GetAssemblyAndSymbolsBytes method (interop.cpp)
         //
@@ -1115,7 +1007,143 @@ namespace shared {
         return hr;
     }
 
+    HRESULT Loader::WriteAssembliesStringArray(ILRewriterWrapper& rewriter_wrapper, const ComPtr<IMetaDataEmit2> metadata_emit, const std::vector<WSTRING>& assembly_string_vector, mdTypeRef string_type_ref) {
+
+        // ldc.i4 = const int (array length)
+        // newarr System.String
+        rewriter_wrapper.CreateArray(string_type_ref, (INT32)assembly_string_vector.size());
+
+        // loading array index
+        for (ULONG i = 0; i < assembly_string_vector.size(); i++) {
+            // dup
+            // ldc.i4 = const int array index 0
+            rewriter_wrapper.BeginLoadValueIntoArray(i);
+
+            // Create a string token
+            mdString string_token;
+            auto hr = metadata_emit->DefineUserString(assembly_string_vector[i].c_str(), (ULONG)assembly_string_vector[i].size(), &string_token);
+            if (FAILED(hr)) {
+                Warn("Loader::InjectLoaderToModuleInitializer: DefineUserString for string array failed");
+                return hr;
+            }
+
+            // ldstr assembly index value
+            rewriter_wrapper.LoadStr(string_token);
+
+            // stelem.ref
+            rewriter_wrapper.EndLoadValueIntoArray();
+        }
+
+        return S_OK;
+    }
+
+    HRESULT Loader::EmitModuleCCtor(const ModuleID module_id, mdTypeDef type_def, AppDomainID app_domain_id, mdMethodDef loader_method_method_def, mdMemberRef securitycriticalattribute_ctor_member_ref) {
+
+        // **************************************************************************************************************
+        //
+        // Retrieve the metadata interfaces for the ModuleID
+        //
+        ComPtr<IUnknown> metadata_interfaces;
+        HRESULT hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: failed fetching metadata interfaces for ModuleID=" + ToString(module_id));
+            return hr;
+        }
+
+        //
+        // Extract both IMetaDataImport2 and IMetaDataEmit2 interfaces
+        //
+        const ComPtr<IMetaDataImport2> metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        const ComPtr<IMetaDataEmit2> metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+
+        //
+        // Check if the <Module> type has already a ..ctor, if not we create an empty one.
+        //
+        const LPCWSTR constructor_name = WStr(".cctor");
+        COR_SIGNATURE cctor_signature[] = {
+                IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
+                0,                              // Number of parameters
+                ELEMENT_TYPE_VOID,              // Return type
+        };
+
+        mdMethodDef cctor_method_def = mdMethodDefNil;
+        hr = metadata_import->FindMethod(type_def, constructor_name, cctor_signature, sizeof(cctor_signature), &cctor_method_def);
+        if (FAILED(hr)) {
+            Debug("Loader::InjectLoaderToModuleInitializer: failed fetching <Module>..ctor mdMethodDef, creating new .ctor [ModuleID=" +
+                ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + "]");
+
+            //
+            // Define a new ..ctor for the <Module> type
+            //
+            hr = metadata_emit->DefineMethod(type_def, constructor_name,
+                mdPublic | mdStatic | mdRTSpecialName | mdSpecialName, cctor_signature,
+                sizeof(cctor_signature), 0, 0, &cctor_method_def);
+
+            if (FAILED(hr)) {
+                Warn("Loader::InjectLoaderToModuleInitializer: Error creating .cctor for <Module> [ModuleID=" +
+                    ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + "]");
+                return hr;
+            }
+
+            //
+            // Create a simple method body with only the `ret` opcode instruction.
+            //
+            ILRewriter rewriter_cctor(this->info_, nullptr, module_id, cctor_method_def);
+            rewriter_cctor.InitializeTiny();
+            ILRewriterWrapper rewriter_wrapper_cctor(&rewriter_cctor);
+            rewriter_wrapper_cctor.SetILPosition(rewriter_cctor.GetILList()->m_pNext);
+            rewriter_wrapper_cctor.Return();
+            hr = rewriter_cctor.Export();
+            if (FAILED(hr)) {
+                Warn("Loader::InjectLoaderToModuleInitializer: ILRewriter.Export failed creating .cctor for <Module> [ModuleID=" +
+                    ToString(module_id) + ", AppDomainID=" + ToString(app_domain_id) + "]");
+                return hr;
+            }
+        }
+
+        //
+        // Set SecurityCriticalAttribute to the loader method.
+        //
+        BYTE cctor_customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
+        mdCustomAttribute cctor_security_critical_attribute;
+        hr = metadata_emit->DefineCustomAttribute(cctor_method_def, securitycriticalattribute_ctor_member_ref, cctor_customAttributeData, sizeof(cctor_customAttributeData), &cctor_security_critical_attribute);
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: Error creating the security critical attribute for the module ..ctor method.");
+            return hr;
+        }
+
+        //
+        // At this point we have a mdTypeDef for <Module> and a mdMethodDef for the ..ctor
+        // that we can rewrite to load the loader
+        //
+
+        //
+        // rewrite ..ctor to call the startup loader.
+        //
+        ILRewriter rewriter_cctor(this->info_, nullptr, module_id, cctor_method_def);
+        hr = rewriter_cctor.Import();
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Import() failed for ModuleID=" + ToString(module_id) +
+                ", CCTORMethodDef" + ToString(cctor_method_def));
+            return hr;
+        }
+        ILRewriterWrapper rewriter_wrapper_cctor(&rewriter_cctor);
+        rewriter_wrapper_cctor.SetILPosition(rewriter_cctor.GetILList()->m_pNext);
+        rewriter_wrapper_cctor.CallMember(loader_method_method_def, false);
+        hr = rewriter_cctor.Export();
+        if (FAILED(hr)) {
+            Warn("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + ToString(module_id) +
+                ", CCTORMethodDef" + ToString(cctor_method_def));
+            return hr;
+        }
+
+        return hr;
+    }
+
+    //
+
     bool Loader::GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize, WCHAR* moduleName) {
+
         //
         // global lock
         //

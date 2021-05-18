@@ -190,6 +190,8 @@ namespace shared {
         static void DeleteSingeltonInstance(void);
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
+        HRESULT EmitDDLoadInitializationAssemblies(const ModuleID module_id, mdTypeDef type_def, WSTRING assembly_name_wstring, mdMethodDef* loader_method_method_def, mdMemberRef* securitycriticalattribute_ctor_member_ref);
+        HRESULT EmitModuleCCtor(const ModuleID module_id, mdTypeDef type_def, AppDomainID app_domain_id, mdMethodDef loader_method_method_def, mdMemberRef securitycriticalattribute_ctor_member_ref);
 
         bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize, WCHAR* moduleName);
     };
