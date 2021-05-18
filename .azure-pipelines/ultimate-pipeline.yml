@@ -400,13 +400,13 @@ stages:
       displayName: docker-compose build IIS containers
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationRegKey
+        dockerComposeCommand: build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
 
     - task: DockerCompose@0
       displayName: docker-compose start IIS containers
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
+        dockerComposeCommand: up -d IntegrationTests.IIS
 
     - powershell: |
         [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
