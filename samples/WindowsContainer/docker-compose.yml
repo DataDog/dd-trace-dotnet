@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    ports:
+      - "8000:80"
+    depends_on:
+      - datadog-agent
+    environment:
+      DD_ENV: "apm-docker-samples"
+      DD_AGENT_HOST: "datadog-agent"
+      DD_TRACE_DEBUG: "true"
+      ASPNETCORE_ENVIRONMENT: Production
+
+  datadog-agent:
+    image: "gcr.io/datadoghq/agent:7"
+    environment:
+      DD_API_KEY: ${DD_API_KEY}
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
