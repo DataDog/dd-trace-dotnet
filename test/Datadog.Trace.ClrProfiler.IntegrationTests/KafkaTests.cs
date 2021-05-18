@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                          .And.OnlyContain(x => x.Service == "Samples.Kafka-kafka")
                          .And.OnlyContain(x => x.Resource == resourceName)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0)
-                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.MessageQueueTimeMs))
+                         .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.MessageQueueTimeMs))
                          .And.OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaOffset) && Regex.IsMatch(x.Tags[Tags.KafkaOffset], @"^[0-9]+$"))
                          .And.OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaPartition) && Regex.IsMatch(x.Tags[Tags.KafkaPartition], @"^\[[0-9]+\]$"));
         }

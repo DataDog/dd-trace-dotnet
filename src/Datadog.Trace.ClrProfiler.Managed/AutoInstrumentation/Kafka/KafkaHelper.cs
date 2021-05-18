@@ -134,9 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     var consumeTime = span.StartTime.UtcDateTime;
                     var produceTime = message.Timestamp.UtcDateTime;
-                    var queueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
-                    // TODO: should this be a metric or tag?
-                    tags.RecordQueueTimeMs = queueTimeMs.ToString("0");
+                    tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
                 }
 
                 if (message is not null && message.Value is null)

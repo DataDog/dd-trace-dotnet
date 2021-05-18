@@ -12,8 +12,11 @@ namespace Datadog.Trace.Tagging
                 new ReadOnlyProperty<KafkaTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
                 new Property<KafkaTags, string>(Trace.Tags.KafkaPartition, t => t.Partition, (t, v) => t.Partition = v),
                 new Property<KafkaTags, string>(Trace.Tags.KafkaOffset, t => t.Offset, (t, v) => t.Offset = v),
-                new Property<KafkaTags, string>(Trace.Tags.KafkaTombstone, t => t.Tombstone, (t, v) => t.Tombstone = v),
-                new Property<KafkaTags, string>(Trace.Tags.MessageQueueTimeMs, t => t.RecordQueueTimeMs, (t, v) => t.RecordQueueTimeMs = v));
+                new Property<KafkaTags, string>(Trace.Tags.KafkaTombstone, t => t.Tombstone, (t, v) => t.Tombstone = v));
+
+        private static readonly IProperty<double?>[] KafkaTagsMetrics =
+            InstrumentationMetricsProperties.Concat(
+                new Property<KafkaTags, double?>(Trace.Tags.MessageQueueTimeMs, t => t.MessageQueueTimeMs, (t, v) => t.MessageQueueTimeMs = v));
 
         // For the sake of unit tests, define a default constructor
         // though the Kafka integration should use the constructor that takes a spanKind
@@ -39,8 +42,10 @@ namespace Datadog.Trace.Tagging
 
         public string Tombstone { get; set; }
 
-        public string RecordQueueTimeMs { get; set; }
+        public double? MessageQueueTimeMs { get; set; }
 
         protected override IProperty<string>[] GetAdditionalTags() => KafkaTagsProperties;
+
+        protected override IProperty<double?>[] GetAdditionalMetrics() => KafkaTagsMetrics;
     }
 }
