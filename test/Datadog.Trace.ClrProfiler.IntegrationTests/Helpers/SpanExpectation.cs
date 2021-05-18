@@ -181,32 +181,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
         }
 
-        public void RegisterTagExpectation(
-            string key,
-            Func<string, bool> isExpected,
-            string errorMessage,
-            Func<MockTracerAgent.Span, bool> when = null)
-        {
-            when ??= Always;
-
-            Assertions.Add(span =>
-            {
-                if (!when(span))
-                {
-                    return null;
-                }
-
-                var actualValue = GetTag(span, key);
-
-                if (!isExpected(actualValue))
-                {
-                    return errorMessage;
-                }
-
-                return null;
-            });
-        }
-
         protected string FailureMessage(string name, string actual, string expected)
         {
             return $"({name} mismatch: actual: {actual ?? "NULL"}, expected: {expected ?? "NULL"})";
