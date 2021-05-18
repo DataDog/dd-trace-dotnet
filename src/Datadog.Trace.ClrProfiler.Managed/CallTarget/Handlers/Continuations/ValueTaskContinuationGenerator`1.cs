@@ -44,11 +44,34 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 }
                 catch (Exception ex)
                 {
-                    _continuation(instance, result, ex, state);
+                    try
+                    {
+                        // *
+                        // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                        // *
+                        _continuation(instance, result, ex, state);
+                    }
+                    catch (Exception contEx)
+                    {
+                        IntegrationOptions<TIntegration, TTarget>.LogException(contEx, "Exception occurred when calling the CallTarget integration continuation.");
+                    }
+
                     throw;
                 }
 
-                return _continuation(instance, result, null, state);
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // *
+                    return _continuation(instance, result, null, state);
+                }
+                catch (Exception contEx)
+                {
+                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx, "Exception occurred when calling the CallTarget integration continuation.");
+                }
+
+                return result;
             }
         }
     }

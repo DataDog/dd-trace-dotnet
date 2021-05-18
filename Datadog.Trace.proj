@@ -121,24 +121,14 @@
 
   <Target Name="PublishManagedProfilerOnDisk">
     <ItemGroup>
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-        <Properties>Platform=AnyCPU;TargetFramework=net45;PublishDir=$(TracerHomeDirectory)\net45</Properties>
-      </ManagedProfilerPublishProject>
-
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-        <Properties>Platform=AnyCPU;TargetFramework=net461;PublishDir=$(TracerHomeDirectory)\net461</Properties>
-      </ManagedProfilerPublishProject>
-
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-        <Properties>Platform=AnyCPU;TargetFramework=netstandard2.0;PublishDir=$(TracerHomeDirectory)\netstandard2.0</Properties>
-      </ManagedProfilerPublishProject>
-
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-        <Properties>Platform=AnyCPU;TargetFramework=netcoreapp3.1;PublishDir=$(TracerHomeDirectory)\netcoreapp3.1</Properties>
-      </ManagedProfilerPublishProject>
+      <TargetFramework Include="net45;net461;netstandard2.0;netcoreapp3.1" />
     </ItemGroup>
 
-    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="false">
+    <ItemGroup>
+      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+    </ItemGroup>
+
+    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="false" Properties="Platform=AnyCPU;TargetFramework=%(TargetFramework.Identity);PublishDir=$(TracerHomeDirectory)\%(TargetFramework.Identity)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>

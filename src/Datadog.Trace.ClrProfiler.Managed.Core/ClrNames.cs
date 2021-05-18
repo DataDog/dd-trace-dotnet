@@ -20,6 +20,8 @@ namespace Datadog.Trace.ClrProfiler
         public const string UInt32 = "System.UInt32";
         public const string UInt64 = "System.UInt64";
 
+        public const string TimeSpan = "System.TimeSpan";
+
         public const string Stream = "System.IO.Stream";
 
         public const string Task = "System.Threading.Tasks.Task";

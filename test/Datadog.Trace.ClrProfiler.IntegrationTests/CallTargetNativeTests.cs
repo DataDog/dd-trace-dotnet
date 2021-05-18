@@ -21,16 +21,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             for (int i = 0; i < 10; i++)
             {
                 bool fastPath = i < 9;
-                yield return new object[] { i, fastPath, false };
-                yield return new object[] { i, fastPath, true };
+                yield return new object[] { i, fastPath };
+                yield return new object[] { i, fastPath };
             }
         }
 
         [Theory]
         [MemberData(nameof(MethodArgumentsData))]
-        public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath, bool inlining)
+        public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
-            SetCallTargetSettings(true, inlining);
+            SetCallTargetSettings(enableCallTarget: true);
             SetEnvironmentVariable("DD_INTEGRATIONS", Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), "integrations.json"));
             int agentPort = TcpPortProvider.GetOpenPort();
 
@@ -47,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, beginMethodString).Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+                int exceptionCount = Regex.Matches(processResult.StandardOutput, "Exception thrown.").Count;
 
                 string[] typeNames = new string[]
                 {
@@ -58,8 +59,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".ReturnGenericMethod",
                 };
 
-                Assert.Equal(32, beginMethodCount);
-                Assert.Equal(32, endMethodCount);
+                if (numberOfArguments == 0)
+                {
+                    // On number of arguments = 0 the throw exception on integrations async continuation runs.
+                    // So we have 1 more case with an exception being reported from the integration.
+                    Assert.Equal(43, beginMethodCount);
+                    Assert.Equal(43, endMethodCount);
+                    Assert.Equal(11, exceptionCount);
+                }
+                else
+                {
+                    Assert.Equal(42, beginMethodCount);
+                    Assert.Equal(42, endMethodCount);
+                    Assert.Equal(10, exceptionCount);
+                }
+
                 foreach (var typeName in typeNames)
                 {
                     Assert.Contains(typeName, processResult.StandardOutput);

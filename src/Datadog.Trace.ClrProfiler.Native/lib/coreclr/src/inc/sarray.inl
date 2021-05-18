@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 // --------------------------------------------------------------------------------
 // SArray.inl
 // --------------------------------------------------------------------------------
@@ -16,7 +15,7 @@ inline SArray<ELEMENT, BITWISE_COPY>::SArray()
 {
     LIMITED_METHOD_CONTRACT;
 }
-    
+
 template <typename ELEMENT, BOOL BITWISE_COPY>
 inline SArray<ELEMENT, BITWISE_COPY>::SArray(COUNT_T count)
   : m_buffer(count * sizeof(ELEMENT))
@@ -151,7 +150,7 @@ inline void SArray<ELEMENT, BITWISE_COPY>::SetCount(COUNT_T count)
     COUNT_T oldCount = GetCount();
     if (count > oldCount)
         ConstructBuffer(Begin() + oldCount, count - oldCount);
-        
+
     m_buffer.SetSize(count*sizeof(ELEMENT));
 
     if (oldCount > count)
@@ -301,7 +300,7 @@ inline void SArray<ELEMENT, BITWISE_COPY>::ConstructBuffer(const Iterator &i, CO
         GC_NOTRIGGER;
     }
     CONTRACTL_END;
-    
+
     if (!BITWISE_COPY)
     {
         ELEMENT *start = GetElements() + (i - Begin());
@@ -351,7 +350,7 @@ inline void SArray<ELEMENT, BITWISE_COPY>::DestructBuffer(const Iterator &i, COU
         GC_NOTRIGGER;
     }
     CONTRACTL_END;
-    
+
     if (!BITWISE_COPY)
     {
         ELEMENT *start = GetElements() + (i - Begin());

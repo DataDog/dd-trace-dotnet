@@ -297,6 +297,7 @@ struct TypeInfo {
   const TypeInfo* extend_from;
   const bool valueType;
   const bool isGeneric;
+  const TypeInfo* parent_type;
 
   TypeInfo()
       : id(0),
@@ -305,16 +306,19 @@ struct TypeInfo {
         token_type(0),
         extend_from(nullptr),
         valueType(false),
-        isGeneric(false) {}
+        isGeneric(false),
+        parent_type(nullptr) {}
   TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type,
-           const TypeInfo* extend_from, bool valueType, bool isGeneric) 
+           const TypeInfo* extend_from, bool valueType, bool isGeneric,
+           const TypeInfo* parent_type)
       : id(id),
         name(name),
         type_spec(type_spec),
         token_type(token_type),
         extend_from(extend_from),
         valueType(valueType),
-        isGeneric(isGeneric) {}
+        isGeneric(isGeneric),
+        parent_type(parent_type) {}
 
   bool IsValid() const { return id != 0; }
 };
@@ -382,7 +386,7 @@ struct FunctionInfo {
 
   FunctionInfo(mdToken id, WSTRING name, TypeInfo type,
                MethodSignature signature,
-               MethodSignature function_spec_signature, 
+               MethodSignature function_spec_signature,
                mdToken method_def_id,
                FunctionMethodSignature method_signature)
       : id(id),
@@ -486,6 +490,11 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
                       const mdToken targetFunctionToken,
                       const MethodSignature targetFunctionSignature,
                       mdToken* ret_type_token);
+
+bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName,
+                       const trace::WSTRING assemblyName,
+                       const ComPtr<IMetaDataImport2>& metadata_import,
+                       mdTypeDef& typeDef);
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_CLR_HELPERS_H_

@@ -18,14 +18,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         [Theory]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
+        [InlineData(true)]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTracesWithNetStandard(bool enableCallTarget, bool enableInlining)
+        public void SubmitsTracesWithNetStandard(bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             var expectedSpanCount = 91;
 
@@ -58,15 +57,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         [Theory]
-        [InlineData(false, false)]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
+        [InlineData(false)]
+        [InlineData(true)]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget, bool enableInlining)
+        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             var totalSpanCount = 21;
 

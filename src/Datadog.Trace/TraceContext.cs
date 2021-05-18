@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -97,7 +98,14 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    span.SetMetric(Metrics.SamplingPriority, (int)_samplingPriority);
+                    if (span.Tags is CommonTags tags)
+                    {
+                        tags.SamplingPriority = (int)_samplingPriority;
+                    }
+                    else
+                    {
+                        span.SetMetric(Metrics.SamplingPriority, (int)_samplingPriority);
+                    }
                 }
             }
 
@@ -108,7 +116,19 @@ namespace Datadog.Trace
                 _spans.Add(span);
                 _openSpans--;
 
-                if (_openSpans == 0 || ShouldTriggerPartialFlush())
+                bool shouldFlush = _openSpans == 0;
+
+                if (!shouldFlush && ShouldTriggerPartialFlush())
+                {
+                    shouldFlush = true;
+                    Log.Debug<ulong, ulong, int>(
+                        "Closing span {spanId} triggered a partial flush of trace {traceId} with {spanCount} pending spans",
+                        span.SpanId,
+                        span.TraceId,
+                        _spans.Count);
+                }
+
+                if (shouldFlush)
                 {
                     spansToWrite = _spans.ToArray();
                     _spans.Clear();

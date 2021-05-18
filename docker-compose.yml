@@ -72,7 +72,7 @@ services:
     - MYSQL_PASSWORD=mysqldb
     ports:
     - "127.0.0.1:3307:3306"
-    
+
   mysql57:
     image: mysql/mysql-server:5.7
     environment:
@@ -138,7 +138,7 @@ services:
     command: /project/build/docker/package.sh
     volumes:
     - ./:/project
-  
+
   package.alpine:
     build:
       context: ./
@@ -156,7 +156,7 @@ services:
       context: ./
       dockerfile: ./build/docker/native.dockerfile
     image: datadog-native
-    environment: 
+    environment:
     - buildConfiguration=${buildConfiguration}
     command: /project/build/docker/Datadog.Trace.ClrProfiler.Native.sh
     volumes:
@@ -167,7 +167,7 @@ services:
       context: ./
       dockerfile: ./build/docker/native.alpine.dockerfile
     image: datadog-native-alpine
-    environment: 
+    environment:
     - buildConfiguration=${buildConfiguration}
     command: /project/build/docker/Datadog.Trace.ClrProfiler.Native.sh
     volumes:

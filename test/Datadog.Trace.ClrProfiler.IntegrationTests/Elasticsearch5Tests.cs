@@ -22,9 +22,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var item in PackageVersions.ElasticSearch5)
             {
-                yield return item.Concat(false, false);
-                yield return item.Concat(true, false);
-                yield return item.Concat(true, true);
+                yield return item.Concat(false);
+                yield return item.Concat(true);
             }
         }
 
@@ -32,9 +31,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetElasticsearch))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion, bool enableCallTarget, bool enableInlining)
+        public void SubmitsTraces(string packageVersion, bool enableCallTarget)
         {
-            SetCallTargetSettings(enableCallTarget, enableInlining);
+            SetCallTargetSettings(enableCallTarget);
 
             int agentPort = TcpPortProvider.GetOpenPort();
 

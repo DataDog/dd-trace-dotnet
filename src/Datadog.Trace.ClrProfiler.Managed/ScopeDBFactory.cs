@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             _type = typeof(T);
             _fullName = _type.FullName;
-            _dbTypeName = ScopeFactory.GetDbType(_type.Name);
+            _dbTypeName = ScopeFactory.GetDbType(_type.Namespace, _type.Name);
             _operationName = $"{_dbTypeName}.query";
         }
 

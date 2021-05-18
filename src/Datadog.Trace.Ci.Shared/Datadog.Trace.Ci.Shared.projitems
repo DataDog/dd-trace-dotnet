@@ -12,6 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)BuildTags.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CIEnvironmentValues.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CommonTags.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FeatureTrackingAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GitInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TestParameters.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TestTags.cs" />

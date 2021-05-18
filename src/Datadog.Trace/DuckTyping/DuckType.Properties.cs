@@ -92,7 +92,7 @@ namespace Datadog.Trace.DuckTyping
                 if (targetMethod.IsPublic)
                 {
                     // We can emit a normal call if we have a public instance with a public property method.
-                    il.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                    il.EmitCall(targetMethod.IsStatic || instanceField.FieldType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
                 }
                 else
                 {
@@ -127,7 +127,7 @@ namespace Datadog.Trace.DuckTyping
                     dynIL.WriteTypeConversion(dynParameters[idx], targetParameters[idx]);
                 }
 
-                dynIL.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                dynIL.EmitCall(targetMethod.IsStatic || instanceField.FieldType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
                 dynIL.WriteTypeConversion(targetProperty.PropertyType, returnType);
                 dynIL.Emit(OpCodes.Ret);
                 dynIL.Flush();

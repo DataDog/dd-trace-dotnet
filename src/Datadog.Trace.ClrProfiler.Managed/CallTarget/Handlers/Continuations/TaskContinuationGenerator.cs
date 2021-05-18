@@ -53,10 +53,25 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         private static void ContinuationAction(Task previousTask, object state)
         {
-            ContinuationGeneratorState<TTarget> contState = (ContinuationGeneratorState<TTarget>)state;
-            _continuation(contState.Target, null, previousTask.Exception, contState.State);
+            try
+            {
+                ContinuationGeneratorState<TTarget> contState = (ContinuationGeneratorState<TTarget>)state;
+
+                // *
+                // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                // *
+                _continuation(contState.Target, null, previousTask.Exception, contState.State);
+            }
+            catch (Exception ex)
+            {
+                IntegrationOptions<TIntegration, TTarget>.LogException(ex, "Exception occurred when calling the CallTarget integration continuation.");
+            }
+
             if (previousTask.Exception is not null)
             {
+                // *
+                // If the original task throws an exception we rethrow it here.
+                // *
                 ExceptionDispatchInfo.Capture(previousTask.Exception.GetBaseException()).Throw();
             }
         }

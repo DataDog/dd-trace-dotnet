@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 1.26.1)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 1.26.3)
 
 # ******************************************************
 # Environment detection
@@ -185,12 +185,12 @@ elseif(ISLINUX)
     add_compile_options(-DLINUX -Wno-pragmas)
 endif()
 if (BIT64)
-    add_compile_options(-DBIT64)
+    add_compile_options(-DBIT64 -DHOST_64BIT)
 endif()
 if (ISAMD64)
     add_compile_options(-DAMD64)
 elseif (ISX86)
-    add_compile_options(-DBX86)
+    add_compile_options(-DBX86 -DHOST_X86)
 elseif (ISARM64)
     add_compile_options(-DARM64)
 elseif (ISARM)
@@ -217,6 +217,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         util.cpp
         calltarget_tokens.cpp
         rejit_handler.cpp
+        lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${GENERATED_OBJ_FILES}
 )
 

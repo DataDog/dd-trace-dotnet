@@ -75,6 +75,10 @@ namespace Datadog.Trace.Tools.Runner
             // Start logic
 
             Dictionary<string, string> profilerEnvironmentVariables = Utils.GetProfilerEnvironmentVariables(RunnerFolder, Platform, options);
+            if (profilerEnvironmentVariables is null)
+            {
+                return 1;
+            }
 
             if (options.SetEnvironmentVariables)
             {

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Web;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -136,7 +137,10 @@ namespace Datadog.Trace.AspNet
                 // Decorate the incoming HTTP Request with distributed tracing headers
                 // in case the next processor cannot access the stored Scope
                 // (e.g. WCF being hosted in IIS)
-                SpanContextPropagator.Instance.Inject(scope.Span.Context, httpRequest.Headers.Wrap());
+                if (HttpRuntime.UsingIntegratedPipeline)
+                {
+                    SpanContextPropagator.Instance.Inject(scope.Span.Context, httpRequest.Headers.Wrap());
+                }
             }
             catch (Exception ex)
             {
@@ -159,7 +163,11 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    scope.Span.SetHeaderTags(app.Context.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    if (HttpRuntime.UsingIntegratedPipeline)
+                    {
+                        scope.Span.SetHeaderTags<IHeadersCollection>(app.Context.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    }
+
                     scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
 
                     if (app.Context.Items[SharedConstants.HttpContextPropagatedResourceNameKey] is string resourceName
@@ -195,7 +203,10 @@ namespace Datadog.Trace.AspNet
 
                 if (httpContext.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    if (HttpRuntime.UsingIntegratedPipeline)
+                    {
+                        scope.Span.SetHeaderTags<IHeadersCollection>(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    }
 
                     if (exception != null && !is404)
                     {

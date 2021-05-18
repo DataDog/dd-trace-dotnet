@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -149,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                string dbType = GetDbType(commandType.Name);
+                string dbType = GetDbType(commandType.Namespace, commandType.Name);
 
                 if (dbType == null)
                 {
@@ -191,33 +192,45 @@ namespace Datadog.Trace.ClrProfiler
             return scope;
         }
 
-        public static string GetDbType(string commandTypeName)
+        public static string GetDbType(string namespaceName, string commandTypeName)
         {
-            switch (commandTypeName)
-            {
-                case "SqlCommand":
-                    return "sql-server";
-                case "NpgsqlCommand":
-                    return "postgres";
-                case "MySqlCommand":
-                    return "mysql";
-                case "OracleCommand":
-                    return "oracle";
-                case "SqliteCommand":
-                case "SQLiteCommand":
-                    return "sqlite";
-                case "InterceptableDbCommand":
-                case "ProfiledDbCommand":
-                    // don't create spans for these
-                    return null;
-                default:
-                    const string commandSuffix = "Command";
+            // First we try with the most commons ones. Avoiding the ComputeStringHash
+            var result =
+                commandTypeName switch
+                {
+                    "SqlCommand" => "sql-server",
+                    "NpgsqlCommand" => "postgres",
+                    "MySqlCommand" => "mysql",
+                    "SqliteCommand" => "sqlite",
+                    "SQLiteCommand" => "sqlite",
+                    _ => null,
+                };
 
-                    // remove "Command" suffix if present
-                    return commandTypeName.EndsWith(commandSuffix)
-                               ? commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length).ToLowerInvariant()
-                               : commandTypeName.ToLowerInvariant();
+            // If we add these cases to the previous switch the JIT will apply the ComputeStringHash codegen
+            if (result != null ||
+                commandTypeName == "InterceptableDbCommand" ||
+                commandTypeName == "ProfiledDbCommand")
+            {
+                return result;
             }
+
+            const string commandSuffix = "Command";
+
+            // Now the uncommon cases
+            return
+                commandTypeName switch
+                {
+                    _ when namespaceName.Length == 0 && commandTypeName == commandSuffix => "command",
+                    _ when namespaceName.Contains('.') && commandTypeName == commandSuffix =>
+                        // the + 1 could be dangerous and cause IndexOutOfRangeException, but this shouldn't happen
+                        // a period should never be the last character in a namespace
+                        namespaceName.Substring(namespaceName.LastIndexOf('.') + 1).ToLowerInvariant(),
+                    _ when commandTypeName == commandSuffix =>
+                        namespaceName.ToLowerInvariant(),
+                    _ when commandTypeName.EndsWith(commandSuffix) =>
+                        commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length).ToLowerInvariant(),
+                    _ => commandTypeName.ToLowerInvariant()
+                };
         }
     }
 }

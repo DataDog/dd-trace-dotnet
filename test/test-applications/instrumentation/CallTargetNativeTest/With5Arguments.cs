@@ -34,4 +34,6 @@ namespace CallTargetNativeTest
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
     }
+    class With5ArgumentsThrowOnBegin : With5Arguments { }
+    class With5ArgumentsThrowOnEnd : With5Arguments { }
 }

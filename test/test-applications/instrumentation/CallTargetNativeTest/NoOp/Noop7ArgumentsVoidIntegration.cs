@@ -12,6 +12,12 @@ namespace CallTargetNativeTest.NoOp
         {
             CallTargetState returnValue = CallTargetState.GetDefault();
             Console.WriteLine($"ProfilerOK: BeginMethod(7)<{typeof(Noop7ArgumentsVoidIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}, {typeof(TArg3)}, {typeof(TArg4)}, {typeof(TArg5)}, {typeof(TArg6)}, {typeof(TArg7)}>({instance}, {arg1}, {arg2}, {arg3}, {arg4}, {arg5}, {arg6}, {arg7})");
+            if (instance?.GetType().Name.Contains("ThrowOnBegin") == true)
+            {
+                Console.WriteLine("Exception thrown.");
+                throw new Exception();
+            }
+
             return returnValue;
         }
 
@@ -19,6 +25,12 @@ namespace CallTargetNativeTest.NoOp
         {
             CallTargetReturn returnValue = CallTargetReturn.GetDefault();
             Console.WriteLine($"ProfilerOK: EndMethod(0)<{typeof(Noop7ArgumentsVoidIntegration)}, {typeof(TTarget)}>({instance}, {exception?.ToString() ?? "(null)"}, {state})");
+            if (instance?.GetType().Name.Contains("ThrowOnEnd") == true)
+            {
+                Console.WriteLine("Exception thrown.");
+                throw new Exception();
+            }
+
             return returnValue;
         }
     }

@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 // --------------------------------------------------------------------------------
 // PEInformation.h
 //
@@ -13,7 +12,7 @@
 #ifndef PEKIND_ENUM_DEFINED
 #define PEKIND_ENUM_DEFINED
 // This must match the definition of pekind in fusion.idl
-typedef enum _tagPEKIND 
+typedef enum _tagPEKIND
 {
     peNone      = 0x00000000,
     peMSIL      = 0x00000001,
@@ -43,19 +42,19 @@ inline bool IsPEMSIL(PEKIND x)
     return ( (x == peMSIL) );
 }
 
-#ifdef _WIN64
+#ifdef HOST_64BIT
 inline bool IsProcess32() { return false; }
 #else
 inline bool IsProcess32() { return true; }
 #endif
 
-#if defined(_TARGET_X86_)
+#if defined(TARGET_X86)
 inline PEKIND TargetNativePEKIND() { return peI386; }
-#elif defined(_TARGET_AMD64_)
+#elif defined(TARGET_AMD64)
 inline PEKIND TargetNativePEKIND() { return peAMD64; }
-#elif defined(_TARGET_ARM_)
+#elif defined(TARGET_ARM)
 inline PEKIND TargetNativePEKIND() { return peARM; }
-#elif defined(_TARGET_ARM64_)
+#elif defined(TARGET_ARM64)
 inline PEKIND TargetNativePEKIND() { return peARM64; }
 #else
 #error Need to define valid TargetNativePEKIND()

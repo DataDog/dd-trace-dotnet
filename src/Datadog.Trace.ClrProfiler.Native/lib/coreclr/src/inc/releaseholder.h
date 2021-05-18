@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 
 // This class acts a smart pointer which calls the Release method on any object
 // you place in it when the ReleaseHolder class falls out of scope.  You may use it
@@ -18,11 +17,11 @@ public:
     ReleaseHolder()
         : m_ptr(NULL)
     {}
-    
+
     ReleaseHolder(T* ptr)
         : m_ptr(ptr)
     {}
-    
+
     ~ReleaseHolder()
     {
         Release();
@@ -61,7 +60,7 @@ public:
         m_ptr = NULL;
         return pT;
     }
-    
+
     void Release()
     {
         if (m_ptr != NULL)
@@ -72,6 +71,6 @@ public:
     }
 
 private:
-    T* m_ptr;    
+    T* m_ptr;
 };
 

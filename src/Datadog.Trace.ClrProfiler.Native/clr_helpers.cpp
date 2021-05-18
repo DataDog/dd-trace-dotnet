@@ -204,6 +204,8 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id) {
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                      const mdToken& token) {
   mdToken parent_token = mdTokenNil;
+  TypeInfo* parentTypeInfo = nullptr;
+  mdToken parent_type_token = mdTokenNil;
   WCHAR type_name[kNameMaxSize]{};
   DWORD type_name_len = 0;
   DWORD type_flags;
@@ -220,6 +222,12 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize,
                                             &type_name_len, &type_flags,
                                             &type_extends);
+
+      metadata_import->GetNestedClassProps(token, &parent_type_token);
+      if (parent_type_token != mdTokenNil) {
+        parentTypeInfo = new TypeInfo(GetTypeInfo(metadata_import, parent_type_token));
+      }
+
       if (type_extends != mdTokenNil) {
         extendsInfo = new TypeInfo(GetTypeInfo(metadata_import, type_extends));
         type_valueType = extendsInfo->name == WStr("System.ValueType") ||
@@ -240,18 +248,20 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       if (FAILED(hr) || signature_length < 3) {
         return {};
       }
-      
+
       if (signature[0] & ELEMENT_TYPE_GENERICINST) {
         mdToken type_token;
         CorSigUncompressToken(&signature[2], &type_token);
         const auto baseType = GetTypeInfo(metadata_import, type_token);
         return {baseType.id, baseType.name, token, token_type,
-                baseType.extend_from, baseType.valueType, baseType.isGeneric};
+                baseType.extend_from,
+                baseType.valueType,
+                baseType.isGeneric,
+                baseType.parent_type};
       }
     } break;
     case mdtModuleRef:
-      metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize,
-                                         &type_name_len);
+      metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize, &type_name_len);
       break;
     case mdtMemberRef:
       return GetFunctionInfo(metadata_import, token).type;
@@ -271,7 +281,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
     type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
   }
 
-  return { token, type_name_string, mdTypeSpecNil, token_type, extendsInfo, type_valueType, type_isGeneric };
+  return { token, type_name_string, mdTypeSpecNil, token_type, extendsInfo, type_valueType, type_isGeneric, parentTypeInfo };
 }
 
 mdAssemblyRef FindAssemblyRef(
@@ -310,7 +320,7 @@ std::vector<Integration> FilterIntegrationsByName(
 }
 
 std::vector<IntegrationMethod> FlattenIntegrations(
-    const std::vector<Integration>& integrations, 
+    const std::vector<Integration>& integrations,
     bool is_calltarget_enabled) {
   std::vector<IntegrationMethod> flattened;
 
@@ -375,18 +385,18 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
 
   for (auto& i : integration_methods) {
     bool found = false;
-    if (AssemblyMeetsIntegrationRequirements(assembly_metadata,
-                                             i.replacement)) {
+    if (AssemblyMeetsIntegrationRequirements(assembly_metadata, i.replacement)) {
       found = true;
-    }
-    for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
-      const auto metadata_ref =
-          GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
-      // Info(L"-- assembly ref: " , assembly_name , " to " , ref_name);
-      if (AssemblyMeetsIntegrationRequirements(metadata_ref, i.replacement)) {
-        found = true;
+    } else {
+      for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
+        const auto metadata_ref = GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
+        if (AssemblyMeetsIntegrationRequirements(metadata_ref, i.replacement)) {
+          found = true;
+          break;
+        }
       }
     }
+
     if (found) {
       enabled.push_back(i);
     }
@@ -428,46 +438,6 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
     Warn("[DefineMethodSpec] failed to define method spec");
   }
   return spec;
-}
-
-bool DisableOptimizations() {
-  const auto disable_optimizations =
-      GetEnvironmentValue(environment::clr_disable_optimizations);
-
-  if (disable_optimizations == WStr("1") ||
-      disable_optimizations == WStr("true")) {
-    return true;
-  }
-
-  // default to false: don't disable JIT optimizations
-  return false;
-}
-
-bool EnableInlining(bool defaultValue) {
-  const auto enable_inlining =
-      GetEnvironmentValue(environment::clr_enable_inlining);
-
-  if (enable_inlining == WStr("1") || enable_inlining == WStr("true")) {
-    return true;
-  }
-
-  if (enable_inlining == WStr("0") || enable_inlining == WStr("false")) {
-    return false;
-  }
-
-  return defaultValue;
-}
-
-bool IsCallTargetEnabled() {
-  const auto calltarget_enabled =
-      GetEnvironmentValue(environment::calltarget_enabled);
-
-  if (calltarget_enabled == WStr("1") || calltarget_enabled == WStr("true")) {
-    return true;
-  }
-
-  // default to false: calltarget integrations are removed from the integrations.json
-  return false;
 }
 
 TypeInfo RetrieveTypeForSignature(
@@ -1534,10 +1504,10 @@ bool ParseRetType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd) {
   if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD)
     return false;
 
-  if (pbCur >= pbEnd) 
+  if (pbCur >= pbEnd)
       return false;
 
-  if (*pbCur == ELEMENT_TYPE_TYPEDBYREF) 
+  if (*pbCur == ELEMENT_TYPE_TYPEDBYREF)
       return false;
 
   if (*pbCur == ELEMENT_TYPE_VOID) {
@@ -1545,7 +1515,7 @@ bool ParseRetType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd) {
     return true;
   }
 
-  if (*pbCur == ELEMENT_TYPE_BYREF) 
+  if (*pbCur == ELEMENT_TYPE_BYREF)
       pbCur++;
 
   return ParseType(pbCur, pbEnd);
@@ -1602,4 +1572,48 @@ HRESULT FunctionMethodSignature::TryParse() {
   return S_OK;
 }
 
+bool FindTypeDefByName(
+    const trace::WSTRING instrumentationTargetMethodTypeName,
+    const trace::WSTRING assemblyName,
+    const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef) {
+  mdTypeDef parentTypeDef = mdTypeDefNil;
+  auto nameParts = Split(instrumentationTargetMethodTypeName, '+');
+  auto instrumentedMethodTypeName = instrumentationTargetMethodTypeName;
+
+  if (nameParts.size() == 2) {
+    // We're instrumenting a nested class, find the parent first
+    auto hr = metadata_import->FindTypeDefByName(nameParts[0].c_str(),
+                                                 mdTokenNil, &parentTypeDef);
+
+    if (FAILED(hr)) {
+      // This can happen between .NET framework and .NET core, not all apis are
+      // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
+      // System.Data
+      Debug("Can't load the parent TypeDef: ", nameParts[0],
+            " for nested class: ", instrumentationTargetMethodTypeName,
+            ", Module: ", assemblyName);
+      return false;
+    }
+    instrumentedMethodTypeName = nameParts[1];
+
+  } else if (nameParts.size() > 2) {
+    Warn("Invalid TypeDef-only one layer of nested classes are supported: ",
+         instrumentationTargetMethodTypeName, ", Module: ", assemblyName);
+    return false;
+  }
+
+  // Find the type we're instrumenting
+  auto hr = metadata_import->FindTypeDefByName(
+      instrumentedMethodTypeName.c_str(), parentTypeDef, &typeDef);
+  if (FAILED(hr)) {
+    // This can happen between .NET framework and .NET core, not all apis are
+    // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
+    // System.Data
+    Debug("Can't load the TypeDef for: ", instrumentedMethodTypeName,
+          ", Module: ", assemblyName);
+    return false;
+  }
+
+  return true;
+}
 }  // namespace trace

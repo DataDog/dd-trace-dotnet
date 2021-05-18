@@ -99,7 +99,6 @@ namespace Datadog.Trace
 
             if (agentWriter == null)
             {
-                Log.Warning("Using eager agent writer");
                 _agentWriter = new AgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), Statsd, maxBufferSize: Settings.TraceBufferSize);
             }
             else
@@ -707,7 +706,7 @@ namespace Datadog.Trace
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
         {
-            new LibLogScopeEventSubscriber(scopeManager, defaultServiceName, version ?? string.Empty, env ?? string.Empty);
+            new LibLogScopeEventSubscriber(this, scopeManager, defaultServiceName, version ?? string.Empty, env ?? string.Empty);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)

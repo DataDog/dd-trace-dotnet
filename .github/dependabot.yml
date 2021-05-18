@@ -53,6 +53,9 @@ updates:
       - dependency-name: "System.Reflection.Emit"
       - dependency-name: "System.Reflection.Emit.Lightweight"
       ### End Datadog.Trace.csproj ignored dependencies
+
+      # Lock Microsoft.Build.Framework for widest compatibility when instrumenting builds
+      - dependency-name: "Microsoft.Build.Framework"
   - package-ecosystem: "nuget"
     directory: "/src/Datadog.Trace.OpenTracing"
     schedule:

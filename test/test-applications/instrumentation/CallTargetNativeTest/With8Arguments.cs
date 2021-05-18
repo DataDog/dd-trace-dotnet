@@ -35,4 +35,6 @@ namespace CallTargetNativeTest
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
     }
+    class With8ArgumentsThrowOnBegin : With8Arguments { }
+    class With8ArgumentsThrowOnEnd : With8Arguments { }
 }

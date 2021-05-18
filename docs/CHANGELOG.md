@@ -1,5 +1,46 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.26.3](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.26.3)
+
+## Fixes
+* Fix crash in the ASP.NET integration when running in IIS in classic mode (#1459)
+* Fixes dynamically emitted methods signatures (#1455, fixes #1232)
+
+
+## Build / Test
+* Add benchmarks for log4net and nlog (#1453)
+* Update CoreCLR headers from dotnet/runtime v5.0.5 tag (#1451)
+* Adds the FeatureTracking tool and CIApp implementation (#1268)
+
+[Changes since 1.26.2](https://github.com/DataDog/dd-trace-dotnet/compare/v1.26.2...v1.26.3)
+
+## [Release 1.26.2](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.26.2)
+
+## Changes
+* Reduce overhead when using log injection (`DD_LOGS_INJECTION`)  with Serilog (#1435, #1450)
+* Use the profiler API instead of the IIS configuration to register the ASP.NET integration (#1280)
+* Various optimizations (#1420, #1425, #1434, #1437, #1448)
+* Allow calltarget instrumentation of nested classes (#1409)
+* Add debug logs to help diagnose partial flush issues (#1432)
+* Add execution time logs for native callbacks (#1426)
+* Upgrade LibLog to 5.0.8 (#1396)
+
+
+## Fixes
+* Remove obsolete "Using eager agent writer" warning at startup (#1441)
+* Fix wrong service name when a DbCommand implementation is named "Command" (#1430, fixes #1282)
+
+
+## Build / Test
+* Run calltarget integration tests only with inlining (#1439, #1452)
+* Clean up the PrepareRelease tool (#1442)
+* Stop using external domains in integration tests (#1438)
+* Prevent dependabot from opening PR's against the Microsoft.Build.Framework NuGet package (#1427)
+* Remove useless dependency from benchmark project (#1428)
+* Fix a build issue with the MSI (#1423)
+
+[Changes since 1.26.1](https://github.com/DataDog/dd-trace-dotnet/compare/v1.26.1...v1.26.2)
+
 ## [Release 1.26.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.26.1)
 
 ## Changes

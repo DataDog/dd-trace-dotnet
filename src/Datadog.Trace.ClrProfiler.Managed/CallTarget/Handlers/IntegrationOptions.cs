@@ -17,10 +17,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         internal static void DisableIntegration() => _disableIntegration = true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void LogException(Exception exception)
+        internal static void LogException(Exception exception, string message = null)
         {
             // ReSharper disable twice ExplicitCallerInfoArgument
-            Log.Error(exception, exception?.Message);
+            Log.Error(exception, message ?? exception?.Message);
             if (exception is DuckTypeException)
             {
                 Log.Warning($"DuckTypeException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");

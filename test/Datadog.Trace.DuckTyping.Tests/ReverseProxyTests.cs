@@ -169,6 +169,8 @@ namespace Datadog.Trace.DuckTyping.Tests
             public IMessageTemplate MessageTemplate { get; }
 
             public Exception Exception { get; }
+
+            void AddPropertyIfAbsent(ILogEventProperty property);
         }
 
         public enum LogEventLevel

@@ -1,6 +1,5 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
 //*****************************************************************************
 // UtilCode.h
 //
@@ -66,7 +65,7 @@ class StringArrayList;
 #define _DEBUG_IMPL 1
 #endif
 
-#ifdef _TARGET_ARM_
+#ifdef TARGET_ARM
 
 // Under ARM we generate code only with Thumb encoding. In order to ensure we execute such code in the correct
 // mode we must ensure the low-order bit is set in any code address we'll call as a sub-routine. In C++ this
@@ -102,13 +101,13 @@ inline ResultType ThumbCodeToDataPointer(SourceType pCode)
     return (ResultType)(((UINT_PTR)pCode) & ~THUMB_CODE);
 }
 
-#endif // _TARGET_ARM_
+#endif // TARGET_ARM
 
 // Convert from a PCODE to the corresponding PINSTR.  On many architectures this will be the identity function;
 // on ARM, this will mask off the THUMB bit.
 inline TADDR PCODEToPINSTR(PCODE pc)
 {
-#ifdef _TARGET_ARM_
+#ifdef TARGET_ARM
     return ThumbCodeToDataPointer<TADDR,PCODE>(pc);
 #else
     return dac_cast<PCODE>(pc);
@@ -119,7 +118,7 @@ inline TADDR PCODEToPINSTR(PCODE pc)
 // on ARM, this will raise the THUMB bit.
 inline PCODE PINSTRToPCODE(TADDR addr)
 {
-#ifdef _TARGET_ARM_
+#ifdef TARGET_ARM
     return DataPointerToThumbCode<PCODE,TADDR>(addr);
 #else
     return dac_cast<PCODE>(addr);
@@ -163,14 +162,14 @@ typedef LPSTR   LPUTF8;
 #endif
 
 
-#define IS_DIGIT(ch) ((ch >= W('0')) && (ch <= W('9')))
-#define DIGIT_TO_INT(ch) (ch - W('0'))
-#define INT_TO_DIGIT(i) ((WCHAR)(W('0') + i))
+#define IS_DIGIT(ch) (((ch) >= W('0')) && ((ch) <= W('9')))
+#define DIGIT_TO_INT(ch) ((ch) - W('0'))
+#define INT_TO_DIGIT(i) ((WCHAR)(W('0') + (i)))
 
-#define IS_HEXDIGIT(ch) (((ch >= W('a')) && (ch <= W('f'))) || \
-                         ((ch >= W('A')) && (ch <= W('F'))))
+#define IS_HEXDIGIT(ch) ((((ch) >= W('a')) && ((ch) <= W('f'))) || \
+                         (((ch) >= W('A')) && ((ch) <= W('F'))))
 #define HEXDIGIT_TO_INT(ch) ((towlower(ch) - W('a')) + 10)
-#define INT_TO_HEXDIGIT(i) ((WCHAR)(W('a') + (i - 10)))
+#define INT_TO_HEXDIGIT(i) ((WCHAR)(W('a') + ((i) - 10)))
 
 
 // Helper will 4 byte align a value, rounding up.
@@ -489,15 +488,8 @@ inline void *__cdecl operator new(size_t, void *_P)
 
 /********************************************************************************/
 /* portability helpers */
-#ifdef _WIN64
-#define IN_WIN64(x)     x
-#define IN_WIN32(x)
-#else
-#define IN_WIN64(x)
-#define IN_WIN32(x)     x
-#endif
 
-#ifdef _TARGET_64BIT_
+#ifdef TARGET_64BIT
 #define IN_TARGET_64BIT(x)     x
 #define IN_TARGET_32BIT(x)
 #else
@@ -574,16 +566,8 @@ void GetResourceCultureCallbacks(
         FPGETTHREADUICULTUREID* fpGetThreadUICultureId
 );
 
-#if !defined(DACCESS_COMPILE)
-// Get the MUI ID, on downlevel platforms where MUI is not supported it
-// returns the default system ID.
-extern int GetMUILanguageID(LocaleIDValue* pResult);
-extern HRESULT GetMUILanguageNames(__inout StringArrayList* pCultureNames);
-
-#endif // !defined(DACCESS_COMPILE)
-
 //*****************************************************************************
-// Use this class by privately deriving from noncopyable to disallow copying of 
+// Use this class by privately deriving from noncopyable to disallow copying of
 // your class.
 //*****************************************************************************
 class noncopyable
@@ -611,7 +595,7 @@ class CCulturedHInstance
     LocaleIDValue   m_LangId;
     HRESOURCEDLL    m_hInst;
     BOOL            m_fMissing;
-    
+
 public:
     CCulturedHInstance()
     {
@@ -619,7 +603,7 @@ public:
         m_hInst = NULL;
         m_fMissing = FALSE;
     }
-    
+
     BOOL HasID(LocaleID id)
     {
         _ASSERTE(m_hInst != NULL || m_fMissing);
@@ -628,12 +612,12 @@ public:
 
         return wcscmp(id, m_LangId) == 0;
     }
-    
+
     HRESOURCEDLL GetLibraryHandle()
     {
         return m_hInst;
     }
-    
+
     BOOL IsSet()
     {
         return m_hInst != NULL;
@@ -650,7 +634,7 @@ public:
         SetId(id);
         m_fMissing = TRUE;
     }
-    
+
     void Set(LocaleID id, HRESOURCEDLL hInst)
     {
         _ASSERTE(m_hInst == NULL);
@@ -688,18 +672,18 @@ public:
     enum ResourceCategory
     {
         // must be present
-        Required,                   
-        
+        Required,
+
         // present in Desktop CLR and Core CLR + debug pack, an error
         // If missing, get a generic error message instead
-        Error,           
-        
+        Error,
+
         // present in Desktop CLR and Core CLR + debug pack, normal operation (e.g tracing)
         // if missing, get a generic "resource not found" message instead
-        Debugging,           
+        Debugging,
 
         // present in Desktop CLR, optional for CoreCLR
-        DesktopCLR,       
+        DesktopCLR,
 
         // might not be present, non essential
         Optional
@@ -709,34 +693,19 @@ public:
     {
         // This constructor will be fired up on startup. Make sure it doesn't
         // do anything besides zero-out out values.
-        m_bUseFallback = FALSE;
-
         m_fpGetThreadUICultureId = NULL;
         m_fpGetThreadUICultureNames = NULL;
-        
 
         m_pHash = NULL;
         m_nHashSize = 0;
         m_csMap = NULL;
         m_pResourceFile = NULL;
-#ifdef FEATURE_PAL
-        m_pResourceDomain = NULL;
-#endif // FEATURE_PAL
-
     }// CCompRC
 
-    HRESULT Init(LPCWSTR pResourceFile, BOOL bUseFallback = FALSE);
+    HRESULT Init(LPCWSTR pResourceFile);
     void Destroy();
 
-    BOOL ShouldUseFallback()
-    {
-        LIMITED_METHOD_CONTRACT;
-        return m_bUseFallback;
-    };
-
-    static void SetIsMscoree() {s_bIsMscoree = TRUE;}
-
-    HRESULT LoadString(ResourceCategory eCategory, UINT iResourceID, __out_ecount (iMax) LPWSTR szBuffer, int iMax , int *pcwchUsed=NULL);    
+    HRESULT LoadString(ResourceCategory eCategory, UINT iResourceID, __out_ecount (iMax) LPWSTR szBuffer, int iMax , int *pcwchUsed=NULL);
     HRESULT LoadString(ResourceCategory eCategory, LocaleID langId, UINT iResourceID, __out_ecount (iMax) LPWSTR szBuffer, int iMax, int *pcwchUsed);
 
     void SetResourceCultureCallbacks(
@@ -749,13 +718,9 @@ public:
         FPGETTHREADUICULTUREID* fpGetThreadUICultureId
     );
 
-    HRESULT LoadMUILibrary(HRESOURCEDLL * pHInst);
-
-    // Get the default resource location (mscorrc.dll for desktop, mscorrc.debug.dll for CoreCLR)
+    // Get the default resource location (mscorrc.dll)
     static CCompRC* GetDefaultResourceDll();
-    // Get the generic messages dll (Silverlight only, mscorrc.dll)
-    static CCompRC* GetFallbackResourceDll();
-    static void ShutdownDefaultResourceDll();
+
     static void GetDefaultCallbacks(
                     FPGETTHREADUICULTURENAMES* fpGetThreadUICultureNames,
                     FPGETTHREADUICULTUREID* fpGetThreadUICultureId)
@@ -778,28 +743,7 @@ public:
         m_DefaultResourceDll.SetResourceCultureCallbacks(
                 fpGetThreadUICultureNames,
                 fpGetThreadUICultureId);
-
-        m_FallbackResourceDll.SetResourceCultureCallbacks(
-                fpGetThreadUICultureNames,
-                fpGetThreadUICultureId);
-
     }
-
-#ifdef USE_FORMATMESSAGE_WRAPPER
-
-DWORD
-PALAPI
-static 
-FormatMessage(
-           IN DWORD dwFlags,
-           IN LPCVOID lpSource,
-           IN DWORD dwMessageId,
-           IN DWORD dwLanguageId,
-           OUT LPWSTR lpBuffer,
-           IN DWORD nSize,
-           IN va_list *Arguments);
-#endif // USE_FORMATMESSAGE_WRAPPER
-
 
 private:
     HRESULT GetLibrary(LocaleID langId, HRESOURCEDLL* phInst);
@@ -816,11 +760,6 @@ private:
     static CCompRC  m_DefaultResourceDll;
     static LPCWSTR  m_pDefaultResource;
 
-    // fallback resources if debug pack is not installed
-    static LONG     m_dwFallbackInitialized;
-    static CCompRC  m_FallbackResourceDll;
-    static LPCWSTR  m_pFallbackResource;
-
     // We must map between a thread's int and a dll instance.
     // Since we only expect 1 language almost all of the time, we'll special case
     // that and then use a variable size map for everything else.
@@ -831,12 +770,6 @@ private:
     CRITSEC_COOKIE m_csMap;
 
     LPCWSTR m_pResourceFile;
-#ifdef FEATURE_PAL
-    // Resource domain is an ANSI string identifying a native resources file
-    static LPCSTR  m_pDefaultResourceDomain;
-    static LPCSTR  m_pFallbackResourceDomain;
-    LPCSTR m_pResourceDomain;
-#endif // FEATURE_PAL
 
     // Main accessors for hash
     HRESOURCEDLL LookupNode(LocaleID langId, BOOL &fMissing);
@@ -844,9 +777,6 @@ private:
 
     FPGETTHREADUICULTUREID m_fpGetThreadUICultureId;
     FPGETTHREADUICULTURENAMES m_fpGetThreadUICultureNames;
-
-    BOOL m_bUseFallback;
-    static BOOL s_bIsMscoree;
 };
 
 HRESULT UtilLoadResourceString(CCompRC::ResourceCategory eCategory, UINT iResouceID, __out_ecount (iMax) LPWSTR szBuffer, int iMax);
@@ -857,7 +787,7 @@ int UtilMessageBox(
                   UINT uText,       // Resource Identifier for Text message
                   UINT uCaption,    // Resource Identifier for Caption
                   UINT uType,       // Style of MessageBox
-                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive 
+                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive
                   BOOL ShowFileNameInTitle, // Flag to show FileName in Caption
                   ...);             // Additional Arguments
 
@@ -866,7 +796,7 @@ int UtilMessageBoxNonLocalized(
                   LPCWSTR lpText,    // Resource Identifier for Text message
                   LPCWSTR lpTitle,   // Resource Identifier for Caption
                   UINT uType,       // Style of MessageBox
-                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive 
+                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive
                   BOOL ShowFileNameInTitle, // Flag to show FileName in Caption
                   ...);             // Additional Arguments
 
@@ -875,7 +805,7 @@ int UtilMessageBoxVA(
                   UINT uText,       // Resource Identifier for Text message
                   UINT uCaption,    // Resource Identifier for Caption
                   UINT uType,       // Style of MessageBox
-                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive 
+                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive
                   BOOL ShowFileNameInTitle, // Flag to show FileName in Caption
                   va_list args);    // Additional Arguments
 
@@ -884,7 +814,7 @@ int UtilMessageBoxNonLocalizedVA(
                   LPCWSTR lpText,    // Text message
                   LPCWSTR lpCaption, // Caption
                   UINT uType,       // Style of MessageBox
-                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive 
+                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive
                   BOOL ShowFileNameInTitle, // Flag to show FileName in Caption
                   BOOL * pInputFromUser,            // To distinguish between user pressing abort vs. assuming abort.
                   va_list args);    // Additional Arguments
@@ -895,7 +825,7 @@ int UtilMessageBoxNonLocalizedVA(
                   LPCWSTR lpCaption, // Caption
                   LPCWSTR lpDetails, // Details that may be shown in a collapsed extended area of the dialog (Vista or higher).
                   UINT uType,       // Style of MessageBox
-                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive 
+                  BOOL displayForNonInteractive,    // Display even if the process is running non interactive
                   BOOL ShowFileNameInTitle, // Flag to show FileName in Caption
                   BOOL * pInputFromUser,            // To distinguish between user pressing abort vs. assuming abort.
                   va_list args);    // Additional Arguments
@@ -972,10 +902,10 @@ inline HRESULT BadError(HRESULT hr)
 }
 
 #define TESTANDRETURNPOINTER(pointer)           \
-    TESTANDRETURN(pointer!=NULL, E_POINTER)
+    TESTANDRETURN((pointer)!=NULL, E_POINTER)
 
 #define TESTANDRETURNMEMORY(pointer)            \
-    TESTANDRETURN(pointer!=NULL, E_OUTOFMEMORY)
+    TESTANDRETURN((pointer)!=NULL, E_OUTOFMEMORY)
 
 #define TESTANDRETURNHR(hr)                     \
     TESTANDRETURN(SUCCEEDED(hr), hr)
@@ -1096,16 +1026,15 @@ public:
         COR_CONFIG_ENV          = 0x01,
         COR_CONFIG_USER         = 0x02,
         COR_CONFIG_MACHINE      = 0x04,
-        COR_CONFIG_FUSION       = 0x08,
 
-        COR_CONFIG_REGISTRY     = (COR_CONFIG_USER|COR_CONFIG_MACHINE|COR_CONFIG_FUSION),
+        COR_CONFIG_REGISTRY     = (COR_CONFIG_USER|COR_CONFIG_MACHINE),
         COR_CONFIG_ALL          = (COR_CONFIG_ENV|COR_CONFIG_USER|COR_CONFIG_MACHINE),
     };
 
     //
-    // NOTE: The following function is deprecated; use the CLRConfig class instead. 
+    // NOTE: The following function is deprecated; use the CLRConfig class instead.
     // To access a configuration value through CLRConfig, add an entry in file:../inc/CLRConfigValues.h.
-    // 
+    //
     static DWORD GetConfigDWORD_DontUse_(
         LPCWSTR        name,
         DWORD          defValue,
@@ -1113,16 +1042,16 @@ public:
         BOOL           fPrependCOMPLUS = TRUE);
 
     //
-    // NOTE: The following function is deprecated; use the CLRConfig class instead. 
+    // NOTE: The following function is deprecated; use the CLRConfig class instead.
     // To access a configuration value through CLRConfig, add an entry in file:../inc/CLRConfigValues.h.
-    // 
+    //
     static HRESULT GetConfigDWORD_DontUse_(
         LPCWSTR name,
         DWORD defValue,
         __out DWORD * result,
         CORConfigLevel level = COR_CONFIG_ALL,
         BOOL fPrependCOMPLUS = TRUE);
-    
+
     static ULONGLONG GetConfigULONGLONG_DontUse_(
         LPCWSTR        name,
         ULONGLONG      defValue,
@@ -1130,18 +1059,18 @@ public:
         BOOL           fPrependCOMPLUS = TRUE);
 
     //
-    // NOTE: The following function is deprecated; use the CLRConfig class instead. 
+    // NOTE: The following function is deprecated; use the CLRConfig class instead.
     // To access a configuration value through CLRConfig, add an entry in file:../inc/CLRConfigValues.h.
-    // 
+    //
     static DWORD GetConfigFlag_DontUse_(
         LPCWSTR        name,
         DWORD          bitToSet,
         BOOL           defValue = FALSE);
 
     //
-    // NOTE: The following function is deprecated; use the CLRConfig class instead. 
+    // NOTE: The following function is deprecated; use the CLRConfig class instead.
     // To access a configuration value through CLRConfig, add an entry in file:../inc/CLRConfigValues.h.
-    // 
+    //
     static LPWSTR GetConfigString_DontUse_(
         LPCWSTR name,
         BOOL fPrependCOMPLUS = TRUE,
@@ -1152,15 +1081,12 @@ public:
 
 private:
     static LPWSTR EnvGetString(LPCWSTR name, BOOL fPrependCOMPLUS);
-public:
-
-    static BOOL UseRegistry();
 
 private:
 //*****************************************************************************
 // Get either a DWORD or ULONGLONG. Always puts the result in a ULONGLONG that
 // you can safely cast to a DWORD if fGetDWORD is TRUE.
-//*****************************************************************************    
+//*****************************************************************************
     static HRESULT GetConfigInteger(
         LPCWSTR name,
         ULONGLONG defValue,
@@ -1200,15 +1126,13 @@ private:
                                  // always returns TRUE.
     static BOOL s_fUseEnvCache; // Enable env cache.
 
-    static BOOL s_fUseRegistry; // Allow lookups in the registry
-
     // Open the .NetFramework keys once and cache the handles
     static HKEY s_hMachineFrameworkKey;
     static HKEY s_hUserFrameworkKey;
 };
 
 // need this here because CLRConfig depends on REGUTIL, and ConfigStringHolder depends on CLRConfig
-#include "clrconfig.h" 
+#include "clrconfig.h"
 
 //-----------------------------------------------------------------------------
 // Wrapper for configuration strings.
@@ -1223,9 +1147,9 @@ public:
     }
 
     //
-    // NOTE: The following function is deprecated; use the CLRConfig class instead. 
+    // NOTE: The following function is deprecated; use the CLRConfig class instead.
     // To access a configuration value through CLRConfig, add an entry in file:../inc/CLRConfigValues.h.
-    // 
+    //
     void Init_DontUse_(LPCWSTR wszName)
     {
         Clear();
@@ -1283,7 +1207,7 @@ BOOL IsPreferredExecutableRange(void * p);
 // Handles the special requirements that we have on 64-bit platforms
 // where we want the executable memory to be located near mscorwks
 //
-BYTE * ClrVirtualAllocExecutable(SIZE_T dwSize, 
+BYTE * ClrVirtualAllocExecutable(SIZE_T dwSize,
                                  DWORD flAllocationType,
                                  DWORD flProtect);
 
@@ -1293,16 +1217,16 @@ BYTE * ClrVirtualAllocExecutable(SIZE_T dwSize,
 //
 BYTE * ClrVirtualAllocWithinRange(const BYTE *pMinAddr,
                                    const BYTE *pMaxAddr,
-                                   SIZE_T dwSize, 
+                                   SIZE_T dwSize,
                                    DWORD flAllocationType,
                                    DWORD flProtect);
 
 //
-// Allocate free memory with specific alignment                                   
+// Allocate free memory with specific alignment
 //
 LPVOID ClrVirtualAllocAligned(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect, SIZE_T alignment);
 
-class NumaNodeInfo 
+class NumaNodeInfo
 {
 private:
     static BOOL m_enableGCNumaAware;
@@ -1318,18 +1242,18 @@ public: 	// functions
 
     static LPVOID VirtualAllocExNuma(HANDLE hProc, LPVOID lpAddr, SIZE_T size,
                                      DWORD allocType, DWORD prot, DWORD node);
-#ifndef FEATURE_PAL
+#ifdef HOST_WINDOWS
     static BOOL GetNumaProcessorNodeEx(PPROCESSOR_NUMBER proc_no, PUSHORT node_no);
     static bool GetNumaInfo(PUSHORT total_nodes, DWORD* max_procs_per_node);
-#else // !FEATURE_PAL
+#else // HOST_WINDOWS
     static BOOL GetNumaProcessorNodeEx(USHORT proc_no, PUSHORT node_no);
-#endif // !FEATURE_PAL
+#endif // HOST_WINDOWS
 #endif
 };
 
-#ifndef FEATURE_PAL
+#ifdef HOST_WINDOWS
 
-struct CPU_Group_Info 
+struct CPU_Group_Info
 {
     WORD	nr_active;	// at most 64
     WORD	reserved[1];
@@ -1348,6 +1272,7 @@ private:
     static WORD m_nProcessors;
     static BOOL m_enableGCCPUGroups;
     static BOOL m_threadUseAllCpuGroups;
+    static BOOL m_threadAssignCpuGroups;
     static WORD m_initialGroup;
     static CPU_Group_Info *m_CPUGroupInfoArray;
     static bool s_hadSingleProcessorAtStartup;
@@ -1361,8 +1286,9 @@ public:
     static void EnsureInitialized();
     static BOOL CanEnableGCCPUGroups();
     static BOOL CanEnableThreadUseAllCpuGroups();
+    static BOOL CanAssignCpuGroupsToThreads();
     static WORD GetNumActiveProcessors();
-    static void GetGroupForProcessor(WORD processor_number, 
+    static void GetGroupForProcessor(WORD processor_number,
 		    WORD *group_number, WORD *group_processor_number);
     static DWORD CalculateCurrentProcessorNumber();
     static bool GetCPUGroupInfo(PUSHORT total_groups, DWORD* max_procs_per_group);
@@ -1371,9 +1297,9 @@ public:
 #if !defined(FEATURE_REDHAWK)
 public:
     static BOOL GetLogicalProcessorInformationEx(LOGICAL_PROCESSOR_RELATIONSHIP relationship,
-		   SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *slpiex, PDWORD count); 
+		   SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *slpiex, PDWORD count);
     static BOOL SetThreadGroupAffinity(HANDLE h,
-		    GROUP_AFFINITY *groupAffinity, GROUP_AFFINITY *previousGroupAffinity);
+		    const GROUP_AFFINITY *groupAffinity, GROUP_AFFINITY *previousGroupAffinity);
     static BOOL GetThreadGroupAffinity(HANDLE h, GROUP_AFFINITY *groupAffinity);
     static BOOL GetSystemTimes(FILETIME *idleTime, FILETIME *kernelTime, FILETIME *userTime);
     static void ChooseCPUGroupAffinity(GROUP_AFFINITY *gf);
@@ -1391,7 +1317,7 @@ public:
 
 DWORD_PTR GetCurrentProcessCpuMask();
 
-#endif // !FEATURE_PAL
+#endif // HOST_WINDOWS
 
 //******************************************************************************
 // Returns the number of processors that a process has been configured to run on
@@ -2160,24 +2086,24 @@ private:
         WRAPPER_NO_CONTRACT;
         SSIZE_T     iLast;
         SSIZE_T     i;                      // loop variable.
-        
+
         for (;;)
         {
             // if less than two elements you're done.
             if (iLeft >= iRight)
                 return;
-            
+
             // ASSERT that we now have valid indicies.  This is statically provable
             // since this private function is only called with valid indicies,
             // and iLeft and iRight only converge towards eachother.  However,
             // PreFast can't detect this because it doesn't know about our callers.
             COMPILER_ASSUME(iLeft >= 0 && iLeft < m_iCount);
             COMPILER_ASSUME(iRight >= 0 && iRight < m_iCount);
-            
+
             // The mid-element is the pivot, move it to the left.
             Swap(iLeft, (iLeft + iRight) / 2);
             iLast = iLeft;
-            
+
             // move everything that is smaller than the pivot to the left.
             for (i = iLeft + 1; i <= iRight; i++)
             {
@@ -2186,10 +2112,10 @@ private:
                     Swap(i, ++iLast);
                 }
             }
-            
+
             // Put the pivot to the point where it is in between smaller and larger elements.
             Swap(iLeft, iLast);
-            
+
             // Sort each partition.
             SSIZE_T iLeftLast = iLast - 1;
             SSIZE_T iRightFirst = iLast + 1;
@@ -2228,7 +2154,7 @@ const T * BinarySearch(const T * pBase, int iCount, const T & find)
     while (iLast - iFirst > 10)
     {
         int iMid = (iLast + iFirst) / 2;
-        
+
         if (find < pBase[iMid])
             iLast = iMid - 1;
         else
@@ -2648,6 +2574,7 @@ template <class MemMgr>
 class CHashTableAndData : public CHashTable
 {
 public:
+    DAC_ALIGNAS(CHashTable)
     ULONG      m_iFree;                // Index into m_pcEntries[] of next available slot
     ULONG      m_iEntries;             // size of m_pcEntries[]
 
@@ -2860,7 +2787,7 @@ int CHashTableAndData<MemMgr>::Grow()   // 1 if successful, 0 if not.
     {
         _ASSERTE( !"CHashTableAndData overflow!" );
         return (0);
-    }    
+    }
     iCurSize = MemMgr::RoundSize( iTotEntrySize.Value() );
     iEntries = (iCurSize + MemMgr::GrowSize(iCurSize)) / m_iEntrySize;
 
@@ -2907,8 +2834,8 @@ inline DWORD HashThreeToOne(DWORD a, DWORD b, DWORD c)
     lookup3.c, by Bob Jenkins, May 2006, Public Domain.
 
     These are functions for producing 32-bit hashes for hash table lookup.
-    hashword(), hashlittle(), hashlittle2(), hashbig(), mix(), and final() 
-    are externally useful functions.  Routines to test the hash are included 
+    hashword(), hashlittle(), hashlittle2(), hashbig(), mix(), and final()
+    are externally useful functions.  Routines to test the hash are included
     if SELF_TEST is defined.  You can use this free for any purpose.  It's in
     the public domain.  It has no warranty.
     */
@@ -2918,7 +2845,7 @@ inline DWORD HashThreeToOne(DWORD a, DWORD b, DWORD c)
     a ^= c; a -= rot32(c,11);
     b ^= a; b -= rot32(a,25);
     c ^= b; c -= rot32(b,16);
-    a ^= c; a -= rot32(c,4); 
+    a ^= c; a -= rot32(c,4);
     b ^= a; b -= rot32(a,14);
     c ^= b; c -= rot32(b,24);
 
@@ -2975,7 +2902,7 @@ inline ULONG HashStringN(LPCWSTR szStr, SIZE_T cchStr)
 
     // hash the string two characters at a time
     ULONG *ptr = (ULONG *)szStr;
-    
+
     // we assume that szStr is null-terminated
     _ASSERTE(cchStr <= wcslen(szStr));
     SIZE_T cDwordCount = (cchStr + 1) / 2;
@@ -3875,9 +3802,9 @@ class ConfigDWORD
 {
 public:
     //
-    // NOTE: The following function is deprecated; use the CLRConfig class instead. 
+    // NOTE: The following function is deprecated; use the CLRConfig class instead.
     // To access a configuration value through CLRConfig, add an entry in file:../inc/CLRConfigValues.h.
-    // 
+    //
     inline DWORD val_DontUse_(__in __in_z LPCWSTR keyName, DWORD defaultVal=0)
     {
         WRAPPER_NO_CONTRACT;
@@ -4017,16 +3944,16 @@ class RangeList
     {
         return this->AddRangeWorker(start, end, id);
     }
-    
+
     void RemoveRanges(void *id, const BYTE *start = NULL, const BYTE *end = NULL)
     {
         return this->RemoveRangesWorker(id, start, end);
     }
-    
+
     BOOL IsInRange(TADDR address, TADDR *pID = NULL)
     {
         SUPPORTS_DAC;
-    
+
         return this->IsInRangeWorker(address, pID);
     }
 
@@ -4057,7 +3984,7 @@ class RangeList
         RANGE_COUNT = 10
     };
 
-   
+
   private:
     struct Range
     {
@@ -4146,13 +4073,14 @@ HRESULT GetImageRuntimeVersionString(PVOID pMetaData, LPCSTR* pString);
 // The registry keys and values that contain the information regarding
 // the default registered unmanaged debugger.
 //*****************************************************************************
-SELECTANY const WCHAR kDebugApplicationsPoliciesKey[] = W("SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Error Reporting\\DebugApplications");
-SELECTANY const WCHAR kDebugApplicationsKey[] = W("SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\DebugApplications");
 
-SELECTANY const WCHAR kUnmanagedDebuggerKey[] = W("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AeDebug");
-SELECTANY const WCHAR kUnmanagedDebuggerValue[] = W("Debugger");
-SELECTANY const WCHAR kUnmanagedDebuggerAutoValue[] = W("Auto");
-SELECTANY const WCHAR kUnmanagedDebuggerAutoExclusionListKey[] = W("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AeDebug\\AutoExclusionList");
+#define kDebugApplicationsPoliciesKey W("SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Error Reporting\\DebugApplications")
+#define kDebugApplicationsKey  W("SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\DebugApplications")
+
+#define kUnmanagedDebuggerKey W("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AeDebug")
+#define kUnmanagedDebuggerValue W("Debugger")
+#define kUnmanagedDebuggerAutoValue W("Auto")
+#define kUnmanagedDebuggerAutoExclusionListKey W("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AeDebug\\AutoExclusionList")
 
 BOOL GetRegistryLongValue(HKEY    hKeyParent,              // Parent key.
                           LPCWSTR szKey,                   // Key name to look at.
@@ -4243,7 +4171,7 @@ INT32 GetThumb2BlRel24(UINT16 * p);
 void PutThumb2BlRel24(UINT16 * p, INT32 imm24);
 
 //*****************************************************************************
-//  Extract the PC-Relative offset from a b or bl instruction 
+//  Extract the PC-Relative offset from a b or bl instruction
 //*****************************************************************************
 INT32 GetArm64Rel28(UINT32 * pCode);
 
@@ -4258,7 +4186,7 @@ INT32 GetArm64Rel21(UINT32 * pCode);
 INT32 GetArm64Rel12(UINT32 * pCode);
 
 //*****************************************************************************
-//  Deposit the PC-Relative offset 'imm28' into a b or bl instruction 
+//  Deposit the PC-Relative offset 'imm28' into a b or bl instruction
 //*****************************************************************************
 void PutArm64Rel28(UINT32 * pCode, INT32 imm28);
 
@@ -4334,13 +4262,13 @@ LPWSTR *SegmentCommandLine(LPCWSTR lpCmdLine, DWORD *pNumArgs);
 class ClrTeb
 {
 public:
-#if defined(FEATURE_PAL)
+#if defined(HOST_UNIX)
 
     // returns pointer that uniquely identifies the fiber
     static void* GetFiberPtrId()
     {
         LIMITED_METHOD_CONTRACT;
-        // not fiber for FEATURE_PAL - use the regular thread ID
+        // not fiber for HOST_UNIX - use the regular thread ID
         return (void *)(size_t)GetCurrentThreadId();
     }
 
@@ -4359,7 +4287,7 @@ public:
         return PAL_GetStackLimit();
     }
 
-#else // !FEATURE_PAL
+#else // HOST_UNIX
 
     // returns pointer that uniquely identifies the fiber
     static void* GetFiberPtrId()
@@ -4408,10 +4336,12 @@ public:
     {
         return (void*) 1;
     }
-#endif // !FEATURE_PAL
+#endif // HOST_UNIX
 };
 
 #if !defined(DACCESS_COMPILE)
+
+extern thread_local size_t t_ThreadType;
 
 // check if current thread is a GC thread (concurrent or server)
 inline BOOL IsGCSpecialThread ()
@@ -4421,7 +4351,7 @@ inline BOOL IsGCSpecialThread ()
     STATIC_CONTRACT_MODE_ANY;
     STATIC_CONTRACT_CANNOT_TAKE_LOCK;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_GC);
+    return !!(t_ThreadType & ThreadType_GC);
 }
 
 // check if current thread is a Gate thread
@@ -4431,7 +4361,7 @@ inline BOOL IsGateSpecialThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_Gate);
+    return !!(t_ThreadType & ThreadType_Gate);
 }
 
 // check if current thread is a Timer thread
@@ -4441,7 +4371,7 @@ inline BOOL IsTimerSpecialThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_Timer);
+    return !!(t_ThreadType & ThreadType_Timer);
 }
 
 // check if current thread is a debugger helper thread
@@ -4451,7 +4381,7 @@ inline BOOL IsDbgHelperSpecialThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_DbgHelper);
+    return !!(t_ThreadType & ThreadType_DbgHelper);
 }
 
 // check if current thread is a debugger helper thread
@@ -4461,7 +4391,7 @@ inline BOOL IsETWRundownSpecialThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_ETWRundownThread);
+    return !!(t_ThreadType & ThreadType_ETWRundownThread);
 }
 
 // check if current thread is a generic instantiation lookup compare thread
@@ -4471,7 +4401,7 @@ inline BOOL IsGenericInstantiationLookupCompareThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_GenericInstantiationCompare);
+    return !!(t_ThreadType & ThreadType_GenericInstantiationCompare);
 }
 
 // check if current thread is a thread which is performing shutdown
@@ -4481,7 +4411,7 @@ inline BOOL IsShutdownSpecialThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_Shutdown);
+    return !!(t_ThreadType & ThreadType_Shutdown);
 }
 
 inline BOOL IsThreadPoolIOCompletionSpecialThread ()
@@ -4490,7 +4420,7 @@ inline BOOL IsThreadPoolIOCompletionSpecialThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_Threadpool_IOCompletion);
+    return !!(t_ThreadType & ThreadType_Threadpool_IOCompletion);
 }
 
 inline BOOL IsThreadPoolWorkerSpecialThread ()
@@ -4499,7 +4429,7 @@ inline BOOL IsThreadPoolWorkerSpecialThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_Threadpool_Worker);
+    return !!(t_ThreadType & ThreadType_Threadpool_Worker);
 }
 
 inline BOOL IsWaitSpecialThread ()
@@ -4508,7 +4438,7 @@ inline BOOL IsWaitSpecialThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_Wait);
+    return !!(t_ThreadType & ThreadType_Wait);
 }
 
 // check if current thread is a thread which is performing shutdown
@@ -4518,7 +4448,7 @@ inline BOOL IsSuspendEEThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_DynamicSuspendEE);
+    return !!(t_ThreadType & ThreadType_DynamicSuspendEE);
 }
 
 inline BOOL IsFinalizerThread ()
@@ -4527,7 +4457,7 @@ inline BOOL IsFinalizerThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_Finalizer);
+    return !!(t_ThreadType & ThreadType_Finalizer);
 }
 
 inline BOOL IsShutdownHelperThread ()
@@ -4536,7 +4466,7 @@ inline BOOL IsShutdownHelperThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_ShutdownHelper);
+    return !!(t_ThreadType & ThreadType_ShutdownHelper);
 }
 
 inline BOOL IsProfilerAttachThread ()
@@ -4545,54 +4475,16 @@ inline BOOL IsProfilerAttachThread ()
     STATIC_CONTRACT_GC_NOTRIGGER;
     STATIC_CONTRACT_MODE_ANY;
 
-    return !!(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ThreadType_ProfAPI_Attach);
+    return !!(t_ThreadType & ThreadType_ProfAPI_Attach);
 }
 
-// set specical type for current thread
-inline void ClrFlsSetThreadType (TlsThreadTypeFlag flag)
-{
-    STATIC_CONTRACT_NOTHROW;
-    STATIC_CONTRACT_GC_NOTRIGGER;
-    STATIC_CONTRACT_MODE_ANY;
-
-    ClrFlsSetValue (TlsIdx_ThreadType, (LPVOID)(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) |flag));
-}
-
-// clear specical type for current thread
-inline void ClrFlsClearThreadType (TlsThreadTypeFlag flag)
-{
-    STATIC_CONTRACT_NOTHROW;
-    STATIC_CONTRACT_GC_NOTRIGGER;
-    STATIC_CONTRACT_MODE_ANY;
-
-    ClrFlsSetValue (TlsIdx_ThreadType, (LPVOID)(((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & ~flag));
-}
+// set special type for current thread
+void ClrFlsSetThreadType(TlsThreadTypeFlag flag);
+void ClrFlsClearThreadType(TlsThreadTypeFlag flag);
 
 #endif //!DACCESS_COMPILE
 
-#ifdef DACCESS_COMPILE
-#define SET_THREAD_TYPE_STACKWALKER(pThread)
-#define CLEAR_THREAD_TYPE_STACKWALKER()
-#else   // DACCESS_COMPILE
-#define SET_THREAD_TYPE_STACKWALKER(pThread)   ClrFlsSetValue(TlsIdx_StackWalkerWalkingThread, pThread)
-#define CLEAR_THREAD_TYPE_STACKWALKER() ClrFlsSetValue(TlsIdx_StackWalkerWalkingThread, NULL)
-#endif  // DACCESS_COMPILE
-
 HRESULT SetThreadName(HANDLE hThread, PCWSTR lpThreadDescription);
-
-inline BOOL IsStackWalkerThread()
-{
-    STATIC_CONTRACT_NOTHROW;
-    STATIC_CONTRACT_GC_NOTRIGGER;
-    STATIC_CONTRACT_MODE_ANY;
-    STATIC_CONTRACT_CANNOT_TAKE_LOCK;
-
-#if defined(DACCESS_COMPILE)
-    return FALSE;
-#else
-    return ClrFlsGetValue (TlsIdx_StackWalkerWalkingThread) != NULL;
-#endif
-}
 
 inline BOOL IsGCThread ()
 {
@@ -4619,12 +4511,12 @@ public:
 
 #ifndef DACCESS_COMPILE
         m_flag = flag;
-        m_fPreviouslySet = (((size_t)ClrFlsGetValue (TlsIdx_ThreadType)) & flag);
+        m_fPreviouslySet = (t_ThreadType & flag);
 
         // In debug builds, remember the full group of flags that were set at the time
         // the constructor was called.  This will be used in ASSERTs in the destructor
-        INDEBUG(m_nPreviousFlagGroup = (size_t)ClrFlsGetValue (TlsIdx_ThreadType));
-        
+        INDEBUG(m_nPreviousFlagGroup = t_ThreadType);
+
         if (!m_fPreviouslySet)
         {
             ClrFlsSetThreadType(flag);
@@ -4644,11 +4536,11 @@ public:
         // instantiated, then this holder still restores only the flag it knows about. To
         // prevent confusion, assert if some other flag was modified, so the user doesn't
         // expect the holder to restore the entire original set of flags.
-        // 
+        //
         // The expression below says that the only difference between the previous flag
         // group and the current flag group should be m_flag (or no difference at all, if
         // m_flag's state didn't actually change).
-        _ASSERTE(((m_nPreviousFlagGroup ^ (size_t) ClrFlsGetValue(TlsIdx_ThreadType)) | (size_t) m_flag) == (size_t) m_flag);
+        _ASSERTE(((m_nPreviousFlagGroup ^ t_ThreadType) | (size_t) m_flag) == (size_t) m_flag);
 
         if (m_fPreviouslySet)
         {
@@ -4667,81 +4559,6 @@ private:
     INDEBUG(size_t m_nPreviousFlagGroup);
 };
 
-class ClrFlsValueSwitch
-{
-public:
-    ClrFlsValueSwitch (PredefinedTlsSlots slot, PVOID value)
-    {
-        STATIC_CONTRACT_NOTHROW;
-        STATIC_CONTRACT_GC_NOTRIGGER;
-        STATIC_CONTRACT_MODE_ANY;
-
-#ifndef DACCESS_COMPILE
-        m_slot = slot;
-        m_PreviousValue = ClrFlsGetValue(slot);
-        ClrFlsSetValue(slot, value);
-#endif // DACCESS_COMPILE
-    }
-
-    ~ClrFlsValueSwitch ()
-    {
-        STATIC_CONTRACT_NOTHROW;
-        STATIC_CONTRACT_GC_NOTRIGGER;
-        STATIC_CONTRACT_MODE_ANY;
-
-#ifndef DACCESS_COMPILE
-        ClrFlsSetValue(m_slot, m_PreviousValue);
-#endif // DACCESS_COMPILE
-    }
-
-private:
-    PVOID m_PreviousValue;
-    PredefinedTlsSlots m_slot;
-};
-
-//*********************************************************************************
-
-// When we're hosted, operations called by the host (such as Thread::YieldTask)
-// may not cause calls back into the host, as the host needs not be reentrant.
-// Use the following holder for code in which calls into the host are forbidden.
-// (If a call into the host is attempted nevertheless, an assert will fire.)
-
-class ForbidCallsIntoHostOnThisThread
-{
-private:
-    static Volatile<PVOID> s_pvOwningFiber;
-
-    FORCEINLINE static BOOL Enter(BOOL)
-    {
-        WRAPPER_NO_CONTRACT;
-        return InterlockedCompareExchangePointer(
-            &s_pvOwningFiber, ClrTeb::GetFiberPtrId(), NULL) == NULL;
-    }
-
-    FORCEINLINE static void Leave(BOOL)
-    {
-        LIMITED_METHOD_CONTRACT;
-        s_pvOwningFiber = NULL;
-    }
-
-public:
-    typedef ConditionalStateHolder<BOOL, ForbidCallsIntoHostOnThisThread::Enter, ForbidCallsIntoHostOnThisThread::Leave> Holder;
-
-    FORCEINLINE static BOOL CanThisThreadCallIntoHost()
-    {
-        WRAPPER_NO_CONTRACT;
-        return s_pvOwningFiber != ClrTeb::GetFiberPtrId();
-    }
-};
-
-typedef ForbidCallsIntoHostOnThisThread::Holder ForbidCallsIntoHostOnThisThreadHolder;
-
-FORCEINLINE BOOL CanThisThreadCallIntoHost()
-{
-    WRAPPER_NO_CONTRACT;
-    return ForbidCallsIntoHostOnThisThread::CanThisThreadCallIntoHost();
-}
-
 //*********************************************************************************
 
 #include "contract.inl"
@@ -4749,8 +4566,8 @@ FORCEINLINE BOOL CanThisThreadCallIntoHost()
 namespace util
 {
     //  compare adapters
-    //  
-    
+    //
+
     template < typename T >
     struct less
     {
@@ -4768,7 +4585,7 @@ namespace util
             return first > second;
         }
     };
-    
+
 
     //  sort adapters
     //
@@ -4785,7 +4602,7 @@ namespace util
                 : CQuickSort< T >( begin, end - begin )
                 , m_pred( pred )
             {}
-            
+
             virtual int Compare( T * first, T * second )
             {
                 return m_pred( *first, *second ) ? -1
@@ -4798,7 +4615,7 @@ namespace util
         sort_helper sort_obj( begin, end, pred );
         sort_obj.Sort();
     }
-    
+
 
     template < typename Iter >
     void sort( Iter begin, Iter end );
@@ -4809,7 +4626,7 @@ namespace util
         util::sort( begin, end, util::less< T >() );
     }
 
-    
+
     // binary search adapters
     //
 
@@ -4847,7 +4664,7 @@ namespace util
  * Overloaded operators for the executable heap
  * ------------------------------------------------------------------------ */
 
-#ifndef FEATURE_PAL
+#ifdef HOST_WINDOWS
 
 struct CExecutable { int x; };
 extern const CExecutable executable;
@@ -4867,11 +4684,11 @@ template<class T> void DeleteExecutable(T *p)
     {
         p->T::~T();
 
-        ClrHeapFree(ClrGetProcessExecutableHeap(), 0, p);
+        HeapFree(ClrGetProcessExecutableHeap(), 0, p);
     }
 }
 
-#endif // FEATURE_PAL
+#endif // HOST_WINDOWS
 
 INDEBUG(BOOL DbgIsExecutable(LPVOID lpMem, SIZE_T length);)
 
@@ -4879,16 +4696,6 @@ BOOL NoGuiOnAssert();
 #ifdef _DEBUG
 VOID TerminateOnAssert();
 #endif // _DEBUG
-
-class HighCharHelper {
-public:
-    static inline BOOL IsHighChar(int c) {
-        return (BOOL)HighCharTable[c];
-    }
-
-private:
-    static const BYTE HighCharTable[];
-};
 
 
 BOOL ThreadWillCreateGuardPage(SIZE_T sizeReservedStack, SIZE_T sizeCommitedStack);
@@ -4899,7 +4706,7 @@ typedef Wrapper<BSTR, DoNothing, HolderSysFreeString> BSTRHolder;
 
 // HMODULE_TGT represents a handle to a module in the target process.  In non-DAC builds this is identical
 // to HMODULE (HINSTANCE), which is the base address of the module.  In DAC builds this must be a target address,
-// and so is represented by TADDR. 
+// and so is represented by TADDR.
 
 #ifdef DACCESS_COMPILE
 typedef TADDR HMODULE_TGT;
@@ -4909,64 +4716,14 @@ typedef HMODULE HMODULE_TGT;
 
 BOOL IsIPInModule(HMODULE_TGT hModule, PCODE ip);
 
-//----------------------------------------------------------------------------------------
-// The runtime invokes InitUtilcode() in its dllmain and passes along all of the critical
-// callback pointers. For the desktop CLR, all DLLs loaded by the runtime must also call
-// InitUtilcode with the same callbacks as the runtime used. To achieve this, the runtime
-// calls a special initialization routine exposed by the loaded module with the callbacks,
-// which in turn calls InitUtilcode.
-//
-// This structure collects all of the critical callback info passed in InitUtilcode().
-//----------------------------------------------------------------------------------------
-struct CoreClrCallbacks
-{
-    typedef IExecutionEngine* (* pfnIEE_t)();
-    typedef HRESULT (* pfnGetCORSystemDirectory_t)(SString& pbuffer);
-
-    HINSTANCE                   m_hmodCoreCLR;
-    pfnIEE_t                    m_pfnIEE;
-    pfnGetCORSystemDirectory_t  m_pfnGetCORSystemDirectory;
-};
-
-
-// For DAC, we include this functionality only when EH SxS is enabled.
-
-//----------------------------------------------------------------------------------------
-// CoreCLR must invoke this before CRT initialization to ensure utilcode has all the callback
-// pointers it needs.
-//----------------------------------------------------------------------------------------
-VOID InitUtilcode(const CoreClrCallbacks &cccallbacks);
-CoreClrCallbacks const & GetClrCallbacks();
-
-//----------------------------------------------------------------------------------------
-// Stuff below is for utilcode.lib eyes only.
-//----------------------------------------------------------------------------------------
-
-// Stores callback pointers provided by InitUtilcode().
-extern CoreClrCallbacks g_CoreClrCallbacks;
-
-// Throws up a helpful dialog if InitUtilcode() wasn't called.
-#ifdef _DEBUG
-void OnUninitializedCoreClrCallbacks();
-#define VALIDATECORECLRCALLBACKS() if (g_CoreClrCallbacks.m_hmodCoreCLR == NULL) OnUninitializedCoreClrCallbacks()
-#else  //_DEBUG
-#define VALIDATECORECLRCALLBACKS()
-#endif //_DEBUG
-
-
-#ifdef FEATURE_CORRUPTING_EXCEPTIONS
-
-// Corrupting Exception limited support for outside the VM folder
-BOOL IsProcessCorruptedStateException(DWORD dwExceptionCode, BOOL fCheckForSO = TRUE);
-
-#endif // FEATURE_CORRUPTING_EXCEPTIONS
+extern HINSTANCE g_hmodCoreCLR;
 
 namespace UtilCode
 {
     // These are type-safe versions of Interlocked[Compare]Exchange
     // They avoid invoking struct cast operations via reinterpreting
     // the struct's address as a LONG* or LONGLONG* and dereferencing it.
-    // 
+    //
     // If we had a global ::operator & (unary), we would love to use that
     // to ensure we were not also accidentally getting a structs's provided
     // operator &. TODO: probe with a static_assert?
@@ -5001,7 +4758,7 @@ namespace UtilCode
             return *reinterpret_cast<T*>(&res);
         }
     };
- 
+
     template <typename T>
     struct InterlockedCompareExchangeHelper<T, sizeof(LONGLONG)>
     {
@@ -5030,7 +4787,7 @@ namespace UtilCode
         }
     };
 }
- 
+
 template <typename T>
 inline T InterlockedExchangeT(
     T volatile * target,
@@ -5075,39 +4832,8 @@ inline T* InterlockedCompareExchangeT(
     typedef typename std::remove_const<T>::type * non_const_ptr_t;
     return reinterpret_cast<T*>(InterlockedCompareExchangePointer(
         reinterpret_cast<PVOID volatile *>(const_cast<non_const_ptr_t volatile *>(destination)),
-        reinterpret_cast<PVOID>(const_cast<non_const_ptr_t>(exchange)), 
+        reinterpret_cast<PVOID>(const_cast<non_const_ptr_t>(exchange)),
         reinterpret_cast<PVOID>(const_cast<non_const_ptr_t>(comparand))));
-}
-
-// NULL pointer variants of the above to avoid having to cast NULL
-// to the appropriate pointer type.
-template <typename T>
-inline T* InterlockedExchangeT(
-    T* volatile *   target,
-    int             value) // When NULL is provided as argument.
-{
-    //STATIC_ASSERT(value == 0);
-    return InterlockedExchangeT(target, reinterpret_cast<T*>(value));
-}
-
-template <typename T>
-inline T* InterlockedCompareExchangeT(
-    T* volatile *   destination,
-    int             exchange,  // When NULL is provided as argument.
-    T*              comparand)
-{
-    //STATIC_ASSERT(exchange == 0);
-    return InterlockedCompareExchangeT(destination, reinterpret_cast<T*>(exchange), comparand);
-}
-
-template <typename T>
-inline T* InterlockedCompareExchangeT(
-    T* volatile *   destination,
-    T*              exchange,
-    int             comparand) // When NULL is provided as argument.
-{
-    //STATIC_ASSERT(comparand == 0);
-    return InterlockedCompareExchangeT(destination, exchange, reinterpret_cast<T*>(comparand));
 }
 
 // NULL pointer variants of the above to avoid having to cast NULL
@@ -5141,6 +4867,37 @@ inline T* InterlockedCompareExchangeT(
     return InterlockedCompareExchangeT(destination, exchange, static_cast<T*>(comparand));
 }
 
+// NULL pointer variants of the above to avoid having to cast NULL
+// to the appropriate pointer type.
+template <typename T>
+inline T* InterlockedExchangeT(
+    T* volatile *   target,
+    int             value) // When NULL is provided as argument.
+{
+    //STATIC_ASSERT(value == 0);
+    return InterlockedExchangeT(target, nullptr);
+}
+
+template <typename T>
+inline T* InterlockedCompareExchangeT(
+    T* volatile *   destination,
+    int             exchange,  // When NULL is provided as argument.
+    T*              comparand)
+{
+    //STATIC_ASSERT(exchange == 0);
+    return InterlockedCompareExchangeT(destination, nullptr, comparand);
+}
+
+template <typename T>
+inline T* InterlockedCompareExchangeT(
+    T* volatile *   destination,
+    T*              exchange,
+    int             comparand) // When NULL is provided as argument.
+{
+    //STATIC_ASSERT(comparand == 0);
+    return InterlockedCompareExchangeT(destination, exchange, nullptr);
+}
+
 #undef InterlockedExchangePointer
 #define InterlockedExchangePointer Use_InterlockedExchangeT
 #undef InterlockedCompareExchangePointer
@@ -5157,27 +4914,8 @@ typedef void* (__cdecl *LocalizedFileHandler)(LPCWSTR);
 void* FindLocalizedFile(_In_z_ LPCWSTR wzResourceDllName, LocalizedFileHandler lfh, _In_opt_z_ LPCWSTR modulePath=NULL);
 
 
-
-// Helper to support termination due to heap corruption
-// It's not supported on Win2K, so we have to manually delay load it
-void EnableTerminationOnHeapCorruption();
-
-
-
 namespace Clr { namespace Util
 {
-    // This api returns a pointer to a null-terminated string that contains the local appdata directory
-    // or it returns NULL in the case that the directory could not be found. The return value from this function
-    // is not actually checked for existence. 
-    HRESULT GetLocalAppDataDirectory(LPCWSTR *ppwzLocalAppDataDirectory);
-    HRESULT SetLocalAppDataDirectory(LPCWSTR pwzLocalAppDataDirectory);
-
-namespace Reg
-{
-    HRESULT ReadStringValue(HKEY hKey, LPCWSTR wszSubKey, LPCWSTR wszName, SString & ssValue);
-    __success(return == S_OK)
-    HRESULT ReadStringValue(HKEY hKey, LPCWSTR wszSubKey, LPCWSTR wszName, __deref_out __deref_out_z LPWSTR* pwszValue);
-}
 
 #ifdef FEATURE_COMINTEROP
 namespace Com
@@ -5186,60 +4924,24 @@ namespace Com
 }
 #endif // FEATURE_COMINTEROP
 
-namespace Win32
-{
-    static const WCHAR LONG_FILENAME_PREFIX_W[] = W("\\\\?\\");
-    static const CHAR LONG_FILENAME_PREFIX_A[] = "\\\\?\\";
-
-    void GetModuleFileName(
-        HMODULE hModule,
-        SString & ssFileName,
-        bool fAllowLongFileNames = false);
-
-    __success(return == S_OK)
-    HRESULT GetModuleFileName(
-        HMODULE hModule,
-        __deref_out_z LPWSTR * pwszFileName,
-        bool fAllowLongFileNames = false);
-
-    void GetFullPathName(
-        SString const & ssFileName,
-        SString & ssPathName,
-        DWORD * pdwFilePartIdx,
-        bool fAllowLongFileNames = false);
-}
-
 }}
 
-#if defined(FEATURE_APPX) && !defined(DACCESS_COMPILE)
-    // Forward declaration of AppX::IsAppXProcess
-    namespace AppX { bool IsAppXProcess(); }
-
-    // LOAD_WITH_ALTERED_SEARCH_PATH is unsupported in AppX processes.
-    inline DWORD GetLoadWithAlteredSearchPathFlag()
-    {
-        WRAPPER_NO_CONTRACT;
-        return AppX::IsAppXProcess() ? 0 : LOAD_WITH_ALTERED_SEARCH_PATH;
-    }
-#else // FEATURE_APPX && !DACCESS_COMPILE
-    // LOAD_WITH_ALTERED_SEARCH_PATH can be used unconditionally.
-    inline DWORD GetLoadWithAlteredSearchPathFlag()
-    {
-        LIMITED_METHOD_CONTRACT;
-        #ifdef LOAD_WITH_ALTERED_SEARCH_PATH
-            return LOAD_WITH_ALTERED_SEARCH_PATH;
-        #else
-            return 0;
-        #endif
-    }
-#endif // FEATURE_APPX && !DACCESS_COMPILE
+inline DWORD GetLoadWithAlteredSearchPathFlag()
+{
+    LIMITED_METHOD_CONTRACT;
+    #ifdef LOAD_WITH_ALTERED_SEARCH_PATH
+        return LOAD_WITH_ALTERED_SEARCH_PATH;
+    #else
+        return 0;
+    #endif
+}
 
 // clr::SafeAddRef and clr::SafeRelease helpers.
 namespace clr
 {
     //=================================================================================================================
     template <typename ItfT>
-    static inline 
+    static inline
     typename std::enable_if< std::is_pointer<ItfT>::value, ItfT >::type
     SafeAddRef(ItfT pItf)
     {
@@ -5286,7 +4988,7 @@ namespace clr
 {
     //=================================================================================================================
     template <typename PtrT>
-    static inline 
+    static inline
     typename std::enable_if< std::is_pointer<PtrT>::value, PtrT >::type
     SafeDelete(PtrT & ptr)
     {
