@@ -101,7 +101,7 @@ namespace shared {
 
         std::function<void(const std::string& str)> log_debug_callback_ = nullptr;
         std::function<void(const std::string& str)> log_info_callback_ = nullptr;
-        std::function<void(const std::string& str)> log_warn_callback_ = nullptr;
+        std::function<void(const std::string& str)> log_error_callback_ = nullptr;
 
         LoaderResourceMonikerIDs resourceMonikerIDs_;
 
@@ -113,7 +113,7 @@ namespace shared {
                     ICorProfilerInfo4* pCorProfilerInfo,
                     std::function<void(const std::string& str)> log_debug_callback,
                     std::function<void(const std::string& str)> log_info_callback,
-                    std::function<void(const std::string& str)> log_warn_callback,
+                    std::function<void(const std::string& str)> log_error_callback,
                     const LoaderResourceMonikerIDs& resourceMonikerIDs,
                     WCHAR const* native_profiler_library_filename,
                     const std::vector<WSTRING>& assembliesToLoad_adDefault_procNonIIS,
@@ -127,7 +127,7 @@ namespace shared {
                     const std::vector<WSTRING>& assembly_string_nondefault_appdomain_vector,
                     std::function<void(const std::string& str)> log_debug_callback,
                     std::function<void(const std::string& str)> log_info_callback,
-                    std::function<void(const std::string& str)> log_warn_callback,
+                    std::function<void(const std::string& str)> log_error_callback,
                     const LoaderResourceMonikerIDs& resourceMonikerIDs,
                     WCHAR const* native_profiler_library_filename);
 
@@ -143,9 +143,9 @@ namespace shared {
             }
         }
 
-        inline void Warn(const std::string& str) {
-            if (log_warn_callback_ != nullptr) {
-                log_warn_callback_(str);
+        inline void Error(const std::string& str) {
+            if (log_error_callback_ != nullptr) {
+                log_error_callback_(str);
             }
         }
 
@@ -178,7 +178,7 @@ namespace shared {
                     ICorProfilerInfo4* pCorProfilerInfo,
                     std::function<void(const std::string& str)> log_debug_callback,
                     std::function<void(const std::string& str)> log_info_callback,
-                    std::function<void(const std::string& str)> log_warn_callback,
+                    std::function<void(const std::string& str)> log_error_callback,
                     const LoaderResourceMonikerIDs& resource_moniker_ids,
                     WCHAR const * native_profiler_library_filename,
                     const std::vector<WSTRING>& assembliesToLoad_adDefault_procNonIIS,

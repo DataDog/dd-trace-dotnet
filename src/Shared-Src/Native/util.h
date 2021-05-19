@@ -39,7 +39,8 @@ namespace shared {
     WSTRING HexStr(const void* data, int len);
 
     // Convert Token to string
-    WSTRING TokenStr(const mdToken* token);
+    WSTRING WTokenStr(const mdToken token);
+    std::string TokenStr(const mdToken token);
 
     template <class Container>
     bool Contains(const Container& items,

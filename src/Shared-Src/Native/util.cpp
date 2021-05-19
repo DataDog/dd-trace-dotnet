@@ -93,10 +93,21 @@ namespace shared {
         return s;
     }
 
-    WSTRING TokenStr(const mdToken* token) {
-        const unsigned char* data = (unsigned char*)token;
+    WSTRING WTokenStr(const mdToken token) {
+        const unsigned char* data = (unsigned char*)&token;
         int len = sizeof(mdToken);
         WSTRING s(len * 2, ' ');
+        for (int i = 0; i < len; i++) {
+            s[(2 * (len - i)) - 2] = HexMap[(data[i] & 0xF0) >> 4];
+            s[(2 * (len - i)) - 1] = HexMap[data[i] & 0x0F];
+        }
+        return s;
+    }
+
+    std::string TokenStr(const mdToken token) {
+        const unsigned char* data = (unsigned char*)&token;
+        int len = sizeof(mdToken);
+        std::string s(len * 2, ' ');
         for (int i = 0; i < len; i++) {
             s[(2 * (len - i)) - 2] = HexMap[(data[i] & 0xF0) >> 4];
             s[(2 * (len - i)) - 1] = HexMap[data[i] & 0x0F];
