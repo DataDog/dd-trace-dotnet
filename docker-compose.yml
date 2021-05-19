@@ -200,78 +200,78 @@ services:
   build:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
     environment:
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
-    command: /project/build/docker/build.sh
+    command: /project/tracer/build/docker/build.sh
     volumes:
     - ./:/project
 
   build.arm64:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.arm64.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.arm64.dockerfile
     image: datadog-dotnet
     environment:
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
-    command: /project/build/docker/build.arm64.sh
+    command: /project/tracer/build/docker/build.arm64.sh
     volumes:
     - ./:/project
 
   package:
     build:
       context: ./
-      dockerfile: ./build/docker/package.dockerfile
+      dockerfile: ./tracer/build/docker/package.dockerfile
     image: datadog-package
     environment:
     - PKGTYPES=deb rpm tar
-    command: /project/build/docker/package.sh
+    command: /project/tracer/build/docker/package.sh
     volumes:
     - ./:/project
 
   package.alpine:
     build:
       context: ./
-      dockerfile: ./build/docker/package.alpine.dockerfile
+      dockerfile: ./tracer/build/docker/package.alpine.dockerfile
     image: datadog-package-alpine
     environment:
     - PKGTYPES=tar
     - MUSL=true
-    command: /project/build/docker/package.sh
+    command: /project/tracer/build/docker/package.sh
     volumes:
     - ./:/project
 
   Profiler:
     build:
       context: ./
-      dockerfile: ./build/docker/native.dockerfile
+      dockerfile: ./tracer/build/docker/native.dockerfile
     image: datadog-native
     environment:
     - buildConfiguration=${buildConfiguration}
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+    command: /project/tracer/build/docker/Datadog.Trace.ClrProfiler.Native.sh
     volumes:
     - ./:/project
 
   Profiler.Alpine:
     build:
       context: ./
-      dockerfile: ./build/docker/native.alpine.dockerfile
+      dockerfile: ./tracer/build/docker/native.alpine.dockerfile
     image: datadog-native-alpine
     environment:
     - buildConfiguration=${buildConfiguration}
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.Native.sh
+    command: /project/tracer/build/docker/Datadog.Trace.ClrProfiler.Native.sh
     volumes:
     - ./:/project
 
   Samples.ServiceStack.Redis:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it servicestackredis:6379 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.ServiceStack.Redis/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.ServiceStack.Redis.dll"
+    command: bash -c "/project/tracer/build/docker/with-profiler-logs.bash wait-for-it servicestackredis:6379 -- /project/tracer/build/docker/with-profiler.bash dotnet /project/samples/Samples.ServiceStack.Redis/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.ServiceStack.Redis.dll"
     volumes:
     - ./:/project
     environment:
@@ -282,9 +282,9 @@ services:
   Samples.StackExchange.Redis:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it stackexchangeredis:6379 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.StackExchange.Redis/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.StackExchange.Redis.dll"
+    command: bash -c "/project/tracer/build/docker/with-profiler-logs.bash wait-for-it stackexchangeredis:6379 -- /project/tracer/build/docker/with-profiler.bash dotnet /project/samples/Samples.StackExchange.Redis/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.StackExchange.Redis.dll"
     volumes:
     - ./:/project
     environment:
@@ -295,9 +295,9 @@ services:
   Samples.Elasticsearch:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it elasticsearch6:9200 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Elasticsearch.dll"
+    command: bash -c "/project/tracer/build/docker/with-profiler-logs.bash wait-for-it elasticsearch6:9200 -- /project/tracer/build/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Elasticsearch.dll"
     volumes:
     - ./:/project
     environment:
@@ -309,9 +309,9 @@ services:
   Samples.Elasticsearch.V5:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it elasticsearch5:9200 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch.V5/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Elasticsearch.V5.dll"
+    command: bash -c "/project/tracer/build/docker/with-profiler-logs.bash wait-for-it elasticsearch5:9200 -- /project/tracer/build/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch.V5/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Elasticsearch.V5.dll"
     volumes:
     - ./:/project
     environment:
@@ -322,9 +322,9 @@ services:
   Samples.SqlServer:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.SqlServer.dll"
+    command: bash -c "/project/tracer/build/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/tracer/build/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.SqlServer.dll"
     volumes:
     - ./:/project
     environment:
@@ -335,9 +335,9 @@ services:
   Samples.Npgsql:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it postgres:5432 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.NpgSql/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.NpgSql.dll"
+    command: bash -c "/project/tracer/build/docker/with-profiler-logs.bash wait-for-it postgres:5432 -- /project/tracer/build/docker/with-profiler.bash dotnet /project/samples/Samples.NpgSql/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.NpgSql.dll"
     volumes:
     - ./:/project
     environment:
@@ -348,9 +348,9 @@ services:
   Samples.MySql:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it mysql:3306 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.MySql/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.MySql.dll"
+    command: bash -c "/project/tracer/build/docker/with-profiler-logs.bash wait-for-it mysql:3306 -- /project/tracer/build/docker/with-profiler.bash dotnet /project/samples/Samples.MySql/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.MySql.dll"
     volumes:
     - ./:/project
     environment:
@@ -362,9 +362,9 @@ services:
   Samples.MongoDB:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it mongo:27017 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.MongoDB.dll"
+    command: bash -c "/project/tracer/build/docker/with-profiler-logs.bash wait-for-it mongo:27017 -- /project/tracer/build/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.MongoDB.dll"
     volumes:
     - ./:/project
     environment:
@@ -375,9 +375,9 @@ services:
   Samples.RabbitMQ:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it rabbitmq:5672 -- /project/build/docker/with-profiler.bash dotnet /project/test/test-applications/integrations/Samples.RabbitMQ/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.RabbitMQ.dll"
+    command: bash -c "/project/tracer/build/docker/with-profiler-logs.bash wait-for-it rabbitmq:5672 -- /project/tracer/build/docker/with-profiler.bash dotnet /project/test/test-applications/integrations/Samples.RabbitMQ/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.RabbitMQ.dll"
     volumes:
     - ./:/project
     environment:
@@ -394,7 +394,7 @@ services:
       args:
         - ENABLE_32_BIT
         - DOTNET_TRACER_MSI
-      dockerfile: ./build/docker/iis/LoaderOptimizationRegKey.dockerfile
+      dockerfile: ./tracer/build/docker/iis/LoaderOptimizationRegKey.dockerfile
     image: datadog-iis-loaderoptimizationregkey
     ports:
     - "8080:80"
@@ -405,9 +405,9 @@ services:
   IntegrationTests.Alpine.Core21:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.alpine.core21.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.alpine.core21.dockerfile
     image: datadog-dotnet-alpine-core21
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    command: /project/tracer/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
     volumes:
     - ./:/project
     environment:
@@ -445,9 +445,9 @@ services:
   IntegrationTests.Alpine.Core30:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.alpine.core30.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.alpine.core30.dockerfile
     image: datadog-dotnet-alpine-core30
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    command: /project/tracer/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
     volumes:
     - ./:/project
     environment:
@@ -485,9 +485,9 @@ services:
   IntegrationTests.Alpine.Core31:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.alpine.core31.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.alpine.core31.dockerfile
     image: datadog-dotnet-alpine-core31
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    command: /project/tracer/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
     volumes:
     - ./:/project
     environment:
@@ -525,9 +525,9 @@ services:
   IntegrationTests.Alpine.Core50:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.alpine.core50.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.alpine.core50.dockerfile
     image: datadog-dotnet-alpine-core50
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    command: /project/tracer/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
     volumes:
     - ./:/project
     environment:
@@ -565,9 +565,9 @@ services:
   IntegrationTests:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    command: /project/tracer/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
     volumes:
     - ./:/project
     environment:
@@ -604,12 +604,12 @@ services:
 
   NukeIntegrationTests:
     build:
-      context: ./build/_build/
+      context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
+    command: dotnet /tracer/build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
       - ./:/project
     environment:
@@ -669,12 +669,12 @@ services:
 
   NukeIntegrationTests.ARM64:
     build:
-      context: ./build/_build/
+      context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
+    command: dotnet /tracer/build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
       - ./:/project
     environment:
@@ -721,9 +721,9 @@ services:
   IntegrationTests.ARM64.Core50:
     build:
       context: ./
-      dockerfile: ./build/docker/dotnet.arm64.core50.dockerfile
+      dockerfile: ./tracer/build/docker/dotnet.arm64.core50.dockerfile
     image: datadog-dotnet-arm64-core50
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh
+    command: /project/tracer/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh
     volumes:
     - ./:/project
     environment:
