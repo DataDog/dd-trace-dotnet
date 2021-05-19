@@ -22,7 +22,7 @@
     <VbSampleLibProject Include="tracer\test\test-applications\integrations\**\*.vbproj" />
     <SampleLibProject Include="tracer\test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="tracer\test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
     <RegressionSampleLibProject Include="tracer\test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
-    <WindowsInstallerProject Include="src\**\*.wixproj"/>
+    <WindowsInstallerProject Include="tracer\src\**\*.wixproj"/>
   </ItemGroup>
 
   <Target Name="BuildCsharpSrc">
@@ -299,7 +299,7 @@
 
   <Target Name="CreateHomeDirectory" DependsOnTargets="PublishNativeProfilerOnDisk;PublishManagedProfilerOnDisk;PublishBuildLoggerOnDisk">
     <Copy
-      SourceFiles="$(MSBuildThisFileDirectory)integrations.json"
+      SourceFiles="$(MSBuildThisFileDirectory)\tracer\integrations.json"
       DestinationFolder="$(TracerHomeDirectory)"
       SkipUnchangedFiles="true"
       Retries="3"
