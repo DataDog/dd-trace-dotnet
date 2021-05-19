@@ -29,6 +29,7 @@ namespace Datadog.Trace.Logging
         private readonly string _env;
         private readonly ILogProvider _logProvider;
         private readonly object _serilogEnricher;
+        private readonly NLogEnricher _nlogEnricher;
 
         private readonly AsyncLocalCompat<IDisposable> _currentEnricher = new AsyncLocalCompat<IDisposable>();
 
@@ -129,9 +130,12 @@ namespace Datadog.Trace.Logging
                         _serilogEnricher = customSerilogLogProvider.CreateEnricher(tracer);
                     }
                 }
-                else if (_logProvider is CustomNLogLogProvider customNLogLogProvider)
+                else if (_logProvider is CustomNLogLogProvider)
                 {
-                    customNLogLogProvider.RegisterLayoutRenderers();
+                    _nlogEnricher = new NLogEnricher(tracer);
+
+                    _scopeManager.TraceStarted += RegisterNLogEnricher;
+                    _scopeManager.TraceEnded += ClearNLogEnricher;
                 }
                 else
                 {
@@ -196,12 +200,38 @@ namespace Datadog.Trace.Logging
             }
         }
 
+        public void RegisterNLogEnricher(object sender, SpanEventArgs spanEventArgs)
+        {
+            if (!_executingIISPreStartInit)
+            {
+                SetNLogLogContext();
+            }
+        }
+
+        public void ClearNLogEnricher(object sender, SpanEventArgs spanEventArgs)
+        {
+            if (!_executingIISPreStartInit)
+            {
+                if (_tracer.ActiveScope == null)
+                {
+                    // We closed the last span
+                    _currentEnricher.Get()?.Dispose();
+                    _currentEnricher.Set(null);
+                }
+            }
+        }
+
         public void Dispose()
         {
             if (_logProvider is SerilogLogProvider)
             {
                 _scopeManager.SpanOpened -= StackOnSpanOpened;
                 _scopeManager.SpanClosed -= StackOnSpanClosed;
+            }
+            else if (_logProvider is CustomNLogLogProvider)
+            {
+                _scopeManager.TraceStarted -= RegisterNLogEnricher;
+                _scopeManager.TraceEnded -= ClearNLogEnricher;
             }
             else
             {
@@ -307,6 +337,28 @@ namespace Datadog.Trace.Logging
             {
                 _safeToAddToMdc = false;
                 RemoveAllCorrelationIdentifierContexts();
+            }
+        }
+
+        private void SetNLogLogContext()
+        {
+            if (!_safeToAddToMdc)
+            {
+                return;
+            }
+
+            try
+            {
+                var currentEnricher = _currentEnricher.Get();
+
+                if (currentEnricher == null)
+                {
+                    _currentEnricher.Set(_nlogEnricher.Register(_logProvider));
+                }
+            }
+            catch (Exception)
+            {
+                _safeToAddToMdc = false;
             }
         }
 

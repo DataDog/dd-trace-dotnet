@@ -1,14 +1,9 @@
 using System;
-using System.Globalization;
-using System.IO;
-using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Moq;
-using Serilog.Formatting.Display;
-using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
 {

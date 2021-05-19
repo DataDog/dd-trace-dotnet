@@ -1,47 +1,58 @@
 using System;
 using System.Linq.Expressions;
-using System.Reflection;
 using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
 {
     internal class CustomNLogLogProvider : NLogLogProvider
     {
-        public void RegisterLayoutRenderers()
+        protected override OpenMdc GetOpenMdcMethod()
         {
-            var logEventInfoType = FindType("NLog.LogEventInfo", "NLog");
-            var wrapFunc = (Func<Func<object>, object>)typeof(CustomNLogLogProvider).GetMethod(nameof(WrapFunc), BindingFlags.Static | BindingFlags.NonPublic)
-                .MakeGenericMethod(logEventInfoType)
-                .CreateDelegate(typeof(Func<Func<object>, object>));
+            // This is a copy/paste of the base GetOpenMdcMethod, but calling Set(string, object) instead of Set(string, string)
 
-            var layoutRendererType = FindType("NLog.LayoutRenderers.LayoutRenderer", "NLog");
-            var register = GetRegisterLayoutRendererMethod(layoutRendererType, logEventInfoType);
+            var keyParam = Expression.Parameter(typeof(string), "key");
 
-            register(CorrelationIdentifier.TraceIdKey, wrapFunc(() => Tracer.Instance?.ActiveScope?.Span.TraceId.ToString()));
-            register(CorrelationIdentifier.SpanIdKey, wrapFunc(() => Tracer.Instance?.ActiveScope?.Span.SpanId.ToString()));
-            register(CorrelationIdentifier.VersionKey, wrapFunc(() => Tracer.Instance?.Settings.ServiceVersion));
-            register(CorrelationIdentifier.EnvKey, wrapFunc(() => Tracer.Instance?.Settings.Environment));
-            register(CorrelationIdentifier.ServiceKey, wrapFunc(() => Tracer.Instance?.DefaultServiceName));
-        }
+            var ndlcContextType = FindType("NLog.NestedDiagnosticsLogicalContext", "NLog");
+            if (ndlcContextType != null)
+            {
+                var pushObjectMethod = ndlcContextType.GetMethod("PushObject", typeof(object));
+                if (pushObjectMethod != null)
+                {
+                    // NLog 4.6 introduces SetScoped with correct handling of logical callcontext (MDLC)
+                    var mdlcContextType = FindType("NLog.MappedDiagnosticsLogicalContext", "NLog");
+                    if (mdlcContextType != null)
+                    {
+                        var setScopedMethod = mdlcContextType.GetMethod("SetScoped", typeof(string), typeof(object));
+                        if (setScopedMethod != null)
+                        {
+                            var valueObjParam = Expression.Parameter(typeof(object), "value");
+                            var setScopedMethodCall = Expression.Call(null, setScopedMethod, keyParam, valueObjParam);
+                            var setMethodLambda = Expression.Lambda<Func<string, object, IDisposable>>(setScopedMethodCall, keyParam, valueObjParam).Compile();
+                            return (key, value, _) => setMethodLambda(key, value);
+                        }
+                    }
+                }
+            }
 
-        private static object WrapFunc<T>(Func<object> action)
-        {
-            return new Func<T, object>(_ => action());
-        }
+            var mdcContextType = FindType("NLog.MappedDiagnosticsContext", "NLog");
+            var setMethod = mdcContextType.GetMethod("Set", typeof(string), typeof(object));
+            var removeMethod = mdcContextType.GetMethod("Remove", typeof(string));
+            var valueParam = Expression.Parameter(typeof(object), "value");
+            var setMethodCall = Expression.Call(null, setMethod, keyParam, valueParam);
+            var removeMethodCall = Expression.Call(null, removeMethod, keyParam);
 
-        private Action<string, object> GetRegisterLayoutRendererMethod(Type layoutRendererType, Type logEventInfoType)
-        {
-            var funcType = typeof(Func<,>).MakeGenericType(logEventInfoType, typeof(object));
-            var registerMethod = layoutRendererType.GetMethod("Register", typeof(string), funcType);
+            var set = Expression
+                .Lambda<Action<string, object>>(setMethodCall, keyParam, valueParam)
+                .Compile();
+            var remove = Expression
+                .Lambda<Action<string>>(removeMethodCall, keyParam)
+                .Compile();
 
-            var nameParam = Expression.Parameter(typeof(string), "name");
-            var funcParam = Expression.Parameter(typeof(object), "func");
-
-            var castFuncParam = Expression.Convert(funcParam, funcType);
-
-            var call = Expression.Call(registerMethod, nameParam, castFuncParam);
-
-            return Expression.Lambda<Action<string, object>>(call, nameParam, funcParam).Compile();
+            return (key, value, _) =>
+            {
+                set(key, value);
+                return new DisposableAction(() => remove(key));
+            };
         }
     }
 }
