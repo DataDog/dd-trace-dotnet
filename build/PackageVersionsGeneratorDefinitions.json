@@ -80,20 +80,6 @@
     "MaxVersionExclusive": "6.0.0"
   },
   {
-    "IntegrationName": "OracleMDA",
-    "SampleProjectName": "Samples.OracleMDA",
-    "NugetPackageSearchName": "Oracle.ManagedDataAccess",
-    "MinVersion": "18.3.0",
-    "MaxVersionExclusive": "20.0.0"
-  },
-  {
-    "IntegrationName": "OracleMDACore",
-    "SampleProjectName": "Samples.OracleMDA.Core",
-    "NugetPackageSearchName": "Oracle.ManagedDataAccess.Core",
-    "MinVersion": "2.18.3",
-    "MaxVersionExclusive": "3.0.0"
-  },
-  {
     "IntegrationName": "XUnit",
     "SampleProjectName": "Samples.XUnitTests",
     "NugetPackageSearchName": "xunit",
