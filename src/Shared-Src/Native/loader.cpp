@@ -43,12 +43,13 @@ namespace shared {
             WStr("System.Transactions"),
             WStr("System.Xml"),
             WStr("System.Web"),
-            WStr("System.Web.ApplicationServices"),*/
-            //WStr("Microsoft.Web.Infrastructure"),
-            /*WStr("System.ComponentModel.DataAnnotations"),
+            WStr("System.Web.ApplicationServices"),
+            WStr("Microsoft.Web.Infrastructure"),
+            WStr("System.ComponentModel.DataAnnotations"),
             WStr("System.Web.RegularExpressions"),*/
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
+
 
     void Loader::CreateNewSingeltonInstance(ICorProfilerInfo4* pCorProfilerInfo,
                                             std::function<void(const std::string& str)> log_debug_callback,
@@ -296,15 +297,12 @@ namespace shared {
         //  class <Module> {
         //
         //      [DllImport("NativeProfilerFile.extension", CharSet = CharSet.Unicode)]
-        //      [SecuritySafeCritical]
         //      static extern bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, string moduleName);
         //
-        //      [SecuritySafeCritical]
         //      static <Module>() {
         //          DD_LoadInitializationAssemblies();
         //      }
         //
-        //      [SecuritySafeCritical]
         //      static void DD_LoadInitializationAssemblies()
         //      {
         //          if (GetAssemblyAndSymbolsBytes(out var assemblyPtr, out var assemblySize, out var symbolsPtr, out var symbolsSize, "[ModuleName]"))
@@ -432,8 +430,6 @@ namespace shared {
             return hr;
         }
 
-        Debug("Loader::EmitDDLoadInitializationAssemblies: Creating all mdTypeRefs and mdMemberRefs required in ModuleID=" + module_id_hex);
-
         // **************************************************************************************************************
         //
         //  Emit all definitions required before writing loader method.
@@ -463,7 +459,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: Error creating assembly reference to mscorlib.");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(corlib_metadata.name) + "=0x" + TokenStr(mscorlib_ref));
 
         // **************************************************************************************************************
         //
@@ -481,7 +476,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_object_name) + "=0x" + TokenStr(system_object_type_ref));
 
         //
         // get a TypeRef for System.Type
@@ -494,7 +488,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_type_name) + "=0x" + TokenStr(system_type_type_ref));
 
         //
         // get a TypeRef for System.Byte
@@ -507,7 +500,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_byte_name) + "=0x" + TokenStr(byte_type_ref));
 
         //
         // get a TypeRef for System.String
@@ -520,7 +512,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_string_name) + "=0x" + TokenStr(string_type_ref));
 
         //
         // get a TypeRef for System.Reflection.Assembly
@@ -533,7 +524,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_reflection_assembly_name) + "=0x" + TokenStr(system_reflection_assembly_type_ref));
 
         //
         // get a TypeRef for System.AppDomain
@@ -546,7 +536,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_appdomain_name) + "=0x" + TokenStr(system_appdomain_type_ref));
 
         //
         // get a TypeRef for System.Reflection.MethodInfo
@@ -559,7 +548,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_reflection_methodinfo_name) + "=0x" + TokenStr(system_reflection_methodinfo_type_ref));
 
         //
         // get a TypeRef for System.Reflection.MethodBase
@@ -572,7 +560,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_reflection_methodbase_name) + "=0x" + TokenStr(system_reflection_methodbase_type_ref));
 
         //
         // get a TypeRef for System.Runtime.InteropServices.Marshal
@@ -585,7 +572,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_runtime_interopservices_marshal_name) + "=0x" + TokenStr(marshal_type_ref));
 
         //
         // get a TypeRef for System.Security.SecuritySafeCriticalAttribute
@@ -598,7 +584,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_security_securitysafecriticalattribute_name) + "=0x" + TokenStr(securitysafecriticalattribute_type_ref));
 
         // **************************************************************************************************************
         //
@@ -629,7 +614,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: DefineMemberRef failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: System.Runtime.InteropServices.Marshal." + ToString(copy_name) + "()=0x" + TokenStr(marshal_copy_member_ref));
 
         //
         // get a MemberRef for System.AppDomain.get_CurrentDomain()
@@ -653,7 +637,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: System.AppDomain.get_CurrentDomain() DefineMemberRef failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: System.AppDomain." + ToString(get_currentdomain_name) + "()=0x" + TokenStr(appdomain_get_current_domain_member_ref));
 
         //
         // Create method signature for AppDomain.Load(byte[], byte[])
@@ -681,7 +664,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: AppDomain.Load(byte[], byte[]) DefineMemberRef failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: AppDomain." + ToString(load_name) + "()=0x" + TokenStr(appdomain_load_member_ref));
 
         //
         // Create method signature for System.Type System.Reflection.Assembly.GetType(string name, bool throwOnError)
@@ -707,7 +689,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: System.Reflection.Assembly.GetType(string name, bool throwOnError) DefineMemberRef failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: System.Reflection.Assembly." + ToString(gettype_name) + "()=0x" + TokenStr(assembly_get_type_member_ref));
 
         //
         // Create method signature for System.Reflection.MethodInfo System.Type.GetMethod(string name)
@@ -732,7 +713,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: System.Type.GetMethod(string name) DefineMemberRef failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: System.Type." + ToString(getmethod_name) + "()=0x" + TokenStr(type_get_method_member_ref));
 
         //
         // Create method signature for object System.Reflection.MethodBase.Invoke(object instance, object[] args)
@@ -754,7 +734,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: System.Reflection.MethodBase.Invoke(object instance, object[] args) DefineMemberRef failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: System.Reflection.MethodBase." + ToString(invoke_name) + "()=0x" + TokenStr(methodbase_invoke_member_ref));
 
         //
         // Create method member ref for System.Security.SecuritySafeCriticalAttribute..ctor()
@@ -773,7 +752,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: System.Security.SecuritySafeCriticalAttribute..ctor() DefineMemberRef failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: System.Security.SecuritySafeCriticalAttribute." + ToString(ctor_name) + "()=0x" + TokenStr(*securitysafecriticalattribute_ctor_member_ref));
 
         // **************************************************************************************************************
         //
@@ -792,7 +770,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: 'Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader' DefineUserString failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: 'Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader'=0x" + TokenStr(load_helper_token));
 
         //
         // Create a string representing
@@ -806,7 +783,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: 'Run' DefineUserString failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: 'Run'=0x" + TokenStr(run_string_token));
 
         //
         // Create a string representing the assembly name
@@ -818,7 +794,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: AssemblyName DefineUserString failed");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: '" + ToString(assembly_name_wstring) + "'=0x" + TokenStr(assembly_name_token));
 
 
         // **************************************************************************************************************
@@ -831,7 +806,6 @@ namespace shared {
         {
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: PInvoke GetAssemblyAndSymbolsBytes=0x" + TokenStr(pinvoke_method_def));
 
         Debug("Loader::EmitDDLoadInitializationAssemblies: Creating <Module>." + ToString(loader_method_name) + "() in ModuleID=" + module_id_hex);
 
@@ -844,25 +818,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: Error creating the loader method.");
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: <Module>." + ToString(loader_method_name) + "()=0x" + TokenStr(*loader_method_method_def));
-
-        ////
-        //// Set SecuritySafeCriticalAttribute to the loader method.
-        ////
-        //BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
-        //mdCustomAttribute security_critical_attribute;
-        //hr = metadata_emit->DefineCustomAttribute(
-        //    *loader_method_method_def,
-        //    *securitysafecriticalattribute_ctor_member_ref,
-        //    customAttributeData,
-        //    sizeof(customAttributeData),
-        //    &security_critical_attribute);
-        //if (FAILED(hr))
-        //{
-        //    Error("Loader::EmitDDLoadInitializationAssemblies: Error creating the security critical attribute for the loader method.");
-        //    return hr;
-        //}
-        //Debug("Loader::EmitDDLoadInitializationAssemblies: DefineCustomAttribute=0x" + TokenStr(security_critical_attribute));
 
         // **************************************************************************************************************
         //
@@ -894,7 +849,6 @@ namespace shared {
             Error("Loader::EmitDDLoadInitializationAssemblies: Unable to generate locals signature. ModuleID=0x" + module_id_hex);
             return hr;
         }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: LocalsSignature=0x" + TokenStr(locals_signature_token));
 
         // **************************************************************************************************************
         //
@@ -1083,8 +1037,6 @@ namespace shared {
 
         WSTRING native_profiler_file = native_profiler_library_filename_;
 
-        Debug("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: Setting the PInvoke native profiler library path to " + ToString(native_profiler_file));
-
         mdModuleRef profiler_ref;
         hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
         if (FAILED(hr))
@@ -1092,8 +1044,6 @@ namespace shared {
             Error("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: Failed! DefineModuleRef for " + ToString(native_profiler_file));
             return hr;
         }
-        Debug("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: ModuleRef to " + ToString(native_profiler_file) + "=0x" + TokenStr(profiler_ref));
-
 
         hr = metadata_emit->DefinePinvokeMap(*result_method_def, pmCharSetUnicode, get_assembly_and_symbols_bytes_name, profiler_ref);
         if (FAILED(hr))
@@ -1101,16 +1051,6 @@ namespace shared {
             Error("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: DefinePinvokeMap for GetAssemblyAndSymbolsBytes failed");
             return hr;
         }
-
-        //BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
-        //mdCustomAttribute security_critical_attribute;
-        //hr = metadata_emit->DefineCustomAttribute(*result_method_def, securitycriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
-        //if (FAILED(hr))
-        //{
-        //    Error("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: Error creating the security critical attribute for the PInvoke method.");
-        //    return hr;
-        //}
-        //Debug("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: CustomAttribute to 0x" + TokenStr(securitycriticalattribute_ctor_member_ref) + "=0x" + TokenStr(security_critical_attribute));
 
         return hr;
     }
@@ -1220,18 +1160,6 @@ namespace shared {
             }
         }
 
-        ////
-        //// Set SecurityCriticalAttribute to the loader method.
-        ////
-        //BYTE cctor_customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
-        //mdCustomAttribute cctor_security_critical_attribute;
-        //hr = metadata_emit->DefineCustomAttribute(cctor_method_def, securitycriticalattribute_ctor_member_ref, cctor_customAttributeData, sizeof(cctor_customAttributeData), &cctor_security_critical_attribute);
-        //if (FAILED(hr))
-        //{
-        //    Error("Loader::EmitModuleCCtor: Error creating the security critical attribute for the module ..ctor method.");
-        //    return hr;
-        //}
-
         //
         // At this point we have a mdTypeDef for <Module> and a mdMethodDef for the ..ctor
         // that we can rewrite to load the loader
@@ -1259,7 +1187,6 @@ namespace shared {
             return hr;
         }
 
-        Debug("Loader::EmitModuleCCtor: <Module>..ctor method emitted sucessfully =0x" + TokenStr(cctor_method_def));
         return hr;
     }
 

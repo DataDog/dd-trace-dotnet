@@ -173,6 +173,7 @@ namespace shared {
         }
 
     public:
+        static const DWORD LoaderProfilerEventMask = COR_PRF_DISABLE_ALL_NGEN_IMAGES | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST;
 
         static void CreateNewSingeltonInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
