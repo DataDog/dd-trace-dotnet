@@ -29,6 +29,9 @@ namespace shared {
 	WSTRING ToWSTRING(const std::string& str);
 	WSTRING ToWSTRING(const uint64_t i);
 
+	WSTRING ReplaceString(WSTRING subject, const WSTRING& search, const WSTRING& replace);
+	std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace);
+
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_STRING_H_

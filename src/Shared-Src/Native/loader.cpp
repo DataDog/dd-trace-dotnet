@@ -50,15 +50,6 @@ namespace shared {
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
-    WSTRING ReplaceString(WSTRING subject, const WSTRING& search, const WSTRING& replace) {
-        size_t pos = 0;
-        while ((pos = subject.find(search, pos)) != std::string::npos) {
-            subject.replace(pos, search.length(), replace);
-            pos += replace.length();
-        }
-        return subject;
-    }
-
     void Loader::CreateNewSingeltonInstance(ICorProfilerInfo4* pCorProfilerInfo,
                                             std::function<void(const std::string& str)> log_debug_callback,
                                             std::function<void(const std::string& str)> log_info_callback,
@@ -122,7 +113,7 @@ namespace shared {
         const bool is_iis = process_name == WStr("w3wp.exe") ||
             process_name == WStr("iisexpress.exe");
 
-        if (is_iis && log_info_callback != nullptr) {
+        if (log_info_callback != nullptr) {
             log_info_callback("Loader::InjectLoaderToModuleInitializer: Process name: " + ToString(process_name));
             log_info_callback("Loader::InjectLoaderToModuleInitializer: IIS process detected.");
         }
@@ -366,9 +357,10 @@ namespace shared {
         //
         // Set SecuritySafeCriticalAttribute to the loader method.
         //
-        BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
+        //BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
         mdCustomAttribute security_critical_attribute;
-        hr = metadata_emit->DefineCustomAttribute(module_type_def, securitysafecriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
+        //hr = metadata_emit->DefineCustomAttribute(module_type_def, securitysafecriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
+        hr = metadata_emit->DefineCustomAttribute(module_type_def, securitysafecriticalattribute_ctor_member_ref, nullptr, 0, &security_critical_attribute);
         if (FAILED(hr))
         {
             Error("Loader::InjectLoaderToModuleInitializer: Error creating the security critical attribute for the module type.");
@@ -393,6 +385,7 @@ namespace shared {
               ", LoaderMethodDef=0x" + TokenStr(loader_method_method_def) +
               ", SecuritySafeCriticalAttributeMemberRef=" + TokenStr(securitysafecriticalattribute_ctor_member_ref) +
               "]");
+
         return S_OK;
     }
 
@@ -431,6 +424,7 @@ namespace shared {
                 0,                              // Number of parameters
                 ELEMENT_TYPE_VOID,              // Return type
         };
+
         hr = metadata_import->FindMethod(type_def, loader_method_name.c_str(), loader_method_signature, sizeof(loader_method_signature), loader_method_method_def);
         if (SUCCEEDED(hr))
         {
@@ -448,10 +442,12 @@ namespace shared {
         //
         // create assembly ref to mscorlib
         //
-        if (corlib_metadata.token == mdAssemblyNil) {
+        if (corlib_metadata.token == mdAssemblyNil)
+        {
             Error("Loader::EmitDDLoadInitializationAssemblies: Loader cannot be injected, corlib was not found.");
             return E_FAIL;
         }
+
         mdAssemblyRef mscorlib_ref = mdAssemblyRefNil;
         hr = assembly_emit->DefineAssemblyRef(
             corlib_metadata.public_key,
@@ -469,6 +465,7 @@ namespace shared {
         }
         Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(corlib_metadata.name) + "=0x" + TokenStr(mscorlib_ref));
 
+        // **************************************************************************************************************
         //
         // TypeRefs
         //
@@ -603,16 +600,19 @@ namespace shared {
         }
         Debug("Loader::EmitDDLoadInitializationAssemblies: " + ToString(system_security_securitysafecriticalattribute_name) + "=0x" + TokenStr(securitysafecriticalattribute_type_ref));
 
+        // **************************************************************************************************************
         //
         // MemberRefs
         //
+        ULONG offset = 0;
 
         //
         // get a MemberRef for System.Runtime.InteropServices.Marshal.Copy(IntPtr, Byte[], int, int)
         //
         const LPCWSTR copy_name = WStr("Copy");
         mdMemberRef marshal_copy_member_ref;
-        COR_SIGNATURE marshal_copy_signature[] = {
+        COR_SIGNATURE marshal_copy_signature[] =
+        {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
                 4,                              // Number of parameters
                 ELEMENT_TYPE_VOID,              // Return type
@@ -620,7 +620,9 @@ namespace shared {
                 ELEMENT_TYPE_SZARRAY,
                 ELEMENT_TYPE_U1,
                 ELEMENT_TYPE_I4,
-                ELEMENT_TYPE_I4 };
+                ELEMENT_TYPE_I4
+        };
+
         hr = metadata_emit->DefineMemberRef(marshal_type_ref, copy_name, marshal_copy_signature, sizeof(marshal_copy_signature), &marshal_copy_member_ref);
         if (FAILED(hr))
         {
@@ -628,8 +630,6 @@ namespace shared {
             return hr;
         }
         Debug("Loader::EmitDDLoadInitializationAssemblies: System.Runtime.InteropServices.Marshal." + ToString(copy_name) + "()=0x" + TokenStr(marshal_copy_member_ref));
-
-        ULONG offset = 0;
 
         //
         // get a MemberRef for System.AppDomain.get_CurrentDomain()
@@ -639,7 +639,6 @@ namespace shared {
         ULONG system_appdomain_type_ref_compressed_token_length = CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
 
         COR_SIGNATURE appdomain_get_current_domain_signature[50];
-
         offset = 0;
         appdomain_get_current_domain_signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
         appdomain_get_current_domain_signature[offset++] = 0;
@@ -664,7 +663,6 @@ namespace shared {
         ULONG system_reflection_assembly_type_ref_compressed_token_length = CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
 
         COR_SIGNATURE appdomain_load_signature[50];
-
         offset = 0;
         appdomain_load_signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
         appdomain_load_signature[offset++] = 2;
@@ -693,7 +691,6 @@ namespace shared {
         ULONG system_type_type_ref_compressed_token_length = CorSigCompressToken(system_type_type_ref, system_type_type_ref_compressed_token);
 
         COR_SIGNATURE assembly_get_type_signature[50];
-
         offset = 0;
         assembly_get_type_signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
         assembly_get_type_signature[offset++] = 2;
@@ -720,7 +717,6 @@ namespace shared {
         ULONG system_reflection_methodinfo_type_ref_compressed_token_length = CorSigCompressToken(system_reflection_methodinfo_type_ref, system_reflection_methodinfo_type_ref_compressed_token);
 
         COR_SIGNATURE type_get_method_signature[50];
-
         offset = 0;
         type_get_method_signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
         type_get_method_signature[offset++] = 1;
@@ -742,7 +738,8 @@ namespace shared {
         // Create method signature for object System.Reflection.MethodBase.Invoke(object instance, object[] args)
         //
         const LPCWSTR invoke_name = WStr("Invoke");
-        COR_SIGNATURE methodbase_invoke_signature[] = {
+        COR_SIGNATURE methodbase_invoke_signature[] =
+        {
             IMAGE_CEE_CS_CALLCONV_HASTHIS,
             2,
             ELEMENT_TYPE_OBJECT,
@@ -761,8 +758,10 @@ namespace shared {
 
         //
         // Create method member ref for System.Security.SecuritySafeCriticalAttribute..ctor()
+        //
         const LPCWSTR ctor_name = WStr(".ctor");
-        COR_SIGNATURE ctor_signature[] = {
+        COR_SIGNATURE ctor_signature[] =
+        {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
                 0,                              // Number of parameters
                 ELEMENT_TYPE_VOID,              // Return type
@@ -776,6 +775,7 @@ namespace shared {
         }
         Debug("Loader::EmitDDLoadInitializationAssemblies: System.Security.SecuritySafeCriticalAttribute." + ToString(ctor_name) + "()=0x" + TokenStr(*securitysafecriticalattribute_ctor_member_ref));
 
+        // **************************************************************************************************************
         //
         // UserStrings definitions
         //
@@ -820,8 +820,8 @@ namespace shared {
         }
         Debug("Loader::EmitDDLoadInitializationAssemblies: '" + ToString(assembly_name_wstring) + "'=0x" + TokenStr(assembly_name_token));
 
-        // **************************************************************************************************************
 
+        // **************************************************************************************************************
         //
         // create PInvoke method definition to the native GetAssemblyAndSymbolsBytes method.
         //
@@ -846,24 +846,25 @@ namespace shared {
         }
         Debug("Loader::EmitDDLoadInitializationAssemblies: <Module>." + ToString(loader_method_name) + "()=0x" + TokenStr(*loader_method_method_def));
 
-        //
-        // Set SecuritySafeCriticalAttribute to the loader method.
-        //
-        BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
-        mdCustomAttribute security_critical_attribute;
-        hr = metadata_emit->DefineCustomAttribute(
-            *loader_method_method_def,
-            *securitysafecriticalattribute_ctor_member_ref,
-            customAttributeData,
-            sizeof(customAttributeData),
-            &security_critical_attribute);
-        if (FAILED(hr))
-        {
-            Error("Loader::EmitDDLoadInitializationAssemblies: Error creating the security critical attribute for the loader method.");
-            return hr;
-        }
-        Debug("Loader::EmitDDLoadInitializationAssemblies: DefineCustomAttribute=0x" + TokenStr(security_critical_attribute));
+        ////
+        //// Set SecuritySafeCriticalAttribute to the loader method.
+        ////
+        //BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
+        //mdCustomAttribute security_critical_attribute;
+        //hr = metadata_emit->DefineCustomAttribute(
+        //    *loader_method_method_def,
+        //    *securitysafecriticalattribute_ctor_member_ref,
+        //    customAttributeData,
+        //    sizeof(customAttributeData),
+        //    &security_critical_attribute);
+        //if (FAILED(hr))
+        //{
+        //    Error("Loader::EmitDDLoadInitializationAssemblies: Error creating the security critical attribute for the loader method.");
+        //    return hr;
+        //}
+        //Debug("Loader::EmitDDLoadInitializationAssemblies: DefineCustomAttribute=0x" + TokenStr(security_critical_attribute));
 
+        // **************************************************************************************************************
         //
         // Generate a locals signature defined in the following way:
         //   [0] System.IntPtr ("assemblyPtr" - address of assembly bytes)
@@ -874,7 +875,8 @@ namespace shared {
         //   [5] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
         //
         mdSignature locals_signature_token;
-        COR_SIGNATURE locals_signature[] = {
+        COR_SIGNATURE locals_signature[] =
+        {
                 IMAGE_CEE_CS_CALLCONV_LOCAL_SIG,  // Calling convention
                 6,                                // Number of variables
                 ELEMENT_TYPE_I,                   // List of variable types
@@ -894,6 +896,7 @@ namespace shared {
         }
         Debug("Loader::EmitDDLoadInitializationAssemblies: LocalsSignature=0x" + TokenStr(locals_signature_token));
 
+        // **************************************************************************************************************
         //
         // Write method body
         //
@@ -1054,7 +1057,8 @@ namespace shared {
         // C++: bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize, string moduleName)
         // C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, string moduleName)
         const LPCWSTR get_assembly_and_symbols_bytes_name = WStr("GetAssemblyAndSymbolsBytes");
-        COR_SIGNATURE get_assembly_bytes_signature[] = {
+        COR_SIGNATURE get_assembly_bytes_signature[] =
+        {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
                 5,                              // Number of parameters
                 ELEMENT_TYPE_BOOLEAN,           // Return type
@@ -1069,15 +1073,8 @@ namespace shared {
                 ELEMENT_TYPE_STRING
         };
 
-        HRESULT hr = metadata_emit->DefineMethod(
-            type_def,
-            get_assembly_and_symbols_bytes_name,
-            mdStatic | mdPinvokeImpl | mdHideBySig,
-            get_assembly_bytes_signature,
-            sizeof(get_assembly_bytes_signature),
-            0,
-            miPreserveSig,
-            result_method_def);
+        HRESULT hr = metadata_emit->DefineMethod(type_def, get_assembly_and_symbols_bytes_name, mdStatic | mdPinvokeImpl | mdHideBySig,
+            get_assembly_bytes_signature, sizeof(get_assembly_bytes_signature), 0, miPreserveSig, result_method_def);
         if (FAILED(hr))
         {
             Error("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: DefineMethod for GetAssemblyAndSymbolsBytes failed.");
@@ -1105,16 +1102,16 @@ namespace shared {
             return hr;
         }
 
-        BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
-        mdCustomAttribute security_critical_attribute;
-        hr = metadata_emit->DefineCustomAttribute(*result_method_def, securitycriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
-        if (FAILED(hr))
-        {
-            Error("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: Error creating the security critical attribute for the PInvoke method.");
-            return hr;
-        }
+        //BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
+        //mdCustomAttribute security_critical_attribute;
+        //hr = metadata_emit->DefineCustomAttribute(*result_method_def, securitycriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
+        //if (FAILED(hr))
+        //{
+        //    Error("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: Error creating the security critical attribute for the PInvoke method.");
+        //    return hr;
+        //}
+        //Debug("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: CustomAttribute to 0x" + TokenStr(securitycriticalattribute_ctor_member_ref) + "=0x" + TokenStr(security_critical_attribute));
 
-        Debug("Loader::GetGetAssemblyAndSymbolsBytesMethodDef: CustomAttribute to 0x" + TokenStr(securitycriticalattribute_ctor_member_ref) + "=0x" + TokenStr(security_critical_attribute));
         return hr;
     }
 
@@ -1223,17 +1220,17 @@ namespace shared {
             }
         }
 
-        //
-        // Set SecurityCriticalAttribute to the loader method.
-        //
-        BYTE cctor_customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
-        mdCustomAttribute cctor_security_critical_attribute;
-        hr = metadata_emit->DefineCustomAttribute(cctor_method_def, securitycriticalattribute_ctor_member_ref, cctor_customAttributeData, sizeof(cctor_customAttributeData), &cctor_security_critical_attribute);
-        if (FAILED(hr))
-        {
-            Error("Loader::EmitModuleCCtor: Error creating the security critical attribute for the module ..ctor method.");
-            return hr;
-        }
+        ////
+        //// Set SecurityCriticalAttribute to the loader method.
+        ////
+        //BYTE cctor_customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
+        //mdCustomAttribute cctor_security_critical_attribute;
+        //hr = metadata_emit->DefineCustomAttribute(cctor_method_def, securitycriticalattribute_ctor_member_ref, cctor_customAttributeData, sizeof(cctor_customAttributeData), &cctor_security_critical_attribute);
+        //if (FAILED(hr))
+        //{
+        //    Error("Loader::EmitModuleCCtor: Error creating the security critical attribute for the module ..ctor method.");
+        //    return hr;
+        //}
 
         //
         // At this point we have a mdTypeDef for <Module> and a mdMethodDef for the ..ctor
