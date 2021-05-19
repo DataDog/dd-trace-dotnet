@@ -3,15 +3,15 @@ set -euxo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-cd "$DIR/../.."
+cd "$DIR/../../.."
 
 # TODO Remove this from the native build as it should be logically separate
 # This is unnecessary in the unified pipeline as it's already done via the package.sh script
-PUBLISH_OUTPUT_NET2="$( pwd )/src/bin/managed-publish/netstandard2.0"
-PUBLISH_OUTPUT_NET31="$( pwd )/src/bin/managed-publish/netcoreapp3.1"
+PUBLISH_OUTPUT_NET2="$( pwd )/tracer/bin/managed-publish/netstandard2.0"
+PUBLISH_OUTPUT_NET31="$( pwd )/tracer/bin/managed-publish/netcoreapp3.1"
 BUILD_TYPE=${buildConfiguration:-Debug}
 
-cd src/Datadog.Trace.ClrProfiler.Native
+cd tracer/src/Datadog.Trace.ClrProfiler.Native
 mkdir -p build
 (cd build && cmake ../ -DCMAKE_BUILD_TYPE=${BUILD_TYPE} && make)
 
