@@ -167,9 +167,19 @@ namespace Datadog.Trace.Configuration
                                           // default value
                                           true;
 
+            var urlSubstringSkips = source?.GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings) ??
+                                    // default value
+                                    (AzureAppServices.Metadata.IsRelevant ? AzureAppServices.Metadata.DefaultHttpClientExclusions : null);
+
+            if (urlSubstringSkips != null)
+            {
+                HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), ',').ToArray();
+            }
+
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
                                            // Default value
                                            "500-599";
+
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
 
             var httpClientErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpClientErrorStatusCodes) ??
@@ -394,6 +404,12 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
+        /// Gets or sets the comma separated list of url patterns to skip tracing.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlSubstrings"/>
+        internal string[] HttpClientExcludedUrlSubstrings { get; set; }
+
+        /// <summary>
         /// Gets or sets the HTTP status code that should be marked as errors for server integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
@@ -554,6 +570,19 @@ namespace Datadog.Trace.Configuration
             }
 
             return headerTags;
+        }
+
+        internal IEnumerable<string> TrimSplitString(string textValues, char separator)
+        {
+            var values = textValues.Split(separator);
+
+            for (var i = 0; i < values.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(values[i]))
+                {
+                    yield return values[i].Trim();
+                }
+            }
         }
 
         internal bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)
