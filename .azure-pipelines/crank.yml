@@ -29,8 +29,8 @@ jobs:
       configuration: Release
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-        sample-libs/**/Samples.ExampleLibrary*.csproj
+        tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        tracer/sample-libs/**/Samples.ExampleLibrary*.csproj
 
   - task: NuGetToolInstaller@1
     displayName: install nuget
@@ -50,7 +50,7 @@ jobs:
       msbuildArguments: /t:BuildCpp
       maximumCpuCount: true
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+  - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
     artifact: windows-native
 
 
@@ -78,7 +78,7 @@ jobs:
       configuration: Release
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
 
   - script: |
       sudo apt-get update
@@ -89,12 +89,12 @@ jobs:
     displayName: install_dependencies
 
   - script: |
-      cd ./src/Datadog.Trace.ClrProfiler.Native
+      cd ./tracer/src/Datadog.Trace.ClrProfiler.Native
       CXX=clang++ CC=clang cmake . -DCMAKE_BUILD_TYPE=Release
       make
     displayName: build_profiler
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin
+  - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin
     artifact: linux-native
 
 
@@ -112,7 +112,7 @@ jobs:
       configuration: Release
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
@@ -121,8 +121,8 @@ jobs:
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration Release --framework netstandard2.0 --output $(System.DefaultWorkingDirectory)/src/bin/managed-publish/netstandard2.0
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netstandard2.0 --output $(System.DefaultWorkingDirectory)/tracer/bin/managed-publish/netstandard2.0
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
@@ -131,8 +131,8 @@ jobs:
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration Release --framework netcoreapp3.1 --output $(System.DefaultWorkingDirectory)/src/bin/managed-publish/netcoreapp3.1
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netcoreapp3.1 --output $(System.DefaultWorkingDirectory)/tracer/bin/managed-publish/netcoreapp3.1
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
@@ -140,7 +140,7 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e buildConfiguration=Release Profiler
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+  - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
     artifact: linux-native-arm64
 
 
@@ -162,7 +162,7 @@ jobs:
   - task: CopyFiles@2
     inputs:
       sourceFolder: $(Pipeline.Workspace)/linux-native
-      targetFolder: $(System.DefaultWorkingDirectory)/
+      targetFolder: $(System.DefaultWorkingDirectory)/tracer
 
 
   - download: current
@@ -171,7 +171,7 @@ jobs:
   - task: CopyFiles@2
     inputs:
       sourceFolder: $(Pipeline.Workspace)/windows-native
-      targetFolder: $(System.DefaultWorkingDirectory)/
+      targetFolder: $(System.DefaultWorkingDirectory)/tracer
 
 
   - download: current
@@ -180,11 +180,11 @@ jobs:
   - task: CopyFiles@2
     inputs:
       sourceFolder: $(Pipeline.Workspace)/linux-native-arm64
-      targetFolder: $(System.DefaultWorkingDirectory)/arm64
+      targetFolder: $(System.DefaultWorkingDirectory)/tracer/arm64
 
 
   - script: |
-      cd ./build/crank
+      cd ./tracer/build/crank
       chmod +x ./run.sh
       ./run.sh
     env:

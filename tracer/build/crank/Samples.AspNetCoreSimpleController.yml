@@ -5,7 +5,7 @@ imports:
 jobs:
   server:
     source:
-      project: test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj
+      project: tracer/test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj
     readyStateText: Application started.
     options:
       displayOutput: true
