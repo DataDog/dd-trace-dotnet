@@ -5,7 +5,7 @@ variables:
   buildConfiguration: release
   dotnetCoreSdkVersion: 5.0.103
   ddApiKey: $(DD_API_KEY)
-  publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
+  publishOutput: $(Build.SourcesDirectory)/tracer/bin/managed-publish
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -35,8 +35,8 @@ stages:
       dd_agent: dd_agent
     variables:
       tracerHomeName: windows-tracer-home
-      tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
-      msiHome: $(System.DefaultWorkingDirectory)/src/bin/msi
+      tracerHome: $(System.DefaultWorkingDirectory)/tracer/bin/$(tracerHomeName)
+      msiHome: $(System.DefaultWorkingDirectory)/tracer/bin/msi
       nuget_packages: $(Pipeline.Workspace)/.nuget/packages
 
     steps:
@@ -54,7 +54,7 @@ stages:
       displayName: dotnet restore
       inputs:
         command: restore
-        projects: src/**/*.csproj
+        projects: tracer/src/**/*.csproj
 
     # native projects must be restored with nuget.exe
     - task: NuGetCommand@2
@@ -67,7 +67,7 @@ stages:
       displayName: Benchmarks
       inputs:
         command: 'run'
-        projects: '$(System.DefaultWorkingDirectory)/test/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
+        projects: '$(System.DefaultWorkingDirectory)/tracer/test/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj'
         arguments: '-c Release -f netcoreapp3.1 -- -r net472 netcoreapp3.1 -m -f * --iterationTime 1500'
       env:
         DD_ENV: CI
