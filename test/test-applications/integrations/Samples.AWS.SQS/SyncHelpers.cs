@@ -14,8 +14,8 @@ namespace Samples.AWS.SQS
 {
     static class SyncHelpers
     {
-        private const string SingleQueue = "MySQSQueue";
-        private const string BatchedQueue = "MySQSQueue2";
+        private const string SingleQueue = "MySyncSQSQueue";
+        private const string BatchedQueue = "MySyncSQSQueue2";
 
         private static string _singleQueueUrl;
         private static string _batchedQueueUrl;
@@ -39,7 +39,6 @@ namespace Samples.AWS.SQS
                 }
                 catch
                 {
-                    PurgeQueue(sqsClient);
                     DeleteQueue(sqsClient);
                     return;
                 }
@@ -55,7 +54,6 @@ namespace Samples.AWS.SQS
                 _messsageBatchBarrier.SignalAndWait(); // Start the BatchedMessage receive loop
                 receiveMessageBatchTask.Wait();
 
-                PurgeQueue(sqsClient);
                 DeleteQueue(sqsClient);
             }
         }
