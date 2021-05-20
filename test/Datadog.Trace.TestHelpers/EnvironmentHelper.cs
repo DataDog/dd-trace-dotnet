@@ -151,7 +151,7 @@ namespace Datadog.Trace.TestHelpers
             int? statsdPort,
             string processPath,
             StringDictionary environmentVariables,
-            bool ignoringProfilerProcesses = false)
+            bool ignoreProfilerProcesses = false)
         {
             var processName = processPath;
             string profilerEnabled = _requiresProfiling ? "1" : "0";
