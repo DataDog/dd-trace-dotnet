@@ -15,6 +15,15 @@
 #include <string>
 #include <regex>
 
+#if __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+error "Missing the <filesystem> header."
+#endif
 
 namespace shared {
 
@@ -133,7 +142,7 @@ namespace shared {
         spdlog::shutdown();
     }
 
-    static std::filesystem::path GetProductBaseDirectoryPath()
+    static fs::path GetProductBaseDirectoryPath()
     {
 #ifdef _WIN32
         char* p_program_data;
@@ -150,9 +159,9 @@ namespace shared {
             program_data = R"(C:\ProgramData)";
         }
         
-        return std::filesystem::path(program_data) / R"(Datadog-APM\logs\DotNet)";
+        return fs::path(program_data) / R"(Datadog-APM\logs\DotNet)";
 #else
-        return std::filesystem::path("/var/log/datadog/dotnet");
+        return fs::path("/var/log/datadog/dotnet");
 #endif
     }
 
@@ -163,7 +172,7 @@ namespace shared {
         WSTRING log_file_name = TLoggerPolicy::filename + ToWSTRING(file_name_suffix) + ToWSTRING(".log");
 
         if (directory.length() > 0) {
-            auto directory_path = std::filesystem::path(directory);
+            auto directory_path = fs::path(directory);
             return ToString((directory_path / log_file_name).native());
         }
 
@@ -173,7 +182,7 @@ namespace shared {
             return ToString(path);
         }
 
-        std::filesystem::path log_directory_path = GetProductBaseDirectoryPath();
+        fs::path log_directory_path = GetProductBaseDirectoryPath();
         return ToString((log_directory_path / log_file_name).native());
     }
 
@@ -181,13 +190,13 @@ namespace shared {
     std::string Logger<TLoggerPolicy>::GetLogPath(const std::string& file_name_suffix) {
         auto path = DatadogLogFilePath(file_name_suffix);
 
-        const auto log_path = std::filesystem::path(path);
+        const auto log_path = fs::path(path);
 
         if (log_path.has_parent_path()) {
             const auto parent_path = log_path.parent_path();
 
-            if (!std::filesystem::exists(parent_path)) {
-                std::filesystem::create_directories(parent_path);
+            if (!fs::exists(parent_path)) {
+                fs::create_directories(parent_path);
             }
         }
 
