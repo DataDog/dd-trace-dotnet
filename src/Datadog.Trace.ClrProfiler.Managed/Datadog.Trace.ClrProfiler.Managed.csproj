@@ -38,8 +38,6 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1'">
     <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
-    
-    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.0.0" PrivateAssets="All" />
   </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'netcoreapp3.1'">
