@@ -33,8 +33,8 @@ namespace Datadog.Trace.AppSec
 
             _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
 
-            var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_DISABLE_SECURITY"), out var disabled);
-            Enabled = (!found || !disabled);
+            var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_ENABLE_SECURITY"), out var enabled);
+            Enabled = (found && enabled);
         }
 
         /// <summary>
@@ -78,7 +78,11 @@ namespace Datadog.Trace.AppSec
 
         private void InstrumentationGateway_InstrumentationGetwayEvent(object sender, InstrumentationGatewayEventArgs e)
         {
-            RunWafAndReact(e.EventData, e.Transport);
+            // if we're not enabled events shouldn't be generated, but this is belt and braces
+            if (Enabled)
+            {
+                RunWafAndReact(e.EventData, e.Transport);
+            }
         }
     }
 }
