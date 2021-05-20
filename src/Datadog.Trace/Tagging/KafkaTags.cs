@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tagging
 
         private static readonly IProperty<double?>[] KafkaTagsMetrics =
             InstrumentationMetricsProperties.Concat(
-                new Property<KafkaTags, double?>(Trace.Tags.MessageQueueTimeMs, t => t.MessageQueueTimeMs, (t, v) => t.MessageQueueTimeMs = v));
+                new Property<KafkaTags, double?>(Trace.Metrics.MessageQueueTimeMs, t => t.MessageQueueTimeMs, (t, v) => t.MessageQueueTimeMs = v));
 
         // For the sake of unit tests, define a default constructor
         // though the Kafka integration should use the constructor that takes a spanKind

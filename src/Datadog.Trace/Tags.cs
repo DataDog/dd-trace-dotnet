@@ -230,11 +230,6 @@ namespace Datadog.Trace
         public const string KafkaTombstone = "kafka.tombstone";
 
         /// <summary>
-        /// The length of time a record has been on the queue
-        /// </summary>
-        public const string MessageQueueTimeMs = "message.queue_time_ms";
-
-        /// <summary>
         /// The sampling priority for the entire trace.
         /// </summary>
         public const string SamplingPriority = "sampling.priority";
