@@ -21,7 +21,7 @@ pool:
 
 variables:
   buildConfiguration: Release
-  publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
+  publishOutput: $(System.DefaultWorkingDirectory)/tracer/bin/managed-publish
   dotnetCoreSdk5Version: 5.0.103
 
 jobs:
@@ -46,7 +46,7 @@ jobs:
     displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
     inputs:
       command: build
-      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
       arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
@@ -56,7 +56,7 @@ jobs:
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
   - task: DotNetCoreCLI@2
@@ -66,7 +66,7 @@ jobs:
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
       
   - task: DockerCompose@0
@@ -75,7 +75,7 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+  - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
     artifact: linux-tracer-home
 
 - job: Linux
@@ -102,7 +102,7 @@ jobs:
   - task: CopyFiles@2
     inputs:
       sourceFolder: $(Pipeline.Workspace)/linux-tracer-home
-      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+      targetFolder: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
 
   - task: DockerCompose@0
     displayName: docker-compose run build
@@ -124,7 +124,7 @@ jobs:
     displayName: publish test results
     inputs:
       testResultsFormat: VSTest
-      testResultsFiles: test/**/*.trx
+      testResultsFiles: tracer/test/**/*.trx
     condition: succeededOrFailed()
 
 - job: build_alpine_linux_profiler
@@ -147,7 +147,7 @@ jobs:
     displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
     inputs:
       command: build
-      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
       arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
@@ -157,7 +157,7 @@ jobs:
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
   - task: DotNetCoreCLI@2
@@ -167,7 +167,7 @@ jobs:
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
 
   - task: DockerCompose@0
@@ -176,7 +176,7 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+  - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
     artifact: alpine-linux-tracer-home
 
 - job: Alpine_Linux
@@ -203,7 +203,7 @@ jobs:
   - task: CopyFiles@2
     inputs:
       sourceFolder: $(Pipeline.Workspace)/alpine-linux-tracer-home
-      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+      targetFolder: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
 
   - task: DockerCompose@0
     displayName: docker-compose run build
@@ -247,7 +247,7 @@ jobs:
     displayName: publish test results
     inputs:
       testResultsFormat: VSTest
-      testResultsFiles: test/**/*.trx
+      testResultsFiles: tracer/test/**/*.trx
     condition: succeededOrFailed()
 
 - job: Windows
@@ -263,7 +263,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    msiOutputDirectory: src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
+    msiOutputDirectory: tracer/src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
 
   steps:
   - task: UseDotNet@2
@@ -334,11 +334,11 @@ jobs:
     inputs:
       command: build
       projects: |
-        test/test-applications/regression/**/*.csproj
-        test/*.IntegrationTests/*.IntegrationTests.csproj
-        !test/test-applications/regression/**/ExpenseItDemo*.csproj
-        !test/test-applications/regression/**/EntityFramework6x*.csproj
-        !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+        tracer/test/test-applications/regression/**/*.csproj
+        tracer/test/*.IntegrationTests/*.IntegrationTests.csproj
+        !tracer/test/test-applications/regression/**/ExpenseItDemo*.csproj
+        !tracer/test/test-applications/regression/**/EntityFramework6x*.csproj
+        !tracer/test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
@@ -346,8 +346,8 @@ jobs:
     inputs:
       command: build
       projects: |
-        test/test-applications/integrations/**/*.csproj
-        !test/test-applications/integrations/dependency-libs/**/*.csproj
+        tracer/test/test-applications/integrations/**/*.csproj
+        !tracer/test/test-applications/integrations/dependency-libs/**/*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138 -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true -p:LoadManagedProfilerFromProfilerDirectory=false
 
   - task: DotNetCoreCLI@2
@@ -355,15 +355,15 @@ jobs:
     inputs:
       command: test
       projects: |
-        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
-        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
+        tracer/test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
+        tracer/test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
       arguments: -c $(buildConfiguration) -p:Platform=$(buildPlatform)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
     inputs:
       command: test
-      projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+      projects: tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True" -p:Platform=$(buildPlatform)
 
   - task: DockerCompose@0
@@ -386,7 +386,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    msiOutputDirectory: src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
+    msiOutputDirectory: tracer/src/WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
 
   steps:
   - task: UseDotNet@2
@@ -447,11 +447,11 @@ jobs:
     inputs:
       command: build
       projects: |
-        test/test-applications/regression/**/*.csproj
-        test/*.IntegrationTests/*.IntegrationTests.csproj
-        !test/test-applications/regression/**/ExpenseItDemo*.csproj
-        !test/test-applications/regression/**/EntityFramework6x*.csproj
-        !test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
+        tracer/test/test-applications/regression/**/*.csproj
+        tracer/test/*.IntegrationTests/*.IntegrationTests.csproj
+        !tracer/test/test-applications/regression/**/ExpenseItDemo*.csproj
+        !tracer/test/test-applications/regression/**/EntityFramework6x*.csproj
+        !tracer/test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
@@ -459,22 +459,22 @@ jobs:
     inputs:
       command: build
       projects: |
-        test/test-applications/integrations/**/*.csproj
-        !test/test-applications/integrations/dependency-libs/**/*.csproj
+        tracer/test/test-applications/integrations/**/*.csproj
+        !tracer/test/test-applications/integrations/dependency-libs/**/*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput) -p:BuildInParallel=false /nowarn:netsdk1138 -p:ExcludeManagedProfiler=true -p:ExcludeNativeProfiler=true -p:LoadManagedProfilerFromProfilerDirectory=false
 
   - task: NuGetCommand@2
     displayName: nuget restore IIS samples
     inputs:
-      restoreSolution: test/test-applications/aspnet/samples-iis.sln
+      restoreSolution: tracer/test/test-applications/aspnet/samples-iis.sln
       verbosityRestore: Normal
 
   - task: MSBuild@1
     displayName: Publish IIS samples
     inputs:
-      solution: test/test-applications/aspnet/samples-iis.sln
+      solution: tracer/test/test-applications/aspnet/samples-iis.sln
       configuration: '$(buildConfiguration)'
-      msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=$(System.DefaultWorkingDirectory)/test/test-applications/aspnet/PublishProfiles/FolderProfile.pubxml'
+      msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=$(System.DefaultWorkingDirectory)/tracer/test/test-applications/aspnet/PublishProfiles/FolderProfile.pubxml'
       maximumCpuCount: true
 
   - task: DockerCompose@0
@@ -499,7 +499,7 @@ jobs:
     displayName: dotnet test --filter LoadFromGAC=True
     inputs:
       command: test
-      projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+      projects: tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: -c $(buildConfiguration) --filter "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True" -p:Platform=$(buildPlatform)
 
   - task: DockerCompose@0
@@ -520,7 +520,7 @@ jobs:
     displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
     inputs:
       command: build
-      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
       arguments: --configuration $(buildConfiguration) /nowarn:netsdk1138
 
   - task: DotNetCoreCLI@2
@@ -530,7 +530,7 @@ jobs:
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
   - task: DotNetCoreCLI@2
@@ -540,7 +540,7 @@ jobs:
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      projects: tracer/src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
 
   - task: DockerCompose@0
@@ -549,7 +549,7 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
 
-  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
+  - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
     artifact: linux-tracer-home_arm
 
 - job: Linux_arm64
@@ -570,7 +570,7 @@ jobs:
   - task: CopyFiles@2
     inputs:
       sourceFolder: $(Pipeline.Workspace)/linux-tracer-home_arm
-      targetFolder: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/arm64
+      targetFolder: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/arm64
 
   - task: DockerCompose@0
     displayName: docker-compose run build.arm64
@@ -592,5 +592,5 @@ jobs:
     displayName: publish test results
     inputs:
       testResultsFormat: VSTest
-      testResultsFiles: test/**/*.trx
+      testResultsFiles: tracer/test/**/*.trx
     condition: succeededOrFailed()
