@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.AppSec
 {
-    internal interface IDatadogSecurity : IDisposable
+    internal interface IDatadogSecurity
     {
         bool Enabled { get; }
 
