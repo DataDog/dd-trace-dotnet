@@ -183,7 +183,7 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
-            if (!ignoringProfilerProcesses)
+            if (!ignoreProfilerProcesses)
             {
                 environmentVariables["DD_PROFILER_PROCESSES"] = processName;
             }
