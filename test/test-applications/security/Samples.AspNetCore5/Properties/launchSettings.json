@@ -11,7 +11,10 @@
     "IIS Express": {
       "commandName": "IISExpress",
       "environmentVariables": {
-        "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+
+        "DD_ENABLE_SECURITY": "true",
+
         "CORECLR_ENABLE_PROFILING": "1",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
@@ -27,13 +30,15 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+
+        "DD_ENABLE_SECURITY": "true",
+
         "CORECLR_ENABLE_PROFILING": "1",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
         "DD_TRACE_CALLTARGET_ENABLED": "1",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
         "CORECLR_PROFILER_PATH": "$(ProjectDir)$(OutputPath)profiler-lib\\Datadog.Trace.ClrProfiler.Native.dll",
-        "ASPNETCORE_ENVIRONMENT": "Development",
         "DD_VERSION": "1.0.0",
         "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server"
       },
