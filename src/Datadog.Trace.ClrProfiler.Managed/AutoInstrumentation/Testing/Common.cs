@@ -54,9 +54,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
         {
             try
             {
-                // https://docs.microsoft.com/en-us/archive/msdn-magazine/2015/july/async-programming-brownfield-async-development#the-thread-pool-hack
-                var flushTask = Task.Run(() => InternalFlush());
-                flushTask.GetAwaiter().GetResult();
+                var flushThread = new Thread(() => InternalFlush().GetAwaiter().GetResult());
+                flushThread.IsBackground = false;
+                flushThread.Name = "FlushThread";
+                flushThread.Start();
+                flushThread.Join();
             }
             catch (Exception ex)
             {
