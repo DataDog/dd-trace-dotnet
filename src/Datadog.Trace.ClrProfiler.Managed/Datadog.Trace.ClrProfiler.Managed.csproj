@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Datadog.Trace.ClrProfiler</RootNamespace>
+
+    <!-- NuGet -->
+    <Version>1.28.2</Version>
+    <Title>Datadog APM - ClrProfiler</Title>
+    <PackageDescription>
+DEPRECATED. This package exists only for backwards compatibility. If your project references this package ("Datadog.Trace.ClrProfiler.Managed") or "Datadog.Trace.AspNet", you can remove them both.
+
+.NET Core applications no longer require any NuGet package to enable automatic instrumentation.
+
+Automatic instrumentation for both ASP.NET and ASP.NET Core is now automatically enabled.
+
+Users who need manual instrumentation should reference the "Datadog.Trace" package.
+    </PackageDescription>
+
+    <!-- Remove the Datadog.Trace.ClrProfiler.Managed.dll assembly from the output and hide inapplicable warning (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128) -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <!-- For VS testing purposes only, copy all implementation assemblies to the
+       to test the loading of managed profiler assemblies from disk -->
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' AND ('$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1')">
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="AutoInstrumentation\AspNetCore\RequestDelegate.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj" />
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1'">
+    <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+    
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'netcoreapp3.1'">
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web" />
+
+    <ProjectReference Include="..\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
+
+  <ItemGroup>
+    <!-- Include Datadog.Trace.Build assembly as a reference for publishing purposes -->
+    <ProjectReference Include="..\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace.AspNet\SharedConstants.cs">
+      <Link>Integrations\AspNet\SharedConstants.cs</Link>
+    </Compile>
+  </ItemGroup>
+</Project>

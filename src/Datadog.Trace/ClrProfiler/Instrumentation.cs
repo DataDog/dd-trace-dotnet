@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
@@ -79,6 +80,15 @@ namespace Datadog.Trace.ClrProfiler
             catch (Exception ex)
             {
                 Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
+                _ = Security.Instance;
+            }
+            catch
+            {
+                // ignore
             }
 
 #if !NETFRAMEWORK
