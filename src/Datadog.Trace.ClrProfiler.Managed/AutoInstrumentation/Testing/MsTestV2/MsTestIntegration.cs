@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             string testSuite = testMethodInfo.TestClassName;
             string testName = testMethodInfo.TestMethodName;
 
-            Scope scope = Common.TestTracer.StartActive("mstest.test", serviceName: Common.ServiceName);
+            Scope scope = Common.TestTracer.StartActive("mstest.test", serviceName: Common.TestTracer.DefaultServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;

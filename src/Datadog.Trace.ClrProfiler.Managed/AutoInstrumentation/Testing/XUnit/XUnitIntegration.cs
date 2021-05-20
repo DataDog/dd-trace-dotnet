@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
             string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
-            Scope scope = Common.TestTracer.StartActive("xunit.test", serviceName: Common.ServiceName);
+            Scope scope = Common.TestTracer.StartActive("xunit.test", serviceName: Common.TestTracer.DefaultServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;

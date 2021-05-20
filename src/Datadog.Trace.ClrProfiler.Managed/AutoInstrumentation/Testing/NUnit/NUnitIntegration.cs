@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             string testName = testMethod.Name;
             string skipReason = null;
 
-            Scope scope = Common.TestTracer.StartActive("nunit.test", serviceName: Common.ServiceName);
+            Scope scope = Common.TestTracer.StartActive("nunit.test", serviceName: Common.TestTracer.DefaultServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
