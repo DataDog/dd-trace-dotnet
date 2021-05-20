@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transport;
-using Datadog.Trace.AppSec.Waf;
 
 namespace Datadog.Trace.AppSec
 {
@@ -19,21 +18,18 @@ namespace Datadog.Trace.AppSec
         private static object _globalInstanceLock = new();
 
         private InstrumentationGateway _instrumentationGateway;
-        private IPowerWaf _powerWaf;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
         public Security()
-            : this(null, null)
+            : this(null)
         {
         }
 
-        internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null)
+        internal Security(InstrumentationGateway instrumentationGateway = null)
         {
             _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
-
-            _powerWaf = powerWaf ?? new PowerWaf();
 
             _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
 
@@ -71,21 +67,10 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         InstrumentationGateway IDatadogSecurity.InstrumentationGateway => _instrumentationGateway;
 
-        /// <summary>
-        /// Frees resouces
-        /// </summary>
-        public void Dispose()
-        {
-            _powerWaf.Dispose();
-        }
-
         private void RunWafAndReact(IReadOnlyDictionary<string, object> args, ITransport transport)
         {
-            var additiveContext = _powerWaf.CreateAdditiveContext();
-
-            // run the WAF and execute the results
-            using var result = additiveContext.Run(args);
-            if (result.ReturnCode == ReturnCode.Block)
+            // run the fake WAF and execute the results
+            if (args.TryGetValue("server.request.query", out var queryString) && queryString?.ToString()?.Contains("database()") == true)
             {
                 transport.Block();
             }
