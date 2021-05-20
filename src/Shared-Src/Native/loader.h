@@ -149,13 +149,10 @@ namespace shared {
             }
         }
 
-        HRESULT WriteAssembliesStringArray(
-                ILRewriterWrapper& rewriter_wrapper,
-                const ComPtr<IMetaDataEmit2> metadata_emit,
-                const std::vector<WSTRING>& assembly_string_vector,
-                mdTypeRef string_type_ref);
-
+        HRESULT EmitDDLoadInitializationAssembliesMethod(const ModuleID module_id, mdTypeDef type_def, WSTRING assembly_name_wstring, mdMethodDef* loader_method_method_def, mdMemberRef* securitycriticalattribute_ctor_member_ref);
         HRESULT GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMemberRef securitycriticalattribute_ctor_member_ref, mdMethodDef* result_method_def);
+        HRESULT WriteAssembliesStringArray(ILRewriterWrapper& rewriter_wrapper, const ComPtr<IMetaDataEmit2> metadata_emit, const std::vector<WSTRING>& assembly_string_vector, mdTypeRef string_type_ref);
+        HRESULT EmitModuleCCtorMethod(const ModuleID module_id, mdTypeDef type_def, AppDomainID app_domain_id, mdMethodDef loader_method_method_def, mdMemberRef securitycriticalattribute_ctor_member_ref);
 
         inline RuntimeInfo GetRuntimeInformation() {
             COR_PRF_RUNTIME_TYPE runtime_type;
@@ -191,8 +188,6 @@ namespace shared {
         static void DeleteSingeltonInstance(void);
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
-        HRESULT EmitDDLoadInitializationAssemblies(const ModuleID module_id, mdTypeDef type_def, WSTRING assembly_name_wstring, mdMethodDef* loader_method_method_def, mdMemberRef* securitycriticalattribute_ctor_member_ref);
-        HRESULT EmitModuleCCtor(const ModuleID module_id, mdTypeDef type_def, AppDomainID app_domain_id, mdMethodDef loader_method_method_def, mdMemberRef securitycriticalattribute_ctor_member_ref);
 
         bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize, WCHAR* moduleName);
     };

@@ -5,7 +5,6 @@
 #endif
 
 #include "il_rewriter_wrapper.h"
-//#include "resource.h"
 
 #ifdef MACOS
 #include <mach-o/dyld.h>
@@ -30,23 +29,11 @@ namespace shared {
 
     // We exclude here the direct references of the loader to avoid a cyclic reference problem.
     // Also well-known assemblies we want to avoid.
-    const WSTRING assemblies_exclusion_list_[] = {
+    const WSTRING assemblies_exclusion_list_[] =
+    {
             WStr("netstandard"),
             WStr("System"),
             WStr("System.Core"),
-            /*WStr("System.Configuration"),
-            WStr("System.Data"),
-            WStr("System.EnterpriseServices"),
-            WStr("System.Numerics"),
-            WStr("System.Runtime.Caching"),
-            WStr("System.Security"),
-            WStr("System.Transactions"),
-            WStr("System.Xml"),
-            WStr("System.Web"),
-            WStr("System.Web.ApplicationServices"),
-            WStr("Microsoft.Web.Infrastructure"),
-            WStr("System.ComponentModel.DataAnnotations"),
-            WStr("System.Web.RegularExpressions"),*/
             WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
@@ -108,15 +95,19 @@ namespace shared {
                 const std::vector<WSTRING>& assembliesToLoad_adDefault_procNonIIS,
                 const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procNonIIS,
                 const std::vector<WSTRING>& assembliesToLoad_adDefault_procIIS,
-                const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procIIS) {
-
+                const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procIIS)
+    {
         WSTRING process_name = GetCurrentProcessName();
-        const bool is_iis = process_name == WStr("w3wp.exe") ||
-            process_name == WStr("iisexpress.exe");
 
-        if (log_info_callback != nullptr) {
+        const bool is_iis = process_name == WStr("w3wp.exe") || process_name == WStr("iisexpress.exe");
+
+        if (log_info_callback != nullptr)
+        {
             log_info_callback("Loader::InjectLoaderToModuleInitializer: Process name: " + ToString(process_name));
-            log_info_callback("Loader::InjectLoaderToModuleInitializer: IIS process detected.");
+            if (is_iis)
+            {
+                log_info_callback("Loader::InjectLoaderToModuleInitializer: IIS process detected.");
+            }
         }
 
         return new Loader(pCorProfilerInfo,
@@ -137,8 +128,8 @@ namespace shared {
                 std::function<void(const std::string& str)> log_info_callback,
                 std::function<void(const std::string& str)> log_error_callback,
                 const LoaderResourceMonikerIDs& resourceMonikerIDs,
-                WCHAR const * native_profiler_library_filename) {
-
+                WCHAR const * native_profiler_library_filename)
+    {
         resourceMonikerIDs_ = LoaderResourceMonikerIDs(resourceMonikerIDs);
         info_ = info;
         assembly_string_default_appdomain_vector_ = assembly_string_default_appdomain_vector;
@@ -193,7 +184,6 @@ namespace shared {
             return hr;
         }
         WSTRING assembly_name_wstring = WSTRING(assembly_name);
-        std::string assembly_name_string = ToString(assembly_name_wstring);
         std::string app_domain_id_hex = "0x" + TokenStr(app_domain_id);
 
 
@@ -223,7 +213,7 @@ namespace shared {
         {
             if (assembly_name_wstring == asm_name)
             {
-                Debug("Loader::InjectLoaderToModuleInitializer: Skipping " + assembly_name_string + " [AppDomainID=" + app_domain_id_hex + "]");
+                Debug("Loader::InjectLoaderToModuleInitializer: Skipping " + ToString(assembly_name_wstring) + " [AppDomainID=" + app_domain_id_hex + "]");
                 return E_FAIL;
             }
         }
@@ -345,7 +335,7 @@ namespace shared {
         //
         mdMethodDef loader_method_method_def;
         mdMemberRef securitysafecriticalattribute_ctor_member_ref;
-        hr = EmitDDLoadInitializationAssemblies(module_id, module_type_def, assembly_name_wstring, &loader_method_method_def, &securitysafecriticalattribute_ctor_member_ref);
+        hr = EmitDDLoadInitializationAssembliesMethod(module_id, module_type_def, assembly_name_wstring, &loader_method_method_def, &securitysafecriticalattribute_ctor_member_ref);
         if (FAILED(hr))
         {
             return hr;
@@ -355,9 +345,7 @@ namespace shared {
         //
         // Set SecuritySafeCriticalAttribute to the loader method.
         //
-        //BYTE customAttributeData[] = { 0x01, 0x00, 0x00, 0x00 };
         mdCustomAttribute security_critical_attribute;
-        //hr = metadata_emit->DefineCustomAttribute(module_type_def, securitysafecriticalattribute_ctor_member_ref, customAttributeData, sizeof(customAttributeData), &security_critical_attribute);
         hr = metadata_emit->DefineCustomAttribute(module_type_def, securitysafecriticalattribute_ctor_member_ref, nullptr, 0, &security_critical_attribute);
         if (FAILED(hr))
         {
@@ -370,7 +358,7 @@ namespace shared {
         //
         // Emit the <Module>.cctor() mdMethodDef
         //
-        hr = EmitModuleCCtor(module_id, module_type_def, app_domain_id, loader_method_method_def, securitysafecriticalattribute_ctor_member_ref);
+        hr = EmitModuleCCtorMethod(module_id, module_type_def, app_domain_id, loader_method_method_def, securitysafecriticalattribute_ctor_member_ref);
         if (FAILED(hr))
         {
             return hr;
@@ -378,7 +366,7 @@ namespace shared {
 
         Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + module_id_hex +
               ", AssemblyID=" + assembly_id_hex +
-              ", AssemblyName=" + ToString(assembly_name_string) +
+              ", AssemblyName=" + ToString(assembly_name_wstring) +
               ", AppDomainID=" + app_domain_id_hex +
               ", LoaderMethodDef=0x" + TokenStr(loader_method_method_def) +
               ", SecuritySafeCriticalAttributeMemberRef=" + TokenStr(securitysafecriticalattribute_ctor_member_ref) +
@@ -389,7 +377,7 @@ namespace shared {
 
     //
 
-    HRESULT Loader::EmitDDLoadInitializationAssemblies(const ModuleID module_id, mdTypeDef type_def, WSTRING assembly_name_wstring, mdMethodDef* loader_method_method_def, mdMemberRef* securitysafecriticalattribute_ctor_member_ref)
+    HRESULT Loader::EmitDDLoadInitializationAssembliesMethod(const ModuleID module_id, mdTypeDef type_def, WSTRING assembly_name_wstring, mdMethodDef* loader_method_method_def, mdMemberRef* securitysafecriticalattribute_ctor_member_ref)
     {
         std::string module_id_hex = "0x" + TokenStr(module_id);
 
@@ -1087,7 +1075,7 @@ namespace shared {
         return S_OK;
     }
 
-    HRESULT Loader::EmitModuleCCtor(const ModuleID module_id, mdTypeDef type_def, AppDomainID app_domain_id, mdMethodDef loader_method_method_def, mdMemberRef securitycriticalattribute_ctor_member_ref)
+    HRESULT Loader::EmitModuleCCtorMethod(const ModuleID module_id, mdTypeDef type_def, AppDomainID app_domain_id, mdMethodDef loader_method_method_def, mdMemberRef securitycriticalattribute_ctor_member_ref)
     {
         std::string module_id_hex = "0x" + TokenStr(module_id);
         std::string app_domain_id_hex = "0x" + TokenStr(app_domain_id);
@@ -1176,6 +1164,7 @@ namespace shared {
                 ", CCTORMethodDef=0x" + TokenStr(cctor_method_def));
             return hr;
         }
+
         ILRewriterWrapper rewriter_wrapper_cctor(&rewriter_cctor);
         rewriter_wrapper_cctor.SetILPosition(rewriter_cctor.GetILList()->m_pNext);
         rewriter_wrapper_cctor.CallMember(loader_method_method_def, false);
@@ -1209,7 +1198,8 @@ namespace shared {
         //
         ThreadID thread_id;
         HRESULT hr = this->info_->GetCurrentThreadID(&thread_id);
-        if (FAILED(hr)) {
+        if (FAILED(hr))
+        {
             Error("Loader::GetAssemblyAndSymbolsBytes: ThreadId could not be retrieved.");
         }
         std::string thread_id_hex = "0x" + TokenStr(thread_id);
@@ -1219,7 +1209,8 @@ namespace shared {
         //
         AppDomainID app_domain_id;
         hr = this->info_->GetThreadAppDomain(thread_id, &app_domain_id);
-        if (FAILED(hr)) {
+        if (FAILED(hr))
+        {
             Error("Loader::GetAssemblyAndSymbolsBytes: AppDomainID could not be retrieved.");
         }
         std::string app_domain_id_hex = "0x" + TokenStr(app_domain_id);
@@ -1229,7 +1220,8 @@ namespace shared {
         //
         // check if the loader has been already loaded for this AppDomain
         //
-        if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end()) {
+        if (loaders_loaded_.find(app_domain_id) != loaders_loaded_.end())
+        {
             Debug("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded. " + trait);
             return false;
         }
@@ -1242,10 +1234,13 @@ namespace shared {
         LPCWSTR dllLpName;
         LPCWSTR symbolsLpName;
 
-        if (runtime_information_.is_desktop()) {
+        if (runtime_information_.is_desktop())
+        {
           dllLpName = MAKEINTRESOURCE(resourceMonikerIDs_.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll);
           symbolsLpName = MAKEINTRESOURCE(resourceMonikerIDs_.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb);
-        } else {
+        }
+        else
+        {
           dllLpName = MAKEINTRESOURCE(resourceMonikerIDs_.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll);
           symbolsLpName = MAKEINTRESOURCE(resourceMonikerIDs_.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb);
         }
@@ -1286,10 +1281,12 @@ namespace shared {
         const unsigned int imgCount = _dyld_image_count();
 
         std::string native_profiler_file_macos = native_profiler_library_filename_;
-        for(auto i = 0; i < imgCount; i++) {
+        for(auto i = 0; i < imgCount; i++)
+        {
             const std::string name = std::string(_dyld_get_image_name(i));
 
-            if (name.rfind(native_profiler_file_macos) != std::string::npos) {
+            if (name.rfind(native_profiler_file_macos) != std::string::npos)
+            {
                 const mach_header_64* header = (const struct mach_header_64 *) _dyld_get_image_header(i);
 
                 unsigned long dllSize;
