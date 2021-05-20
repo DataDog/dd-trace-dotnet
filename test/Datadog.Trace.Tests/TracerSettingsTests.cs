@@ -100,6 +100,19 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
+        [InlineData("a,b,c,d,,f", new[] { "a", "b", "c", "d", "f" })]
+        [InlineData(" a, b ,c, ,,f ", new[] { "a", "b", "c", "f" })]
+        [InlineData("a,b, c ,d,      e      ,f  ", new[] { "a", "b", "c", "d", "e", "f" })]
+        [InlineData("a,b,c,d,e,f", new[] { "a", "b", "c", "d", "e", "f" })]
+        [InlineData("", new string[0])]
+        public void ParseStringArraySplit(string input, string[] expected)
+        {
+            var tracerSettings = new TracerSettings();
+            var result = tracerSettings.TrimSplitString(input, ',').ToArray();
+            Assert.Equal(expected: expected, actual: result);
+        }
+
+        [Theory]
         [InlineData("404 -401, 419,344_ 23-302, 201,_5633-55, 409-411", "401,402,403,404,419,201,409,410,411")]
         [InlineData("-33, 500-503,113#53,500-502-200,456_2, 590-590", "500,501,502,503,590")]
         [InlineData("800", "")]
