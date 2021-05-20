@@ -14,41 +14,48 @@
 #include "string.h"
 #include "pal.h"
 
-namespace shared {
+namespace shared
+{
+    struct RuntimeInfo
+    {
+        COR_PRF_RUNTIME_TYPE RuntimeType;
+        USHORT MajorVersion;
+        USHORT MinorVersion;
+        USHORT BuildVersion;
+        USHORT QfeVersion;
 
-    struct RuntimeInfo {
-        COR_PRF_RUNTIME_TYPE runtime_type;
-        USHORT major_version;
-        USHORT minor_version;
-        USHORT build_version;
-        USHORT qfe_version;
+        RuntimeInfo() :
+            RuntimeType((COR_PRF_RUNTIME_TYPE)0x0),
+            MajorVersion(0),
+            MinorVersion(0),
+            BuildVersion(0),
+            QfeVersion(0) {}
 
-        RuntimeInfo()
-            : runtime_type((COR_PRF_RUNTIME_TYPE)0x0),
-            major_version(0),
-            minor_version(0),
-            build_version(0),
-            qfe_version(0) {}
+        RuntimeInfo(COR_PRF_RUNTIME_TYPE runtimeType, USHORT majorVersion, USHORT minorVersion, USHORT buildVersion, USHORT qfeVersion) :
+            RuntimeType(runtimeType),
+            MajorVersion(majorVersion),
+            MinorVersion(minorVersion),
+            BuildVersion(buildVersion),
+            QfeVersion(qfeVersion) {}
 
-        RuntimeInfo(COR_PRF_RUNTIME_TYPE runtime_type, USHORT major_version,
-            USHORT minor_version, USHORT build_version, USHORT qfe_version)
-            : runtime_type(runtime_type),
-            major_version(major_version),
-            minor_version(minor_version),
-            build_version(build_version),
-            qfe_version(qfe_version) {}
-
-        RuntimeInfo& operator=(const RuntimeInfo& other) {
-            runtime_type = other.runtime_type;
-            major_version = other.major_version;
-            minor_version = other.minor_version;
-            build_version = other.build_version;
-            qfe_version = other.qfe_version;
+        RuntimeInfo& operator=(const RuntimeInfo& other)
+        {
+            RuntimeType = other.RuntimeType;
+            MajorVersion = other.MajorVersion;
+            MinorVersion = other.MinorVersion;
+            BuildVersion = other.BuildVersion;
+            QfeVersion = other.QfeVersion;
             return *this;
         }
 
-        bool is_desktop() const { return runtime_type == COR_PRF_DESKTOP_CLR; }
-        bool is_core() const { return runtime_type == COR_PRF_CORE_CLR; }
+        bool IsDesktop() const
+        {
+            return RuntimeType == COR_PRF_DESKTOP_CLR;
+        }
+        bool IsCore() const
+        {
+            return RuntimeType == COR_PRF_CORE_CLR;
+        }
     };
 
     struct LoaderResourceMonikerIDs
@@ -74,99 +81,119 @@ namespace shared {
             std::int32_t NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb;
     };
 
-    struct AssemblyMetadata {
-        AppDomainID app_domain_id;
-        ModuleID module_id;
-        AssemblyID id;
-        mdAssembly token = mdAssemblyNil;
-        ASSEMBLYMETADATA metadata{};
-        WSTRING name;
-        DWORD flags;
-        const void* public_key;
-        ULONG public_key_length;
-        ULONG hash_alg_id;
+    struct AssemblyMetadata
+    {
+        AppDomainID AppDomainId;
+        ModuleID ModuleId;
+        AssemblyID Id;
+        mdAssembly Token = mdAssemblyNil;
+        ASSEMBLYMETADATA Metadata{};
+        WSTRING Name;
+        DWORD Flags;
+        const void* pPublicKey;
+        ULONG PublicKeyLength;
+        ULONG HashAlgId;
     };
 
     class Loader {
     private:
-        RuntimeInfo runtime_information_;
-        ICorProfilerInfo4* info_;
+        RuntimeInfo _runtimeInformation;
+        ICorProfilerInfo4* _pCorProfilerInfo;
 
-        std::mutex loaders_loaded_mutex_;
-        std::unordered_set<AppDomainID> loaders_loaded_;
-        AssemblyMetadata corlib_metadata{};
+        std::mutex _loadersLoadedMutex;
+        std::unordered_set<AppDomainID> _loadersLoadedSet;
+        AssemblyMetadata _corlibMetadata{};
 
-        std::vector<WSTRING> assembly_string_default_appdomain_vector_;
-        std::vector<WSTRING> assembly_string_nondefault_appdomain_vector_;
+        std::vector<WSTRING> _assemblyStringDefaultAppDomainVector;
+        std::vector<WSTRING> _assemblyStringNonDefaultAppDomainVector;
 
-        std::function<void(const std::string& str)> log_debug_callback_ = nullptr;
-        std::function<void(const std::string& str)> log_info_callback_ = nullptr;
-        std::function<void(const std::string& str)> log_error_callback_ = nullptr;
+        std::function<void(const std::string& str)> _logDebugCallback = nullptr;
+        std::function<void(const std::string& str)> _logInfoCallback = nullptr;
+        std::function<void(const std::string& str)> _logErrorCallback = nullptr;
 
-        LoaderResourceMonikerIDs resourceMonikerIDs_;
+        LoaderResourceMonikerIDs _resourceMonikerIDs;
 
-        WCHAR const* native_profiler_library_filename_;
+        const WCHAR* _pNativeProfilerLibraryFilename;
 
         static Loader* s_singeltonInstance;
 
         static Loader* CreateNewLoaderInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
-                    std::function<void(const std::string& str)> log_debug_callback,
-                    std::function<void(const std::string& str)> log_info_callback,
-                    std::function<void(const std::string& str)> log_error_callback,
+                    std::function<void(const std::string& str)> logDebugCallback,
+                    std::function<void(const std::string& str)> logInfoCallback,
+                    std::function<void(const std::string& str)> logErrorCallback,
                     const LoaderResourceMonikerIDs& resourceMonikerIDs,
-                    WCHAR const* native_profiler_library_filename,
-                    const std::vector<WSTRING>& assembliesToLoad_adDefault_procNonIIS,
-                    const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procNonIIS,
-                    const std::vector<WSTRING>& assembliesToLoad_adDefault_procIIS,
-                    const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procIIS);
+                    const WCHAR* pNativeProfilerLibraryFilename,
+                    const std::vector<WSTRING>& nonIISAssemblyStringDefaultAppDomainVector,
+                    const std::vector<WSTRING>& nonIISAssemblyStringNonDefaultAppDomainVector,
+                    const std::vector<WSTRING>& iisAssemblyStringDefaultAppDomainVector,
+                    const std::vector<WSTRING>& iisAssemblyStringNonDefaultAppDomainVector);
 
         Loader(
-                    ICorProfilerInfo4* info,
-                    const std::vector<WSTRING>& assembly_string_default_appdomain_vector,
-                    const std::vector<WSTRING>& assembly_string_nondefault_appdomain_vector,
-                    std::function<void(const std::string& str)> log_debug_callback,
-                    std::function<void(const std::string& str)> log_info_callback,
-                    std::function<void(const std::string& str)> log_error_callback,
+                    ICorProfilerInfo4* pCorProfilerInfo,
+                    const std::vector<WSTRING>& assemblyStringDefaultAppDomainVector,
+                    const std::vector<WSTRING>& assemblyStringNonDefaultAppDomainVector,
+                    std::function<void(const std::string& str)> logDebugCallback,
+                    std::function<void(const std::string& str)> logInfoCallback,
+                    std::function<void(const std::string& str)> logErrorCallback,
                     const LoaderResourceMonikerIDs& resourceMonikerIDs,
-                    WCHAR const* native_profiler_library_filename);
+                    const WCHAR* pNativeProfilerLibraryFilename);
 
-        inline void Debug(const std::string& str) {
-            if (log_debug_callback_ != nullptr) {
-                log_debug_callback_(str);
+        inline void Debug(const std::string& value) {
+            if (_logDebugCallback != nullptr) {
+                _logDebugCallback(value);
             }
         }
 
-        inline void Info(const std::string& str) {
-            if (log_info_callback_ != nullptr) {
-                log_info_callback_(str);
+        inline void Info(const std::string& value) {
+            if (_logInfoCallback != nullptr) {
+                _logInfoCallback(value);
             }
         }
 
-        inline void Error(const std::string& str) {
-            if (log_error_callback_ != nullptr) {
-                log_error_callback_(str);
+        inline void Error(const std::string& value) {
+            if (_logErrorCallback != nullptr) {
+                _logErrorCallback(value);
             }
         }
 
-        HRESULT EmitDDLoadInitializationAssembliesMethod(const ModuleID module_id, mdTypeDef type_def, WSTRING assembly_name_wstring, mdMethodDef* loader_method_method_def, mdMemberRef* securitycriticalattribute_ctor_member_ref);
-        HRESULT GetGetAssemblyAndSymbolsBytesMethodDef(const ComPtr<IMetaDataEmit2> metadata_emit, mdTypeDef module_type_def, mdMemberRef securitycriticalattribute_ctor_member_ref, mdMethodDef* result_method_def);
-        HRESULT WriteAssembliesStringArray(ILRewriterWrapper& rewriter_wrapper, const ComPtr<IMetaDataEmit2> metadata_emit, const std::vector<WSTRING>& assembly_string_vector, mdTypeRef string_type_ref);
-        HRESULT EmitModuleCCtorMethod(const ModuleID module_id, mdTypeDef type_def, AppDomainID app_domain_id, mdMethodDef loader_method_method_def, mdMemberRef securitycriticalattribute_ctor_member_ref);
+        HRESULT EmitDDLoadInitializationAssembliesMethod(
+            const ModuleID moduleId,
+            mdTypeDef typeDef,
+            WSTRING assemblyName,
+            mdMethodDef* pLoaderMethodDef,
+            mdMemberRef* pSecuritySafeCriticalCtorMemberRef);
+
+        HRESULT GetGetAssemblyAndSymbolsBytesMethodDef(
+            const ComPtr<IMetaDataEmit2> metadataEmit,
+            mdTypeDef typeDef,
+            mdMethodDef* pGetAssemblyAndSymbolsBytesMethodDef);
+
+        HRESULT WriteAssembliesStringArray(
+            ILRewriterWrapper& rewriterWrapper,
+            const ComPtr<IMetaDataEmit2> metadataEmit,
+            const std::vector<WSTRING>& assemblyStringVector,
+            mdTypeRef stringTypeRef);
+
+        HRESULT EmitModuleCCtorMethod(
+            const ModuleID moduleId,
+            mdTypeDef typeDef,
+            AppDomainID appDomainId,
+            mdMethodDef loaderMethodDef);
 
         inline RuntimeInfo GetRuntimeInformation() {
-            COR_PRF_RUNTIME_TYPE runtime_type;
-            USHORT major_version;
-            USHORT minor_version;
-            USHORT build_version;
-            USHORT qfe_version;
+            COR_PRF_RUNTIME_TYPE runtimeType;
+            USHORT majorVersion;
+            USHORT minorVersion;
+            USHORT buildVersion;
+            USHORT qfeVersion;
 
-            HRESULT hr = info_->GetRuntimeInformation(nullptr, &runtime_type, &major_version, &minor_version, &build_version, &qfe_version, 0, nullptr, nullptr);
+            HRESULT hr = _pCorProfilerInfo->GetRuntimeInformation(nullptr, &runtimeType, &majorVersion, &minorVersion, &buildVersion, &qfeVersion, 0, nullptr, nullptr);
             if (FAILED(hr)) {
                 return {};
             }
 
-            return { runtime_type, major_version, minor_version, build_version, qfe_version };
+            return { runtimeType, majorVersion, minorVersion, buildVersion, qfeVersion };
         }
 
     public:
@@ -174,22 +201,22 @@ namespace shared {
 
         static void CreateNewSingeltonInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
-                    std::function<void(const std::string& str)> log_debug_callback,
-                    std::function<void(const std::string& str)> log_info_callback,
-                    std::function<void(const std::string& str)> log_error_callback,
-                    const LoaderResourceMonikerIDs& resource_moniker_ids,
-                    WCHAR const * native_profiler_library_filename,
-                    const std::vector<WSTRING>& assembliesToLoad_adDefault_procNonIIS,
-                    const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procNonIIS,
-                    const std::vector<WSTRING>& assembliesToLoad_adDefault_procIIS,
-                    const std::vector<WSTRING>& assembliesToLoad_adNonDefault_procIIS);
+                    std::function<void(const std::string& str)> logDebugCallback,
+                    std::function<void(const std::string& str)> logInfoCallback,
+                    std::function<void(const std::string& str)> logErrorCallback,
+                    const LoaderResourceMonikerIDs& resourceMonikerIDs,
+                    const WCHAR* pNativeProfilerLibraryFilename,
+                    const std::vector<WSTRING>& nonIISAssemblyStringDefaultAppDomainVector,
+                    const std::vector<WSTRING>& nonIISAssemblyStringNonDefaultAppDomainVector,
+                    const std::vector<WSTRING>& iisAssemblyStringDefaultAppDomainVector,
+                    const std::vector<WSTRING>& iisAssemblyStringNonDefaultAppDomainVector);
 
         static Loader* GetSingeltonInstance();
         static void DeleteSingeltonInstance(void);
 
-        HRESULT InjectLoaderToModuleInitializer(const ModuleID module_id);
+        HRESULT InjectLoaderToModuleInitializer(const ModuleID moduleId);
 
-        bool GetAssemblyAndSymbolsBytes(void** pAssemblyArray, int* assemblySize, void** pSymbolsArray, int* symbolsSize, WCHAR* moduleName);
+        bool GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* pModuleName);
     };
 
 }  // namespace shared

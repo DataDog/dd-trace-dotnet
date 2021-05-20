@@ -12,8 +12,8 @@
 
 #include "string.h"
 
-namespace shared {
-
+namespace shared
+{
     template <typename Out>
     void Split(const WSTRING& s, wchar_t delim, Out result);
 
@@ -35,21 +35,50 @@ namespace shared {
     // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
     std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name);
 
-    // Convert Hex to string
-    WSTRING HexStr(const void* data, int len);
 
-    // Convert Token to string
-    WSTRING WTokenStr(const mdToken token);
-    std::string TokenStr(const mdToken token);
+    constexpr char HexMap[] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                               '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
+    // Convert Hex to string
+    template <typename T>
+    std::string HexStr(const T value)
+    {
+        const unsigned char* data = (unsigned char*)&value;
+        int len = sizeof(T);
+        std::string s(len * 2, ' ');
+        for (int i = 0; i < len; i++)
+        {
+            s[(2 * (len - i)) - 2] = HexMap[(data[i] & 0xF0) >> 4];
+            s[(2 * (len - i)) - 1] = HexMap[data[i] & 0x0F];
+        }
+        return s;
+    }
+
+    template <typename T>
+    WSTRING WHexStr(const T value)
+    {
+        const unsigned char* data = (unsigned char*)&value;
+        int len = sizeof(T);
+        WSTRING s(len * 2, ' ');
+        for (int i = 0; i < len; i++)
+        {
+            s[(2 * (len - i)) - 2] = HexMap[(data[i] & 0xF0) >> 4];
+            s[(2 * (len - i)) - 1] = HexMap[data[i] & 0x0F];
+        }
+        return s;
+    }
+
+    WSTRING WHexStr(const void* pData, int len);
 
     template <class Container>
-    bool Contains(const Container& items,
-        const typename Container::value_type& value) {
+    bool Contains(const Container& items, const typename Container::value_type& value)
+    {
         return std::find(items.begin(), items.end(), value) != items.end();
     }
 
     // Singleton definition
-    class UnCopyable {
+    class UnCopyable
+    {
     protected:
         UnCopyable() {};
         ~UnCopyable() {};
@@ -62,32 +91,38 @@ namespace shared {
     };
 
     template <typename T>
-    class Singleton : public UnCopyable {
+    class Singleton : public UnCopyable
+    {
     public:
-        static T* Instance() {
+        static T* Instance()
+        {
             static T instance_obj;
             return &instance_obj;
         }
     };
 
     template <typename T>
-    class BlockingQueue : public UnCopyable {
+    class BlockingQueue : public UnCopyable
+    {
     private:
         std::queue<T> queue_;
         mutable std::mutex mutex_;
         std::condition_variable condition_;
 
     public:
-        T pop() {
+        T pop()
+        {
             std::unique_lock<std::mutex> mlock(mutex_);
-            while (queue_.empty()) {
+            while (queue_.empty())
+            {
                 condition_.wait(mlock);
             }
             T value = queue_.front();
             queue_.pop();
             return value;
         }
-        void push(const T& item) {
+        void push(const T& item)
+        {
             {
                 std::lock_guard<std::mutex> guard(mutex_);
                 queue_.push(item);
