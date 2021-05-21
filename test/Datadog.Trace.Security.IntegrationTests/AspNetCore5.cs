@@ -17,6 +17,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestBlockedRequestAsync()
         {
             Environment.SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", "1");
+            Environment.SetEnvironmentVariable("DD_ENABLE_SECURITY", "true");
             Environment.SetEnvironmentVariable("DD_VERSION", "1.0.0");
             Environment.SetEnvironmentVariable("DD_TRACE_HEADER_TAGS", "sample.correlation.identifier, Server");
             Environment.SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
@@ -27,7 +28,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             using var process = await RunTraceTestOnSelfHosted("/Home");
             var (statusCode, _) = await SubmitRequest("/Home?arg=database()");
             Assert.Equal(System.Net.HttpStatusCode.Forbidden, statusCode);
-            process.Kill();
+            if (!process.HasExited)
+            {
+                process.Kill();
+            }
         }
     }
 }
