@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tagging
         {
             int originalOffset = offset;
 
-            offset += WriteTags(ref bytes, offset);
+            offset += WriteTags(ref bytes, offset, span);
             offset += WriteMetrics(ref bytes, offset, span);
 
             return offset - originalOffset;
@@ -259,7 +259,7 @@ namespace Datadog.Trace.Tagging
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
         }
 
-        private int WriteTags(ref byte[] bytes, int offset)
+        private int WriteTags(ref byte[] bytes, int offset, Span span)
         {
             int originalOffset = offset;
 
@@ -273,6 +273,8 @@ namespace Datadog.Trace.Tagging
 
             var tags = Tags;
 
+            bool isOriginWritten = false;
+
             if (tags != null)
             {
                 lock (tags)
@@ -281,6 +283,11 @@ namespace Datadog.Trace.Tagging
 
                     foreach (var pair in tags)
                     {
+                        if (pair.Key == Trace.Tags.Origin)
+                        {
+                            isOriginWritten = true;
+                        }
+
                         WriteTag(ref bytes, ref offset, pair.Key, pair.Value);
                     }
                 }
@@ -292,9 +299,20 @@ namespace Datadog.Trace.Tagging
 
                 if (value != null)
                 {
+                    if (property.Key == Trace.Tags.Origin)
+                    {
+                        isOriginWritten = true;
+                    }
+
                     count++;
                     WriteTag(ref bytes, ref offset, property.Key, value);
                 }
+            }
+
+            if (!isOriginWritten && !string.IsNullOrEmpty(span.Context.Origin))
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, Trace.Tags.Origin, span.Context.Origin);
             }
 
             if (count > 0)

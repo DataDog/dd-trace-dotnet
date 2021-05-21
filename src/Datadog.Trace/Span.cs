@@ -112,6 +112,7 @@ namespace Datadog.Trace
             sb.AppendLine($"TraceId: {Context.TraceId}");
             sb.AppendLine($"ParentId: {Context.ParentId}");
             sb.AppendLine($"SpanId: {Context.SpanId}");
+            sb.AppendLine($"Origin: {Context.Origin}");
             sb.AppendLine($"ServiceName: {ServiceName}");
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
@@ -366,6 +367,11 @@ namespace Datadog.Trace
         internal void ResetStartTime()
         {
             StartTime = Context.TraceContext.UtcNow;
+        }
+
+        internal void SetOrigin(string origin)
+        {
+            Context.Origin = origin;
         }
     }
 }
