@@ -142,6 +142,9 @@ namespace Datadog.Trace
             // some tags have special meaning
             switch (key)
             {
+                case Trace.Tags.Origin:
+                    Context.Origin = value;
+                    break;
                 case Trace.Tags.SamplingPriority:
                     if (Enum.TryParse(value, out SamplingPriority samplingPriority) &&
                         Enum.IsDefined(typeof(SamplingPriority), samplingPriority))
@@ -315,7 +318,7 @@ namespace Datadog.Trace
                 case Trace.Tags.SamplingPriority:
                     return ((int?)(Context.TraceContext?.SamplingPriority ?? Context.SamplingPriority))?.ToString();
                 case Trace.Tags.Origin:
-                    return Tags.GetTag(key) ?? Context.Origin;
+                    return Context.Origin;
                 default:
                     return Tags.GetTag(key);
             }
@@ -369,11 +372,6 @@ namespace Datadog.Trace
         internal void ResetStartTime()
         {
             StartTime = Context.TraceContext.UtcNow;
-        }
-
-        internal void SetOrigin(string origin)
-        {
-            Context.Origin = origin;
         }
     }
 }
