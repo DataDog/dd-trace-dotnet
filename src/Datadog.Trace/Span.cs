@@ -314,6 +314,8 @@ namespace Datadog.Trace
             {
                 case Trace.Tags.SamplingPriority:
                     return ((int?)(Context.TraceContext?.SamplingPriority ?? Context.SamplingPriority))?.ToString();
+                case Trace.Tags.Origin:
+                    return Tags.GetTag(key) ?? Context.Origin;
                 default:
                     return Tags.GetTag(key);
             }

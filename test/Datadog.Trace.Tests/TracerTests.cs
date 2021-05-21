@@ -354,7 +354,7 @@ namespace Datadog.Trace.Tests
             using var secondSpan = _tracer.StartActive("Child", firstSpan.Span.Context);
             Assert.False(secondSpan.Span.IsRootSpan);
             Assert.Equal(origin, secondSpan.Span.Context.Origin);
-            Assert.Null(secondSpan.Span.GetTag(Tags.Origin));
+            Assert.Equal(origin, secondSpan.Span.GetTag(Tags.Origin));
         }
 
         [Fact]
