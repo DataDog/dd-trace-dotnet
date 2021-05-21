@@ -2,5 +2,5 @@
   "shadowCopy": false,
   "diagnosticMessages": true,
   "internalDiagnosticMessages": true,
-  "methodDisplay": "method"
+  "methodDisplay": "classAndMethod"
 }
