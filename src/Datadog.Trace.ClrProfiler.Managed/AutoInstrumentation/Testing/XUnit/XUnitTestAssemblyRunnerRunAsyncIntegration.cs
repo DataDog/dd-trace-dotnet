@@ -1,21 +1,20 @@
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     /// <summary>
-    /// Microsoft.VisualStudio.TestPlatform.TestFramework.Execute calltarget instrumentation
+    /// Xunit.Sdk.TestAssemblyRunner`1.RunAsync calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
-        TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
-        MethodName = "RunCleanup",
-        ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.RunCleanupResult",
-        ParameterTypeNames = new string[0],
-        MinimumVersion = "14.0.0",
-        MaximumVersion = "14.*.*",
-        IntegrationName = MsTestIntegration.IntegrationName)]
-    public class UnitTestRunnerRunCleanupIntegration
+        AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
+        TypeName = "Xunit.Sdk.TestAssemblyRunner`1",
+        MethodName = "RunAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
+        MinimumVersion = "2.2.0",
+        MaximumVersion = "2.*.*",
+        IntegrationName = XUnitIntegration.IntegrationName)]
+    public static class XUnitTestAssemblyRunnerRunAsyncIntegration
     {
         /// <summary>
         /// OnAsyncMethodEnd callback
@@ -29,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            Common.FlushSpans(MsTestIntegration.IntegrationId);
+            Common.FlushSpans(XUnitIntegration.IntegrationId);
             return returnValue;
         }
     }

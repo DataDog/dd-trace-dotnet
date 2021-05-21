@@ -150,7 +150,8 @@ namespace Datadog.Trace.TestHelpers
             int aspNetCorePort,
             int? statsdPort,
             string processPath,
-            StringDictionary environmentVariables)
+            StringDictionary environmentVariables,
+            bool ignoreProfilerProcesses = false)
         {
             var processName = processPath;
             string profilerEnabled = _requiresProfiling ? "1" : "0";
@@ -182,7 +183,10 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
-            environmentVariables["DD_PROFILER_PROCESSES"] = processName;
+            if (!ignoreProfilerProcesses)
+            {
+                environmentVariables["DD_PROFILER_PROCESSES"] = processName;
+            }
 
             string integrations = string.Join(";", GetIntegrationsFilePaths());
             environmentVariables["DD_INTEGRATIONS"] = integrations;
@@ -331,6 +335,13 @@ namespace Datadog.Trace.TestHelpers
             return sampleAppPath;
         }
 
+        public string GetTestCommandForSampleApplicationPath(string packageVersion = "", string framework = "")
+        {
+            var appFileName = $"{FullSampleName}.dll";
+            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
+            return sampleAppPath;
+        }
+
         public string GetSampleExecutionSource()
         {
             string executor;
@@ -357,6 +368,39 @@ namespace Datadog.Trace.TestHelpers
             return executor;
         }
 
+        public string GetDotNetTest()
+        {
+            if (EnvironmentTools.IsWindows())
+            {
+                if (!IsCoreClr())
+                {
+                    string filePattern = @"C:\Program Files (x86)\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
+                    List<Tuple<string, string>> lstTuple = new List<Tuple<string, string>>
+                    {
+                        Tuple.Create("2019", "Enterprise"),
+                        Tuple.Create("2019", "Professional"),
+                        Tuple.Create("2019", "Community"),
+                        Tuple.Create("2017", "Enterprise"),
+                        Tuple.Create("2017", "Professional"),
+                        Tuple.Create("2017", "Community"),
+                    };
+
+                    foreach (Tuple<string, string> tuple in lstTuple)
+                    {
+                        var tryPath = string.Format(filePattern, tuple.Item1, tuple.Item2);
+                        if (File.Exists(tryPath))
+                        {
+                            return tryPath;
+                        }
+                    }
+                }
+
+                return "dotnet.exe";
+            }
+
+            return "dotnet";
+        }
+
         public string GetSampleProjectDirectory()
         {
             var solutionDirectory = GetSolutionDirectory();
@@ -367,7 +411,7 @@ namespace Datadog.Trace.TestHelpers
             return projectDir;
         }
 
-        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "")
+        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "", bool usePublishFolder = true)
         {
             var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
             var binDir = Path.Combine(
@@ -392,7 +436,7 @@ namespace Datadog.Trace.TestHelpers
                     EnvironmentTools.GetBuildConfiguration(),
                     targetFramework);
             }
-            else
+            else if (usePublishFolder)
             {
                 outputDir = Path.Combine(
                     binDir,
@@ -400,6 +444,14 @@ namespace Datadog.Trace.TestHelpers
                     EnvironmentTools.GetBuildConfiguration(),
                     targetFramework,
                     "publish");
+            }
+            else
+            {
+                outputDir = Path.Combine(
+                    binDir,
+                    packageVersion,
+                    EnvironmentTools.GetBuildConfiguration(),
+                    targetFramework);
             }
 
             return outputDir;

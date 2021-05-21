@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            if (!Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!XUnitIntegration.IsEnabled)
             {
                 return CallTargetState.GetDefault();
             }

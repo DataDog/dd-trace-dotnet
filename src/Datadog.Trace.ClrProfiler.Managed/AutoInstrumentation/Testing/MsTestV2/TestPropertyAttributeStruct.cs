@@ -1,22 +1,21 @@
-using System;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
     /// <summary>
-    /// TestResult ducktype struct
+    /// TestPropertyAttribute ducktype struct
     /// </summary>
     [DuckCopy]
-    public struct TestResultStruct
+    public struct TestPropertyAttributeStruct
     {
         /// <summary>
-        /// Gets the outcome enum
+        /// Gets the name.
         /// </summary>
-        public UnitTestOutcome Outcome;
+        public string Name;
 
         /// <summary>
-        /// Test failure exception
+        /// Gets the value.
         /// </summary>
-        public Exception TestFailureException;
+        public string Value;
     }
 }
