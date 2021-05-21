@@ -1280,9 +1280,9 @@ namespace shared
 
         Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=LINUX)."
             " *assemblySize=" + ToString(*pAssemblySize) + ", "
-            " *pAssemblyArray=" + TokenStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ", "
+            " *pAssemblyArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ", "
             " *symbolsSize=" + ToString(*pSymbolsSize) + ", "
-            " *pSymbolsArray=" + TokenStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
+            " *pSymbolsArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
 #elif MACOS
         const unsigned int imgCount = _dyld_image_count();
 
@@ -1311,9 +1311,9 @@ namespace shared
 
         Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=MACOS)."
             " *assemblySize=" + ToString(*pAssemblySize) + ", "
-            " *pAssemblyArray=" + TokenStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ", "
+            " *pAssemblyArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ", "
             " *symbolsSize=" + ToString(*pSymbolsSize) + ", "
-            " *pSymbolsArray=" + TokenStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
+            " *pSymbolsArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
 #else
         Error("Loader::GetAssemblyAndSymbolsBytes. Platform not supported.");
         return false;
