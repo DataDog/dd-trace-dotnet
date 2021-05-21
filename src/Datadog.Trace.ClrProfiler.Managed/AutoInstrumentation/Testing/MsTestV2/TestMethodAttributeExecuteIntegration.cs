@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         {
             if (MsTestIntegration.IsEnabled)
             {
-                Scope scope = Common.TestTracer.ActiveScope;
+                Scope scope = state.Scope;
                 if (scope != null)
                 {
                     Array returnValueArray = returnValue as Array;

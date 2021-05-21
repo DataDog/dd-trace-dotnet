@@ -7,6 +7,7 @@ using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -18,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     /// </summary>
     public static class NUnitIntegration
     {
-        private const string IntegrationName = "NUnit";
+        private const string IntegrationName = nameof(IntegrationIds.NUnit);
         private const string Major3 = "3";
         private const string Major3Minor0 = "3.0";
 
@@ -44,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string NUnitResultStateType = "NUnit.Framework.Interfaces.ResultState";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         /// <summary>
         /// Wrap the original NUnit.Framework.Internal.Commands.TestMethodCommand.Execute method by adding instrumentation code around it
@@ -183,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
 
             execute(workShift);
-            AutoInstrumentation.Testing.Common.FlushSpans();
+            AutoInstrumentation.Testing.Common.FlushSpans(IntegrationId);
         }
 
         /// <summary>
@@ -237,7 +239,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
 
             object result = execute(testAssemblyRunner, timeout);
-            AutoInstrumentation.Testing.Common.FlushSpans();
+            AutoInstrumentation.Testing.Common.FlushSpans(IntegrationId);
             return result;
         }
 

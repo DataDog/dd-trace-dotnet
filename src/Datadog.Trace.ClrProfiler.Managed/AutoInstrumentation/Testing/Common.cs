@@ -44,14 +44,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
         internal static void FlushSpans(IntegrationInfo integrationInfo)
         {
-            if (TestTracer.Settings.IsIntegrationEnabled(integrationInfo))
+            if (!TestTracer.Settings.IsIntegrationEnabled(integrationInfo))
             {
-                FlushSpans();
+                return;
             }
-        }
 
-        internal static void FlushSpans()
-        {
             try
             {
                 var flushThread = new Thread(() => InternalFlush().GetAwaiter().GetResult());
