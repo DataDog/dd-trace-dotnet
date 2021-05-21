@@ -14,18 +14,19 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public class AspNetCoreBase
     {
-        private readonly ITestOutputHelper output;
         private readonly HttpClient httpClient;
         private int aspNetCorePort;
 
         public AspNetCoreBase(string sampleName, ITestOutputHelper outputHelper)
         {
-            output = outputHelper;
+            Output = outputHelper;
             httpClient = new HttpClient();
-            EnvironmentHelper = new EnvironmentHelper(sampleName, typeof(AspNetCoreBase), output, samplesDirectory: "test/test-applications/security");
+            EnvironmentHelper = new EnvironmentHelper(sampleName, typeof(AspNetCoreBase), Output, samplesDirectory: "test/test-applications/security");
         }
 
         public EnvironmentHelper EnvironmentHelper { get; }
+
+        protected ITestOutputHelper Output { get; }
 
         public async Task<Process> RunTraceTestOnSelfHosted(string path)
         {
@@ -33,7 +34,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             aspNetCorePort = TcpPortProvider.GetOpenPort();
 
             using var agent = new MockTracerAgent(agentPort);
-            using var process = StartSample(agent.Port, arguments: null, string.Empty, aspNetCorePort: aspNetCorePort);
+            var process = StartSample(agent.Port, arguments: null, string.Empty, aspNetCorePort: aspNetCorePort);
 
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -46,7 +47,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                         wh.Set();
                     }
 
-                    output.WriteLine($"[webserver][stdout] {args.Data}");
+                    Output.WriteLine($"[webserver][stdout] {args.Data}");
                 }
             };
             process.BeginOutputReadLine();
@@ -55,7 +56,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 if (args.Data != null)
                 {
-                    output.WriteLine($"[webserver][stderr] {args.Data}");
+                    Output.WriteLine($"[webserver][stderr] {args.Data}");
                 }
             };
 
@@ -125,7 +126,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var response = await httpClient.GetAsync($"http://localhost:{this.aspNetCorePort}{path}");
             var responseText = await response.Content.ReadAsStringAsync();
-            output.WriteLine($"[http] {response.StatusCode} {responseText}");
+            Output.WriteLine($"[http] {response.StatusCode} {responseText}");
             return (response.StatusCode, responseText);
         }
     }
