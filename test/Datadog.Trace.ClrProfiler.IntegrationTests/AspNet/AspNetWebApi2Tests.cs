@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using VerifyXunit;
@@ -88,6 +89,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    [UsesVerify]
     public abstract class AspNetWebApi2Tests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
@@ -108,7 +110,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _testName = nameof(AspNetWebApi2Tests)
                       + (enableCallTarget ? ".CallSite" : ".CallTarget")
                       + (classicMode ? ".Classic" : ".Integrated")
-                      + (enableFeatureFlag ? ".NoFF" : ".WithFF");
+                      + (enableFeatureFlag ? ".NoFF" : ".WithFF")
+                      + (RuntimeInformation.ProcessArchitecture == Architecture.X64 ? ".X64" : ".X86"); // assume that arm is the same
         }
 
         public static TheoryData<string, int> Data() => new()
