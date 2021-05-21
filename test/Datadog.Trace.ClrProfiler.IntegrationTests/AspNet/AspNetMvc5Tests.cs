@@ -11,19 +11,37 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetMvc5TestsCallsite : AspNetMvc5Tests
+    public class AspNetMvc5TestsCallsiteClassic : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallsite(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false)
+        public AspNetMvc5TestsCallsiteClassic(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: true)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5TestsCallTarget : AspNetMvc5Tests
+    public class AspNetMvc5TestsCallsiteIntegrated : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true)
+        public AspNetMvc5TestsCallsiteIntegrated(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: false)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsCallTargetClassic : AspNetMvc5Tests
+    {
+        public AspNetMvc5TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: true)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsCallTargetIntegrated : AspNetMvc5Tests
+    {
+        public AspNetMvc5TestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: false)
         {
         }
     }
@@ -32,14 +50,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private readonly IisFixture _iisFixture;
 
-        public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget)
+        public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget);
 
             _iisFixture = iisFixture;
-            _iisFixture.TryStartIis(this);
+            _iisFixture.TryStartIis(this, classicMode);
         }
 
         [Theory]
