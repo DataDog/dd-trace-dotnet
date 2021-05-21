@@ -11,7 +11,7 @@
 #include <mach-o/getsect.h>
 #endif
 
-#define stringMaxSize 1024
+#define STRINGMAXSIZE 1024
 
 namespace shared
 {
@@ -176,9 +176,9 @@ namespace shared
         // retrieve AppDomainID from AssemblyID
         //
         AppDomainID appDomainId = 0;
-        WCHAR assemblyName[stringMaxSize];
+        WCHAR assemblyName[STRINGMAXSIZE];
         ULONG assemblyNameLength = 0;
-        hr = this->_pCorProfilerInfo->GetAssemblyInfo(assemblyId, stringMaxSize, &assemblyNameLength, assemblyName, &appDomainId, NULL);
+        hr = this->_pCorProfilerInfo->GetAssemblyInfo(assemblyId, STRINGMAXSIZE, &assemblyNameLength, assemblyName, &appDomainId, NULL);
         if (FAILED(hr))
         {
             Error("Loader::InjectLoaderToModuleInitializer: failed fetching AppDomainID for AssemblyID=" + assemblyIdHex);
@@ -253,7 +253,7 @@ namespace shared
             _corlibMetadata.Token = corLibAssembly;
             _corlibMetadata.AppDomainId = appDomainId;
 
-            WCHAR name[stringMaxSize];
+            WCHAR name[STRINGMAXSIZE];
             DWORD name_len = 0;
 
             hr = assemblyImport->GetAssemblyProps(
@@ -262,7 +262,7 @@ namespace shared
                 &_corlibMetadata.PublicKeyLength,
                 &_corlibMetadata.HashAlgId,
                 name,
-                stringMaxSize,
+                STRINGMAXSIZE,
                 &name_len,
                 &_corlibMetadata.Metadata,
                 &_corlibMetadata.Flags);
@@ -409,7 +409,7 @@ namespace shared
         //
         // Check if the static void <Module>.DD_LoadInitializationAssemblies() mdMethodDef has been already injected.
         //
-        WSTRING loaderMethodName = WSTRING(WStr("DD_LoadInitializationAssemblies_")) + ReplaceString(assemblyName, WStr("."), WStr(""));
+        WSTRING loaderMethodName = WSTRING(WStr("DD_LoadInitializationAssemblies_")) + ReplaceString(assemblyName, (WSTRING)WStr("."), (WSTRING)WStr(""));
         COR_SIGNATURE loaderMethodSignature[] =
         {
                 IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention

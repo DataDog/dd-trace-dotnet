@@ -53,22 +53,4 @@ namespace shared {
         return WSTRING(reinterpret_cast<const WCHAR*>(std::to_wstring(i).c_str()));
     }
 
-    WSTRING ReplaceString(WSTRING subject, const WSTRING& search, const WSTRING& replace) {
-        size_t pos = 0;
-        while ((pos = subject.find(search, pos)) != std::string::npos) {
-            subject.replace(pos, search.length(), replace);
-            pos += replace.length();
-        }
-        return subject;
-    }
-
-    std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace) {
-        size_t pos = 0;
-        while ((pos = subject.find(search, pos)) != std::string::npos) {
-            subject.replace(pos, search.length(), replace);
-            pos += replace.length();
-        }
-        return subject;
-    }
-
 }  // namespace trace
