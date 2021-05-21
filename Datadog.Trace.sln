@@ -436,8 +436,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DuplicateTypeProxy", "test\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreRazorPages", "test\test-applications\integrations\Samples.AspNetCoreRazorPages\Samples.AspNetCoreRazorPages.csproj", "{1B9E6BF4-9D48-4988-9945-248096119E46}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Kafka", "test\test-applications\integrations\Samples.Kafka\Samples.Kafka.csproj", "{760B1586-23B4-418A-B7D9-ABC0AC023FAE}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FeatureTracking", "tools\FeatureTracking\FeatureTracking.csproj", "{2829C811-66EE-4B81-96CA-2ACB00B8E813}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.XUnitTests", "test\test-applications\integrations\Samples.XUnitTests\Samples.XUnitTests.csproj", "{4AD438D9-D4E3-4EB5-8851-89DB4D1CFB9C}"
