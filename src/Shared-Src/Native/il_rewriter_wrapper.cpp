@@ -103,13 +103,19 @@ void ILRewriterWrapper::UnboxAnyAfter(const mdTypeRef type_ref) const {
 
 void ILRewriterWrapper::CreateArray(const mdTypeRef type_ref,
                                     const INT32 size) const {
-  mdTypeRef typeRef = mdTypeRefNil;
   LoadInt32(size);
 
   ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
   pNewInstr->m_opcode = CEE_NEWARR;
   pNewInstr->m_Arg32 = type_ref;
   m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+}
+
+void ILRewriterWrapper::CreateArray(const mdTypeRef type_ref) const {
+    ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+    pNewInstr->m_opcode = CEE_NEWARR;
+    pNewInstr->m_Arg32 = type_ref;
+    m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
 ILInstr* ILRewriterWrapper::CallMember(const mdMemberRef& member_ref,
@@ -267,10 +273,19 @@ ILInstr* ILRewriterWrapper::CreateInstr(unsigned opCode) const {
   m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
   return pNewInstr;
 }
+
 ILInstr* ILRewriterWrapper::InitObj(mdTypeRef type_ref) const {
   ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
   pNewInstr->m_opcode = CEE_INITOBJ;
   pNewInstr->m_Arg32 = type_ref;
+  m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+  return pNewInstr;
+}
+
+ILInstr* ILRewriterWrapper::LoadStr(mdString string_ref) const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = CEE_LDSTR;
+  pNewInstr->m_Arg32 = string_ref;
   m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
   return pNewInstr;
 }
