@@ -1,5 +1,6 @@
 #if NET5_0
 using System;
+using System.Net;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -13,11 +14,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
-        [Fact]
-        public async Task TestBlockedRequestAsync()
+        [Theory]
+        [InlineData(true, HttpStatusCode.Forbidden)]
+        [InlineData(false, HttpStatusCode.OK)]
+        public async Task TestBlockedRequestAsync(bool enableSecurity, HttpStatusCode expectedStatusCode)
         {
             Environment.SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", "1");
-            Environment.SetEnvironmentVariable("DD_ENABLE_SECURITY", "true");
+            Environment.SetEnvironmentVariable("DD_ENABLE_SECURITY", enableSecurity.ToString());
             Environment.SetEnvironmentVariable("DD_VERSION", "1.0.0");
             Environment.SetEnvironmentVariable("DD_TRACE_HEADER_TAGS", "sample.correlation.identifier, Server");
             Environment.SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
@@ -25,12 +28,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", "$(ProjectDir)$(OutputPath)profiler-lib");
             Environment.SetEnvironmentVariable("DD_INTEGRATIONS", "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json");
             Environment.SetEnvironmentVariable("CORECLR_PROFILER_PATH", "$(ProjectDir)$(OutputPath)profiler-lib\\Datadog.Trace.ClrProfiler.Native.dll");
-            using var process = await RunTraceTestOnSelfHosted("/Home");
+            var process = await RunTraceTestOnSelfHosted("/Home");
             var (statusCode, _) = await SubmitRequest("/Home?arg=database()");
-            Assert.Equal(System.Net.HttpStatusCode.Forbidden, statusCode);
+            Assert.Equal(expectedStatusCode, statusCode);
             if (!process.HasExited)
             {
                 process.Kill();
+                process.Dispose();
             }
         }
     }
