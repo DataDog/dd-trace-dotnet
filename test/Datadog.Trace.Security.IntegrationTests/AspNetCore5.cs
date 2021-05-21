@@ -26,6 +26,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             Environment.SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", "1");
             Environment.SetEnvironmentVariable("DD_ENABLE_SECURITY", enableSecurity.ToString());
+            Environment.SetEnvironmentVariable("DD_ENABLE_SECURITY", "true");
             Environment.SetEnvironmentVariable("DD_VERSION", "1.0.0");
             Environment.SetEnvironmentVariable("DD_TRACE_HEADER_TAGS", "sample.correlation.identifier, Server");
             Environment.SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
