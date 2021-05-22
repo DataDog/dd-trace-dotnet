@@ -309,10 +309,12 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            if (!isOriginWritten && !string.IsNullOrEmpty(span.Context.Origin))
+            string origin = span.Context.Origin;
+            if (!isOriginWritten && !string.IsNullOrEmpty(origin))
             {
                 count++;
-                WriteTag(ref bytes, ref offset, Trace.Tags.Origin, span.Context.Origin);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringBytesCache.OriginTagName);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, origin);
             }
 
             if (count > 0)
@@ -375,6 +377,11 @@ namespace Datadog.Trace.Tagging
             }
 
             return offset - originalOffset;
+        }
+
+        private static class StringBytesCache
+        {
+            public static byte[] OriginTagName { get; } = Encoding.UTF8.GetBytes(Trace.Tags.Origin);
         }
     }
 }
