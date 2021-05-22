@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Samples.AspNetCoreMvc.Controllers
 {
@@ -9,11 +10,19 @@ namespace Samples.AspNetCoreMvc.Controllers
     public class ApiController : ControllerBase
     {
         private const string CorrelationIdentifierHeaderName = "sample.correlation.identifier";
+        private readonly ILogger _logger;
+        private Action<ILogger, string> _logMessage = (logger, page) => logger.LogInformation("Visited {Controller}/{Page} at {Time}", nameof(ApiController), page, DateTime.UtcNow.ToLongTimeString());
+
+        public ApiController(ILogger<HomeController> logger)
+        {
+            _logger = logger;
+        }
 
         [HttpGet]
         [Route("delay/{seconds}")]
         public ActionResult Delay(int seconds)
         {
+            _logMessage(_logger, nameof(Delay));
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
             AddCorrelationIdentifierToResponse();
             return Ok(seconds);
@@ -23,6 +32,7 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("delay-async/{seconds}")]
         public async Task<ActionResult> DelayAsync(int seconds)
         {
+            _logMessage(_logger, nameof(DelayAsync));
             await Task.Delay(TimeSpan.FromSeconds(seconds));
             AddCorrelationIdentifierToResponse();
             return Ok(seconds);

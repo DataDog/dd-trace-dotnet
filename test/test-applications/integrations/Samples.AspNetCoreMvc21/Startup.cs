@@ -23,7 +23,13 @@ namespace Samples.AspNetCoreMvc
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
+                   .ConfigureLogging((ctx, logging) =>
+                   {
+                       logging.ClearProviders();
+                       logging.AddConsole();
+                       logging.AddFile(o => o.RootPath = ctx.HostingEnvironment.ContentRootPath);
+                   })
+                   .UseStartup<Startup>()
                 .Build();
 
         public IConfiguration Configuration { get; }
