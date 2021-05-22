@@ -56,6 +56,8 @@ namespace Benchmarks.Trace
             // Run benchmarks once to reduce noise
             new AgentWriterBenchmark().WriteAndFlushTraces().GetAwaiter().GetResult();
             new AgentWriterBenchmark().WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
+            new AgentWriterBenchmark().WriteAndFlushTracesWithOrigin().GetAwaiter().GetResult();
+            new AgentWriterBenchmark().WriteAndFlushEnrichedTracesWithOrigin().GetAwaiter().GetResult();
         }
 
         /// <summary>
