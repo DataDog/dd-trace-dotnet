@@ -10,24 +10,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     {
         private const string SqsKey = "_datadog";
 
-        public static readonly Func<IDictionary<string, object>, string, IEnumerable<string>> HeadersGetter = ((carrier, key) =>
-         {
-             if (carrier.TryGetValue(key, out object value) && value is byte[] bytes)
-             {
-                 return new[] { Encoding.UTF8.GetString(bytes) };
-             }
-             else
-             {
-                 return Enumerable.Empty<string>();
-             }
-         });
-
-        public static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
+        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             StringBuilder sb = new();
             sb.Append("{");
-            SpanContextPropagator.Instance.Inject(context, sb, ((sb, key, value) => sb.Append($"\"{key}\":\"{value}\",")));
+            SpanContextPropagator.Instance.Inject(context, sb, ((carrier, key, value) => carrier.Append($"\"{key}\":\"{value}\",")));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append("}");
 
