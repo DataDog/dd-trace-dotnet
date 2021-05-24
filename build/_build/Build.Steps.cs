@@ -794,6 +794,7 @@ partial class Build
                 "Samples.MongoDB",
                 "Samples.Elasticsearch",
                 "Samples.Elasticsearch.V5",
+                "Samples.Kafka",
                 "Samples.Npgsql",
                 "Samples.RabbitMQ",
                 "Samples.SqlServer",
