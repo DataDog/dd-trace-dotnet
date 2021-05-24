@@ -16,9 +16,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 #if NETFRAMEWORK
             // CreateSqsQueue
             AwsSqsSpan.GetDefault("CreateQueue")
-                    .WithTag("aws.queue.name", "MySQSQueue"),
+                    .WithTag("aws.queue.name", "MySyncSQSQueue"),
             AwsSqsSpan.GetDefault("CreateQueue")
-                    .WithTag("aws.queue.name", "MySQSQueue2"),
+                    .WithTag("aws.queue.name", "MySyncSQSQueue2"),
 
             // SendMessagesWithInjectedHeaders
             AwsSqsSpan.GetDefault("SendMessage"),
@@ -63,9 +63,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 #endif
             // CreateSqsQueueAsync
             AwsSqsSpan.GetDefault("CreateQueue")
-                    .WithTag("aws.queue.name", "MySQSQueue"),
+                    .WithTag("aws.queue.name", "MyAsyncSQSQueue"),
             AwsSqsSpan.GetDefault("CreateQueue")
-                    .WithTag("aws.queue.name", "MySQSQueue2"),
+                    .WithTag("aws.queue.name", "MyAsyncSQSQueue2"),
 
             // SendMessagesWithInjectedHeadersAsync
             AwsSqsSpan.GetDefault("SendMessage"),
