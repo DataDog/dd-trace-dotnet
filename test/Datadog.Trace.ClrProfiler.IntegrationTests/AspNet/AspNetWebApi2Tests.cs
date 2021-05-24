@@ -9,7 +9,8 @@
 
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Configuration;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -19,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetWebApi2TestsCallsiteClassic : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallsiteClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableFeatureFlag: false)
         {
         }
     }
@@ -28,7 +29,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetWebApi2TestsCallsiteIntegrated : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallsiteIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableFeatureFlag: false)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetWebApi2TestsCallsiteClassicWithFeatureFlag : AspNetWebApi2Tests
+    {
+        public AspNetWebApi2TestsCallsiteClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableFeatureFlag: true)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetWebApi2TestsCallsiteIntegratedWithFeatureFlag : AspNetWebApi2Tests
+    {
+        public AspNetWebApi2TestsCallsiteIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableFeatureFlag: true)
         {
         }
     }
@@ -37,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetWebApi2TestsCallTargetClassic : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: true)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableFeatureFlag: false)
         {
         }
     }
@@ -46,7 +65,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetWebApi2TestsCallTargetIntegrated : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: false)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableFeatureFlag: false)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetWebApi2TestsCallTargetClassicWithFeatureFlag : AspNetWebApi2Tests
+    {
+        public AspNetWebApi2TestsCallTargetClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableFeatureFlag: true)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetWebApi2TestsCallTargetIntegratedWithFeatureFlag : AspNetWebApi2Tests
+    {
+        public AspNetWebApi2TestsCallTargetIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableFeatureFlag: true)
         {
         }
     }
@@ -54,50 +91,66 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public abstract class AspNetWebApi2Tests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
+        private readonly string _testName;
 
-        public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode)
+        public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode, bool enableFeatureFlag)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget);
+            if (enableFeatureFlag)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
+            }
 
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this, classicMode);
+            _testName = nameof(AspNetWebApi2Tests)
+                      + (enableCallTarget ? ".CallSite" : ".CallTarget")
+                      + (classicMode ? ".Classic" : ".Integrated")
+                      + (enableFeatureFlag ? ".NoFF" : ".WithFF");
         }
+
+        public static TheoryData<string, int> Data() => new()
+        {
+            { "/api/environment", 200 },
+            { "/api/absolute-route", 200 },
+            { "/api/delay/0", 200 },
+            { "/api/delay-optional", 200 },
+            { "/api/delay-optional/1", 200 },
+            { "/api/delay-async/0", 200 },
+            { "/api/transient-failure/true", 200 },
+            { "/api/transient-failure/false", 500 },
+            { "/api/statuscode/201", 201 },
+            { "/api/statuscode/503", 503 },
+            { "/api2/delay/0", 200 },
+            { "/api2/optional", 200 },
+            { "/api2/optional/1", 200 },
+            { "/api2/delayAsync/0", 200 },
+            { "/api2/transientfailure/true", 200 },
+            { "/api2/transientfailure/false", 500 },
+            { "/api2/statuscode/201", 201 },
+            { "/api2/statuscode/503", 503 },
+        };
 
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
-        [MemberData(nameof(AspNetWebApi2TestData.WithoutFeatureFlag), MemberType = typeof(AspNetWebApi2TestData))]
-        public async Task SubmitsTraces(
-            string path,
-            string expectedAspNetResourceName,
-            string expectedResourceName,
-            HttpStatusCode expectedStatusCode,
-            bool isError,
-            string expectedErrorType,
-            string expectedErrorMessage,
-            SerializableDictionary expectedTags)
+        [MemberData(nameof(Data))]
+        public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
         {
-            await AssertWebServerSpan(
-                path,
-                _iisFixture.Agent,
-                _iisFixture.HttpPort,
-                expectedStatusCode,
-                isError,
-                expectedAspNetErrorType: null,
-                expectedAspNetErrorMessage: isError ? $"The HTTP response has status code {(int)expectedStatusCode}." : null,
-                expectedErrorType: expectedErrorType,
-                expectedErrorMessage: expectedErrorMessage,
-                "web",
-                "aspnet-webapi.request",
-                expectedAspNetResourceName,
-                expectedResourceName,
-                "1.0.0",
-                expectedTags);
+            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            await Verifier.Verify(spans, settings)
+                          .UseTypeName(_testName);
         }
     }
 }
-
 #endif
