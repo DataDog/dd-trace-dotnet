@@ -146,7 +146,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 {
                     Name = "aws.request",
                     Resource = $"SQS.{operationName}",
-                    Service = "Samples.AWS.SQS-aws-sdk",
+                    Service = "Samples.AWS.SQS-SQS",
                     Tags = new()
                     {
                         { "component", "aws-sdk" },
