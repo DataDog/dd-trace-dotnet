@@ -170,6 +170,7 @@ partial class Build : NukeBuild
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetConfiguration(BuildConfiguration)
+                    .SetProperty("Platform", "AnyCPU")
                     .SetOutputDirectory(ArtifactsDirectory / "nuget")
                     .CombineWith(ProjectsToPack, (x, project) => x
                         .SetProject(project)),
