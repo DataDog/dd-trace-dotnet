@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget: true, enableMethodInlining: true);
+            SetCallTargetSettings(true);
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
