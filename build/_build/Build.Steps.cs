@@ -870,7 +870,9 @@ partial class Build
         .Executes(() =>
         {
             // Build and restore for all versions
-            // Annoyingly this rebuilds everything again
+            // Annoyingly this rebuilds everything again and again.
+            var targets = new [] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
+
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
@@ -878,9 +880,9 @@ partial class Build
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("BuildInParallel", "true")
-                .SetTargets("RestoreAndBuildSamplesForPackageVersionsOnly")
                 .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                .CombineWith(targets, (c, target) => c.SetTargets(target))
             );
         });
 
