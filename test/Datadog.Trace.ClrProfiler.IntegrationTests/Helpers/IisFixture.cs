@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 
@@ -7,24 +8,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public sealed class IisFixture : IDisposable
     {
-        private Process _iisExpress;
+        private (Process Process, string ConfigFile) _iisExpress;
 
         public MockTracerAgent Agent { get; private set; }
 
         public int HttpPort { get; private set; }
 
-        public void TryStartIis(TestHelper helper)
+        public void TryStartIis(TestHelper helper, bool classicMode)
         {
             lock (this)
             {
-                if (_iisExpress == null)
+                if (_iisExpress.Process == null)
                 {
                     var initialAgentPort = TcpPortProvider.GetOpenPort();
                     Agent = new MockTracerAgent(initialAgentPort);
 
                     HttpPort = TcpPortProvider.GetOpenPort();
 
-                    _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort);
+                    _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort, classicMode);
                 }
             }
         }
@@ -35,18 +36,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             lock (this)
             {
-                if (_iisExpress != null)
+                if (_iisExpress.Process != null)
                 {
                     try
                     {
-                        if (!_iisExpress.HasExited)
+                        if (!_iisExpress.Process.HasExited)
                         {
                             // sending "Q" to standard input does not work because
                             // iisexpress is scanning console key press, so just kill it.
                             // maybe try this in the future:
                             // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
-                            _iisExpress.Kill();
-                            _iisExpress.WaitForExit(8000);
+                            _iisExpress.Process.Kill();
+                            _iisExpress.Process.WaitForExit(8000);
                         }
                     }
                     catch
@@ -54,7 +55,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
                     }
 
-                    _iisExpress.Dispose();
+                    _iisExpress.Process.Dispose();
+
+                    try
+                    {
+                        File.Delete(_iisExpress.ConfigFile);
+                    }
+                    catch
+                    {
+                    }
                 }
             }
         }

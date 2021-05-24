@@ -52,5 +52,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> OracleMDA => IsComprehensive ? PackageVersionsComprehensive.OracleMDA : PackageVersionsLatestMinors.OracleMDA;
 
         public static IEnumerable<object[]> OracleMDACore => IsComprehensive ? PackageVersionsComprehensive.OracleMDACore : PackageVersionsLatestMinors.OracleMDACore;
+
+        public static IEnumerable<object[]> XUnit => IsComprehensive ? PackageVersionsComprehensive.XUnit : PackageVersionsLatestMinors.XUnit;
+
+        public static IEnumerable<object[]> NUnit => IsComprehensive ? PackageVersionsComprehensive.NUnit : PackageVersionsLatestMinors.NUnit;
+
+        public static IEnumerable<object[]> MSTest => IsComprehensive ? PackageVersionsComprehensive.MSTest : PackageVersionsLatestMinors.MSTest;
+
+        public static IEnumerable<object[]> Kafka => IsComprehensive ? PackageVersionsComprehensive.Kafka : PackageVersionsLatestMinors.Kafka;
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
@@ -12,6 +13,9 @@ namespace Benchmarks.Trace
     {
         private static void Main(string[] args)
         {
+            Console.WriteLine($"Execution context: ");
+            Console.WriteLine("CurrentCulture is {0}.", CultureInfo.CurrentCulture.Name);
+
             if (args?.Any(a => a == "-jetbrains") == true)
             {
                 ExecuteWithJetbrainsTools(args);

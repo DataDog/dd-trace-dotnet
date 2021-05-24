@@ -210,6 +210,21 @@ namespace Datadog.Trace
         public const string AmqpDeliveryMode = "amqp.delivery_mode";
 
         /// <summary>
+        /// The partition associated with a record
+        /// </summary>
+        public const string KafkaPartition = "kafka.partition";
+
+        /// <summary>
+        /// The offset inside a partition associated with a record
+        /// </summary>
+        public const string KafkaOffset = "kafka.offset";
+
+        /// <summary>
+        /// Whether the record was a "tombstone" record
+        /// </summary>
+        public const string KafkaTombstone = "kafka.tombstone";
+
+        /// <summary>
         /// The size of the message.
         /// </summary>
         public const string MessageSize = "message.size";

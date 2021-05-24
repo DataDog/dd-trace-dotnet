@@ -26,6 +26,7 @@ namespace Datadog.Trace.Configuration
         ServiceRemoting,
         RabbitMQ,
         Msmq,
+        Kafka,
         AwsSdk,
     }
 }

@@ -7,6 +7,17 @@ namespace Datadog.Trace.Agent.MessagePack
 {
     internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
     {
+        private static byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
+        private static byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
+        private static byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
+        private static byte[] _resourceBytes = StringEncoding.UTF8.GetBytes("resource");
+        private static byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("service");
+        private static byte[] _typeBytes = StringEncoding.UTF8.GetBytes("type");
+        private static byte[] _startBytes = StringEncoding.UTF8.GetBytes("start");
+        private static byte[] _durationBytes = StringEncoding.UTF8.GetBytes("duration");
+        private static byte[] _parentIdBytes = StringEncoding.UTF8.GetBytes("parent_id");
+        private static byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
+
         public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
         {
             // First, pack array length (or map length).
@@ -29,39 +40,39 @@ namespace Datadog.Trace.Agent.MessagePack
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "trace_id");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.Context.TraceId);
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "span_id");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.Context.SpanId);
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "name");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.OperationName);
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "resource");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _resourceBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.ResourceName);
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "service");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.ServiceName);
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "type");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "start");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _startBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.StartTime.ToUnixTimeNanoseconds());
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "duration");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _durationBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.Duration.ToNanoseconds());
 
             if (value.Context.ParentId != null)
             {
-                offset += MessagePackBinary.WriteString(ref bytes, offset, "parent_id");
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, (ulong)value.Context.ParentId);
             }
 
             if (value.Error)
             {
-                offset += MessagePackBinary.WriteString(ref bytes, offset, "error");
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _errorBytes);
                 offset += MessagePackBinary.WriteByte(ref bytes, offset, 1);
             }
 

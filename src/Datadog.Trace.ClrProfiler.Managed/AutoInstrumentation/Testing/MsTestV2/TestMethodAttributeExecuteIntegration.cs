@@ -1,6 +1,6 @@
 using System;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
@@ -16,12 +16,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         ParameterTypeNames = new[] { "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod" },
         MinimumVersion = "14.0.0",
         MaximumVersion = "14.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = MsTestIntegration.IntegrationName)]
     public class TestMethodAttributeExecuteIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.MsTestV2);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -31,8 +28,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <param name="testMethod">Test method instance</param>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
+            where TTestMethod : ITestMethod, IDuckType
         {
-            return CallTargetState.GetDefault();
+            if (!MsTestIntegration.IsEnabled)
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            var scope = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type);
+            return new CallTargetState(scope);
         }
 
         /// <summary>
@@ -47,9 +51,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            if (Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (MsTestIntegration.IsEnabled)
             {
-                Scope scope = Common.TestTracer.ActiveScope;
+                Scope scope = state.Scope;
                 if (scope != null)
                 {
                     Array returnValueArray = returnValue as Array;
@@ -57,14 +61,42 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                     {
                         object testResultObject = returnValueArray.GetValue(0);
                         if (testResultObject != null &&
-                            testResultObject.TryDuckCast<TestResultStruct>(out var testResult) &&
-                            testResult.TestFailureException != null)
+                            testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
                         {
-                            Exception testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
-                            string testExceptionName = testException.GetType().Name;
-                            if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
+                            string errorMessage = null;
+                            string errorStackTrace = null;
+
+                            if (testResult.TestFailureException != null)
                             {
-                                scope.Span.SetException(testException);
+                                Exception testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
+                                string testExceptionName = testException.GetType().Name;
+                                if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
+                                {
+                                    scope.Span.SetException(testException);
+                                }
+
+                                errorMessage = testException.Message;
+                                errorStackTrace = testException.ToString();
+                            }
+
+                            switch (testResult.Outcome)
+                            {
+                                case UnitTestOutcome.Error:
+                                case UnitTestOutcome.Failed:
+                                case UnitTestOutcome.Timeout:
+                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                                    scope.Span.Error = true;
+                                    scope.Span.SetTag(Tags.ErrorMsg, errorMessage);
+                                    scope.Span.SetTag(Tags.ErrorStack, errorStackTrace);
+                                    break;
+                                case UnitTestOutcome.Inconclusive:
+                                case UnitTestOutcome.NotRunnable:
+                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                                    scope.Span.SetTag(TestTags.SkipReason, errorMessage);
+                                    break;
+                                case UnitTestOutcome.Passed:
+                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                                    break;
                             }
                         }
                     }
@@ -72,7 +104,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                     if (exception != null)
                     {
                         scope.Span.SetException(exception);
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                     }
+
+                    scope.Dispose();
                 }
             }
 

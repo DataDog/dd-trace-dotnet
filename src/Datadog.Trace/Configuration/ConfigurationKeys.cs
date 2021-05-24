@@ -291,6 +291,12 @@ namespace Datadog.Trace.Configuration
         public const string TracesTransport = "DD_TRACE_TRANSPORT";
 
         /// <summary>
+        /// Configuration key for overriding which URLs are skipped by the tracer.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HttpClientExcludedUrlSubstrings"/>
+        public const string HttpClientExcludedUrlSubstrings = "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS";
+
+        /// <summary>
         /// Configuration key for the application's server http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>
@@ -313,6 +319,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.PartialFlushMinSpans"/>
         public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
+
+        /// <summary>
+        /// Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
+        /// Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
+        /// Default value is <c>true</c> (enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.KafkaCreateConsumerScopeEnabled"/>
+        public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.

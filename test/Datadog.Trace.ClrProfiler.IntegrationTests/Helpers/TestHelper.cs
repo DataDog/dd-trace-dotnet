@@ -50,6 +50,66 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
+        public Process StartDotnetTestSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort, int? statsdPort = null, string framework = "")
+        {
+            // get path to sample app that the profiler will attach to
+            string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
+            if (!File.Exists(sampleAppPath))
+            {
+                throw new Exception($"application not found: {sampleAppPath}");
+            }
+
+            // get full paths to integration definitions
+            IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
+
+            Output.WriteLine($"Starting Application: {sampleAppPath}");
+            string testCli = EnvironmentHelper.GetDotNetTest();
+            string exec = testCli;
+            string appPath = testCli.StartsWith("dotnet") ? $"vstest {sampleAppPath}" : sampleAppPath;
+            Output.WriteLine("Executable: " + exec);
+            Output.WriteLine("ApplicationPath: " + appPath);
+            return ProfilerHelper.StartProcessWithProfiler(
+                exec,
+                appPath,
+                EnvironmentHelper,
+                integrationPaths,
+                arguments,
+                traceAgentPort: traceAgentPort,
+                statsdPort: statsdPort,
+                aspNetCorePort: aspNetCorePort,
+                forceExecutable: true);
+        }
+
+        public ProcessResult RunDotnetTestSampleAndWaitForExit(int traceAgentPort, int? statsdPort = null, string arguments = null, string packageVersion = "", string framework = "")
+        {
+            var process = StartDotnetTestSample(traceAgentPort, arguments, packageVersion, aspNetCorePort: 5000, statsdPort: statsdPort, framework: framework);
+
+            using var helper = new ProcessHelper(process);
+
+            process.WaitForExit();
+            helper.Drain();
+            var exitCode = process.ExitCode;
+
+            Output.WriteLine($"ProcessId: " + process.Id);
+            Output.WriteLine($"Exit Code: " + exitCode);
+
+            var standardOutput = helper.StandardOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardOutput))
+            {
+                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            }
+
+            var standardError = helper.ErrorOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
+
+            return new ProcessResult(process, standardOutput, standardError, exitCode);
+        }
+
         public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort, int? statsdPort = null, string framework = "")
         {
             // get path to sample app that the profiler will attach to
@@ -104,19 +164,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public Process StartIISExpress(int traceAgentPort, int iisPort)
+        public (Process Process, string ConfigFile) StartIISExpress(int traceAgentPort, int iisPort, bool classicMode)
         {
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
             var exe = EnvironmentHelper.GetSampleExecutionSource();
-            var args = new string[]
+
+            var configTemplate = File.ReadAllText("applicationHost.config");
+
+            var newConfig = Path.GetTempFileName();
+
+            configTemplate = configTemplate
+                            .Replace("[PATH]", EnvironmentHelper.GetSampleProjectDirectory())
+                            .Replace("[PORT]", iisPort.ToString())
+                            .Replace("[POOL]", classicMode ? "Clr4ClassicAppPool" : "Clr4IntegratedAppPool");
+
+            File.WriteAllText(newConfig, configTemplate);
+
+            var args = new[]
                 {
-                    $"/clr:v4.0",
-                    $"/path:{EnvironmentHelper.GetSampleProjectDirectory()}",
-                    $"/systray:false",
-                    $"/port:{iisPort}",
-                    $"/trace:info",
+                    "/site:sample",
+                    $"/config:{newConfig}",
+                    "/systray:false",
+                    "/trace:info"
                 };
 
             Output.WriteLine($"[webserver] starting {exe} {string.Join(" ", args)}");
@@ -180,7 +251,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Thread.Sleep(1500);
             }
 
-            return process;
+            return (process, newConfig);
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockTracerAgent.Span> spans, Func<MockTracerAgent.Span, T> mapper, IEnumerable<T> expected)

@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -84,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(integrationId) || HttpBypassHelper.UriContainsAnyOf(requestUri, tracer.Settings.HttpClientExcludedUrlSubstrings))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;

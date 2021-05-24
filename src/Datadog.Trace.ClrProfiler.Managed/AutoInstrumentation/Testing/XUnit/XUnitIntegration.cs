@@ -2,12 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     internal static class XUnitIntegration
     {
+        internal const string IntegrationName = nameof(IntegrationIds.XUnit);
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+
+        internal static bool IsEnabled => Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId);
+
         internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
         {
             string testSuite = runnerInstance.TestClass.ToString();
@@ -17,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
             string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
-            Scope scope = Common.TestTracer.StartActive("xunit.test", serviceName: Common.ServiceName);
+            Scope scope = Common.TestTracer.StartActive("xunit.test", serviceName: Common.TestTracer.DefaultServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;

@@ -9,6 +9,9 @@ namespace Datadog.Trace.Tagging
 {
     internal abstract class TagsList : ITags
     {
+        private static byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
+        private static byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
+
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
 
@@ -255,7 +258,7 @@ namespace Datadog.Trace.Tagging
         {
             int originalOffset = offset;
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "meta");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaBytes);
 
             int count = 0;
 
@@ -302,7 +305,7 @@ namespace Datadog.Trace.Tagging
         {
             int originalOffset = offset;
 
-            offset += MessagePackBinary.WriteString(ref bytes, offset, "metrics");
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metricsBytes);
 
             int count = 0;
 

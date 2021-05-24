@@ -993,6 +993,176 @@
     ]
   },
   {
+    "name": "Kafka",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Confluent.Kafka",
+          "type": "Confluent.Kafka.Consumer`2",
+          "method": "Close",
+          "signature_types": [
+            "System.Void"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 4,
+          "minimum_patch": 0,
+          "maximum_major": 1,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCloseIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Confluent.Kafka",
+          "type": "Confluent.Kafka.Consumer`2",
+          "method": "Consume",
+          "signature_types": [
+            "Confluent.Kafka.ConsumeResult`2[!0,!1]",
+            "System.Int32"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 4,
+          "minimum_patch": 0,
+          "maximum_major": 1,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConsumeIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Confluent.Kafka",
+          "type": "Confluent.Kafka.Consumer`2",
+          "method": "Dispose",
+          "signature_types": [
+            "System.Void"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 4,
+          "minimum_patch": 0,
+          "maximum_major": 1,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerDisposeIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Confluent.Kafka",
+          "type": "Confluent.Kafka.Consumer`2",
+          "method": "Unsubscribe",
+          "signature_types": [
+            "System.Void"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 4,
+          "minimum_patch": 0,
+          "maximum_major": 1,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerUnsubscribeIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Confluent.Kafka",
+          "type": "Confluent.Kafka.Producer`2",
+          "method": "ProduceAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]",
+            "Confluent.Kafka.TopicPartition",
+            "Confluent.Kafka.Message`2[!0,!1]",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 4,
+          "minimum_patch": 0,
+          "maximum_major": 1,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Confluent.Kafka",
+          "type": "Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action",
+          "method": ".ctor",
+          "signature_types": [
+            "System.Void",
+            "System.String",
+            "!0",
+            "!1",
+            "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 4,
+          "minimum_patch": 0,
+          "maximum_major": 1,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncDeliveryHandlerIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Confluent.Kafka",
+          "type": "Confluent.Kafka.Producer`2",
+          "method": "Produce",
+          "signature_types": [
+            "System.Void",
+            "Confluent.Kafka.TopicPartition",
+            "Confluent.Kafka.Message`2[!0,!1]",
+            "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 4,
+          "minimum_patch": 0,
+          "maximum_major": 1,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "MongoDb",
     "method_replacements": [
       {
@@ -2161,6 +2331,31 @@
         "caller": {},
         "target": {
           "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Internal.Execution.CompositeWorkItem",
+          "method": "SkipChildren",
+          "signature_types": [
+            "System.Void",
+            "_",
+            "NUnit.Framework.Interfaces.ResultState",
+            "System.String"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSkipChildrenIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
           "type": "NUnit.Framework.Internal.Commands.SkipCommand",
           "method": "Execute",
           "signature_types": [
@@ -2199,6 +2394,29 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAdapterUnloadIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Api.NUnitTestAssemblyRunner",
+          "method": "WaitForCompletion",
+          "signature_types": [
+            "System.Boolean",
+            "System.Int32"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAssemblyRunnerWaitForCompletionIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -4196,6 +4414,50 @@
         "target": {
           "assembly": "xunit.execution.dotnet",
           "type": "Xunit.Sdk.TestAssemblyRunner`1",
+          "method": "RunAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "xunit.execution.desktop",
+          "type": "Xunit.Sdk.TestAssemblyRunner`1",
+          "method": "RunAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "xunit.execution.dotnet",
+          "type": "Xunit.Sdk.TestAssemblyRunner`1",
           "method": "RunTestCollectionAsync",
           "signature_types": [
             "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
@@ -5926,6 +6188,58 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
           "method": "WorkShift_ShutDown",
           "signature": "00 04 01 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Api.NUnitTestAssemblyRunner",
+          "method": "WaitForCompletion",
+          "signature_types": [
+            "System.Boolean",
+            "System.Int32"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
+          "method": "NUnitTestAssemblyRunner_WaitForCompletion",
+          "signature": "00 05 1C 1C 08 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "nunit.framework",
+          "type": "NUnit.Framework.Internal.Execution.CompositeWorkItem",
+          "method": "SkipChildren",
+          "signature_types": [
+            "System.Void",
+            "_",
+            "NUnit.Framework.Interfaces.ResultState",
+            "System.String"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
+          "method": "CompositeWorkItem_SkipChildren",
+          "signature": "00 07 01 1C 1C 1C 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
       }
