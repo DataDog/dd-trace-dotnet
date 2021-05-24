@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tagging
     {
         private static byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
         private static byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
-        private static byte[] _originBytes = Encoding.UTF8.GetBytes(Trace.Tags.Origin);
+        private static byte[] _originBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
 
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
