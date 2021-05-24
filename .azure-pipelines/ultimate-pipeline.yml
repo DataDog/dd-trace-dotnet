@@ -389,6 +389,7 @@ stages:
           poolName: Azure Pipelines
           vmImage: ubuntu-18.04
           dockerComposeTask: IntegrationTests2
+          dockerComposeDependenciesTask: StartDependencies
         debian_netcoreapp3_0:
           publishTargetFramework: netcoreapp3.0
           baseImage: debian
@@ -396,6 +397,7 @@ stages:
           poolName: Azure Pipelines
           vmImage: ubuntu-18.04
           dockerComposeTask: IntegrationTests2
+          dockerComposeDependenciesTask: StartDependencies
         debian_netcoreapp3_1:
           publishTargetFramework: netcoreapp3.1
           baseImage: debian
@@ -403,6 +405,7 @@ stages:
           poolName: Azure Pipelines
           vmImage: ubuntu-18.04
           dockerComposeTask: IntegrationTests2
+          dockerComposeDependenciesTask: StartDependencies
         debian_net5_0:
           publishTargetFramework: net5.0
           baseImage: debian
@@ -410,6 +413,7 @@ stages:
           poolName: Azure Pipelines
           vmImage: ubuntu-18.04
           dockerComposeTask: IntegrationTests2
+          dockerComposeDependenciesTask: StartDependencies
         alpine_netcoreapp2_1:
           publishTargetFramework: netcoreapp2.1
           baseImage: alpine
@@ -417,6 +421,7 @@ stages:
           poolName: Azure Pipelines
           vmImage: ubuntu-18.04
           dockerComposeTask: IntegrationTests2
+          dockerComposeDependenciesTask: StartDependencies
         alpine_netcoreapp3_0:
           publishTargetFramework: netcoreapp3.0
           baseImage: alpine
@@ -424,6 +429,7 @@ stages:
           poolName: Azure Pipelines
           vmImage: ubuntu-18.04
           dockerComposeTask: IntegrationTests2
+          dockerComposeDependenciesTask: StartDependencies
         alpine_netcoreapp3_1:
           publishTargetFramework: netcoreapp3.1
           baseImage: alpine
@@ -431,6 +437,7 @@ stages:
           poolName: Azure Pipelines
           vmImage: ubuntu-18.04
           dockerComposeTask: IntegrationTests2
+          dockerComposeDependenciesTask: StartDependencies
         alpine_net5_0:
           publishTargetFramework: net5.0
           baseImage: alpine
@@ -438,6 +445,7 @@ stages:
           poolName: Azure Pipelines
           vmImage: ubuntu-18.04
           dockerComposeTask: IntegrationTests2
+          dockerComposeDependenciesTask: StartDependencies
         arm64_net5_0:
           publishTargetFramework: net5.0
           baseImage: debian
@@ -445,6 +453,7 @@ stages:
           poolName: Arm64
           vmImage:
           dockerComposeTask: IntegrationTests2.ARM64
+          dockerComposeDependenciesTask: StartDependencies.ARM64
 
     variables:
       TestAllPackageVersions: true
@@ -471,13 +480,19 @@ stages:
         dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) $(dockerComposeTask)
 
     - task: DockerCompose@0
+      displayName: docker-compose start dependencies
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run --rm $(dockerComposeDependenciesTask)
+
+    - task: DockerCompose@0
       displayName: docker-compose run IntegrationTests2
       inputs:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) $(dockerComposeTask)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) $(dockerComposeTask)
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
