@@ -1,12 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Text;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -28,36 +24,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
         public static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
         {
-            /* TODO: Either use the optimized StringBuilder or decide the optimization is not worth it
+            // Consolidate headers into one JSON object with <header_name>:<value>
             StringBuilder sb = new();
             sb.Append("{");
             SpanContextPropagator.Instance.Inject(context, sb, ((sb, key, value) => sb.Append($"\"{key}\":\"{value}\",")));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append("}");
+
             var resultString = sb.ToString();
-            */
-
-            // Consolidate separate headers into one
-            Dictionary<string, string> contextMapping = new();
-            SpanContextPropagator.Instance.Inject(context, contextMapping, ((dict, key, value) => dict[key] = value));
-
-            // Emit the value as a JSON string
-            var stringWriter = new StringWriter();
-            using (var writer = new JsonTextWriter(stringWriter))
-            {
-                writer.WriteStartObject();
-
-                foreach (var kvp in contextMapping)
-                {
-                    writer.WritePropertyName(kvp.Key);
-                    writer.WriteValue(kvp.Value);
-                }
-
-                writer.WriteEndObject();
-            }
-
-            var stringRepresentation = stringWriter.ToString();
-            messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stringRepresentation);
+            messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
         }
 
         public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
