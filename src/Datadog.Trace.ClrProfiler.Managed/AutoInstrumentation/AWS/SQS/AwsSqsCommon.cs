@@ -6,9 +6,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     internal static class AwsSqsCommon
     {
+        private const string SqsServiceName = "SQS";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSqsCommon));
 
-        public static Scope CreateScope(Tracer tracer, string resourceName, out AwsSqsTags tags, ISpanContext parentContext = null)
+        public static Scope CreateScope(Tracer tracer, string operation, out AwsSqsTags tags, ISpanContext parentContext = null)
         {
             tags = null;
 
@@ -25,13 +26,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 Span parent = tracer.ActiveScope?.Span;
 
                 tags = new AwsSqsTags();
-                string serviceName = tracer.Settings.GetServiceName(tracer, AwsConstants.ServiceName);
+                string serviceName = tracer.Settings.GetServiceName(tracer, SqsServiceName);
                 scope = tracer.StartActiveWithTags(AwsConstants.OperationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
-                span.ResourceName = resourceName;
+                span.ResourceName = $"{SqsServiceName}.{operation}";
 
+                tags.Service = SqsServiceName;
+                tags.Operation = operation;
                 tags.SetAnalyticsSampleRate(AwsConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
