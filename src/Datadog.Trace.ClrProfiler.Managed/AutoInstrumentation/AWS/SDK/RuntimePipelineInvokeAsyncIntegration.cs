@@ -60,11 +60,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         {
             if (state.Scope?.Span.Tags is AwsSdkTags tags)
             {
-                if (state.State is not null)
+                if (state.State is IExecutionContext executionContext)
                 {
                     // The request object is populated later by the Marshaller,
                     // so we wait until the method end callback to read it
-                    tags.HttpMethod = state.State.DuckCast<IExecutionContext>().RequestContext.Request.HttpMethod.ToUpperInvariant();
+                    tags.HttpMethod = executionContext.RequestContext.Request.HttpMethod.ToUpperInvariant();
                 }
 
                 tags.RequestId = response.ResponseMetadata.RequestId;
