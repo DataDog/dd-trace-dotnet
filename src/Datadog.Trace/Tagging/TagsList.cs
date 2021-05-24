@@ -284,11 +284,6 @@ namespace Datadog.Trace.Tagging
 
                     foreach (var pair in tags)
                     {
-                        if (pair.Key == Trace.Tags.Origin)
-                        {
-                            isOriginWritten = true;
-                        }
-
                         WriteTag(ref bytes, ref offset, pair.Key, pair.Value);
                     }
                 }
