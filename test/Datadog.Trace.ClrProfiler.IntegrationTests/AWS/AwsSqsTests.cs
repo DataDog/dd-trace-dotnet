@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
 
-                var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: AwsExpectation.IntegrationOperationName);
+                var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: "aws.request");
                 spans.Should().HaveCountGreaterOrEqualTo(_expectedSpans.Count);
 
                 spans.OrderBy(s => s.Start).Should().BeEquivalentTo(_expectedSpans, options => options

@@ -333,12 +333,6 @@ namespace Datadog.Trace.TestHelpers
             [Key("metrics")]
             public Dictionary<string, double> Metrics { get; set; }
 
-            public Span WithResource(string resource)
-            {
-                Resource = resource;
-                return this;
-            }
-
             public Span WithTag(string key, string value)
             {
                 Tags[key] = value;
