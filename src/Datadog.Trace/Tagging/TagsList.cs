@@ -16,6 +16,7 @@ namespace Datadog.Trace.Tagging
     {
         private static byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
         private static byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
+        private static byte[] _originBytes = Encoding.UTF8.GetBytes(Trace.Tags.Origin);
 
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
@@ -313,7 +314,7 @@ namespace Datadog.Trace.Tagging
             if (!isOriginWritten && !string.IsNullOrEmpty(origin))
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringBytesCache.OriginTagName);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, origin);
             }
 
@@ -377,11 +378,6 @@ namespace Datadog.Trace.Tagging
             }
 
             return offset - originalOffset;
-        }
-
-        private static class StringBytesCache
-        {
-            public static byte[] OriginTagName { get; } = Encoding.UTF8.GetBytes(Trace.Tags.Origin);
         }
     }
 }
