@@ -48,7 +48,7 @@ namespace Benchmarks.Trace
                 SpansWithOrigin[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
                 SpansWithOrigin[i].SetTag(Tags.Origin, "synthetics");
                 EnrichedSpansWithOrigin[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
-                SpansWithOrigin[i].SetTag(Tags.Origin, "synthetics");
+                EnrichedSpansWithOrigin[i].SetTag(Tags.Origin, "synthetics");
                 EnrichedSpansWithOrigin[i].SetTag(Tags.Env, "Benchmark");
                 EnrichedSpansWithOrigin[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
