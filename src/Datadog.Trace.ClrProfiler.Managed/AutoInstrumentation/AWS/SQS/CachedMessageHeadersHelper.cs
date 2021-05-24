@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         private const string StringDataType = "String";
 
         private static readonly Func<string, object> _createMessageAttributeValue;
-        private static readonly Func<object> _createDict;
+        private static readonly Func<IDictionary> _createDict;
 
         static CachedMessageHeadersHelper()
         {
@@ -58,12 +58,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             dictIL.Emit(OpCodes.Newobj, dictionaryCtor);
             dictIL.Emit(OpCodes.Ret);
 
-            _createDict = (Func<object>)createDictMethod.CreateDelegate(typeof(Func<object>));
+            _createDict = (Func<IDictionary>)createDictMethod.CreateDelegate(typeof(Func<IDictionary>));
         }
 
         public static IDictionary CreateMessageAttributes()
         {
-            return (IDictionary)_createDict();
+            return _createDict();
         }
 
         public static object CreateMessageAttributeValue(string value)
