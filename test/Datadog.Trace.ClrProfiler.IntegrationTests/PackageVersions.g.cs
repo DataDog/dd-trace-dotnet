@@ -56,5 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> NUnit => IsComprehensive ? PackageVersionsComprehensive.NUnit : PackageVersionsLatestMinors.NUnit;
 
         public static IEnumerable<object[]> MSTest => IsComprehensive ? PackageVersionsComprehensive.MSTest : PackageVersionsLatestMinors.MSTest;
+
+        public static IEnumerable<object[]> Kafka => IsComprehensive ? PackageVersionsComprehensive.Kafka : PackageVersionsLatestMinors.Kafka;
     }
 }

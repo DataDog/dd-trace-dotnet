@@ -215,6 +215,21 @@ namespace Datadog.Trace
         public const string MessageSize = "message.size";
 
         /// <summary>
+        /// The partition associated with a record
+        /// </summary>
+        public const string KafkaPartition = "kafka.partition";
+
+        /// <summary>
+        /// The offset inside a partition associated with a record
+        /// </summary>
+        public const string KafkaOffset = "kafka.offset";
+
+        /// <summary>
+        /// Whether the record was a "tombstone" record
+        /// </summary>
+        public const string KafkaTombstone = "kafka.tombstone";
+
+        /// <summary>
         /// The sampling priority for the entire trace.
         /// </summary>
         public const string SamplingPriority = "sampling.priority";

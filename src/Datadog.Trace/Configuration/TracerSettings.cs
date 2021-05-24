@@ -206,6 +206,9 @@ namespace Datadog.Trace.Configuration
             {
                 PartialFlushMinSpans = 500;
             }
+
+            KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
+                                           ?? true; // default
         }
 
         /// <summary>
@@ -397,6 +400,13 @@ namespace Datadog.Trace.Configuration
                 _partialFlushMinSpans = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether a span context should be created on exiting a successful Kafka
+        /// Consumer.Consume() call, and closed on entering Consumer.Consume().
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.KafkaCreateConsumerScopeEnabled"/>
+        public bool KafkaCreateConsumerScopeEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled

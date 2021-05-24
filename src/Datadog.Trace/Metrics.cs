@@ -23,6 +23,11 @@ namespace Datadog.Trace
         public const string SamplingLimitDecision = "_dd.limit_psr";
 
         /// <summary>
+        /// The length of time a record has been on the queue
+        /// </summary>
+        public const string MessageQueueTimeMs = "message.queue_time_ms";
+
+        /// <summary>
         /// Identifies top-level spans.
         /// Top-level spans have a different service name from their immediate parent or have no parent.
         /// </summary>
