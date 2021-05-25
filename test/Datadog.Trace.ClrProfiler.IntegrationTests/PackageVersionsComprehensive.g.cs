@@ -251,6 +251,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.1.0" },
                 new object[] { "2.1.1" },
                 new object[] { "2.1.2" },
+                new object[] { "2.1.3" },
 #endif
             };
 
@@ -467,56 +468,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.0.4" },
                 new object[] { "5.0.5" },
                 new object[] { "5.0.6" },
-#endif
-            };
-
-        public static IEnumerable<object[]> OracleMDA =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-#if NETFRAMEWORK
-#endif
-                new object[] { "18.3.0" },
-                new object[] { "18.6.0" },
-                new object[] { "19.3.0" },
-                new object[] { "19.3.1" },
-                new object[] { "19.5.0" },
-                new object[] { "19.6.0" },
-                new object[] { "19.7.0" },
-                new object[] { "19.8.0" },
-                new object[] { "19.9.0" },
-                new object[] { "19.10.0" },
-                new object[] { "19.10.1" },
-                new object[] { "19.11.0" },
-#endif
-            };
-
-        public static IEnumerable<object[]> OracleMDACore =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-#if NETFRAMEWORK
-#endif
-                new object[] { "2.18.3" },
-                new object[] { "2.18.5" },
-                new object[] { "2.18.6" },
-                new object[] { "2.19.3" },
-                new object[] { "2.19.31" },
-                new object[] { "2.19.50" },
-                new object[] { "2.19.60" },
-                new object[] { "2.19.70" },
-                new object[] { "2.19.80" },
-                new object[] { "2.19.90" },
-                new object[] { "2.19.91" },
-                new object[] { "2.19.100" },
-                new object[] { "2.19.101" },
-                new object[] { "2.19.110" },
 #endif
             };
 

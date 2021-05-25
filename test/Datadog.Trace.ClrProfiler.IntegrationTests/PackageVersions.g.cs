@@ -47,10 +47,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> MicrosoftDataSqlite => IsComprehensive ? PackageVersionsComprehensive.MicrosoftDataSqlite : PackageVersionsLatestMinors.MicrosoftDataSqlite;
 
-        public static IEnumerable<object[]> OracleMDA => IsComprehensive ? PackageVersionsComprehensive.OracleMDA : PackageVersionsLatestMinors.OracleMDA;
-
-        public static IEnumerable<object[]> OracleMDACore => IsComprehensive ? PackageVersionsComprehensive.OracleMDACore : PackageVersionsLatestMinors.OracleMDACore;
-
         public static IEnumerable<object[]> XUnit => IsComprehensive ? PackageVersionsComprehensive.XUnit : PackageVersionsLatestMinors.XUnit;
 
         public static IEnumerable<object[]> NUnit => IsComprehensive ? PackageVersionsComprehensive.NUnit : PackageVersionsLatestMinors.NUnit;
