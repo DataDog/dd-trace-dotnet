@@ -27,9 +27,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NETFRAMEWORK
-#endif
                 new object[] { "3.1.0.13" },
+#endif
                 new object[] { "3.3.103.26" },
+                new object[] { "3.5.1.28" },
+                new object[] { "3.7.0.27" },
 #endif
             };
 

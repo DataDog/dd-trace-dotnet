@@ -4,7 +4,8 @@
     "SampleProjectName": "Samples.AWS.SQS",
     "NugetPackageSearchName": "AWSSDK.SQS",
     "MinVersion": "3.0.0",
-    "MaxVersionExclusive": "3.4.0"
+    "MinVersionNetCore": "3.3.0",
+    "MaxVersionExclusive": "3.8.0"
   },
   {
     "IntegrationName": "MongoDB",
