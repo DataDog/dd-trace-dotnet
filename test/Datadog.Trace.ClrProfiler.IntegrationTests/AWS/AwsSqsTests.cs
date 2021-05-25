@@ -19,13 +19,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         private static List<MockTracerAgent.Span> _expectedSpans = new()
         {
 #if NETFRAMEWORK
-            // CreateSqsQueue
+            // Method: CreateSqsQueue
             AwsSqsSpan.GetDefault("CreateQueue")
                     .WithTag("aws.queue.name", "MySyncSQSQueue"),
             AwsSqsSpan.GetDefault("CreateQueue")
                     .WithTag("aws.queue.name", "MySyncSQSQueue2"),
 
-            // SendMessagesWithInjectedHeaders
+            // Method: SendMessagesWithInjectedHeaders
             AwsSqsSpan.GetDefault("SendMessage"),
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessage"),
@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessageBatch"),
 
-            // SendMessagesWithoutInjectedHeaders
+            // Method: SendMessagesWithoutInjectedHeaders
             AwsSqsSpan.GetDefault("SendMessage"),
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessage"),
@@ -41,38 +41,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessageBatch"),
 
-            // SendMessage
+            // Method: SendMessage
             AwsSqsSpan.GetDefault("SendMessage"),
             AwsSqsSpan.GetDefault("SendMessage"),
 
-            // ReceiveMessageAndDeleteMessage
+            // Method: ReceiveMessageAndDeleteMessage
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessage"),
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessage"),
 
-            // SendMessageBatch
+            // Method: SendMessageBatch
             AwsSqsSpan.GetDefault("SendMessageBatch"),
             AwsSqsSpan.GetDefault("SendMessageBatch"),
 
-            // ReceiveMessagesAndDeleteMessageBatch
+            // Method: ReceiveMessagesAndDeleteMessageBatch
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessageBatch"),
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessageBatch"),
 
-            // DeleteQueue
+            // Method: DeleteQueue
             AwsSqsSpan.GetDefault("DeleteQueue"),
             AwsSqsSpan.GetDefault("DeleteQueue"),
 
 #endif
-            // CreateSqsQueueAsync
+            // Note: Resource names will match the SQS API, which does not have Async suffixes
+            // Method: CreateSqsQueueAsync
             AwsSqsSpan.GetDefault("CreateQueue")
                     .WithTag("aws.queue.name", "MyAsyncSQSQueue"),
             AwsSqsSpan.GetDefault("CreateQueue")
                     .WithTag("aws.queue.name", "MyAsyncSQSQueue2"),
 
-            // SendMessagesWithInjectedHeadersAsync
+            // Method: SendMessagesWithInjectedHeadersAsync
             AwsSqsSpan.GetDefault("SendMessage"),
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessage"),
@@ -80,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessageBatch"),
 
-            // SendMessagesWithoutInjectedHeadersAsync
+            // Method: SendMessagesWithoutInjectedHeadersAsync
             AwsSqsSpan.GetDefault("SendMessage"),
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessage"),
@@ -88,27 +89,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessageBatch"),
 
-            // SendMessageAsync
+            // Method: SendMessageAsync
             AwsSqsSpan.GetDefault("SendMessage"),
             AwsSqsSpan.GetDefault("SendMessage"),
 
-            // ReceiveMessageAndDeleteMessageAsync
+            // Method: ReceiveMessageAndDeleteMessageAsync
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessage"),
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessage"),
 
-            // SendMessageBatchAsync
+            // Method: SendMessageBatchAsync
             AwsSqsSpan.GetDefault("SendMessageBatch"),
             AwsSqsSpan.GetDefault("SendMessageBatch"),
 
-            // ReceiveMessagesAndDeleteMessageBatchAsync
+            // Method: ReceiveMessagesAndDeleteMessageBatchAsync
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessageBatch"),
             AwsSqsSpan.GetDefault("ReceiveMessage"),
             AwsSqsSpan.GetDefault("DeleteMessageBatch"),
 
-            // DeleteQueueAsync
+            // Method: DeleteQueueAsync
             AwsSqsSpan.GetDefault("DeleteQueue"),
             AwsSqsSpan.GetDefault("DeleteQueue"),
         };
