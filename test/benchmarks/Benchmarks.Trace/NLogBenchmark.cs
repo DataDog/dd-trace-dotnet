@@ -3,7 +3,6 @@ using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.LogProviders;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
@@ -19,7 +18,7 @@ namespace Benchmarks.Trace
 
         static NLogBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new NLogLogProvider());
+            LogProvider.SetCurrentLogProvider(new CustomNLogLogProvider());
 
             var logInjectionSettings = new TracerSettings
             {
