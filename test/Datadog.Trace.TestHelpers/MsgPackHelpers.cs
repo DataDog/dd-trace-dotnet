@@ -100,7 +100,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private static MessagePackObjectDictionary FirstDictionary(this MessagePackObject obj)
+        public static MessagePackObjectDictionary FirstDictionary(this MessagePackObject obj)
         {
             if (obj.IsList)
             {

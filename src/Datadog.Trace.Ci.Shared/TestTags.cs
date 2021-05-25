@@ -87,5 +87,10 @@ namespace Datadog.Trace.Ci
         /// Parameters metadata TestName
         /// </summary>
         public const string MetadataTestName = "test_name";
+
+        /// <summary>
+        /// Origin value for CIApp Test
+        /// </summary>
+        public const string CIAppTestOriginName = "ciapp-test";
     }
 }
