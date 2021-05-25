@@ -71,7 +71,12 @@ namespace Datadog.Trace.DuckTyping
                     // You can still proxy those methods if they are defined in an interface.
                     if (method.DeclaringType == typeof(object))
                     {
-                        continue;
+                        bool include = method.GetCustomAttribute<DuckIncludeAttribute>(true) is not null;
+
+                        if (!include)
+                        {
+                            continue;
+                        }
                     }
 
                     if (method.IsSpecialName || method.IsFinal || method.IsPrivate)
@@ -89,7 +94,9 @@ namespace Datadog.Trace.DuckTyping
 
         private static void CreateMethods(TypeBuilder proxyTypeBuilder, Type proxyType, Type targetType, FieldInfo instanceField)
         {
-            List<MethodInfo> proxyMethodsDefinitions = GetMethods(proxyType);
+            List<MethodInfo> proxyMethodsDefinitions = GetMethods(proxyType)
+                .Concat(GetMethods(targetType).Where(m => m.GetCustomAttribute<DuckIncludeAttribute>(true) is not null))
+                .ToList();
             foreach (MethodInfo proxyMethodDefinition in proxyMethodsDefinitions)
             {
                 // Ignore the method marked with `DuckIgnore` attribute
