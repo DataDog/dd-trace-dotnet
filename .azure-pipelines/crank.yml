@@ -138,6 +138,26 @@ jobs:
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
 
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netstandard2.0 --output $(System.DefaultWorkingDirectory)/src/bin/managed-publish/netstandard2.0
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netcoreapp3.1 --output $(System.DefaultWorkingDirectory)/src/bin/managed-publish/netcoreapp3.1
+
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
     inputs:
