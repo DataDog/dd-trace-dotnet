@@ -1,7 +1,7 @@
 [
   {
     "IntegrationName": "AwsSqs",
-    "SampleProjectName": "Samples.AWS.Sqs",
+    "SampleProjectName": "Samples.AWS.SQS",
     "NugetPackageSearchName": "AWSSDK.SQS",
     "MinVersion": "3.0.0",
     "MaxVersionExclusive": "3.4.0"
