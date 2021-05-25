@@ -147,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.0.19269.1" },
                 new object[] { "1.1.4" },
                 new object[] { "2.0.1" },
-                new object[] { "2.1.2" },
+                new object[] { "2.1.3" },
 #endif
             };
 
@@ -223,42 +223,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.0.3" },
                 new object[] { "3.1.15" },
                 new object[] { "5.0.6" },
-#endif
-            };
-
-        public static IEnumerable<object[]> OracleMDA =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-#if NETFRAMEWORK
-#endif
-                new object[] { "18.3.0" },
-                new object[] { "18.6.0" },
-                new object[] { "19.3.1" },
-                new object[] { "19.5.0" },
-                new object[] { "19.6.0" },
-                new object[] { "19.7.0" },
-                new object[] { "19.8.0" },
-                new object[] { "19.9.0" },
-                new object[] { "19.10.1" },
-                new object[] { "19.11.0" },
-#endif
-            };
-
-        public static IEnumerable<object[]> OracleMDACore =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-#if NETFRAMEWORK
-#endif
-                new object[] { "2.18.6" },
-                new object[] { "2.19.110" },
 #endif
             };
 
