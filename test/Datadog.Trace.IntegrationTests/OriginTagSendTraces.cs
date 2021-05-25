@@ -1,4 +1,10 @@
+// <copyright file="OriginTagSendTraces.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -83,7 +89,14 @@ namespace Datadog.Trace.IntegrationTests
         public void MultipleOriginsSpans()
         {
             const string originValue = "ciapp-test_";
-            var origins = new string[] { originValue + "01", originValue + "02", originValue + "03" };
+            var origins = new List<string>
+            {
+                originValue + "01",
+                originValue + "02",
+                originValue + "02",
+                originValue + "03",
+                originValue + "03"
+            };
 
             using (var scope = _tracer.StartActive("Operation"))
             {
@@ -112,7 +125,7 @@ namespace Datadog.Trace.IntegrationTests
                 var metaDictio = spanDictio["meta"].AsDictionary();
                 Assert.True(metaDictio.ContainsKey(Tags.Origin));
                 var value = metaDictio[Tags.Origin];
-                Assert.True(Array.IndexOf(origins, value.ToString()) != -1);
+                Assert.True(origins.Remove(value.ToString()));
             }
         }
     }
