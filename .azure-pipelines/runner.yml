@@ -70,7 +70,7 @@ jobs:
     displayName: docker-compose run Profiler
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e buildConfiguration=Release Profiler
+      dockerComposeCommand: run -rm -e buildConfiguration=Release Profiler
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
     displayName: Uploading linux tracer home artifact
@@ -114,7 +114,7 @@ jobs:
     displayName: docker-compose run Profiler
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e buildConfiguration=Release Profiler
+      dockerComposeCommand: run -rm -e buildConfiguration=Release Profiler
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
     artifact: linux-tracer-home_arm64

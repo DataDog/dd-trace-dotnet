@@ -68,12 +68,12 @@ jobs:
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netcoreapp3.1 --output $(publishOutput)/netcoreapp3.1
-      
+
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
+      dockerComposeCommand: run -rm -e buildConfiguration=$(buildConfiguration) Profiler
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
     artifact: linux-tracer-home
@@ -91,7 +91,7 @@ jobs:
         publishTargetFramework: netcoreapp3.1
       net5_0:
         publishTargetFramework: net5.0
-        
+
   variables:
     TestAllPackageVersions: true
 
@@ -108,13 +108,13 @@ jobs:
     displayName: docker-compose run build
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+      dockerComposeCommand: run -rm -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
+      dockerComposeCommand: run -rm -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
 
   - publish: build_data
     artifact: $(Agent.JobName)_profiler-logs-$(System.JobAttempt)
@@ -174,7 +174,7 @@ jobs:
     displayName: docker-compose run Profiler.Alpine
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
+      dockerComposeCommand: run -rm -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
     artifact: alpine-linux-tracer-home
@@ -209,35 +209,35 @@ jobs:
     displayName: docker-compose run build
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+      dockerComposeCommand: run -rm -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core21
     condition: eq(variables['publishTargetFramework'], 'netcoreapp2.1')
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core21
+      dockerComposeCommand: run -rm -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core21
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core30
     condition: eq(variables['publishTargetFramework'], 'netcoreapp3.0')
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core30
+      dockerComposeCommand: run -rm -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core30
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core31
     condition: eq(variables['publishTargetFramework'], 'netcoreapp3.1')
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
+      dockerComposeCommand: run -rm -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core50
     condition: eq(variables['publishTargetFramework'], 'net5.0')
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core50
+      dockerComposeCommand: run -rm -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core50
 
   - publish: build_data
     artifact: $(Agent.JobName)_profiler-logs-$(System.JobAttempt)
@@ -290,7 +290,7 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdk5Version)
       includePreviewVersions: true
-      
+
   - task: NuGetToolInstaller@1
     displayName: install nuget
 
@@ -362,7 +362,7 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: down
     condition: succeededOrFailed()
-    
+
 - job: Windows_IIS
   timeoutInMinutes: 100
   strategy:
@@ -537,7 +537,7 @@ jobs:
     displayName: docker-compose run Profiler
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
+      dockerComposeCommand: run -rm -e buildConfiguration=$(buildConfiguration) Profiler
 
   - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/$(buildConfiguration)/x64
     artifact: linux-tracer-home_arm
@@ -566,13 +566,13 @@ jobs:
     displayName: docker-compose run build.arm64
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=net5.0 build.arm64
+      dockerComposeCommand: run -rm -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=net5.0 build.arm64
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.ARM64.Core50
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.ARM64.Core50
+      dockerComposeCommand: run -rm -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.ARM64.Core50
 
   - publish: build_data
     artifact: $(Agent.JobName)_profiler-logs-$(System.JobAttempt)

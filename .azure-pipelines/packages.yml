@@ -120,13 +120,13 @@ stages:
       displayName: docker-compose run Profiler
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
+        dockerComposeCommand: run -rm -e buildConfiguration=$(buildConfiguration) Profiler
 
     - task: DockerCompose@0
       displayName: docker-compose run package
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e ARCHITECTURE=x64 package
+        dockerComposeCommand: run -rm -e buildConfiguration=$(buildConfiguration) -e ARCHITECTURE=x64 package
 
     - publish: deploy/linux
       artifact: linux-packages
@@ -174,13 +174,13 @@ stages:
       displayName: docker-compose run Profiler.Alpine
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
+        dockerComposeCommand: run -rm -e buildConfiguration=$(buildConfiguration) Profiler.Alpine
 
     - task: DockerCompose@0
       displayName: docker-compose run package.alpine
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) package.alpine
+        dockerComposeCommand: run -rm -e buildConfiguration=$(buildConfiguration) package.alpine
 
     - publish: deploy/linux
       artifact: linux-alpine-packages
@@ -225,13 +225,13 @@ stages:
       displayName: docker-compose run Profiler
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) Profiler
+        dockerComposeCommand: run -rm -e buildConfiguration=$(buildConfiguration) Profiler
 
     - task: DockerCompose@0
       displayName: docker-compose run package
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e ARCHITECTURE=arm64 package
+        dockerComposeCommand: run -rm -e buildConfiguration=$(buildConfiguration) -e ARCHITECTURE=arm64 package
 
     - publish: deploy/linux
       artifact: linux-arm64-packages
