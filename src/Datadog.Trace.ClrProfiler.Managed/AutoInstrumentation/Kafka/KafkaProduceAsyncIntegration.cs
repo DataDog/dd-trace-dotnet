@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
             }
 
-            state.Scope?.DisposeWithException(exception);
+            state.Scope.DisposeWithException(exception);
             return response;
         }
     }
