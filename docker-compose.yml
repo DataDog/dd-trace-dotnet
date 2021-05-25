@@ -107,6 +107,7 @@ services:
     container_name: kafka-zookeeper
     ports:
       - "2181:2181"
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -120,6 +121,7 @@ services:
     ports:
       - "9092:9092"
       - "9101:9101"
+    restart: unless-stopped
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'kafka-zookeeper:2181'
@@ -149,6 +151,7 @@ services:
       - kafka-broker
     ports:
       - "8081:8081"
+    restart: unless-stopped
     environment:
       SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
@@ -163,6 +166,7 @@ services:
       - kafka-schema-registry
     ports:
       - "9021:9021"
+    restart: unless-stopped
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://kafka-schema-registry:8081"
@@ -181,6 +185,7 @@ services:
       - 8082:8082
     hostname: kafka-rest-proxy
     container_name: kafka-rest-proxy
+    restart: unless-stopped
     environment:
       KAFKA_REST_HOST_NAME: kafka-rest-proxy
       KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
