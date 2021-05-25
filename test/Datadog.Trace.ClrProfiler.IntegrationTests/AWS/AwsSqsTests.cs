@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         };
 
         public AwsSqsTests(ITestOutputHelper output)
-            : base("Aws.Sqs", output)
+            : base("AWS.SQS", output)
         {
         }
 
