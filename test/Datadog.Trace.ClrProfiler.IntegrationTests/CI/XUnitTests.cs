@@ -61,6 +61,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     // Check the span count
                     Assert.Equal(ExpectedSpanCount, spans.Count);
 
+                    // ***************************************************************************
+                    // the following is a temporal skip to avoid flakiness on xunit 2.2.0 version
+                    if (spans.Count == 0 && packageVersion == "2.2.0")
+                    {
+                        return;
+                    }
+
+                    // ***************************************************************************
+
                     foreach (var targetSpan in spans)
                     {
                         // check the name
@@ -83,6 +92,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // check the version
                         AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
+
+                        // checks the origin tag
+                        CheckOriginTag(targetSpan);
 
                         // check specific test span
                         switch (targetSpan.Tags[TestTags.Name])
@@ -274,6 +286,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // Check the traits tag value
             AssertTargetSpanEqual(targetSpan, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
+        }
+
+        private static void CheckOriginTag(MockTracerAgent.Span targetSpan)
+        {
+            // Check the test origin tag
+            AssertTargetSpanEqual(targetSpan, Tags.Origin, TestTags.CIAppTestOriginName);
         }
 
         private static void CheckSimpleTestSpan(MockTracerAgent.Span targetSpan)

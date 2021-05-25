@@ -105,9 +105,9 @@ namespace Datadog.Trace
         public string ServiceName { get; set; }
 
         /// <summary>
-        /// Gets the origin of the trace
+        /// Gets or sets the origin of the trace
         /// </summary>
-        internal string Origin { get; }
+        internal string Origin { get; set; }
 
         /// <summary>
         /// Gets the trace context.
