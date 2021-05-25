@@ -19,10 +19,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             StringBuilder sb = new();
-            sb.Append("{");
-            SpanContextPropagator.Instance.Inject(context, sb, ((carrier, key, value) => carrier.Append($"\"{key}\":\"{value}\",")));
+            sb.Append('{');
+            SpanContextPropagator.Instance.Inject(context, sb, ((carrier, key, value) => carrier.AppendFormat("\"{0}\":\"{1}\",", key, value)));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
-            sb.Append("}");
+            sb.Append('}');
 
             var resultString = sb.ToString();
             messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
