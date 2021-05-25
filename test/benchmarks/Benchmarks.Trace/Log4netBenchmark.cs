@@ -3,7 +3,6 @@ using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.LogProviders;
 using log4net.Appender;
 using log4net.Core;
 using log4net.Layout;
@@ -20,7 +19,7 @@ namespace Benchmarks.Trace
 
         static Log4netBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new Log4NetLogProvider());
+            LogProvider.SetCurrentLogProvider(new CustomLog4NetLogProvider());
 
             var logInjectionSettings = new TracerSettings
             {

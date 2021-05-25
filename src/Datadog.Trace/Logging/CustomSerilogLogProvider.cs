@@ -5,12 +5,11 @@
 
 using System;
 using System.Linq.Expressions;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
 {
-    internal class CustomSerilogLogProvider : SerilogLogProvider
+    internal class CustomSerilogLogProvider : SerilogLogProvider, ILogProviderWithEnricher
     {
         private static Func<object, IDisposable> _pushMethod;
 
@@ -24,9 +23,9 @@ namespace Datadog.Trace.Logging
             return _pushMethod(enricher);
         }
 
-        public object CreateEnricher(Tracer tracer) => new SerilogEventEnricher(tracer).DuckCast(GetLogEnricherType());
+        public ILogEnricher CreateEnricher() => new SerilogEnricher(this);
 
-        private static Type GetLogEnricherType() => Type.GetType("Serilog.Core.ILogEventEnricher, Serilog");
+        internal static Type GetLogEnricherType() => Type.GetType("Serilog.Core.ILogEventEnricher, Serilog");
 
         private static Func<object, IDisposable> GetPush()
         {
