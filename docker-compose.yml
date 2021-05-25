@@ -261,19 +261,6 @@ services:
     volumes:
     - ./:/project
 
-  Samples.Aws.Sqs:
-    build:
-      context: ./
-      dockerfile: ./docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticmq:9324 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Aws.Sqs/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Aws.Sqs.dll"
-    environment:
-    - AWS_SQS_HOST=elasticmq:9324
-    volumes:
-    - ./:/project
-    depends_on:
-    - aws_sqs
-
   Samples.ServiceStack.Redis:
     build:
       context: ./
