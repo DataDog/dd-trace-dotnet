@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461</TargetFrameworks>
-    <IsPackable>false</IsPackable>
+    <TargetFrameworks>net452;net461</TargetFrameworks>
     <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
   </PropertyGroup>
 

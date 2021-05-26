@@ -2,9 +2,9 @@
   <Import Project="..\Directory.Build.props" />
 
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
-    <TargetFrameworks Condition="$(MSBuildVersion) >= 16.8.0">$(TargetFrameworks);net5.0</TargetFrameworks>
+    <!-- only run .NET Framework tests on Windows -->
+    <TargetFrameworks Condition="'$(TargetFrameworks)' == '' and '$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TargetFrameworks)' == ''">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0</TargetFrameworks>
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
@@ -21,11 +21,6 @@
   <!-- StyleCop -->
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.test.cs" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <!-- reference assemblies let us target .NET Framework without the SDK (for example, on non-Windows) -->
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
