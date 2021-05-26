@@ -73,6 +73,7 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(TracerHomeDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
             EnsureCleanDirectory(NativeProfilerProject.Directory / "build");
+            EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
             EnsureCleanDirectory(BuildDataDirectory);
             DeleteFile(TracerHomeZip);
         });
