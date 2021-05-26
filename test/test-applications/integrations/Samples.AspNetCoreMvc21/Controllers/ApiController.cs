@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,8 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("delay/{seconds}")]
         public ActionResult Delay(int seconds)
         {
+            using var logScope = _logger.BeginScope(new DatadogLoggingScope());
+
             _logMessage(_logger, nameof(Delay));
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
             AddCorrelationIdentifierToResponse();
@@ -32,6 +35,8 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("delay-async/{seconds}")]
         public async Task<ActionResult> DelayAsync(int seconds)
         {
+            using var logScope = _logger.BeginScope(new DatadogLoggingScope());
+
             _logMessage(_logger, nameof(DelayAsync));
             await Task.Delay(TimeSpan.FromSeconds(seconds));
             AddCorrelationIdentifierToResponse();

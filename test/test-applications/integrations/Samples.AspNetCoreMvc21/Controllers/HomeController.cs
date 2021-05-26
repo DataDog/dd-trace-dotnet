@@ -24,6 +24,8 @@ namespace Samples.AspNetCoreMvc.Controllers
 
         public IActionResult Index()
         {
+            using var logScope = _logger.BeginScope(new DatadogLoggingScope());
+
             _logMessage(_logger, nameof(Index));
             var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace.ClrProfiler.Managed");
             ViewBag.ProfilerAttached = instrumentationType?.GetProperty("ProfilerAttached", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ?? false;
@@ -48,6 +50,8 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("delay/{seconds}")]
         public IActionResult Delay(int seconds)
         {
+            using var logScope = _logger.BeginScope(new DatadogLoggingScope());
+
             _logMessage(_logger, nameof(Delay));
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
@@ -58,6 +62,8 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("delay-async/{seconds}")]
         public async Task<IActionResult> DelayAsync(int seconds)
         {
+            using var logScope = _logger.BeginScope(new DatadogLoggingScope());
+
             _logMessage(_logger, nameof(DelayAsync));
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
             await Task.Delay(TimeSpan.FromSeconds(seconds));
@@ -68,6 +74,8 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("bad-request")]
         public IActionResult ThrowException()
         {
+            using var logScope = _logger.BeginScope(new DatadogLoggingScope());
+
             _logMessage(_logger, nameof(ThrowException));
             AddCorrelationIdentifierToResponse();
             throw new Exception("This was a bad request.");
@@ -76,6 +84,8 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("status-code/{statusCode}")]
         public string StatusCodeTest(int statusCode)
         {
+            using var logScope = _logger.BeginScope(new DatadogLoggingScope());
+
             _logMessage(_logger, nameof(StatusCodeTest));
             AddCorrelationIdentifierToResponse();
             HttpContext.Response.StatusCode = statusCode;
@@ -85,6 +95,8 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("alive-check")]
         public string IsAlive()
         {
+            using var logScope = _logger.BeginScope(new DatadogLoggingScope());
+
             _logMessage(_logger, nameof(IsAlive));
             AddCorrelationIdentifierToResponse();
             return "Yes";
