@@ -323,7 +323,7 @@ partial class Build
             GlobFiles(NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.*")
                 .ForEach(source =>
                 {
-                    var dest = TracerHomeDirectory / $"macos";
+                    var dest = TracerHomeDirectory / $"osx-x64";
                     CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
 
                 });
