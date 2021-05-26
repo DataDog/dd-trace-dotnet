@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc5TestsCallsiteClassic : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallsiteClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableFeatureFlag: false)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc5TestsCallsiteIntegrated : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallsiteIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableFeatureFlag: false)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc5TestsCallsiteClassicWithFeatureFlag : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallsiteClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableFeatureFlag: true)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc5TestsCallsiteIntegratedWithFeatureFlag : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallsiteIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableFeatureFlag: true)
+            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc5TestsCallTargetClassic : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableFeatureFlag: false)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc5TestsCallTargetIntegrated : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableFeatureFlag: false)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc5TestsCallTargetClassicWithFeatureFlag : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableFeatureFlag: true)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc5TestsCallTargetIntegratedWithFeatureFlag : AspNetMvc5Tests
     {
         public AspNetMvc5TestsCallTargetIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableFeatureFlag: true)
+            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -96,12 +96,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode, bool enableFeatureFlag)
+        public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode, bool enableRouteTemplateResourceNames)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget);
-            if (enableFeatureFlag)
+            if (enableRouteTemplateResourceNames)
             {
                 SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
             }
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _testName = nameof(AspNetMvc5Tests)
                       + (enableCallTarget ? ".CallSite" : ".CallTarget")
                       + (classicMode ? ".Classic" : ".Integrated")
-                      + (enableFeatureFlag ? ".NoFF" : ".WithFF")
+                      + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF")
                       + (RuntimeInformation.ProcessArchitecture == Architecture.X64 ? ".X64" : ".X86"); // assume that arm is the same
         }
 
