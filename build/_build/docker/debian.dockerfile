@@ -35,8 +35,8 @@ WORKDIR /project
 
 FROM base as tester
 
-# Install .NET Core runtimes using install script
-# FYI there is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
+# Install ASP.NET Core runtimes using install script
+# There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
 
 RUN if [ "$(uname -m)" = "x86_64" ]; \
     then export NETCORERUNTIME2_1=aspnetcore; \

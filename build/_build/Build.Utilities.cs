@@ -90,7 +90,8 @@ partial class Build
             {
                 {"COR_ENABLE_PROFILING", "1"},
                 {"COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
-                {"COR_PROFILER_PATH", TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll" },
+                {"COR_PROFILER_PATH_64", TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll" },
+                {"COR_PROFILER_PATH_32", TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll" },
                 {"DD_INTEGRATIONS", TracerHomeDirectory / "integrations.json" },
                 {"DD_DOTNET_TRACER_HOME", TracerHomeDirectory },
             };
@@ -121,10 +122,12 @@ partial class Build
             {
                 {"COR_ENABLE_PROFILING", "1"},
                 {"COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
-                {"COR_PROFILER_PATH", TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll" },
+                {"COR_PROFILER_PATH_32", TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll" },
+                {"COR_PROFILER_PATH_64", TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll" },
                 {"CORECLR_ENABLE_PROFILING", "1"},
                 {"CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
-                {"CORECLR_PROFILER_PATH", TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll" },
+                {"CORECLR_PROFILER_PATH_32", TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll" },
+                {"CORECLR_PROFILER_PATH_64", TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll" },
                 {"DD_INTEGRATIONS", TracerHomeDirectory / "integrations.json" },
                 {"DD_DOTNET_TRACER_HOME", TracerHomeDirectory },
                 {"ASPNETCORE_URLS", "https://*:5003" },
