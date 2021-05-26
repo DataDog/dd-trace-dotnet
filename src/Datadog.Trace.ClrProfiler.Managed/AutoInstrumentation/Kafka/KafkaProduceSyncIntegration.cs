@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
         {
-            state.Scope?.DisposeWithException(exception);
+            state.Scope.DisposeWithException(exception);
             return CallTargetReturn.GetDefault();
         }
     }
