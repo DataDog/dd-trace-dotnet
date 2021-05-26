@@ -96,6 +96,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // checks the origin tag
                         CheckOriginTag(targetSpan);
 
+                        // Check the Environment
+                        AssertTargetSpanEqual(targetSpan, Tags.Env, "integration_tests");
+
                         // check specific test span
                         switch (targetSpan.Tags[TestTags.Name])
                         {

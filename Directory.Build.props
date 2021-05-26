@@ -23,4 +23,9 @@
   <PropertyGroup Condition="'$(TF_BUILD)' == 'true' OR '$(GITLAB_CI)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
+  
+  <!-- Not set when building outside of IDE or not using sln -->
+  <PropertyGroup>
+    <SolutionDir Condition="'$(SolutionDir)'==''">$(MSBuildThisFileDirectory)</SolutionDir>
+  </PropertyGroup>
 </Project>

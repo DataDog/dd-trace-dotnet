@@ -318,6 +318,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", enableCallTarget ? "true" : "false");
         }
 
+#if !NET452
+        protected async Task<IImmutableList<MockTracerAgent.Span>> GetWebServerSpans(
+            string path,
+            MockTracerAgent agent,
+            int httpPort,
+            HttpStatusCode expectedHttpStatusCode)
+        {
+            using var httpClient = new HttpClient();
+
+            // disable tracing for this HttpClient request
+            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+            var testStart = DateTime.UtcNow;
+            var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
+            var content = await response.Content.ReadAsStringAsync();
+            Output.WriteLine($"[http] {response.StatusCode} {content}");
+            Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+
+            agent.SpanFilters.Add(IsServerSpan);
+
+            return agent.WaitForSpans(
+                count: 2,
+                minDateTime: testStart,
+                returnAllOperations: true);
+        }
+#endif
+
         protected async Task AssertWebServerSpan(
             string path,
             MockTracerAgent agent,
