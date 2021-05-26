@@ -748,18 +748,25 @@ stages:
 
     steps:
     - task: DownloadPipelineArtifact@2
-      displayName: Download windows native bindary
+      displayName: Download windows native binary
       inputs:
         artifact: windows-tracer-home
         patterns: '**/win-x64/*.dll'
         path: $(System.DefaultWorkingDirectory)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download linux native bindary
+      displayName: Download linux native binary
       inputs:
         artifact: linux-tracer-home-debian
         patterns: '**/*.so'
         path: $(System.DefaultWorkingDirectory)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download arm64 native binary
+      inputs:
+        artifact: linux-tracer-home-arm64
+        patterns: '**/*.so'
+        path: $(System.DefaultWorkingDirectory)/arm64
 
     - script: |
         cd $(System.DefaultWorkingDirectory)/build/crank
