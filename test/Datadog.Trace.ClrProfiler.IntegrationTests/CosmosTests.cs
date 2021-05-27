@@ -1,3 +1,8 @@
+// <copyright file="CosmosTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
 #if !NET452
 using System;
 using System.Collections.Generic;
@@ -60,6 +65,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
                 spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
+                Console.WriteLine($"spans.Count: {spans.Count}");
+
+                foreach (var span in spans)
+                {
+                    Console.WriteLine(span);
+                }
+
                 var dbTags = 0;
                 var containerTags = 0;
 
@@ -67,9 +79,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     span.Name.Should().Be(ExpectedOperationName);
                     span.Service.Should().Be(ExpectedServiceName);
-                    span.Type.Should().Be(SpanTypes.CosmosDb);
+                    span.Type.Should().Be(SpanTypes.Sql);
                     span.Resource.Should().StartWith("SELECT * FROM");
                     span.Tags.Should().NotContain(Tags.Version, "External service span should not have service version tag.");
+                    span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.DbType, "cosmosdb"));
                     span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.OutHost, "https://localhost:8081/"));
 
                     if (span.Tags.ContainsKey(Tags.CosmosDbContainer))
@@ -78,9 +91,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         containerTags++;
                     }
 
-                    if (span.Tags.ContainsKey(Tags.CosmosDbDatabase))
+                    if (span.Tags.ContainsKey(Tags.DbName))
                     {
-                        span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.CosmosDbDatabase, "db"));
+                        span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.DbName, "db"));
                         dbTags++;
                     }
                 }

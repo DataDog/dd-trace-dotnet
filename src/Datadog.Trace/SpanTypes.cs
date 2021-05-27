@@ -68,7 +68,7 @@ namespace Datadog.Trace
         public const string Build = "build";
 
         /// <summary>
-        /// The span type for msbuild integration.
+        /// The span type for CosmosDb integration.
         /// </summary>
         public const string CosmosDb = "cosmosdb";
     }

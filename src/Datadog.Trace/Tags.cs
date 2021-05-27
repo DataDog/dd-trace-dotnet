@@ -363,11 +363,6 @@ namespace Datadog.Trace
         /// </summary>
         public const string CosmosDbContainer = "cosmosdb.container";
 
-        /// <summary>
-        /// A CosmosDb database name.
-        /// </summary>
-        public const string CosmosDbDatabase = "cosmosdb.database";
-
         internal const string ElasticsearchAction = "elasticsearch.action";
 
         internal const string ElasticsearchMethod = "elasticsearch.method";
