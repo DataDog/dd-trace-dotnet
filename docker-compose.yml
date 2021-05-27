@@ -587,7 +587,7 @@ services:
     - kafka-broker
     - kafka-zookeeper
 
-  IntegrationTests2:
+  NukeIntegrationTests:
     build:
       context: ./build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
@@ -650,7 +650,7 @@ services:
       - TIMEOUT_LENGTH=60
     command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181
 
-  IntegrationTests2.ARM64:
+  NukeIntegrationTests.ARM64:
     build:
       context: ./build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
