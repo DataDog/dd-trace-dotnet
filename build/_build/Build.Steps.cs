@@ -645,7 +645,15 @@ partial class Build
             var include = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
             var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
 
-            var projects = include.Where(x => !exclude.Contains(x));
+            var projects = include.Where(projectPath =>
+                projectPath switch
+                {
+                    _ when exclude.Contains(projectPath) => false,
+                    _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
+                    _ => true,
+                }
+            );
+
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(Platform)
