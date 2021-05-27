@@ -281,3 +281,4 @@ deploy/AzureAppServices/
 
 # profiler output files
 src/Datadog.Trace.ClrProfiler.Native/build/
+/src/Datadog.Trace.ClrProfiler.Native/out/
