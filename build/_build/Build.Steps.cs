@@ -539,6 +539,7 @@ partial class Build
         .After(CompileManagedSrc)
         .Executes(() =>
         {
+            PrintDriveInfo();
             // We run linux integration tests in AnyCPU, but Windows on the specific architecture
             var platform = IsLinux ? MSBuildTargetPlatform.MSIL : Platform;
 
@@ -559,6 +560,8 @@ partial class Build
         .After(CompileRegressionDependencyLibs)
         .Executes(() =>
         {
+            PrintDriveInfo();
+
             // explicitly build the other dependency (with restore to avoid runtime identifier dependency issues)
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.ApplicationWithLog4Net))
@@ -601,6 +604,7 @@ partial class Build
         .Requires(() => IsWin)
         .Executes(() =>
         {
+            PrintDriveInfo();
             // We have to use the full MSBuild here, as dotnet msbuild doesn't copy the EDMX assets for embedding correctly
             // seems similar to https://github.com/dotnet/sdk/issues/8360
             MSBuild(s => s
@@ -622,6 +626,7 @@ partial class Build
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
         {
+            PrintDriveInfo();
             DotNetMSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .DisableRestore()
@@ -641,6 +646,7 @@ partial class Build
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
         {
+            PrintDriveInfo();
             // This does some "unnecessary" rebuilding and restoring
             var include = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
             var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
@@ -674,6 +680,8 @@ partial class Build
         .After(CompileFrameworkReproductions)
         .Executes(() =>
         {
+            PrintDriveInfo();
+
             var publishProfile = TestsDirectory / "test-applications" / "aspnet" / "PublishProfiles" /
                                  "FolderProfile.pubxml";
             MSBuild(x => x
@@ -992,7 +1000,7 @@ partial class Build
     private void EnsureResultsDirectory(Project proj) => EnsureCleanDirectory(GetResultsDirectory(proj));
 
     private void MoveLogsToBuildData()
-{
+    {
         if (Directory.Exists(TracerLogDirectory))
         {
             CopyDirectoryRecursively(TracerLogDirectory, BuildDataDirectory / "logs",
@@ -1006,5 +1014,14 @@ partial class Build
                 MoveFileToDirectory(dump, BuildDataDirectory / "dumps", FileExistsPolicy.Overwrite);
             }
         }
+    }
+
+    private void PrintDriveInfo()
+    {
+        foreach (var drive in DriveInfo.GetDrives().Where(d => d.IsReady))
+        {
+            Logger.Info($"Drive space '{drive.Name}' : {drive.AvailableFreeSpace}/{drive.TotalSize}");
+        }
+
     }
 }
