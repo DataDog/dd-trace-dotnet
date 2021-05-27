@@ -1,4 +1,4 @@
-// <copyright file="SerilogEventEnricher.cs" company="Datadog">
+// <copyright file="SerilogEnricher.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,18 +12,23 @@ using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
 {
-    internal class SerilogEventEnricher
+    internal class SerilogEnricher : ILogEnricher
     {
-        private readonly Tracer _tracer;
-
-        private readonly object _serviceProperty;
-        private readonly object _versionProperty;
-        private readonly object _environmentProperty;
+        private readonly CustomSerilogLogProvider _logProvider;
         private readonly Func<object, object> _valueFactory;
         private readonly Func<string, object, object> _propertyFactory;
 
-        public SerilogEventEnricher(Tracer tracer)
+        private Tracer _tracer;
+        private object _serviceProperty;
+        private object _versionProperty;
+        private object _environmentProperty;
+
+        private object _serilogEventEnricher;
+
+        public SerilogEnricher(CustomSerilogLogProvider logProvider)
         {
+            _logProvider = logProvider;
+
             var logEventPropertyType = Type.GetType("Serilog.Events.LogEventProperty, Serilog");
 
             if (logEventPropertyType == null)
@@ -45,14 +50,24 @@ namespace Datadog.Trace.Logging
                 throw new LibLogException("Serilog.Events.ScalarValue not found");
             }
 
-            _tracer = tracer;
-
             _valueFactory = BuildValueFactory(scalarValueType);
             _propertyFactory = BuildPropertyFactory(logEventPropertyType, logEventPropertyValueType);
+        }
+
+        public void Initialize(Tracer tracer)
+        {
+            _tracer = tracer;
 
             _serviceProperty = _propertyFactory(CorrelationIdentifier.SerilogServiceKey, _valueFactory(tracer.DefaultServiceName));
             _versionProperty = _propertyFactory(CorrelationIdentifier.SerilogVersionKey, _valueFactory(tracer.Settings.ServiceVersion));
             _environmentProperty = _propertyFactory(CorrelationIdentifier.SerilogEnvKey, _valueFactory(tracer.Settings.Environment));
+
+            _serilogEventEnricher = this.DuckCast(CustomSerilogLogProvider.GetLogEnricherType());
+        }
+
+        public IDisposable Register()
+        {
+            return _logProvider.OpenContext(_serilogEventEnricher);
         }
 
         [DuckReverseMethod("Serilog.Events.LogEvent", "Serilog.Core.ILogEventPropertyFactory")]

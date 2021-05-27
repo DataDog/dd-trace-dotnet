@@ -33,8 +33,7 @@ namespace Datadog.Trace.Logging
         private readonly string _version;
         private readonly string _env;
         private readonly ILogProvider _logProvider;
-        private readonly object _serilogEnricher;
-        private readonly NLogEnricher _nlogEnricher;
+        private readonly ILogEnricher _logEnricher;
 
         private readonly AsyncLocalCompat<IDisposable> _currentEnricher = new AsyncLocalCompat<IDisposable>();
 
@@ -123,24 +122,22 @@ namespace Datadog.Trace.Logging
             try
             {
                 _logProvider = LogProvider.CurrentLogProvider ?? LogProvider.ResolveLogProvider();
-                if (_logProvider is SerilogLogProvider)
+
+                if (_logProvider is ILogProviderWithEnricher logProvider)
+                {
+                    var enricher = logProvider.CreateEnricher();
+                    enricher.Initialize(_tracer);
+                    _logEnricher = enricher;
+
+                    _scopeManager.TraceStarted += RegisterLogEnricher;
+                    _scopeManager.TraceEnded += ClearLogEnricher;
+                }
+                else if (_logProvider is SerilogLogProvider)
                 {
                     // Do not set default values for Serilog because it is unsafe to set
                     // except at the application startup, but this would require auto-instrumentation
                     _scopeManager.SpanOpened += StackOnSpanOpened;
                     _scopeManager.SpanClosed += StackOnSpanClosed;
-
-                    if (_logProvider is CustomSerilogLogProvider customSerilogLogProvider)
-                    {
-                        _serilogEnricher = customSerilogLogProvider.CreateEnricher(tracer);
-                    }
-                }
-                else if (_logProvider is CustomNLogLogProvider)
-                {
-                    _nlogEnricher = new NLogEnricher(tracer);
-
-                    _scopeManager.TraceStarted += RegisterNLogEnricher;
-                    _scopeManager.TraceEnded += ClearNLogEnricher;
                 }
                 else
                 {
@@ -205,15 +202,27 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        public void RegisterNLogEnricher(object sender, SpanEventArgs spanEventArgs)
+        public void RegisterLogEnricher(object sender, SpanEventArgs spanEventArgs)
         {
-            if (!_executingIISPreStartInit)
+            if (!_executingIISPreStartInit && _safeToAddToMdc)
             {
-                SetNLogLogContext();
+                try
+                {
+                    var currentEnricher = _currentEnricher.Get();
+
+                    if (currentEnricher == null)
+                    {
+                        _currentEnricher.Set(_logEnricher.Register());
+                    }
+                }
+                catch (Exception)
+                {
+                    _safeToAddToMdc = false;
+                }
             }
         }
 
-        public void ClearNLogEnricher(object sender, SpanEventArgs spanEventArgs)
+        public void ClearLogEnricher(object sender, SpanEventArgs spanEventArgs)
         {
             if (!_executingIISPreStartInit)
             {
@@ -228,15 +237,15 @@ namespace Datadog.Trace.Logging
 
         public void Dispose()
         {
-            if (_logProvider is SerilogLogProvider)
+            if (_logProvider is ILogProviderWithEnricher)
+            {
+                _scopeManager.TraceStarted -= RegisterLogEnricher;
+                _scopeManager.TraceEnded -= ClearLogEnricher;
+            }
+            else if (_logProvider is SerilogLogProvider)
             {
                 _scopeManager.SpanOpened -= StackOnSpanOpened;
                 _scopeManager.SpanClosed -= StackOnSpanClosed;
-            }
-            else if (_logProvider is CustomNLogLogProvider)
-            {
-                _scopeManager.TraceStarted -= RegisterNLogEnricher;
-                _scopeManager.TraceEnded -= ClearNLogEnricher;
             }
             else
             {
@@ -262,6 +271,13 @@ namespace Datadog.Trace.Logging
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
                     CustomNLogLogProvider.IsLoggerAvailable,
                     () => new CustomNLogLogProvider()));
+
+            // Register the custom log4net provider
+            LogProvider.LogProviderResolvers.Insert(
+                0,
+                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
+                    CustomLog4NetLogProvider.IsLoggerAvailable,
+                    () => new CustomLog4NetLogProvider()));
         }
 
         private void SetDefaultValues()
@@ -345,28 +361,6 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        private void SetNLogLogContext()
-        {
-            if (!_safeToAddToMdc)
-            {
-                return;
-            }
-
-            try
-            {
-                var currentEnricher = _currentEnricher.Get();
-
-                if (currentEnricher == null)
-                {
-                    _currentEnricher.Set(_nlogEnricher.Register(_logProvider));
-                }
-            }
-            catch (Exception)
-            {
-                _safeToAddToMdc = false;
-            }
-        }
-
         private void SetSerilogCompatibleLogContext(ulong traceId, ulong spanId)
         {
             if (!_safeToAddToMdc)
@@ -376,18 +370,6 @@ namespace Datadog.Trace.Logging
 
             try
             {
-                if (_logProvider is CustomSerilogLogProvider customSerilogLogProvider)
-                {
-                    var currentEnricher = _currentEnricher.Get();
-
-                    if (currentEnricher == null)
-                    {
-                        _currentEnricher.Set(customSerilogLogProvider.OpenContext(_serilogEnricher));
-                    }
-
-                    return;
-                }
-
                 // TODO: Debug logs
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(

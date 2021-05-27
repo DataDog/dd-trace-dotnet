@@ -1,4 +1,4 @@
-// <copyright file="NLogEnricher.cs" company="Datadog">
+// <copyright file="LogEnricher.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,27 +7,39 @@ using System;
 
 namespace Datadog.Trace.Logging
 {
-    internal class NLogEnricher
+    /// <summary>
+    /// Represents the context needed for log injection for a given tracer
+    /// </summary>
+    internal class LogEnricher : ILogEnricher
     {
-        private readonly object _versionProperty;
-        private readonly object _environmentProperty;
-        private readonly object _serviceProperty;
-        private readonly object _traceIdProperty;
-        private readonly object _spanIdProperty;
+        private readonly ILogProvider _logProvider;
 
-        public NLogEnricher(Tracer tracer)
+        private object _versionProperty;
+        private object _environmentProperty;
+        private object _serviceProperty;
+        private object _traceIdProperty;
+        private object _spanIdProperty;
+
+        public LogEnricher(ILogProvider logProvider)
+        {
+            _logProvider = logProvider;
+        }
+
+        public void Initialize(Tracer tracer)
         {
             _versionProperty = tracer.Settings.ServiceVersion;
             _environmentProperty = tracer.Settings.Environment;
             _serviceProperty = tracer.DefaultServiceName;
-            _traceIdProperty = new TracerProperty(tracer, t => t.ActiveScope?.Span.TraceId.ToString());
-            _spanIdProperty = new TracerProperty(tracer, t => t.ActiveScope?.Span.SpanId.ToString());
+            _traceIdProperty = CreateTracerProperty(tracer, t => t.ActiveScope?.Span.TraceId.ToString());
+            _spanIdProperty = CreateTracerProperty(tracer, t => t.ActiveScope?.Span.SpanId.ToString());
         }
 
-        public IDisposable Register(ILogProvider logProvider)
+        public IDisposable Register()
         {
-            return new Context(logProvider, this);
+            return new Context(_logProvider, this);
         }
+
+        protected virtual object CreateTracerProperty(Tracer tracer, Func<Tracer, string> getter) => new TracerProperty(tracer, getter);
 
         /// <summary>
         /// Wraps all the individual context objects in a single instance, that can be stored in an AsyncLocal
@@ -40,7 +52,7 @@ namespace Datadog.Trace.Logging
             private readonly IDisposable _traceId;
             private readonly IDisposable _spanId;
 
-            public Context(ILogProvider logProvider, NLogEnricher enricher)
+            public Context(ILogProvider logProvider, LogEnricher enricher)
             {
                 try
                 {

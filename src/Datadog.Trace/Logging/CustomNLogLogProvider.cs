@@ -9,8 +9,10 @@ using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
 {
-    internal class CustomNLogLogProvider : NLogLogProvider
+    internal class CustomNLogLogProvider : NLogLogProvider, ILogProviderWithEnricher
     {
+        public ILogEnricher CreateEnricher() => new LogEnricher(this);
+
         protected override OpenMdc GetOpenMdcMethod()
         {
             // This is a copy/paste of the base GetOpenMdcMethod, but calling Set(string, object) instead of Set(string, string)
