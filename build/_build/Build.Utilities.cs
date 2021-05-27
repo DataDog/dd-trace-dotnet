@@ -86,16 +86,16 @@ partial class Build
         .Requires(() => IsWin)
         .Executes(() =>
         {
-            var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment)
-            {
-                {"COR_ENABLE_PROFILING", "1"},
-                {"COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
-                {"COR_PROFILER_PATH_64", TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll" },
-                {"COR_PROFILER_PATH_32", TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll" },
-                {"DD_INTEGRATIONS", TracerHomeDirectory / "integrations.json" },
-                {"DD_DOTNET_TRACER_HOME", TracerHomeDirectory },
-            };
-            
+            var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment);
+
+            // Override environment variables
+            envVars["COR_ENABLE_PROFILING"] = "1";
+            envVars["COR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+            envVars["COR_PROFILER_PATH_64"] = TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll";
+            envVars["COR_PROFILER_PATH_32"] = TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll";
+            envVars["DD_INTEGRATIONS"] = TracerHomeDirectory / "integrations.json";
+            envVars["DD_DOTNET_TRACER_HOME"] = TracerHomeDirectory;
+
             if (ExtraEnvVars?.Length > 0)
             {
                 foreach (var envVar in ExtraEnvVars)
