@@ -17,10 +17,7 @@ namespace Benchmarks.Trace
         private const int SpanCount = 1000;
 
         private static readonly IAgentWriter AgentWriter;
-        private static readonly Span[] Spans;
         private static readonly Span[] EnrichedSpans;
-        private static readonly Span[] SpansWithOrigin;
-        private static readonly Span[] EnrichedSpansWithOrigin;
         static AgentWriterBenchmark()
         {
             var settings = TracerSettings.FromDefaultSources();
@@ -32,42 +29,18 @@ namespace Benchmarks.Trace
 
             AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
 
-            Spans = new Span[SpanCount];
             EnrichedSpans = new Span[SpanCount];
-            SpansWithOrigin = new Span[SpanCount];
-            EnrichedSpansWithOrigin = new Span[SpanCount];
             var now = DateTimeOffset.UtcNow;
 
             for (int i = 0; i < SpanCount; i++)
             {
-                Spans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
                 EnrichedSpans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
                 EnrichedSpans[i].SetTag(Tags.Env, "Benchmark");
                 EnrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
-                //
-                SpansWithOrigin[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
-                SpansWithOrigin[i].SetTag(Tags.Origin, "synthetics");
-                EnrichedSpansWithOrigin[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
-                EnrichedSpansWithOrigin[i].SetTag(Tags.Origin, "synthetics");
-                EnrichedSpansWithOrigin[i].SetTag(Tags.Env, "Benchmark");
-                EnrichedSpansWithOrigin[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
 
             // Run benchmarks once to reduce noise
-            new AgentWriterBenchmark().WriteAndFlushTraces().GetAwaiter().GetResult();
             new AgentWriterBenchmark().WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
-            new AgentWriterBenchmark().WriteAndFlushTracesWithOrigin().GetAwaiter().GetResult();
-            new AgentWriterBenchmark().WriteAndFlushEnrichedTracesWithOrigin().GetAwaiter().GetResult();
-        }
-
-        /// <summary>
-        /// Write traces to the agent and flushes them
-        /// </summary>
-        [Benchmark]
-        public Task WriteAndFlushTraces()
-        {
-            AgentWriter.WriteTrace(Spans);
-            return AgentWriter.FlushTracesAsync();
         }
 
         /// <summary>
@@ -77,26 +50,6 @@ namespace Benchmarks.Trace
         public Task WriteAndFlushEnrichedTraces()
         {
             AgentWriter.WriteTrace(EnrichedSpans);
-            return AgentWriter.FlushTracesAsync();
-        }
-
-        /// <summary>
-        /// Write traces with origin to the agent and flushes them
-        /// </summary>
-        [Benchmark]
-        public Task WriteAndFlushTracesWithOrigin()
-        {
-            AgentWriter.WriteTrace(SpansWithOrigin);
-            return AgentWriter.FlushTracesAsync();
-        }
-
-        /// <summary>
-        /// Same as WriteAndFlushTraces but with more realistic traces (with tags and metrics) with origin
-        /// </summary>
-        [Benchmark]
-        public Task WriteAndFlushEnrichedTracesWithOrigin()
-        {
-            AgentWriter.WriteTrace(EnrichedSpansWithOrigin);
             return AgentWriter.FlushTracesAsync();
         }
 
