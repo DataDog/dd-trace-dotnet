@@ -8,7 +8,7 @@ rem Set default values
 set profiler_platform=x64
 set profiler_configuration=Debug
 set start_visual_studio=true
-set vs_sln_name=Datadog.Trace.sln
+set vs_sln_name=Datadog.Trace.Security.sln
 
 :next_argument
 set devenv_arg1=%1
@@ -61,6 +61,8 @@ if "%start_visual_studio%" == "true" (
         START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     ) ELSE IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe" (
         START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
+    ) ELSE IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe" (
+        START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     ) ELSE IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" (
         START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     ) ELSE (
