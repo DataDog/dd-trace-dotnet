@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Datadog.Trace.Security</name>
+    </assembly>
+    <members>
+        <member name="T:Datadog.Trace.Security.Rules.SqreenJsonDeserializeFailedException">
+            <summary>
+            Represents errors that occur during deserialization of JSON structures.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.Security.Rules.SqreenJsonDeserializeFailedException.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Datadog.Trace.Security.Rules.SqreenJsonDeserializeFailedException"/> class.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.Security.Rules.SqreenJsonDeserializeFailedException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Datadog.Trace.Security.Rules.SqreenJsonDeserializeFailedException"/> class.
+            </summary>
+            <param name="message">The message</param>
+        </member>
+        <member name="M:Datadog.Trace.Security.Rules.SqreenJsonDeserializeFailedException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Datadog.Trace.Security.Rules.SqreenJsonDeserializeFailedException"/> class.
+            </summary>
+            <param name="message">The message</param>
+            <param name="innerException">The inner exception</param>
+        </member>
+        <member name="M:Datadog.Trace.Security.Rules.SqreenJsonDeserializeFailedException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Datadog.Trace.Security.Rules.SqreenJsonDeserializeFailedException"/> class.
+            </summary>
+            <param name="info">The serialization info</param>
+            <param name="context">The context</param>
+        </member>
+    </members>
+</doc>
