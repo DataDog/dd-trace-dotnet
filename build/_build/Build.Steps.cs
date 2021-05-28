@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -539,7 +539,6 @@ partial class Build
         .After(CompileManagedSrc)
         .Executes(() =>
         {
-            PrintDriveInfo();
             // We run linux integration tests in AnyCPU, but Windows on the specific architecture
             var platform = IsLinux ? MSBuildTargetPlatform.MSIL : Platform;
 
@@ -560,8 +559,6 @@ partial class Build
         .After(CompileRegressionDependencyLibs)
         .Executes(() =>
         {
-            PrintDriveInfo();
-
             // explicitly build the other dependency (with restore to avoid runtime identifier dependency issues)
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.ApplicationWithLog4Net))
@@ -604,7 +601,6 @@ partial class Build
         .Requires(() => IsWin)
         .Executes(() =>
         {
-            PrintDriveInfo();
             // We have to use the full MSBuild here, as dotnet msbuild doesn't copy the EDMX assets for embedding correctly
             // seems similar to https://github.com/dotnet/sdk/issues/8360
             MSBuild(s => s
@@ -626,7 +622,6 @@ partial class Build
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
         {
-            PrintDriveInfo();
             DotNetMSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .DisableRestore()
@@ -646,7 +641,6 @@ partial class Build
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
         {
-            PrintDriveInfo();
             // This does some "unnecessary" rebuilding and restoring
             var include = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
             var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
@@ -680,7 +674,6 @@ partial class Build
         .After(CompileFrameworkReproductions)
         .Executes(() =>
         {
-            PrintDriveInfo();
 
             var publishProfile = TestsDirectory / "test-applications" / "aspnet" / "PublishProfiles" /
                                  "FolderProfile.pubxml";
@@ -1016,12 +1009,29 @@ partial class Build
         }
     }
 
-    private void PrintDriveInfo()
+    protected override void OnTargetStart(string target)
     {
-        foreach (var drive in DriveInfo.GetDrives().Where(d => d.IsReady))
+        if (PrintDriveSpace)
         {
-            Logger.Info($"Drive space '{drive.Name}' : {drive.AvailableFreeSpace}/{drive.TotalSize}");
+            foreach (var drive in DriveInfo.GetDrives().Where(d => d.IsReady))
+            {
+                Logger.Info($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
+            }
         }
+        base.OnTargetStart(target);
 
+        static string PrettyPrint(long bytes)
+        {
+            var power = Math.Min((int) Math.Log(bytes, 1000), 4);
+            var normalised = bytes / Math.Pow(1000, power);
+            return power switch
+            {
+                4 => $"{normalised:F}TB",
+                3 => $"{normalised:F}GB",
+                2 => $"{normalised:F}MB",
+                1 => $"{normalised:F}KB",
+                _ => $"{bytes}B",
+            };
+        }
     }
 }

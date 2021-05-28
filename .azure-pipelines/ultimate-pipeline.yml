@@ -298,7 +298,7 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
-    - script: build.cmd BuildAndRunWindowsIntegrationTests
+    - script: build.cmd BuildAndRunWindowsIntegrationTests --PrintDriveSpace
       displayName: Run integration tests
 
     - task: PublishTestResults@2

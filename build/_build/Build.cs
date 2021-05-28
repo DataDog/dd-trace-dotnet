@@ -48,6 +48,9 @@ partial class Build : NukeBuild
     [Parameter("The build version (for packaging purposes). Default is latest")]
     readonly string Version = "1.26.3";
 
+    [Parameter("Prints the available drive space before executing each target. Defaults to false")]
+    readonly bool PrintDriveSpace = false;
+
     Target Info => _ => _
         .Description("Describes the current configuration")
         .Executes(() =>
