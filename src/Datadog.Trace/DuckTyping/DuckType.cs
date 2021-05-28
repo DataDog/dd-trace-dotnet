@@ -58,6 +58,26 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Create duck type proxy using a base type
+        /// </summary>
+        /// <param name="proxyType">Duck type</param>
+        /// <param name="instance">Instance object</param>
+        /// <param name="targetType">Specific target type</param>
+        /// <returns>Duck Type proxy</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static IDuckType Create(Type proxyType, object instance, Type targetType)
+        {
+            // Validate arguments
+            EnsureArguments(proxyType, instance, targetType);
+
+            // Create Type
+            CreateTypeResult result = GetOrCreateProxyType(proxyType, targetType);
+
+            // Create instance
+            return result.CreateInstance(instance);
+        }
+
+        /// <summary>
         /// Gets if a proxy can be created
         /// </summary>
         /// <param name="instance">Instance object</param>

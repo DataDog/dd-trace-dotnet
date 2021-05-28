@@ -42,6 +42,38 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Checks and ensures the arguments for the Create methods
+        /// </summary>
+        /// <param name="proxyType">Duck type</param>
+        /// <param name="instance">Instance value</param>
+        /// <param name="targetType">Specific target type</param>
+        /// <exception cref="ArgumentNullException">If the duck type or the instance value is null</exception>
+        private static void EnsureArguments(Type proxyType, object instance, Type targetType)
+        {
+            if (proxyType is null)
+            {
+                DuckTypeProxyTypeDefinitionIsNull.Throw();
+            }
+
+            if (instance is null)
+            {
+                DuckTypeTargetObjectInstanceIsNull.Throw();
+            }
+
+            if (targetType is null)
+            {
+                DuckTypeProxyTypeDefinitionIsNull.Throw();
+            }
+
+#if NET45
+            if (!proxyType.IsPublic && !proxyType.IsNestedPublic)
+            {
+                DuckTypeTypeIsNotPublicException.Throw(proxyType, nameof(proxyType));
+            }
+#endif
+        }
+
+        /// <summary>
         /// Ensures the visibility access to the type
         /// </summary>
         /// <param name="builder">Module builder</param>
