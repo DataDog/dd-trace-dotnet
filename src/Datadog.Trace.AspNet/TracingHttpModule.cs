@@ -81,6 +81,8 @@ namespace Datadog.Trace.AspNet
                     return;
                 }
 
+                // Make sure the request wasn't already handled by another TracingHttpModule,
+                // in case they're registered multiple times
                 if (httpContext.Items.Contains(_httpContextScopeKey))
                 {
                     return;
@@ -167,6 +169,7 @@ namespace Datadog.Trace.AspNet
 
                     scope.Dispose();
 
+                    // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
                     app.Context.Items.Remove(_httpContextScopeKey);
                 }
             }
