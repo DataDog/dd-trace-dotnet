@@ -670,6 +670,13 @@ namespace Datadog.Trace
                                        $"service:{serviceName}"
                                    };
 
+                var containerId = ContainerMetadata.GetContainerId();
+
+                if (containerId != null)
+                {
+                    constantTags.Add($"runtime-id:{containerId}");
+                }
+
                 if (settings.Environment != null)
                 {
                     constantTags.Add($"env:{settings.Environment}");
