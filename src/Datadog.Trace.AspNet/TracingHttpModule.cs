@@ -118,8 +118,6 @@ namespace Datadog.Trace.AspNet
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
-                httpContext.Items[_httpContextScopeKey] = scope;
-
                 // Decorate the incoming HTTP Request with distributed tracing headers
                 // in case the next processor cannot access the stored Scope
                 // (e.g. WCF being hosted in IIS)
@@ -127,6 +125,8 @@ namespace Datadog.Trace.AspNet
                 {
                     SpanContextPropagator.Instance.Inject(scope.Span.Context, httpRequest.Headers.Wrap());
                 }
+
+                httpContext.Items[_httpContextScopeKey] = scope;
             }
             catch (Exception ex)
             {
@@ -149,28 +149,33 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    if (HttpRuntime.UsingIntegratedPipeline)
+                    try
                     {
-                        scope.Span.SetHeaderTags<IHeadersCollection>(app.Context.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                        if (HttpRuntime.UsingIntegratedPipeline)
+                        {
+                            scope.Span.SetHeaderTags<IHeadersCollection>(app.Context.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                        }
+
+                        scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
+
+                        if (app.Context.Items[SharedConstants.HttpContextPropagatedResourceNameKey] is string resourceName
+                            && !string.IsNullOrEmpty(resourceName))
+                        {
+                            scope.Span.ResourceName = resourceName;
+                        }
+                        else
+                        {
+                            string path = UriHelpers.GetCleanUriPath(app.Request.Url);
+                            scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                        }
+
+                        scope.Dispose();
                     }
-
-                    scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
-
-                    if (app.Context.Items[SharedConstants.HttpContextPropagatedResourceNameKey] is string resourceName
-                        && !string.IsNullOrEmpty(resourceName))
+                    finally
                     {
-                        scope.Span.ResourceName = resourceName;
+                        // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
+                        TryClearContext(app.Context);
                     }
-                    else
-                    {
-                        string path = UriHelpers.GetCleanUriPath(app.Request.Url);
-                        scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
-                    }
-
-                    scope.Dispose();
-
-                    // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
-                    app.Context.Items.Remove(_httpContextScopeKey);
                 }
             }
             catch (Exception ex)
@@ -206,6 +211,18 @@ namespace Datadog.Trace.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+            }
+        }
+
+        private void TryClearContext(HttpContext context)
+        {
+            try
+            {
+                context.Items.Remove(_httpContextScopeKey);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while clearing the HttpContext");
             }
         }
     }
