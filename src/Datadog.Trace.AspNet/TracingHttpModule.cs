@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -26,13 +25,8 @@ namespace Datadog.Trace.AspNet
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracingHttpModule));
 
-        // there is no ConcurrentHashSet, so use a ConcurrentDictionary
-        // where we only care about the key, not the value
-        private static ConcurrentDictionary<HttpApplication, byte> registeredEventHandlers = new ConcurrentDictionary<HttpApplication, byte>();
-
         private readonly string _httpContextScopeKey;
         private readonly string _requestOperationName;
-        private HttpApplication _httpApplication;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TracingHttpModule" /> class.
@@ -56,34 +50,14 @@ namespace Datadog.Trace.AspNet
         /// <inheritdoc />
         public void Init(HttpApplication httpApplication)
         {
-            // Intent: The first HttpModule to run Init for this HttpApplication will register for events
-            // Actual: Each HttpApplication that comes through here is potentially a new .NET object, even
-            //         if it refers to the same web application. Based on my reading, it appears that initialization
-            //         is done for several types of resources. Read more in this SO article -- look at Sunday Ironfoot's
-            //         (yes, reliable sounding name of course) response toward the end of this article:
-            //         https://stackoverflow.com/a/2416546/24231.
-            //         I've discovered that not letting each of these unique application objects be added, and thus
-            //         the event handlers be registered within each HttpApplication object, leads to the runtime
-            //         weirdness: at one point it crashed consistently for me, and later, I saw no spans at all.
-            if (registeredEventHandlers.TryAdd(httpApplication, 1))
-            {
-                _httpApplication = httpApplication;
-                httpApplication.BeginRequest += OnBeginRequest;
-                httpApplication.EndRequest += OnEndRequest;
-                httpApplication.Error += OnError;
-            }
+            httpApplication.BeginRequest += OnBeginRequest;
+            httpApplication.EndRequest += OnEndRequest;
+            httpApplication.Error += OnError;
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            // defend against multiple calls to Dispose()
-            if (_httpApplication != null)
-            {
-                // Remove the HttpApplication mapping so we don't keep the object alive
-                registeredEventHandlers.TryRemove(_httpApplication, out var _);
-                _httpApplication = null;
-            }
         }
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
@@ -103,6 +77,11 @@ namespace Datadog.Trace.AspNet
                 var httpContext = (sender as HttpApplication)?.Context;
 
                 if (httpContext == null)
+                {
+                    return;
+                }
+
+                if (httpContext.Items.Contains(_httpContextScopeKey))
                 {
                     return;
                 }
@@ -187,6 +166,8 @@ namespace Datadog.Trace.AspNet
                     }
 
                     scope.Dispose();
+
+                    app.Context.Items.Remove(_httpContextScopeKey);
                 }
             }
             catch (Exception ex)
