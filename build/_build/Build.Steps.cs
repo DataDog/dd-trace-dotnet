@@ -707,6 +707,7 @@ partial class Build
                     .SetTargetPlatform(Platform)
                     .EnableNoRestore()
                     .EnableNoBuild()
+                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)), degreeOfParallelism: 4);
@@ -719,7 +720,7 @@ partial class Build
                     .SetTargetPlatform(Platform)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter("(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True")
+                    .SetFilter(Filter ?? "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True")
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)));
@@ -748,7 +749,7 @@ partial class Build
                     .SetTargetPlatform(Platform)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter("(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True")
+                    .SetFilter(Filter ?? "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True")
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)));
@@ -959,6 +960,7 @@ partial class Build
                         .EnableNoBuild()
                         .SetFramework(Framework)
                         .EnableMemoryDumps()
+                        .When(!string.IsNullOrEmpty(Filter), x => x.SetFilter(Filter))
                         .When(TestAllPackageVersions, o => o
                             .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -974,7 +976,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFramework(Framework)
                     .EnableMemoryDumps()
-                    .SetFilter(IsArm64 ? "Category!=ArmUnsupported" : null)
+                    .SetFilter(Filter ?? (IsArm64 ? "Category!=ArmUnsupported" : null))
                     .When(TestAllPackageVersions, o => o
                         .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s

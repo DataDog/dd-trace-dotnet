@@ -51,6 +51,9 @@ partial class Build : NukeBuild
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
     readonly bool PrintDriveSpace = false;
 
+    [Parameter("Override the default test filters for integration tests. (Optional)")]
+    readonly string Filter;
+
     Target Info => _ => _
         .Description("Describes the current configuration")
         .Executes(() =>
