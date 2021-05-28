@@ -23,7 +23,6 @@ namespace Samples.AspNetCoreMvc
             // First, set up Serilog
             Log.Logger = new LoggerConfiguration()
                               .Enrich.FromLogContext()
-                              .WriteTo.File("ILoggerInterface.To.Serilog.log")
                               .WriteTo.File("Logs/Serilog/ILoggerInterface.To.Serilog.Raw.log", outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Properties} {Message:lj} {NewLine}{Exception}")
                               .WriteTo.File(new CompactJsonFormatter(), "Logs/Serilog/ILoggerInterface.To.Serilog.CompactJson.log")
                               .CreateLogger();
