@@ -190,7 +190,7 @@ stages:
         displayName: Build and Test
 
       - publish: build_data
-        artifact: profiler-logs_$(Agent.JobName)
+        artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
         condition: succeededOrFailed()
 
       - task: PublishTestResults@2
@@ -228,6 +228,10 @@ stages:
 
       - script: ./build.sh BuildAndRunManagedUnitTests
         displayName: Build and Test
+
+      - publish: build_data
+        artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
+        condition: succeededOrFailed()
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -271,6 +275,10 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests"
+
+    - publish: build_data
+      artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -502,7 +510,7 @@ stages:
       condition: succeededOrFailed()
 
     - publish: build_data
-      artifact: profiler-logs_$(Agent.JobName)
+      artifact: profiler-logs_integration_tests_linux_$(matrixName)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
 
     - task: PublishTestResults@2
