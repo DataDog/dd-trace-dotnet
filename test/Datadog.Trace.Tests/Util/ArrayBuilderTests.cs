@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.Util
 
             var result = _builder.GetArray();
 
-            result.Should().BeEquivalentTo(Enumerable.Range(0, 20));
+            result.Should().BeEquivalentTo(Enumerable.Range(0, numberOfElements));
         }
 
         [Fact]
