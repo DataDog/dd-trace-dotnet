@@ -372,18 +372,6 @@ namespace Datadog.Trace
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(Span[] trace)
-        {
-            if (Settings.TraceEnabled)
-            {
-                _agentWriter.WriteTrace(new ArraySegment<Span>(trace));
-            }
-        }
-
-        /// <summary>
-        /// Writes the specified <see cref="Span"/> collection to the agent writer.
-        /// </summary>
-        /// <param name="trace">The <see cref="Span"/> collection to write.</param>
         void IDatadogTracer.Write(ArraySegment<Span> trace)
         {
             if (Settings.TraceEnabled)
