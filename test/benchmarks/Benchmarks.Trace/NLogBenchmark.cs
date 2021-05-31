@@ -12,7 +12,6 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class NLogBenchmark
     {
-        private static readonly Tracer BaselineTracer;
         private static readonly Tracer LogInjectionTracer;
         private static readonly NLog.Logger Logger;
 
@@ -31,16 +30,6 @@ namespace Benchmarks.Trace
             LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
             Tracer.Instance = LogInjectionTracer;
 
-            var baselineSettings = new TracerSettings
-            {
-                StartupDiagnosticLogEnabled = false,
-                LogsInjectionEnabled = false,
-                Environment = "env",
-                ServiceVersion = "version"
-            };
-
-            BaselineTracer = new Tracer(baselineSettings, new DummyAgentWriter(), null, null, null);
-
             var config = new LoggingConfiguration();
 
 #if DEBUG
@@ -58,18 +47,6 @@ namespace Benchmarks.Trace
 
             LogManager.Configuration = config;
             Logger = LogManager.GetCurrentClassLogger();
-        }
-
-        [Benchmark(Baseline = true)]
-        public void Log()
-        {
-            using (BaselineTracer.StartActive("Test"))
-            {
-                using (BaselineTracer.StartActive("Child"))
-                {
-                    Logger.Info("Hello");
-                }
-            }
         }
 
         [Benchmark]
