@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         public const string MicrosoftAzureCosmosFeedIteratorTypeName = "Microsoft.Azure.Cosmos.FeedIterator`1<T>";
         public const string MicrosoftAzureCosmosQueryDefinitionTypeName = "Microsoft.Azure.Cosmos.QueryDefinition";
         public const string MicrosoftAzureCosmosQueryRequestOptionsTypeName = "Microsoft.Azure.Cosmos.QueryRequestOptions";
-        public const string Major3Minor0 = "3.0.0";
+        public const string Major3Minor6 = "3.6.0";
         public const string Major3MinorX = "3";
 
         public const string IntegrationName = nameof(IntegrationIds.CosmosDb);

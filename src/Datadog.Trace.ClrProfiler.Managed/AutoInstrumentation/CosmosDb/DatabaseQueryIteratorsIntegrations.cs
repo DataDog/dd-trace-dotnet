@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MethodName = "GetUserQueryIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { CosmosCommon.MicrosoftAzureCosmosQueryDefinitionTypeName, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
     [InstrumentMethod(
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MethodName = "GetUserQueryIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
 
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MethodName = "GetContainerQueryStreamIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { CosmosCommon.MicrosoftAzureCosmosQueryDefinitionTypeName, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
     [InstrumentMethod(
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MethodName = "GetContainerQueryStreamIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
     [InstrumentMethod(
@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MethodName = "GetContainerQueryIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { CosmosCommon.MicrosoftAzureCosmosQueryDefinitionTypeName, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
     [InstrumentMethod(
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MethodName = "GetContainerQueryIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
 

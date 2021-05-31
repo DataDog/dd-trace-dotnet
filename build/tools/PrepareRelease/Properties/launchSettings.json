@@ -2,7 +2,7 @@
   "profiles": {
     "PrepareRelease": {
       "commandName": "Project",
-      "commandLineArgs": "integrations"
+      "commandLineArgs": "versions integrations msi"
     }
   }
 }

@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MethodName = "GetDatabaseQueryIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { CosmosCommon.MicrosoftAzureCosmosQueryDefinitionTypeName, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
     [InstrumentMethod(
@@ -26,16 +26,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MethodName = "GetDatabaseQueryIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.CosmosClient",
-        MethodName = "CosmosCommon.GetDatabaseQueryStreamIterator",
+        MethodName = "GetDatabaseQueryStreamIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { CosmosCommon.MicrosoftAzureCosmosQueryDefinitionTypeName, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
     [InstrumentMethod(
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MethodName = "GetDatabaseQueryStreamIterator",
         ReturnTypeName = CosmosCommon.MicrosoftAzureCosmosFeedIteratorTypeName,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, CosmosCommon.MicrosoftAzureCosmosQueryRequestOptionsTypeName, },
-        MinimumVersion = CosmosCommon.Major3Minor0,
+        MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
 

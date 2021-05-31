@@ -272,7 +272,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -297,7 +297,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -322,7 +322,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -347,7 +347,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -372,7 +372,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -397,7 +397,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -422,7 +422,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -447,7 +447,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -472,7 +472,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -497,7 +497,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -522,7 +522,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -547,7 +547,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -572,7 +572,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
@@ -597,7 +597,7 @@
             "Microsoft.Azure.Cosmos.QueryRequestOptions"
           ],
           "minimum_major": 3,
-          "minimum_minor": 0,
+          "minimum_minor": 6,
           "minimum_patch": 0,
           "maximum_major": 3,
           "maximum_minor": 65535,
