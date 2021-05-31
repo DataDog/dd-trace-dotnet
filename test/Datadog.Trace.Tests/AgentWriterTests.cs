@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -301,6 +302,44 @@ namespace Datadog.Trace.Tests
             await agent.FlushAndCloseAsync();
 
             api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData)), It.Is<int>(i => i == 1)), Times.Once);
+        }
+
+        [Fact]
+        public async Task AgentWriterEnqueueFlushTasks()
+        {
+            var api = new Mock<IApi>();
+            var agentWriter = new AgentWriter(api.Object, statsd: null);
+
+            api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>()))
+               .Returns(() => Task.Delay(5000).ContinueWith(t => true));
+
+            var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
+
+            List<Task> tasks = new List<Task>();
+            List<double> times = new List<double>();
+            for (var i = 0; i < 20; i++)
+            {
+                agentWriter.WriteTrace(trace);
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var idx = i;
+                if (i > 0)
+                {
+                    tasks.Add(agentWriter.FlushTracesAsync().ContinueWith(t => times.Add(sw.Elapsed.TotalMilliseconds)));
+                }
+                else
+                {
+                    _ = agentWriter.FlushTracesAsync().ContinueWith(t => times.Add(sw.Elapsed.TotalMilliseconds));
+                    await Task.Delay(500).ConfigureAwait(false);
+                }
+            }
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            // Number of Task ending after 4 seconds should be greater than those that end sooner.
+            // Due the flush now awaits to the previous task to be completed.
+            // We can still have some few task that ends sooner due the FlushLoop.
+            Assert.True(times.Count - times.Where(t => t >= 4000).Count() < 2);
         }
 
         private static bool WaitForDequeue(AgentWriter agent, bool wakeUpThread = true, int delay = -1)
