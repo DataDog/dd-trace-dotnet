@@ -54,6 +54,9 @@ namespace Datadog.Trace.Agent
 
         private TaskCompletionSource<bool> _forceFlush;
 
+        private Task _frontBufferFlushTask;
+        private Task _backBufferFlushTask;
+
         static AgentWriter()
         {
             var data = Vendors.MessagePack.MessagePackSerializer.Serialize(ArrayHelper.Empty<Span[]>());
@@ -85,6 +88,15 @@ namespace Datadog.Trace.Agent
 
             _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.FromResult(true);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
+
+#if NET45
+            // "If the supplied array/enumerable contains no tasks, the returned task will immediately transition to a RanToCompletion state before it's returned to the caller."
+            // https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall?redirectedfrom=MSDN&view=netframework-4.5.2#System_Threading_Tasks_Task_WhenAll_System_Threading_Tasks_Task___
+            _backBufferFlushTask = _frontBufferFlushTask = Task.WhenAll();
+#else
+            _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
+#endif
+
         }
 
         internal event Action Flushed;
@@ -259,48 +271,64 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private async Task FlushBuffer(SpanBuffer buffer)
+        private Task FlushBuffer(SpanBuffer buffer)
         {
+            bool isFrontBuffer = buffer == _frontBuffer;
+
             // Wait for write operations to complete, then prevent further modifications
             if (!buffer.Lock())
             {
                 // Buffer is already locked, it's probably being flushed from another thread
-                return;
+                return isFrontBuffer ? _frontBufferFlushTask : _backBufferFlushTask;
             }
 
-            try
+            if (isFrontBuffer)
             {
-                if (_statsd != null)
+                return _frontBufferFlushTask = EnqueueInternalFlushBuffer(_frontBufferFlushTask);
+            }
+            else
+            {
+                return _backBufferFlushTask = EnqueueInternalFlushBuffer(_backBufferFlushTask);
+            }
+
+            async Task EnqueueInternalFlushBuffer(Task previousTask)
+            {
+                await previousTask.ConfigureAwait(false);
+
+                try
                 {
-                    _statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
-                    _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
-                }
+                    if (_statsd != null)
+                    {
+                        _statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
+                        _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
+                    }
 
-                if (buffer.TraceCount > 0)
+                    if (buffer.TraceCount > 0)
+                    {
+                        Log.Debug<int, int>("Flushing {spans} spans across {traces} traces", buffer.SpanCount, buffer.TraceCount);
+
+                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount).ConfigureAwait(false);
+
+                        if (success)
+                        {
+                            _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
+                        }
+                        else
+                        {
+                            _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
+                        }
+                    }
+                }
+                catch (Exception ex)
                 {
-                    Log.Debug<int, int>("Flushing {spans} spans across {traces} traces", buffer.SpanCount, buffer.TraceCount);
-
-                    var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount).ConfigureAwait(false);
-
-                    if (success)
-                    {
-                        _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
-                    }
-                    else
-                    {
-                        _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
-                    }
+                    Log.Error(ex, "An unhandled error occurred while flushing a buffer");
+                    _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "An unhandled error occurred while flushing a buffer");
-                _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
-            }
-            finally
-            {
-                // Clear and unlock the buffer
-                buffer.Clear();
+                finally
+                {
+                    // Clear and unlock the buffer
+                    buffer.Clear();
+                }
             }
         }
 
