@@ -89,14 +89,7 @@ namespace Datadog.Trace.Agent
             _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.FromResult(true);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
 
-#if NET45
-            // "If the supplied array/enumerable contains no tasks, the returned task will immediately transition to a RanToCompletion state before it's returned to the caller."
-            // https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall?redirectedfrom=MSDN&view=netframework-4.5.2#System_Threading_Tasks_Task_WhenAll_System_Threading_Tasks_Task___
-            _backBufferFlushTask = _frontBufferFlushTask = Task.WhenAll();
-#else
-            _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
-#endif
-
+            _backBufferFlushTask = _frontBufferFlushTask = Task.FromResult(true);
         }
 
         internal event Action Flushed;
@@ -271,29 +264,27 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private Task FlushBuffer(SpanBuffer buffer)
+        private async Task FlushBuffer(SpanBuffer buffer)
         {
-            bool isFrontBuffer = buffer == _frontBuffer;
-
-            // Wait for write operations to complete, then prevent further modifications
-            if (!buffer.Lock())
+            if (buffer == _frontBuffer)
             {
-                // Buffer is already locked, it's probably being flushed from another thread
-                return isFrontBuffer ? _frontBufferFlushTask : _backBufferFlushTask;
-            }
-
-            if (isFrontBuffer)
-            {
-                return _frontBufferFlushTask = EnqueueInternalFlushBuffer(_frontBufferFlushTask);
+                await _frontBufferFlushTask.ConfigureAwait(false);
+                await (_frontBufferFlushTask = InternalBufferFlush()).ConfigureAwait(false);
             }
             else
             {
-                return _backBufferFlushTask = EnqueueInternalFlushBuffer(_backBufferFlushTask);
+                await _backBufferFlushTask.ConfigureAwait(false);
+                await (_backBufferFlushTask = InternalBufferFlush()).ConfigureAwait(false);
             }
 
-            async Task EnqueueInternalFlushBuffer(Task previousTask)
+            async Task InternalBufferFlush()
             {
-                await previousTask.ConfigureAwait(false);
+                // Wait for write operations to complete, then prevent further modifications
+                if (!buffer.Lock())
+                {
+                    // Buffer is already locked, it's probably being flushed from another thread
+                    return;
+                }
 
                 try
                 {
