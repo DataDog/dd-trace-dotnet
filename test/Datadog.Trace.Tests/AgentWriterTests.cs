@@ -322,7 +322,6 @@ namespace Datadog.Trace.Tests
                 agentWriter.WriteTrace(trace);
 
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                var idx = i;
                 if (i > 0)
                 {
                     tasks.Add(agentWriter.FlushTracesAsync().ContinueWith(t => times.Add(sw.Elapsed.TotalMilliseconds)));
