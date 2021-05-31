@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tests
 
             var assertion = areTracesEnabled ? Times.Once() : Times.Never();
 
-            _writerMock.Verify(w => w.WriteTrace(It.IsAny<Span[]>()), assertion);
+            _writerMock.Verify(w => w.WriteTrace(It.IsAny<ArraySegment<Span>>()), assertion);
         }
 
         [Theory]

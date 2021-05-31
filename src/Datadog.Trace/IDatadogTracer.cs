@@ -29,6 +29,8 @@ namespace Datadog.Trace
 
         void Write(Span[] span);
 
+        void Write(ArraySegment<Span> span);
+
         /// <summary>
         /// Make a span the active span and return its new scope.
         /// </summary>

@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
 
-            var traces = new List<Span[]>();
+            var traces = new List<ArraySegment<Span>>();
 
             for (int i = 0; i < traceCount; i++)
             {
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests.Agent
                     spans[j] = new Span(new SpanContext((ulong)i, (ulong)i), DateTimeOffset.UtcNow);
                 }
 
-                traces.Add(spans);
+                traces.Add(new ArraySegment<Span>(spans));
             }
 
             foreach (var trace in traces)
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests.Agent
 
             Assert.False(buffer.IsFull);
 
-            var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
+            var trace = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
 
             var result = buffer.TryWrite(trace, ref _temporaryBuffer);
 
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
 
-            var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
+            var trace = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
 
             Assert.True(buffer.TryWrite(trace, ref _temporaryBuffer));
 
@@ -110,12 +110,12 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
 
-            var trace = new[]
+            var trace = new ArraySegment<Span>(new[]
             {
                 new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow),
                 new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow),
                 new Span(new SpanContext(3, 3), DateTimeOffset.UtcNow),
-            };
+            });
 
             Assert.True(buffer.TryWrite(trace, ref _temporaryBuffer));
 
