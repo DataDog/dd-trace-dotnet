@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -24,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         IntegrationName = NUnitIntegration.IntegrationName)]
     public class NUnitCompositeWorkItemSkipChildrenIntegration
     {
+        private static ConditionalWeakTable<object, object> _errorSpansFromCompositeWorkItems = new ConditionalWeakTable<object, object>();
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -64,6 +67,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                                     scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                                     scope.Span.Finish(new TimeSpan(10));
                                     scope.Dispose();
+
+                                    // we need to track all items that we tagged as error due this method uses recursion on child spans.
+                                    _errorSpansFromCompositeWorkItems.GetOrCreateValue(item2);
                                 }
                             }
                             else
@@ -77,6 +83,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                                 scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                                 scope.Span.Finish(new TimeSpan(10));
                                 scope.Dispose();
+
+                                // we need to track all items that we tagged as error due this method uses recursion on child spans.
+                                _errorSpansFromCompositeWorkItems.GetOrCreateValue(item);
                             }
                         }
 
@@ -104,12 +113,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 object testSuiteOrWorkItem = stateArray[0];
                 string skipMessage = (string)stateArray[1];
 
-                bool isOneTimeSetup = false;
                 const string startString = "OneTimeSetUp:";
                 if (skipMessage?.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
                 {
                     skipMessage = skipMessage.Substring(startString.Length).Trim();
-                    isOneTimeSetup = true;
                 }
 
                 if (testSuiteOrWorkItem is not null)
@@ -126,13 +133,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                             NUnitIntegration.FinishSkippedScope(scope, skipMessage);
                         }
                     }
-                    else if (typeName == "CompositeWorkItem" && !isOneTimeSetup)
+                    else if (typeName == "CompositeWorkItem")
                     {
                         // In case we have a CompositeWorkItem
                         var compositeWorkItem = testSuiteOrWorkItem.DuckCast<ICompositeWorkItem>();
 
                         foreach (var item in compositeWorkItem.Children)
                         {
+                            // If we already created an error span for this item, we skip this other span creation.
+                            if (_errorSpansFromCompositeWorkItems.TryGetValue(item, out _))
+                            {
+                                continue;
+                            }
+
                             var testResult = item.DuckCast<IWorkItem>().Result;
                             Scope scope = NUnitIntegration.CreateScope(testResult.Test, typeof(TTarget));
                             NUnitIntegration.FinishSkippedScope(scope, skipMessage);
