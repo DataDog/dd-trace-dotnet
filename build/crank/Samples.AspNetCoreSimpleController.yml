@@ -26,7 +26,7 @@ scenarios:
       job: bombardier
       variables:
         warmup: 30
-        duration: 120
+        duration: 240
         serverPort: 5000
         path: /hello
 
@@ -42,7 +42,7 @@ scenarios:
       job: bombardier
       variables:
         warmup: 30
-        duration: 120
+        duration: 240
         serverPort: 5000
         path: /hello
 
@@ -58,7 +58,7 @@ scenarios:
       job: bombardier
       variables:
         warmup: 30
-        duration: 120
+        duration: 240
         serverPort: 5000
         path: /hello
 
