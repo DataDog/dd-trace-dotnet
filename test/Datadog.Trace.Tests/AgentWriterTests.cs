@@ -27,8 +27,8 @@ namespace Datadog.Trace.Tests
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
 
-            _api = null; // new Mock<IApi>();
-            _agentWriter = null; // new AgentWriter(_api.Object, statsd: null);
+            _api = new Mock<IApi>();
+            _agentWriter = new AgentWriter(_api.Object, statsd: null);
         }
 
         [Fact]
