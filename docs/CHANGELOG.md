@@ -3,7 +3,7 @@
 ## [Release 1.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.27.0)
 
 ## Changes
-* Add ARM64 support (#1449)
+* Add ARM64 support (.NET 5 Only) (#1449)
 * Add MSMQ automatic instrumentation integration (#1463)
 * Add Confluent.Kafka automatic instrumentation integration (#1444, #1492)
 * Exclude well-known URLs from tracing, to avoid multiple top level spans in AAS (#1447)
