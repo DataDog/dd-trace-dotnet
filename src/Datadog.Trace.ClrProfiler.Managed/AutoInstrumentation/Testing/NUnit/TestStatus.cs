@@ -1,4 +1,4 @@
-// <copyright file="ITestResult.cs" company="Datadog">
+// <copyright file="TestStatus.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,28 +6,33 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
-    /// DuckTyping interface for NUnit.Framework.Internal.TestResult
+    /// The TestStatus enum indicates the result of running a test
     /// </summary>
-    public interface ITestResult
+    public enum TestStatus
     {
         /// <summary>
-        /// Gets the test with which this result is associated.
+        /// The test was inconclusive
         /// </summary>
-        ITest Test { get; }
+        Inconclusive,
 
         /// <summary>
-        /// Gets the resultstate of the test result.
+        /// The test has skipped
         /// </summary>
-        IResultState ResultState { get; }
+        Skipped,
 
         /// <summary>
-        /// Gets the message associated with a test failure.
+        /// The test succeeded
         /// </summary>
-        string Message { get; }
+        Passed,
 
         /// <summary>
-        /// Gets any stacktrace associated with an error or failure.
+        /// There was a warning
         /// </summary>
-        string StackTrace { get; }
+        Warning,
+
+        /// <summary>
+        /// The test failed
+        /// </summary>
+        Failed
     }
 }
