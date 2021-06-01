@@ -27,8 +27,8 @@ namespace Datadog.Trace.Tests
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
 
-            _api = new Mock<IApi>();
-            _agentWriter = new AgentWriter(_api.Object, statsd: null);
+            _api = null; // new Mock<IApi>();
+            _agentWriter = null; // new AgentWriter(_api.Object, statsd: null);
         }
 
         [Fact]
@@ -305,40 +305,47 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public async Task AgentWriterEnqueueFlushTasks()
+        public void AgentWriterEnqueueFlushTasks()
         {
             var api = new Mock<IApi>();
-            var agentWriter = new AgentWriter(api.Object, statsd: null);
+            var agentWriter = new AgentWriter(api.Object, statsd: null, automaticFlush: false);
+            var flushTcs = new TaskCompletionSource<bool>();
+            int invocation = 0;
 
             api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>()))
-               .Returns(() => Task.Delay(5000).ContinueWith(t => true));
+                .Returns(() =>
+                {
+                    // One for the front buffer, one for the back buffer
+                    if (Interlocked.Increment(ref invocation) <= 2)
+                    {
+                        return flushTcs.Task;
+                    }
+
+                    return Task.FromResult(true);
+                });
 
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
 
-            List<Task> tasks = new List<Task>();
-            List<double> times = new List<double>();
-            for (var i = 0; i < 20; i++)
-            {
-                agentWriter.WriteTrace(trace);
+            // Write trace to the front buffer
+            agentWriter.WriteTrace(trace);
 
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                if (i > 0)
-                {
-                    tasks.Add(agentWriter.FlushTracesAsync().ContinueWith(t => times.Add(sw.Elapsed.TotalMilliseconds)));
-                }
-                else
-                {
-                    _ = agentWriter.FlushTracesAsync().ContinueWith(t => times.Add(sw.Elapsed.TotalMilliseconds));
-                    await Task.Delay(500).ConfigureAwait(false);
-                }
-            }
+            // Flush front buffer
+            var firstFlush = agentWriter.FlushTracesAsync();
 
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            // This will swap to the back buffer due front buffer is blocked.
+            agentWriter.WriteTrace(trace);
 
-            // Number of Task ending after 4 seconds should be greater than those that end sooner.
-            // Due the flush now awaits to the previous task to be completed.
-            // We can still have some few task that ends sooner due the FlushLoop.
-            Assert.True(times.Count - times.Where(t => t >= 4000).Count() < 2);
+            // Flush the second buffer
+            var secondFlush = agentWriter.FlushTracesAsync();
+
+            // This trace will force other buffer swap and then a drop because both buffers are blocked
+            agentWriter.WriteTrace(trace);
+
+            // This will try to flush the front buffer again.
+            var thirdFlush = agentWriter.FlushTracesAsync();
+
+            // Third flush should wait for the first flush to complete.
+            Assert.False(thirdFlush.IsCompleted);
         }
 
         private static bool WaitForDequeue(AgentWriter agent, bool wakeUpThread = true, int delay = -1)
