@@ -391,7 +391,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                         {
                             if (i < testMethodArguments.Length)
                             {
-                                testParameters.Arguments[methodParameters[i].Name] = testMethodArguments[i]?.ToString() ?? "(null)";
+                                testParameters.Arguments[methodParameters[i].Name] = Common.GetParametersValueData(testMethodArguments[i]);
                             }
                             else
                             {

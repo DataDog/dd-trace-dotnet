@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             }
             else if (paramValue is Delegate pValueDelegate)
             {
-                return $"{paramValue}[{pValueDelegate.GetHashCode()}]";
+                return $"{paramValue}[{pValueDelegate.Target}|{pValueDelegate.Method}]";
             }
 
             return paramValue.ToString();
