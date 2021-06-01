@@ -1,5 +1,41 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.27.0)
+
+## Changes
+* Add ARM64 support (#1449)
+* Add MSMQ automatic instrumentation integration (#1463)
+* Add Confluent.Kafka automatic instrumentation integration (#1444, #1492)
+* Exclude well-known URLs from tracing, to avoid multiple top level spans in AAS (#1447)
+* Optimize log injection with NLog (#1475)
+* Optimize log4net and refactor log providers (#1489)
+* _dd.origin tag improvements for CIApp (#1481)
+* Cache MessagePack Span tag keys in UTF8 (#1482)
+* Add DuckInclude attribute (#1487)
+
+## Fixes
+* Handle exceptions in async integrations in Calltarget (#1458)
+* Fix Call opcode in DuckTyping on struct targets (#1469)
+* Refactor DisposeWithException invocations to remove null conditional operator (#1493)
+* Add runtime-id tag to metrics to improve Fargate support (#1496)
+* Remove the static collection in the HTTP module (#1498)
+
+## Build / Test
+* Remove stale AAS tests (#1466, #1467)
+* Add Windows container sample (#1472)
+* Add tests for IIS classic mode (#1462)
+* Add CIApp test framework integrations test suite (#1317)
+* Add and enforce copyright headers (#1445, #1485)
+* Clean up project files (#1464, #1468)
+* Add GH Action to auto-create benchmark branch (#1483)
+* Add throughput test for ARM64 (#1490)
+* Convert ASP.NET tests to use Snapshot Testing with VerifyTests/Verify
+* Fix .vcxproj file for latest msbuild version. (#1495)
+* Remove a few benchmarks to make the pipeline faster (#1497)
+* Increase crank duration to 4 minutes (#1505)
+
+[Changes since 1.26.3](https://github.com/DataDog/dd-trace-dotnet/compare/v1.26.3...v1.27.0)
+
 ## [Release 1.26.3](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.26.3)
 
 ## Fixes
