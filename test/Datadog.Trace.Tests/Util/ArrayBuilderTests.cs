@@ -47,5 +47,41 @@ namespace Datadog.Trace.Tests.Util
             result.Count.Should().Be(0);
             result.Array.Length.Should().Be(numberOfElements);
         }
+
+        [Fact]
+        public void Empty()
+        {
+            ArrayBuilder<int> builder = default;
+
+            var result = builder.GetArray();
+
+            result.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void DoubleSizeWhenGrowing()
+        {
+            ArrayBuilder<int> builder = default;
+
+            builder.GetArray().Array.Should().BeEmpty();
+
+            for (int i = 0; i < 4; i++)
+            {
+                builder.Add(i);
+                builder.GetArray().Array.Should().HaveCount(4);
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                builder.Add(i);
+                builder.GetArray().Array.Should().HaveCount(8);
+            }
+
+            for (int i = 0; i < 8; i++)
+            {
+                builder.Add(i);
+                builder.GetArray().Array.Should().HaveCount(16);
+            }
+        }
     }
 }
