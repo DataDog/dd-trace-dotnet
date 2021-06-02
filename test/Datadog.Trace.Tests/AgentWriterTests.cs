@@ -303,6 +303,50 @@ namespace Datadog.Trace.Tests
             api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData)), It.Is<int>(i => i == 1)), Times.Once);
         }
 
+        [Fact]
+        public void AgentWriterEnqueueFlushTasks()
+        {
+            var api = new Mock<IApi>();
+            var agentWriter = new AgentWriter(api.Object, statsd: null, automaticFlush: false);
+            var flushTcs = new TaskCompletionSource<bool>();
+            int invocation = 0;
+
+            api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>()))
+                .Returns(() =>
+                {
+                    // One for the front buffer, one for the back buffer
+                    if (Interlocked.Increment(ref invocation) <= 2)
+                    {
+                        return flushTcs.Task;
+                    }
+
+                    return Task.FromResult(true);
+                });
+
+            var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
+
+            // Write trace to the front buffer
+            agentWriter.WriteTrace(trace);
+
+            // Flush front buffer
+            var firstFlush = agentWriter.FlushTracesAsync();
+
+            // This will swap to the back buffer due front buffer is blocked.
+            agentWriter.WriteTrace(trace);
+
+            // Flush the second buffer
+            var secondFlush = agentWriter.FlushTracesAsync();
+
+            // This trace will force other buffer swap and then a drop because both buffers are blocked
+            agentWriter.WriteTrace(trace);
+
+            // This will try to flush the front buffer again.
+            var thirdFlush = agentWriter.FlushTracesAsync();
+
+            // Third flush should wait for the first flush to complete.
+            Assert.False(thirdFlush.IsCompleted);
+        }
+
         private static bool WaitForDequeue(AgentWriter agent, bool wakeUpThread = true, int delay = -1)
         {
             var mutex = new ManualResetEventSlim();
