@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -23,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         IntegrationName = NUnitIntegration.IntegrationName)]
     public class NUnitCompositeWorkItemSkipChildrenIntegration
     {
+        private static ConditionalWeakTable<object, object> _errorSpansFromCompositeWorkItems = new ConditionalWeakTable<object, object>();
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -36,6 +40,60 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TSuite, TResultState>(TTarget instance, TSuite testSuite, TResultState resultState, string message)
         {
+            if (testSuite is not null)
+            {
+                string typeName = testSuite.GetType().Name;
+
+                if (typeName == "CompositeWorkItem")
+                {
+                    // In case we have a CompositeWorkItem we check if there is a OneTimeSetUp failure
+                    var compositeWorkItem = testSuite.DuckCast<ICompositeWorkItem>();
+
+                    if (compositeWorkItem.Result?.ResultState?.Status == TestStatus.Failed && compositeWorkItem.Result.ResultState.Site == FailureSite.SetUp)
+                    {
+                        foreach (var item in compositeWorkItem.Children)
+                        {
+                            if (item.GetType().Name == "CompositeWorkItem")
+                            {
+                                var compositeWorkItem2 = item.DuckCast<ICompositeWorkItem>();
+                                foreach (var item2 in compositeWorkItem2.Children)
+                                {
+                                    var testResult = item2.DuckCast<IWorkItem>().Result;
+                                    Scope scope = NUnitIntegration.CreateScope(testResult.Test, typeof(TTarget));
+                                    scope.Span.Error = true;
+                                    scope.Span.SetTag(Tags.ErrorMsg, compositeWorkItem.Result.Message);
+                                    scope.Span.SetTag(Tags.ErrorStack, compositeWorkItem.Result.StackTrace);
+                                    scope.Span.SetTag(Tags.ErrorType, "SetUpException");
+                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                                    scope.Span.Finish(new TimeSpan(10));
+                                    scope.Dispose();
+
+                                    // we need to track all items that we tagged as error due this method uses recursion on child spans.
+                                    _errorSpansFromCompositeWorkItems.GetOrCreateValue(item2);
+                                }
+                            }
+                            else
+                            {
+                                var testResult = item.DuckCast<IWorkItem>().Result;
+                                Scope scope = NUnitIntegration.CreateScope(testResult.Test, typeof(TTarget));
+                                scope.Span.Error = true;
+                                scope.Span.SetTag(Tags.ErrorMsg, compositeWorkItem.Result.Message);
+                                scope.Span.SetTag(Tags.ErrorStack, compositeWorkItem.Result.StackTrace);
+                                scope.Span.SetTag(Tags.ErrorType, "SetUpException");
+                                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                                scope.Span.Finish(new TimeSpan(10));
+                                scope.Dispose();
+
+                                // we need to track all items that we tagged as error due this method uses recursion on child spans.
+                                _errorSpansFromCompositeWorkItems.GetOrCreateValue(item);
+                            }
+                        }
+
+                        return new CallTargetState((Scope)null, (object)null);
+                    }
+                }
+            }
+
             return new CallTargetState(null, new object[] { testSuite, message });
         }
 
@@ -52,14 +110,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             if (state.State != null)
             {
                 object[] stateArray = (object[])state.State;
+                object testSuiteOrWorkItem = stateArray[0];
                 string skipMessage = (string)stateArray[1];
+
                 const string startString = "OneTimeSetUp:";
                 if (skipMessage?.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
                 {
                     skipMessage = skipMessage.Substring(startString.Length).Trim();
                 }
-
-                object testSuiteOrWorkItem = stateArray[0];
 
                 if (testSuiteOrWorkItem is not null)
                 {
@@ -79,9 +137,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     {
                         // In case we have a CompositeWorkItem
                         var compositeWorkItem = testSuiteOrWorkItem.DuckCast<ICompositeWorkItem>();
+
                         foreach (var item in compositeWorkItem.Children)
                         {
-                            Scope scope = NUnitIntegration.CreateScope(item.DuckCast<IWorkItem>().Result.Test, typeof(TTarget));
+                            // If we already created an error span for this item, we skip this other span creation.
+                            if (_errorSpansFromCompositeWorkItems.TryGetValue(item, out _))
+                            {
+                                continue;
+                            }
+
+                            var testResult = item.DuckCast<IWorkItem>().Result;
+                            Scope scope = NUnitIntegration.CreateScope(testResult.Test, typeof(TTarget));
                             NUnitIntegration.FinishSkippedScope(scope, skipMessage);
                         }
                     }
