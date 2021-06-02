@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transport;
+using Datadog.Trace.AppSec.Waf;
 
 namespace Datadog.Trace.AppSec
 {
@@ -23,23 +24,26 @@ namespace Datadog.Trace.AppSec
         private static object _globalInstanceLock = new();
 
         private InstrumentationGateway _instrumentationGateway;
+        private IPowerWaf _powerWaf;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
         public Security()
-            : this(null)
+            : this(null, null)
         {
         }
 
-        internal Security(InstrumentationGateway instrumentationGateway = null)
+        internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null)
         {
             _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
+            _powerWaf = powerWaf ?? new PowerWaf();
+
             _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
 
-            var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_ENABLE_SECURITY"), out var enabled);
-            Enabled = (found && enabled);
+            var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_DISABLE_SECURITY"), out var disabled);
+            Enabled = (!found || !disabled);
         }
 
         /// <summary>
@@ -72,10 +76,21 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         InstrumentationGateway IDatadogSecurity.InstrumentationGateway => _instrumentationGateway;
 
-        private void RunWafAndReact(IReadOnlyDictionary<string, object> args, ITransport transport)
+        /// <summary>
+        /// Frees resouces
+        /// </summary>
+        public void Dispose()
         {
-            // run the fake WAF and execute the results
-            if (args.TryGetValue("server.request.query", out var queryString) && queryString?.ToString()?.Contains("database()") == true)
+            _powerWaf.Dispose();
+        }
+
+        private void RunWafAndReact(IDictionary<string, object> args, ITransport transport)
+        {
+            var additiveContext = _powerWaf.CreateAdditiveContext();
+
+            // run the WAF and execute the results
+            using var result = additiveContext.Run(args);
+            if (result.ReturnCode == ReturnCode.Block)
             {
                 transport.Block();
             }
@@ -83,11 +98,7 @@ namespace Datadog.Trace.AppSec
 
         private void InstrumentationGateway_InstrumentationGetwayEvent(object sender, InstrumentationGatewayEventArgs e)
         {
-            // if we're not enabled events shouldn't be generated, but this is belt and braces
-            if (Enabled)
-            {
-                RunWafAndReact(e.EventData, e.Transport);
-            }
+            RunWafAndReact(e.EventData, e.Transport);
         }
     }
 }

@@ -14,13 +14,13 @@ namespace Datadog.Trace.AppSec
 {
     internal class InstrumentationGatewayEventArgs : EventArgs
     {
-        public InstrumentationGatewayEventArgs(IReadOnlyDictionary<string, object> eventData, ITransport transport)
+        public InstrumentationGatewayEventArgs(IDictionary<string, object> eventData, ITransport transport)
         {
             EventData = eventData;
             Transport = transport;
         }
 
-        public IReadOnlyDictionary<string, object> EventData { get; }
+        public IDictionary<string, object> EventData { get; }
 
         public ITransport Transport { get; }
     }
