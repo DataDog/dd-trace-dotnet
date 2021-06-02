@@ -1,12 +1,9 @@
 using System;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack;
-using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
 using ServiceStack.Redis;
 
@@ -15,9 +12,6 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class RedisBenchmark
     {
-        private static readonly int MdToken;
-        private static readonly IntPtr GuidPtr;
-        private static readonly object ClientObject = new RedisNativeClient();
         private static readonly RedisNativeClient Client = new RedisNativeClient();
         private static readonly Func<int> Fn = () => 42;
         private static readonly Action<Func<int>> CompletePipelineFn = _ => { };
@@ -32,38 +26,13 @@ namespace Benchmarks.Trace
 
             Tracer.Instance = new Tracer(settings, new DummyAgentWriter(), null, null, null);
 
-            var methodInfo = typeof(RedisNativeClient).GetMethod("SendReceive", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-
-            MdToken = methodInfo.MetadataToken;
-            var guid = typeof(RedisNativeClient).Module.ModuleVersionId;
-
-            GuidPtr = Marshal.AllocHGlobal(Marshal.SizeOf(guid));
-
-            Marshal.StructureToPtr(guid, GuidPtr, false);
-
             RawCommands = new[] {"Command", "arg1", "arg2"}
                 .Select(Encoding.UTF8.GetBytes)
                 .ToArray();
-
-            // new RedisBenchmark().ExecuteNonQuery();
         }
 
         [Benchmark]
-        public int SendReceive()
-        {
-            return ServiceStackRedisIntegration.SendReceive<int>(
-                ClientObject,
-                RawCommands,
-                Fn,
-                CompletePipelineFn,
-                true,
-                (int)OpCodeValue.Callvirt,
-                MdToken,
-                (long)GuidPtr);
-        }
-
-        [Benchmark]
-        public unsafe int CallTargetSendReceive()
+        public unsafe int SendReceive()
         {
             return CallTarget.Run<RedisNativeClientSendReceiveIntegration, RedisNativeClient, byte[][], Func<int>, Action<Func<int>>, bool, int>
                 (Client, RawCommands, Fn, CompletePipelineFn, true, &SendReceive);
