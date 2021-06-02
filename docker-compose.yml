@@ -386,6 +386,9 @@ services:
   IntegrationTests.IIS.LoaderOptimizationRegKey:
     build:
       context: ./
+      args:
+        - ENABLE_32_BIT
+        - DOTNET_TRACER_MSI
       dockerfile: ./build/docker/iis/LoaderOptimizationRegKey.dockerfile
     image: datadog-iis-loaderoptimizationregkey
     ports:
@@ -583,6 +586,120 @@ services:
     - rabbitmq
     - kafka-broker
     - kafka-zookeeper
+
+  NukeIntegrationTests:
+    build:
+      context: ./build/_build/
+      dockerfile: docker/${baseImage:-debian}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
+    volumes:
+      - ./:/project
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - tracerHome=/project/${relativeTracerHome:-src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-src/bin/artifacts}
+      - framework=${framework:-netcoreapp3.1}
+      - baseImage=${baseImage:-default}
+      - MONGO_HOST=mongo
+      - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+      - ELASTICSEARCH6_HOST=elasticsearch6:9200
+      - ELASTICSEARCH5_HOST=elasticsearch5:9200
+      - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
+      - POSTGRES_HOST=postgres
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL57_HOST=mysql57
+      - MYSQL57_PORT=3306
+      - RABBITMQ_HOST=rabbitmq
+      - KAFKA_BROKER_HOST=kafka-broker:29092
+    depends_on:
+      - servicestackredis
+      - stackexchangeredis
+      - elasticsearch6
+      - elasticsearch5
+      - sqlserver
+      - mongo
+      - postgres
+      - mysql
+      - mysql57
+      - rabbitmq
+      - kafka-broker
+      - kafka-zookeeper
+
+
+  StartDependencies:
+    image: andrewlock/wait-for-dependencies
+    depends_on:
+      - servicestackredis
+      - stackexchangeredis
+      - elasticsearch6
+      - elasticsearch5
+      - sqlserver
+      - mongo
+      - postgres
+      - mysql
+      - mysql57
+      - rabbitmq
+      - kafka-broker
+      - kafka-zookeeper
+    environment:
+      - TIMEOUT_LENGTH=60
+    command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181
+
+  NukeIntegrationTests.ARM64:
+    build:
+      context: ./build/_build/
+      dockerfile: docker/${baseImage:-debian}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
+    volumes:
+      - ./:/project
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - tracerHome=/project/${relativeTracerHome:-src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-src/bin/artifacts}
+      - framework=${framework:-netcoreapp3.1}
+      - baseImage=${baseImage:-debian}
+      - MONGO_HOST=mongo
+      - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+      - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
+      - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
+      - SQLSERVER_CONNECTION_STRING=Server=sqledge;User=sa;Password=Strong!Passw0rd
+      - POSTGRES_HOST=postgres
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - servicestackredis
+      - stackexchangeredis
+      - elasticsearch7_arm64
+      - sqledge
+      - mongo
+      - postgres
+      - mysql
+      - rabbitmq
+
+  StartDependencies.ARM64:
+    image: andrewlock/wait-for-dependencies
+    depends_on:
+      - servicestackredis
+      - stackexchangeredis
+      - elasticsearch7_arm64
+      - sqledge
+      - mongo
+      - postgres
+      - mysql
+      - rabbitmq
+    environment:
+      - TIMEOUT_LENGTH=60
+    command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch7_arm64:9200 sqledge:1433 mongo:27017 postgres:5432 mysql:3306 rabbitmq:5672
 
   IntegrationTests.ARM64.Core50:
     build:

@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         public static IEnumerable<object[]> GetData()
         {
-            string dataFolder = Path.Combine(Environment.CurrentDirectory, "CI", "Data");
+            string dataFolder = DataHelpers.GetCiDataDirectory();
 
             // gitdata-01 => Git clone
             yield return new object[]
