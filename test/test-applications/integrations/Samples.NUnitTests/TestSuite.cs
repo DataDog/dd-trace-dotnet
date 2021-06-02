@@ -19,7 +19,8 @@ namespace Samples.NUnitTests
             }
             writer.WriteLine(string.Empty);
         }
-        
+
+
         [Test]
         public void SimplePassTest()
         {
@@ -96,6 +97,20 @@ namespace Samples.NUnitTests
         public void SimpleErrorParameterizedTest(int xValue, int yValue, int expectedResult)
         {
             Assert.AreEqual(expectedResult, xValue / yValue);
+        }
+
+        // **********************************************************************************
+
+        [Test]
+        public void SimpleAssertPassTest()
+        {
+            Assert.Pass("The test passed.");
+        }
+
+        [Test]
+        public void SimpleAssertInconclusive()
+        {
+            Assert.Inconclusive("The test is inconclusive.");
         }
     }
 }

@@ -1,4 +1,4 @@
-// <copyright file="ITestResult.cs" company="Datadog">
+// <copyright file="FailureSite.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,28 +6,34 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
-    /// DuckTyping interface for NUnit.Framework.Internal.TestResult
+    /// The FailureSite enum indicates the stage of a test
+    /// in which an error or failure occurred.
     /// </summary>
-    public interface ITestResult
+    public enum FailureSite
     {
         /// <summary>
-        /// Gets the test with which this result is associated.
+        /// Failure in the test itself
         /// </summary>
-        ITest Test { get; }
+        Test,
 
         /// <summary>
-        /// Gets the resultstate of the test result.
+        /// Failure in the SetUp method
         /// </summary>
-        IResultState ResultState { get; }
+        SetUp,
 
         /// <summary>
-        /// Gets the message associated with a test failure.
+        /// Failure in the TearDown method
         /// </summary>
-        string Message { get; }
+        TearDown,
 
         /// <summary>
-        /// Gets any stacktrace associated with an error or failure.
+        /// Failure of a parent test
         /// </summary>
-        string StackTrace { get; }
+        Parent,
+
+        /// <summary>
+        /// Failure of a child test
+        /// </summary>
+        Child
     }
 }
