@@ -14,59 +14,59 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     {
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWVersion pw_getVersion();
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern IntPtr pw_initH(string wafRule, ref PWConfig config, ref string errors);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern void pw_clearRuleH(IntPtr wafHandle);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWRet pw_runH(IntPtr wafHandle, PWArgs64 parameters, ulong timeLeftInUs);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern void pw_freeReturn(PWRet output);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern IntPtr pw_initAdditiveH(IntPtr powerwafHandle);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWRet pw_runAdditive(IntPtr context, PWArgs64 newArgs, ulong timeLeftInUs);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern void pw_clearAdditive(IntPtr context);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWArgs64 pw_getInvalid();
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWArgs64 pw_createStringWithLength(string s, ulong length);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWArgs64 pw_createString(string s);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWArgs64 pw_createInt(long value);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWArgs64 pw_createUint(ulong value);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWArgs64 pw_createArray();
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern PWArgs64 pw_createMap();
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern bool pw_addArray(ref PWArgs64 array, PWArgs64 entry);
 
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern bool pw_addMap(ref PWArgs64 map, string entryName, ulong entryNameLength, PWArgs64 entry);
 
-        [DllImport("Sqreen")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         internal static extern void pw_freeArg(ref PWArgs64 input);
 
 #pragma warning restore SA1300 // Element should begin with upper-case letter
