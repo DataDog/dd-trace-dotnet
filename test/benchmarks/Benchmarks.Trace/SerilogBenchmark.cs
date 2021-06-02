@@ -15,7 +15,6 @@ namespace Benchmarks.Trace
     {
         private static readonly Logger Logger;
         private static readonly Tracer LogInjectionTracer;
-        private static readonly Tracer BaselineTracer;
 
         static SerilogBenchmark()
         {
@@ -32,15 +31,6 @@ namespace Benchmarks.Trace
             LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
             Tracer.Instance = LogInjectionTracer;
 
-            var baselineSettings = new TracerSettings
-            {
-                StartupDiagnosticLogEnabled = false,
-                LogsInjectionEnabled = false,
-                Environment = "env",
-                ServiceVersion = "version"
-            };
-
-            BaselineTracer = new Tracer(baselineSettings, new DummyAgentWriter(), null, null, null);
             var formatter = new MessageTemplateTextFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}{Properties}{NewLine}", null);
 
             Logger = new LoggerConfiguration()
@@ -48,18 +38,6 @@ namespace Benchmarks.Trace
                 .Enrich.FromLogContext()
                 .WriteTo.Sink(new NullSink(formatter))
                 .CreateLogger();
-        }
-
-        [Benchmark(Baseline = true)]
-        public void Log()
-        {
-            using (BaselineTracer.StartActive("Test"))
-            {
-                using (BaselineTracer.StartActive("Child"))
-                {
-                    Logger.Information("Hello");
-                }
-            }
         }
 
         [Benchmark]

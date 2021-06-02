@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, CallTargetState state)
         {
-            state.Scope?.DisposeWithException(exception);
+            state.Scope.DisposeWithException(exception);
             return response;
         }
     }

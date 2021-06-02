@@ -29,11 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public static IEnumerable<object[]> GetJsonItems()
         {
             // Check if the CI\Data folder exists.
-            string jsonFolder = Path.Combine("CI", "Data");
-            if (!Directory.Exists(jsonFolder))
-            {
-                throw new DirectoryNotFoundException(jsonFolder);
-            }
+            string jsonFolder = DataHelpers.GetCiDataDirectory();
 
             // JSON file path
             foreach (string filePath in Directory.EnumerateFiles(jsonFolder, "*.json", SearchOption.TopDirectoryOnly))

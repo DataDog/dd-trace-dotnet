@@ -1,0 +1,47 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet-mvc.request,
+    Resource: GET /delay-optional/{seconds},
+    Service: sample,
+    Type: web,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      version: 1.0.0,
+      span.kind: server,
+      http.status_code: 200,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.url: /delay-optional,
+      language: dotnet,
+      aspnet.route: delay-optional/{seconds},
+      aspnet.controller: home,
+      aspnet.action: optional
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet.request,
+    Resource: GET /delay-optional/{seconds},
+    Service: sample,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      version: 1.0.0,
+      span.kind: server,
+      http.status_code: 200,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.url: /delay-optional,
+      language: dotnet
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  }
+]

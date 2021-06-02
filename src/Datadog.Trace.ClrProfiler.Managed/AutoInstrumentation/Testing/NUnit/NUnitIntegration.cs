@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 {
                     if (testMethodArguments != null && i < testMethodArguments.Length)
                     {
-                        testParameters.Arguments[methodParameters[i].Name] = testMethodArguments[i]?.ToString() ?? "(null)";
+                        testParameters.Arguments[methodParameters[i].Name] = Common.GetParametersValueData(testMethodArguments[i]);
                     }
                     else
                     {
@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
                 if (traits.Count > 0)
                 {
-                    span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
+                    span.SetTag(TestTags.Traits, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
                 }
             }
 
@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 {
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
                 }
-                else if (exTypeName == "NUnit.Framework.IgnoreException")
+                else if (exTypeName == "NUnit.Framework.IgnoreException" || exTypeName == "NUnit.Framework.InconclusiveException")
                 {
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
                     scope.Span.SetTag(TestTags.SkipReason, ex.Message);

@@ -122,11 +122,59 @@ jobs:
     artifact: linux-native
 
 
+- job: linux_arm64_profiler
+  pool: Arm64
+  workspace:
+    clean: all
+
+  steps:
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+    inputs:
+      command: build
+      configuration: Release
+      arguments: /nowarn:netsdk1138
+      projects: |
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 2.0
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netstandard2.0 --output $(System.DefaultWorkingDirectory)/src/bin/managed-publish/netstandard2.0
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed 3.1
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration Release --framework netcoreapp3.1 --output $(System.DefaultWorkingDirectory)/src/bin/managed-publish/netcoreapp3.1
+
+  - task: DockerCompose@0
+    displayName: docker-compose run Profiler
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e buildConfiguration=Release Profiler
+
+  - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin/Release/x64
+    artifact: linux-native-arm64
+
+
+
 - job: crank
   pool: Throughput
   workspace:
     clean: all
   dependsOn:
+  - linux_arm64_profiler
   - linux_profiler
   - windows_profiler
   condition: succeeded()
@@ -140,6 +188,7 @@ jobs:
       sourceFolder: $(Pipeline.Workspace)/linux-native
       targetFolder: $(System.DefaultWorkingDirectory)/
 
+
   - download: current
     artifact: windows-native
 
@@ -147,6 +196,16 @@ jobs:
     inputs:
       sourceFolder: $(Pipeline.Workspace)/windows-native
       targetFolder: $(System.DefaultWorkingDirectory)/
+
+
+  - download: current
+    artifact: linux-native-arm64
+
+  - task: CopyFiles@2
+    inputs:
+      sourceFolder: $(Pipeline.Workspace)/linux-native-arm64
+      targetFolder: $(System.DefaultWorkingDirectory)/arm64
+
 
   - script: |
       cd ./build/crank

@@ -26,7 +26,7 @@ scenarios:
       job: bombardier
       variables:
         warmup: 30
-        duration: 120
+        duration: 240
         serverPort: 5000
         path: /hello
 
@@ -42,7 +42,7 @@ scenarios:
       job: bombardier
       variables:
         warmup: 30
-        duration: 120
+        duration: 240
         serverPort: 5000
         path: /hello
 
@@ -58,7 +58,7 @@ scenarios:
       job: bombardier
       variables:
         warmup: 30
-        duration: 120
+        duration: 240
         serverPort: 5000
         path: /hello
 
@@ -82,6 +82,7 @@ profiles:
           DD_TRACE_DEBUG: 0
         options:
           requiredOperatingSystem: windows
+          requiredArchitecture: x64
           buildFiles:
           - "../../integrations.json;{{ windowsProfilerPath }}"
           - "../../Datadog.Trace.ClrProfiler.Native.dll;{{ windowsProfilerPath }}"
@@ -108,9 +109,36 @@ profiles:
           DD_TRACE_DEBUG: 0
         options:
           requiredOperatingSystem: linux
+          requiredArchitecture: x64
           buildFiles:
           - "../../integrations.json;{{ linuxProfilerPath }}"
           - "../../Datadog.Trace.ClrProfiler.Native.so;{{ linuxProfilerPath }}"
+      load:
+        endpoints:
+          - http://localhost:5010
+
+  linux_arm64:
+    variables:
+      serverAddress: "{{ linuxArm64Ip }}"
+    jobs:
+      application:
+        endpoints:
+          - "{{ linuxArm64Endpoint }}"
+        environmentVariables:
+          COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          COR_PROFILER_PATH: "{{ linuxArm64ProfilerPath }}/Datadog.Trace.ClrProfiler.Native.so"
+          CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          CORECLR_PROFILER_PATH: "{{ linuxArm64ProfilerPath }}/Datadog.Trace.ClrProfiler.Native.so"
+          DD_DOTNET_TRACER_HOME: "{{ linuxArm64ProfilerPath }}"
+          DD_INTEGRATIONS: "{{ linuxArm64ProfilerPath }}/integrations.json"
+          DD_AGENT_HOST: "{{ controllerIp }}"
+          DD_TRACE_DEBUG: 0
+        options:
+          requiredOperatingSystem: linux
+          requiredArchitecture: arm64
+          buildFiles:
+          - "../../integrations.json;{{ linuxArm64ProfilerPath }}"
+          - "../../arm64/Datadog.Trace.ClrProfiler.Native.so;{{ linuxArm64ProfilerPath }}"
       load:
         endpoints:
           - http://localhost:5010

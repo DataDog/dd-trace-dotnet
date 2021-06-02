@@ -1,0 +1,87 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /home/badrequest,
+    Service: sample,
+    Type: web,
+    Error: 1,
+    Tags: {
+      error.msg: Oops, it broke.,
+      error.stack: 
+System.Exception: Oops, it broke.
+at Samples.AspNetMvc4.Controllers.HomeController.BadRequest()
+at lambda_method(Closure , ControllerBase , Object[] )
+at System.Web.Mvc.ReflectedActionDescriptor.Execute(ControllerContext controllerContext, IDictionary`2 parameters)
+at System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod(ControllerContext controllerContext, ActionDescriptor actionDescriptor, IDictionary`2 parameters)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass37.<>c__DisplayClass39.<BeginInvokeActionMethodWithFilters>b__33()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass4f.<InvokeActionMethodFilterAsynchronously>b__49()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<>c__DisplayClass2a.<BeginInvokeAction>b__20()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<BeginInvokeAction>b__22(IAsyncResult asyncResult)
+at Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration.EndInvokeAction(Object asyncControllerActionInvoker, Object asyncResult, Int32 opCode, Int32 mdToken, Int64 moduleVersionPtr)
+at System.Web.Mvc.Controller.<>c__DisplayClass1d.<BeginExecuteCore>b__18(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass4.<MakeVoidDelegate>b__3(IAsyncResult ar)
+at System.Web.Mvc.Async.AsyncResultWrapper.End(IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Controller.EndExecuteCore(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass4.<MakeVoidDelegate>b__3(IAsyncResult ar)
+at System.Web.Mvc.Async.AsyncResultWrapper.End(IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.MvcHandler.<>c__DisplayClass8.<BeginProcessRequest>b__3(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass4.<MakeVoidDelegate>b__3(IAsyncResult ar)
+at System.Web.Mvc.Async.AsyncResultWrapper.End(IAsyncResult asyncResult, Object tag)
+at System.Web.HttpApplication.CallHandlerExecutionStep.System.Web.HttpApplication.IExecutionStep.Execute()
+at System.Web.HttpApplication.ExecuteStepImpl(IExecutionStep step)
+at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& completedSynchronously),
+      error.type: System.Exception,
+      env: integration_tests,
+      version: 1.0.0,
+      span.kind: server,
+      http.status_code: 500,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.url: /home/badrequest,
+      language: dotnet
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /home/badrequest,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Error: 1,
+    Tags: {
+      error.msg: Oops, it broke.,
+      error.stack: 
+System.Exception: Oops, it broke.
+at Samples.AspNetMvc4.Controllers.HomeController.BadRequest()
+at lambda_method(Closure , ControllerBase , Object[] )
+at System.Web.Mvc.ReflectedActionDescriptor.Execute(ControllerContext controllerContext, IDictionary`2 parameters)
+at System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod(ControllerContext controllerContext, ActionDescriptor actionDescriptor, IDictionary`2 parameters)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass37.<>c__DisplayClass39.<BeginInvokeActionMethodWithFilters>b__33()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass4f.<InvokeActionMethodFilterAsynchronously>b__49()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<>c__DisplayClass2a.<BeginInvokeAction>b__20()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<BeginInvokeAction>b__22(IAsyncResult asyncResult)
+at Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration.EndInvokeAction(Object asyncControllerActionInvoker, Object asyncResult, Int32 opCode, Int32 mdToken, Int64 moduleVersionPtr),
+      error.type: System.Exception,
+      env: integration_tests,
+      version: 1.0.0,
+      span.kind: server,
+      http.status_code: 500,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.url: /home/badrequest,
+      language: dotnet,
+      aspnet.route: {controller}/{action}/{id},
+      aspnet.controller: home,
+      aspnet.action: badrequest
+    }
+  }
+]

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 
@@ -40,6 +41,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                 return _testTracer;
             }
+        }
+
+        internal static string GetParametersValueData(object paramValue)
+        {
+            if (paramValue is null)
+            {
+                return "(null)";
+            }
+            else if (paramValue is Array pValueArray)
+            {
+                const int maxArrayLength = 50;
+                int length = pValueArray.Length > maxArrayLength ? maxArrayLength : pValueArray.Length;
+
+                string[] strValueArray = new string[length];
+                for (var i = 0; i < length; i++)
+                {
+                    strValueArray[i] = GetParametersValueData(pValueArray.GetValue(i));
+                }
+
+                return "[" + string.Join(", ", strValueArray) + (pValueArray.Length > maxArrayLength ? ", ..." : string.Empty) + "]";
+            }
+            else if (paramValue is Delegate pValueDelegate)
+            {
+                return $"{paramValue}[{pValueDelegate.Target}|{pValueDelegate.Method}]";
+            }
+
+            return paramValue.ToString();
         }
     }
 }
