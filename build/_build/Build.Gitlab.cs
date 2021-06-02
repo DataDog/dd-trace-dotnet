@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -18,127 +19,162 @@ partial class Build
     // Only change temporarily for testing
     bool UseTestPfxCertificate = false;
 
-    Target SignPackages => _ => _
-        .Description("Sign the dlls, NupKg and msi files after build")
-        .Unlisted()
-        .Requires(() => IsWin)
-        .After(BuildTracerHome, PackageTracerHome)
-        .Executes(async () =>
+    Target SignDlls => _ => _
+       .Description("Sign the dlls produced by building the Tracer home directory")
+       .Unlisted()
+       .Requires(() => IsWin)
+       .After(BuildTracerHome)
+       .Before(PackNuGet, BuildMsi, ZipTracerHome)
+       .Executes(async () =>
         {
-            // To create a pfx certificate for local testing, use powershell and run:
-            // $outputLocation = "test_cert.pfx"
-            // $cert = New-SelfSignedCertificate -DnsName sample.contoso.com -Type CodeSigning -CertStoreLocation Cert:\CurrentUser\My
-            // $CertPassword = ConvertTo-SecureString -String "Passw0rd" -Force –AsPlainText
-            // Export-PfxCertificate -Cert "cert:\CurrentUser\My\$($cert.Thumbprint)" -FilePath $outputLocation -Password $CertPassword
+            var dlls = TracerHomeDirectory.GlobFiles("**/Datadog*.dll");
+            await SignFiles(dlls);
+        });
 
-            var tempFileName = Path.GetTempFileName();
-            const string timestampServer = "http://timestamp.digicert.com/";
+    Target SignMsiAndNupkg => _ => _
+       .Description("Sign the nupkg and msi files produced by packaging the Tracer home directory")
+       .Unlisted()
+       .Requires(() => IsWin)
+       .After(PackageTracerHome)
+       .Executes(async () =>
+        {
+            var files = ArtifactsDirectory.GlobFiles("**/*.msi")
+                                         .Concat(ArtifactsDirectory.GlobFiles("**/*.nupkg"));
+            await SignFiles(files);
+        });
 
-            try
+    async Task SignFiles(IEnumerable<AbsolutePath> filesToSign)
+    {
+        // To create a pfx certificate for local testing, use powershell and run:
+        // $outputLocation = "test_cert.pfx"
+        // $cert = New-SelfSignedCertificate -DnsName sample.contoso.com -Type CodeSigning -CertStoreLocation Cert:\CurrentUser\My
+        // $CertPassword = ConvertTo-SecureString -String "Passw0rd" -Force –AsPlainText
+        // Export-PfxCertificate -Cert "cert:\CurrentUser\My\$($cert.Thumbprint)" -FilePath $outputLocation -Password $CertPassword
+
+        var tempFileName = Path.GetTempFileName();
+        const string timestampServer = "http://timestamp.digicert.com/";
+
+        try
+        {
+            var (certPath, certPassword) = UseTestPfxCertificate
+                                               ? (@"test_cert.pfx", "Passw0rd")
+                                               : await GetSigningMaterial(tempFileName);
+
+            Logger.Info("Signing material retrieved");
+
+            var binaries = filesToSign
+               .Where(x => !x.ToString().EndsWith(".nupkg"))
+                .ToList();
+
+            if (binaries.Any())
             {
-                var (certPath, certPassword) = UseTestPfxCertificate
-                    ? (@"test_cert.pfx", "Passw0rd")
-                    : await GetSigningMaterial(tempFileName);
-
-                Logger.Info("Signing material retrieved, signing binaries...");
-                TracerHomeDirectory.GlobFiles("**/Datadog*.dll")
-                    .Concat(ArtifactsDirectory.GlobFiles("**/*.msi"))
-                    .ForEach(binaryPath => SignBinary(certPath, certPassword, binaryPath));
+                Logger.Info("Signing binaries...");
+                binaries.ForEach(file => SignBinary(certPath, certPassword, file));
                 Logger.Info("Binary signing complete");
+            }
 
+            var nupkgs = filesToSign
+                        .Where(x => x.ToString().EndsWith(".nupkg"))
+                        .ToList();
+
+            if (nupkgs.Any())
+            {
                 Logger.Info("Signing NuGet packages...");
-                ArtifactsDirectory.GlobFiles("**/*.nupkg")
-                    .ForEach(binaryPath => SignNuGet(certPath, certPassword, binaryPath));
+                nupkgs.ForEach(file => SignNuGet(certPath, certPassword, file));
                 Logger.Info("NuGet signing complete");
             }
-            finally
-            {
-                File.Delete(tempFileName);
-            }
+        }
+        finally
+        {
+            File.Delete(tempFileName);
+        }
 
-            return;
+        return;
 
-            void SignBinary(string certPath, string certPassword, AbsolutePath binaryPath)
-            {
-                Logger.Info($"Signing {binaryPath}");
+        void SignBinary(string certPath, string certPassword, AbsolutePath binaryPath)
+        {
+            Logger.Info($"Signing {binaryPath}");
 
-                SignToolTasks.SignTool(x => x
+            SignToolTasks.SignTool(
+                x => x
                     .SetFiles(binaryPath)
                     .SetFile(certPath)
                     .SetPassword(certPassword)
                     .SetTimestampServerUrl(timestampServer)
-                );
-            }
+            );
+        }
 
-            void SignNuGet(string certPath, string certPassword, AbsolutePath binaryPath)
+        void SignNuGet(string certPath, string certPassword, AbsolutePath binaryPath)
+        {
+            Logger.Info($"Signing {binaryPath}");
+
+            // nuke doesn't expose the sign tool
+            try
             {
-                Logger.Info($"Signing {binaryPath}");
-
-                // nuke doesn't expose the sign tool
-                try
-                {
-                    NuGetTasks.NuGet(
-                        $"sign \"{binaryPath}\"" +
-                        $" -CertificatePath {certPath}" +
-                        $" -CertificatePassword {certPassword}" +
-                        $" -Timestamper {timestampServer} -NonInteractive",
-                        logOutput: false, logInvocation: false, logTimestamp: false); // don't print to std out/err
-                }
-                catch (Exception)
-                {
-                    // Exception doesn't say anything useful generally and don't want to expose it if it does
-                    // so don't log it
-                    Logger.Error($"Failed to sign nuget package '{binaryPath}");
-                }
+                NuGetTasks.NuGet(
+                    $"sign \"{binaryPath}\"" +
+                    $" -CertificatePath {certPath}" +
+                    $" -CertificatePassword {certPassword}" +
+                    $" -Timestamper {timestampServer} -NonInteractive",
+                    logOutput: false,
+                    logInvocation: false,
+                    logTimestamp: false); // don't print to std out/err
             }
-
-            async Task<(string CertificateFilePath, string Password)> GetSigningMaterial(string keyFile)
+            catch (Exception)
             {
-                // Get the signing keys from SSM
-                var pfxB64EncodedPart1 = await GetFileValueFromSsmUsingAmazonSdk("keygen.dd_win_agent_codesign.pfx_b64_0");
-                var pfxB64EncodedPart2 = await GetFileValueFromSsmUsingAmazonSdk("keygen.dd_win_agent_codesign.pfx_b64_1");
-                var pfxPassword = await GetFileValueFromSsmUsingAmazonSdk("keygen.dd_win_agent_codesign.password");
+                // Exception doesn't say anything useful generally and don't want to expose it if it does
+                // so don't log it
+                Logger.Error($"Failed to sign nuget package '{binaryPath}");
+            }
+        }
 
-                var pfxB64Encoded = pfxB64EncodedPart1 + pfxB64EncodedPart2;
+        async Task<(string CertificateFilePath, string Password)> GetSigningMaterial(string keyFile)
+        {
+            // Get the signing keys from SSM
+            var pfxB64EncodedPart1 = await GetFileValueFromSsmUsingAmazonSdk("keygen.dd_win_agent_codesign.pfx_b64_0");
+            var pfxB64EncodedPart2 = await GetFileValueFromSsmUsingAmazonSdk("keygen.dd_win_agent_codesign.pfx_b64_1");
+            var pfxPassword = await GetFileValueFromSsmUsingAmazonSdk("keygen.dd_win_agent_codesign.password");
 
-                Logger.Info($"Retrieved base64 encoded pfx. Length: {pfxB64Encoded.Length}");
-                var pfxB64Decoded = Convert.FromBase64String(pfxB64Encoded);
+            var pfxB64Encoded = pfxB64EncodedPart1 + pfxB64EncodedPart2;
 
-                Logger.Info($"Writing key material to temporary file {keyFile}");
-                File.WriteAllBytes(keyFile, pfxB64Decoded);
+            Logger.Info($"Retrieved base64 encoded pfx. Length: {pfxB64Encoded.Length}");
+            var pfxB64Decoded = Convert.FromBase64String(pfxB64Encoded);
 
-                Logger.Info("Verifying key material");
-                var file = new X509Certificate2(keyFile, pfxPassword);
-                file.Verify();
+            Logger.Info($"Writing key material to temporary file {keyFile}");
+            File.WriteAllBytes(keyFile, pfxB64Decoded);
 
-                return (CertificateFilePath: keyFile, Password: pfxPassword);
+            Logger.Info("Verifying key material");
+            var file = new X509Certificate2(keyFile, pfxPassword);
+            file.Verify();
 
-                static async Task<string> GetFileValueFromSsmUsingAmazonSdk(string filename)
+            return (CertificateFilePath: keyFile, Password: pfxPassword);
+
+            static async Task<string> GetFileValueFromSsmUsingAmazonSdk(string filename)
+            {
+                // NOTE: set the region here to match the region used when you created
+                // the parameter
+                var region = Amazon.RegionEndpoint.USEast1;
+                var request = new GetParameterRequest()
                 {
-                    // NOTE: set the region here to match the region used when you created
-                    // the parameter
-                    var region = Amazon.RegionEndpoint.USEast1;
-                    var request = new GetParameterRequest()
-                    {
-                        Name = filename,
-                        WithDecryption = true
-                    };
+                    Name = filename,
+                    WithDecryption = true
+                };
 
-                    using (var client = new AmazonSimpleSystemsManagementClient(region))
+                using (var client = new AmazonSimpleSystemsManagementClient(region))
+                {
+                    try
                     {
-                        try
-                        {
-                            var response = await client.GetParameterAsync(request);
-                            Logger.Info($"Retrieved {filename} from SSM");
-                            return response.Parameter.Value;
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Error("Error fetching {0} from SSM: {1}", filename, ex);
-                            throw;
-                        }
+                        var response = await client.GetParameterAsync(request);
+                        Logger.Info($"Retrieved {filename} from SSM");
+                        return response.Parameter.Value;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error("Error fetching {0} from SSM: {1}", filename, ex);
+                        throw;
                     }
                 }
             }
-        });
+        }
+    }
 }
