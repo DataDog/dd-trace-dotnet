@@ -1,18 +1,14 @@
-//
-// Copyright(c) 2015 Gabi Melman.
+// Copyright(c) 2015-present, Gabi Melman & spdlog contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
-//
 
 #pragma once
-
-#ifndef SPDLOG_H
-#include "spdlog/spdlog.h"
-#endif
 
 #include "spdlog/details/file_helper.h"
 #include "spdlog/details/null_mutex.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/sinks/base_sink.h"
+#include "spdlog/details/os.h"
+#include "spdlog/details/synchronous_factory.h"
 
 #include <chrono>
 #include <cstdio>
@@ -63,17 +59,26 @@ public:
         rotation_tp_ = next_rotation_tp_();
     }
 
+    const filename_t &filename() const
+    {
+        return file_helper_.filename();
+    }
+
 protected:
     void sink_it_(const details::log_msg &msg) override
     {
-
-        if (msg.time >= rotation_tp_)
+#ifdef SPDLOG_NO_DATETIME
+        auto time = log_clock::now();
+#else
+        auto time = msg.time;
+#endif
+        if (time >= rotation_tp_)
         {
-            file_helper_.open(FileNameCalc::calc_filename(base_filename_, now_tm(msg.time)), truncate_);
+            file_helper_.open(FileNameCalc::calc_filename(base_filename_, now_tm(time)), truncate_);
             rotation_tp_ = next_rotation_tp_();
         }
         fmt::memory_buffer formatted;
-        sink::formatter_->format(msg, formatted);
+        base_sink<Mutex>::formatter_->format(msg, formatted);
         file_helper_.write(formatted);
     }
 
@@ -120,14 +125,14 @@ using daily_file_sink_st = daily_file_sink<details::null_mutex>;
 //
 // factory functions
 //
-template<typename Factory = default_factory>
+template<typename Factory = spdlog::synchronous_factory>
 inline std::shared_ptr<logger> daily_logger_mt(
     const std::string &logger_name, const filename_t &filename, int hour = 0, int minute = 0, bool truncate = false)
 {
     return Factory::template create<sinks::daily_file_sink_mt>(logger_name, filename, hour, minute, truncate);
 }
 
-template<typename Factory = default_factory>
+template<typename Factory = spdlog::synchronous_factory>
 inline std::shared_ptr<logger> daily_logger_st(
     const std::string &logger_name, const filename_t &filename, int hour = 0, int minute = 0, bool truncate = false)
 {

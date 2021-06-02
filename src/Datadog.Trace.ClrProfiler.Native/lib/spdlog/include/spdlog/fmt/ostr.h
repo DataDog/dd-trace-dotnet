@@ -7,7 +7,7 @@
 //
 // include bundled or external copy of fmtlib's ostream support
 //
-#if 0 // !defined(SPDLOG_FMT_EXTERNAL)
+#if !defined(SPDLOG_FMT_EXTERNAL)
 #ifndef FMT_HEADER_ONLY
 #define FMT_HEADER_ONLY
 #endif
