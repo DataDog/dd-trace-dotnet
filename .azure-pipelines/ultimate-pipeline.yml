@@ -1,17 +1,15 @@
 trigger:
   branches:
     include:
-      - master # Only run on master for now
+      - master
+      - refs/tags/*
     exclude:
       - refs/pull/*/head
   paths:
     exclude:
       - docs/*
       - .github/*
-pr:
-  branches:
-    exclude: # Don't run PR validation for now
-    - '*'
+
 
 # Global variables
 variables:
