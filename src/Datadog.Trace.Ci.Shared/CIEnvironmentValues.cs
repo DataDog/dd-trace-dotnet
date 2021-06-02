@@ -264,7 +264,7 @@ namespace Datadog.Trace.Ci
             WorkspacePath = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_WORKING_DIRECTORY");
             PipelineId = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_WORKFLOW_ID");
             PipelineName = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_PROJECT_REPONAME");
-            PipelineUrl = $"https://app.circle.com/pipelines/workflows/{PipelineId}";
+            PipelineUrl = $"https://app.circleci.com/pipelines/workflows/{PipelineId}";
             JobName = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_JOB");
             JobUrl = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_BUILD_URL");
         }
