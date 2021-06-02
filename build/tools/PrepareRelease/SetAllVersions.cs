@@ -58,7 +58,7 @@ namespace PrepareRelease
             // Nuke build
             SynchronizeVersion(
                 "build/_build/Build.cs",
-                text => Regex.Replace(text, $"readonly string Version = \"{VersionPattern()}\"", $"readonly string Version = \"{VersionString()}\"));
+                text => Regex.Replace(text, $"readonly string Version = \"{VersionPattern()}\"", $"readonly string Version = \"{VersionString()}\""));
 
             // Managed project / NuGet package updates
             SynchronizeVersion(
