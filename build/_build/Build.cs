@@ -46,7 +46,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version (for packaging purposes). Default is latest")]
-    readonly string Version = "1.26.3";
+    readonly string Version = "1.27.0";
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
     readonly bool PrintDriveSpace = false;
