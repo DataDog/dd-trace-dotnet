@@ -17,12 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         TestStatus Status { get; }
 
         /// <summary>
-        /// Gets the label under which this test result is
-        /// categorized, or <see cref="string.Empty"/> if none.
-        /// </summary>
-        string Label { get; }
-
-        /// <summary>
         /// Gets the stage of test execution in which
         /// the failure or other result took place.
         /// </summary>
