@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace></RootNamespace>
+    <NoWarn>CS0649;CS0169;SA1652</NoWarn>
+    <NukeRootDirectory>..\..</NukeRootDirectory>
+    <NukeScriptDirectory>..\..</NukeScriptDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NuGet.CommandLine" Version="5.8.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Nuke.Common" Version="5.0.2" />
+    <PackageReference Include="Colorful.Console" Version="1.2.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\.azure-pipelines\steps\run-in-docker.yml">
+      <Link>ci\steps\run-in-docker.yml</Link>
+    </Content>
+    <Content Include="..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
+    <Content Include="..\..\.azure-pipelines\steps\install-dotnet.yml" Link="ci\steps\install-dotnet.yml" />
+    <Content Include="..\..\.azure-pipelines\steps\install-dotnet-sdks.yml" Link="ci\steps\install-dotnet-sdks.yml" />
+    <Content Include="..\..\.azure-pipelines\steps\install-dotnet-5-sdk.yml" Link="ci\steps\install-dotnet-5-sdk.yml" />
+    <Content Include="..\..\.azure-pipelines\steps\restore-working-directory.yml" Link="ci\steps\restore-working-directory.yml" />
+    <Content Include="..\..\docker.sh" Link="docker\docker.sh" />
+  </ItemGroup>
+</Project>

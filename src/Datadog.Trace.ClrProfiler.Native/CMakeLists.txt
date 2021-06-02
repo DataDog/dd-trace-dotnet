@@ -102,7 +102,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/json)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/json
-        COMMAND git clone --depth 1 --branch v3.3.0 https://github.com/nlohmann/json.git
+        COMMAND git clone --quiet --depth 1 --branch v3.3.0 https://github.com/nlohmann/json.git
         WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
     )
 endif()
@@ -110,7 +110,7 @@ endif()
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/re2)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/re2
-        COMMAND git clone --depth 1 --branch 2018-10-01 https://github.com/google/re2.git && cd re2 && env CXXFLAGS=\"-O3 -g -fPIC\" make
+        COMMAND git clone --quiet --depth 1 --branch 2018-10-01 https://github.com/google/re2.git && cd re2 && env CXXFLAGS=\"-O3 -g -fPIC\" make
         WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
     )
 endif()
@@ -118,7 +118,7 @@ endif()
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/fmt)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/fmt
-        COMMAND git clone --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git && cd fmt && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make
+        COMMAND git clone --quiet --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git && cd fmt && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make
         WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
     )
 endif()
