@@ -2691,7 +2691,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
     if (findRes != module_id_to_info_map_.end()) {
       module_metadata = findRes->second;
     } else {
-      return S_OK;
+      return S_FALSE;
     }
   }
 
@@ -2945,13 +2945,20 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
        ", Arguments=", numArgs,
        "]");
 
+  // First we check if the managed profiler has not been loaded yet
+  if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
+    Warn("*** CallTarget_RewriterCallback() skipping method: Method replacement found but the managed profiler has not yet been loaded into AppDomain with id=",
+        module_metadata->app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
+    return S_FALSE;
+  }
+
   // *** Create rewriter
   ILRewriter rewriter(this->info_, methodHandler->GetFunctionControl(), module_id, function_token);
   bool modified = false;
   auto hr = rewriter.Import();
   if (FAILED(hr)) {
     Warn("*** CallTarget_RewriterCallback(): Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
-    return hr;
+    return S_FALSE;
   }
 
   // *** Store the original il code text if the dump_il option is enabled.
@@ -2995,7 +3002,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
       //    initobj [valueType]
       //    ldloc.s [localIndex]
       Warn("*** CallTarget_RewriterCallback(): Static methods in a ValueType cannot be instrumented. ");
-      return E_FAIL;
+      return S_FALSE;
     }
     reWriterWrapper.LoadNull();
   } else {
@@ -3015,7 +3022,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         // We can't emit LoadObj or Box because that would result in an invalid IL.
         // This problem doesn't occur on a class type because we can always relay in the
         // object type.
-        return E_FAIL;
+        return S_FALSE;
       }
     }
   }
@@ -3031,7 +3038,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         Warn(
             "*** CallTarget_RewriterCallback(): Methods with ref parameters "
             "cannot be instrumented. ");
-        return E_FAIL;
+        return S_FALSE;
       }
     }
   } else {
@@ -3045,13 +3052,13 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         Warn(
             "*** CallTarget_RewriterCallback(): Methods with ref parameters "
             "cannot be instrumented. ");
-        return E_FAIL;
+        return S_FALSE;
       }
       if (argTypeFlags & TypeFlagBoxedType) {
         auto tok = methodArguments[i].GetTypeTok(
             metaEmit, callTargetTokens->GetCorLibAssemblyRef());
         if (tok == mdTokenNil) {
-          return E_FAIL;
+          return S_FALSE;
         }
         reWriterWrapper.Box(tok);
       }
@@ -3091,7 +3098,11 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
   }
 
   ILInstr* beginCallInstruction;
-  IfFailRet(callTargetTokens->WriteBeginMethod(&reWriterWrapper, wrapper_type_ref, &caller->type, methodArguments, &beginCallInstruction));
+  hr = callTargetTokens->WriteBeginMethod(&reWriterWrapper, wrapper_type_ref, &caller->type, methodArguments, &beginCallInstruction);
+  if (FAILED(hr)) {
+    // Error message is written to the log in WriteBeginMethod.
+    return S_FALSE;
+  }
   reWriterWrapper.StLocal(callTargetStateIndex);
   ILInstr* pStateLeaveToBeginOriginalMethodInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
@@ -3152,7 +3163,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
       Warn(
           "CallTarget_RewriterCallback: Static methods in a ValueType cannot "
           "be instrumented. ");
-      return E_FAIL;
+      return S_FALSE;
     }
     endMethodTryStartInstr = reWriterWrapper.LoadNull();
   } else {
@@ -3171,7 +3182,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         // We can't emit LoadObj or Box because that would result in an invalid IL.
         // This problem doesn't occur on a class type because we can always relay in the
         // object type.
-        return E_FAIL;
+        return S_FALSE;
       }
     }
   }
@@ -3299,7 +3310,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         "*** CallTarget_RewriterCallback(): Call to ILRewriter.Export() failed for "
         "ModuleID=",
         module_id, " ", function_token);
-    return hr;
+    return S_FALSE;
   }
 
   Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".",
