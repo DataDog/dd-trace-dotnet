@@ -27,7 +27,7 @@ namespace Datadog.Trace
 
         Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
 
-        void Write(Span[] span);
+        void Write(ArraySegment<Span> span);
 
         /// <summary>
         /// Make a span the active span and return its new scope.

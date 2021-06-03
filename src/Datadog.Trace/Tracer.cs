@@ -372,7 +372,7 @@ namespace Datadog.Trace
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(Span[] trace)
+        void IDatadogTracer.Write(ArraySegment<Span> trace)
         {
             if (Settings.TraceEnabled)
             {
@@ -395,10 +395,7 @@ namespace Datadog.Trace
             if (parent is SpanContext parentSpanContext)
             {
                 traceContext = parentSpanContext.TraceContext ??
-                               new TraceContext(this)
-                               {
-                                   SamplingPriority = parentSpanContext.SamplingPriority
-                               };
+                    new TraceContext(this) { SamplingPriority = parentSpanContext.SamplingPriority };
             }
             else
             {

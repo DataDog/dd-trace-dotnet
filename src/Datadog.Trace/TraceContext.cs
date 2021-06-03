@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -19,7 +18,7 @@ namespace Datadog.Trace
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
-        private readonly List<Span> _spans = new List<Span>();
+        private ArrayBuilder<Span> _spans;
 
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
@@ -57,7 +56,7 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (_spans)
+            lock (this)
             {
                 if (RootSpan == null)
                 {
@@ -114,33 +113,36 @@ namespace Datadog.Trace
                 }
             }
 
-            Span[] spansToWrite = null;
+            ArraySegment<Span> spansToWrite = default;
 
-            lock (_spans)
+            lock (this)
             {
                 _spans.Add(span);
                 _openSpans--;
 
-                bool shouldFlush = _openSpans == 0;
-
-                if (!shouldFlush && ShouldTriggerPartialFlush())
+                if (_openSpans == 0)
                 {
-                    shouldFlush = true;
+                    spansToWrite = _spans.GetArray();
+                    _spans = default;
+                }
+                else if (ShouldTriggerPartialFlush())
+                {
                     Log.Debug<ulong, ulong, int>(
                         "Closing span {spanId} triggered a partial flush of trace {traceId} with {spanCount} pending spans",
                         span.SpanId,
                         span.TraceId,
                         _spans.Count);
-                }
 
-                if (shouldFlush)
-                {
-                    spansToWrite = _spans.ToArray();
-                    _spans.Clear();
+                    spansToWrite = _spans.GetArray();
+
+                    // Making the assumption that, if the number of closed spans was big enough to trigger partial flush,
+                    // the number of remaining spans is probably big as well.
+                    // Therefore, we bypass the resize logic and immediately allocate the array to its maximum size
+                    _spans = new ArrayBuilder<Span>(spansToWrite.Count);
                 }
             }
 
-            if (spansToWrite != null)
+            if (spansToWrite.Count > 0)
             {
                 Tracer.Write(spansToWrite);
             }
