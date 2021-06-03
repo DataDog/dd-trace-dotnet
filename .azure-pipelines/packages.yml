@@ -1,9 +1,4 @@
-trigger:
-  branches:
-    include:
-      - master
-      - refs/tags/*
-pr: none
+trigger: none
 
 variables:
   buildConfiguration: release
