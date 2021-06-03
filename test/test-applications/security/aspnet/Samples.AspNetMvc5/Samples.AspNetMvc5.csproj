@@ -8,24 +8,24 @@
     <ProductVersion>
     </ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{D262231F-105D-4297-ACA3-53E5AD6DB982}</ProjectGuid>
+    <ProjectGuid>{F5582F54-E911-4258-B419-5E894D338C5B}</ProjectGuid>
     <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Samples.AspNetMvc</RootNamespace>
-    <AssemblyName>Samples.AspNetMvc</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <RootNamespace>Samples.AspNetMvc5</RootNamespace>
+    <AssemblyName>Samples.AspNetMvc5</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
     <UseIISExpress>true</UseIISExpress>
-    <Use64BitIISExpress>
-    </Use64BitIISExpress>
-    <IISExpressSSLPort>44349</IISExpressSSLPort>
+    <Use64BitIISExpress>true</Use64BitIISExpress>
+    <IISExpressSSLPort>44385</IISExpressSSLPort>
     <IISExpressAnonymousAuthentication />
     <IISExpressWindowsAuthentication />
     <IISExpressUseClassicPipelineMode />
     <UseGlobalApplicationHostFile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,6 +35,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -55,11 +56,7 @@
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Web.Abstractions" />
     <Reference Include="System.Web.Routing" />
     <Reference Include="System.Xml" />
@@ -183,13 +180,13 @@
     <Content Include="Scripts\jquery-3.4.1.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj">
-      <Project>{934fe26d-885d-4fad-9afc-bfa975dfcbb5}</Project>
-      <Name>Datadog.Trace.ClrProfiler.Managed.Core</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
       <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
       <Name>Datadog.Trace.ClrProfiler.Managed</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
+      <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
+      <Name>Datadog.Trace</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
@@ -208,9 +205,9 @@
         <WebProjectProperties>
           <UseIIS>True</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>61281</DevelopmentServerPort>
+          <DevelopmentServerPort>62387</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>https://localhost:44349/</IISUrl>
+          <IISUrl>https://localhost:44386/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

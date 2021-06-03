@@ -11,7 +11,6 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 
@@ -34,16 +33,16 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
-        public Task RunOnSelfHosted()
+        public Task RunOnSelfHosted(bool enableSecurity)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             httpPort = TcpPortProvider.GetOpenPort();
 
             using var agent = new MockTracerAgent(agentPort);
-            return StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort);
+            return StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity);
         }
 
-        public Task RunOnIis(string path)
+        public Task RunOnIis(string path, bool enableSecurity)
         {
             var initialAgentPort = TcpPortProvider.GetOpenPort();
             var agent = new MockTracerAgent(initialAgentPort);
@@ -52,13 +51,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             var arguments = $"/clr:v4.0 /path:{EnvironmentHelper.GetSampleProjectDirectory()} /systray:false /port:{httpPort} /trace:verbose";
             Output.WriteLine($"[webserver] starting {path} {string.Join(" ", arguments)}");
 
-            return StartSample(agent.Port, arguments, httpPort, iisExpress: true);
+            return StartSample(agent.Port, arguments, httpPort, iisExpress: true, enableSecurity: enableSecurity);
         }
 
         public void Dispose()
         {
             if (process != null && !process.HasExited)
             {
+                Output.WriteLine("Killing process");
                 process.Kill();
                 process.Dispose();
             }
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             return (response.StatusCode, responseText);
         }
 
-        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", bool iisExpress = false, string path = "/Home")
+        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", bool iisExpress = false, string path = "/Home", bool enableSecurity = true)
         {
             var sampleAppPath = string.Empty;
             // get path to sample app that the profiler will attach to
@@ -99,13 +99,13 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             process = ProfilerHelper.StartProcessWithProfiler(
                 EnvironmentHelper.GetSampleExecutionSource(),
-                sampleAppPath,
                 EnvironmentHelper,
-                integrationPaths,
-                arguments,
+                $"{sampleAppPath} {arguments ?? string.Empty}",
                 traceAgentPort: traceAgentPort,
                 statsdPort: statsdPort,
-                aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000));
+                aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
+                enableSecurity: enableSecurity,
+                callTargetEnabled: true);
 
             // then wait server ready
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
