@@ -5,10 +5,11 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 
-namespace Samples.AspNetMvc.Controllers
+namespace Samples.AspNetMvc5.Controllers
 {
     public class HomeController : Controller
     {
+        [ValidateInput(false)]
         public ActionResult Index()
         {
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };

@@ -1,9 +1,9 @@
-// <copyright file="AspNetCore5.cs" company="Datadog">
+// <copyright file="AspNetMvc5.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET5_0
+#if NET461
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -12,10 +12,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5 : AspNetCoreBase, IDisposable
+    public class AspNetMvc5 : AspNetCoreBase
     {
-        public AspNetCore5(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper)
+        public AspNetMvc5(ITestOutputHelper outputHelper)
+           : base(nameof(AspNetMvc5), outputHelper, "test\\test-applications\\security\\aspnet")
         {
         }
 
@@ -24,7 +24,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(false, HttpStatusCode.OK)]
         public async Task TestBlockedRequestAsync(bool enableSecurity, HttpStatusCode expectedStatusCode)
         {
-            await RunOnSelfHosted(enableSecurity);
+            await RunOnIis("/Home", enableSecurity);
             var (statusCode, _) = await SubmitRequest("/Home?arg=database()");
             Assert.Equal(expectedStatusCode, statusCode);
         }

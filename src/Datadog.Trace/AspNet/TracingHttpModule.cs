@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Transport.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -131,6 +133,12 @@ namespace Datadog.Trace.AspNet
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
+
+                var security = Security.Instance;
+                if (security.Enabled)
+                {
+                    RaiseIntrumentationEvent(security, httpContext, httpRequest);
+                }
             }
             catch (Exception ex)
             {
@@ -248,7 +256,7 @@ namespace Datadog.Trace.AspNet
             var dict = new Dictionary<string, object>()
             {
                 { "server.request.method", request.HttpMethod },
-                { "server.request.uri.raw", request.Url.ToString() },
+                { "server.request.uri.raw", request.Url },
                 { "server.request.query", request.QueryString.ToString() },
             };
 
