@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Samples.AspNetMvc")]
+[assembly: AssemblyTitle("Samples.AspNetMvc5")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Samples.AspNetMvc")]
+[assembly: AssemblyProduct("Samples.AspNetMvc5")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("80b4a6e3-d356-4358-b492-18474db52796")]
+[assembly: Guid("947a24d8-c3aa-40b8-a933-50371fd34ce7")]
 
 // Version information for an assembly consists of the following four values:
 //

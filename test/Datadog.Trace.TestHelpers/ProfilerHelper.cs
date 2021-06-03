@@ -21,7 +21,9 @@ namespace Datadog.Trace.TestHelpers
             int traceAgentPort = 9696,
             int aspNetCorePort = 5000,
             int? statsdPort = null,
-            bool? forceExecutable = null)
+            bool? forceExecutable = null,
+            bool? enableSecurity = null,
+            bool? callTargetEnabled = null)
         {
             if (environmentHelper == null)
             {
@@ -49,7 +51,7 @@ namespace Datadog.Trace.TestHelpers
                 startInfo = new ProcessStartInfo(applicationPath, $"{arguments ?? string.Empty}");
             }
 
-            environmentHelper.SetEnvironmentVariables(traceAgentPort, aspNetCorePort, statsdPort, executable, startInfo.EnvironmentVariables, forceExecutable == true);
+            environmentHelper.SetEnvironmentVariables(traceAgentPort, aspNetCorePort, statsdPort, executable, startInfo.EnvironmentVariables, forceExecutable == true, enableSecurity.GetValueOrDefault(), callTargetEnabled.GetValueOrDefault());
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
