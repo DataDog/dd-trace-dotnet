@@ -5,7 +5,7 @@
     <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
+    <TargetFrameworks>net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dd-trace</ToolCommandName>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
