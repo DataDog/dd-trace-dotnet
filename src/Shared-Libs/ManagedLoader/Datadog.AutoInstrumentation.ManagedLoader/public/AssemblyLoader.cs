@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Datadog.AutoInstrumentation.ManagedLoader
 {
@@ -76,44 +77,54 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// <param name="assemblyNamesToLoadIntoNonDefaultAppDomains">List of assemblies to load and start if the curret App Domain is the NOT default App Domain.</param>
         public static void Run(string[] assemblyNamesToLoadIntoDefaultAppDomain, string[] assemblyNamesToLoadIntoNonDefaultAppDomains)
         {
-            try
+            /*
+             * Here we delay the loading of the assemblies to prevent a crash due to some unknown (yet) race.
+             * The case has been seen with a WCF application (client: Inovalon)
+             * This is a short-term fix to secure and ensure clients onboarding.
+             */
+            Task.Run(() =>
             {
+                Task.Delay(TimeSpan.FromSeconds(1));
                 try
                 {
-                    LogConfigurator.SetupLogger();
-
                     try
                     {
-                        var assemblyLoader = new AssemblyLoader(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
-                        assemblyLoader.Execute();
+                        LogConfigurator.SetupLogger();
+
+                        try
+                        {
+                            var assemblyLoader = new AssemblyLoader(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
+                            assemblyLoader.Execute();
+                        }
+                        catch (Exception ex)
+                        {
+                            // An exception escaped from the loader. We are about to return to the caller, which is likely the IL-generated code in the module cctor.
+                            // So all we can do is log the error and swallow it to avoid crashing things.
+                            Log.Error(LoggingComponentMoniker, ex);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        // An exception escaped from the loader. We are about to return to the caller, which is likely the IL-generated code in the module cctor.
-                        // So all we can do is log the error and swallow it to avoid crashing things.
-                        Log.Error(LoggingComponentMoniker, ex);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // We still have an exception, despite the above catch-all. Likely the exception came out of the logger.
-                    // We can log it to console it as a backup (if enabled).
+                        // We still have an exception, despite the above catch-all. Likely the exception came out of the logger.
+                        // We can log it to console it as a backup (if enabled).
 #pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
-                    if (UseConsoleLoggingIfFileLoggingFails)
-                    {
-                        Console.WriteLine($"{Environment.NewLine}An exception occurred in {LoggingComponentMoniker}. Assemblies may not be loded or started."
+                        if (UseConsoleLoggingIfFileLoggingFails)
+                        {
+                            Console.WriteLine($"{Environment.NewLine}An exception occurred in {LoggingComponentMoniker}. Assemblies may not be loded or started."
 
-                                        + $"{Environment.NewLine}{ex}");
-                    }
+                                            + $"{Environment.NewLine}{ex}");
+                        }
 #pragma warning restore CS0162 // Unreachable code detected
+                    }
                 }
-            }
-            catch
-            {
-                // We still have an exception passing through the above double-catch-all. Could not even write to console.
-                // Our last choise is to let it excpe and potentially crash the process or swallow it. We prefer the later.
-            }
+                catch
+                {
+                    // We still have an exception passing through the above double-catch-all. Could not even write to console.
+                    // Our last choise is to let it excpe and potentially crash the process or swallow it. We prefer the later.
+                }
+            });
         }
+
 
         /// <summary>
         /// Loads the assemblied specified for this <c>AssemblyLoader</c> instance and executes their entry point.
@@ -198,11 +209,11 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             {
                 entryPointType = assembly.GetType(TargetLibraryEntrypointType, throwOnError: false);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 findEntryPointError = ex;
             }
-            
+
             if (entryPointType == null)
             {
                 Log.Info(
@@ -225,7 +236,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                                                             types: new Type[0],
                                                             modifiers: null);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 findEntryPointError = ex;
             }
@@ -257,7 +268,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                         "assembly.FullName", assembly.FullName,
                         "assembly.Location", assembly.Location,
                         "assembly.CodeBase", assembly.CodeBase,
-                        "entryPointType",  entryPointType.FullName,
+                        "entryPointType", entryPointType.FullName,
                         "entryPointMethod", entryPointMethod.Name);
                 return;
             }
@@ -268,7 +279,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     "assembly.FullName", assembly.FullName,
                     "assembly.Location", assembly.Location,
                     "assembly.CodeBase", assembly.CodeBase,
-                    "entryPointType",  entryPointType.FullName,
+                    "entryPointType", entryPointType.FullName,
                     "entryPointMethod", entryPointMethod.Name);
             return;
         }
