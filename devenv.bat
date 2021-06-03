@@ -8,10 +8,17 @@ rem Set default values
 set profiler_platform=x64
 set profiler_configuration=Debug
 set start_visual_studio=true
-set vs_sln_name=Datadog.Trace.Security.sln
 
 :next_argument
-set devenv_arg1=%1
+set arg1=%1
+set devenv_arg1=
+set vs_sln_name=Datadog.Trace.sln
+
+if "%arg1:~-3%" == "sln" (
+    set vs_sln_name=%1
+) else (
+    set devenv_arg1=%1
+)
 
 if not "%devenv_arg1%" == "" (
     if /i "%devenv_arg1%" == "Debug" (
@@ -56,6 +63,8 @@ SET DD_PROFILER_EXCLUDE_PROCESSES=devenv.exe;Microsoft.ServiceHub.Controller.exe
 rem Set dotnet tracer home path
 SET DD_DOTNET_TRACER_HOME=%~dp0
 SET DD_INTEGRATIONS=%DD_DOTNET_TRACER_HOME%\integrations.json
+
+SET DD_ENABLE_SECURITY=TRUE
 
 if "%start_visual_studio%" == "true" (
     echo Starting Visual Studio...
