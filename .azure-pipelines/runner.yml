@@ -158,6 +158,7 @@ jobs:
 - job: build_runner_tool_and_standalone
   dependsOn:
   - build_linux_profiler
+  - build_linux_profiler_arm64
   - macos_profiler
   condition: succeeded()
 
