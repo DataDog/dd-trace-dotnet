@@ -323,7 +323,7 @@ namespace Datadog.Trace.Tests
                     return Task.FromResult(true);
                 });
 
-            var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
+            var trace = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
 
             // Write trace to the front buffer
             agentWriter.WriteTrace(trace);
