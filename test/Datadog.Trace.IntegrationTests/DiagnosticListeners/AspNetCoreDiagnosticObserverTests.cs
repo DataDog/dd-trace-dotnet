@@ -272,7 +272,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private class AgentWriterStub : IAgentWriter
         {
-            public List<Span[]> Traces { get; } = new();
+            public List<ArraySegment<Span>> Traces { get; } = new();
 
             public Task FlushAndCloseAsync() => Task.CompletedTask;
 
@@ -280,7 +280,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
             public Task<bool> Ping() => Task.FromResult(true);
 
-            public void WriteTrace(Span[] trace) => Traces.Add(trace);
+            public void WriteTrace(ArraySegment<Span> trace) => Traces.Add(trace);
         }
     }
 }
