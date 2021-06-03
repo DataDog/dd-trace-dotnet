@@ -182,7 +182,7 @@ namespace Datadog.Trace.Agent
                 await tcs.Task.ConfigureAwait(false);
             }
 
-            await FlushBuffers().ConfigureAwait(false);
+            await FlushBuffers(true).ConfigureAwait(false);
         }
 
         internal void WriteWatermark(Action watermark, bool wakeUpThread = true)
