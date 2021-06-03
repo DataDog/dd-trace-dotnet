@@ -193,7 +193,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreMiddlewareIntegration",
           "action": "CallTargetModification"
         }
@@ -5003,7 +5003,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetIntegration",
           "method": "TryLoadHttpModule",
           "signature": "00 00 01",
@@ -5038,7 +5038,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
           "method": "BeginInvokeAction",
           "signature": "00 08 1C 1C 1C 1C 1C 1C 08 08 0A",
@@ -5065,7 +5065,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
           "method": "EndInvokeAction",
           "signature": "00 05 02 1C 1C 08 08 0A",
@@ -5096,7 +5096,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration",
           "method": "ExecuteAsync",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -7637,7 +7637,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.26.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WcfIntegration",
           "method": "HandleRequest",
           "signature": "00 06 02 1C 1C 1C 08 08 0A",
