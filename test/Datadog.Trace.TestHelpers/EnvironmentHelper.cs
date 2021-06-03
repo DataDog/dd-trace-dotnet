@@ -141,7 +141,9 @@ namespace Datadog.Trace.TestHelpers
                 "DD_DISABLED_INTEGRATIONS",
                 "DD_SERVICE",
                 "DD_VERSION",
-                "DD_TAGS"
+                "DD_TAGS",
+                "DD_ENABLE_SECURITY",
+                "DD_TRACE_CALLTARGET_ENABLED"
             };
 
             foreach (string variable in environmentVariables)
@@ -156,7 +158,9 @@ namespace Datadog.Trace.TestHelpers
             int? statsdPort,
             string processPath,
             StringDictionary environmentVariables,
-            bool ignoreProfilerProcesses = false)
+            bool ignoreProfilerProcesses = false,
+            bool enableSecurity = false,
+            bool callTargetEnabled = false)
         {
             var processName = processPath;
             string profilerEnabled = _requiresProfiling ? "1" : "0";
@@ -188,6 +192,11 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
+            if (callTargetEnabled)
+            {
+                environmentVariables["DD_TRACE_CALLTARGET_ENABLED"] = "1";
+            }
+
             if (!ignoreProfilerProcesses)
             {
                 environmentVariables["DD_PROFILER_PROCESSES"] = processName;
@@ -204,6 +213,11 @@ namespace Datadog.Trace.TestHelpers
             if (statsdPort != null)
             {
                 environmentVariables["DD_DOGSTATSD_PORT"] = statsdPort.Value.ToString();
+            }
+
+            if (enableSecurity)
+            {
+                environmentVariables["DD_ENABLE_SECURITY"] = enableSecurity.ToString();
             }
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
