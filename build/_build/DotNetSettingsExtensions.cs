@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
@@ -9,33 +10,41 @@ using Nuke.Common.Tools.NuGet;
 
 internal static partial class DotNetSettingsExtensions
 {
+    public static DotNetBuildSettings SetTargetPlatformAnyCPU(this DotNetBuildSettings settings)
+        => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
+
+    public static DotNetTestSettings SetTargetPlatformAnyCPU(this DotNetTestSettings settings)
+        => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
+
+    public static DotNetPublishSettings SetTargetPlatformAnyCPU(this DotNetPublishSettings settings)
+        => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
+
+    public static T SetTargetPlatformAnyCPU<T>(this T settings)
+        where T: MSBuildSettings
+        => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
+
     public static DotNetBuildSettings SetTargetPlatform(this DotNetBuildSettings settings, MSBuildTargetPlatform platform)
     {
         return platform is null
             ? settings
-            : settings.SetProperty("Platform", platform);
+            : settings.SetProperty("Platform", GetTargetPlatform(platform));
     }
-
-    public static DotNetRunSettings SetTargetPlatform(this DotNetRunSettings settings, MSBuildTargetPlatform platform)
-    {
-        return platform is null
-            ? settings
-            : settings.SetProperty("Platform", platform);
-    }
-
     public static DotNetTestSettings SetTargetPlatform(this DotNetTestSettings settings, MSBuildTargetPlatform platform)
     {
         return platform is null
             ? settings
-            : settings.SetProperty("Platform", platform);
+            : settings.SetProperty("Platform", GetTargetPlatform(platform));
     }
 
-    public static DotNetRestoreSettings SetTargetPlatform(this DotNetRestoreSettings settings, MSBuildTargetPlatform platform)
+    public static DotNetPublishSettings SetTargetPlatform(this DotNetPublishSettings settings, MSBuildTargetPlatform platform)
     {
         return platform is null
             ? settings
-            : settings.SetProperty("Platform", platform);
+            : settings.SetProperty("Platform", GetTargetPlatform(platform));
     }
+
+    private static string GetTargetPlatform(MSBuildTargetPlatform platform) =>
+        platform == MSBuildTargetPlatform.MSIL ? "AnyCPU" : platform.ToString();
 
     public static T SetNoWarnDotNetCore3<T>(this T settings)
         where T: ToolSettings
@@ -87,5 +96,17 @@ internal static partial class DotNetSettingsExtensions
         return settings
             .SetLogger("trx")
             .SetResultsDirectory(resultsDirectory);
+    }
+
+    /// <summary>
+    /// GitLab installs MSBuild in a non-standard place that causes issues for Nuke trying to resolve it
+    /// </summary>
+    public static MSBuildSettings SetMSBuildPath(this MSBuildSettings settings)
+    {
+        var vsRoot = Environment.GetEnvironmentVariable("VSTUDIO_ROOT");
+
+        return settings
+            .When(!string.IsNullOrEmpty(vsRoot),
+                c => c.SetProcessToolPath(Path.Combine(vsRoot, "MSBuild", "Current", "Bin", "MSBuild.exe")));
     }
 }

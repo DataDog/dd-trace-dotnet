@@ -3,7 +3,7 @@ stages:
   - binary_build
   
 variables:
-  DATADOG_AGENT_WINBUILDIMAGES: v3946939-487746f
+  DATADOG_AGENT_WINBUILDIMAGES: v4603787-d533a1c
     
 driver_build:
   only:
@@ -13,7 +13,7 @@ driver_build:
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts) { remove-item -recurse -force artifacts }
-    - docker run --rm -m 4096M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/windows_1809_x64:$Env:DATADOG_AGENT_WINBUILDIMAGES c:\mnt\tasks\winbuildscripts\buildwin.bat
+    - docker run --rm -m 4096M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/windows_1809_x64:$Env:DATADOG_AGENT_WINBUILDIMAGES c:\mnt\build\_build\gitlab.bat
     - mkdir artifacts
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts
     - remove-item -recurse -force build-out\${CI_JOB_ID}
@@ -24,4 +24,3 @@ driver_build:
     expire_in: 2 weeks
     paths:
     - artifacts
-  
