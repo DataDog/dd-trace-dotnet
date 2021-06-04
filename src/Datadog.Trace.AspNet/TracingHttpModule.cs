@@ -239,7 +239,7 @@ namespace Datadog.Trace.AspNet
             var dict = new Dictionary<string, object>()
             {
                 { "server.request.method", request.HttpMethod },
-                { "server.request.uri.raw", request.Url },
+                { "server.request.uri.raw", request.Url.ToString() },
                 { "server.request.query", request.QueryString.ToString() },
             };
 
