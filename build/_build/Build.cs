@@ -56,14 +56,15 @@ partial class Build : NukeBuild
 
     Target Info => _ => _
         .Description("Describes the current configuration")
+        .Before(Clean, Restore, BuildTracerHome)
         .Executes(() =>
         {
             Logger.Info($"Configuration: {BuildConfiguration}");
             Logger.Info($"Platform: {Platform}");
             Logger.Info($"Framework: {Framework}");
             Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
-            Logger.Info($"TracerHome: {TracerHome}");
-            Logger.Info($"Artifacts: {Artifacts}");
+            Logger.Info($"TracerHomeDirectory: {TracerHomeDirectory}");
+            Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
             Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
             Logger.Info($"IsAlpine: {IsAlpine}");
             Logger.Info($"Version: {Version}");
@@ -81,7 +82,7 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(NativeProfilerProject.Directory / "build");
             EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
             EnsureCleanDirectory(BuildDataDirectory);
-            DeleteFile(TracerHomeZip);
+            DeleteFile(WindowsTracerHomeZip);
         });
 
     Target BuildTracerHome => _ => _
@@ -169,6 +170,7 @@ partial class Build : NukeBuild
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetConfiguration(BuildConfiguration)
+                    .SetProperty("Platform", "AnyCPU")
                     .SetOutputDirectory(ArtifactsDirectory / "nuget")
                     .CombineWith(ProjectsToPack, (x, project) => x
                         .SetProject(project)),

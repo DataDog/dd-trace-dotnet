@@ -35,7 +35,7 @@ partial class Build
     AbsolutePath OutputDirectory => RootDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
-    AbsolutePath TracerHomeZip => ArtifactsDirectory / "tracer-home.zip";
+    AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -139,6 +139,7 @@ partial class Build
             MSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
+                .SetMSBuildPath()
                 .SetTargets("BuildCppSrc")
                 .DisableRestore()
                 .SetMaxCpuCount(null)
@@ -193,6 +194,7 @@ partial class Build
             // Always AnyCPU
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
+                .SetTargetPlatformAnyCPU()
                 .SetConfiguration(BuildConfiguration)
                 .DisableRestore()
                 .SetTargets("BuildCsharpSrc")
@@ -216,6 +218,7 @@ partial class Build
             MSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
+                .SetMSBuildPath()
                 .SetTargets("BuildCppTests")
                 .DisableRestore()
                 .SetMaxCpuCount(null)
@@ -260,6 +263,7 @@ partial class Build
             DotNetPublish(s => s
                 .SetProject(Solution.GetProject(Projects.ClrProfilerManaged))
                 .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
                 .EnableNoBuild()
                 .EnableNoRestore()
                 .CombineWith(TargetFrameworks, (p, framework) => p
@@ -345,6 +349,7 @@ partial class Build
             MSBuild(s => s
                     .SetTargetPath(Solution.GetProject(Projects.WindowsInstaller))
                     .SetConfiguration(BuildConfiguration)
+                    .SetMSBuildPath()
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
                     .SetMaxCpuCount(null)
@@ -394,7 +399,7 @@ partial class Build
         {
             if (IsWin)
             {
-                CompressZip(TracerHomeDirectory, TracerHomeZip, fileMode: FileMode.Create);
+                CompressZip(TracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
             }
             else if (IsLinux)
             {
@@ -455,6 +460,7 @@ partial class Build
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
                 .DisableRestore()
                 .SetProperty("BuildProjectReferences", false)
                 .SetTargets("BuildCsharpUnitTests"));
@@ -477,6 +483,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatformAnyCPU()
                     .SetDDEnvironmentVariables("dd-tracer-dotnet")
                     .EnableMemoryDumps()
                     .CombineWith(testProjects, (x, project) => x
@@ -527,6 +534,7 @@ partial class Build
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetTargets("BuildDependencyLibs")
@@ -544,6 +552,7 @@ partial class Build
 
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
+                .SetTargetPlatformAnyCPU()
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -605,6 +614,7 @@ partial class Build
             // seems similar to https://github.com/dotnet/sdk/issues/8360
             MSBuild(s => s
                 .SetTargetPath(MsBuildProject)
+                .SetMSBuildPath()
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -678,6 +688,7 @@ partial class Build
             var publishProfile = TestsDirectory / "test-applications" / "aspnet" / "PublishProfiles" /
                                  "FolderProfile.pubxml";
             MSBuild(x => x
+                .SetMSBuildPath()
                 // .DisableRestore()
                 .EnableNoDependencies()
                 .SetTargetPath(IisSolution)
