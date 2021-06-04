@@ -1,17 +1,24 @@
 trigger:
   branches:
     include:
-      - master # Only run on master for now
+      - master
+      - refs/tags/*
     exclude:
       - refs/pull/*/head
   paths:
     exclude:
       - docs/*
       - .github/*
-pr:
-  branches:
-    exclude: # Don't run PR validation for now
-    - '*'
+
+
+schedules:
+  - cron: "0 3 * * *"
+    displayName: Daily 3am (UTC) build
+    branches:
+      include:
+        - master
+        - /benchmarks/*
+    always: true
 
 # Global variables
 variables:
@@ -26,6 +33,9 @@ variables:
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
+  # For scheduled builds, only run benchmarks and crank (and deps).
+  # Allow forcing a benchmark/throughput run using run_benchmarks_only=true
+  benchmarksOnly: ${{ or(eq(variables['Build.Reason'], 'Schedule'), eq(variables['run_benchmarks_only'], 'true')) }} # only works if you have a main branch
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -119,6 +129,7 @@ stages:
       artifact: build-linux-$(matrixName)-working-directory
 
 - stage: build_macos
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: []
   jobs:
   - job: build
@@ -148,6 +159,7 @@ stages:
       artifact: build-macos-working-directory
 
 - stage: package_windows
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: build_windows
   pool:
     vmImage: windows-2019
@@ -177,6 +189,7 @@ stages:
         artifact: nuget-packages
 
 - stage: unit_tests_windows
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: build_windows
   pool:
     vmImage: windows-2019
@@ -215,6 +228,7 @@ stages:
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: build_macos
   jobs:
   - job: managed
@@ -241,6 +255,7 @@ stages:
         condition: succeededOrFailed()
 
 - stage: unit_tests_linux
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: [build_linux]
   jobs:
   - job: test
@@ -288,6 +303,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: integration_tests_windows
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: build_windows
   pool:
     vmImage: windows-2019
@@ -317,6 +333,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: integration_tests_windows_iis
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: [build_windows, package_windows]
   jobs:
   - job: Windows_IIS
@@ -385,6 +402,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: integration_tests_linux
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: [build_linux]
   jobs:
   - job: Test
@@ -521,6 +539,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: benchmarks
+  condition: and(succeeded(), ne(variables['skip_benchmarks'], 'true'))
   dependsOn: build_windows
   jobs:
 
@@ -549,6 +568,7 @@ stages:
         script: 'Start-Sleep -s 120'
 
 - stage: dotnet_tool
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: [build_windows, build_linux, build_macos]
   jobs:
   - job: build_runner_tool_and_standalone
@@ -653,6 +673,7 @@ stages:
       artifact: runner-standalone-osx-x64
 
 - stage: upload
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
   dependsOn: [package_windows, build_linux]
   jobs:
   - job: s3_upload
@@ -745,7 +766,10 @@ stages:
           )
         )
 
+
+
 - stage: throughput
+  condition: and(succeeded(), ne(variables['skip_benchmarks'], 'true'))
   dependsOn: [build_linux, build_windows]
   jobs:
 
