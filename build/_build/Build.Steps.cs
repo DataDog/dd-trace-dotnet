@@ -35,7 +35,7 @@ partial class Build
     AbsolutePath OutputDirectory => RootDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
-    AbsolutePath TracerHomeZip => ArtifactsDirectory / "tracer-home.zip";
+    AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -399,7 +399,7 @@ partial class Build
         {
             if (IsWin)
             {
-                CompressZip(TracerHomeDirectory, TracerHomeZip, fileMode: FileMode.Create);
+                CompressZip(TracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
             }
             else if (IsLinux)
             {
