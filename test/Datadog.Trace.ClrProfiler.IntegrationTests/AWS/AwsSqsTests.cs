@@ -132,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
 
-                var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: "aws.request");
+                var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: "sqs.request");
                 spans.Should().HaveCountGreaterOrEqualTo(_expectedSpans.Count);
 
                 spans.OrderBy(s => s.Start).Should().BeEquivalentTo(_expectedSpans, options => options
@@ -150,9 +150,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             {
                 return new AwsSqsSpan()
                 {
-                    Name = "aws.request",
+                    Name = "sqs.request",
                     Resource = $"SQS.{operationName}",
-                    Service = "Samples.AWS.SQS-SQS",
+                    Service = "Samples.AWS.SQS-aws-sqs",
                     Tags = new()
                     {
                         { "component", "aws-sdk" },
