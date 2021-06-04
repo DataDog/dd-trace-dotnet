@@ -79,7 +79,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         {
             /*
              * Here we delay the loading of the assemblies to prevent a crash due to some unknown (yet) race.
-             * The case has been seen with a WCF application (client: Inovalon)
+             * The case has been seen with a WCF application.
+
              * This is a short-term fix to secure and ensure clients onboarding.
              */
             Task.Run(() =>
