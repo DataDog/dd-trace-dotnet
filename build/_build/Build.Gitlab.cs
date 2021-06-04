@@ -27,7 +27,12 @@ partial class Build
        .Before(PackNuGet, BuildMsi, ZipTracerHome)
        .Executes(async () =>
         {
-            var dlls = TracerHomeDirectory.GlobFiles("**/Datadog*.dll");
+            // also sign the NuGet package "bin" folder, as they are what gets packed in the NuGet
+            var dllsInBin = ProjectsToPack
+                           .Select(project => project.Directory)
+                           .SelectMany(projectDir => projectDir.GlobFiles("**/bin/**/Datadog*.dll"));
+            var dlls = TracerHomeDirectory.GlobFiles("**/Datadog*.dll")
+                                          .Concat(dllsInBin);
             await SignFiles(dlls);
         });
 
