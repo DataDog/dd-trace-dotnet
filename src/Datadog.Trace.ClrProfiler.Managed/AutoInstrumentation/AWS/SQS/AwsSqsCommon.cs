@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     internal static class AwsSqsCommon
     {
+        private const string DatadogAwsSqsServiceName = "aws-sqs";
         private const string SqsOperationName = "sqs.request";
         private const string SqsServiceName = "SQS";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSqsCommon));
@@ -36,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 Span parent = tracer.ActiveScope?.Span;
 
                 tags = new AwsSqsTags();
-                string serviceName = tracer.Settings.GetServiceName(tracer, SqsServiceName);
+                string serviceName = tracer.Settings.GetServiceName(tracer, DatadogAwsSqsServiceName);
                 scope = tracer.StartActiveWithTags(SqsOperationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
