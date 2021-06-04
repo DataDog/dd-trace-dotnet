@@ -47,6 +47,9 @@ SET CORECLR_ENABLE_PROFILING=1
 SET CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
 SET CORECLR_PROFILER_PATH=%~dp0\src\Datadog.Trace.ClrProfiler.Native\bin\%profiler_configuration%\%profiler_platform%\Datadog.Trace.ClrProfiler.Native.dll
 
+rem Enable Security features
+SET DD_ENABLE_SECURITY=true
+
 rem Don't attach the profiler to these processes
 SET DD_PROFILER_EXCLUDE_PROCESSES=devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;vstest.console.exe;ServiceHub.RoslynCodeAnalysisService32.exe;testhost.x86.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe
 
@@ -72,12 +75,13 @@ if "%start_visual_studio%" == "true" (
 goto end
 
 :show_usage
-echo Usage: %0 [Release^|Debug] [x64^|x86] [vs+^|vs-]
+echo Usage: %0 [Release^|Debug] [x64^|x86] [vs+^|vs-] [sln name with sln extension]
 echo   All arguments are optional and can be provided in any order.
 echo   If an argument is provided multiple times, the last value wins.
 echo   The default configuration is "Release".
 echo   The default platform is "x64".
 echo   Visual Studio is started unless "vs-" is specified.
+echo   The default solution is "Datadog.Trace.sln"
 
 :end
 rem Clear temporary values

@@ -42,8 +42,8 @@ namespace Datadog.Trace.AppSec
 
             _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
 
-            var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_DISABLE_SECURITY"), out var disabled);
-            Enabled = (!found || !disabled);
+            var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_ENABLE_SECURITY"), out var enabled);
+            Enabled = found && enabled;
         }
 
         /// <summary>
