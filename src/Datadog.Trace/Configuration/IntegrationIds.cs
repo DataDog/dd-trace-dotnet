@@ -32,5 +32,6 @@ namespace Datadog.Trace.Configuration
         Msmq,
         Kafka,
         AwsSdk,
+        AwsSqs,
     }
 }

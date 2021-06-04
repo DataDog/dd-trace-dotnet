@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         ParameterTypeNames = new[] { "Amazon.SQS.Model.ReceiveMessageRequest" },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
-        IntegrationName = AwsConstants.IntegrationName)]
+        IntegrationName = AwsSqsCommon.IntegrationName)]
     public class ReceiveMessageIntegration
     {
         private const string Operation = "ReceiveMessage";

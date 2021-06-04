@@ -446,7 +446,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Kafka", "test\test-
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNet472.LoaderOptimizationRegKey", "test\test-applications\aspnet\Samples.AspNet472.LoaderOptimizationRegKey\Samples.AspNet472.LoaderOptimizationRegKey.csproj", "{BBB60B0F-BF01-4499-936A-4A299A9ACFD4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "_build", "build\_build\_build.csproj", "{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build\_build.csproj", "{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -1684,6 +1684,18 @@ Global
 		{BBB60B0F-BF01-4499-936A-4A299A9ACFD4}.Release|x64.Build.0 = Release|x64
 		{BBB60B0F-BF01-4499-936A-4A299A9ACFD4}.Release|x86.ActiveCfg = Release|x86
 		{BBB60B0F-BF01-4499-936A-4A299A9ACFD4}.Release|x86.Build.0 = Release|x86
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Debug|x64.Build.0 = Debug|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Debug|x86.Build.0 = Debug|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Release|x64.ActiveCfg = Release|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Release|x64.Build.0 = Release|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Release|x86.ActiveCfg = Release|Any CPU
+		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

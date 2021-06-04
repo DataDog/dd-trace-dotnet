@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -11,14 +12,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     internal static class AwsSqsCommon
     {
+        private const string SqsOperationName = "sqs.request";
         private const string SqsServiceName = "SQS";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSqsCommon));
+
+        internal const string IntegrationName = nameof(IntegrationIds.AwsSqs);
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         public static Scope CreateScope(Tracer tracer, string operation, out AwsSqsTags tags, ISpanContext parentContext = null)
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -32,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
                 tags = new AwsSqsTags();
                 string serviceName = tracer.Settings.GetServiceName(tracer, SqsServiceName);
-                scope = tracer.StartActiveWithTags(AwsConstants.OperationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveWithTags(SqsOperationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
@@ -40,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
                 tags.Service = SqsServiceName;
                 tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(AwsConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

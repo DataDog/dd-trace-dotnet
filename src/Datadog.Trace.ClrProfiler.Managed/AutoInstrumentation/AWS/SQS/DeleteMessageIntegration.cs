@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         ParameterTypeNames = new[] { "Amazon.SQS.Model.DeleteMessageRequest" },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
-        IntegrationName = AwsConstants.IntegrationName)]
+        IntegrationName = AwsSqsCommon.IntegrationName)]
     public class DeleteMessageIntegration
     {
         private const string Operation = "DeleteMessage";

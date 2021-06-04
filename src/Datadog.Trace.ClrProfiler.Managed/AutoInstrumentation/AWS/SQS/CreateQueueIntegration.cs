@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         ParameterTypeNames = new[] { "Amazon.SQS.Model.CreateQueueRequest" },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
-        IntegrationName = AwsConstants.IntegrationName)]
+        IntegrationName = AwsSqsCommon.IntegrationName)]
     public class CreateQueueIntegration
     {
         private const string Operation = "CreateQueue";

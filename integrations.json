@@ -262,6 +262,57 @@
       {
         "caller": {},
         "target": {
+          "assembly": "AWSSDK.Core",
+          "type": "Amazon.Runtime.Internal.RuntimePipeline",
+          "method": "InvokeAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<T>",
+            "Amazon.Runtime.IExecutionContext"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "AWSSDK.Core",
+          "type": "Amazon.Runtime.Internal.RuntimePipeline",
+          "method": "InvokeSync",
+          "signature_types": [
+            "Amazon.Runtime.IResponseContext",
+            "Amazon.Runtime.IExecutionContext"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
+    "name": "AwsSqs",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
           "assembly": "AWSSDK.SQS",
           "type": "Amazon.SQS.AmazonSQSClient",
           "method": "CreateQueueAsync",
@@ -585,52 +636,6 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageIntegration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "AWSSDK.Core",
-          "type": "Amazon.Runtime.Internal.RuntimePipeline",
-          "method": "InvokeAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<T>",
-            "Amazon.Runtime.IExecutionContext"
-          ],
-          "minimum_major": 3,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 3,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration",
-          "action": "CallTargetModification"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "AWSSDK.Core",
-          "type": "Amazon.Runtime.Internal.RuntimePipeline",
-          "method": "InvokeSync",
-          "signature_types": [
-            "Amazon.Runtime.IResponseContext",
-            "Amazon.Runtime.IExecutionContext"
-          ],
-          "minimum_major": 3,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 3,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration",
           "action": "CallTargetModification"
         }
       }
