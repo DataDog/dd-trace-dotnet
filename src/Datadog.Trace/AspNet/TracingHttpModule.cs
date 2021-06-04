@@ -243,6 +243,16 @@ namespace Datadog.Trace.AspNet
                     Log.Error(ex, "Error extracting HTTP headers to create header tags.");
                 }
             }
+        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request)
+        {
+            var dict = new Dictionary<string, object>()
+            {
+                { "server.request.method", request.HttpMethod },
+                { "server.request.uri.raw", request.Url.ToString() },
+                { "server.request.query", request.QueryString.ToString() },
+            };
+
+            security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context));
         }
     }
 }

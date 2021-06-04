@@ -5,9 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transport;
 
 namespace Datadog.Trace.AppSec

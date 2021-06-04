@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net452|x64'">
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DocumentationFile>C:\Repositories\dd-dotnet-trace\test\Datadog.Trace.Security.IntegrationTests\Datadog.Trace.Security.IntegrationTests.xml</DocumentationFile>
   </PropertyGroup>
 
