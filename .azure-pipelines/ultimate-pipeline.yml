@@ -539,6 +539,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: benchmarks
+  condition: and(succeeded(), ne(variables['skip_benchmarks'], 'true'))
   dependsOn: build_windows
   jobs:
 
@@ -767,6 +768,7 @@ stages:
 
 
 - stage: throughput
+  condition: and(succeeded(), ne(variables['skip_benchmarks'], 'true'))
   dependsOn: [build_linux, build_windows]
   jobs:
 
