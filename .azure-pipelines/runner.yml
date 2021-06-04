@@ -1,14 +1,4 @@
-trigger:
-  branches:
-    include:
-      - master
-      - refs/tags/*
-    exclude:
-      - refs/pull/*/head
-  paths:
-    exclude:
-      - docs/*
-      - .github/*
+trigger: none
 
 variables:
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
