@@ -1296,6 +1296,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
           && ReturnTypeIsValueTypeOrGeneric(module_metadata->metadata_import,
                               module_metadata->metadata_emit,
                               module_metadata->assembly_emit,
+                              corAssemblyProperty,
                               target.id,
                               target.signature,
                               &typeToken)) {
@@ -1723,8 +1724,8 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  mdModuleRef mscorlib_ref;
-  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+  mdAssemblyRef corlib_ref;
+  hr = GetCORLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
 
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: failed to define AssemblyRef to mscorlib");
@@ -1733,7 +1734,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   // Define a TypeRef for System.Object
   mdTypeRef object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, WStr("System.Object"), &object_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Object"), &object_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
     return hr;
@@ -1809,7 +1810,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
     // Get a TypeRef for System.Threading.Interlocked
     mdTypeRef interlocked_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
     if (FAILED(hr)) {
       Warn("GenerateVoidILStartupMethod: DefineTypeRefByName interlocked_type_ref failed");
       return hr;
@@ -2002,7 +2003,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.Byte
   mdTypeRef byte_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref,
                                           WStr("System.Byte"),
                                           &byte_type_ref);
   if (FAILED(hr)) {
@@ -2012,7 +2013,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.Runtime.InteropServices.Marshal
   mdTypeRef marshal_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref,
                                           WStr("System.Runtime.InteropServices.Marshal"),
                                           &marshal_type_ref);
   if (FAILED(hr)) {
@@ -2042,7 +2043,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.Reflection.Assembly
   mdTypeRef system_reflection_assembly_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref,
                                           WStr("System.Reflection.Assembly"),
                                           &system_reflection_assembly_type_ref);
   if (FAILED(hr)) {
@@ -2052,7 +2053,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a MemberRef for System.Object.ToString()
   mdTypeRef system_object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref,
                                           WStr("System.Object"),
                                           &system_object_type_ref);
   if (FAILED(hr)) {
@@ -2062,7 +2063,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.AppDomain
   mdTypeRef system_appdomain_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref,
                                           WStr("System.AppDomain"),
                                           &system_appdomain_type_ref);
   if (FAILED(hr)) {
@@ -2480,19 +2481,19 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
 
   ILRewriterWrapper rewriter_wrapper(&rewriter);
 
-  // Get mscorlib assembly ref
-  mdModuleRef mscorlib_ref;
-  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+  // Get corlib assembly ref
+  mdAssemblyRef corlib_ref;
+  hr = GetCORLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
 
   // Get System.Boolean type token
   mdToken boolToken;
-  metadata_emit->DefineTypeRefByName(mscorlib_ref, SystemBoolean,
+  metadata_emit->DefineTypeRefByName(corlib_ref, SystemBoolean,
                                      &boolToken);
 
   // Get System.AppDomain type ref
   mdTypeRef system_appdomain_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(
-      mscorlib_ref, WStr("System.AppDomain"), &system_appdomain_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.AppDomain"),
+                                          &system_appdomain_type_ref);
   if (FAILED(hr)) {
     Warn("Wrapper objectTypeRef could not be defined.");
     return hr;
