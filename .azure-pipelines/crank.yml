@@ -1,20 +1,4 @@
-trigger:
-  branches:
-    include:
-      - master
-  paths:
-    exclude:
-      - docs/*
-      - .github/*
-pr:
-  branches:
-    include:
-      - master
-      - release/*
-  paths:
-    exclude:
-      - docs/*
-      - .github/*
+trigger: none
 
 schedules:
 - cron: "0 4 * * *"

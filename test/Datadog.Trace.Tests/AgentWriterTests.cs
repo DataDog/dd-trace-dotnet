@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
 
-            _agentWriter.WriteTrace(trace);
+            _agentWriter.WriteTrace(new ArraySegment<Span>(trace));
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1)), Times.Once);
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests
             trace = new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) };
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
 
-            _agentWriter.WriteTrace(trace);
+            _agentWriter.WriteTrace(new ArraySegment<Span>(trace));
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1)), Times.Once);
@@ -267,7 +267,7 @@ namespace Datadog.Trace.Tests
             var childSpan = new Span(new SpanContext(rootSpanContext, traceContext, null), DateTimeOffset.UtcNow);
             traceContext.AddSpan(rootSpan);
             traceContext.AddSpan(childSpan);
-            var trace = new[] { rootSpan, childSpan };
+            var trace = new ArraySegment<Span>(new[] { rootSpan, childSpan });
             var sizeOfTrace = ComputeSizeOfTrace(trace);
 
             // Make the buffer size big enough for a single trace
@@ -323,7 +323,7 @@ namespace Datadog.Trace.Tests
                     return Task.FromResult(true);
                 });
 
-            var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
+            var trace = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
 
             // Write trace to the front buffer
             agentWriter.WriteTrace(trace);
@@ -361,16 +361,18 @@ namespace Datadog.Trace.Tests
             return data.Array.Skip(data.Offset).Take(data.Count).Skip(SpanBuffer.HeaderSize).SequenceEqual(expectedData);
         }
 
-        private static int ComputeSizeOfTrace(Span[] trace)
+        private static int ComputeSizeOfTrace(ArraySegment<Span> trace)
         {
             return Vendors.MessagePack.MessagePackSerializer.Serialize(trace, new FormatterResolverWrapper(SpanFormatterResolver.Instance)).Length;
         }
 
-        private static Span[] CreateTrace(int numberOfSpans)
+        private static ArraySegment<Span> CreateTrace(int numberOfSpans)
         {
-            return Enumerable.Range(0, numberOfSpans)
+            var array = Enumerable.Range(0, numberOfSpans)
                 .Select(i => new Span(new SpanContext((ulong)i + 1, (ulong)i + 1), DateTimeOffset.UtcNow))
                 .ToArray();
+
+            return new ArraySegment<Span>(array);
         }
     }
 }

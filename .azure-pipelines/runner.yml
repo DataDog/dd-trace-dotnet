@@ -1,14 +1,4 @@
-trigger:
-  branches:
-    include:
-      - master
-      - refs/tags/*
-    exclude:
-      - refs/pull/*/head
-  paths:
-    exclude:
-      - docs/*
-      - .github/*
+trigger: none
 
 variables:
   publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
@@ -158,6 +148,7 @@ jobs:
 - job: build_runner_tool_and_standalone
   dependsOn:
   - build_linux_profiler
+  - build_linux_profiler_arm64
   - macos_profiler
   condition: succeeded()
 
