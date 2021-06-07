@@ -124,7 +124,7 @@ partial class Build : NukeBuild
         .Description("Builds the integration tests for Windows")
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CopyPlatformlessBuildOutput)
+        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileRegressionSamples)
         .DependsOn(CompileFrameworkReproductions)

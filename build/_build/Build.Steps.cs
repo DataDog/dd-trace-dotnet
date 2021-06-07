@@ -52,6 +52,7 @@ partial class Build
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
     [LazyPathExecutable(name: "fpm")] readonly Lazy<Tool> Fpm;
     [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
+    [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(Platform, MSBuildTargetPlatform.x64)
@@ -362,7 +363,7 @@ partial class Build
     /// <summary>
     /// This target is a bit of a hack, but means that we actually use the All CPU builds in intgration tests etc
     /// </summary>
-    Target CopyPlatformlessBuildOutput => _ => _
+    Target CreatePlatformlessSymlinks => _ => _
         .Description("Copies the build output from 'All CPU' platforms to platform-specific folders")
         .Unlisted()
         .After(CompileManagedSrc)
@@ -370,22 +371,25 @@ partial class Build
         .After(CompileManagedTestHelpers)
         .Executes(() =>
         {
+            // create junction for each directory
             var directories = RootDirectory.GlobDirectories(
                 $"src/**/bin/{BuildConfiguration}",
                 $"tools/**/bin/{BuildConfiguration}",
                 $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
                 $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
             );
-            directories.ForEach(source =>
+
+            directories.ForEach(existingDir =>
             {
-                var target = source.Parent / $"{Platform}" / BuildConfiguration;
-                if (DirectoryExists(target))
+                var newDir = existingDir.Parent / $"{Platform}" / BuildConfiguration;
+                if (DirectoryExists(newDir))
                 {
-                    Logger.Info($"Skipping '{target}' as already exists");
+                    Logger.Info($"Skipping '{newDir}' as already exists");
                 }
                 else
                 {
-                    CopyDirectoryRecursively(source, target, DirectoryExistsPolicy.Fail, FileExistsPolicy.Fail);
+                    EnsureExistingDirectory(newDir.Parent);
+                    Cmd.Value(arguments: $"cmd /c mklink /J \"{newDir}\" \"{existingDir}\"");
                 }
             });
         });
@@ -578,7 +582,7 @@ partial class Build
     Target CompileRegressionSamples => _ => _
         .Unlisted()
         .After(Restore)
-        .After(CopyPlatformlessBuildOutput)
+        .After(CreatePlatformlessSymlinks)
         .After(CompileRegressionDependencyLibs)
         .Executes(() =>
         {
@@ -620,7 +624,7 @@ partial class Build
         .Description("Builds .NET Framework projects (non SDK-based projects)")
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
-        .After(CopyPlatformlessBuildOutput)
+        .After(CreatePlatformlessSymlinks)
         .Requires(() => IsWin)
         .Executes(() =>
         {
@@ -660,7 +664,7 @@ partial class Build
     Target CompileSamples => _ => _
         .Unlisted()
         .After(CompileDependencyLibs)
-        .After(CopyPlatformlessBuildOutput)
+        .After(CreatePlatformlessSymlinks)
         .After(CompileFrameworkReproductions)
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
