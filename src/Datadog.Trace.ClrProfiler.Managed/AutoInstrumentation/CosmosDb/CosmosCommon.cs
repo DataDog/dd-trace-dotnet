@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         public const string Major3MinorX = "3";
 
         public const string IntegrationName = nameof(IntegrationIds.CosmosDb);
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         private const string OperationName = "cosmosdb.query";
         private const string ServiceName = "cosmosdb";
@@ -45,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
         private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(Func<object, Tuple<string, string, string>> extractProperties, TTarget instance, TQueryDefinition queryDefinition)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -84,11 +85,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 string databaseId = properties.Item2;
                 string endpoint = properties.Item3;
 
-                if (endpoint == null)
-                {
-                    Console.WriteLine();
-                }
-
                 var tags = new CosmosDbTags
                 {
                     ContainerId = containerId,
@@ -96,6 +92,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                     Host = endpoint,
                     DbType = "cosmosdb",
                 };
+
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
                 var scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName);
