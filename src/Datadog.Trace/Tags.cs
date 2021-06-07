@@ -358,6 +358,11 @@ namespace Datadog.Trace
         /// </summary>
         public const string MsmqMessageWithTransaction = "msmq.message.transactional";
 
+        /// <summary>
+        /// A CosmosDb container name.
+        /// </summary>
+        public const string CosmosDbContainer = "cosmosdb.container";
+
         internal const string ElasticsearchAction = "elasticsearch.action";
 
         internal const string ElasticsearchMethod = "elasticsearch.method";

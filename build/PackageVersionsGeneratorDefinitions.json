@@ -106,5 +106,12 @@
     "NugetPackageSearchName": "Confluent.Kafka",
     "MinVersion": "1.4.0",
     "MaxVersionExclusive": "2.0.0"
+  },
+  {
+    "IntegrationName": "CosmosDb",
+    "SampleProjectName": "Samples.CosmosDb",
+    "NugetPackageSearchName": "Microsoft.Azure.Cosmos",
+    "MinVersion": "3.6.0",
+    "MaxVersionExclusive": "4.0.0"
   }
 ]

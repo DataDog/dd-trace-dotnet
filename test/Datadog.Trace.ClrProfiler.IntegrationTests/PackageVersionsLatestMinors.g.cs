@@ -292,5 +292,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+        public static IEnumerable<object[]> CosmosDb =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
+                new object[] { "3.12.0" },
+                new object[] { "3.13.0" },
+                new object[] { "3.14.0" },
+                new object[] { "3.15.1" },
+                new object[] { "3.16.0" },
+                new object[] { "3.17.1" },
+                new object[] { "3.18.0" },
+#endif
+            };
+
     }
 }
