@@ -31,7 +31,7 @@
     <LIB_INCLUDES>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\include;$(LIB_PATH)spdlog\include</LIB_INCLUDES>
     <LIB_BINARIES Condition="'$(Configuration)'=='Release'">$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\lib\fmt.lib</LIB_BINARIES>
     <LIB_BINARIES Condition="'$(Configuration)'=='Debug'">$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\debug\lib\fmtd.lib</LIB_BINARIES>
-    <LIB_BINARIES>$(LIB_BINARIES);Ws2_32.lib;..\..\lib\x64\SqreenLibrary\lib\SqreenStatic.lib</LIB_BINARIES>
+    <LIB_BINARIES>$(LIB_BINARIES);Ws2_32.lib;..\..\lib\$(LIB_PLATFORM)\SqreenLibrary\lib\SqreenStatic.lib</LIB_BINARIES>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
