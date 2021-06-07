@@ -30,7 +30,6 @@ partial class Build
 {
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
     AbsolutePath MsBuildProject => RootDirectory / "Datadog.Trace.proj";
-    AbsolutePath IisSolution => TestsDirectory / "test-applications" / "aspnet" / "samples-iis.sln";
 
     AbsolutePath OutputDirectory => RootDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
@@ -684,18 +683,21 @@ partial class Build
         .After(CompileFrameworkReproductions)
         .Executes(() =>
         {
+            var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
+            var aspnetProjects = aspnetFolder.GlobFiles("**/*.csproj");
 
-            var publishProfile = TestsDirectory / "test-applications" / "aspnet" / "PublishProfiles" /
-                                 "FolderProfile.pubxml";
+            var publishProfile = aspnetFolder / "PublishProfiles" / "FolderProfile.pubxml";
+
             MSBuild(x => x
                 .SetMSBuildPath()
                 // .DisableRestore()
                 .EnableNoDependencies()
-                .SetTargetPath(IisSolution)
                 .SetConfiguration(BuildConfiguration)
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
+                .CombineWith(aspnetProjects, (c, project ) => c
+                    .SetTargetPath(project))
             );
         });
 
