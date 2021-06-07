@@ -1,12 +1,11 @@
-//
-// Created by gabi on 6/15/18.
-//
-
+// Copyright(c) 2015-present, Gabi Melman & spdlog contributors.
+// Distributed under the MIT License (http://opensource.org/licenses/MIT)
 #pragma once
 
 #include <chrono>
 #include <type_traits>
 #include "spdlog/fmt/fmt.h"
+#include "spdlog/common.h"
 
 // Some fmt helpers to efficiently format and pad ints and strings
 namespace spdlog {
@@ -108,7 +107,7 @@ inline void pad9(T n, fmt::basic_memory_buffer<char, Buffer_Size> &dest)
 // e.g.
 // fraction<std::milliseconds>(tp) -> will return the millis part of the second
 template<typename ToDuration>
-inline ToDuration time_fraction(const log_clock::time_point &tp)
+inline ToDuration time_fraction(log_clock::time_point tp)
 {
     using std::chrono::duration_cast;
     using std::chrono::seconds;
