@@ -367,7 +367,7 @@ partial class Build
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileDependencyLibs)
-        .After(CompileManagedUnitTests)
+        .After(CompileManagedTestHelpers)
         .Executes(() =>
         {
             var directories = RootDirectory.GlobDirectories(
@@ -448,6 +448,21 @@ partial class Build
             }
         });
 
+    Target CompileManagedTestHelpers => _ => _
+        .Unlisted()
+        .After(Restore)
+        .After(CompileManagedSrc)
+        .Executes(() =>
+        {
+            // Always AnyCPU
+            DotNetMSBuild(x => x
+                .SetTargetPath(MsBuildProject)
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .DisableRestore()
+                .SetProperty("BuildProjectReferences", false)
+                .SetTargets("BuildCsharpTestHelpers"));
+        });
 
     Target CompileManagedUnitTests => _ => _
         .Unlisted()
@@ -678,7 +693,7 @@ partial class Build
 
     Target PublishIisSamples => _ => _
         .Unlisted()
-        .After(CompileManagedUnitTests)
+        .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .Executes(() =>
@@ -778,7 +793,7 @@ partial class Build
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
-        .After(CompileManagedUnitTests)
+        .After(CompileManagedTestHelpers)
         .Requires(() => TracerHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -885,7 +900,7 @@ partial class Build
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
-        .After(CompileManagedUnitTests)
+        .After(CompileManagedTestHelpers)
         .After(CompileSamplesLinux)
         .Requires(() => TracerHomeDirectory != null)
         .Requires(() => Framework)
@@ -913,7 +928,7 @@ partial class Build
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
-        .After(CompileManagedUnitTests)
+        .After(CompileManagedTestHelpers)
         .After(CompileSamplesLinux)
         .After(CompileMultiApiPackageVersionSamples)
         .Requires(() => TracerHomeDirectory != null)

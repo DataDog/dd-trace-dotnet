@@ -31,6 +31,12 @@
     </MSBuild>
   </Target>
 
+  <Target Name="BuildCsharpTestHelpers">
+    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
   <Target Name="BuildCsharpUnitTests">
     <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
