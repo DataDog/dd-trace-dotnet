@@ -12,12 +12,13 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Args : IDisposable
     {
-        private PWArgs64 args;
+        private PWArgs args;
         private bool disposed = false;
 
-        public Args(PWArgs64 args)
+        public Args(PWArgs args)
         {
             this.args = args;
+            Console.WriteLine($"args.RawHandle: {args.RawHandle}, args.Type: {args.Type}");
         }
 
         // NOTE: do not add a finalizer here. Often args will be owned and freed by the native code
@@ -27,7 +28,7 @@ namespace Datadog.Trace.AppSec.Waf
             get { return Encoder.DecodeArgsType(args.Type); }
         }
 
-        public PWArgs64 RawArgs
+        public PWArgs RawArgs
         {
             get { return args; }
         }
