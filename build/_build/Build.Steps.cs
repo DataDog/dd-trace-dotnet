@@ -811,7 +811,7 @@ partial class Build
             // These samples are currently skipped.
             var projectsToSkip = new[]
             {
-                "Samples.Msmq",
+                "Samples.Msmq",  // Doesn't run on Linux
                 "Samples.MultiDomainHost.Runner",
                 "Samples.RateLimiter", // I think we _should_ run this one (assuming it has tests)
                 "Samples.SqlServer.NetFramework20",
@@ -833,6 +833,7 @@ partial class Build
             // TODO: Load this list dynamically
             var multiApiProjects = new[]
             {
+                "Samples.CosmosDb",
                 "Samples.MongoDB",
                 "Samples.Elasticsearch",
                 "Samples.Elasticsearch.V5",
