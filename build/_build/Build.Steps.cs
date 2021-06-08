@@ -811,7 +811,7 @@ partial class Build
             // These samples are currently skipped.
             var projectsToSkip = new[]
             {
-                "Samples.Msmq",
+                "Samples.Msmq",  // Doesn't run on Linux
                 "Samples.MultiDomainHost.Runner",
                 "Samples.RateLimiter", // I think we _should_ run this one (assuming it has tests)
                 "Samples.SqlServer.NetFramework20",
@@ -833,6 +833,7 @@ partial class Build
             // TODO: Load this list dynamically
             var multiApiProjects = new[]
             {
+                "Samples.CosmosDb",
                 "Samples.MongoDB",
                 "Samples.Elasticsearch",
                 "Samples.Elasticsearch.V5",
@@ -980,6 +981,14 @@ partial class Build
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
+
+            var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
+            {
+                (true, false) => "Category!=LinuxUnsupported",
+                (true, true) => "(Category!=ArmUnsupported)&(Category!=LinuxUnsupported",
+                _ => Filter
+            };
+
             try
             {
                 // Run these ones in parallel
@@ -991,7 +1000,7 @@ partial class Build
                         .EnableNoBuild()
                         .SetFramework(Framework)
                         .EnableMemoryDumps()
-                        .When(!string.IsNullOrEmpty(Filter), x => x.SetFilter(Filter))
+                        .SetFilter(filter)
                         .When(TestAllPackageVersions, o => o
                             .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -1007,7 +1016,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFramework(Framework)
                     .EnableMemoryDumps()
-                    .SetFilter(Filter ?? (IsArm64 ? "Category!=ArmUnsupported" : null))
+                    .SetFilter(filter)
                     .When(TestAllPackageVersions, o => o
                         .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
