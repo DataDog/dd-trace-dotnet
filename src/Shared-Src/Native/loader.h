@@ -157,6 +157,13 @@ namespace shared
             }
         }
 
+        HRESULT EmitLoaderInModule(
+            const ComPtr<IMetaDataImport2> metadataImport,
+            const ComPtr<IMetaDataEmit2> metadataEmit,
+            ModuleID moduleId,
+            AppDomainID appDomainId,
+            WSTRING assemblyNameString);
+
         HRESULT EmitDDLoadInitializationAssembliesMethod(
             const ModuleID moduleId,
             mdTypeDef typeDef,

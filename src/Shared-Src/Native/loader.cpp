@@ -148,6 +148,20 @@ namespace shared
         }
     }
 
+
+    static Enumerator<mdMethodDef> EnumMethodsWithName(
+        const ComPtr<IMetaDataImport2>& metadata_import,
+        const mdToken& parent_token, LPCWSTR method_name) {
+        return Enumerator<mdMethodDef>(
+            [metadata_import, parent_token, method_name](HCORENUM* ptr, mdMethodDef arr[],
+                ULONG max, ULONG* cnt) -> HRESULT {
+                    return metadata_import->EnumMethodsWithName(ptr, parent_token, method_name, arr, max, cnt);
+            },
+            [metadata_import](HCORENUM ptr) -> void {
+                metadata_import->CloseEnum(ptr);
+            });
+    }
+
     HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID moduleId)
     {
         //
@@ -243,7 +257,7 @@ namespace shared
         //
         if (assemblyNameString == WStr("mscorlib") || assemblyNameString == WStr("System.Private.CoreLib"))
         {
-            Debug("Loader::InjectLoaderToModuleInitializer: extracting metadata of the corlib assembly.");
+            Debug("Loader::InjectLoaderToModuleInitializer: extracting metadata of the corlib assembly: " + ToString(assemblyNameString));
 
             mdAssembly corLibAssembly;
             assemblyImport->GetAssemblyFromScope(&corLibAssembly);
@@ -268,11 +282,75 @@ namespace shared
                 &_corlibMetadata.Flags);
             if (FAILED(hr) || assemblyNameString != WSTRING(name))
             {
-                Error("Loader::InjectLoaderToModuleInitializer: failed fetching metadata for corlib assembly.");
+                Error("Loader::InjectLoaderToModuleInitializer: failed fetching metadata for corlib assembly: " + ToString(assemblyNameString));
                 return hr;
             }
 
             _corlibMetadata.Name = WSTRING(name);
+            Debug("Loader::InjectLoaderToModuleInitializer: [" +
+                ToString(_corlibMetadata.Name) + ", " +
+                ToString(_corlibMetadata.Metadata.usMajorVersion) + ", " +
+                ToString(_corlibMetadata.Metadata.usMinorVersion) + ", " +
+                ToString(_corlibMetadata.Metadata.usRevisionNumber) + ", " +
+                ToString(_corlibMetadata.Metadata.usBuildNumber) +
+                "]");
+
+            mdTypeDef appDomainTypeDef;
+            hr = metadataImport->FindTypeDefByName(WStr("System.AppDomain"), mdTokenNil, &appDomainTypeDef);
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+
+            auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, WStr("IsCompatibilitySwitchSet"));
+            auto enumIterator = enumMethods.begin();
+            if (enumIterator != enumMethods.end()) {
+                auto methodDef = *enumIterator;
+
+                //
+                // Emit the System.AppDomain.DD_LoadInitializationAssemblies() mdMethodDef
+                //
+                mdMethodDef loaderMethodDef;
+                mdMemberRef securitySafeCriticalCtorMemberRef;
+                hr = EmitDDLoadInitializationAssembliesMethod(moduleId, appDomainTypeDef, assemblyNameString, &loaderMethodDef, &securitySafeCriticalCtorMemberRef);
+                if (FAILED(hr))
+                {
+                    return hr;
+                }
+
+                //
+                // rewrite method to call the startup loader.
+                //
+                ILRewriter rewriter(this->_pCorProfilerInfo, nullptr, moduleId, methodDef);
+                hr = rewriter.Import();
+                if (FAILED(hr))
+                {
+                    Error("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Import() failed for ModuleID=" + moduleIdHex +
+                        ", methodDef=0x" + HexStr(methodDef));
+                    return hr;
+                }
+
+                ILRewriterWrapper rewriterWrapper(&rewriter);
+                rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
+                rewriterWrapper.CallMember(loaderMethodDef, false);
+
+                hr = rewriter.Export();
+                if (FAILED(hr))
+                {
+                    Error("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + moduleIdHex +
+                        ", methodDef=0x" + HexStr(methodDef));
+                    return hr;
+                }
+
+                Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + moduleIdHex +
+                    ", AssemblyID=" + assemblyIdHex +
+                    ", AssemblyName=" + ToString(assemblyNameString) +
+                    ", AppDomainID=" + appDomainIdHex +
+                    "]");
+
+                return hr;
+            }
+
             return hr;
         }
 
@@ -304,7 +382,7 @@ namespace shared
         //              byte[] symbolsBytes = new byte[symbolsSize];
         //              Marshal.Copy(symbolsPtr, symbolsBytes, 0, symbolsSize);
         //
-        //              Assembly loadedAssembly = AppDomain.CurrentDomain.Load(assemblyBytes, symbolsBytes);
+        //              Assembly loadedAssembly = Assembly.Load(assemblyBytes, symbolsBytes);
         //              loadedAssembly
         //                  .GetType("Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader", true)
         //                  .GetMethod("Run")
@@ -318,6 +396,32 @@ namespace shared
         //  }
         //
         // **************************************************************************************************************
+        hr = EmitLoaderInModule(metadataImport, metadataEmit, moduleId, appDomainId, assemblyNameString);
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+
+        Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + moduleIdHex +
+              ", AssemblyID=" + assemblyIdHex +
+              ", AssemblyName=" + ToString(assemblyNameString) +
+              ", AppDomainID=" + appDomainIdHex +
+              "]");
+
+        return S_OK;
+    }
+
+    //
+
+    HRESULT Loader::EmitLoaderInModule(
+        const ComPtr<IMetaDataImport2> metadataImport,
+        const ComPtr<IMetaDataEmit2> metadataEmit,
+        ModuleID moduleId,
+        AppDomainID appDomainId,
+        WSTRING assemblyNameString) {
+
+        HRESULT hr;
+        std::string moduleIdHex = "0x" + HexStr(moduleId);
 
         //
         // Gets the mdTypeDef of <Module> type
@@ -327,9 +431,10 @@ namespace shared
         hr = metadataImport->FindTypeDefByName(moduleTypeName, mdTokenNil, &moduleTypeDef);
         if (FAILED(hr))
         {
-            Error("Loader::InjectLoaderToModuleInitializer: failed fetching " + ToString(moduleTypeName) + " (module type) typedef for ModuleID=" + moduleIdHex);
+            Error("Loader::EmitLoaderInModule: failed fetching " + ToString(moduleTypeName) + " (module type) typedef for ModuleID=" + moduleIdHex);
             return hr;
         }
+
 
         //
         // Emit the <Module>.DD_LoadInitializationAssemblies() mdMethodDef
@@ -350,11 +455,9 @@ namespace shared
         hr = metadataEmit->DefineCustomAttribute(moduleTypeDef, securitySafeCriticalCtorMemberRef, nullptr, 0, &securityCriticalAttribute);
         if (FAILED(hr))
         {
-            Error("Loader::InjectLoaderToModuleInitializer: Error creating the security critical attribute for the module type.");
+            Error("Loader::EmitLoaderInModule: Error creating the security critical attribute for the module type.");
             return hr;
         }
-
-        // ***************************************************************************************************************
 
         //
         // Emit the <Module>.cctor() mdMethodDef
@@ -365,18 +468,8 @@ namespace shared
             return hr;
         }
 
-        Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + moduleIdHex +
-              ", AssemblyID=" + assemblyIdHex +
-              ", AssemblyName=" + ToString(assemblyNameString) +
-              ", AppDomainID=" + appDomainIdHex +
-              ", LoaderMethodDef=0x" + HexStr(loaderMethodDef) +
-              ", SecuritySafeCriticalAttributeMemberRef=0x" + HexStr(securitySafeCriticalCtorMemberRef) +
-              "]");
-
         return S_OK;
     }
-
-    //
 
     HRESULT Loader::EmitDDLoadInitializationAssembliesMethod(
         const ModuleID moduleId,
@@ -407,7 +500,19 @@ namespace shared
         const ComPtr<IMetaDataAssemblyEmit> assmeblyEmit = metadataInterface.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
         //
-        // Check if the static void <Module>.DD_LoadInitializationAssemblies() mdMethodDef has been already injected.
+        // Get type name
+        //
+        WCHAR typeName[STRINGMAXSIZE];
+        hr = metadataImport->GetTypeDefProps(typeDef, typeName, STRINGMAXSIZE, NULL, nullptr, NULL);
+        if (FAILED(hr))
+        {
+            Info("Loader::EmitDDLoadInitializationAssemblies: Error loading the name for the type. ModuleID=" + moduleIdHex + ", TypeDef=" + ToString(HexStr(typeDef)));
+            return hr;
+        }
+        WSTRING typeNameString = WSTRING(typeName);
+
+        //
+        // Check if the static void [Type].DD_LoadInitializationAssemblies() mdMethodDef has been already injected.
         //
         WSTRING loaderMethodName = WSTRING(WStr("DD_LoadInitializationAssemblies_")) + ReplaceString(assemblyName, (WSTRING)WStr("."), (WSTRING)WStr(""));
         COR_SIGNATURE loaderMethodSignature[] =
@@ -515,17 +620,6 @@ namespace shared
         }
 
         //
-        // get a TypeRef for System.AppDomain
-        //
-        mdTypeRef systemAppDomainTypeRef;
-        hr = metadataEmit->DefineTypeRefByName(corlibAssemblyRef, WStr("System.AppDomain"), &systemAppDomainTypeRef);
-        if (FAILED(hr))
-        {
-            Error("Loader::EmitDDLoadInitializationAssemblies: DefineTypeRefByName failed");
-            return hr;
-        }
-
-        //
         // get a TypeRef for System.Reflection.MethodInfo
         //
         mdTypeRef systemReflectionMethodInfoTypeRef;
@@ -599,50 +693,28 @@ namespace shared
         }
 
         //
-        // get a MemberRef for System.AppDomain.get_CurrentDomain()
-        //
-        BYTE systemAppDomainTypeRefCompressedToken[10];
-        ULONG systemAppDomainTypeRefCompressedTokenLength = CorSigCompressToken(systemAppDomainTypeRef, systemAppDomainTypeRefCompressedToken);
-
-        COR_SIGNATURE appDomainGetCurrentDomainSignature[50];
-        offset = 0;
-        appDomainGetCurrentDomainSignature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
-        appDomainGetCurrentDomainSignature[offset++] = 0;
-        appDomainGetCurrentDomainSignature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&appDomainGetCurrentDomainSignature[offset], systemAppDomainTypeRefCompressedToken, systemAppDomainTypeRefCompressedTokenLength);
-        offset += systemAppDomainTypeRefCompressedTokenLength;
-
-        mdMemberRef appDomainGetCurrentDomainMemberRef;
-        hr = metadataEmit->DefineMemberRef(systemAppDomainTypeRef, WStr("get_CurrentDomain"), appDomainGetCurrentDomainSignature, offset, &appDomainGetCurrentDomainMemberRef);
-        if (FAILED(hr))
-        {
-            Error("Loader::EmitDDLoadInitializationAssemblies: System.AppDomain.get_CurrentDomain() DefineMemberRef failed");
-            return hr;
-        }
-
-        //
-        // Create method signature for AppDomain.Load(byte[], byte[])
+        // Create method signature for Assembly.Load(byte[], byte[])
         //
         BYTE systemReflectionAssemblyTypeRefCompressedToken[10];
         ULONG systemReflectionAssemblyTypeRefCompressedTokenLength = CorSigCompressToken(systemReflectionAssemblyTypeRef, systemReflectionAssemblyTypeRefCompressedToken);
 
-        COR_SIGNATURE appDomainLoadSignature[50];
+        COR_SIGNATURE assemblyLoadSignature[50];
         offset = 0;
-        appDomainLoadSignature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
-        appDomainLoadSignature[offset++] = 2;
-        appDomainLoadSignature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&appDomainLoadSignature[offset], systemReflectionAssemblyTypeRefCompressedToken, systemReflectionAssemblyTypeRefCompressedTokenLength);
+        assemblyLoadSignature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        assemblyLoadSignature[offset++] = 2;
+        assemblyLoadSignature[offset++] = ELEMENT_TYPE_CLASS;
+        memcpy(&assemblyLoadSignature[offset], systemReflectionAssemblyTypeRefCompressedToken, systemReflectionAssemblyTypeRefCompressedTokenLength);
         offset += systemReflectionAssemblyTypeRefCompressedTokenLength;
-        appDomainLoadSignature[offset++] = ELEMENT_TYPE_SZARRAY;
-        appDomainLoadSignature[offset++] = ELEMENT_TYPE_U1;
-        appDomainLoadSignature[offset++] = ELEMENT_TYPE_SZARRAY;
-        appDomainLoadSignature[offset++] = ELEMENT_TYPE_U1;
+        assemblyLoadSignature[offset++] = ELEMENT_TYPE_SZARRAY;
+        assemblyLoadSignature[offset++] = ELEMENT_TYPE_U1;
+        assemblyLoadSignature[offset++] = ELEMENT_TYPE_SZARRAY;
+        assemblyLoadSignature[offset++] = ELEMENT_TYPE_U1;
 
-        mdMemberRef appDomainLoadMemberRef;
-        hr = metadataEmit->DefineMemberRef(systemAppDomainTypeRef, WStr("Load"), appDomainLoadSignature, offset, &appDomainLoadMemberRef);
+        mdMemberRef assemblyLoadMemberRef;
+        hr = metadataEmit->DefineMemberRef(systemReflectionAssemblyTypeRef, WStr("Load"), assemblyLoadSignature, offset, &assemblyLoadMemberRef);
         if (FAILED(hr))
         {
-            Error("Loader::EmitDDLoadInitializationAssemblies: AppDomain.Load(byte[], byte[]) DefineMemberRef failed");
+            Error("Loader::EmitDDLoadInitializationAssemblies: Assembly.Load(byte[], byte[]) DefineMemberRef failed");
             return hr;
         }
 
@@ -784,10 +856,10 @@ namespace shared
             return hr;
         }
 
-        Debug("Loader::EmitDDLoadInitializationAssemblies: Creating <Module>." + ToString(loaderMethodName) + "() in ModuleID=" + moduleIdHex);
+        Debug("Loader::EmitDDLoadInitializationAssemblies: Creating " + ToString(typeNameString) + "." + ToString(loaderMethodName) + "() in ModuleID = " + moduleIdHex);
 
         //
-        // If the loader method cannot be found we create <Module>.DD_LoadInitializationAssemblies() mdMethodDef
+        // If the loader method cannot be found we create [Type].DD_LoadInitializationAssemblies() mdMethodDef
         //
         hr = metadataEmit->DefineMethod(typeDef, loaderMethodName.c_str(), mdStatic, loaderMethodSignature, sizeof(loaderMethodSignature), 0, 0, pLoaderMethodDef);
         if (FAILED(hr))
@@ -893,16 +965,14 @@ namespace shared
         // call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length)
         rewriterWrapper.CallMember(marshalCopyMemberRef, false);
 
-        // Step 4) Call System.Reflection.Assembly System.AppDomain.CurrentDomain.Load(byte[], byte[]))
+        // Step 4) Call System.Reflection.Assembly System.Reflection.Assembly.Load(byte[], byte[]))
 
-        // call System.AppDomain System.AppDomain.CurrentDomain property
-        rewriterWrapper.CallMember(appDomainGetCurrentDomainMemberRef, false);
         // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4) for the first byte[] parameter of AppDomain.Load(byte[], byte[])
         rewriterWrapper.LoadLocal(4);
         // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 5) for the second byte[] parameter of AppDomain.Load(byte[], byte[])
         rewriterWrapper.LoadLocal(5);
         // callvirt System.Reflection.Assembly System.AppDomain.Load(uint8[], uint8[])
-        rewriterWrapper.CallMember(appDomainLoadMemberRef, true);
+        rewriterWrapper.CallMember(assemblyLoadMemberRef, false);
 
         // Step 5) Call instance method Assembly.GetType("Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader", true)
 
