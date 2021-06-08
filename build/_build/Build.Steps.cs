@@ -981,6 +981,14 @@ partial class Build
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
+
+            var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
+            {
+                (true, false) => "Category!=LinuxUnsupported",
+                (true, true) => "(Category!=ArmUnsupported)&(Category!=LinuxUnsupported",
+                _ => Filter
+            };
+
             try
             {
                 // Run these ones in parallel
@@ -992,7 +1000,7 @@ partial class Build
                         .EnableNoBuild()
                         .SetFramework(Framework)
                         .EnableMemoryDumps()
-                        .When(!string.IsNullOrEmpty(Filter), x => x.SetFilter(Filter))
+                        .SetFilter(filter)
                         .When(TestAllPackageVersions, o => o
                             .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -1008,7 +1016,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFramework(Framework)
                     .EnableMemoryDumps()
-                    .SetFilter(Filter ?? (IsArm64 ? "Category!=ArmUnsupported" : null))
+                    .SetFilter(filter)
                     .When(TestAllPackageVersions, o => o
                         .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
