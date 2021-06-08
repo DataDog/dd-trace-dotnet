@@ -57,32 +57,32 @@ partial class Build
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(Platform, MSBuildTargetPlatform.x64)
-            ? new[] {MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86}
-            : new[] {MSBuildTargetPlatform.x86};
+            ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
+            : new[] { MSBuildTargetPlatform.x86 };
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
     string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : Platform.ToString();
 
-    IEnumerable<string> LinuxPackageTypes => IsAlpine ? new[] {"tar"} : new[] {"deb", "rpm", "tar"};
+    IEnumerable<string> LinuxPackageTypes => IsAlpine ? new[] { "tar" } : new[] { "deb", "rpm", "tar" };
 
-    IEnumerable<Project> ProjectsToPack => new []
+    IEnumerable<Project> ProjectsToPack => new[]
     {
         Solution.GetProject(Projects.DatadogTrace),
         Solution.GetProject(Projects.DatadogTraceOpenTracing),
     };
 
-    Project[] ParallelIntegrationTests => new []
+    Project[] ParallelIntegrationTests => new[]
     {
         Solution.GetProject(Projects.TraceIntegrationTests),
         Solution.GetProject(Projects.OpenTracingIntegrationTests),
     };
 
-    Project[] ClrProfilerIntegrationTests => new []
+    Project[] ClrProfilerIntegrationTests => new[]
     {
         Solution.GetProject(Projects.ClrProfilerIntegrationTests)
     };
 
-    readonly IEnumerable<TargetFramework> TargetFrameworks = new []
+    readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
         TargetFramework.NET45,
         TargetFramework.NET461,
@@ -439,7 +439,7 @@ partial class Build
 
                 foreach (var packageType in LinuxPackageTypes)
                 {
-                    var args = new []
+                    var args = new[]
                     {
                         "-f",
                         "-s dir",
@@ -562,8 +562,8 @@ partial class Build
 
     Target CompileDependencyLibs => _ => _
         .Unlisted()
-        .After(Restore)
-        .After(CompileManagedSrc)
+        .DependsOn(Restore)
+        .DependsOn(CompileManagedSrc)
         .Executes(() =>
         {
             // Always AnyCPU
@@ -623,18 +623,18 @@ partial class Build
                             && !x.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject")
                             && !x.Contains("dependency-libs"));
 
-             // Allow restore here, otherwise things go wonky with runtime identifiers
-             // in some target frameworks. No, I don't know why
-             DotNetBuild(x => x
-                 // .EnableNoRestore()
-                 .EnableNoDependencies()
-                 .SetConfiguration(BuildConfiguration)
-                 .SetTargetPlatform(Platform)
-                 .SetNoWarnDotNetCore3()
-                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                     o.SetPackageDirectory(NugetPackageDirectory))
-                 .CombineWith(regressionLibs, (x, project) => x
-                     .SetProjectFile(project)));
+            // Allow restore here, otherwise things go wonky with runtime identifiers
+            // in some target frameworks. No, I don't know why
+            DotNetBuild(x => x
+                // .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatform(Platform)
+                .SetNoWarnDotNetCore3()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                    o.SetPackageDirectory(NugetPackageDirectory))
+                .CombineWith(regressionLibs, (x, project) => x
+                    .SetProjectFile(project)));
         });
 
     Target CompileFrameworkReproductions => _ => _
@@ -757,9 +757,10 @@ partial class Build
                     .SetDotnetPath(Platform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(Platform)
-                    .EnableNoRestore()
+                                    .EnableNoRestore()
                     .EnableNoBuild()
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)), degreeOfParallelism: 4);
@@ -939,7 +940,7 @@ partial class Build
         {
             // Build and restore for all versions
             // Annoyingly this rebuilds everything again and again.
-            var targets = new [] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
+            var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
 
             // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetMSBuild(x => x
@@ -1079,6 +1080,23 @@ partial class Build
         }
     }
 
+    private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings)
+    {
+        // if (settings.Framework != TargetFramework.NETCOREAPP3_1)
+        // {
+        //     return settings;
+        // }
+
+        // var profilerLibFolder = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory / "bin" / BuildConfiguration / TargetFramework.NETCOREAPP3_1 / "profiler-lib" / TargetFramework.NETCOREAPP3_1;
+
+        return settings.SetDataCollector("XPlat Code Coverage")
+                .SetProcessArgumentConfigurator(
+                     args =>
+                         args.Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura")
+                             // .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeDirectory={0}", profilerLibFolder)
+                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*]Datadog.Trace.Vendors.*"));
+    }
+
     protected override void OnTargetStart(string target)
     {
         if (PrintDriveSpace)
@@ -1092,7 +1110,7 @@ partial class Build
 
         static string PrettyPrint(long bytes)
         {
-            var power = Math.Min((int) Math.Log(bytes, 1000), 4);
+            var power = Math.Min((int)Math.Log(bytes, 1000), 4);
             var normalised = bytes / Math.Pow(1000, power);
             return power switch
             {

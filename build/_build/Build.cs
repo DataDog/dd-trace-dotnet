@@ -59,6 +59,9 @@ partial class Build : NukeBuild
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
 
+    [Parameter("Enables code coverage")]
+    readonly bool CodeCoverage;
+
     Target Info => _ => _
         .Description("Describes the current configuration")
         .Before(Clean, Restore, BuildTracerHome)

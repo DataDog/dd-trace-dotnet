@@ -5,10 +5,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -22,6 +24,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
+#if NETCOREAPP3_1
+
+            var paths = EnvironmentHelper.GetProfilerPathCandidates(null).ToArray();
+
+            foreach (var path in paths)
+            {
+                var baseDirectory = Path.GetDirectoryName(path);
+                var finalDirectory = Path.Combine(baseDirectory, "netcoreapp3.1");
+
+                if (Directory.Exists(finalDirectory))
+                {
+                    var file = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.Location;
+                    File.Copy(file, Path.Combine(finalDirectory, Path.GetFileName(file)), true);
+                    return;
+                }
+            }
+
+            throw new DirectoryNotFoundException("Could not find the netcoreapp3.1 folder. Tried: " + string.Join("; ", paths));
+
+#endif
         }
 
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
