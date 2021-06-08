@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Linq;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
@@ -74,6 +77,13 @@ partial class Build : NukeBuild
         .Description("Cleans all build output")
         .Executes(()=>
         {
+            if(IsWin)
+            {
+                // These are created as part of the CreatePlatformlessSymlinks target and cause havok
+                // when deleting directories otherwise
+                DeleteReparsePoints(SourceDirectory);
+                DeleteReparsePoints(TestsDirectory);
+            }
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             EnsureCleanDirectory(OutputDirectory);
@@ -83,6 +93,14 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
             EnsureCleanDirectory(BuildDataDirectory);
             DeleteFile(WindowsTracerHomeZip);
+
+            void DeleteReparsePoints(string path)
+            {
+                new DirectoryInfo(path)
+                   .GetDirectories("*", SearchOption.AllDirectories)
+                   .Where(x => x.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                   .ForEach(dir => Cmd.Value(arguments: $"cmd /c rmdir \"{dir}\""));
+            }
         });
 
     Target BuildTracerHome => _ => _
