@@ -32,5 +32,7 @@ namespace Datadog.Trace.Configuration
         Msmq,
         Kafka,
         CosmosDb,
+        AwsSdk,
+        AwsSqs,
     }
 }

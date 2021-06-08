@@ -1,5 +1,10 @@
 version: '3'
 services:
+  aws_sqs:
+    image: softwaremill/elasticmq
+    ports:
+    - "127.0.0.1:9324:9324"
+
   rabbitmq:
     image: rabbitmq:3-management
     command: rabbitmq-server
@@ -418,6 +423,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs:9324
     - KAFKA_BROKER_HOST=kafka-broker:29092
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp2.1
@@ -432,6 +438,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
     - kafka-broker
     - kafka-zookeeper
 
@@ -456,6 +463,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs:9324
     - KAFKA_BROKER_HOST=kafka-broker:29092
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.0
@@ -470,6 +478,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
     - kafka-broker
     - kafka-zookeeper
 
@@ -494,6 +503,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs:9324
     - KAFKA_BROKER_HOST=kafka-broker:29092
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.1
@@ -508,6 +518,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
     - kafka-broker
     - kafka-zookeeper
 
@@ -532,6 +543,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs:9324
     - KAFKA_BROKER_HOST=kafka-broker:29092
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=net5.0
@@ -546,6 +558,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
     - kafka-broker
     - kafka-zookeeper
 
@@ -570,6 +583,7 @@ services:
     - MYSQL57_HOST=mysql57
     - MYSQL57_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs:9324
     - KAFKA_BROKER_HOST=kafka-broker:29092
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
@@ -584,6 +598,7 @@ services:
     - mysql
     - mysql57
     - rabbitmq
+    - aws_sqs
     - kafka-broker
     - kafka-zookeeper
 
@@ -720,6 +735,7 @@ services:
     - MYSQL_HOST=mysql
     - MYSQL_PORT=3306
     - RABBITMQ_HOST=rabbitmq
+    - AWS_SQS_HOST=aws_sqs:9324
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=net5.0
     depends_on:
@@ -731,3 +747,4 @@ services:
     - postgres
     - mysql
     - rabbitmq
+    - aws_sqs
