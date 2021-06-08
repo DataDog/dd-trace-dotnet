@@ -172,9 +172,9 @@ stages:
       - script: build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
 
-      - publish: $(artifacts)/tracer-home.zip
+      - publish: $(artifacts)/windows-tracer-home.zip
         displayName: Publish tracer-home.zip
-        artifact: tracer-home.zip
+        artifact: windows-tracer-home.zip
 
       - publish: $(artifacts)/x86/en-us
         displayName: Publish Windows x86 MSI
