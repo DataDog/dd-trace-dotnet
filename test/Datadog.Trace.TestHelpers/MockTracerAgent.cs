@@ -338,6 +338,18 @@ namespace Datadog.Trace.TestHelpers
             [Key("metrics")]
             public Dictionary<string, double> Metrics { get; set; }
 
+            public Span WithTag(string key, string value)
+            {
+                Tags[key] = value;
+                return this;
+            }
+
+            public Span WithMetric(string key, double value)
+            {
+                Metrics[key] = value;
+                return this;
+            }
+
             public override string ToString()
             {
                 return $"TraceId={TraceId}, SpanId={SpanId}, Service={Service}, Name={Name}, Resource={Resource}, Type={Type}";

@@ -19,6 +19,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestMinors
     {
+        public static IEnumerable<object[]> AwsSqs =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+                new object[] { "3.1.0.13" },
+#endif
+                new object[] { "3.3.103.26" },
+                new object[] { "3.5.1.28" },
+                new object[] { "3.7.0.27" },
+#endif
+            };
+
         public static IEnumerable<object[]> MongoDB =>
 
             new List<object[]>

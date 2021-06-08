@@ -30,7 +30,7 @@ fi
 
 dotnet publish -f $publishTargetFramework -c $buildConfiguration test/test-applications/instrumentation/CallTargetNativeTest/CallTargetNativeTest.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 
-for sample in Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStack.Redis Samples.StackExchange.Redis Samples.SqlServer Samples.Microsoft.Data.SqlClient Samples.MongoDB Samples.HttpMessageHandler Samples.WebRequest Samples.Npgsql Samples.MySql Samples.GraphQL Samples.Dapper Samples.NoMultiLoader Samples.RabbitMQ Samples.RuntimeMetrics Samples.FakeDbCommand Samples.XUnitTests Samples.NUnitTests Samples.MSTestTests ; do
+for sample in Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStack.Redis Samples.StackExchange.Redis Samples.SqlServer Samples.Microsoft.Data.SqlClient Samples.MongoDB Samples.HttpMessageHandler Samples.WebRequest Samples.Npgsql Samples.MySql Samples.GraphQL Samples.Dapper Samples.NoMultiLoader Samples.RabbitMQ Samples.RuntimeMetrics Samples.FakeDbCommand Samples.XUnitTests Samples.NUnitTests Samples.MSTestTests Samples.AWS.SQS ; do
     dotnet publish -f $publishTargetFramework -c $buildConfiguration test/test-applications/integrations/$sample/$sample.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 done
 
