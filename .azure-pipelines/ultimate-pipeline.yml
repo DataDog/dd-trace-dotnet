@@ -322,6 +322,13 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
+    - powershell: |
+        Write-Host "Starting CosmosDB Emulator"
+        Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
+        Start-CosmosDbEmulator
+      displayName: 'Start CosmosDB Emulator'
+      workingDirectory: $(Pipeline.Workspace)
+
     - script: build.cmd BuildAndRunWindowsIntegrationTests --PrintDriveSpace
       displayName: Run integration tests
 
