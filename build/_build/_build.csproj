@@ -20,14 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\.azure-pipelines\steps\run-in-docker.yml">
-      <Link>ci\steps\run-in-docker.yml</Link>
-    </Content>
+    <Content Include="..\..\.azure-pipelines\steps\*" Link="ci\steps\%(Filename)%(Extension)" />
     <Content Include="..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
-    <Content Include="..\..\.azure-pipelines\steps\install-dotnet.yml" Link="ci\steps\install-dotnet.yml" />
-    <Content Include="..\..\.azure-pipelines\steps\install-dotnet-sdks.yml" Link="ci\steps\install-dotnet-sdks.yml" />
-    <Content Include="..\..\.azure-pipelines\steps\install-dotnet-5-sdk.yml" Link="ci\steps\install-dotnet-5-sdk.yml" />
-    <Content Include="..\..\.azure-pipelines\steps\restore-working-directory.yml" Link="ci\steps\restore-working-directory.yml" />
     <Content Include="..\..\docker.sh" Link="docker\docker.sh" />
   </ItemGroup>
 </Project>
