@@ -6,6 +6,8 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <!-- Ignore Found conflicts between different versions of "System.ValueTuple" (and others) that could not be resolved.   -->
+    <NoWarn>MSB3277</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
