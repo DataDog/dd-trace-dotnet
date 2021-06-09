@@ -110,7 +110,7 @@ endif()
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/re2)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/re2
-        COMMAND git clone --quiet --depth 1 --branch 2018-10-01 https://github.com/google/re2.git && cd re2 && env CXXFLAGS=\"-O3 -g -fPIC\" make
+        COMMAND git clone --quiet --depth 1 --branch 2018-10-01 https://github.com/google/re2.git && cd re2 && env ARFLAGS=\"-r -s -c\" CXXFLAGS=\"-O3 -g -fPIC\" make
         WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
     )
 endif()

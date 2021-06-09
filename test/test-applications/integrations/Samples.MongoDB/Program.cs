@@ -81,7 +81,9 @@ namespace Samples.MongoDB
                 // https://stackoverflow.com/questions/49506857/how-do-i-run-an-explain-query-with-the-2-4-c-sharp-mongo-driver
                 var options = new FindOptions
                 {
+#pragma warning disable 0618 // 'FindOptionsBase.Modifiers' is obsolete: 'Use individual properties instead.'
                     Modifiers = new BsonDocument("$explain", true)
+#pragma warning restore 0618
                 };
                 // Without properly unboxing generic arguments whose instantiations
                 // are valuetypes, the following line will fail with

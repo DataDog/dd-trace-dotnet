@@ -848,6 +848,9 @@ partial class Build
                 "Samples.Microsoft.Data.Sqlite",
                 "Samples.OracleMDA",
                 "Samples.OracleMDA.Core",
+                "Samples.XUnitTests",
+                "Samples.NUnitTests",
+                "Samples.MSTestTests",
             };
 
             var projectsToBuild = sampleProjects
@@ -915,6 +918,7 @@ partial class Build
             // Annoyingly this rebuilds everything again and again.
             var targets = new [] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
 
+            // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
@@ -922,6 +926,7 @@ partial class Build
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("BuildInParallel", "true")
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                 .CombineWith(targets, (c, target) => c.SetTargets(target))
