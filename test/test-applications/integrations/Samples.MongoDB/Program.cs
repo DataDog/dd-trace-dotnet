@@ -83,7 +83,7 @@ namespace Samples.MongoDB
                 {
 #pragma warning disable 0618 // 'FindOptionsBase.Modifiers' is obsolete: 'Use individual properties instead.'
                     Modifiers = new BsonDocument("$explain", true)
-#pragma warning enable 0618
+#pragma warning restore 0618
                 };
                 // Without properly unboxing generic arguments whose instantiations
                 // are valuetypes, the following line will fail with
