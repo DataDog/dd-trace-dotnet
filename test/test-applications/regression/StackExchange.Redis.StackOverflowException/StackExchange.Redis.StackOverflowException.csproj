@@ -3,12 +3,11 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0</TargetFrameworks>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <!-- Ignore  Found conflicts between different versions of "System.Diagnostics.PerformanceCounter" that could not be resolved. -->
-    <NoWarn >MSB3277</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="StackExchange.Redis" Version="2.0.601" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="5.0.1" />
   </ItemGroup>
 
 </Project>
