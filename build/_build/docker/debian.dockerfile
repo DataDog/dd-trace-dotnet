@@ -49,6 +49,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
+RUN dotnet tool install --global dd-trace
+ENV PATH="${PATH}:/root/.dotnet/tools"
 
 # Copy the build project in and build it
 COPY . /build
