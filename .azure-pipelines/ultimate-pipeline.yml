@@ -198,9 +198,12 @@ stages:
     vmImage: windows-2019
   jobs:
     - job: managed
+      services:
+        dd_agent: dd_agent
       steps:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
+      - template: steps/enable-ciapp.yml
 
       - script: build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
@@ -235,6 +238,8 @@ stages:
   dependsOn: build_macos
   jobs:
   - job: managed
+    services:
+      dd_agent: dd_agent
     pool:
       vmImage: macOS-10.15
     steps:
@@ -242,6 +247,7 @@ stages:
       - template: steps/restore-working-directory.yml
         parameters:
           artifact: build-macos-working-directory
+      - template: steps/enable-ciapp.yml
 
       - script: ./build.sh BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
@@ -264,6 +270,8 @@ stages:
   dependsOn: [build_linux]
   jobs:
   - job: test
+    services:
+      dd_agent: dd_agent
     strategy:
       matrix:
         debian:
@@ -281,6 +289,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
+        ddTraceEnabled: true
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests --code-coverage"
 

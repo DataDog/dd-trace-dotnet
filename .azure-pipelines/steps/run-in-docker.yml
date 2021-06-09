@@ -10,7 +10,11 @@ parameters:
   - name: build
     type: boolean
     default: false
-    
+
+  - name: ddTraceEnabled
+    type: boolean
+    default: false
+
   - name: command
     type: string
 
@@ -24,13 +28,25 @@ steps:
         --file "$(System.DefaultWorkingDirectory)/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \
         "$(System.DefaultWorkingDirectory)/build/_build"
     displayName: Build ${{ parameters.baseImage }} Docker image
-- script: |
-    docker run --rm \
-        --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
-        --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
-        --env tracerHome=/project/$(relativeTracerHome) \
-        --env artifacts=/project/$(relativeArtifacts) \
-        --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
-        dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
-        dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
-  displayName: Run '${{ parameters.command }}' in Docker
+- ${{ if eq(parameters.ddTraceEnabled, true) }}:
+  - script: |
+      docker run --rm \
+          --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
+          --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
+          --env tracerHome=/project/$(relativeTracerHome) \
+          --env artifacts=/project/$(relativeArtifacts) \
+          --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
+          dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
+          dd-trace dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
+    displayName: Run '${{ parameters.command }}' in Docker
+- ${{ if ne(parameters.ddTraceEnabled, true) }}:
+    - script: |
+        docker run --rm \
+            --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
+            --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
+            --env tracerHome=/project/$(relativeTracerHome) \
+            --env artifacts=/project/$(relativeArtifacts) \
+            --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
+            dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
+            dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
+      displayName: Run '${{ parameters.command }}' in Docker

@@ -1,0 +1,7 @@
+steps:
+# Install the tracer latest release to attach the profiler to the build and test steps.
+# The script exposes the required environment variables to the following steps
+- powershell: |
+    dotnet tool install --global dd-trace
+    dd-trace --set-ci
+  displayName: Install dd-trace and --set-ci
