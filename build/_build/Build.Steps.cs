@@ -848,6 +848,9 @@ partial class Build
                 "Samples.Microsoft.Data.Sqlite",
                 "Samples.OracleMDA",
                 "Samples.OracleMDA.Core",
+                "Samples.XUnitTests",
+                "Samples.NUnitTests",
+                "Samples.MSTestTests",
             };
 
             var projectsToBuild = sampleProjects
