@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net452;net461</TargetFrameworks>
+    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.7" />
+  </ItemGroup>
+
+  <!--Files shared with aspnet/Samples.AspNetMvc5 -->
+  <ItemGroup>
+    <Compile Include="..\..\aspnet\Samples.AspNetMvc5\Controllers\ApiController.cs" Link="Controllers\ApiController.cs" />
+    <Compile Include="..\..\aspnet\Samples.AspNetMvc5\Controllers\ConventionsController.cs" Link="Controllers\ConventionsController.cs" />
+  </ItemGroup>
+</Project>
