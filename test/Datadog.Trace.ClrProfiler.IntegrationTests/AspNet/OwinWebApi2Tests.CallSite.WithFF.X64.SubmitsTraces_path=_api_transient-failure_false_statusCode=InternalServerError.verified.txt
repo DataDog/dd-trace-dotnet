@@ -1,0 +1,38 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet-webapi.request,
+    Resource: GET api/transient-failure/{value},
+    Service: Samples.Owin.WebApi2,
+    Type: web,
+    Error: 1,
+    Tags: {
+      error.msg: Passed in value was not 'true': false,
+      error.stack: 
+System.ArgumentException: Passed in value was not 'true': false
+at Samples.AspNetMvc5.Controllers.ApiController.TransientFailure(String value)
+at lambda_method(Closure , Object , Object[] )
+at System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ActionExecutor.<>c__DisplayClass6_2.<GetExecutor>b__2(Object instance, Object[] methodParameters)
+at System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync(HttpControllerContext controllerContext, IDictionary`2 arguments, CancellationToken cancellationToken)
+at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+at System.Web.Http.Controllers.ApiControllerActionInvoker.<InvokeActionAsyncCore>d__1.MoveNext()
+at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+at System.Web.Http.Controllers.ActionFilterResult.<ExecuteAsync>d__5.MoveNext(),
+      error.type: System.ArgumentException,
+      env: integration_tests,
+      version: 1.0.0,
+      span.kind: server,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/api/transient-failure/false,
+      language: dotnet,
+      aspnet.route: api/transient-failure/{value}
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  }
+]
