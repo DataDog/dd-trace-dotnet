@@ -480,7 +480,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
                          std::vector<WSTRING>& signature_result);
 
-HRESULT GetCORLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
                              AssemblyProperty& corAssemblyProperty,
                              mdAssemblyRef* corlib_ref);
 

@@ -1725,7 +1725,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
   mdAssemblyRef corlib_ref;
-  hr = GetCORLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
+  hr = GetCorLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
 
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: failed to define AssemblyRef to mscorlib");
@@ -2431,7 +2431,7 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
 
   // Get corlib assembly ref
   mdAssemblyRef corlib_ref;
-  hr = GetCORLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
+  hr = GetCorLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
 
   // Get System.Boolean type token
   mdToken boolToken;

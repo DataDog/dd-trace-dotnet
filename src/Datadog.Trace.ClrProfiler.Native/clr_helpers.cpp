@@ -723,7 +723,9 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
   return true;
 }
 
-HRESULT GetCORLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, AssemblyProperty& corAssemblyProperty, mdAssemblyRef* corlib_ref) {
+HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                             AssemblyProperty& corAssemblyProperty,
+                             mdAssemblyRef* corlib_ref) {
   if (corAssemblyProperty.ppbPublicKey != nullptr) {
     // the corlib module is already loaded, use that information to create the assembly ref
     Debug("Using existing corlib reference: ", corAssemblyProperty.szName);
@@ -825,7 +827,7 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
   // Create reference to Mscorlib
   mdModuleRef mscorlib_ref;
   HRESULT hr;
-  hr = GetCORLibAssemblyRef(assembly_emit, corAssemblyProperty, &mscorlib_ref);
+  hr = GetCorLibAssemblyRef(assembly_emit, corAssemblyProperty, &mscorlib_ref);
 
   if (FAILED(hr)) {
     Warn("[trace::ReturnTypeTokenforElementType] failed to define AssemblyRef to mscorlib");
