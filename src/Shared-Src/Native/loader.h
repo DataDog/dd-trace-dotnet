@@ -157,6 +157,8 @@ namespace shared
             }
         }
 
+        HRESULT EmitLoaderCallInMethod(ModuleID moduleId, mdMethodDef methodDef, mdMethodDef loaderMethodDef);
+
         HRESULT EmitLoaderInModule(
             const ComPtr<IMetaDataImport2> metadataImport,
             const ComPtr<IMetaDataEmit2> metadataEmit,
@@ -204,7 +206,7 @@ namespace shared
         }
 
     public:
-        static const DWORD LoaderProfilerEventMask = COR_PRF_DISABLE_ALL_NGEN_IMAGES | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST;
+        static const DWORD LoaderProfilerEventMask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_ENABLE_REJIT | COR_PRF_MONITOR_CACHE_SEARCHES | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST;
 
         static void CreateNewSingeltonInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
@@ -222,6 +224,7 @@ namespace shared
         static void DeleteSingeltonInstance(void);
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID moduleId);
+        HRESULT HandleFunctionSearch(FunctionID functionId, BOOL* pbUseCachedFunction);
 
         bool GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* pModuleName);
     };

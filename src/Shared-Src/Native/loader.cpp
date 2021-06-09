@@ -37,6 +37,18 @@ namespace shared
         WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
+    static Enumerator<mdMethodDef> EnumMethodsWithName(
+        const ComPtr<IMetaDataImport2>& metadata_import,
+        const mdToken& parent_token, LPCWSTR method_name) {
+        return Enumerator<mdMethodDef>(
+            [metadata_import, parent_token, method_name](HCORENUM* ptr, mdMethodDef arr[],
+                ULONG max, ULONG* cnt) -> HRESULT {
+                    return metadata_import->EnumMethodsWithName(ptr, parent_token, method_name, arr, max, cnt);
+            },
+            [metadata_import](HCORENUM ptr) -> void {
+                metadata_import->CloseEnum(ptr);
+            });
+    }
 
     void Loader::CreateNewSingeltonInstance(
         ICorProfilerInfo4* pCorProfilerInfo,
@@ -146,20 +158,6 @@ namespace shared
             Error("No native profiler library filename was provided. You must pass one to the loader.");
             throw std::runtime_error("No native profiler library filename was provided. You must pass one to the loader.");
         }
-    }
-
-
-    static Enumerator<mdMethodDef> EnumMethodsWithName(
-        const ComPtr<IMetaDataImport2>& metadata_import,
-        const mdToken& parent_token, LPCWSTR method_name) {
-        return Enumerator<mdMethodDef>(
-            [metadata_import, parent_token, method_name](HCORENUM* ptr, mdMethodDef arr[],
-                ULONG max, ULONG* cnt) -> HRESULT {
-                    return metadata_import->EnumMethodsWithName(ptr, parent_token, method_name, arr, max, cnt);
-            },
-            [metadata_import](HCORENUM ptr) -> void {
-                metadata_import->CloseEnum(ptr);
-            });
     }
 
     HRESULT Loader::InjectLoaderToModuleInitializer(const ModuleID moduleId)
@@ -319,40 +317,27 @@ namespace shared
                 }
 
                 //
-                // rewrite method to call the startup loader.
+                // Emit Call to the loader.
                 //
-                ILRewriter rewriter(this->_pCorProfilerInfo, nullptr, moduleId, methodDef);
-                hr = rewriter.Import();
-                if (FAILED(hr))
+                hr = EmitLoaderCallInMethod(moduleId, methodDef, loaderMethodDef);
+                if (SUCCEEDED(hr))
                 {
-                    Error("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Import() failed for ModuleID=" + moduleIdHex +
-                        ", methodDef=0x" + HexStr(methodDef));
-                    return hr;
+                    ModuleID modules[1] = { moduleId };
+                    mdMethodDef methods[1] = { methodDef };
+                    this->_pCorProfilerInfo->RequestReJIT(1, modules, methods);
+
+                    Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully (in IsCompatibilitySwitchSet). [ModuleID=" + moduleIdHex +
+                        ", AssemblyID=" + assemblyIdHex +
+                        ", AssemblyName=" + ToString(assemblyNameString) +
+                        ", AppDomainID=" + appDomainIdHex +
+                        "]");
                 }
-
-                ILRewriterWrapper rewriterWrapper(&rewriter);
-                rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
-                rewriterWrapper.CallMember(loaderMethodDef, false);
-
-                hr = rewriter.Export();
-                if (FAILED(hr))
-                {
-                    Error("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + moduleIdHex +
-                        ", methodDef=0x" + HexStr(methodDef));
-                    return hr;
-                }
-
-                Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + moduleIdHex +
-                    ", AssemblyID=" + assemblyIdHex +
-                    ", AssemblyName=" + ToString(assemblyNameString) +
-                    ", AppDomainID=" + appDomainIdHex +
-                    "]");
-
-                return hr;
             }
 
             return hr;
         }
+
+        return S_OK;
 
         // **************************************************************************************************************
         //
@@ -411,7 +396,86 @@ namespace shared
         return S_OK;
     }
 
+    HRESULT Loader::HandleFunctionSearch(FunctionID functionId, BOOL* pbUseCachedFunction)
+    {
+        HRESULT hr;
+
+        ModuleID moduleId;
+        mdToken functionToken;
+        hr = _pCorProfilerInfo->GetFunctionInfo(functionId, NULL, &moduleId, &functionToken);
+        if (FAILED(hr))
+        {
+            return S_FALSE;
+        }
+
+        ComPtr<IUnknown> metadataInterfaces;
+        hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, metadataInterfaces.GetAddressOf());
+        if (FAILED(hr))
+        {
+            return S_FALSE;
+        }
+
+        const ComPtr<IMetaDataImport2> metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        const ComPtr<IMetaDataAssemblyImport> assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+
+        mdToken functionParentToken;
+        WCHAR functionName[1024]{};
+        DWORD functionNameLength = 0;
+        hr = metadataImport->GetMemberProps(functionToken, &functionParentToken, functionName, 1024, &functionNameLength,
+            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+        if (FAILED(hr))
+        {
+            return S_FALSE;
+        }
+
+        auto functionNameString = WSTRING(functionName);
+
+        mdToken typeParentToken = mdTokenNil;
+        WCHAR typeName[1024]{};
+        DWORD typeNameLength = 0;
+        DWORD typeFlags;
+        hr = metadataImport->GetTypeDefProps(functionParentToken, typeName, 1024, &typeNameLength, &typeFlags, NULL);
+        if (FAILED(hr))
+        {
+            return S_FALSE;
+        }
+        auto typeNameString = WSTRING(typeName);
+
+        Info("  * " + ToString(typeNameString) + "." + ToString(functionNameString) + "()");
+
+        return S_OK;
+    }
+
     //
+
+    HRESULT Loader::EmitLoaderCallInMethod(ModuleID moduleId, mdMethodDef methodDef, mdMethodDef loaderMethodDef) {
+        HRESULT hr;
+        std::string moduleIdHex = "0x" + HexStr(moduleId);
+
+        //
+        // rewrite method IsCompatibilitySwitchSet to call the startup loader.
+        //
+        ILRewriter rewriter(this->_pCorProfilerInfo, nullptr, moduleId, methodDef);
+        hr = rewriter.Import();
+        if (FAILED(hr))
+        {
+            Error("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Import() failed for ModuleID=" + moduleIdHex +
+                ", methodDef=0x" + HexStr(methodDef));
+            return hr;
+        }
+
+        ILRewriterWrapper rewriterWrapper(&rewriter);
+        rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
+        rewriterWrapper.CallMember(loaderMethodDef, false);
+
+        hr = rewriter.Export();
+        if (FAILED(hr))
+        {
+            Error("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + moduleIdHex +
+                ", methodDef=0x" + HexStr(methodDef));
+            return hr;
+        }
+    }
 
     HRESULT Loader::EmitLoaderInModule(
         const ComPtr<IMetaDataImport2> metadataImport,
@@ -1224,33 +1288,7 @@ namespace shared
         // At this point we have a mdTypeDef for <Module> and a mdMethodDef for the ..ctor
         // that we can rewrite to load the loader
         //
-
-        //
-        // rewrite ..ctor to call the startup loader.
-        //
-        ILRewriter rewriter(this->_pCorProfilerInfo, nullptr, moduleId, cctorMethodDef);
-        hr = rewriter.Import();
-        if (FAILED(hr))
-        {
-            Error("Loader::EmitModuleCCtor: Call to ILRewriter.Import() failed for ModuleID=" + moduleIdHex +
-                ", CCTORMethodDef=0x" + HexStr(cctorMethodDef));
-            return hr;
-        }
-
-        ILRewriterWrapper rewriterWrapper(&rewriter);
-        rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
-
-        rewriterWrapper.CallMember(loaderMethodDef, false);
-
-        hr = rewriter.Export();
-        if (FAILED(hr))
-        {
-            Error("Loader::EmitModuleCCtor: Call to ILRewriter.Export() failed for ModuleID=" + moduleIdHex +
-                ", CCTORMethodDef=0x" + HexStr(cctorMethodDef));
-            return hr;
-        }
-
-        return hr;
+        return EmitLoaderCallInMethod(moduleId, cctorMethodDef, loaderMethodDef);
     }
 
     //
