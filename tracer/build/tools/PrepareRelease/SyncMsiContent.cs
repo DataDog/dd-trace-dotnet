@@ -105,6 +105,7 @@ namespace PrepareRelease
             var wixProjectRoot =
                 Path.Combine(
                     solutionDirectory,
+                    "tracer",
                     "src",
                     "WindowsInstaller");
 

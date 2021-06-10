@@ -167,7 +167,7 @@ namespace PrepareRelease
 
             foreach (var outputDirectory in outputDirectories)
             {
-                var filename = Path.Combine(outputDirectory, "integrations.json");
+                var filename = Path.Combine(outputDirectory, "tracer", "integrations.json");
                 var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
                 File.WriteAllText(filename, json, utf8NoBom);
             }

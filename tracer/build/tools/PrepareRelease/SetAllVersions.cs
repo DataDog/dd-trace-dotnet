@@ -209,7 +209,7 @@ namespace PrepareRelease
         private static void SynchronizeVersion(string path, Func<string, string> transform)
         {
             var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
-            var fullPath = Path.Combine(solutionDirectory, path);
+            var fullPath = Path.Combine(solutionDirectory, "tracer", path);
 
             Console.WriteLine($"Updating version instances for {path}");
 
