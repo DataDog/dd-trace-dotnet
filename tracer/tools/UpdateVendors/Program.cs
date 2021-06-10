@@ -22,7 +22,7 @@ namespace UpdateVendors
         {
             InitializeCleanDirectory(DownloadDirectory);
             var solutionDirectory = GetSolutionDirectory();
-            _vendorProjectDirectory = Path.Combine(solutionDirectory, "src", "Datadog.Trace", "Vendors");
+            _vendorProjectDirectory = Path.Combine(solutionDirectory, "tracer", "src", "Datadog.Trace", "Vendors");
 
             var fakeRefs = string.Empty;
 
@@ -77,11 +77,18 @@ namespace UpdateVendors
             var sourceUrlLocation = Path.Combine(vendorFinalPath, "_last_downloaded_source_url.txt");
 
             // Ensure the url has changed, or don't bother upgrading
-            var currentSource = File.ReadAllText(sourceUrlLocation);
-            if (currentSource.Equals(downloadUrl, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                Console.WriteLine($"No updates to be made for {libraryName}.");
-                return;
+                var currentSource = File.ReadAllText(sourceUrlLocation);
+                if (currentSource.Equals(downloadUrl, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"No updates to be made for {libraryName}.");
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"There was an issue reading {sourceUrlLocation}. An update for {libraryName} will run.");
             }
 
             using (var repoDownloadClient = new WebClient())
