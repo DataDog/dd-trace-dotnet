@@ -11,7 +11,7 @@ namespace Samples.AspNetCore5.Controllers
     [ApiController]
     public class HealthController : ControllerBase
     {
-        public IActionResult Index()
+        public IActionResult Index([FromBody]object test)
         {
             return Content("Ok\n");
         }

@@ -173,6 +173,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
         }
+
 #else
         protected override void OnNext(string eventName, object arg)
         {
@@ -268,6 +269,34 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 #endif
+
+        private static Dictionary<string, object> PrepareArgsForWaf(HttpRequest request)
+        {
+            var url = GetUrl(request);
+
+            var headersDic = new Dictionary<string, string>();
+            foreach (var k in request.Headers.Keys)
+            {
+                headersDic.Add(k, request.Headers[k]);
+            }
+
+            var cookiesDic = new Dictionary<string, string>();
+            foreach (var k in request.Cookies.Keys)
+            {
+                cookiesDic.Add(k, request.Cookies[k]);
+            }
+
+            var dict = new Dictionary<string, object>()
+            {
+                { AddressesConstants.RequestMethod, request.Method },
+                { AddressesConstants.RequestUriRaw, url },
+                { AddressesConstants.RequestQuery, request.QueryString.ToString() },
+                { AddressesConstants.RequestHeaderNoCookies, headersDic },
+                { AddressesConstants.RequestCookies, cookiesDic },
+            };
+
+            return dict;
+        }
 
         private static string GetUrl(HttpRequest request)
         {
@@ -665,16 +694,20 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request)
         {
-            string url = GetUrl(request);
+            var dic = PrepareArgsForWaf(request);
 
-            var dict = new Dictionary<string, object>()
+            security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
+        }
+
+        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, RouteData routeDatas)
+        {
+            var dic = PrepareArgsForWaf(request);
+            if (routeDatas.Values.Any())
             {
-                { "server.request.method", request.Method },
-                { "server.request.uri.raw", url },
-                { "server.request.query", request.QueryString.ToString() },
-            };
+                dic.Add(AddressesConstants.RequestPathParams, routeDatas.Values.ToDictionary(c => c.Key, c => c.Value));
+            }
 
-            security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context));
+            security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
         }
 
         private void OnRoutingEndpointMatched(object arg)
@@ -834,7 +867,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    RaiseIntrumentationEvent(security, httpContext, request);
+                    RaiseIntrumentationEvent(security, httpContext, request, typedArg.RouteData);
                 }
             }
         }
@@ -937,6 +970,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public ActionDescriptor ActionDescriptor;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public RouteData RouteData;
         }
 
         [DuckCopy]

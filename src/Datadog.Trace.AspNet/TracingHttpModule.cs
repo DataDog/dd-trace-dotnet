@@ -236,11 +236,26 @@ namespace Datadog.Trace.AspNet
 
         private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request)
         {
+            var headersDic = new Dictionary<string, string>();
+            foreach (var k in request.Headers.AllKeys)
+            {
+                headersDic.Add(k, request.Headers[k]);
+            }
+
+            var cookiesDic = new Dictionary<string, string>();
+            foreach (var k in request.Cookies.AllKeys)
+            {
+                cookiesDic.Add(k, request.Cookies[k].Value);
+            }
+
             var dict = new Dictionary<string, object>()
             {
-                { "server.request.method", request.HttpMethod },
-                { "server.request.uri.raw", request.Url.ToString() },
-                { "server.request.query", request.QueryString.ToString() },
+                { AddressesConstants.RequestMethod, request.HttpMethod },
+                { AddressesConstants.RequestUriRaw, request.Url.ToString() },
+                { AddressesConstants.RequestQuery, request.QueryString.ToString() },
+                { AddressesConstants.RequestHeaderNoCookies, headersDic },
+                { AddressesConstants.RequestCookies, cookiesDic },
+                { AddressesConstants.RequestPathParams, request.Path }
             };
 
             security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context));
