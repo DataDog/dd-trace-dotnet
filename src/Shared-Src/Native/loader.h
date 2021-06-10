@@ -206,7 +206,7 @@ namespace shared
         }
 
     public:
-        static const DWORD LoaderProfilerEventMask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_ENABLE_REJIT | COR_PRF_MONITOR_CACHE_SEARCHES | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST;
+        static const DWORD LoaderProfilerEventMask = COR_PRF_MONITOR_CACHE_SEARCHES | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST;
 
         static void CreateNewSingeltonInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,

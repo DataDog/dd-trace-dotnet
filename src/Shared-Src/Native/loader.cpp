@@ -37,6 +37,9 @@ namespace shared
         WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
+    const WSTRING _specificTypeToInject = WStr("System.AppDomain");
+    const WSTRING _specificMethodToInject = WStr("IsCompatibilitySwitchSet");
+
     static Enumerator<mdMethodDef> EnumMethodsWithName(
         const ComPtr<IMetaDataImport2>& metadata_import,
         const mdToken& parent_token, LPCWSTR method_name) {
@@ -294,23 +297,42 @@ namespace shared
                 "]");
 
             mdTypeDef appDomainTypeDef;
-            hr = metadataImport->FindTypeDefByName(WStr("System.AppDomain"), mdTokenNil, &appDomainTypeDef);
+            hr = metadataImport->FindTypeDefByName(_specificTypeToInject.c_str(), mdTokenNil, &appDomainTypeDef);
             if (FAILED(hr))
             {
                 return hr;
             }
 
-            auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, WStr("IsCompatibilitySwitchSet"));
+            auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, _specificMethodToInject.c_str());
             auto enumIterator = enumMethods.begin();
             if (enumIterator != enumMethods.end()) {
                 auto methodDef = *enumIterator;
 
                 //
-                // Emit the System.AppDomain.DD_LoadInitializationAssemblies() mdMethodDef
+                // get a TypeRef for System.Object
+                //
+                mdTypeRef systemObjectTypeRef;
+                hr = metadataEmit->DefineTypeRefByName(corLibAssembly, WStr("System.Object"), &systemObjectTypeRef);
+                if (FAILED(hr))
+                {
+                    return hr;
+                }
+
+                //
+                // Define a new TypeDef DD_LoaderMethodsType that extends System.Object
+                //
+                mdTypeDef newTypeDef;
+                hr = metadataEmit->DefineTypeDef(WStr("DD_LoaderMethodsType"), tdAbstract | tdSealed, systemObjectTypeRef, NULL, &newTypeDef);
+                if (FAILED(hr)) {
+                    return hr;
+                }
+
+                //
+                // Emit the DD_LoaderMethodsType.DD_LoadInitializationAssemblies() mdMethodDef
                 //
                 mdMethodDef loaderMethodDef;
                 mdMemberRef securitySafeCriticalCtorMemberRef;
-                hr = EmitDDLoadInitializationAssembliesMethod(moduleId, appDomainTypeDef, assemblyNameString, &loaderMethodDef, &securitySafeCriticalCtorMemberRef);
+                hr = EmitDDLoadInitializationAssembliesMethod(moduleId, newTypeDef, assemblyNameString, &loaderMethodDef, &securitySafeCriticalCtorMemberRef);
                 if (FAILED(hr))
                 {
                     return hr;
@@ -322,22 +344,18 @@ namespace shared
                 hr = EmitLoaderCallInMethod(moduleId, methodDef, loaderMethodDef);
                 if (SUCCEEDED(hr))
                 {
-                    ModuleID modules[1] = { moduleId };
-                    mdMethodDef methods[1] = { methodDef };
-                    this->_pCorProfilerInfo->RequestReJIT(1, modules, methods);
-
                     Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully (in IsCompatibilitySwitchSet). [ModuleID=" + moduleIdHex +
                         ", AssemblyID=" + assemblyIdHex +
                         ", AssemblyName=" + ToString(assemblyNameString) +
                         ", AppDomainID=" + appDomainIdHex +
+                        ", methodDef=" + HexStr(methodDef) +
+                        ", loaderMethodDef=" + HexStr(loaderMethodDef) +
                         "]");
                 }
             }
 
             return hr;
         }
-
-        return S_OK;
 
         // **************************************************************************************************************
         //
@@ -441,8 +459,12 @@ namespace shared
         }
         auto typeNameString = WSTRING(typeName);
 
-        Info("  * " + ToString(typeNameString) + "." + ToString(functionNameString) + "()");
+        // Debug("  * " + ToString(typeNameString) + "." + ToString(functionNameString) + "()");
 
+        bool disableNGEN = false;
+        disableNGEN |= typeNameString == _specificTypeToInject && functionNameString == _specificMethodToInject;
+
+        *pbUseCachedFunction = *pbUseCachedFunction && !disableNGEN;
         return S_OK;
     }
 
@@ -925,7 +947,7 @@ namespace shared
         //
         // If the loader method cannot be found we create [Type].DD_LoadInitializationAssemblies() mdMethodDef
         //
-        hr = metadataEmit->DefineMethod(typeDef, loaderMethodName.c_str(), mdStatic, loaderMethodSignature, sizeof(loaderMethodSignature), 0, 0, pLoaderMethodDef);
+        hr = metadataEmit->DefineMethod(typeDef, loaderMethodName.c_str(), mdStatic | mdPublic, loaderMethodSignature, sizeof(loaderMethodSignature), 0, 0, pLoaderMethodDef);
         if (FAILED(hr))
         {
             Error("Loader::EmitDDLoadInitializationAssemblies: Error creating the loader method.");
