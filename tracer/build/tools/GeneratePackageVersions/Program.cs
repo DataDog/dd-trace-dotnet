@@ -32,6 +32,7 @@ namespace GeneratePackageVersions
 
             _baseXunitPath = Path.Combine(
                 _solutionDirectory,
+                "tracer",
                 "test",
                 "Datadog.Trace.ClrProfiler.IntegrationTests");
 
@@ -43,7 +44,7 @@ namespace GeneratePackageVersions
                     _baseXunitPath,
                     "PackageVersions.g.cs"));
 
-            var definitionsFilename = Path.Combine(args[0], "build", "PackageVersionsGeneratorDefinitions.json");
+            var definitionsFilename = Path.Combine(args[0], "tracer", "build", "PackageVersionsGeneratorDefinitions.json");
 
             if (!File.Exists(definitionsFilename))
             {
@@ -121,7 +122,7 @@ namespace GeneratePackageVersions
             {
                 var className = $"PackageVersions{postfix}";
 
-                var outputPackageVersionsPropsFilename = Path.Combine(_solutionDirectory, "build", $"PackageVersions{postfix}.g.props");
+                var outputPackageVersionsPropsFilename = Path.Combine(_solutionDirectory, "tracer", "build", $"PackageVersions{postfix}.g.props");
 
                 var outputPackageVersionsXunitFilename = Path.Combine(
                     _baseXunitPath,
