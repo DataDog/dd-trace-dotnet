@@ -83,10 +83,10 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138 #-l:DatadogLogger,"$(DD_DOTNET_TRACER_MSBUILD)"
       projects: |
-        src/**/*.csproj
-        test/**/*.Tests.csproj
-        test/benchmarks/**/*.csproj
-        !src/Datadog.Trace.Tools.Runner/*.csproj
+        tracer/src/**/*.csproj
+        tracer/test/**/*.Tests.csproj
+        tracer/test/benchmarks/**/*.csproj
+        !tracer/src/Datadog.Trace.Tools.Runner/*.csproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -95,7 +95,7 @@ jobs:
     inputs:
       command: test
       configuration: $(buildConfiguration)
-      projects: test/**/*.Tests.csproj
+      projects: tracer/test/**/*.Tests.csproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -113,10 +113,10 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/**/*.csproj
-        test/**/*.Tests.csproj
-        benchmarks/**/*.csproj
-        !src/Datadog.Trace.Tools.Runner/*.csproj
+        tracer/src/**/*.csproj
+        tracer/test/**/*.Tests.csproj
+        tracer/benchmarks/**/*.csproj
+        !tracer/src/Datadog.Trace.Tools.Runner/*.csproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -125,7 +125,7 @@ jobs:
     inputs:
       command: test
       configuration: $(buildConfiguration)
-      projects: test/**/*.Tests.csproj
+      projects: tracer/test/**/*.Tests.csproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -166,17 +166,17 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/**/*.csproj
-        test/**/*.Tests.csproj
-        benchmarks/**/*.csproj
-        !src/Datadog.Trace.Tools.Runner/*.csproj
+        tracer/src/**/*.csproj
+        tracer/test/**/*.Tests.csproj
+        tracer/benchmarks/**/*.csproj
+        !tracer/src/Datadog.Trace.Tools.Runner/*.csproj
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
     inputs:
       command: test
       configuration: $(buildConfiguration)
-      projects: test/**/*.Tests.csproj
+      projects: tracer/test/**/*.Tests.csproj
     env:
       DD_SERVICE: dd-trace-dotnet
 
@@ -212,8 +212,8 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-        sample-libs/**/Samples.ExampleLibrary*.csproj
+        tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        tracer/sample-libs/**/Samples.ExampleLibrary*.csproj
 
   - task: NuGetToolInstaller@1
     displayName: install nuget
@@ -235,12 +235,12 @@ jobs:
 
   - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
     displayName: run tests
-    workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/$(buildPlatform)
+    workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/$(buildPlatform)
 
   - task: PublishTestResults@2
     displayName: publish test results
     inputs:
-      testResultsFiles: test/**/test*.xml
+      testResultsFiles: tracer/test/**/test*.xml
       buildPlatform: $(buildPlatform)
       buildConfiguration: $(buildConfiguration)
     condition: succeededOrFailed()
@@ -269,7 +269,7 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
   
   - script: |
       sudo apt-get update
@@ -277,7 +277,7 @@ jobs:
     displayName: install_dependencies
 
   - script: |
-      cd ./src/Datadog.Trace.ClrProfiler.Native
+      cd ./tracer/src/Datadog.Trace.ClrProfiler.Native
       CXX=clang++ CC=clang cmake .
       make
     displayName: build_profiler
@@ -296,10 +296,10 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
   
   - script: |
-      cd ./src/Datadog.Trace.ClrProfiler.Native
+      cd ./tracer/src/Datadog.Trace.ClrProfiler.Native
       CXX=clang++ CC=clang cmake .
       make
     displayName: build_profiler
@@ -328,10 +328,10 @@ jobs:
       configuration: $(buildConfiguration)
       arguments: /nowarn:netsdk1138
       projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
 
   - script: |
-      cd ./src/Datadog.Trace.ClrProfiler.Native
+      cd ./tracer/src/Datadog.Trace.ClrProfiler.Native
       cmake .
       make
     displayName: build_profiler

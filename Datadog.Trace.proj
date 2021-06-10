@@ -2,26 +2,26 @@
   <PropertyGroup>
     <BuildInParallel Condition="'$(BuildInParallel)' == ''">true</BuildInParallel>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)src\bin\windows-tracer-home</TracerHomeDirectory>
+    <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)tracer\bin\windows-tracer-home</TracerHomeDirectory>
   </PropertyGroup>
 
   <ItemGroup>
-    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Tools.Runner/*.csproj" />
-    <CsharpTestProject Include="test\*\*.csproj" Exclude="test\Datadog.Trace.ClrProfiler.IntegrationTests\*.csproj" />
-    <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
-    <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj"/>
-    <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
-    <ExcludeExpenseItDemoProject Remove="test/test-applications/regression/**/ExpenseItDemo*.csproj" />
-    <ExcludeEF6DemoProject Remove="test/test-applications/regression/**/EntityFramework6x*.csproj" />
-    <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
-    <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj"/>
-    <CsharpToolsProject Include="tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj"/>
-    <CppProject Include="src\**\*.vcxproj"/>
-    <CppTestProject Include="test\**\*.vcxproj"/>
-    <SampleProject Include="test\test-applications\integrations\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
-    <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
-    <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
-    <RegressionSampleLibProject Include="test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
+    <CsharpProject Include="tracer\src\**\*.csproj" Exclude="tracer/src/Datadog.Trace.Tools.Runner/*.csproj" />
+    <CsharpTestProject Include="tracer\test\*\*.csproj" Exclude="tracer\test\Datadog.Trace.ClrProfiler.IntegrationTests\*.csproj" />
+    <CsharpUnitTestProject Include="tracer\test\**\*.Tests.csproj"/>
+    <CsharpIntegrationTestProject Include="tracer\test\*.IntegrationTests\*.IntegrationTests.csproj"/>
+    <CsharpIntegrationTestRegressionProject Include="tracer\test\tests-applications\regression\*.IntegrationTests.csproj" />
+    <ExcludeExpenseItDemoProject Remove="tracer/test/test-applications/regression/**/ExpenseItDemo*.csproj" />
+    <ExcludeEF6DemoProject Remove="tracer/test/test-applications/regression/**/EntityFramework6x*.csproj" />
+    <ExcludeLegacyRedisProject Remove="tracer/test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
+    <CsharpTestHelperProject Include="tracer\test\**\*.TestHelpers.csproj"/>
+    <CsharpToolsProject Include="tracer\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj"/>
+    <CppProject Include="tracer\src\**\*.vcxproj"/>
+    <CppTestProject Include="tracer\test\**\*.vcxproj"/>
+    <SampleProject Include="tracer\test\test-applications\integrations\**\*.csproj" Exclude="tracer\test\test-applications\integrations\dependency-libs\**\*.csproj" />
+    <VbSampleLibProject Include="tracer\test\test-applications\integrations\**\*.vbproj" />
+    <SampleLibProject Include="tracer\test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="tracer\test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
+    <RegressionSampleLibProject Include="tracer\test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
     <WindowsInstallerProject Include="src\**\*.wixproj"/>
   </ItemGroup>
 
@@ -74,12 +74,12 @@
   </Target>
 
   <ItemGroup>
-    <FrameworkReproduction Include="test\test-applications\regression\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
-    <FrameworkReproduction Include="test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
+    <FrameworkReproduction Include="tracer\test\test-applications\regression\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
+    <FrameworkReproduction Include="tracer\test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
   </ItemGroup>
 
-  <Import Condition="'$(PerformComprehensiveTesting)'=='true'" Project="build\PackageVersionsComprehensive.g.props" />
-  <Import Condition="'$(PerformComprehensiveTesting)'!='true'" Project="build\PackageVersionsLatestMinors.g.props" />
+  <Import Condition="'$(PerformComprehensiveTesting)'=='true'" Project="tracer\build\PackageVersionsComprehensive.g.props" />
+  <Import Condition="'$(PerformComprehensiveTesting)'!='true'" Project="tracer\build\PackageVersionsLatestMinors.g.props" />
 
   <Target Name="Restore">
     <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject)"/>
@@ -220,7 +220,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+      <ManagedProfilerPublishProject Include="tracer\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
     </ItemGroup>
 
     <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="false" Properties="Platform=AnyCPU;TargetFramework=%(TargetFramework.Identity);PublishDir=$(TracerHomeDirectory)\%(TargetFramework.Identity)">
@@ -230,19 +230,19 @@
 
   <Target Name="PublishBuildLoggerOnDisk">
     <ItemGroup>
-      <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
+      <BuildLoggerPublishProject Include="tracer\src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
         <Properties>Platform=AnyCPU;TargetFramework=net45;PublishDir=$(TracerHomeDirectory)\net45</Properties>
       </BuildLoggerPublishProject>
 
-      <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
+      <BuildLoggerPublishProject Include="tracer\src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
         <Properties>Platform=AnyCPU;TargetFramework=net461;PublishDir=$(TracerHomeDirectory)\net461</Properties>
       </BuildLoggerPublishProject>
 
-      <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
+      <BuildLoggerPublishProject Include="tracer\src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
         <Properties>Platform=AnyCPU;TargetFramework=netstandard2.0;PublishDir=$(TracerHomeDirectory)\netstandard2.0</Properties>
       </BuildLoggerPublishProject>
 
-      <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
+      <BuildLoggerPublishProject Include="tracer\src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
         <Properties>Platform=AnyCPU;TargetFramework=netcoreapp3.1;PublishDir=$(TracerHomeDirectory)\netcoreapp3.1</Properties>
       </BuildLoggerPublishProject>
     </ItemGroup>
@@ -254,7 +254,7 @@
 
   <Target Name="BuildLoader">
     <ItemGroup>
-      <ManagedLoaderProject Include="src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj"/>
+      <ManagedLoaderProject Include="tracer\src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj"/>
     </ItemGroup>
 
     <MSBuild Targets="Build" Projects="@(ManagedLoaderProject)" Properties="Platform=AnyCPU">
@@ -264,13 +264,13 @@
 
   <Target Name="PublishNativeProfilerOnDisk" DependsOnTargets="BuildLoader;BuildCpp">
     <Copy Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'"
-        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x64\Datadog.Trace.ClrProfiler.Native.dll"
+        SourceFiles="$(MSBuildThisFileDirectory)tracer\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x64\Datadog.Trace.ClrProfiler.Native.dll"
         DestinationFolder="$(TracerHomeDirectory)\win-x64"
         SkipUnchangedFiles="true"
         Retries="3"
         RetryDelayMilliseconds="300"/>
     <Copy Condition="'$(Platform)' == 'x86' OR '$(Platform)' == 'All' OR '$(Buildx86Profiler)' == 'true'"
-        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x86\Datadog.Trace.ClrProfiler.Native.dll"
+        SourceFiles="$(MSBuildThisFileDirectory)tracer\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x86\Datadog.Trace.ClrProfiler.Native.dll"
         DestinationFolder="$(TracerHomeDirectory)\win-x86"
         SkipUnchangedFiles="true"
         Retries="3"
