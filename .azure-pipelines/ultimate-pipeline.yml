@@ -238,11 +238,16 @@ stages:
   dependsOn: build_macos
   jobs:
   - job: managed
-    services:
-      dd_agent: dd_agent
     pool:
       vmImage: macOS-10.15
     steps:
+      - script: |
+          DD_AGENT_MAJOR_VERSION=7 \
+          DD_API_KEY=$(ddApiKey) \
+          DD_SITE="datadoghq.com" \
+          bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_mac_os.sh)"
+        displayName: Install Datadog agent
+
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
         parameters:
@@ -639,7 +644,7 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: build_windows  
+  dependsOn: build_windows
   jobs:
 
   #### Windows
