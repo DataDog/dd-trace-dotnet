@@ -344,7 +344,8 @@ namespace shared
                 hr = EmitLoaderCallInMethod(moduleId, methodDef, loaderMethodDef);
                 if (SUCCEEDED(hr))
                 {
-                    Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully (in IsCompatibilitySwitchSet). [ModuleID=" + moduleIdHex +
+                    Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully (in " +
+                        ToString(_specificTypeToInject) + "." + ToString(_specificMethodToInject) + "). [ModuleID=" + moduleIdHex +
                         ", AssemblyID=" + assemblyIdHex +
                         ", AssemblyName=" + ToString(assemblyNameString) +
                         ", AppDomainID=" + appDomainIdHex +
@@ -495,8 +496,8 @@ namespace shared
         {
             Error("Loader::InjectLoaderToModuleInitializer: Call to ILRewriter.Export() failed for ModuleID=" + moduleIdHex +
                 ", methodDef=0x" + HexStr(methodDef));
-            return hr;
         }
+        return hr;
     }
 
     HRESULT Loader::EmitLoaderInModule(
