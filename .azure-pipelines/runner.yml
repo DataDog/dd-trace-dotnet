@@ -114,6 +114,7 @@ jobs:
   pool:
     vmImage: macOS-10.15
   steps:
+  - template: steps/downgrade-macos-cmake.yml
 
   - task: UseDotNet@2
     displayName: install dotnet core runtime 3.1

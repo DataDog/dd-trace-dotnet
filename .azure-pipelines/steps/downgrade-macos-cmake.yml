@@ -1,0 +1,18 @@
+steps:
+# Downgrade the cmake to 3.19.x. 3.20.x causes failure embedded dll and pdb
+- script: |
+    CMAKE_VERSION=3.19.8
+    echo "Uninstalling brew CMake"
+    brew uninstall cmake
+    echo "Downloading CMake $CMAKE_VERSION"
+    curl --output cmake-$CMAKE_VERSION-macos-universal.tar.gz -L https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-macos-universal.tar.gz
+    echo "Extracting archive"
+    tar -xzvf cmake-$CMAKE_VERSION-macos-universal.tar.gz
+    echo "Copying Cmake.app to Applications"
+    cp -rf ./cmake-$CMAKE_VERSION-macos-universal/CMake.app /Applications
+    echo "Updating PATH"
+    echo "##vso[task.setvariable variable=PATH]${PATH}:/Applications/CMake.app/Contents/bin"
+    echo "Cleaning up files"
+    rm -rf ./cmake-$CMAKE_VERSION-macos-universal
+    rm ./cmake-$CMAKE_VERSION-macos-universal.tar.gz
+  displayName: Downgrade cmake version
