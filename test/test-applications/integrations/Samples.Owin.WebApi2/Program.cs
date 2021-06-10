@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Threading;
 using Microsoft.Owin.Hosting;
 
 namespace Samples.Owin.WebApi2
@@ -14,11 +15,17 @@ namespace Samples.Owin.WebApi2
         static void Main()
         {
             // Start OWIN host 
-            using (WebApp.Start<Startup>(url: Host()))
+            var host = Host();
+            Console.WriteLine($"Starting Owin app listening on {host}");
+            using (WebApp.Start<Startup>(url: host))
             {
-                Console.WriteLine("Press enter to close the webserver");
-                Console.ReadLine();
+                Console.WriteLine("Webserver started");
+                // Console.ReadLine doesn't work apparently.
+                var stopHandle = new ManualResetEvent(false);
+                stopHandle.WaitOne();
+
             }
+            Console.WriteLine("Shutting down server");
         }
     }
 }

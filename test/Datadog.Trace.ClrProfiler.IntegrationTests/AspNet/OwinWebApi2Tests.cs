@@ -110,7 +110,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
         public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
         {
@@ -159,6 +158,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                         Agent = new MockTracerAgent(initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
+                        output.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                         _process = helper.StartSample(Agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
                     }
                 }
@@ -207,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     if (args.Data != null)
                     {
-                        if (args.Data.Contains("Now listening on:") || args.Data.Contains("Unable to start Kestrel"))
+                        if (args.Data.Contains("Webserver started"))
                         {
                             wh.Set();
                         }
@@ -229,7 +229,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 wh.WaitOne(5000);
 
-                var maxMillisecondsToWait = 15_000;
+                var maxMillisecondsToWait = 30_000;
                 var intervalMilliseconds = 500;
                 var intervals = maxMillisecondsToWait / intervalMilliseconds;
                 var serverReady = false;
