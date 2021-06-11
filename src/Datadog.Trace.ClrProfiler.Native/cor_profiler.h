@@ -36,7 +36,8 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
   bool is_desktop_iis = false;
-  
+  bool is_net46_or_greater = false;
+
   //
   // CallTarget Members
   //
@@ -127,7 +128,7 @@ class CorProfiler : public CorProfilerBase {
   HRESULT STDMETHODCALLTYPE Shutdown() override;
 
   HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
-  
+
   HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId,
                                         FunctionID calleeId,
                                         BOOL* pfShouldInline) override;
