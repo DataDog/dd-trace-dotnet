@@ -2345,7 +2345,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   pNewInstr->m_Arg8 = 5;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // callvirt System.Reflection.Assembly System.Reflection.Assembly.Load(uint8[], uint8[])
+  // call System.Reflection.Assembly System.Reflection.Assembly.Load(uint8[], uint8[])
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_CALL;
   pNewInstr->m_Arg32 = appdomain_load_member_ref;
