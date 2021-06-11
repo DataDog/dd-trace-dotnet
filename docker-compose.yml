@@ -609,7 +609,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /tracer/build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
       - ./:/project
     environment:
@@ -674,7 +674,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /tracer/build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
       - ./:/project
     environment:

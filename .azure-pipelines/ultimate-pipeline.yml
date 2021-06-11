@@ -145,9 +145,9 @@ stages:
     ## TODO: Move to Nuke target
     - script: |
         mkdir -p tracer/src/Datadog.Trace.ClrProfiler.Native/bin/netstandard2.0
-        cp src/bin/windows-tracer-home/netstandard2.0/*.dll tracer/src/Datadog.Trace.ClrProfiler.Native/bin/netstandard2.0/
+        cp tracer/bin/windows-tracer-home/netstandard2.0/*.dll tracer/src/Datadog.Trace.ClrProfiler.Native/bin/netstandard2.0/
         mkdir -p tracer/src/Datadog.Trace.ClrProfiler.Native/bin/netcoreapp3.1
-        cp src/bin/windows-tracer-home/netcoreapp3.1/*.dll tracer/src/Datadog.Trace.ClrProfiler.Native/bin/netcoreapp3.1/
+        cp tracer/bin/windows-tracer-home/netcoreapp3.1/*.dll tracer/src/Datadog.Trace.ClrProfiler.Native/bin/netcoreapp3.1/
       displayName: Copy files into macos-tracer-home
 
     - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.ClrProfiler.Native/bin
@@ -202,7 +202,7 @@ stages:
       - script: tracer\build.cmd BuildAndRunManagedUnitTests
         displayName: Build and Test
 
-      - publish: build_data
+      - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
         condition: succeededOrFailed()
 
@@ -210,7 +210,7 @@ stages:
         displayName: publish test results
         inputs:
           testResultsFormat: VSTest
-          testResultsFiles: build_data/results/**/*.trx
+          testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
     - job: native
