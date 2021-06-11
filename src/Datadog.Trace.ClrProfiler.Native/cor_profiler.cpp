@@ -1915,7 +1915,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
     pALNewInstr->m_opcode = CEE_LDC_I4_0;
     rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
 
-    // ret : Return the value of the comparison
+    // ret : Return
     pALNewInstr = rewriter_already_loaded.NewILInstr();
     pALNewInstr->m_opcode = CEE_RET;
     rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
