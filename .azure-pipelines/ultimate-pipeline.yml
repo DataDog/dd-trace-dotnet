@@ -612,6 +612,11 @@ stages:
             testResultsFiles: build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'build_data/results/'
+      continueOnError: true
+
 - stage: benchmarks
   dependsOn: build_windows
   jobs:

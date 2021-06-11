@@ -1035,6 +1035,7 @@ partial class Build
                         .SetFilter(filter)
                         .When(TestAllPackageVersions, o => o
                             .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                        .When(CodeCoverage, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
                             .SetProjectFile(project)),
@@ -1051,6 +1052,7 @@ partial class Build
                     .SetFilter(filter)
                     .When(TestAllPackageVersions, o => o
                         .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project))
@@ -1085,13 +1087,6 @@ partial class Build
 
     private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings)
     {
-        // if (settings.Framework != TargetFramework.NETCOREAPP3_1)
-        // {
-        //     return settings;
-        // }
-
-        // var profilerLibFolder = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory / "bin" / BuildConfiguration / TargetFramework.NETCOREAPP3_1 / "profiler-lib" / TargetFramework.NETCOREAPP3_1;
-
         return settings.SetDataCollector("XPlat Code Coverage")
                 .SetProcessArgumentConfigurator(
                      args =>
