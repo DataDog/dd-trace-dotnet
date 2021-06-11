@@ -324,7 +324,7 @@ partial class Build
         .After(CompileNativeSrc, PublishManagedProfiler)
         .Executes(() =>
         {
-            GlobFiles(NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.*")
+            GlobFiles(NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.dylib")
                 .ForEach(source =>
                 {
                     var dest = TracerHomeDirectory / $"osx-x64";
