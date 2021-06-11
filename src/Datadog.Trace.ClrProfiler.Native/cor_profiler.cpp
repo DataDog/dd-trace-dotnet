@@ -1296,6 +1296,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
           && ReturnTypeIsValueTypeOrGeneric(module_metadata->metadata_import,
                               module_metadata->metadata_emit,
                               module_metadata->assembly_emit,
+                              corAssemblyProperty,
                               target.id,
                               target.signature,
                               &typeToken)) {
@@ -1723,8 +1724,8 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  mdModuleRef mscorlib_ref;
-  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+  mdAssemblyRef corlib_ref;
+  hr = GetCorLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
 
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: failed to define AssemblyRef to mscorlib");
@@ -1733,7 +1734,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   // Define a TypeRef for System.Object
   mdTypeRef object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, WStr("System.Object"), &object_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Object"), &object_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
     return hr;
@@ -1809,7 +1810,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
     // Get a TypeRef for System.Threading.Interlocked
     mdTypeRef interlocked_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
     if (FAILED(hr)) {
       Warn("GenerateVoidILStartupMethod: DefineTypeRefByName interlocked_type_ref failed");
       return hr;
@@ -2002,7 +2003,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.Byte
   mdTypeRef byte_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref,
                                           WStr("System.Byte"),
                                           &byte_type_ref);
   if (FAILED(hr)) {
@@ -2012,7 +2013,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.Runtime.InteropServices.Marshal
   mdTypeRef marshal_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref,
                                           WStr("System.Runtime.InteropServices.Marshal"),
                                           &marshal_type_ref);
   if (FAILED(hr)) {
@@ -2042,7 +2043,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.Reflection.Assembly
   mdTypeRef system_reflection_assembly_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref,
                                           WStr("System.Reflection.Assembly"),
                                           &system_reflection_assembly_type_ref);
   if (FAILED(hr)) {
@@ -2052,7 +2053,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a MemberRef for System.Object.ToString()
   mdTypeRef system_object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref,
                                           WStr("System.Object"),
                                           &system_object_type_ref);
   if (FAILED(hr)) {
@@ -2060,55 +2061,9 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
     return hr;
   }
 
-  // Get a TypeRef for System.AppDomain
-  mdTypeRef system_appdomain_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          WStr("System.AppDomain"),
-                                          &system_appdomain_type_ref);
-  if (FAILED(hr)) {
-    Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
-    return hr;
-  }
-
-  // Get a MemberRef for System.AppDomain.get_CurrentDomain()
-  // and System.AppDomain.Assembly.Load(byte[], byte[])
-
-  // Create method signature for AppDomain.CurrentDomain property
-  COR_SIGNATURE appdomain_get_current_domain_signature_start[] = {
-      IMAGE_CEE_CS_CALLCONV_DEFAULT,
-      0,
-      ELEMENT_TYPE_CLASS, // ret = System.AppDomain
-      // insert compressed token for System.AppDomain TypeRef here
-  };
-  ULONG start_length = sizeof(appdomain_get_current_domain_signature_start);
-
-  BYTE system_appdomain_type_ref_compressed_token[4];
-  ULONG token_length = CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
-
-  const auto appdomain_get_current_domain_signature_length = start_length + token_length;
-  COR_SIGNATURE appdomain_get_current_domain_signature[250];
-  memcpy(appdomain_get_current_domain_signature,
-         appdomain_get_current_domain_signature_start,
-         start_length);
-  memcpy(&appdomain_get_current_domain_signature[start_length],
-         system_appdomain_type_ref_compressed_token,
-         token_length);
-
-  mdMemberRef appdomain_get_current_domain_member_ref;
-  hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref,
-      WStr("get_CurrentDomain"),
-      appdomain_get_current_domain_signature,
-      appdomain_get_current_domain_signature_length,
-      &appdomain_get_current_domain_member_ref);
-  if (FAILED(hr)) {
-    Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
-    return hr;
-  }
-
-  // Create method signature for AppDomain.Load(byte[], byte[])
+  // Create method signature for System.Reflection.Assembly.Load(byte[], byte[])
   COR_SIGNATURE appdomain_load_signature_start[] = {
-      IMAGE_CEE_CS_CALLCONV_HASTHIS,
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,
       2,
       ELEMENT_TYPE_CLASS  // ret = System.Reflection.Assembly
       // insert compressed token for System.Reflection.Assembly TypeRef here
@@ -2119,11 +2074,11 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
       ELEMENT_TYPE_SZARRAY,
       ELEMENT_TYPE_U1
   };
-  start_length = sizeof(appdomain_load_signature_start);
+  ULONG start_length = sizeof(appdomain_load_signature_start);
   ULONG end_length = sizeof(appdomain_load_signature_end);
 
   BYTE system_reflection_assembly_type_ref_compressed_token[4];
-  token_length = CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
+  ULONG token_length = CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
 
   const auto appdomain_load_signature_length = start_length + token_length + end_length;
   COR_SIGNATURE appdomain_load_signature[250];
@@ -2139,7 +2094,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   mdMemberRef appdomain_load_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, WStr("Load"),
+      system_reflection_assembly_type_ref, WStr("Load"),
       appdomain_load_signature,
       appdomain_load_signature_length,
       &appdomain_load_member_ref);
@@ -2376,13 +2331,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   pNewInstr->m_Arg32 = marshal_copy_member_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // Step 4) Call System.Reflection.Assembly System.AppDomain.CurrentDomain.Load(byte[], byte[]))
-
-  // call System.AppDomain System.AppDomain.CurrentDomain property
-  pNewInstr = rewriter_void.NewILInstr();
-  pNewInstr->m_opcode = CEE_CALL;
-  pNewInstr->m_Arg32 = appdomain_get_current_domain_member_ref;
-  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+  // Step 4) Call System.Reflection.Assembly System.Reflection.Assembly.Load(byte[], byte[]))
 
   // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4) for the first byte[] parameter of AppDomain.Load(byte[], byte[])
   pNewInstr = rewriter_void.NewILInstr();
@@ -2396,9 +2345,9 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   pNewInstr->m_Arg8 = 5;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // callvirt System.Reflection.Assembly System.AppDomain.Load(uint8[], uint8[])
+  // call System.Reflection.Assembly System.Reflection.Assembly.Load(uint8[], uint8[])
   pNewInstr = rewriter_void.NewILInstr();
-  pNewInstr->m_opcode = CEE_CALLVIRT;
+  pNewInstr->m_opcode = CEE_CALL;
   pNewInstr->m_Arg32 = appdomain_load_member_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
@@ -2480,19 +2429,19 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(
 
   ILRewriterWrapper rewriter_wrapper(&rewriter);
 
-  // Get mscorlib assembly ref
-  mdModuleRef mscorlib_ref;
-  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+  // Get corlib assembly ref
+  mdAssemblyRef corlib_ref;
+  hr = GetCorLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
 
   // Get System.Boolean type token
   mdToken boolToken;
-  metadata_emit->DefineTypeRefByName(mscorlib_ref, SystemBoolean,
+  metadata_emit->DefineTypeRefByName(corlib_ref, SystemBoolean,
                                      &boolToken);
 
   // Get System.AppDomain type ref
   mdTypeRef system_appdomain_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(
-      mscorlib_ref, WStr("System.AppDomain"), &system_appdomain_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.AppDomain"),
+                                          &system_appdomain_type_ref);
   if (FAILED(hr)) {
     Warn("Wrapper objectTypeRef could not be defined.");
     return hr;
