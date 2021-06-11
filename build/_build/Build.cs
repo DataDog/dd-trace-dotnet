@@ -88,6 +88,7 @@ partial class Build : NukeBuild
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(TracerHomeDirectory);
+            EnsureCleanDirectory(DDTracerHomeDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
             EnsureCleanDirectory(NativeProfilerProject.Directory / "build");
             EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
@@ -114,10 +115,12 @@ partial class Build : NukeBuild
         .DependsOn(PublishNativeProfiler)
         .DependsOn(CopyIntegrationsJson);
 
+
     Target PackageTracerHome => _ => _
         .Description("Packages the already built src")
         .After(Clean, BuildTracerHome)
         .DependsOn(CreateRequiredDirectories)
+        .DependsOn(CreateDdTracerHome)
         .DependsOn(ZipTracerHome)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);

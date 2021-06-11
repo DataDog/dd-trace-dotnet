@@ -160,10 +160,6 @@ partial class Build
                 arguments: "../ -DCMAKE_BUILD_TYPE=Release",
                 workingDirectory: buildDirectory);
             Make.Value(workingDirectory: buildDirectory);
-
-            var source = buildDirectory / "bin" / $"{NativeProfilerProject.Name}.so";
-            var dest = TracerHomeDirectory / $"linux-{LinuxArchitectureIdentifier}";
-            CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -293,29 +289,17 @@ partial class Build
         .After(CompileNativeSrc, PublishManagedProfiler)
         .Executes(() =>
         {
-            // TODO: Invert this, so it copies _from the bin folder instead of _into_ it
-            // leaving this as-is for now to match existing pipeline
-            var outputDir = NativeProfilerProject.Directory / "build" / "bin" / BuildConfiguration /
-                            LinuxArchitectureIdentifier;
+            // copy createLogPath.sh
+            CopyFileToDirectory(
+                RootDirectory / "build" / "artifacts" / "createLogPath.sh",
+                TracerHomeDirectory,
+                FileExistsPolicy.OverwriteIfNewer);
 
-            EnsureCleanDirectory(outputDir);
-            // copy static files
-            CopyFileToDirectory(RootDirectory / "integrations.json", outputDir, FileExistsPolicy.Overwrite);
-            CopyFileToDirectory(RootDirectory / "build" / "artifacts" / "createLogPath.sh", outputDir, FileExistsPolicy.Overwrite);
-
-            // copy native file
-            var buildOutputDirectory = NativeProfilerProject.Directory / "build" / "bin";
-            CopyFileToDirectory(buildOutputDirectory / $"{NativeProfilerProject.Name}.so", outputDir);
-
-            // Copy managed files
-            foreach (var framework in new []{TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP3_1})
-            {
-                EnsureCleanDirectory(outputDir / framework);
-                CopyDirectoryRecursively(
-                    source: TracerHomeDirectory / framework,
-                    target: outputDir / framework,
-                    DirectoryExistsPolicy.Merge);
-            }
+            // Copy Native file
+            CopyFileToDirectory(
+                NativeProfilerProject.Directory / "build" / "bin" / $"{NativeProfilerProject.Name}.so",
+                TracerHomeDirectory,
+                FileExistsPolicy.Overwrite);
         });
 
     Target PublishNativeProfilerMacOs => _ => _
@@ -324,13 +308,17 @@ partial class Build
         .After(CompileNativeSrc, PublishManagedProfiler)
         .Executes(() =>
         {
-            GlobFiles(NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.dylib")
-                .ForEach(source =>
-                {
-                    var dest = TracerHomeDirectory / $"osx-x64";
-                    CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
+            // copy createLogPath.sh
+            CopyFileToDirectory(
+                RootDirectory / "build" / "artifacts" / "createLogPath.sh",
+                TracerHomeDirectory,
+                FileExistsPolicy.OverwriteIfNewer);
 
-                });
+            // Create home directory
+            CopyFileToDirectory(
+                NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.dylib",
+                TracerHomeDirectory,
+                FileExistsPolicy.Overwrite);
         });
 
     Target PublishNativeProfiler => _ => _
@@ -417,8 +405,6 @@ partial class Build
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
                 EnsureCleanDirectory(workingDirectory);
 
-                var publishDir = NativeProfilerProject.Directory / "build" / "bin" / BuildConfiguration /
-                                 LinuxArchitectureIdentifier;
                 foreach (var packageType in LinuxPackageTypes)
                 {
                     var args = new []
@@ -429,7 +415,7 @@ partial class Build
                         $"-n {packageName}",
                         $"-v {Version}",
                         packageType == "tar" ? "--prefix /opt/datadog" : "",
-                        $"--chdir {publishDir}",
+                        $"--chdir {TracerHomeDirectory}",
                         "netstandard2.0/",
                         "netcoreapp3.1/",
                         "Datadog.Trace.ClrProfiler.Native.so",
