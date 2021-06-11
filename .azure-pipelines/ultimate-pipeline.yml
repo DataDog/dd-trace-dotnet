@@ -949,6 +949,9 @@ stages:
     - job: Windows
       timeoutInMinutes: 30
 
+      pool:
+        vmImage: windows-2019
+
       steps:
       - template: steps/install-dotnet-sdks.yml
       - template: steps/restore-working-directory.yml
