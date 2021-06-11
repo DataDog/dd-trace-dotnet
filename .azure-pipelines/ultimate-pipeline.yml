@@ -243,7 +243,7 @@ stages:
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests
         displayName: Build and Test
 
-      - publish: build_data
+      - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
         condition: succeededOrFailed()
 
@@ -251,7 +251,7 @@ stages:
         displayName: publish test results
         inputs:
           testResultsFormat: VSTest
-          testResultsFiles: build_data/results/**/*.trx
+          testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
 - stage: unit_tests_linux
@@ -291,7 +291,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests"
 
-    - publish: build_data
+    - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
       condition: succeededOrFailed()
 
@@ -299,7 +299,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: build_data/results/**/*.trx
+        testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
 - stage: integration_tests_windows
@@ -336,7 +336,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: build_data/results/**/*.trx
+        testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
 - stage: integration_tests_windows_iis
@@ -398,7 +398,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: build_data/results/**/*.trx
+        testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
     - task: DockerCompose@0
@@ -534,7 +534,7 @@ stages:
         dockerComposeCommand: down
       condition: succeededOrFailed()
 
-    - publish: build_data
+    - publish: tracer/build_data
       artifact: profiler-logs_integration_tests_linux_$(matrixName)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
 
@@ -542,7 +542,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: build_data/results/**/*.trx
+        testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
 - stage: benchmarks
