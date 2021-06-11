@@ -745,6 +745,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileSamples)
         .After(CompileFrameworkReproductions)
+        .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
         .Executes(() =>
         {
@@ -775,6 +776,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True")
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)));
@@ -805,6 +807,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True")
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)));
@@ -1092,8 +1095,8 @@ partial class Build
         return settings.SetDataCollector("XPlat Code Coverage")
                 .SetProcessArgumentConfigurator(
                      args =>
-                         args.Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura")
-                             // .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeDirectory={0}", profilerLibFolder)
+                         args.Add("--")
+                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*]Datadog.Trace.Vendors.*"));
     }
 

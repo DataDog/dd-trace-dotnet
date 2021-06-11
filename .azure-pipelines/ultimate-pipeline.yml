@@ -350,7 +350,7 @@ stages:
       displayName: 'Start CosmosDB Emulator'
       workingDirectory: $(Pipeline.Workspace)
 
-    - script: build.cmd BuildAndRunWindowsIntegrationTests --PrintDriveSpace
+    - script: build.cmd BuildAndRunWindowsIntegrationTests --PrintDriveSpace --code-coverage
       displayName: Run integration tests
 
     - task: PublishTestResults@2
@@ -359,6 +359,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
+      
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'build_data/results/'
+      continueOnError: true
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -423,6 +428,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'build_data/results/'
+      continueOnError: true
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -932,3 +942,30 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+- stage: coverage
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis]
+  jobs:
+    - job: Windows
+      timeoutInMinutes: 30
+
+      steps:
+      - template: steps/install-dotnet-sdks.yml
+      - template: steps/restore-working-directory.yml
+    
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          patterns: '**/coverage.cobertura.xml'
+          path: $(Build.SourcesDirectory)/cover
+    
+      - task: reportgenerator@4
+        inputs:
+          reports: '$(Build.SourcesDirectory)\cover\*\*\coverage.cobertura.xml'
+          targetdir: '$(Build.SourcesDirectory)\coveragereport'
+          sourcedirs: '$(Build.SourcesDirectory)'
+          reporttypes: 'Cobertura'
+     
+      - task: PublishCodeCoverageResults@1
+        inputs:
+          codeCoverageTool: 'Cobertura'
+          summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/Cobertura.xml'
