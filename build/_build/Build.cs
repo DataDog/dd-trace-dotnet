@@ -39,6 +39,8 @@ partial class Build : NukeBuild
 
     [Parameter("The location to create the tracer home directory. Default is ./bin/tracer-home ")]
     readonly AbsolutePath TracerHome;
+    [Parameter("The location to create the dd-trace home directory. Default is ./bin/dd-tracer-home ")]
+    readonly AbsolutePath DDTracerHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
     
@@ -113,14 +115,14 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedProfiler)
         .DependsOn(CompileNativeSrc)
         .DependsOn(PublishNativeProfiler)
-        .DependsOn(CopyIntegrationsJson);
+        .DependsOn(CopyIntegrationsJson)
+        .DependsOn(CreateDdTracerHome);
 
 
     Target PackageTracerHome => _ => _
         .Description("Packages the already built src")
         .After(Clean, BuildTracerHome)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(CreateDdTracerHome)
         .DependsOn(ZipTracerHome)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);

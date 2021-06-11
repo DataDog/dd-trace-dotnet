@@ -33,6 +33,7 @@ partial class Build
 
     AbsolutePath OutputDirectory => RootDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
+    AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
@@ -95,6 +96,7 @@ partial class Build
         {
             EnsureExistingDirectory(TracerHomeDirectory);
             EnsureExistingDirectory(ArtifactsDirectory);
+            EnsureExistingDirectory(DDTracerHomeDirectory);
             EnsureExistingDirectory(BuildDataDirectory);
         });
 
@@ -256,13 +258,17 @@ partial class Build
         .After(CompileManagedSrc)
         .Executes(() =>
         {
+            var targetFrameworks = IsWin
+                ? TargetFrameworks
+                : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
+
             DotNetPublish(s => s
                 .SetProject(Solution.GetProject(Projects.ClrProfilerManaged))
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
                 .EnableNoBuild()
                 .EnableNoRestore()
-                .CombineWith(TargetFrameworks, (p, framework) => p
+                .CombineWith(targetFrameworks, (p, framework) => p
                     .SetFramework(framework)
                     .SetOutput(TracerHomeDirectory / framework)));
         });
@@ -326,6 +332,32 @@ partial class Build
         .DependsOn(PublishNativeProfilerWindows)
         .DependsOn(PublishNativeProfilerLinux)
         .DependsOn(PublishNativeProfilerMacOs);
+
+    Target CreateDdTracerHome => _ => _
+       .Unlisted()
+       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler)
+       .Executes(() =>
+       {
+           // start by copying everything from the tracer home dir
+           CopyDirectoryRecursively(TracerHomeDirectory, DDTracerHomeDirectory, DirectoryExistsPolicy.Merge);
+
+           if (IsWin)
+           {
+               // windows already has the expected layout
+               return;
+           }
+
+           // Move the native file to the art
+           var (architecture, fileName) = IsOsx
+               ? ("osx-x64", $"{NativeProfilerProject.Name}.dylib")
+               : ($"linux-{LinuxArchitectureIdentifier}", $"{NativeProfilerProject.Name}.so");
+
+           var outputDir = DDTracerHomeDirectory / architecture;
+           EnsureCleanDirectory(outputDir);
+           MoveFile(
+               DDTracerHomeDirectory / fileName,
+               outputDir / architecture);
+       });
 
     Target BuildMsi => _ => _
         .Unlisted()
