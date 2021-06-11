@@ -31,5 +31,5 @@ steps:
         --env tracerHome=/project/$(relativeTracerHome) \
         --env artifacts=/project/$(relativeArtifacts) \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
-        dotnet /tracer/build/bin/Debug/_build.dll ${{ parameters.command }}
+        dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
