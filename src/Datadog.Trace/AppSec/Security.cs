@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec
 {
@@ -83,7 +84,7 @@ namespace Datadog.Trace.AppSec
 
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport)
         {
-            var additiveContext = _powerWaf.CreateAdditiveContext();
+            using var additiveContext = _powerWaf.CreateAdditiveContext();
 
             // run the WAF and execute the results
             using var result = additiveContext.Run(args);

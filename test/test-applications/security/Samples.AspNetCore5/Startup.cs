@@ -45,7 +45,7 @@ namespace Samples.AspNetCore5
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+             
             app.UseRouting();
 
             app.UseAuthorization();

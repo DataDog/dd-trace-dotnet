@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -36,7 +37,6 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-
             Native.pw_clearRuleH(ruleHandle);
         }
 
