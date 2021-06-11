@@ -805,7 +805,7 @@ stages:
       inputs:
         artifact: linux-tracer-home-arm64
         patterns: '**/*.so'
-        path: $(System.DefaultWorkingDirectory)/arm64
+        path: $(System.DefaultWorkingDirectory)/tracer/arm64
 
     - script: |
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
