@@ -138,6 +138,7 @@ stages:
       vmImage: macOS-10.15
     steps:
     - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/downgrade-macos-cmake.yml
 
     - script: ./build.sh BuildTracerHome
       displayName: Build tracer home
