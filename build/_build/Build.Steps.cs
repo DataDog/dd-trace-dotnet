@@ -347,7 +347,7 @@ partial class Build
                return;
            }
 
-           // Move the native file to the art
+           // Move the native file to the architecture-specific folder
            var (architecture, fileName) = IsOsx
                ? ("osx-x64", $"{NativeProfilerProject.Name}.dylib")
                : ($"linux-{LinuxArchitectureIdentifier}", $"{NativeProfilerProject.Name}.so");
