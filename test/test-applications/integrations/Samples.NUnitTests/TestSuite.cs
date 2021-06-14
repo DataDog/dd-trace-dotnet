@@ -123,7 +123,6 @@ namespace Samples.NUnitTests
         public TestFixtureTest(string name)
         {
             _name = name;
-            // Assert.Fail(Environment.StackTrace);
         }
 
         [Test]
