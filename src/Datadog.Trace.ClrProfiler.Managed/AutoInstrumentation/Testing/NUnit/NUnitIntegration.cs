@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             string testName = testMethod.Name;
             string testSuite = testMethod.DeclaringType?.FullName;
 
-            // Extract the test suite from the full name to support custom fixture parameters.
+            // Extract the test suite from the full name to support custom fixture parameters and test declared in base classes.
             if (fullName.EndsWith("." + composedTestName))
             {
                 testSuite = fullName.Substring(0, fullName.Length - (composedTestName.Length + 1));
