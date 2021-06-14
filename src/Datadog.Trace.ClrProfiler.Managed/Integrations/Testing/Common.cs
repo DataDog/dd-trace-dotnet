@@ -38,19 +38,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                             {
                                 // Extract repository name from the git url and use it as a default service name.
                                 string repository = CIEnvironmentValues.Repository;
-                                Regex regex = new Regex(@"/([a-zA-Z0-9\\\-_.]*)$");
-                                Match match = regex.Match(repository);
-                                if (match.Success && match.Groups.Count > 1)
+                                if (!string.IsNullOrEmpty(repository))
                                 {
-                                    const string gitSuffix = ".git";
-                                    string repoName = match.Groups[1].Value;
-                                    if (repoName.EndsWith(gitSuffix))
+                                    Regex regex = new Regex(@"/([a-zA-Z0-9\\\-_.]*)$");
+                                    Match match = regex.Match(repository);
+                                    if (match.Success && match.Groups.Count > 1)
                                     {
-                                        settings.ServiceName = repoName.Substring(0, repoName.Length - gitSuffix.Length);
-                                    }
-                                    else
-                                    {
-                                        settings.ServiceName = repoName;
+                                        const string gitSuffix = ".git";
+                                        string repoName = match.Groups[1].Value;
+                                        if (repoName.EndsWith(gitSuffix))
+                                        {
+                                            settings.ServiceName = repoName.Substring(0, repoName.Length - gitSuffix.Length);
+                                        }
+                                        else
+                                        {
+                                            settings.ServiceName = repoName;
+                                        }
                                     }
                                 }
                             }
