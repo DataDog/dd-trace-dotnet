@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             HttpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
             HttpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2},{HeaderName3}");
-            SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-501-234, s342, 500-503");
+            SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
 
             SetServiceVersion(ServiceVersion);
 
