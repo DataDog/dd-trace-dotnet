@@ -106,6 +106,14 @@ partial class Build : NukeBuild
             }
         });
 
+    Target CleanObjFiles => _ => _
+         .Unlisted()
+         .Description("Deletes all build output files, but preserves folders to work around AzDo issues")
+         .Executes(() =>
+          {
+              TestsDirectory.GlobFiles("**/bin/*", "**/obj/*").ForEach(DeleteFile);
+          });
+
     Target BuildTracerHome => _ => _
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean)
