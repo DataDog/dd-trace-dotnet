@@ -313,6 +313,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // Check the Test Status
             AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
+
+            // Check the `test.message` tag. We check if contains the default or the custom message.
+            if (targetSpan.Tags.ContainsKey(TestTags.Message))
+            {
+                AssertTargetSpanAnyOf(targetSpan, TestTags.Message, new string[] { "Test is ok", "The test passed." });
+            }
         }
 
         private static void CheckSimpleSkipFromAttributeTest(MockTracerAgent.Span targetSpan, string skipReason = "Simple skip reason")

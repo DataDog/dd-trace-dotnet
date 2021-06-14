@@ -129,6 +129,7 @@ namespace Samples.NUnitTests
         [Test]
         public void Test()
         {
+            Assert.Pass("Test is ok");
         }
     }
 
