@@ -84,7 +84,13 @@ namespace Datadog.Trace.AppSec
 
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport)
         {
-            using var additiveContext = _powerWaf.CreateAdditiveContext();
+            var additiveContext = transport.GetAdditiveContext();
+
+            if (additiveContext == null)
+            {
+                additiveContext = _powerWaf.CreateAdditiveContext();
+                transport.SetAdditiveContext(additiveContext);
+            }
 
             // run the WAF and execute the results
             using var result = additiveContext.Run(args);

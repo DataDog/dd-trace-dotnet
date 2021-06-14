@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 using System.Web;
+using Datadog.Trace.AppSec.Waf;
 
 namespace Datadog.Trace.AppSec.Transport.Http
 {
@@ -24,6 +25,16 @@ namespace Datadog.Trace.AppSec.Transport.Http
             context.Response.Write(SecurityConstants.AttackBlockedHtml);
             context.Response.Flush();
             context.Response.End();
+        }
+
+        public IAdditiveContext GetAdditiveContext()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void SetAdditiveContext(IAdditiveContext additiveContext)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }
