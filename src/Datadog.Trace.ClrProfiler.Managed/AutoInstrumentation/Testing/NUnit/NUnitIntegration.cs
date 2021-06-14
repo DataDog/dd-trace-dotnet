@@ -34,8 +34,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             string testFramework = "NUnit " + targetType?.Assembly?.GetName().Version;
-            string testSuite = testMethod.DeclaringType?.FullName;
+            string fullName = currentTest.FullName;
+            string composedTestName = currentTest.Name;
+
             string testName = testMethod.Name;
+            string testSuite = testMethod.DeclaringType?.FullName;
+
+            // Extract the test suite from the full name to support custom fixture parameters.
+            if (fullName.EndsWith("." + composedTestName))
+            {
+                testSuite = fullName.Substring(0, fullName.Length - (composedTestName.Length + 1));
+            }
+
             string skipReason = null;
 
             Scope scope = Common.TestTracer.StartActive("nunit.test", serviceName: Common.TestTracer.DefaultServiceName);

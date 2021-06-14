@@ -113,4 +113,34 @@ namespace Samples.NUnitTests
             Assert.Inconclusive("The test is inconclusive.");
         }
     }
+
+    [TestFixture("Test01")]
+    [TestFixture("Test02")]
+    public class TestFixtureTest
+    {
+        private string _name;
+
+        public TestFixtureTest(string name)
+        {
+            _name = name;
+            // Assert.Fail(Environment.StackTrace);
+        }
+
+        [Test]
+        public void Test()
+        {
+        }
+    }
+
+    public class TestBase<T>
+    {
+        [Test]
+        public void IsNull()
+        {
+            Assert.IsNull(default(T));
+        }
+    }
+
+    public class TestString : TestBase<string>
+    { }
 }
