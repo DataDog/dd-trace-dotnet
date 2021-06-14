@@ -159,6 +159,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 if (exTypeName == "NUnit.Framework.SuccessException")
                 {
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                    scope.Span.SetTag(TestTags.Message, ex.Message);
                 }
                 else if (exTypeName == "NUnit.Framework.IgnoreException" || exTypeName == "NUnit.Framework.InconclusiveException")
                 {
