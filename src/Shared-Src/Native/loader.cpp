@@ -462,8 +462,7 @@ namespace shared
 
         // Debug("  * " + ToString(typeNameString) + "." + ToString(functionNameString) + "()");
 
-        bool disableNGEN = false;
-        disableNGEN |= typeNameString == _specificTypeToInject && functionNameString == _specificMethodToInject;
+        bool disableNGEN = typeNameString == _specificTypeToInject && functionNameString == _specificMethodToInject;
 
         *pbUseCachedFunction = *pbUseCachedFunction && !disableNGEN;
         return S_OK;
