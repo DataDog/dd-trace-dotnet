@@ -52,6 +52,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                                     {
                                         settings.ServiceName = repoName.Substring(0, repoName.Length - gitSuffix.Length);
                                     }
+                                    else
+                                    {
+                                        settings.ServiceName = repoName;
+                                    }
                                 }
                             }
 
