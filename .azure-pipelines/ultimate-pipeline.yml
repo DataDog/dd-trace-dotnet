@@ -26,6 +26,7 @@ variables:
   dotnetCoreSdk5Version: 5.0.103
   relativeTracerHome: /src/bin/windows-tracer-home
   relativeArtifacts: /src/bin/artifacts
+  ddTracerHome: $(System.DefaultWorkingDirectory)/src/bin/dd-tracer-home
   tracerHome: $(System.DefaultWorkingDirectory)/src/bin/windows-tracer-home
   artifacts: $(System.DefaultWorkingDirectory)/src/bin/artifacts
   ddApiKey: $(DD_API_KEY)
@@ -104,8 +105,7 @@ stages:
         baseImage: $(baseImage)
         command: "Clean BuildTracerHome ZipTracerHome"
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/build/bin/Release/x64
-      condition: ne(variables['matrixName'], 'arm64')
+    - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-$(matrixName)
 
@@ -113,11 +113,6 @@ stages:
       condition: ne(variables['matrixName'], 'arm64')
       displayName: Upload linux-x64 packages
       artifact: linux-packages-$(matrixName)
-
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/build/bin/Release/arm64
-      condition: eq(variables['matrixName'], 'arm64')
-      displayName: Uploading arm64 tracer home artifact
-      artifact: linux-tracer-home-$(matrixName)
 
     - publish: $(artifacts)/linux-arm64
       condition: eq(variables['matrixName'], 'arm64')
@@ -143,15 +138,7 @@ stages:
     - script: ./build.sh BuildTracerHome
       displayName: Build tracer home
 
-    ## TODO: Move to Nuke target
-    - script: |
-        mkdir -p src/Datadog.Trace.ClrProfiler.Native/bin/netstandard2.0
-        cp src/bin/windows-tracer-home/netstandard2.0/*.dll src/Datadog.Trace.ClrProfiler.Native/bin/netstandard2.0/
-        mkdir -p src/Datadog.Trace.ClrProfiler.Native/bin/netcoreapp3.1
-        cp src/bin/windows-tracer-home/netcoreapp3.1/*.dll src/Datadog.Trace.ClrProfiler.Native/bin/netcoreapp3.1/
-      displayName: Copy files into macos-tracer-home
-
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.ClrProfiler.Native/bin
+    - publish: $(tracerHome)
       displayName: Uploading macos profiler artifact
       artifact: macos-tracer-home
 
@@ -497,6 +484,16 @@ stages:
       vmImage: $(vmImage)
 
     steps:
+    # Doing a clean of obj files _before_ restore to remove build output from previous runs
+    # Can't do a full clean, as otherwise restore-working-directory fails
+    # Only necessary for ARM64, but shouldn't cause any harm on others
+    # Can't ifdef it as depends on a matrix variable
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "CleanObjFiles"
+
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(matrixName)-working-directory

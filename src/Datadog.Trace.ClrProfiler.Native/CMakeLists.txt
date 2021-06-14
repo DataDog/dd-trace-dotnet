@@ -198,6 +198,20 @@ elseif (ISARM)
 endif()
 
 # ******************************************************
+# Suppress Warning on MacOS
+# ******************************************************
+
+# Only necessary with cmake 3.19.x on macos
+# See https://stackoverflow.com/questions/4929255/building-static-libraries-on-mac-using-cmake-and-gcc#answer-4953904
+
+if (ISMACOS)
+    SET(CMAKE_C_ARCHIVE_CREATE   "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    SET(CMAKE_C_ARCHIVE_FINISH   "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+    SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+endif()
+
+# ******************************************************
 # Define static target
 # ******************************************************
 add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC

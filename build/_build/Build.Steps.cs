@@ -33,6 +33,7 @@ partial class Build
 
     AbsolutePath OutputDirectory => RootDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
+    AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
@@ -95,6 +96,7 @@ partial class Build
         {
             EnsureExistingDirectory(TracerHomeDirectory);
             EnsureExistingDirectory(ArtifactsDirectory);
+            EnsureExistingDirectory(DDTracerHomeDirectory);
             EnsureExistingDirectory(BuildDataDirectory);
         });
 
@@ -160,10 +162,6 @@ partial class Build
                 arguments: "../ -DCMAKE_BUILD_TYPE=Release",
                 workingDirectory: buildDirectory);
             Make.Value(workingDirectory: buildDirectory);
-
-            var source = buildDirectory / "bin" / $"{NativeProfilerProject.Name}.so";
-            var dest = TracerHomeDirectory / $"linux-{LinuxArchitectureIdentifier}";
-            CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -260,13 +258,17 @@ partial class Build
         .After(CompileManagedSrc)
         .Executes(() =>
         {
+            var targetFrameworks = IsWin
+                ? TargetFrameworks
+                : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
+
             DotNetPublish(s => s
                 .SetProject(Solution.GetProject(Projects.ClrProfilerManaged))
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
                 .EnableNoBuild()
                 .EnableNoRestore()
-                .CombineWith(TargetFrameworks, (p, framework) => p
+                .CombineWith(targetFrameworks, (p, framework) => p
                     .SetFramework(framework)
                     .SetOutput(TracerHomeDirectory / framework)));
         });
@@ -293,29 +295,17 @@ partial class Build
         .After(CompileNativeSrc, PublishManagedProfiler)
         .Executes(() =>
         {
-            // TODO: Invert this, so it copies _from the bin folder instead of _into_ it
-            // leaving this as-is for now to match existing pipeline
-            var outputDir = NativeProfilerProject.Directory / "build" / "bin" / BuildConfiguration /
-                            LinuxArchitectureIdentifier;
+            // copy createLogPath.sh
+            CopyFileToDirectory(
+                RootDirectory / "build" / "artifacts" / "createLogPath.sh",
+                TracerHomeDirectory,
+                FileExistsPolicy.OverwriteIfNewer);
 
-            EnsureCleanDirectory(outputDir);
-            // copy static files
-            CopyFileToDirectory(RootDirectory / "integrations.json", outputDir, FileExistsPolicy.Overwrite);
-            CopyFileToDirectory(RootDirectory / "build" / "artifacts" / "createLogPath.sh", outputDir, FileExistsPolicy.Overwrite);
-
-            // copy native file
-            var buildOutputDirectory = NativeProfilerProject.Directory / "build" / "bin";
-            CopyFileToDirectory(buildOutputDirectory / $"{NativeProfilerProject.Name}.so", outputDir);
-
-            // Copy managed files
-            foreach (var framework in new []{TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP3_1})
-            {
-                EnsureCleanDirectory(outputDir / framework);
-                CopyDirectoryRecursively(
-                    source: TracerHomeDirectory / framework,
-                    target: outputDir / framework,
-                    DirectoryExistsPolicy.Merge);
-            }
+            // Copy Native file
+            CopyFileToDirectory(
+                NativeProfilerProject.Directory / "build" / "bin" / $"{NativeProfilerProject.Name}.so",
+                TracerHomeDirectory,
+                FileExistsPolicy.Overwrite);
         });
 
     Target PublishNativeProfilerMacOs => _ => _
@@ -324,13 +314,17 @@ partial class Build
         .After(CompileNativeSrc, PublishManagedProfiler)
         .Executes(() =>
         {
-            GlobFiles(NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.*")
-                .ForEach(source =>
-                {
-                    var dest = TracerHomeDirectory / $"osx-x64";
-                    CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
+            // copy createLogPath.sh
+            CopyFileToDirectory(
+                RootDirectory / "build" / "artifacts" / "createLogPath.sh",
+                TracerHomeDirectory,
+                FileExistsPolicy.OverwriteIfNewer);
 
-                });
+            // Create home directory
+            CopyFileToDirectory(
+                NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.dylib",
+                TracerHomeDirectory,
+                FileExistsPolicy.Overwrite);
         });
 
     Target PublishNativeProfiler => _ => _
@@ -338,6 +332,32 @@ partial class Build
         .DependsOn(PublishNativeProfilerWindows)
         .DependsOn(PublishNativeProfilerLinux)
         .DependsOn(PublishNativeProfilerMacOs);
+
+    Target CreateDdTracerHome => _ => _
+       .Unlisted()
+       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler)
+       .Executes(() =>
+       {
+           // start by copying everything from the tracer home dir
+           CopyDirectoryRecursively(TracerHomeDirectory, DDTracerHomeDirectory, DirectoryExistsPolicy.Merge);
+
+           if (IsWin)
+           {
+               // windows already has the expected layout
+               return;
+           }
+
+           // Move the native file to the architecture-specific folder
+           var (architecture, fileName) = IsOsx
+               ? ("osx-x64", $"{NativeProfilerProject.Name}.dylib")
+               : ($"linux-{LinuxArchitectureIdentifier}", $"{NativeProfilerProject.Name}.so");
+
+           var outputDir = DDTracerHomeDirectory / architecture;
+           EnsureCleanDirectory(outputDir);
+           MoveFile(
+               DDTracerHomeDirectory / fileName,
+               outputDir / architecture);
+       });
 
     Target BuildMsi => _ => _
         .Unlisted()
@@ -417,8 +437,6 @@ partial class Build
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
                 EnsureCleanDirectory(workingDirectory);
 
-                var publishDir = NativeProfilerProject.Directory / "build" / "bin" / BuildConfiguration /
-                                 LinuxArchitectureIdentifier;
                 foreach (var packageType in LinuxPackageTypes)
                 {
                     var args = new []
@@ -429,7 +447,7 @@ partial class Build
                         $"-n {packageName}",
                         $"-v {Version}",
                         packageType == "tar" ? "--prefix /opt/datadog" : "",
-                        $"--chdir {publishDir}",
+                        $"--chdir {TracerHomeDirectory}",
                         "netstandard2.0/",
                         "netcoreapp3.1/",
                         "Datadog.Trace.ClrProfiler.Native.so",
