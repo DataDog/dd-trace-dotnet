@@ -18,8 +18,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitTests : TestHelper
     {
-        private const string TestSuiteName = "Samples.NUnitTests.TestSuite";
-        private const int ExpectedSpanCount = 17;
+        private const int ExpectedSpanCount = 20;
+
+        private static string[] _testSuiteNames = new string[]
+        {
+            "Samples.NUnitTests.TestSuite",
+            "Samples.NUnitTests.TestFixtureTest(\"Test01\")",
+            "Samples.NUnitTests.TestFixtureTest(\"Test02\")",
+            "Samples.NUnitTests.TestString",
+        };
 
         public NUnitTests(ITestOutputHelper output)
             : base("NUnitTests", output)
@@ -82,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         CheckRuntimeValues(targetSpan);
 
                         // check the suite name
-                        AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
+                        AssertTargetSpanAnyOf(targetSpan, TestTags.Suite, _testSuiteNames);
 
                         // check the test type
                         AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);
@@ -103,6 +110,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         switch (targetSpan.Tags[TestTags.Name])
                         {
                             case "SimplePassTest":
+                            case "Test":
+                            case "IsNull":
                                 CheckSimpleTestSpan(targetSpan);
                                 break;
 
@@ -304,6 +313,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // Check the Test Status
             AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
+
+            // Check the `test.message` tag. We check if contains the default or the custom message.
+            if (targetSpan.Tags.ContainsKey(TestTags.Message))
+            {
+                AssertTargetSpanAnyOf(targetSpan, TestTags.Message, new string[] { "Test is ok", "The test passed." });
+            }
         }
 
         private static void CheckSimpleSkipFromAttributeTest(MockTracerAgent.Span targetSpan, string skipReason = "Simple skip reason")
