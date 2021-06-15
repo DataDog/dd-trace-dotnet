@@ -428,6 +428,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DuplicateTypeProxy", "test\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreRazorPages", "test\test-applications\integrations\Samples.AspNetCoreRazorPages\Samples.AspNetCoreRazorPages.csproj", "{1B9E6BF4-9D48-4988-9945-248096119E46}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsFunctionBarebone", "test\test-applications\integrations\WindowsFunctionBarebone\WindowsFunctionBarebone.csproj", "{313115F8-770B-472F-8251-C099525F627A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions", "test\test-applications\integrations\Samples.AzureFunctions\Samples.AzureFunctions.csproj", "{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{1f146d40-8b21-4630-8049-14fa4bbbb217}*SharedItemsImports = 5
@@ -1588,6 +1592,26 @@ Global
 		{1B9E6BF4-9D48-4988-9945-248096119E46}.Release|x64.Build.0 = Release|Any CPU
 		{1B9E6BF4-9D48-4988-9945-248096119E46}.Release|x86.ActiveCfg = Release|Any CPU
 		{1B9E6BF4-9D48-4988-9945-248096119E46}.Release|x86.Build.0 = Release|Any CPU
+		{313115F8-770B-472F-8251-C099525F627A}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{313115F8-770B-472F-8251-C099525F627A}.Debug|x64.ActiveCfg = Debug|x64
+		{313115F8-770B-472F-8251-C099525F627A}.Debug|x64.Build.0 = Debug|x64
+		{313115F8-770B-472F-8251-C099525F627A}.Debug|x86.ActiveCfg = Debug|x86
+		{313115F8-770B-472F-8251-C099525F627A}.Debug|x86.Build.0 = Debug|x86
+		{313115F8-770B-472F-8251-C099525F627A}.Release|Any CPU.ActiveCfg = Release|x86
+		{313115F8-770B-472F-8251-C099525F627A}.Release|x64.ActiveCfg = Release|x64
+		{313115F8-770B-472F-8251-C099525F627A}.Release|x64.Build.0 = Release|x64
+		{313115F8-770B-472F-8251-C099525F627A}.Release|x86.ActiveCfg = Release|x86
+		{313115F8-770B-472F-8251-C099525F627A}.Release|x86.Build.0 = Release|x86
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Debug|x64.ActiveCfg = Debug|x64
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Debug|x64.Build.0 = Debug|x64
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Debug|x86.ActiveCfg = Debug|x86
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Debug|x86.Build.0 = Debug|x86
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Release|Any CPU.ActiveCfg = Release|x86
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Release|x64.ActiveCfg = Release|x64
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Release|x64.Build.0 = Release|x64
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Release|x86.ActiveCfg = Release|x86
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1712,6 +1736,8 @@ Global
 		{E3FB283A-B766-4887-95E1-329667671921} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{34B67004-7249-4EF1-8E12-6E6DA37EA6BE} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{1B9E6BF4-9D48-4988-9945-248096119E46} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{313115F8-770B-472F-8251-C099525F627A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{ECB98FD1-0FE1-42C8-8918-CCD9714404F9} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

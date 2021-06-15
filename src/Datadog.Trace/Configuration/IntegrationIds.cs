@@ -25,5 +25,6 @@ namespace Datadog.Trace.Configuration
         StackExchangeRedis,
         ServiceRemoting,
         RabbitMQ,
+        AzureFunction,
     }
 }

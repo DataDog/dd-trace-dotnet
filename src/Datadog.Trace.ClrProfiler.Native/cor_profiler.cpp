@@ -960,6 +960,37 @@ HRESULT CorProfiler::ProcessReplacementCalls(
         continue;
       }
 
+      std::string::size_type middlewareFound =
+          target.type.name.find(WStr("Middleware")) !=
+          std::string::npos;
+
+      std::string::size_type loggerFound =
+          target.type.name.find(WStr("FunctionInstanceLogger")) !=
+          std::string::npos;
+
+      std::string::size_type collectorFound =
+          target.type.name.find(WStr("AsyncCollec")) !=
+          std::string::npos;
+
+      std::string::size_type functionFound =
+          target.type.name.find(WStr("Function")) !=
+          std::string::npos;
+
+      if (collectorFound || loggerFound || middlewareFound || functionFound) {
+        Warn("ProcessReplacementCalls: Found ", target.name," on ", target.type.name);
+      }
+
+      std::string::size_type invokeFound =
+          target.name.find(WStr("Invoke")) != std::string::npos;
+
+      std::string::size_type execFound =
+          target.name.find(WStr("Exec")) != std::string::npos;
+
+      if (functionFound && (invokeFound || execFound)) {
+        Warn("ProcessReplacementCalls: Found ", target.name, " on ",
+             target.type.name);
+      }
+
       // make sure the type and method names match
       if (method_replacement.target_method.type_name != target.type.name ||
           method_replacement.target_method.method_name != target.name) {
@@ -968,6 +999,8 @@ HRESULT CorProfiler::ProcessReplacementCalls(
 
       // we add 3 parameters to every wrapper method: opcode, mdToken, and
       // module_version_id
+
+
       const short added_parameters_count = 3;
 
       auto wrapper_method_signature_size =
@@ -1074,6 +1107,15 @@ HRESULT CorProfiler::ProcessReplacementCalls(
 
         continue;
       }
+      
+      Debug(
+          "JITCompilationStarted: Function parsed detailed  "
+          "signature. function_id=",
+          function_id, " token=", function_token,
+          " target_name=", target.type.name, ".", target.name, "()",
+          " successfully_parsed_signature=", successfully_parsed_signature,
+          " sig_types.size()=", actual_sig.size(),
+          " expected_sig_types.size()=", expected_sig.size());
 
       if (actual_sig.size() != expected_sig.size()) {
         // we can't safely assume our wrapper methods handle the types
