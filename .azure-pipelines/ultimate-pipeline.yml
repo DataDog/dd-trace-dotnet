@@ -958,7 +958,6 @@ stages:
         vmImage: windows-2019
 
       steps:
-      - template: steps/install-dotnet-sdks.yml
       - template: steps/restore-working-directory.yml
     
       - task: DownloadPipelineArtifact@2
@@ -968,16 +967,17 @@ stages:
     
       - task: CmdLine@2
         inputs:
-          script: 'tree $(Build.SourcesDirectory)\cover /F /A'     
+          script: 'tree $(Build.SourcesDirectory) /F /A'     
     
       - task: reportgenerator@4
         inputs:
           reports: '$(Build.SourcesDirectory)\cover\**\coverage.cobertura.xml'
           targetdir: '$(Build.SourcesDirectory)\coveragereport'
-          sourcedirs: '$(Build.SourcesDirectory)'
+          sourcedirs: '$(Build.SourcesDirectory);..'
           reporttypes: 'Cobertura'
      
       - task: PublishCodeCoverageResults@1
         inputs:
           codeCoverageTool: 'Cobertura'
           summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/Cobertura.xml'
+          pathToSources: '$(Build.SourcesDirectory)'
