@@ -365,7 +365,7 @@ stages:
       displayName: docker-compose build IIS containers
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg enable_32_bit=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationRegKey
+        dockerComposeCommand: build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationRegKey
 
     - task: DockerCompose@0
       displayName: docker-compose start IIS containers
