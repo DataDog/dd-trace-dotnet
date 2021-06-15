@@ -15,6 +15,11 @@
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+
+    <PackageReference Include="coverlet.collector" Version="3.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">

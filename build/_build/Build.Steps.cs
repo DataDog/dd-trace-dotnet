@@ -522,6 +522,7 @@ partial class Build
                     .SetTargetPlatformAnyCPU()
                     .SetDDEnvironmentVariables("dd-tracer-dotnet")
                     .EnableMemoryDumps()
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(testProjects, (x, project) => x
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)));
