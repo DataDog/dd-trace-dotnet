@@ -22,6 +22,6 @@
   <ItemGroup>
     <Content Include="..\..\.azure-pipelines\steps\*" Link="ci\steps\%(Filename)%(Extension)" />
     <Content Include="..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
-    <Content Include="..\..\docker.sh" Link="docker\docker.sh" />
+    <Content Include="..\..\build_in_docker.sh" Link="boot\build_in_docker.sh" />
   </ItemGroup>
 </Project>

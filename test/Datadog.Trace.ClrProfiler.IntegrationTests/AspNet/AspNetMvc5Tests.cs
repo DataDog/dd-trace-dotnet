@@ -17,7 +17,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [CollectionDefinition("IisTests", DisableParallelization = true)]
     [Collection("IisTests")]
     public class AspNetMvc5TestsCallsiteClassic : AspNetMvc5Tests
     {
