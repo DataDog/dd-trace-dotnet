@@ -964,11 +964,7 @@ stages:
         inputs:
           patterns: '**/coverage.cobertura.xml'
           path: $(Build.SourcesDirectory)/cover
-    
-      - task: CmdLine@2
-        inputs:
-          script: 'tree $(Build.SourcesDirectory) /F /A'     
-    
+
       - task: reportgenerator@4
         inputs:
           reports: '$(Build.SourcesDirectory)\cover\**\coverage.cobertura.xml'
