@@ -443,9 +443,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         }
     }
 
-    std::vector<IntegrationMethod> filtered_integrations =
-        IsCallTargetEnabled() ? integration_methods_
-                              : FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
+  std::vector<IntegrationMethod> filtered_integrations = IsCallTargetEnabled(is_net46_or_greater) ?
+      integration_methods_ : FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
 
     if (filtered_integrations.empty()) {
         // we don't need to instrument anything in this module, skip it
@@ -467,13 +466,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
     const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-    // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
-    // subscribe to DiagnosticSource events.
-    // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
-    // System.Data or System.Data.Common
-    if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") &&
-        module_info.assembly.name != WStr("Dapper") && !IsCallTargetEnabled()) {
-        filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import);
+  // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
+  // subscribe to DiagnosticSource events.
+  // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
+  // System.Data or System.Data.Common
+  if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") && module_info.assembly.name != WStr("Dapper") && !IsCallTargetEnabled(is_net46_or_greater)) {
+    filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import);
 
         if (filtered_integrations.empty()) {
             // we don't need to instrument anything in this module, skip it
@@ -507,10 +505,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     Debug("ModuleLoadFinished stored metadata for ", module_id, " ", module_info.assembly.name, " AppDomain ",
           module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
 
-    // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-    if (IsCallTargetEnabled()) {
-        CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
-    }
+  // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+  if (IsCallTargetEnabled(is_net46_or_greater)) {
+    CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
+  }
 
     return S_OK;
 }
@@ -641,11 +639,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    // We check if we are in CallTarget mode and the loader was already injected.
-    const bool is_calltarget_enabled = IsCallTargetEnabled();
-    const bool has_loader_injected_in_appdomain =
-        first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
-        first_jit_compilation_app_domains.end();
+  // We check if we are in CallTarget mode and the loader was already injected.
+  const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
+  const bool has_loader_injected_in_appdomain =
+      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
+      first_jit_compilation_app_domains.end();
 
     if (is_calltarget_enabled && has_loader_injected_in_appdomain) {
         // Loader was already injected in a calltarget scenario, we don't need to do anything else here
