@@ -2609,7 +2609,8 @@ extern "C" {
     #define __readonly
     #define __notreadonly
     #define __maybereadonly
-    #define __valid
+    // commented because it conflicts with stdlibc++ 8
+    //#define __valid
     #define __notvalid
     #define __maybevalid
     #define __readableTo(extent)
@@ -2618,7 +2619,8 @@ extern "C" {
     #define __writableTo(size)
     #define __elem_writableTo(size)
     #define __byte_writableTo(size)
-    #define __pre
+    // commented because it conflicts with stdlibc++ 8
+    //#define __pre
     #define __post
     #define __precond(expr)
     #define __postcond(expr)
