@@ -209,7 +209,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     throw new Exception("Couldn't verify the application is ready to receive requests.");
                 }
 
-                var testStart = DateTime.Now;
+                var testStart = DateTime.UtcNow;
 
                 var paths = Expectations.Select(e => e.OriginalUri).ToArray();
                 await SubmitRequests(aspNetCorePort, paths);
