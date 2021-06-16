@@ -4773,10 +4773,16 @@
         "caller": {},
         "target": {
           "assembly": "xunit.execution.dotnet",
-          "type": "Xunit.Sdk.TestAssemblyRunner`1",
-          "method": "RunAsync",
+          "type": "Xunit.Sdk.TestAssemblyFinished",
+          "method": ".ctor",
           "signature_types": [
-            "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>"
+            "System.Void",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 2,
           "minimum_minor": 2,
@@ -4787,7 +4793,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyFinishedCtorIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -4795,10 +4801,16 @@
         "caller": {},
         "target": {
           "assembly": "xunit.execution.desktop",
-          "type": "Xunit.Sdk.TestAssemblyRunner`1",
-          "method": "RunAsync",
+          "type": "Xunit.Sdk.TestAssemblyFinished",
+          "method": ".ctor",
           "signature_types": [
-            "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>"
+            "System.Void",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 2,
           "minimum_minor": 2,
@@ -4809,7 +4821,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyFinishedCtorIntegration",
           "action": "CallTargetModification"
         }
       },
