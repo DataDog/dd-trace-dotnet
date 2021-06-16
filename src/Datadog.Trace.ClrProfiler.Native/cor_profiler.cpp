@@ -94,6 +94,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
+  // get ICorProfilerInfo6 for net452+
+  ICorProfilerInfo6* info6;
+  hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**)&info6);
+
+  if (SUCCEEDED(hr)) {
+    Debug("Interface ICorProfilerInfo6 found.");
+    is_net46_or_greater = true;
+  }
+
     Info("Environment variables:");
     for (auto&& env_var : env_vars_to_display) {
         WSTRING env_var_value = GetEnvironmentValue(env_var);
@@ -201,15 +210,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         instrument_domain_neutral_assemblies = true;
     }
 
-    // set event mask to subscribe to events and disable NGEN images
-    // get ICorProfilerInfo6 for net452+
-    ICorProfilerInfo6* info6;
-    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**)&info6);
-
-    if (SUCCEEDED(hr)) {
-        Debug("Interface ICorProfilerInfo6 found.");
-        is_net46_or_greater = true;
-        hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+  // set event mask to subscribe to events and disable NGEN images
+  if (is_net46_or_greater) {
+    hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
 
         if (instrument_domain_neutral_assemblies) {
             Info("Note: The ", environment::domain_neutral_instrumentation,
