@@ -360,10 +360,12 @@ TEST_F(CLRHelperTest,
       if (type_info.IsValid() &&
           type_info.name == L"Samples.ExampleLibrary.Class1") {
         mdToken type_token = mdTokenNil;
+        AssemblyProperty asm_prop{};
         auto target = GetFunctionInfo(metadata_import_, method_def);
         bool result = ReturnTypeIsValueTypeOrGeneric(metadata_import_,
                                                      metadata_emit_,
                                                      assembly_emit_,
+                                                     asm_prop,
                                                      target.id,
                                                      target.signature,
                                                      &type_token) &&
@@ -402,9 +404,11 @@ TEST_F(CLRHelperTest,
     auto target = GetFunctionInfo(metadata_import_, current);
     if (target.name == L"ReturnT1" || target.name == L"ReturnT2") {
       mdToken type_token = mdTokenNil;
+      AssemblyProperty asm_prop{};
       bool result = ReturnTypeIsValueTypeOrGeneric(metadata_import_,
                                                   metadata_emit_,
                                                   assembly_emit_,
+                                                  asm_prop,
                                                   target.id,
                                                   target.signature,
                                                   &type_token) &&
@@ -435,11 +439,13 @@ TEST_F(CLRHelperTest,
 
   for (mdMethodSpec current = mdtMethodSpec + 1; metadata_import_->IsValidToken(current); current++) {
     mdToken type_token = mdTokenNil;
+    AssemblyProperty asm_prop{};
     auto target = GetFunctionInfo(metadata_import_, current);
     if (target.name.find(L"ReturnM") != std::string::npos) {
       bool result = ReturnTypeIsValueTypeOrGeneric(metadata_import_,
                                                    metadata_emit_,
                                                    assembly_emit_,
+                                                   asm_prop,
                                                    target.id,
                                                    target.signature,
                                                    &type_token) &&

@@ -1,0 +1,12 @@
+parameters:
+  - name: 'artifact'
+    type: 'string'
+    default: 'build-windows-working-directory'
+
+steps:
+- task: DownloadPipelineArtifact@2
+  displayName: Download working dir
+  inputs:
+    artifact: ${{ parameters.artifact }}
+    patterns: "**/@(bin|obj|packages)/**"
+    path: $(System.DefaultWorkingDirectory)

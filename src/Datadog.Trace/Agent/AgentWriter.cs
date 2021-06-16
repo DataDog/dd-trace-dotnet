@@ -54,6 +54,9 @@ namespace Datadog.Trace.Agent
 
         private TaskCompletionSource<bool> _forceFlush;
 
+        private Task _frontBufferFlushTask;
+        private Task _backBufferFlushTask;
+
         static AgentWriter()
         {
             var data = Vendors.MessagePack.MessagePackSerializer.Serialize(ArrayHelper.Empty<Span[]>());
@@ -85,6 +88,8 @@ namespace Datadog.Trace.Agent
 
             _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.FromResult(true);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
+
+            _backBufferFlushTask = _frontBufferFlushTask = Task.FromResult(true);
         }
 
         internal event Action Flushed;
@@ -100,7 +105,7 @@ namespace Datadog.Trace.Agent
             return _api.SendTracesAsync(EmptyPayload, 0);
         }
 
-        public void WriteTrace(Span[] trace)
+        public void WriteTrace(ArraySegment<Span> trace)
         {
             if (_serializationTask.IsCompleted)
             {
@@ -120,7 +125,7 @@ namespace Datadog.Trace.Agent
             if (_statsd != null)
             {
                 _statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces);
-                _statsd.Increment(TracerMetricNames.Queue.EnqueuedSpans, trace.Length);
+                _statsd.Increment(TracerMetricNames.Queue.EnqueuedSpans, trace.Count);
             }
         }
 
@@ -177,7 +182,7 @@ namespace Datadog.Trace.Agent
                 await tcs.Task.ConfigureAwait(false);
             }
 
-            await FlushBuffers().ConfigureAwait(false);
+            await FlushBuffers(true).ConfigureAwait(false);
         }
 
         internal void WriteWatermark(Action watermark, bool wakeUpThread = true)
@@ -261,50 +266,64 @@ namespace Datadog.Trace.Agent
 
         private async Task FlushBuffer(SpanBuffer buffer)
         {
-            // Wait for write operations to complete, then prevent further modifications
-            if (!buffer.Lock())
+            if (buffer == _frontBuffer)
             {
-                // Buffer is already locked, it's probably being flushed from another thread
-                return;
+                await _frontBufferFlushTask.ConfigureAwait(false);
+                await (_frontBufferFlushTask = InternalBufferFlush()).ConfigureAwait(false);
+            }
+            else
+            {
+                await _backBufferFlushTask.ConfigureAwait(false);
+                await (_backBufferFlushTask = InternalBufferFlush()).ConfigureAwait(false);
             }
 
-            try
+            async Task InternalBufferFlush()
             {
-                if (_statsd != null)
+                // Wait for write operations to complete, then prevent further modifications
+                if (!buffer.Lock())
                 {
-                    _statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
-                    _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
+                    // Buffer is already locked, it's probably being flushed from another thread
+                    return;
                 }
 
-                if (buffer.TraceCount > 0)
+                try
                 {
-                    Log.Debug<int, int>("Flushing {spans} spans across {traces} traces", buffer.SpanCount, buffer.TraceCount);
-
-                    var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount).ConfigureAwait(false);
-
-                    if (success)
+                    if (_statsd != null)
                     {
-                        _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
+                        _statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
+                        _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
                     }
-                    else
+
+                    if (buffer.TraceCount > 0)
                     {
-                        _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
+                        Log.Debug<int, int>("Flushing {spans} spans across {traces} traces", buffer.SpanCount, buffer.TraceCount);
+
+                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount).ConfigureAwait(false);
+
+                        if (success)
+                        {
+                            _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
+                        }
+                        else
+                        {
+                            _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "An unhandled error occurred while flushing a buffer");
-                _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
-            }
-            finally
-            {
-                // Clear and unlock the buffer
-                buffer.Clear();
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "An unhandled error occurred while flushing a buffer");
+                    _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
+                }
+                finally
+                {
+                    // Clear and unlock the buffer
+                    buffer.Clear();
+                }
             }
         }
 
-        private void SerializeTrace(Span[] trace)
+        private void SerializeTrace(ArraySegment<Span> trace)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer SwapBuffers()
@@ -330,7 +349,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Add the current keep rate to the root span
-            var rootSpan = trace[0].Context.TraceContext?.RootSpan;
+            var rootSpan = trace.Array[trace.Offset].Context.TraceContext?.RootSpan;
             if (rootSpan is not null)
             {
                 var currentKeepRate = _traceKeepRateCalculator.GetKeepRate();
@@ -376,7 +395,7 @@ namespace Datadog.Trace.Agent
             if (_statsd != null)
             {
                 _statsd.Increment(TracerMetricNames.Queue.DroppedTraces);
-                _statsd.Increment(TracerMetricNames.Queue.DroppedSpans, trace.Length);
+                _statsd.Increment(TracerMetricNames.Queue.DroppedSpans, trace.Count);
             }
         }
 
@@ -402,7 +421,7 @@ namespace Datadog.Trace.Agent
                 {
                     while (_pendingTraces.TryDequeue(out var item))
                     {
-                        if (item.Trace == null)
+                        if (item.Callback != null)
                         {
                             // Found a watermark
                             item.Callback();
@@ -438,10 +457,10 @@ namespace Datadog.Trace.Agent
 
         private readonly struct WorkItem
         {
-            public readonly Span[] Trace;
+            public readonly ArraySegment<Span> Trace;
             public readonly Action Callback;
 
-            public WorkItem(Span[] trace)
+            public WorkItem(ArraySegment<Span> trace)
             {
                 Trace = trace;
                 Callback = null;
@@ -449,7 +468,7 @@ namespace Datadog.Trace.Agent
 
             public WorkItem(Action callback)
             {
-                Trace = null;
+                Trace = default;
                 Callback = callback;
             }
         }

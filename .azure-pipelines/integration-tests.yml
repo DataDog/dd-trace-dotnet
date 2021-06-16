@@ -294,6 +294,16 @@ jobs:
       version: $(dotnetCoreSdk5Version)
       includePreviewVersions: true
 
+  - task: PowerShell@2
+    displayName: 'Starting Cosmos Emulator'
+    inputs:
+      targetType: 'inline'
+      workingDirectory: $(Pipeline.Workspace)
+      script: |
+          Write-Host "Starting CosmosDB Emulator"
+          Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
+          Start-CosmosDbEmulator
+
   - task: NuGetToolInstaller@1
     displayName: install nuget
 

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
@@ -36,6 +37,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                         {
                             var settings = TracerSettings.FromDefaultSources();
                             settings.TraceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+
+                            if (string.IsNullOrEmpty(settings.ServiceName))
+                            {
+                                // Extract repository name from the git url and use it as a default service name.
+                                string repository = CIEnvironmentValues.Repository;
+                                if (!string.IsNullOrEmpty(repository))
+                                {
+                                    Regex regex = new Regex(@"/([a-zA-Z0-9\\\-_.]*)$");
+                                    Match match = regex.Match(repository);
+                                    if (match.Success && match.Groups.Count > 1)
+                                    {
+                                        const string gitSuffix = ".git";
+                                        string repoName = match.Groups[1].Value;
+                                        if (repoName.EndsWith(gitSuffix))
+                                        {
+                                            settings.ServiceName = repoName.Substring(0, repoName.Length - gitSuffix.Length);
+                                        }
+                                        else
+                                        {
+                                            settings.ServiceName = repoName;
+                                        }
+                                    }
+                                }
+                            }
 
                             _testTracer = new Tracer(settings);
                             Tracer.Instance = _testTracer;
@@ -76,11 +101,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                     // So the last spans in buffer aren't send to the agent.
                     Log.Debug("Integration flushing spans.");
                     await TestTracer.FlushAsync().ConfigureAwait(false);
-                    // The current agent writer FlushAsync method can return inmediately if a payload is being sent (there is buffer lock)
-                    // There is not api in the agent writer that guarantees the send has been sucessfully completed.
-                    // Until we change the behavior of the agentwriter we should at least wait 2 seconds before returning.
-                    Log.Debug("Waiting 2 seconds to flush.");
-                    await Task.Delay(2000).ConfigureAwait(false);
                     Log.Debug("Integration flushed.");
                 }
                 catch (Exception ex)
@@ -88,6 +108,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                     Log.Error(ex, "Exception occurred when flushing spans.");
                 }
             }
+        }
+
+        internal static string GetParametersValueData(object paramValue)
+        {
+            if (paramValue is null)
+            {
+                return "(null)";
+            }
+            else if (paramValue is Array pValueArray)
+            {
+                const int maxArrayLength = 50;
+                int length = pValueArray.Length > maxArrayLength ? maxArrayLength : pValueArray.Length;
+
+                string[] strValueArray = new string[length];
+                for (var i = 0; i < length; i++)
+                {
+                    strValueArray[i] = GetParametersValueData(pValueArray.GetValue(i));
+                }
+
+                return "[" + string.Join(", ", strValueArray) + (pValueArray.Length > maxArrayLength ? ", ..." : string.Empty) + "]";
+            }
+            else if (paramValue is Delegate pValueDelegate)
+            {
+                return $"{paramValue}[{pValueDelegate.Target}|{pValueDelegate.Method}]";
+            }
+
+            return paramValue.ToString();
         }
     }
 }

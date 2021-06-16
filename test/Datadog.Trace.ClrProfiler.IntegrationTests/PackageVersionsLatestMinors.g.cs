@@ -19,6 +19,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestMinors
     {
+        public static IEnumerable<object[]> AwsSqs =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+                new object[] { "3.1.0.13" },
+#endif
+                new object[] { "3.3.103.26" },
+                new object[] { "3.5.1.28" },
+                new object[] { "3.7.0.27" },
+#endif
+            };
+
         public static IEnumerable<object[]> MongoDB =>
 
             new List<object[]>
@@ -289,6 +305,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.5.3" },
                 new object[] { "1.6.3" },
                 new object[] { "1.7.0" },
+#endif
+            };
+
+        public static IEnumerable<object[]> CosmosDb =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "3.6.0" },
+                new object[] { "3.7.1" },
+                new object[] { "3.8.0" },
+                new object[] { "3.9.1" },
+                new object[] { "3.10.1" },
+                new object[] { "3.11.0" },
+                new object[] { "3.12.0" },
+                new object[] { "3.13.0" },
+                new object[] { "3.14.0" },
+                new object[] { "3.15.1" },
+                new object[] { "3.16.0" },
+                new object[] { "3.17.1" },
+                new object[] { "3.18.0" },
 #endif
             };
 

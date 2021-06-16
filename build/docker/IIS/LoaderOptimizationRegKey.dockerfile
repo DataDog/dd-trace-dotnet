@@ -9,8 +9,10 @@ RUN Add-WindowsFeature NET-Framework-45-ASPNET; \
 ADD test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/Release/Publish LoaderOptimizationRegKey
 
 # Set up IIS websites
-ARG ENABLE_32_BIT=false
+ARG ENABLE_32_BIT
+ENV ENABLE_32_BIT=${ENABLE_32_BIT:-false}
 RUN Remove-WebSite -Name 'Default Web Site'; \
+    Write-Host "Creating website with 32 bit reg key: $env:ENABLE_32_BIT"; \
     New-Website -Name 'LoaderOptimizationRegKey' -Port 80 -PhysicalPath 'c:\LoaderOptimizationRegKey'
 RUN c:\Windows\System32\inetsrv\appcmd set apppool /apppool.name:DefaultAppPool /enable32bitapponwin64:$env:ENABLE_32_BIT
 

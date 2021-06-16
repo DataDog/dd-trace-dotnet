@@ -215,11 +215,6 @@ namespace Datadog.Trace
         public const string AmqpDeliveryMode = "amqp.delivery_mode";
 
         /// <summary>
-        /// The size of the message.
-        /// </summary>
-        public const string MessageSize = "message.size";
-
-        /// <summary>
         /// The partition associated with a record
         /// </summary>
         public const string KafkaPartition = "kafka.partition";
@@ -233,6 +228,46 @@ namespace Datadog.Trace
         /// Whether the record was a "tombstone" record
         /// </summary>
         public const string KafkaTombstone = "kafka.tombstone";
+
+        /// <summary>
+        /// The size of the message.
+        /// </summary>
+        public const string MessageSize = "message.size";
+
+        /// <summary>
+        /// The agent that instrumented the associated AWS SDK span.
+        /// </summary>
+        public const string AwsAgentName = "aws.agent";
+
+        /// <summary>
+        /// The operation associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsOperationName = "aws.operation";
+
+        /// <summary>
+        /// The region associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsRegion = "aws.region";
+
+        /// <summary>
+        /// The request ID associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsRequestId = "aws.requestId";
+
+        /// <summary>
+        /// The service associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsServiceName = "aws.service";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsQueueName = "aws.queue.name";
+
+        /// <summary>
+        /// The queue URL associated with the AWS SDK span.
+        /// </summary>
+        public const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
         /// The sampling priority for the entire trace.
@@ -357,6 +392,11 @@ namespace Datadog.Trace
         /// A boolean indicating if it's part of a transaction.
         /// </summary>
         public const string MsmqMessageWithTransaction = "msmq.message.transactional";
+
+        /// <summary>
+        /// A CosmosDb container name.
+        /// </summary>
+        public const string CosmosDbContainer = "cosmosdb.container";
 
         internal const string ElasticsearchAction = "elasticsearch.action";
 

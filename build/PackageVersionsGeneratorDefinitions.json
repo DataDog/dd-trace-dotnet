@@ -1,5 +1,13 @@
 [
   {
+    "IntegrationName": "AwsSqs",
+    "SampleProjectName": "Samples.AWS.SQS",
+    "NugetPackageSearchName": "AWSSDK.SQS",
+    "MinVersion": "3.0.0",
+    "MinVersionNetCore": "3.3.0",
+    "MaxVersionExclusive": "3.8.0"
+  },
+  {
     "IntegrationName": "MongoDB",
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
@@ -106,5 +114,12 @@
     "NugetPackageSearchName": "Confluent.Kafka",
     "MinVersion": "1.4.0",
     "MaxVersionExclusive": "2.0.0"
+  },
+  {
+    "IntegrationName": "CosmosDb",
+    "SampleProjectName": "Samples.CosmosDb",
+    "NugetPackageSearchName": "Microsoft.Azure.Cosmos",
+    "MinVersion": "3.6.0",
+    "MaxVersionExclusive": "4.0.0"
   }
 ]

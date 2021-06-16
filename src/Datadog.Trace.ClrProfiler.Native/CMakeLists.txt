@@ -73,7 +73,7 @@ else()
 endif()
 
 if (NOT EXISTS ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
-    message(FATAL_ERROR "Datadog.Trace.ClrProfiler.Loader must be build first.")
+    message(FATAL_ERROR "Datadog.Trace.ClrProfiler.Loader must be built first.")
 else()
     message(STATUS "Datadog.Trace.ClrProfiler.Loader was found")
 endif()
@@ -102,7 +102,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/json)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/json
-        COMMAND git clone --depth 1 --branch v3.3.0 https://github.com/nlohmann/json.git
+        COMMAND git clone --quiet --depth 1 --branch v3.3.0 https://github.com/nlohmann/json.git
         WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
     )
 endif()
@@ -110,7 +110,7 @@ endif()
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/re2)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/re2
-        COMMAND git clone --depth 1 --branch 2018-10-01 https://github.com/google/re2.git && cd re2 && env CXXFLAGS=\"-O3 -g -fPIC\" make
+        COMMAND git clone --quiet --depth 1 --branch 2018-10-01 https://github.com/google/re2.git && cd re2 && env ARFLAGS=\"-r -s -c\" CXXFLAGS=\"-O3 -g -fPIC\" make
         WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
     )
 endif()
@@ -118,7 +118,7 @@ endif()
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/fmt)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/fmt
-        COMMAND git clone --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git && cd fmt && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make
+        COMMAND git clone --quiet --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git && cd fmt && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make
         WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
     )
 endif()
@@ -176,13 +176,13 @@ if(ISLINUX)
 endif()
 
 # Sets compiler options
-add_compile_options(-std=c++11 -fPIC -fms-extensions)
+add_compile_options(-std=c++17 -fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
-add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wno-c++17-extensions)
+add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 if (ISMACOS)
     add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack)
 elseif(ISLINUX)
-    add_compile_options(-DLINUX -Wno-pragmas)
+    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
 endif()
 if (BIT64)
     add_compile_options(-DBIT64 -DHOST_64BIT)
@@ -195,6 +195,20 @@ elseif (ISARM64)
     add_compile_options(-DARM64)
 elseif (ISARM)
     add_compile_options(-DARM)
+endif()
+
+# ******************************************************
+# Suppress Warning on MacOS
+# ******************************************************
+
+# Only necessary with cmake 3.19.x on macos
+# See https://stackoverflow.com/questions/4929255/building-static-libraries-on-mac-using-cmake-and-gcc#answer-4953904
+
+if (ISMACOS)
+    SET(CMAKE_C_ARCHIVE_CREATE   "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    SET(CMAKE_C_ARCHIVE_FINISH   "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+    SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
 endif()
 
 # ******************************************************

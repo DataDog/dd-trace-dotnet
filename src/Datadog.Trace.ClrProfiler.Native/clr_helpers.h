@@ -480,13 +480,14 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
                          std::vector<WSTRING>& signature_result);
 
-HRESULT CreateAssemblyRefToMscorlib(
-    const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
-    mdAssemblyRef* mscorlib_ref);
+HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                             AssemblyProperty& corAssemblyProperty,
+                             mdAssemblyRef* corlib_ref);
 
 bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
                       const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                      AssemblyProperty& corAssemblyProperty,
                       const mdToken targetFunctionToken,
                       const MethodSignature targetFunctionSignature,
                       mdToken* ret_type_token);

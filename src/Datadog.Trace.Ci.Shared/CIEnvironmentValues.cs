@@ -227,7 +227,7 @@ namespace Datadog.Trace.Ci
             string prSlug = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_PULL_REQUEST_SLUG");
             string repoSlug = !string.IsNullOrEmpty(prSlug) ? prSlug : EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_REPO_SLUG");
 
-            Repository = string.Format("https://github.com/{0}.git", repoSlug);
+            Repository = $"https://github.com/{repoSlug}.git";
             Commit = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_COMMIT");
             Tag = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_TAG");
             if (string.IsNullOrEmpty(Tag))
@@ -263,9 +263,9 @@ namespace Datadog.Trace.Ci
             SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_WORKING_DIRECTORY");
             WorkspacePath = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_WORKING_DIRECTORY");
             PipelineId = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_WORKFLOW_ID");
-            PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_BUILD_NUM");
             PipelineName = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_PROJECT_REPONAME");
-            PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_BUILD_URL");
+            PipelineUrl = $"https://app.circleci.com/pipelines/workflows/{PipelineId}";
+            JobName = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_JOB");
             JobUrl = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_BUILD_URL");
         }
 

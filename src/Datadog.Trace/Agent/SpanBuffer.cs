@@ -15,7 +15,7 @@ namespace Datadog.Trace.Agent
         internal const int HeaderSize = 5;
         internal const int InitialBufferSize = 64 * 1024;
 
-        private readonly IMessagePackFormatter<Span[]> _formatter;
+        private readonly IMessagePackFormatter<ArraySegment<Span>> _formatter;
         private readonly IFormatterResolver _formatterResolver;
         private readonly object _syncRoot = new object();
         private readonly int _maxBufferSize;
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Agent
             _offset = HeaderSize;
             _buffer = new byte[Math.Min(InitialBufferSize, maxBufferSize)];
             _formatterResolver = formatterResolver;
-            _formatter = _formatterResolver.GetFormatter<Span[]>();
+            _formatter = _formatterResolver.GetFormatter<ArraySegment<Span>>();
         }
 
         public ArraySegment<byte> Data
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Agent
         // For tests only
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == HeaderSize;
 
-        public bool TryWrite(Span[] trace, ref byte[] temporaryBuffer)
+        public bool TryWrite(ArraySegment<Span> trace, ref byte[] temporaryBuffer)
         {
             bool lockTaken = false;
 
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Agent
 
                 _offset += size;
                 TraceCount++;
-                SpanCount += trace.Length;
+                SpanCount += trace.Count;
 
                 return true;
             }

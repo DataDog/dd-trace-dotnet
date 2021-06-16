@@ -19,7 +19,8 @@ namespace Samples.NUnitTests
             }
             writer.WriteLine(string.Empty);
         }
-        
+
+
         [Test]
         public void SimplePassTest()
         {
@@ -97,5 +98,49 @@ namespace Samples.NUnitTests
         {
             Assert.AreEqual(expectedResult, xValue / yValue);
         }
+
+        // **********************************************************************************
+
+        [Test]
+        public void SimpleAssertPassTest()
+        {
+            Assert.Pass("The test passed.");
+        }
+
+        [Test]
+        public void SimpleAssertInconclusive()
+        {
+            Assert.Inconclusive("The test is inconclusive.");
+        }
     }
+
+    [TestFixture("Test01")]
+    [TestFixture("Test02")]
+    public class TestFixtureTest
+    {
+        private string _name;
+
+        public TestFixtureTest(string name)
+        {
+            _name = name;
+        }
+
+        [Test]
+        public void Test()
+        {
+            Assert.Pass("Test is ok");
+        }
+    }
+
+    public class TestBase<T>
+    {
+        [Test]
+        public void IsNull()
+        {
+            Assert.IsNull(default(T));
+        }
+    }
+
+    public class TestString : TestBase<string>
+    { }
 }

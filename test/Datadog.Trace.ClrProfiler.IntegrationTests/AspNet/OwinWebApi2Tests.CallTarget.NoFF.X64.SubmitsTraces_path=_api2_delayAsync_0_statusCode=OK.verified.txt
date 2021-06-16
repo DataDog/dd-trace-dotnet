@@ -1,0 +1,28 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet-webapi.request,
+    Resource: GET /api2/delayasync/{value},
+    Service: Samples.Owin.WebApi2,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      version: 1.0.0,
+      span.kind: server,
+      http.status_code: 200,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/api2/delayasync/0,
+      language: dotnet,
+      aspnet.route: api2/{action}/{value},
+      aspnet.controller: conventions,
+      aspnet.action: delayasync
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  }
+]

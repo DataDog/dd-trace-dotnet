@@ -55,6 +55,11 @@ namespace PrepareRelease
                 "samples/WindowsContainer/Dockerfile",
                 text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
+            // Nuke build
+            SynchronizeVersion(
+                "build/_build/Build.cs",
+                text => Regex.Replace(text, $"readonly string Version = \"{VersionPattern()}\"", $"readonly string Version = \"{VersionString()}\""));
+
             // Managed project / NuGet package updates
             SynchronizeVersion(
                 "src/Datadog.Trace/Datadog.Trace.csproj",

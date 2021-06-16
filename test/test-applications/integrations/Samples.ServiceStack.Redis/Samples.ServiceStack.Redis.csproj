@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="ServiceStack.Redis" Version="$(ApiVersion)" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 
 </Project>

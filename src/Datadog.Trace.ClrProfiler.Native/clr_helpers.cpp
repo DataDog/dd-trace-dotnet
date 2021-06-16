@@ -723,24 +723,39 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
   return true;
 }
 
-HRESULT CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, mdAssemblyRef* mscorlib_ref) {
-  // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
-  ASSEMBLYMETADATA metadata{};
-  metadata.usMajorVersion = 4;
-  metadata.usMinorVersion = 0;
-  metadata.usBuildNumber = 0;
-  metadata.usRevisionNumber = 0;
-  BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
-  HRESULT hr = assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key),
-                                   WStr("mscorlib"), &metadata, NULL, 0, 0,
-                                   mscorlib_ref);
-
-  return hr;
+HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                             AssemblyProperty& corAssemblyProperty,
+                             mdAssemblyRef* corlib_ref) {
+  if (corAssemblyProperty.ppbPublicKey != nullptr) {
+    // the corlib module is already loaded, use that information to create the assembly ref
+    Debug("Using existing corlib reference: ", corAssemblyProperty.szName);
+    return assembly_emit->DefineAssemblyRef(
+        corAssemblyProperty.ppbPublicKey,
+        corAssemblyProperty.pcbPublicKey,
+        corAssemblyProperty.szName.c_str(),
+        &corAssemblyProperty.pMetaData,
+        NULL, 0, 0, corlib_ref);
+  } else {
+    // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
+    ASSEMBLYMETADATA metadata{};
+    metadata.usMajorVersion = 4;
+    metadata.usMinorVersion = 0;
+    metadata.usBuildNumber = 0;
+    metadata.usRevisionNumber = 0;
+    BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
+    return assembly_emit->DefineAssemblyRef(
+        public_key,
+        sizeof(public_key),
+        WStr("mscorlib"),
+        &metadata,
+        NULL, 0, 0, corlib_ref);
+  }
 }
 
 bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
                                             const ComPtr<IMetaDataEmit2>& metadata_emit,
                                             const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                                            AssemblyProperty& corAssemblyProperty,
                                             mdToken* ret_type_token) {
   const auto cor_element_type = CorElementType(*p_sig);
   WSTRING managed_type_name = WStr("");
@@ -812,7 +827,7 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
   // Create reference to Mscorlib
   mdModuleRef mscorlib_ref;
   HRESULT hr;
-  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+  hr = GetCorLibAssemblyRef(assembly_emit, corAssemblyProperty, &mscorlib_ref);
 
   if (FAILED(hr)) {
     Warn("[trace::ReturnTypeTokenforElementType] failed to define AssemblyRef to mscorlib");
@@ -840,6 +855,7 @@ bool ReturnTypeIsValueTypeOrGeneric(
                       const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
                       const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                      AssemblyProperty& corAssemblyProperty,
                       const mdToken targetFunctionToken,
                       const MethodSignature targetFunctionSignature,
                       mdToken* ret_type_token) {
@@ -1010,6 +1026,7 @@ bool ReturnTypeIsValueTypeOrGeneric(
               p_current_byte,
               metadata_emit,
               assembly_emit,
+              corAssemblyProperty,
               ret_type_token);
         }
       }
@@ -1022,6 +1039,7 @@ bool ReturnTypeIsValueTypeOrGeneric(
           PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
           metadata_emit,
           assembly_emit,
+          corAssemblyProperty,
           ret_type_token);
   }
 }

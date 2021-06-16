@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tests
 
             var assertion = areTracesEnabled ? Times.Once() : Times.Never();
 
-            _writerMock.Verify(w => w.WriteTrace(It.IsAny<Span[]>()), assertion);
+            _writerMock.Verify(w => w.WriteTrace(It.IsAny<ArraySegment<Span>>()), assertion);
         }
 
         [Theory]
@@ -122,6 +122,7 @@ namespace Datadog.Trace.Tests
         [InlineData("-33, 500-503,113#53,500-502-200,456_2, 590-590", "500,501,502,503,590")]
         [InlineData("800", "")]
         [InlineData("599-605,700-800", "599")]
+        [InlineData("400-403, 500-501-234, s342, 500-503", "400,401,402,403,500,501,502,503")]
         public void ParseHttpCodes(string original, string expected)
         {
             var tracerSettings = new TracerSettings();

@@ -32,7 +32,7 @@ namespace Benchmarks.Trace
             return PingTask;
         }
 
-        public void WriteTrace(Span[] trace)
+        public void WriteTrace(ArraySegment<Span> trace)
         {
         }
     }

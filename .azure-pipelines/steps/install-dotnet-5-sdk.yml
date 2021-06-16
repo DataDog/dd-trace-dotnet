@@ -1,0 +1,7 @@
+steps:
+- task: UseDotNet@2
+  displayName: install dotnet core sdk 5
+  inputs:
+    packageType: sdk
+    version: $(dotnetCoreSdk5Version)
+    includePreviewVersions: true

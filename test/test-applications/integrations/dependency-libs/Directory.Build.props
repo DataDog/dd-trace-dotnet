@@ -3,4 +3,9 @@
   This file intentionally left blank...
   to stop msbuild from looking up the folder hierarchy
   -->
+
+  <ItemGroup>
+    <!-- Needed because some of these projects target net20, and the .NET SDK doesn't include them by default   -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

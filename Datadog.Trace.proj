@@ -8,12 +8,70 @@
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Tools.Runner/*.csproj" />
     <CsharpTestProject Include="test\*\*.csproj" Exclude="test\Datadog.Trace.ClrProfiler.IntegrationTests\*.csproj" />
+    <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
+    <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj"/>
+    <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
+    <ExcludeExpenseItDemoProject Remove="test/test-applications/regression/**/ExpenseItDemo*.csproj" />
+    <ExcludeEF6DemoProject Remove="test/test-applications/regression/**/EntityFramework6x*.csproj" />
+    <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
+    <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj"/>
+    <CsharpToolsProject Include="tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <SampleProject Include="test\test-applications\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
+    <SampleProject Include="test\test-applications\integrations\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
+    <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
+    <RegressionSampleLibProject Include="test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
     <WindowsInstallerProject Include="src\**\*.wixproj"/>
   </ItemGroup>
+
+  <Target Name="BuildCsharpSrc">
+    <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCsharpTestHelpers">
+    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCsharpUnitTests">
+    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCsharpIntegrationTests">
+    <MSBuild Targets="Build" Projects="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeEF6DemoProject);@(ExcludeLegacyRedisProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCppSrc">
+    <MSBuild Targets="Build" Projects="@(CppProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildDependencyLibs">
+    <MSBuild Targets="Build" Projects="@(SampleLibProject);@(VbSampleLibProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildRegressionDependencyLibs">
+    <MSBuild Targets="Build" Projects="@(RegressionSampleLibProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildSampleLibs">
+    <MSBuild Targets="Build" Projects="@(SampleProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
 
   <ItemGroup>
     <FrameworkReproduction Include="test\test-applications\regression\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
@@ -119,6 +177,39 @@
 
     <!-- Publish the sample projects concurrently -->
     <MSBuild Targets="Publish" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+
+  <Target Name="RestoreSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'">
+    <!-- Filter the sample projects by TargetFramework -->
+    <ItemGroup>
+      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
+    </ItemGroup>
+
+    <!-- Build the sample projects concurrently -->
+    <MSBuild Targets="Restore" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="RestoreAndBuildSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'" DependsOnTargets="RestoreSamplesForPackageVersionsOnly">
+
+    <!-- Assumes that the core C# projects are already built first -->
+    <!-- Filter the sample projects by TargetFramework -->
+    <ItemGroup>
+      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
+    </ItemGroup>
+
+    <!-- Build the sample projects concurrently -->
+    <MSBuild Targets="Publish" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildSamples" DependsOnTargets="RestoreAndBuildSamplesForPackageVersions">
+    <MSBuild Targets="Build" Projects="@(SampleProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>

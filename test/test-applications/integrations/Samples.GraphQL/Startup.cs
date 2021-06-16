@@ -46,7 +46,13 @@ namespace Samples.GraphQL
             .AddUserContextBuilder(httpContext => new GraphQLUserContext { User = httpContext.User });
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app,
+#if NETCOREAPP2_1 || NET461
+                              IHostingEnvironment env,
+#else
+                              IWebHostEnvironment env,
+#endif
+                              ILoggerFactory loggerFactory)
         {
             // Get StarWarsSchema Singleton
             var starWarsSchema = (StarWarsSchema)app.ApplicationServices.GetService(typeof(ISchema));
