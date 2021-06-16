@@ -21,11 +21,16 @@ namespace Datadog.Trace.AspNetCore
         private string _cachedToString;
 
         public DatadogLoggingScope()
+            : this(Tracer.Instance)
         {
-            _service = CorrelationIdentifier.Service;
-            _env = CorrelationIdentifier.Env;
-            _version = CorrelationIdentifier.Version;
-            _traceId = CorrelationIdentifier.TraceId.ToString();
+        }
+
+        internal DatadogLoggingScope(Tracer tracer)
+        {
+            _service = tracer.DefaultServiceName ?? string.Empty;
+            _env = tracer.Settings.Environment ?? string.Empty;
+            _version = tracer.Settings.ServiceVersion ?? string.Empty;
+            _traceId = tracer.ActiveScope?.Span?.TraceId.ToString() ?? "0";
         }
 
         public int Count
