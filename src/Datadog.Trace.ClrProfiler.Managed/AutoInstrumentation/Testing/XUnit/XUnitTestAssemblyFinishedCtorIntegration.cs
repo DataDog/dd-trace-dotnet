@@ -9,7 +9,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     /// <summary>
-    /// Xunit.Sdk.TestAssemblyRunner`1.RunAsync calltarget instrumentation
+    /// Xunit.Sdk.TestAssemblyFinished..ctor calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
