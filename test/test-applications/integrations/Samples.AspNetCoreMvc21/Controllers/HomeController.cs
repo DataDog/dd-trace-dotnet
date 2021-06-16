@@ -14,17 +14,9 @@ namespace Samples.AspNetCoreMvc.Controllers
     public class HomeController : Controller
     {
         private const string CorrelationIdentifierHeaderName = "sample.correlation.identifier";
-        private readonly ILogger _logger;
-        private Action<ILogger, string> _logMessage = (logger, page) => logger.LogInformation("Visited {Controller}/{Page} at {Time}", nameof(HomeController), page, DateTime.UtcNow.ToLongTimeString());
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
 
         public IActionResult Index()
         {
-            _logMessage(_logger, nameof(Index));
             var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace.ClrProfiler.Managed");
             ViewBag.ProfilerAttached = instrumentationType?.GetProperty("ProfilerAttached", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ?? false;
             ViewBag.TracerAssemblyLocation = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace")?.Assembly.Location;
@@ -48,7 +40,6 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("delay/{seconds}")]
         public IActionResult Delay(int seconds)
         {
-            _logMessage(_logger, nameof(Delay));
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
             AddCorrelationIdentifierToResponse();
@@ -58,7 +49,6 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("delay-async/{seconds}")]
         public async Task<IActionResult> DelayAsync(int seconds)
         {
-            _logMessage(_logger, nameof(DelayAsync));
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
             await Task.Delay(TimeSpan.FromSeconds(seconds));
             AddCorrelationIdentifierToResponse();
@@ -68,7 +58,6 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("bad-request")]
         public IActionResult ThrowException()
         {
-            _logMessage(_logger, nameof(ThrowException));
             AddCorrelationIdentifierToResponse();
             throw new Exception("This was a bad request.");
         }
@@ -76,7 +65,6 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("status-code/{statusCode}")]
         public string StatusCodeTest(int statusCode)
         {
-            _logMessage(_logger, nameof(StatusCodeTest));
             AddCorrelationIdentifierToResponse();
             HttpContext.Response.StatusCode = statusCode;
             return $"Status code has been set to {statusCode}";
@@ -85,7 +73,6 @@ namespace Samples.AspNetCoreMvc.Controllers
         [Route("alive-check")]
         public string IsAlive()
         {
-            _logMessage(_logger, nameof(IsAlive));
             AddCorrelationIdentifierToResponse();
             return "Yes";
         }
