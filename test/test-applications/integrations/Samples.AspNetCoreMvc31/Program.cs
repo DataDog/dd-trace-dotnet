@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using Karambolo.Extensions.Logging.File;
 using Microsoft.AspNetCore.Hosting;
@@ -18,12 +19,8 @@ namespace Samples.AspNetCoreMvc
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder
-                        .ConfigureLogging((ctx, logging) =>
-                        {
-                            logging.ClearProviders();
-                            logging.AddConsole();
-                            logging.AddFile(o => o.RootPath = ctx.HostingEnvironment.ContentRootPath);
-                        })
+                       .UseContentRoot(AppContext.BaseDirectory)
+                       .ConfigureLogging(LogHelpers.ConfigureCustomLogging)
                         .UseStartup<Startup>();
                 });
     }

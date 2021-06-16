@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -16,13 +17,9 @@ namespace Samples.AspNetCoreMvc
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder
-                        .ConfigureLogging((ctx, logging) =>
-                        {
-                            logging.ClearProviders();
-                            logging.AddConsole();
-                            logging.AddFile(o => o.RootPath = ctx.HostingEnvironment.ContentRootPath);
-                        })
-                        .UseStartup<Startup>();
+                       .UseContentRoot(AppContext.BaseDirectory)
+                       .ConfigureLogging(LogHelpers.ConfigureCustomLogging)
+                       .UseStartup<Startup>();
                 });
     }
 }
