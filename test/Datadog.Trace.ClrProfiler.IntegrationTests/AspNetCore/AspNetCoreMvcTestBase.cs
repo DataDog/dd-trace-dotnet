@@ -43,6 +43,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             SetServiceVersion(ServiceVersion);
 
+            SetEnvironmentVariable(ConfigurationKeys.LogsInjectionEnabled, "1");
+            SetCallTargetSettings(enableCallTarget: true);
+
             CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index", serviceVersion: ServiceVersion);
             CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}", serviceVersion: ServiceVersion);
             CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}", serviceVersion: ServiceVersion);

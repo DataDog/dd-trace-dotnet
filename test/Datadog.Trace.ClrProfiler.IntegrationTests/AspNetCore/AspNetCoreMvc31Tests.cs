@@ -4,7 +4,10 @@
 // </copyright>
 
 #if NETCOREAPP3_1
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -24,7 +27,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public async Task MeetsAllAspNetCoreMvcExpectations()
         {
             // No package versions are relevant because this is built-in
-            await RunTraceTestOnSelfHosted(string.Empty);
+            var spans = await RunTraceTestOnSelfHosted(string.Empty);
+
+            // output log file
+            var sampleProjectDirectory = EnvironmentHelper.GetSampleApplicationOutputDirectory();
+            var logFile = Path.Combine(sampleProjectDirectory, "log", "Karambolo", "log.txt");
+            File.Exists(logFile).Should().BeTrue($"'{logFile}' should exist");
+            var logJson = await File.ReadAllTextAsync(logFile);
+
+            logJson.Should().NotBeNullOrEmpty();
+            var traceIds = spans
+                          .Select(x => x.TraceId.ToString())
+                          .Distinct();
+            logJson.Should().ContainAll(traceIds);
         }
     }
 }

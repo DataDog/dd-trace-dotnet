@@ -19,8 +19,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public AspNetCoreMvc21Tests(ITestOutputHelper output)
             : base("AspNetCoreMvc21", output, serviceVersion: "1.0.0")
         {
-            SetEnvironmentVariable(ConfigurationKeys.LogsInjectionEnabled, "1");
-            SetCallTargetSettings(enableCallTarget: true);
         }
 
         [Fact]
