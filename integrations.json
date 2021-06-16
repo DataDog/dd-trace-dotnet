@@ -198,6 +198,29 @@
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.ILoggerIntegration",
           "action": "CallTargetModification"
         }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.AspNetCore.Hosting",
+          "type": "Microsoft.AspNetCore.Hosting.HostingApplication",
+          "method": "ProcessRequestAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task",
+            "Context"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.27.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.ILoggerIntegration",
+          "action": "CallTargetModification"
+        }
       }
     ]
   },

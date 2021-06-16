@@ -23,6 +23,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MinimumVersion = "2.0.0",
         MaximumVersion = "2.*.*",
         IntegrationName = IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = "Microsoft.AspNetCore.Hosting",
+        TypeName = "Microsoft.AspNetCore.Hosting.HostingApplication", // different namespace
+        MethodName = "ProcessRequestAsync",
+        ReturnTypeName = ClrNames.Task,
+        ParameterTypeNames = new[] { "Context" },
+        MinimumVersion = "3.0.0",
+        MaximumVersion = "5.*.*",
+        IntegrationName = IntegrationName)]
     public class ILoggerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.AspNetCore);
