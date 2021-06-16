@@ -2,8 +2,9 @@
 
 #include <corhlpr.h>
 
-namespace trace {
+namespace trace
+{
 
-bool ParseType(PCCOR_SIGNATURE* p_sig);
+bool ParseType(PCCOR_SIGNATURE *p_sig);
 
-}  // namespace trace
+} // namespace trace
