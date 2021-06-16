@@ -214,11 +214,6 @@ stages:
           testResultsFiles: build_data/results/**/*.trx
         condition: succeededOrFailed()
         
-      - task: PublishPipelineArtifact@1
-        inputs:
-          targetPath: 'build_data/results/'
-        continueOnError: true
-
     - job: native
       steps:
       - template: steps/install-dotnet.yml
@@ -260,10 +255,7 @@ stages:
           testResultsFiles: build_data/results/**/*.trx
         condition: succeededOrFailed()
         
-      - task: PublishPipelineArtifact@1
-        inputs:
-          targetPath: 'build_data/results/'
-        continueOnError: true
+
 
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -626,11 +618,6 @@ stages:
             testResultsFormat: VSTest
             testResultsFiles: build_data/results/**/*.trx
           condition: succeededOrFailed()
-
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: 'build_data/results/'
-      continueOnError: true
 
 - stage: benchmarks
   dependsOn: build_windows
