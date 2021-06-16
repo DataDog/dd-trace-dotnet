@@ -24,14 +24,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
-#if NETCOREAPP3_1
+            var targetFrameworkDirectory = GetTargetFrameworkDirectory();
 
             var paths = EnvironmentHelper.GetProfilerPathCandidates(null).ToArray();
 
             foreach (var path in paths)
             {
                 var baseDirectory = Path.GetDirectoryName(path);
-                var finalDirectory = Path.Combine(baseDirectory, "netcoreapp3.1");
+                var finalDirectory = Path.Combine(baseDirectory, targetFrameworkDirectory);
 
                 if (Directory.Exists(finalDirectory))
                 {
@@ -41,14 +41,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             }
 
-            throw new DirectoryNotFoundException("Could not find the netcoreapp3.1 folder. Tried: " + string.Join("; ", paths));
-
-#endif
+            throw new DirectoryNotFoundException($"Could not find the {targetFrameworkDirectory} folder. Tried: {string.Join("; ", paths)}");
         }
 
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
         {
             return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink);
+        }
+
+        private static string GetTargetFrameworkDirectory()
+        {
+#if NETCOREAPP3_1_OR_GREATER
+            return "netcoreapp3.1";
+#elif NETCOREAPP || NETSTANDARD
+            return "netstandard2.0";
+#elif NET461_OR_GREATER
+            return "net461";
+#elif NET45_OR_GREATER
+            return "net45";
+#else
+            throw new InvalidOperationException("Unexpected TFM");
+#endif
         }
 
         private class CustomExecutor : XunitTestFrameworkExecutor
