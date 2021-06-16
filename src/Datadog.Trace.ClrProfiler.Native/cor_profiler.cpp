@@ -94,7 +94,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-  // get ICorProfilerInfo6 for net452+
+  // get ICorProfilerInfo6 for net46+
   ICorProfilerInfo6* info6;
   hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**)&info6);
 
