@@ -1,32 +1,7 @@
-trigger:
-  branches:
-    include:
-      - master
-  paths:
-    exclude:
-      - docs/*
-      - .github/*
-pr:
-  branches:
-    include:
-      - master
-      - release/*
-  paths:
-    exclude:
-      - docs/*
-      - .github/*
-
-schedules:
-- cron: "0 4 * * *"
-  displayName: Daily 4am (UTC) build
-  branches:
-    include:
-    - master
-    - /benchmarks/*
-  always: true
+trigger: none
+pr: none
 
 jobs:
-
 
 - job: windows_profiler
   pool:

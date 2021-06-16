@@ -1,8 +1,4 @@
-trigger:
-  branches:
-    include:
-      - master
-      - refs/tags/*
+trigger: none
 pr: none
 
 variables:
