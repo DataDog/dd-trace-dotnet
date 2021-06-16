@@ -2,6 +2,7 @@ trigger:
   branches:
     include:
       - master
+      - release/*
       - refs/tags/*
     exclude:
       - refs/pull/*/head
@@ -270,7 +271,7 @@ jobs:
       arguments: /nowarn:netsdk1138
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-  
+
   - script: |
       sudo apt-get update
       sudo apt-get install -y llvm clang
@@ -297,7 +298,7 @@ jobs:
       arguments: /nowarn:netsdk1138
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-  
+
   - script: |
       cd ./src/Datadog.Trace.ClrProfiler.Native
       CXX=clang++ CC=clang cmake .
