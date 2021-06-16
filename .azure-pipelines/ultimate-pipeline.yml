@@ -3,6 +3,7 @@ trigger:
     include:
       - master
       - release/*
+      - hotfix/*
       - refs/tags/*
     exclude:
       - refs/pull/*/head
@@ -19,6 +20,7 @@ schedules:
       include:
         - master
         - release/*
+        - hotfix/*
         - /benchmarks/*
     always: true
 
