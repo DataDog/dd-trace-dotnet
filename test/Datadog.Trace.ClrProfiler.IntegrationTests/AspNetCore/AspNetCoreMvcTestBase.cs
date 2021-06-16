@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         protected List<AspNetCoreMvcSpanExpectation> Expectations { get; set; } = new List<AspNetCoreMvcSpanExpectation>();
 
-        public async Task RunTraceTestOnSelfHosted(string packageVersion)
+        public async Task<List<MockTracerAgent.Span>> RunTraceTestOnSelfHosted(string packageVersion)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             var aspNetCorePort = TcpPortProvider.GetOpenPort();
@@ -234,6 +234,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 }
 
                 SpanTestHelpers.AssertExpectationsMet(Expectations, spans);
+                return spans;
             }
         }
 
