@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -14,6 +15,8 @@ using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
@@ -238,6 +241,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                 SpanTestHelpers.AssertExpectationsMet(Expectations, spans);
                 return spans;
+            }
+        }
+
+        public void RunLogInjectionTest(List<MockTracerAgent.Span> spans)
+        {
+            // direct ILogger output log file
+            var logFile = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(), "log", "Karambolo", "log.txt");
+            File.Exists(logFile).Should().BeTrue($"'{logFile}' should exist");
+
+            var logs = File.ReadAllLines(logFile);
+            logs.Should().NotBeNullOrEmpty();
+
+            using var s = new AssertionScope();
+
+            // Assumes we _only_ have logs for logs within traces + our startup log
+            var tracedLogs = logs.Where(log => !log.Contains("Building pipeline")).ToList();
+
+            // all spans should be represented in the traced logs
+            var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct();
+            string.Join(",", tracedLogs).Should().ContainAll(traceIds);
+
+            foreach (var log in tracedLogs)
+            {
+                log.Should().MatchRegex($@"""dd_version"":""{ServiceVersion}""");
+                log.Should().MatchRegex($@"""dd_env"":""integration_tests""");
+                log.Should().MatchRegex($@"""dd_service"":""{EnvironmentHelper.FullSampleName}""");
+                log.Should().NotMatchRegex($@"""dd_trace_id"":""0""");
+            }
+
+            var unTracedLogs = logs.Where(log => log.Contains("Building pipeline")).ToList();
+
+            foreach (var log in unTracedLogs)
+            {
+                log.Should()
+                   .NotMatchRegex("dd_version")
+                   .And.NotMatchRegex("dd_env")
+                   .And.NotMatchRegex("dd_service")
+                   .And.NotMatchRegex("dd_trace_id");
             }
         }
 

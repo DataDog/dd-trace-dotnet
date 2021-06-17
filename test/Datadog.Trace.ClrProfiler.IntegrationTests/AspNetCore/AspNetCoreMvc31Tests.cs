@@ -4,10 +4,7 @@
 // </copyright>
 
 #if NETCOREAPP3_1
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -29,17 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             // No package versions are relevant because this is built-in
             var spans = await RunTraceTestOnSelfHosted(string.Empty);
 
-            // output log file
-            var sampleProjectDirectory = EnvironmentHelper.GetSampleApplicationOutputDirectory();
-            var logFile = Path.Combine(sampleProjectDirectory, "log", "Karambolo", "log.txt");
-            File.Exists(logFile).Should().BeTrue($"'{logFile}' should exist");
-            var logJson = await File.ReadAllTextAsync(logFile);
-
-            logJson.Should().NotBeNullOrEmpty();
-            var traceIds = spans
-                          .Select(x => x.TraceId.ToString())
-                          .Distinct();
-            logJson.Should().ContainAll(traceIds);
+            RunLogInjectionTest(spans);
         }
     }
 }
