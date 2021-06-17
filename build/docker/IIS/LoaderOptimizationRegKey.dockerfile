@@ -1,12 +1,8 @@
-FROM mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019
+FROM mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2019
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-# Install .NET Framework, and ASP.NET features
-RUN Add-WindowsFeature NET-Framework-45-ASPNET; \
-    Add-WindowsFeature Web-Asp-Net45
-
 # Copy IIS websites
-ADD test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/Release/Publish LoaderOptimizationRegKey
+ADD test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/Release/publish LoaderOptimizationRegKey
 
 # Set up IIS websites
 ARG ENABLE_32_BIT
