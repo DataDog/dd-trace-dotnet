@@ -35,7 +35,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != 'net452'">
-    <PackageReference Include="Verify.Xunit" Version="11.12.1" />
+    <PackageReference Include="Verify.Xunit" Version="13.2.2" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
