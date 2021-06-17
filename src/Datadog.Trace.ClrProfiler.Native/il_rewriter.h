@@ -18,16 +18,15 @@ typedef enum
     // special internal instructions
 } OPCODE;
 
-struct ILInstr
-{
-    ILInstr *m_pNext;
-    ILInstr *m_pPrev;
+struct ILInstr {
+    ILInstr* m_pNext;
+    ILInstr* m_pPrev;
 
     unsigned m_opcode;
     unsigned m_offset;
 
     union {
-        ILInstr *m_pTarget;
+        ILInstr* m_pTarget;
         INT8 m_Arg8;
         INT16 m_Arg16;
         INT32 m_Arg32;
@@ -35,25 +34,23 @@ struct ILInstr
     };
 };
 
-struct EHClause
-{
+struct EHClause {
     CorExceptionFlag m_Flags;
-    ILInstr *m_pTryBegin;
-    ILInstr *m_pTryEnd;
-    ILInstr *m_pHandlerBegin; // First instruction inside the handler
-    ILInstr *m_pHandlerEnd;   // Last instruction inside the handler
+    ILInstr* m_pTryBegin;
+    ILInstr* m_pTryEnd;
+    ILInstr* m_pHandlerBegin; // First instruction inside the handler
+    ILInstr* m_pHandlerEnd;   // Last instruction inside the handler
     union {
         DWORD m_ClassToken; // use for type-based exception handlers
-        ILInstr *m_pFilter; // use for filter-based exception handlers
+        ILInstr* m_pFilter; // use for filter-based exception handlers
                             // (COR_ILEXCEPTION_CLAUSE_FILTER is set)
     };
 };
 
-class ILRewriter
-{
+class ILRewriter {
   private:
-    ICorProfilerInfo *m_pICorProfilerInfo;
-    ICorProfilerFunctionControl *m_pICorProfilerFunctionControl;
+    ICorProfilerInfo* m_pICorProfilerInfo;
+    ICorProfilerFunctionControl* m_pICorProfilerFunctionControl;
 
     ModuleID m_moduleId;
     mdToken m_tkMethod;
@@ -66,23 +63,23 @@ class ILRewriter
     ILInstr m_IL; // Double linked list of all il instructions
 
     unsigned m_nEH;
-    EHClause *m_pEH;
+    EHClause* m_pEH;
 
     // Helper table for importing.  Sparse array that maps BYTE offset of
     // beginning of an instruction to that instruction's ILInstr*.  BYTE offsets
     // that don't correspond to the beginning of an instruction are mapped to
     // NULL.
-    ILInstr **m_pOffsetToInstr;
+    ILInstr** m_pOffsetToInstr;
     unsigned m_CodeSize;
 
     unsigned m_nInstrs;
 
-    BYTE *m_pOutputBuffer;
+    BYTE* m_pOutputBuffer;
 
-    IMethodMalloc *m_pIMethodMalloc;
+    IMethodMalloc* m_pIMethodMalloc;
 
   public:
-    ILRewriter(ICorProfilerInfo *pICorProfilerInfo, ICorProfilerFunctionControl *pICorProfilerFunctionControl,
+    ILRewriter(ICorProfilerInfo* pICorProfilerInfo, ICorProfilerFunctionControl* pICorProfilerFunctionControl,
                ModuleID moduleID, mdToken tkMethod);
 
     ~ILRewriter();
@@ -95,9 +92,9 @@ class ILRewriter
 
     unsigned GetEHCount();
 
-    EHClause *GetEHPointer();
+    EHClause* GetEHPointer();
 
-    void SetEHClause(EHClause *ehPointer, unsigned ehLength);
+    void SetEHClause(EHClause* ehPointer, unsigned ehLength);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////
     //
@@ -109,19 +106,19 @@ class ILRewriter
 
     HRESULT ImportIL(LPCBYTE pIL);
 
-    HRESULT ImportEH(const COR_ILMETHOD_SECT_EH *pILEH, unsigned nEH);
+    HRESULT ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH);
 
-    ILInstr *NewILInstr();
+    ILInstr* NewILInstr();
 
-    HRESULT GetInstrFromOffset(unsigned offset, ILInstr **ppInstr);
+    HRESULT GetInstrFromOffset(unsigned offset, ILInstr** ppInstr);
 
-    void InsertBefore(ILInstr *pWhere, ILInstr *pWhat);
+    void InsertBefore(ILInstr* pWhere, ILInstr* pWhat);
 
-    void InsertAfter(ILInstr *pWhere, ILInstr *pWhat);
+    void InsertAfter(ILInstr* pWhere, ILInstr* pWhat);
 
-    void AdjustState(ILInstr *pNewInstr);
+    void AdjustState(ILInstr* pNewInstr);
 
-    ILInstr *GetILList();
+    ILInstr* GetILList();
 
     /////////////////////////////////////////////////////////////////////////////////////////////////
     //

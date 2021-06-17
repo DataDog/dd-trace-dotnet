@@ -15,17 +15,15 @@
 
 #define FASTPATH_COUNT 9
 
-namespace trace
-{
+namespace trace {
 
 /// <summary>
 /// Class to control all the token references of the module where the calltarget will be called.
 /// Also provides useful helpers for the rewriting process
 /// </summary>
-class CallTargetTokens
-{
+class CallTargetTokens {
   private:
-    void *module_metadata_ptr = nullptr;
+    void* module_metadata_ptr = nullptr;
 
     // CallTarget constants
     WSTRING managed_profiler_calltarget_type = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
@@ -70,34 +68,33 @@ class CallTargetTokens
     mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
     mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
-    inline ModuleMetadata *GetMetadata()
+    inline ModuleMetadata* GetMetadata()
     {
-        return (ModuleMetadata *)module_metadata_ptr;
+        return (ModuleMetadata*)module_metadata_ptr;
     }
     HRESULT EnsureCorLibTokens();
     HRESULT EnsureBaseCalltargetTokens();
     mdTypeRef GetTargetStateTypeRef();
     mdTypeRef GetTargetVoidReturnTypeRef();
-    mdTypeSpec GetTargetReturnValueTypeRef(FunctionMethodArgument *returnArgument);
+    mdTypeSpec GetTargetReturnValueTypeRef(FunctionMethodArgument* returnArgument);
     mdMemberRef GetCallTargetStateDefaultMemberRef();
     mdMemberRef GetCallTargetReturnVoidDefaultMemberRef();
     mdMemberRef GetCallTargetReturnValueDefaultMemberRef(mdTypeSpec callTargetReturnTypeSpec);
-    mdMethodSpec GetCallTargetDefaultValueMethodSpec(FunctionMethodArgument *methodArgument);
-    mdToken GetCurrentTypeRef(const TypeInfo *currentType, bool &isValueType);
+    mdMethodSpec GetCallTargetDefaultValueMethodSpec(FunctionMethodArgument* methodArgument);
+    mdToken GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType);
 
-    HRESULT ModifyLocalSig(ILRewriter *reWriter, FunctionMethodArgument *methodReturnValue, ULONG *callTargetStateIndex,
-                           ULONG *exceptionIndex, ULONG *callTargetReturnIndex, ULONG *returnValueIndex,
-                           mdToken *callTargetStateToken, mdToken *exceptionToken, mdToken *callTargetReturnToken);
+    HRESULT ModifyLocalSig(ILRewriter* reWriter, FunctionMethodArgument* methodReturnValue, ULONG* callTargetStateIndex,
+                           ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken);
 
-    HRESULT WriteBeginMethodWithArgumentsArray(void *rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                               const TypeInfo *currentType, ILInstr **instruction);
+    HRESULT WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+                                               const TypeInfo* currentType, ILInstr** instruction);
 
   public:
-    CallTargetTokens(void *module_metadata_ptr)
+    CallTargetTokens(void* module_metadata_ptr)
     {
         this->module_metadata_ptr = module_metadata_ptr;
-        for (int i = 0; i < FASTPATH_COUNT; i++)
-        {
+        for (int i = 0; i < FASTPATH_COUNT; i++) {
             beginMethodFastPathRefs[i] = mdMemberRefNil;
         }
     }
@@ -105,26 +102,26 @@ class CallTargetTokens
     mdTypeRef GetExceptionTypeRef();
     mdAssemblyRef GetCorLibAssemblyRef();
 
-    HRESULT ModifyLocalSigAndInitialize(void *rewriterWrapperPtr, FunctionInfo *functionInfo,
-                                        ULONG *callTargetStateIndex, ULONG *exceptionIndex,
-                                        ULONG *callTargetReturnIndex, ULONG *returnValueIndex,
-                                        mdToken *callTargetStateToken, mdToken *exceptionToken,
-                                        mdToken *callTargetReturnToken, ILInstr **firstInstruction);
+    HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, FunctionInfo* functionInfo,
+                                        ULONG* callTargetStateIndex, ULONG* exceptionIndex,
+                                        ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+                                        mdToken* callTargetStateToken, mdToken* exceptionToken,
+                                        mdToken* callTargetReturnToken, ILInstr** firstInstruction);
 
-    HRESULT WriteBeginMethod(void *rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo *currentType,
-                             std::vector<FunctionMethodArgument> &methodArguments, ILInstr **instruction);
+    HRESULT WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo* currentType,
+                             std::vector<FunctionMethodArgument>& methodArguments, ILInstr** instruction);
 
-    HRESULT WriteEndVoidReturnMemberRef(void *rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                        const TypeInfo *currentType, ILInstr **instruction);
+    HRESULT WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
+                                        const TypeInfo* currentType, ILInstr** instruction);
 
-    HRESULT WriteEndReturnMemberRef(void *rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo *currentType,
-                                    FunctionMethodArgument *returnArgument, ILInstr **instruction);
+    HRESULT WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo* currentType,
+                                    FunctionMethodArgument* returnArgument, ILInstr** instruction);
 
-    HRESULT WriteLogException(void *rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo *currentType,
-                              ILInstr **instruction);
+    HRESULT WriteLogException(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo* currentType,
+                              ILInstr** instruction);
 
-    HRESULT WriteCallTargetReturnGetReturnValue(void *rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
-                                                ILInstr **instruction);
+    HRESULT WriteCallTargetReturnGetReturnValue(void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
+                                                ILInstr** instruction);
 };
 
 } // namespace trace

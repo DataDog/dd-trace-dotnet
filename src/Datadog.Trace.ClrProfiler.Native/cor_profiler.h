@@ -17,11 +17,9 @@
 #include "pal.h"
 #include "rejit_handler.h"
 
-namespace trace
-{
+namespace trace {
 
-class CorProfiler : public CorProfilerBase
-{
+class CorProfiler : public CorProfilerBase {
   private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
@@ -43,7 +41,7 @@ class CorProfiler : public CorProfilerBase
     //
     // CallTarget Members
     //
-    RejitHandler *rejit_handler = nullptr;
+    RejitHandler* rejit_handler = nullptr;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
@@ -57,49 +55,49 @@ class CorProfiler : public CorProfilerBase
     // Module helper variables
     //
     std::mutex module_id_to_info_map_lock_;
-    std::unordered_map<ModuleID, ModuleMetadata *> module_id_to_info_map_;
+    std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
 
     //
     // Helper methods
     //
-    bool GetWrapperMethodRef(ModuleMetadata *module_metadata, ModuleID module_id,
-                             const MethodReplacement &method_replacement, mdMemberRef &wrapper_method_ref,
-                             mdTypeRef &wrapper_type_ref);
-    HRESULT ProcessReplacementCalls(ModuleMetadata *module_metadata, const FunctionID function_id,
-                                    const ModuleID module_id, const mdToken function_token, const FunctionInfo &caller,
+    bool GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
+                             const MethodReplacement& method_replacement, mdMemberRef& wrapper_method_ref,
+                             mdTypeRef& wrapper_type_ref);
+    HRESULT ProcessReplacementCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
+                                    const ModuleID module_id, const mdToken function_token, const FunctionInfo& caller,
                                     const std::vector<MethodReplacement> method_replacements);
-    HRESULT ProcessInsertionCalls(ModuleMetadata *module_metadata, const FunctionID function_id,
-                                  const ModuleID module_id, const mdToken function_token, const FunctionInfo &caller,
+    HRESULT ProcessInsertionCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
+                                  const ModuleID module_id, const mdToken function_token, const FunctionInfo& caller,
                                   const std::vector<MethodReplacement> method_replacements);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
-    std::string GetILCodes(const std::string &title, ILRewriter *rewriter, const FunctionInfo &caller,
-                           ModuleMetadata *module_metadata);
+    std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
+                           ModuleMetadata* module_metadata);
     //
     // Startup methods
     //
-    HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2> &, const ModuleID module_id, const mdToken function_token);
-    HRESULT GenerateVoidILStartupMethod(const ModuleID module_id, mdMethodDef *ret_method_token);
+    HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&, const ModuleID module_id, const mdToken function_token);
+    HRESULT GenerateVoidILStartupMethod(const ModuleID module_id, mdMethodDef* ret_method_token);
     HRESULT AddIISPreStartInitFlags(const ModuleID module_id, const mdToken function_token);
 
     //
     // CallTarget Methods
     //
-    size_t CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata *module_metadata,
-                                            const std::vector<IntegrationMethod> &filtered_integrations);
-    HRESULT CallTarget_RewriterCallback(RejitHandlerModule *moduleHandler, RejitHandlerModuleMethod *methodHandler);
+    size_t CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata,
+                                            const std::vector<IntegrationMethod>& filtered_integrations);
+    HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
   public:
     CorProfiler() = default;
 
     bool IsAttached() const;
 
-    void GetAssemblyAndSymbolsBytes(BYTE **pAssemblyArray, int *assemblySize, BYTE **pSymbolsArray,
-                                    int *symbolsSize) const;
+    void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
+                                    int* symbolsSize) const;
 
     //
     // ICorProfilerCallback methods
     //
-    HRESULT STDMETHODCALLTYPE Initialize(IUnknown *cor_profiler_info_unknown) override;
+    HRESULT STDMETHODCALLTYPE Initialize(IUnknown* cor_profiler_info_unknown) override;
 
     HRESULT STDMETHODCALLTYPE AssemblyLoadFinished(AssemblyID assembly_id, HRESULT hr_status) override;
 
@@ -113,7 +111,7 @@ class CorProfiler : public CorProfilerBase
 
     HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
 
-    HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId, FunctionID calleeId, BOOL *pfShouldInline) override;
+    HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline) override;
     //
     // ReJIT Methods
     //
@@ -122,7 +120,7 @@ class CorProfiler : public CorProfilerBase
                                                       BOOL fIsSafeToBlock) override;
 
     HRESULT STDMETHODCALLTYPE GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
-                                                 ICorProfilerFunctionControl *pFunctionControl) override;
+                                                 ICorProfilerFunctionControl* pFunctionControl) override;
 
     HRESULT STDMETHODCALLTYPE ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
                                                        BOOL fIsSafeToBlock) override;
@@ -133,8 +131,8 @@ class CorProfiler : public CorProfilerBase
     //
     // ICorProfilerCallback6 methods
     //
-    HRESULT STDMETHODCALLTYPE GetAssemblyReferences(const WCHAR *wszAssemblyPath,
-                                                    ICorProfilerAssemblyReferenceProvider *pAsmRefProvider) override;
+    HRESULT STDMETHODCALLTYPE GetAssemblyReferences(const WCHAR* wszAssemblyPath,
+                                                    ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,
@@ -143,7 +141,7 @@ class CorProfiler : public CorProfilerBase
 // alternative of dealing with multiple in-process side-by-side CLR instances.
 // First CLR to try to load us into this process wins; so there can only be one
 // callback implementation created. (See ProfilerCallback::CreateObject.)
-extern CorProfiler *profiler; // global reference to callback object
+extern CorProfiler* profiler; // global reference to callback object
 
 } // namespace trace
 

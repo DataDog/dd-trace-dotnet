@@ -11,8 +11,7 @@
 #include "util.h"
 #include <set>
 
-namespace trace
-{
+namespace trace {
 class ModuleMetadata;
 
 const size_t kNameMaxSize = 1024;
@@ -44,22 +43,21 @@ const auto RuntimeMethodHandleTypeName = WStr("System.RuntimeMethodHandle");
 
 template <typename T> class EnumeratorIterator;
 
-template <typename T> class Enumerator
-{
+template <typename T> class Enumerator {
   private:
-    const std::function<HRESULT(HCORENUM *, T[], ULONG, ULONG *)> callback_;
+    const std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback_;
     const std::function<void(HCORENUM)> close_;
     mutable HCORENUM ptr_;
 
   public:
-    Enumerator(std::function<HRESULT(HCORENUM *, T[], ULONG, ULONG *)> callback, std::function<void(HCORENUM)> close)
+    Enumerator(std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback, std::function<void(HCORENUM)> close)
         : callback_(callback), close_(close), ptr_(nullptr)
     {
     }
 
-    Enumerator(const Enumerator &other) = default;
+    Enumerator(const Enumerator& other) = default;
 
-    Enumerator &operator=(const Enumerator &other) = default;
+    Enumerator& operator=(const Enumerator& other) = default;
 
     ~Enumerator()
     {
@@ -76,60 +74,51 @@ template <typename T> class Enumerator
         return EnumeratorIterator<T>(this, S_FALSE);
     }
 
-    HRESULT Next(T arr[], ULONG max, ULONG *cnt) const
+    HRESULT Next(T arr[], ULONG max, ULONG* cnt) const
     {
         return callback_(&ptr_, arr, max, cnt);
     }
 };
 
-template <typename T> class EnumeratorIterator
-{
+template <typename T> class EnumeratorIterator {
   private:
-    const Enumerator<T> *enumerator_;
+    const Enumerator<T>* enumerator_;
     HRESULT status_ = S_FALSE;
     T arr_[kEnumeratorMax]{};
     ULONG idx_ = 0;
     ULONG sz_ = 0;
 
   public:
-    EnumeratorIterator(const Enumerator<T> *enumerator, HRESULT status) : enumerator_(enumerator)
+    EnumeratorIterator(const Enumerator<T>* enumerator, HRESULT status) : enumerator_(enumerator)
     {
-        if (status == S_OK)
-        {
+        if (status == S_OK) {
             status_ = enumerator_->Next(arr_, kEnumeratorMax, &sz_);
-            if (status_ == S_OK && sz_ == 0)
-            {
+            if (status_ == S_OK && sz_ == 0) {
                 status_ = S_FALSE;
             }
-        }
-        else
-        {
+        } else {
             status_ = status;
         }
     }
 
-    bool operator!=(EnumeratorIterator const &other) const
+    bool operator!=(EnumeratorIterator const& other) const
     {
         return enumerator_ != other.enumerator_ || (status_ == S_OK) != (other.status_ == S_OK);
     }
 
-    T const &operator*() const
+    T const& operator*() const
     {
         return arr_[idx_];
     }
 
-    EnumeratorIterator<T> &operator++()
+    EnumeratorIterator<T>& operator++()
     {
-        if (idx_ < sz_ - 1)
-        {
+        if (idx_ < sz_ - 1) {
             idx_++;
-        }
-        else
-        {
+        } else {
             idx_ = 0;
             status_ = enumerator_->Next(arr_, kEnumeratorMax, &sz_);
-            if (status_ == S_OK && sz_ == 0)
-            {
+            if (status_ == S_OK && sz_ == 0) {
                 status_ = S_FALSE;
             }
         }
@@ -137,63 +126,62 @@ template <typename T> class EnumeratorIterator
     }
 };
 
-static Enumerator<mdTypeDef> EnumTypeDefs(const ComPtr<IMetaDataImport2> &metadata_import)
+static Enumerator<mdTypeDef> EnumTypeDefs(const ComPtr<IMetaDataImport2>& metadata_import)
 {
     return Enumerator<mdTypeDef>(
-        [metadata_import](HCORENUM *ptr, mdTypeDef arr[], ULONG max, ULONG *cnt) -> HRESULT {
+        [metadata_import](HCORENUM* ptr, mdTypeDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
             return metadata_import->EnumTypeDefs(ptr, arr, max, cnt);
         },
         [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
 }
 
-static Enumerator<mdTypeRef> EnumTypeRefs(const ComPtr<IMetaDataImport2> &metadata_import)
+static Enumerator<mdTypeRef> EnumTypeRefs(const ComPtr<IMetaDataImport2>& metadata_import)
 {
     return Enumerator<mdTypeRef>(
-        [metadata_import](HCORENUM *ptr, mdTypeRef arr[], ULONG max, ULONG *cnt) -> HRESULT {
+        [metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
             return metadata_import->EnumTypeRefs(ptr, arr, max, cnt);
         },
         [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
 }
 
-static Enumerator<mdMethodDef> EnumMethods(const ComPtr<IMetaDataImport2> &metadata_import, const mdToken &parent_token)
+static Enumerator<mdMethodDef> EnumMethods(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& parent_token)
 {
     return Enumerator<mdMethodDef>(
-        [metadata_import, parent_token](HCORENUM *ptr, mdMethodDef arr[], ULONG max, ULONG *cnt) -> HRESULT {
+        [metadata_import, parent_token](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
             return metadata_import->EnumMethods(ptr, parent_token, arr, max, cnt);
         },
         [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
 }
 
-static Enumerator<mdMemberRef> EnumMemberRefs(const ComPtr<IMetaDataImport2> &metadata_import,
-                                              const mdToken &parent_token)
+static Enumerator<mdMemberRef> EnumMemberRefs(const ComPtr<IMetaDataImport2>& metadata_import,
+                                              const mdToken& parent_token)
 {
     return Enumerator<mdMemberRef>(
-        [metadata_import, parent_token](HCORENUM *ptr, mdMemberRef arr[], ULONG max, ULONG *cnt) -> HRESULT {
+        [metadata_import, parent_token](HCORENUM* ptr, mdMemberRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
             return metadata_import->EnumMemberRefs(ptr, parent_token, arr, max, cnt);
         },
         [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
 }
 
-static Enumerator<mdModuleRef> EnumModuleRefs(const ComPtr<IMetaDataImport2> &metadata_import)
+static Enumerator<mdModuleRef> EnumModuleRefs(const ComPtr<IMetaDataImport2>& metadata_import)
 {
     return Enumerator<mdModuleRef>(
-        [metadata_import](HCORENUM *ptr, mdModuleRef arr[], ULONG max, ULONG *cnt) -> HRESULT {
+        [metadata_import](HCORENUM* ptr, mdModuleRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
             return metadata_import->EnumModuleRefs(ptr, arr, max, cnt);
         },
         [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
 }
 
-static Enumerator<mdAssemblyRef> EnumAssemblyRefs(const ComPtr<IMetaDataAssemblyImport> &assembly_import)
+static Enumerator<mdAssemblyRef> EnumAssemblyRefs(const ComPtr<IMetaDataAssemblyImport>& assembly_import)
 {
     return Enumerator<mdAssemblyRef>(
-        [assembly_import](HCORENUM *ptr, mdAssemblyRef arr[], ULONG max, ULONG *cnt) -> HRESULT {
+        [assembly_import](HCORENUM* ptr, mdAssemblyRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
             return assembly_import->EnumAssemblyRefs(ptr, arr, max, cnt);
         },
         [assembly_import](HCORENUM ptr) -> void { assembly_import->CloseEnum(ptr); });
 }
 
-struct RuntimeInformation
-{
+struct RuntimeInformation {
     COR_PRF_RUNTIME_TYPE runtime_type;
     USHORT major_version;
     USHORT minor_version;
@@ -212,7 +200,7 @@ struct RuntimeInformation
     {
     }
 
-    RuntimeInformation &operator=(const RuntimeInformation &other)
+    RuntimeInformation& operator=(const RuntimeInformation& other)
     {
         runtime_type = other.runtime_type;
         major_version = other.major_version;
@@ -232,8 +220,7 @@ struct RuntimeInformation
     }
 };
 
-struct AssemblyInfo
-{
+struct AssemblyInfo {
     const AssemblyID id;
     const WSTRING name;
     const ModuleID manifest_module_id;
@@ -257,8 +244,7 @@ struct AssemblyInfo
     }
 };
 
-struct AssemblyMetadata
-{
+struct AssemblyMetadata {
     const ModuleID module_id;
     const WSTRING name;
     const mdAssembly assembly_token;
@@ -281,9 +267,8 @@ struct AssemblyMetadata
     }
 };
 
-struct AssemblyProperty
-{
-    const void *ppbPublicKey;
+struct AssemblyProperty {
+    const void* ppbPublicKey;
     ULONG pcbPublicKey;
     ULONG pulHashAlgId;
     ASSEMBLYMETADATA pMetaData{};
@@ -295,8 +280,7 @@ struct AssemblyProperty
     }
 };
 
-struct ModuleInfo
-{
+struct ModuleInfo {
     const ModuleID id;
     const WSTRING path;
     const AssemblyInfo assembly;
@@ -321,24 +305,23 @@ struct ModuleInfo
     }
 };
 
-struct TypeInfo
-{
+struct TypeInfo {
     const mdToken id;
     const WSTRING name;
     const mdTypeSpec type_spec;
     const ULONG32 token_type;
-    const TypeInfo *extend_from;
+    const TypeInfo* extend_from;
     const bool valueType;
     const bool isGeneric;
-    const TypeInfo *parent_type;
+    const TypeInfo* parent_type;
 
     TypeInfo()
         : id(0), name(WStr("")), type_spec(0), token_type(0), extend_from(nullptr), valueType(false), isGeneric(false),
           parent_type(nullptr)
     {
     }
-    TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, const TypeInfo *extend_from,
-             bool valueType, bool isGeneric, const TypeInfo *parent_type)
+    TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, const TypeInfo* extend_from,
+             bool valueType, bool isGeneric, const TypeInfo* parent_type)
         : id(id), name(name), type_spec(type_spec), token_type(token_type), extend_from(extend_from),
           valueType(valueType), isGeneric(isGeneric), parent_type(parent_type)
     {
@@ -357,19 +340,17 @@ enum MethodArgumentTypeFlag
     TypeFlagBoxedType = 0x04
 };
 
-struct FunctionMethodArgument
-{
+struct FunctionMethodArgument {
     ULONG offset;
     ULONG length;
     PCCOR_SIGNATURE pbBase;
-    mdToken GetTypeTok(ComPtr<IMetaDataEmit2> &pEmit, mdAssemblyRef corLibRef) const;
-    WSTRING GetTypeTokName(ComPtr<IMetaDataImport2> &pImport) const;
-    int GetTypeFlags(unsigned &elementType) const;
-    ULONG GetSignature(PCCOR_SIGNATURE &data) const;
+    mdToken GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const;
+    WSTRING GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const;
+    int GetTypeFlags(unsigned& elementType) const;
+    ULONG GetSignature(PCCOR_SIGNATURE& data) const;
 };
 
-struct FunctionMethodSignature
-{
+struct FunctionMethodSignature {
   private:
     PCCOR_SIGNATURE pbBase;
     unsigned len;
@@ -408,7 +389,7 @@ struct FunctionMethodSignature
         return params;
     }
     HRESULT TryParse();
-    bool operator==(const FunctionMethodSignature &other) const
+    bool operator==(const FunctionMethodSignature& other) const
     {
         return memcmp(pbBase, other.pbBase, len);
     }
@@ -422,8 +403,7 @@ struct FunctionMethodSignature
     }
 };
 
-struct FunctionInfo
-{
+struct FunctionInfo {
     const mdToken id;
     const WSTRING name;
     const TypeInfo type;
@@ -459,70 +439,70 @@ struct FunctionInfo
     }
 };
 
-RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4 *info);
+RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4* info);
 
-AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4 *info, const AssemblyID &assembly_id);
+AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4* info, const AssemblyID& assembly_id);
 
-AssemblyMetadata GetAssemblyMetadata(const ModuleID &module_id, const ComPtr<IMetaDataAssemblyImport> &assembly_import);
+AssemblyMetadata GetAssemblyMetadata(const ModuleID& module_id, const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
-AssemblyMetadata GetAssemblyImportMetadata(const ComPtr<IMetaDataAssemblyImport> &assembly_import);
+AssemblyMetadata GetAssemblyImportMetadata(const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
-AssemblyMetadata GetReferencedAssemblyMetadata(const ComPtr<IMetaDataAssemblyImport> &assembly_import,
-                                               const mdAssemblyRef &assembly_ref);
+AssemblyMetadata GetReferencedAssemblyMetadata(const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+                                               const mdAssemblyRef& assembly_ref);
 
-FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2> &metadata_import, const mdToken &token);
+FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token);
 
-ModuleInfo GetModuleInfo(ICorProfilerInfo4 *info, const ModuleID &module_id);
+ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id);
 
-TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2> &metadata_import, const mdToken &token);
+TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token);
 
-mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport> &assembly_import, const WSTRING &assembly_name);
+mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const WSTRING& assembly_name);
 
 // FilterIntegrationsByName removes integrations whose names are specified in
 // disabled_integration_names
-std::vector<Integration> FilterIntegrationsByName(const std::vector<Integration> &integrations,
-                                                  const std::vector<WSTRING> &disabled_integration_names);
+std::vector<Integration> FilterIntegrationsByName(const std::vector<Integration>& integrations,
+                                                  const std::vector<WSTRING>& disabled_integration_names);
 
 // FlattenIntegrations flattens integrations to per method structures
-std::vector<IntegrationMethod> FlattenIntegrations(const std::vector<Integration> &integrations,
+std::vector<IntegrationMethod> FlattenIntegrations(const std::vector<Integration>& integrations,
                                                    bool is_calltarget_enabled);
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
-std::vector<IntegrationMethod> FilterIntegrationsByCaller(const std::vector<IntegrationMethod> &integration_methods,
+std::vector<IntegrationMethod> FilterIntegrationsByCaller(const std::vector<IntegrationMethod>& integration_methods,
                                                           const AssemblyInfo assembly);
 
 // FilterIntegrationsByTarget removes any integrations which have a target not
 // referenced by the module's assembly import
-std::vector<IntegrationMethod> FilterIntegrationsByTarget(const std::vector<IntegrationMethod> &integration_methods,
-                                                          const ComPtr<IMetaDataAssemblyImport> &assembly_import);
+std::vector<IntegrationMethod> FilterIntegrationsByTarget(const std::vector<IntegrationMethod>& integration_methods,
+                                                          const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
 // FilterIntegrationsByTargetAssemblyName removes any integrations which target any
 // of the specified assemblies
 std::vector<IntegrationMethod> FilterIntegrationsByTargetAssemblyName(
-    const std::vector<IntegrationMethod> &integration_methods, const std::vector<WSTRING> &excluded_assembly_names);
+    const std::vector<IntegrationMethod>& integration_methods, const std::vector<WSTRING>& excluded_assembly_names);
 
-mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2> &metadata_emit, const mdToken &token,
-                              const MethodSignature &signature);
+mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit, const mdToken& token,
+                              const MethodSignature& signature);
 
 bool DisableOptimizations();
 bool EnableInlining(bool defaultValue);
 bool IsCallTargetEnabled();
 
-bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2> &metadata_import, const FunctionInfo &function_info,
-                            std::vector<WSTRING> &signature_result);
+bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import, const FunctionInfo& function_info,
+                            std::vector<WSTRING>& signature_result);
 
-HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit> &assembly_emit, AssemblyProperty &corAssemblyProperty,
-                             mdAssemblyRef *corlib_ref);
+HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, AssemblyProperty& corAssemblyProperty,
+                             mdAssemblyRef* corlib_ref);
 
-bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_import,
-                                    const ComPtr<IMetaDataEmit2> &metadata_emit,
-                                    const ComPtr<IMetaDataAssemblyEmit> &assembly_emit,
-                                    AssemblyProperty &corAssemblyProperty, const mdToken targetFunctionToken,
-                                    const MethodSignature targetFunctionSignature, mdToken *ret_type_token);
+bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
+                                    const ComPtr<IMetaDataEmit2>& metadata_emit,
+                                    const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                                    AssemblyProperty& corAssemblyProperty, const mdToken targetFunctionToken,
+                                    const MethodSignature targetFunctionSignature, mdToken* ret_type_token);
 
 bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName, const trace::WSTRING assemblyName,
-                       const ComPtr<IMetaDataImport2> &metadata_import, mdTypeDef &typeDef);
+                       const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef);
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_CLR_HELPERS_H_

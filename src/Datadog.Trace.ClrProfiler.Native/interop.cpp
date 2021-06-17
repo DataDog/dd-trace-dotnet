@@ -13,8 +13,8 @@ EXTERN_C BOOL STDAPICALLTYPE IsProfilerAttached()
     return trace::profiler->IsAttached();
 }
 
-EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE **pAssemblyArray, int *assemblySize, BYTE **pSymbolsArray,
-                                                        int *symbolsSize)
+EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
+                                                        int* symbolsSize)
 {
     return trace::profiler->GetAssemblyAndSymbolsBytes(pAssemblyArray, assemblySize, pSymbolsArray, symbolsSize);
 }

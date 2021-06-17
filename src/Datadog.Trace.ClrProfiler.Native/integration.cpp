@@ -10,39 +10,35 @@
 
 #include "util.h"
 
-namespace trace
-{
+namespace trace {
 
-AssemblyReference::AssemblyReference(const WSTRING &str)
+AssemblyReference::AssemblyReference(const WSTRING& str)
     : name(GetNameFromAssemblyReferenceString(str)), version(GetVersionFromAssemblyReferenceString(str)),
       locale(GetLocaleFromAssemblyReferenceString(str)), public_key(GetPublicKeyFromAssemblyReferenceString(str))
 {
 }
 
-namespace
-{
+namespace {
 
-WSTRING GetNameFromAssemblyReferenceString(const WSTRING &wstr)
+WSTRING GetNameFromAssemblyReferenceString(const WSTRING& wstr)
 {
     WSTRING name = wstr;
 
     auto pos = name.find(WStr(','));
-    if (pos != WSTRING::npos)
-    {
+    if (pos != WSTRING::npos) {
         name = name.substr(0, pos);
     }
 
     // strip spaces
     pos = name.rfind(WStr(' '));
-    if (pos != WSTRING::npos)
-    {
+    if (pos != WSTRING::npos) {
         name = name.substr(0, pos);
     }
 
     return name;
 }
 
-Version GetVersionFromAssemblyReferenceString(const WSTRING &str)
+Version GetVersionFromAssemblyReferenceString(const WSTRING& str)
 {
     unsigned short major = 0;
     unsigned short minor = 0;
@@ -54,8 +50,7 @@ Version GetVersionFromAssemblyReferenceString(const WSTRING &str)
     static auto re = std::wregex(WStr("Version=([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)"));
 
     std::wsmatch match;
-    if (std::regex_search(str, match, re) && match.size() == 5)
-    {
+    if (std::regex_search(str, match, re) && match.size() == 5) {
         WSTRINGSTREAM(match.str(1)) >> major;
         WSTRINGSTREAM(match.str(2)) >> minor;
         WSTRINGSTREAM(match.str(3)) >> build;
@@ -72,7 +67,7 @@ Version GetVersionFromAssemblyReferenceString(const WSTRING &str)
     return {major, minor, build, revision};
 }
 
-WSTRING GetLocaleFromAssemblyReferenceString(const WSTRING &str)
+WSTRING GetLocaleFromAssemblyReferenceString(const WSTRING& str)
 {
     WSTRING locale = WStr("neutral");
 
@@ -80,8 +75,7 @@ WSTRING GetLocaleFromAssemblyReferenceString(const WSTRING &str)
 
     static auto re = std::wregex(WStr("Culture=([a-zA-Z0-9]+)"));
     std::wsmatch match;
-    if (std::regex_search(str, match, re) && match.size() == 2)
-    {
+    if (std::regex_search(str, match, re) && match.size() == 2) {
         locale = match.str(1);
     }
 
@@ -90,8 +84,7 @@ WSTRING GetLocaleFromAssemblyReferenceString(const WSTRING &str)
     static re2::RE2 re("Culture=([a-zA-Z0-9]+)", RE2::Quiet);
 
     std::string match;
-    if (re2::RE2::FullMatch(ToString(str), re, &match))
-    {
+    if (re2::RE2::FullMatch(ToString(str), re, &match)) {
         locale = ToWSTRING(match);
     }
 
@@ -100,7 +93,7 @@ WSTRING GetLocaleFromAssemblyReferenceString(const WSTRING &str)
     return locale;
 }
 
-PublicKey GetPublicKeyFromAssemblyReferenceString(const WSTRING &str)
+PublicKey GetPublicKeyFromAssemblyReferenceString(const WSTRING& str)
 {
     BYTE data[8] = {0};
 
@@ -108,10 +101,8 @@ PublicKey GetPublicKeyFromAssemblyReferenceString(const WSTRING &str)
 
     static auto re = std::wregex(WStr("PublicKeyToken=([a-fA-F0-9]{16})"));
     std::wsmatch match;
-    if (std::regex_search(str, match, re) && match.size() == 2)
-    {
-        for (int i = 0; i < 8; i++)
-        {
+    if (std::regex_search(str, match, re) && match.size() == 2) {
+        for (int i = 0; i < 8; i++) {
             auto s = match.str(1).substr(i * 2, 2);
             unsigned long x;
             WSTRINGSTREAM(s) >> std::hex >> x;
@@ -123,10 +114,8 @@ PublicKey GetPublicKeyFromAssemblyReferenceString(const WSTRING &str)
 
     static re2::RE2 re("PublicKeyToken=([a-fA-F0-9]{16})");
     std::string match;
-    if (re2::RE2::FullMatch(ToString(str), re, &match))
-    {
-        for (int i = 0; i < 8; i++)
-        {
+    if (re2::RE2::FullMatch(ToString(str), re, &match)) {
+        for (int i = 0; i < 8; i++) {
             auto s = match.substr(i * 2, 2);
             unsigned long x;
             std::stringstream(s) >> std::hex >> x;

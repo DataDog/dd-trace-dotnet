@@ -12,35 +12,32 @@
 #include "logging.h"
 #include "module_metadata.h"
 
-namespace trace
-{
+namespace trace {
 
-struct RejitItem
-{
+struct RejitItem {
     int length_ = 0;
-    ModuleID *moduleIds_ = nullptr;
-    mdMethodDef *methodDefs_ = nullptr;
+    ModuleID* moduleIds_ = nullptr;
+    mdMethodDef* methodDefs_ = nullptr;
 
-    RejitItem(int length, ModuleID *modulesId, mdMethodDef *methodDefs);
+    RejitItem(int length, ModuleID* modulesId, mdMethodDef* methodDefs);
     void DeleteArray();
 };
 
 /// <summary>
 /// Rejit handler representation of a method
 /// </summary>
-class RejitHandlerModuleMethod
-{
+class RejitHandlerModuleMethod {
   private:
     mdMethodDef methodDef;
-    ICorProfilerFunctionControl *pFunctionControl;
-    FunctionInfo *functionInfo;
-    MethodReplacement *methodReplacement;
+    ICorProfilerFunctionControl* pFunctionControl;
+    FunctionInfo* functionInfo;
+    MethodReplacement* methodReplacement;
     std::mutex functionsIds_lock;
     std::unordered_set<FunctionID> functionsIds;
-    void *module;
+    void* module;
 
   public:
-    RejitHandlerModuleMethod(mdMethodDef methodDef, void *module)
+    RejitHandlerModuleMethod(mdMethodDef methodDef, void* module)
     {
         this->methodDef = methodDef;
         this->pFunctionControl = nullptr;
@@ -52,31 +49,31 @@ class RejitHandlerModuleMethod
     {
         return this->methodDef;
     }
-    inline ICorProfilerFunctionControl *GetFunctionControl()
+    inline ICorProfilerFunctionControl* GetFunctionControl()
     {
         return this->pFunctionControl;
     }
-    inline void SetFunctionControl(ICorProfilerFunctionControl *pFunctionControl)
+    inline void SetFunctionControl(ICorProfilerFunctionControl* pFunctionControl)
     {
         this->pFunctionControl = pFunctionControl;
     }
-    inline FunctionInfo *GetFunctionInfo()
+    inline FunctionInfo* GetFunctionInfo()
     {
         return this->functionInfo;
     }
-    inline void SetFunctionInfo(FunctionInfo *functionInfo)
+    inline void SetFunctionInfo(FunctionInfo* functionInfo)
     {
         this->functionInfo = functionInfo;
     }
-    inline MethodReplacement *GetMethodReplacement()
+    inline MethodReplacement* GetMethodReplacement()
     {
         return this->methodReplacement;
     }
-    inline void SetMethodReplacement(MethodReplacement *methodReplacement)
+    inline void SetMethodReplacement(MethodReplacement* methodReplacement)
     {
         this->methodReplacement = methodReplacement;
     }
-    inline void *GetModule()
+    inline void* GetModule()
     {
         return this->module;
     }
@@ -87,17 +84,16 @@ class RejitHandlerModuleMethod
 /// <summary>
 /// Rejit handler representation of a module
 /// </summary>
-class RejitHandlerModule
-{
+class RejitHandlerModule {
   private:
     ModuleID moduleId;
-    ModuleMetadata *metadata;
+    ModuleMetadata* metadata;
     std::mutex methods_lock;
-    std::unordered_map<mdMethodDef, RejitHandlerModuleMethod *> methods;
-    void *handler;
+    std::unordered_map<mdMethodDef, RejitHandlerModuleMethod*> methods;
+    void* handler;
 
   public:
-    RejitHandlerModule(ModuleID moduleId, void *handler)
+    RejitHandlerModule(ModuleID moduleId, void* handler)
     {
         this->moduleId = moduleId;
         this->metadata = nullptr;
@@ -107,60 +103,59 @@ class RejitHandlerModule
     {
         return this->moduleId;
     }
-    inline ModuleMetadata *GetModuleMetadata()
+    inline ModuleMetadata* GetModuleMetadata()
     {
         return this->metadata;
     }
-    inline void SetModuleMetadata(ModuleMetadata *metadata)
+    inline void SetModuleMetadata(ModuleMetadata* metadata)
     {
         this->metadata = metadata;
     }
-    inline void *GetHandler()
+    inline void* GetHandler()
     {
         return this->handler;
     }
-    RejitHandlerModuleMethod *GetOrAddMethod(mdMethodDef methodDef);
-    bool TryGetMethod(mdMethodDef methodDef, RejitHandlerModuleMethod **methodHandler);
+    RejitHandlerModuleMethod* GetOrAddMethod(mdMethodDef methodDef);
+    bool TryGetMethod(mdMethodDef methodDef, RejitHandlerModuleMethod** methodHandler);
 };
 
 /// <summary>
 /// Class to control the ReJIT mechanism and to make sure all the required
 /// information is present before calling a method rewrite
 /// </summary>
-class RejitHandler
-{
+class RejitHandler {
   private:
     std::mutex modules_lock;
-    std::unordered_map<ModuleID, RejitHandlerModule *> modules;
+    std::unordered_map<ModuleID, RejitHandlerModule*> modules;
     std::mutex methodByFunctionId_lock;
-    std::unordered_map<FunctionID, RejitHandlerModuleMethod *> methodByFunctionId;
-    ICorProfilerInfo4 *profilerInfo;
-    std::function<HRESULT(RejitHandlerModule *, RejitHandlerModuleMethod *)> rewriteCallback;
+    std::unordered_map<FunctionID, RejitHandlerModuleMethod*> methodByFunctionId;
+    ICorProfilerInfo4* profilerInfo;
+    std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback;
 
-    BlockingQueue<RejitItem> *rejit_queue_;
-    std::thread *rejit_queue_thread_;
+    BlockingQueue<RejitItem>* rejit_queue_;
+    std::thread* rejit_queue_thread_;
 
-    RejitHandlerModuleMethod *GetModuleMethodFromFunctionId(FunctionID functionId);
+    RejitHandlerModuleMethod* GetModuleMethodFromFunctionId(FunctionID functionId);
 
   public:
-    RejitHandler(ICorProfilerInfo4 *pInfo,
-                 std::function<HRESULT(RejitHandlerModule *, RejitHandlerModuleMethod *)> rewriteCallback)
+    RejitHandler(ICorProfilerInfo4* pInfo,
+                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
     {
         this->profilerInfo = pInfo;
         this->rewriteCallback = rewriteCallback;
         this->rejit_queue_ = new BlockingQueue<RejitItem>();
         this->rejit_queue_thread_ = new std::thread(enqueue_thread, this);
     }
-    RejitHandlerModule *GetOrAddModule(ModuleID moduleId);
+    RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
 
-    bool TryGetModule(ModuleID moduleId, RejitHandlerModule **moduleHandler);
+    bool TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHandler);
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
-                                  ICorProfilerFunctionControl *pFunctionControl, ModuleMetadata *metadata);
+                                  ICorProfilerFunctionControl* pFunctionControl, ModuleMetadata* metadata);
     HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
-    void _addFunctionToSet(FunctionID functionId, RejitHandlerModuleMethod *method);
+    void _addFunctionToSet(FunctionID functionId, RejitHandlerModuleMethod* method);
 
-    void EnqueueForRejit(size_t length, ModuleID *moduleIds, mdMethodDef *methodDefs)
+    void EnqueueForRejit(size_t length, ModuleID* moduleIds, mdMethodDef* methodDefs)
     {
         rejit_queue_->push(RejitItem((int)length, moduleIds, methodDefs));
     }
@@ -168,41 +163,34 @@ class RejitHandler
     void Shutdown()
     {
         rejit_queue_->push(RejitItem(-1, nullptr, nullptr));
-        if (rejit_queue_thread_->joinable())
-        {
+        if (rejit_queue_thread_->joinable()) {
             rejit_queue_thread_->join();
         }
     }
 
   private:
-    static void enqueue_thread(RejitHandler *handler)
+    static void enqueue_thread(RejitHandler* handler)
     {
         auto queue = handler->rejit_queue_;
         auto profilerInfo = handler->profilerInfo;
 
         Info("Initializing ReJIT request thread.");
         HRESULT hr = profilerInfo->InitializeCurrentThread();
-        if (FAILED(hr))
-        {
+        if (FAILED(hr)) {
             Warn("Call to InitializeCurrentThread fail.");
         }
 
-        while (true)
-        {
+        while (true) {
             RejitItem item = queue->pop();
 
-            if (item.length_ == -1)
-            {
+            if (item.length_ == -1) {
                 break;
             }
 
             hr = profilerInfo->RequestReJIT((ULONG)item.length_, item.moduleIds_, item.methodDefs_);
-            if (SUCCEEDED(hr))
-            {
+            if (SUCCEEDED(hr)) {
                 Info("Request ReJIT done for ", item.length_, " methods");
-            }
-            else
-            {
+            } else {
                 Warn("Error requesting ReJIT for ", item.length_, " methods");
             }
 

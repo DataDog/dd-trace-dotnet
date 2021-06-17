@@ -8,19 +8,16 @@
 
 #undef IfFailRet
 #define IfFailRet(EXPR)                                                                                                \
-    do                                                                                                                 \
-    {                                                                                                                  \
+    do {                                                                                                               \
         HRESULT hr = (EXPR);                                                                                           \
-        if (FAILED(hr))                                                                                                \
-        {                                                                                                              \
+        if (FAILED(hr)) {                                                                                              \
             return (hr);                                                                                               \
         }                                                                                                              \
     } while (0)
 
 #undef IfNullRet
 #define IfNullRet(EXPR)                                                                                                \
-    do                                                                                                                 \
-    {                                                                                                                  \
+    do {                                                                                                               \
         if ((EXPR) == NULL)                                                                                            \
             return E_OUTOFMEMORY;                                                                                      \
     } while (0)
@@ -107,7 +104,7 @@ static int k_rgnStackPushes[] = {
     0  // CEE_SWITCH_ARG
 };
 
-ILRewriter::ILRewriter(ICorProfilerInfo *pICorProfilerInfo, ICorProfilerFunctionControl *pICorProfilerFunctionControl,
+ILRewriter::ILRewriter(ICorProfilerInfo* pICorProfilerInfo, ICorProfilerFunctionControl* pICorProfilerFunctionControl,
                        ModuleID moduleID, mdToken tkMethod)
     : m_pICorProfilerInfo(pICorProfilerInfo), m_pICorProfilerFunctionControl(pICorProfilerFunctionControl),
       m_moduleId(moduleID), m_tkMethod(tkMethod), m_fGenerateTinyHeader(false), m_pEH(nullptr),
@@ -121,10 +118,9 @@ ILRewriter::ILRewriter(ICorProfilerInfo *pICorProfilerInfo, ICorProfilerFunction
 
 ILRewriter::~ILRewriter()
 {
-    ILInstr *p = m_IL.m_pNext;
-    while (p != &m_IL)
-    {
-        ILInstr *t = p->m_pNext;
+    ILInstr* p = m_IL.m_pNext;
+    while (p != &m_IL) {
+        ILInstr* t = p->m_pNext;
         delete p;
         p = t;
     }
@@ -132,8 +128,7 @@ ILRewriter::~ILRewriter()
     delete[] m_pOffsetToInstr;
     delete[] m_pOutputBuffer;
 
-    if (m_pIMethodMalloc)
-    {
+    if (m_pIMethodMalloc) {
         m_pIMethodMalloc->Release();
     }
 }
@@ -164,12 +159,12 @@ unsigned ILRewriter::GetEHCount()
     return m_nEH;
 }
 
-EHClause *ILRewriter::GetEHPointer()
+EHClause* ILRewriter::GetEHPointer()
 {
     return m_pEH;
 }
 
-void ILRewriter::SetEHClause(EHClause *ehPointer, unsigned ehLength)
+void ILRewriter::SetEHClause(EHClause* ehPointer, unsigned ehLength)
 {
     m_nEH = ehLength;
     m_pEH = ehPointer;
@@ -181,7 +176,7 @@ HRESULT ILRewriter::Import()
 
     IfFailRet(m_pICorProfilerInfo->GetILFunctionBody(m_moduleId, m_tkMethod, &pMethodBytes, nullptr));
 
-    COR_ILMETHOD_DECODER decoder((COR_ILMETHOD *)pMethodBytes);
+    COR_ILMETHOD_DECODER decoder((COR_ILMETHOD*)pMethodBytes);
 
     // Import the header flags
     m_tkLocalVarSig = decoder.GetLocalVarSigTok();
@@ -199,10 +194,10 @@ HRESULT ILRewriter::Import()
 
 HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
 {
-    m_pOffsetToInstr = new ILInstr *[m_CodeSize + 1];
+    m_pOffsetToInstr = new ILInstr*[m_CodeSize + 1];
     IfNullRet(m_pOffsetToInstr);
 
-    ZeroMemory(m_pOffsetToInstr, m_CodeSize * sizeof(ILInstr *));
+    ZeroMemory(m_pOffsetToInstr, m_CodeSize * sizeof(ILInstr*));
 
     // Set the sentinel instruction
     m_pOffsetToInstr[m_CodeSize] = &m_IL;
@@ -210,40 +205,34 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
 
     bool fBranch = false;
     unsigned offset = 0;
-    while (offset < m_CodeSize)
-    {
+    while (offset < m_CodeSize) {
         unsigned startOffset = offset;
         unsigned opcode = pIL[offset++];
 
-        if (opcode == CEE_PREFIX1)
-        {
-            if (offset >= m_CodeSize)
-            {
+        if (opcode == CEE_PREFIX1) {
+            if (offset >= m_CodeSize) {
                 return COR_E_INVALIDPROGRAM;
             }
             opcode = 0x100 + pIL[offset++];
         }
 
-        if ((CEE_PREFIX7 <= opcode) && (opcode <= CEE_PREFIX2))
-        {
+        if ((CEE_PREFIX7 <= opcode) && (opcode <= CEE_PREFIX2)) {
             // NOTE: CEE_PREFIX2-7 are currently not supported
             return COR_E_INVALIDPROGRAM;
         }
 
-        if (opcode >= CEE_COUNT)
-        {
+        if (opcode >= CEE_COUNT) {
             return COR_E_INVALIDPROGRAM;
         }
 
         BYTE flags = s_OpCodeFlags[opcode];
 
         int size = (flags & OPCODEFLAGS_SizeMask);
-        if (offset + size > m_CodeSize)
-        {
+        if (offset + size > m_CodeSize) {
             return COR_E_INVALIDPROGRAM;
         }
 
-        ILInstr *pInstr = NewILInstr();
+        ILInstr* pInstr = NewILInstr();
         IfNullRet(pInstr);
 
         pInstr->m_opcode = opcode;
@@ -252,46 +241,42 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
 
         m_pOffsetToInstr[startOffset] = pInstr;
 
-        switch (flags)
-        {
+        switch (flags) {
         case 0:
             break;
         case 1:
-            pInstr->m_Arg8 = *(UNALIGNED INT8 *)&(pIL[offset]);
+            pInstr->m_Arg8 = *(UNALIGNED INT8*)&(pIL[offset]);
             break;
         case 2:
-            pInstr->m_Arg16 = *(UNALIGNED INT16 *)&(pIL[offset]);
+            pInstr->m_Arg16 = *(UNALIGNED INT16*)&(pIL[offset]);
             break;
         case 4:
-            pInstr->m_Arg32 = *(UNALIGNED INT32 *)&(pIL[offset]);
+            pInstr->m_Arg32 = *(UNALIGNED INT32*)&(pIL[offset]);
             break;
         case 8:
-            pInstr->m_Arg64 = *(UNALIGNED INT64 *)&(pIL[offset]);
+            pInstr->m_Arg64 = *(UNALIGNED INT64*)&(pIL[offset]);
             break;
         case 1 | OPCODEFLAGS_BranchTarget:
-            pInstr->m_Arg32 = offset + 1 + *(UNALIGNED INT8 *)&(pIL[offset]);
+            pInstr->m_Arg32 = offset + 1 + *(UNALIGNED INT8*)&(pIL[offset]);
             fBranch = true;
             break;
         case 4 | OPCODEFLAGS_BranchTarget:
-            pInstr->m_Arg32 = offset + 4 + *(UNALIGNED INT32 *)&(pIL[offset]);
+            pInstr->m_Arg32 = offset + 4 + *(UNALIGNED INT32*)&(pIL[offset]);
             fBranch = true;
             break;
         case 0 | OPCODEFLAGS_Switch: {
-            if (offset + sizeof(INT32) > m_CodeSize)
-            {
+            if (offset + sizeof(INT32) > m_CodeSize) {
                 return COR_E_INVALIDPROGRAM;
             }
 
-            unsigned nTargets = *(UNALIGNED INT32 *)&(pIL[offset]);
+            unsigned nTargets = *(UNALIGNED INT32*)&(pIL[offset]);
             pInstr->m_Arg32 = nTargets;
             offset += sizeof(INT32);
 
             unsigned base = offset + nTargets * sizeof(INT32);
 
-            for (unsigned iTarget = 0; iTarget < nTargets; iTarget++)
-            {
-                if (offset + sizeof(INT32) > m_CodeSize)
-                {
+            for (unsigned iTarget = 0; iTarget < nTargets; iTarget++) {
+                if (offset + sizeof(INT32) > m_CodeSize) {
                     return COR_E_INVALIDPROGRAM;
                 }
 
@@ -300,7 +285,7 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
 
                 pInstr->m_opcode = CEE_SWITCH_ARG;
 
-                pInstr->m_Arg32 = base + *(UNALIGNED INT32 *)&(pIL[offset]);
+                pInstr->m_Arg32 = base + *(UNALIGNED INT32*)&(pIL[offset]);
                 offset += sizeof(INT32);
 
                 InsertBefore(&m_IL, pInstr);
@@ -314,18 +299,14 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
         offset += size;
     }
 
-    if (offset != m_CodeSize)
-    {
+    if (offset != m_CodeSize) {
         return COR_E_INVALIDPROGRAM;
     }
 
-    if (fBranch)
-    {
+    if (fBranch) {
         // Go over all control flow instructions and resolve the targets
-        for (ILInstr *pInstr = m_IL.m_pNext; pInstr != &m_IL; pInstr = pInstr->m_pNext)
-        {
-            if (s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget)
-            {
+        for (ILInstr* pInstr = m_IL.m_pNext; pInstr != &m_IL; pInstr = pInstr->m_pNext) {
+            if (s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget) {
                 IfFailRet(GetInstrFromOffset(pInstr->m_Arg32, &pInstr->m_pTarget));
             }
         }
@@ -334,10 +315,9 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
     return S_OK;
 }
 
-HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH *pILEH, unsigned nEH)
+HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH)
 {
-    if (m_pEH != nullptr)
-    {
+    if (m_pEH != nullptr) {
         return COR_E_INVALIDOPERATION;
     }
 
@@ -347,19 +327,18 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH *pILEH, unsigned nEH)
         return S_OK;
 
     IfNullRet(m_pEH = new EHClause[m_nEH]);
-    for (unsigned iEH = 0; iEH < m_nEH; iEH++)
-    {
+    for (unsigned iEH = 0; iEH < m_nEH; iEH++) {
         // If the EH clause is in tiny form, the call to pILEH->EHClause() below
         // will use this as a scratch buffer to expand the EH clause into its fat
         // form.
         COR_ILMETHOD_SECT_EH_CLAUSE_FAT scratch;
 
-        const COR_ILMETHOD_SECT_EH_CLAUSE_FAT *ehInfo;
-        ehInfo = (COR_ILMETHOD_SECT_EH_CLAUSE_FAT *)pILEH->EHClause(iEH, &scratch);
+        const COR_ILMETHOD_SECT_EH_CLAUSE_FAT* ehInfo;
+        ehInfo = (COR_ILMETHOD_SECT_EH_CLAUSE_FAT*)pILEH->EHClause(iEH, &scratch);
 
-        EHClause *clause = &(m_pEH[iEH]);
+        EHClause* clause = &(m_pEH[iEH]);
         clause->m_Flags = ehInfo->GetFlags();
-        ILInstr *pInstr = nullptr;
+        ILInstr* pInstr = nullptr;
 
         IfFailRet(GetInstrFromOffset(ehInfo->GetTryOffset(), &pInstr));
         clause->m_pTryBegin = pInstr;
@@ -373,12 +352,9 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH *pILEH, unsigned nEH)
         IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset() + ehInfo->GetHandlerLength(), &pInstr));
         clause->m_pHandlerEnd = pInstr->m_pPrev;
 
-        if ((clause->m_Flags & COR_ILEXCEPTION_CLAUSE_FILTER) == 0)
-        {
+        if ((clause->m_Flags & COR_ILEXCEPTION_CLAUSE_FILTER) == 0) {
             clause->m_ClassToken = ehInfo->GetClassToken();
-        }
-        else
-        {
+        } else {
             IfFailRet(GetInstrFromOffset(ehInfo->GetFilterOffset(), &pInstr));
             clause->m_pFilter = pInstr;
         }
@@ -387,20 +363,18 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH *pILEH, unsigned nEH)
     return S_OK;
 }
 
-ILInstr *ILRewriter::NewILInstr()
+ILInstr* ILRewriter::NewILInstr()
 {
     m_nInstrs++;
     return new ILInstr();
 }
 
-HRESULT ILRewriter::GetInstrFromOffset(unsigned offset, ILInstr **ppInstr)
+HRESULT ILRewriter::GetInstrFromOffset(unsigned offset, ILInstr** ppInstr)
 {
-    if (offset <= m_CodeSize)
-    {
-        ILInstr *result = m_pOffsetToInstr[offset];
+    if (offset <= m_CodeSize) {
+        ILInstr* result = m_pOffsetToInstr[offset];
 
-        if (result != nullptr)
-        {
+        if (result != nullptr) {
             *ppInstr = result;
             return S_OK;
         }
@@ -409,7 +383,7 @@ HRESULT ILRewriter::GetInstrFromOffset(unsigned offset, ILInstr **ppInstr)
     return COR_E_INVALIDPROGRAM;
 }
 
-void ILRewriter::InsertBefore(ILInstr *pWhere, ILInstr *pWhat)
+void ILRewriter::InsertBefore(ILInstr* pWhere, ILInstr* pWhat)
 {
     pWhat->m_pNext = pWhere;
     pWhat->m_pPrev = pWhere->m_pPrev;
@@ -420,7 +394,7 @@ void ILRewriter::InsertBefore(ILInstr *pWhere, ILInstr *pWhat)
     AdjustState(pWhat);
 }
 
-void ILRewriter::InsertAfter(ILInstr *pWhere, ILInstr *pWhat)
+void ILRewriter::InsertAfter(ILInstr* pWhere, ILInstr* pWhat)
 {
     pWhat->m_pNext = pWhere->m_pNext;
     pWhat->m_pPrev = pWhere;
@@ -431,12 +405,12 @@ void ILRewriter::InsertAfter(ILInstr *pWhere, ILInstr *pWhat)
     AdjustState(pWhat);
 }
 
-void ILRewriter::AdjustState(ILInstr *pNewInstr)
+void ILRewriter::AdjustState(ILInstr* pNewInstr)
 {
     m_maxStack += k_rgnStackPushes[pNewInstr->m_opcode];
 }
 
-ILInstr *ILRewriter::GetILList()
+ILInstr* ILRewriter::GetILList()
 {
     return &m_IL;
 }
@@ -451,25 +425,22 @@ HRESULT ILRewriter::Export()
     IfNullRet(m_pOutputBuffer);
 
 again:
-    BYTE *pIL = m_pOutputBuffer;
+    BYTE* pIL = m_pOutputBuffer;
 
     bool fBranch = false;
     unsigned offset = 0;
 
     // Go over all instructions and produce code for them
-    for (ILInstr *pInstr = m_IL.m_pNext; pInstr != &m_IL; pInstr = pInstr->m_pNext)
-    {
+    for (ILInstr* pInstr = m_IL.m_pNext; pInstr != &m_IL; pInstr = pInstr->m_pNext) {
 
-        if (offset >= maxSize)
-        {
+        if (offset >= maxSize) {
             return COR_E_INDEXOUTOFRANGE;
         }
 
         pInstr->m_offset = offset;
 
         unsigned opcode = pInstr->m_opcode;
-        if (opcode < CEE_COUNT)
-        {
+        if (opcode < CEE_COUNT) {
             // CEE_PREFIX1 refers not to instruction prefixes (like tail.), but to
             // the lead byte of multi-byte opcodes. For now, the only lead byte
             // supported is CEE_PREFIX1 = 0xFE.
@@ -482,27 +453,25 @@ again:
             m_pOutputBuffer[offset++] = (opcode & 0xFF);
         }
 
-        if (pInstr->m_opcode >= (sizeof(s_OpCodeFlags) / sizeof(BYTE)))
-        {
+        if (pInstr->m_opcode >= (sizeof(s_OpCodeFlags) / sizeof(BYTE))) {
             return COR_E_INVALIDPROGRAM;
         }
 
         BYTE flags = s_OpCodeFlags[pInstr->m_opcode];
-        switch (flags)
-        {
+        switch (flags) {
         case 0:
             break;
         case 1:
-            *(UNALIGNED INT8 *)&(pIL[offset]) = pInstr->m_Arg8;
+            *(UNALIGNED INT8*)&(pIL[offset]) = pInstr->m_Arg8;
             break;
         case 2:
-            *(UNALIGNED INT16 *)&(pIL[offset]) = pInstr->m_Arg16;
+            *(UNALIGNED INT16*)&(pIL[offset]) = pInstr->m_Arg16;
             break;
         case 4:
-            *(UNALIGNED INT32 *)&(pIL[offset]) = pInstr->m_Arg32;
+            *(UNALIGNED INT32*)&(pIL[offset]) = pInstr->m_Arg32;
             break;
         case 8:
-            *(UNALIGNED INT64 *)&(pIL[offset]) = pInstr->m_Arg64;
+            *(UNALIGNED INT64*)&(pIL[offset]) = pInstr->m_Arg64;
             break;
         case 1 | OPCODEFLAGS_BranchTarget:
             fBranch = true;
@@ -511,7 +480,7 @@ again:
             fBranch = true;
             break;
         case 0 | OPCODEFLAGS_Switch:
-            *(UNALIGNED INT32 *)&(pIL[offset]) = pInstr->m_Arg32;
+            *(UNALIGNED INT32*)&(pIL[offset]) = pInstr->m_Arg32;
             offset += sizeof(INT32);
             break;
         default:
@@ -521,67 +490,55 @@ again:
     }
     m_IL.m_offset = offset;
 
-    if (fBranch)
-    {
+    if (fBranch) {
         bool fTryAgain = false;
         unsigned switchBase = 0;
 
         // Go over all control flow instructions and resolve the targets
-        for (ILInstr *pInstr = m_IL.m_pNext; pInstr != &m_IL; pInstr = pInstr->m_pNext)
-        {
+        for (ILInstr* pInstr = m_IL.m_pNext; pInstr != &m_IL; pInstr = pInstr->m_pNext) {
             unsigned opcode = pInstr->m_opcode;
 
-            if (pInstr->m_opcode == CEE_SWITCH)
-            {
+            if (pInstr->m_opcode == CEE_SWITCH) {
                 switchBase = pInstr->m_offset + 1 + sizeof(INT32) * (pInstr->m_Arg32 + 1);
                 continue;
             }
-            if (opcode == CEE_SWITCH_ARG)
-            {
+            if (opcode == CEE_SWITCH_ARG) {
                 // Switch args are special
-                *(UNALIGNED INT32 *)&(pIL[pInstr->m_offset]) = pInstr->m_pTarget->m_offset - switchBase;
+                *(UNALIGNED INT32*)&(pIL[pInstr->m_offset]) = pInstr->m_pTarget->m_offset - switchBase;
                 continue;
             }
 
             BYTE flags = s_OpCodeFlags[pInstr->m_opcode];
 
-            if (flags & OPCODEFLAGS_BranchTarget)
-            {
+            if (flags & OPCODEFLAGS_BranchTarget) {
                 int delta = pInstr->m_pTarget->m_offset - pInstr->m_pNext->m_offset;
 
-                switch (flags)
-                {
+                switch (flags) {
                 case 1 | OPCODEFLAGS_BranchTarget:
                     // Check if delta is too big to fit into an INT8.
                     //
                     // (see #pragma at top of file)
-                    if ((INT8)delta != delta)
-                    {
-                        if (opcode == CEE_LEAVE_S)
-                        {
+                    if ((INT8)delta != delta) {
+                        if (opcode == CEE_LEAVE_S) {
                             pInstr->m_opcode = CEE_LEAVE;
-                        }
-                        else
-                        {
-                            if (!(opcode >= CEE_BR_S && opcode <= CEE_BLT_UN_S))
-                            {
+                        } else {
+                            if (!(opcode >= CEE_BR_S && opcode <= CEE_BLT_UN_S)) {
                                 return COR_E_INVALIDPROGRAM;
                             }
 
                             pInstr->m_opcode = opcode - CEE_BR_S + CEE_BR;
 
-                            if (!(pInstr->m_opcode >= CEE_BR && pInstr->m_opcode <= CEE_BLT_UN))
-                            {
+                            if (!(pInstr->m_opcode >= CEE_BR && pInstr->m_opcode <= CEE_BLT_UN)) {
                                 return COR_E_INVALIDPROGRAM;
                             }
                         }
                         fTryAgain = true;
                         continue;
                     }
-                    *(UNALIGNED INT8 *)&(pIL[pInstr->m_pNext->m_offset - sizeof(INT8)]) = delta;
+                    *(UNALIGNED INT8*)&(pIL[pInstr->m_pNext->m_offset - sizeof(INT8)]) = delta;
                     break;
                 case 4 | OPCODEFLAGS_BranchTarget:
-                    *(UNALIGNED INT32 *)&(pIL[pInstr->m_pNext->m_offset - sizeof(INT32)]) = delta;
+                    *(UNALIGNED INT32*)&(pIL[pInstr->m_pNext->m_offset - sizeof(INT32)]) = delta;
                     break;
                 default:
                     return COR_E_INVALIDPROGRAM;
@@ -597,8 +554,7 @@ again:
     unsigned codeSize = offset;
     unsigned totalSize;
     LPBYTE pBody = NULL;
-    if (m_fGenerateTinyHeader)
-    {
+    if (m_fGenerateTinyHeader) {
         // Make sure we can fit in a tiny header
         if (codeSize >= 64)
             return E_FAIL;
@@ -607,7 +563,7 @@ again:
         pBody = AllocateILMemory(totalSize);
         IfNullRet(pBody);
 
-        BYTE *pCurrent = pBody;
+        BYTE* pCurrent = pBody;
 
         // Here's the tiny header
         *pCurrent = (BYTE)(CorILMethod_TinyFormat | (codeSize << 2));
@@ -615,9 +571,7 @@ again:
 
         // And the body
         CopyMemory(pCurrent, m_pOutputBuffer, codeSize);
-    }
-    else
-    {
+    } else {
         // Use FAT header
 
         unsigned alignedCodeSize = (offset + 3) & ~3;
@@ -629,33 +583,31 @@ again:
         pBody = AllocateILMemory(totalSize);
         IfNullRet(pBody);
 
-        BYTE *pCurrent = pBody;
+        BYTE* pCurrent = pBody;
 
-        IMAGE_COR_ILMETHOD_FAT *pHeader = (IMAGE_COR_ILMETHOD_FAT *)pCurrent;
+        IMAGE_COR_ILMETHOD_FAT* pHeader = (IMAGE_COR_ILMETHOD_FAT*)pCurrent;
         pHeader->Flags = m_flags | (m_nEH ? CorILMethod_MoreSects : 0) | CorILMethod_FatFormat;
         pHeader->Size = sizeof(IMAGE_COR_ILMETHOD_FAT) / sizeof(DWORD);
         pHeader->MaxStack = m_maxStack;
         pHeader->CodeSize = offset;
         pHeader->LocalVarSigTok = m_tkLocalVarSig;
 
-        pCurrent = (BYTE *)(pHeader + 1);
+        pCurrent = (BYTE*)(pHeader + 1);
 
         CopyMemory(pCurrent, m_pOutputBuffer, codeSize);
         pCurrent += alignedCodeSize;
 
-        if (m_nEH != 0)
-        {
-            IMAGE_COR_ILMETHOD_SECT_FAT *pEH = (IMAGE_COR_ILMETHOD_SECT_FAT *)pCurrent;
+        if (m_nEH != 0) {
+            IMAGE_COR_ILMETHOD_SECT_FAT* pEH = (IMAGE_COR_ILMETHOD_SECT_FAT*)pCurrent;
             pEH->Kind = CorILMethod_Sect_EHTable | CorILMethod_Sect_FatFormat;
             pEH->DataSize =
                 (unsigned)(sizeof(IMAGE_COR_ILMETHOD_SECT_FAT) + sizeof(IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT) * m_nEH);
 
-            pCurrent = (BYTE *)(pEH + 1);
+            pCurrent = (BYTE*)(pEH + 1);
 
-            for (unsigned iEH = 0; iEH < m_nEH; iEH++)
-            {
-                EHClause *pSrc = &(m_pEH[iEH]);
-                IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT *pDst = (IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT *)pCurrent;
+            for (unsigned iEH = 0; iEH < m_nEH; iEH++) {
+                EHClause* pSrc = &(m_pEH[iEH]);
+                IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT* pDst = (IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT*)pCurrent;
 
                 pDst->Flags = pSrc->m_Flags;
                 pDst->TryOffset = pSrc->m_pTryBegin->m_offset;
@@ -667,7 +619,7 @@ again:
                 else
                     pDst->FilterOffset = pSrc->m_pFilter->m_offset;
 
-                pCurrent = (BYTE *)(pDst + 1);
+                pCurrent = (BYTE*)(pDst + 1);
             }
         }
     }
@@ -680,13 +632,10 @@ again:
 
 HRESULT ILRewriter::SetILFunctionBody(unsigned size, LPBYTE pBody)
 {
-    if (m_pICorProfilerFunctionControl != nullptr)
-    {
+    if (m_pICorProfilerFunctionControl != nullptr) {
         // We're supplying IL for a rejit, so use the rejit mechanism
         IfFailRet(m_pICorProfilerFunctionControl->SetILFunctionBody(size, pBody));
-    }
-    else
-    {
+    } else {
         // "classic-style" instrumentation on first JIT, so use old mechanism
         IfFailRet(m_pICorProfilerInfo->SetILFunctionBody(m_moduleId, m_tkMethod, pBody));
     }
@@ -696,8 +645,7 @@ HRESULT ILRewriter::SetILFunctionBody(unsigned size, LPBYTE pBody)
 
 LPBYTE ILRewriter::AllocateILMemory(unsigned size)
 {
-    if (m_pICorProfilerFunctionControl != nullptr)
-    {
+    if (m_pICorProfilerFunctionControl != nullptr) {
         // We're supplying IL for a rejit, so we can just allocate from
         // the heap
         return new BYTE[size];
@@ -714,8 +662,7 @@ LPBYTE ILRewriter::AllocateILMemory(unsigned size)
 
 void ILRewriter::DeallocateILMemory(LPBYTE pBody)
 {
-    if (m_pICorProfilerFunctionControl == nullptr)
-    {
+    if (m_pICorProfilerFunctionControl == nullptr) {
         // Old-style instrumentation does not provide a way to free up bytes
         return;
     }

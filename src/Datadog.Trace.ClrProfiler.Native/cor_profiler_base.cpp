@@ -1,8 +1,7 @@
 ﻿#include "cor_profiler_base.h"
 #include "logging.h"
 
-namespace trace
-{
+namespace trace {
 
 CorProfilerBase::CorProfilerBase() : ref_count_(0), info_(nullptr)
 {
@@ -10,14 +9,13 @@ CorProfilerBase::CorProfilerBase() : ref_count_(0), info_(nullptr)
 
 CorProfilerBase::~CorProfilerBase()
 {
-    if (this->info_ != nullptr)
-    {
+    if (this->info_ != nullptr) {
         this->info_->Release();
         this->info_ = nullptr;
     }
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::Initialize(IUnknown *pICorProfilerInfoUnk)
+HRESULT STDMETHODCALLTYPE CorProfilerBase::Initialize(IUnknown* pICorProfilerInfoUnk)
 {
     Debug("Initialize");
     return S_OK;
@@ -142,7 +140,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCompilationFinished(FunctionID fun
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCachedFunctionSearchStarted(FunctionID functionId,
-                                                                          BOOL *pbUseCachedFunction)
+                                                                          BOOL* pbUseCachedFunction)
 {
     return S_OK;
 }
@@ -158,7 +156,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::JITFunctionPitched(FunctionID functio
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::JITInlining(FunctionID callerId, FunctionID calleeId, BOOL *pfShouldInline)
+HRESULT STDMETHODCALLTYPE CorProfilerBase::JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline)
 {
     return S_OK;
 }
@@ -183,12 +181,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingClientInvocationStarted()
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingClientSendingMessage(GUID *pCookie, BOOL fIsAsync)
+HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingClientSendingMessage(GUID* pCookie, BOOL fIsAsync)
 {
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingClientReceivingReply(GUID *pCookie, BOOL fIsAsync)
+HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingClientReceivingReply(GUID* pCookie, BOOL fIsAsync)
 {
     return S_OK;
 }
@@ -198,7 +196,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingClientInvocationFinished()
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingServerReceivingMessage(GUID *pCookie, BOOL fIsAsync)
+HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingServerReceivingMessage(GUID* pCookie, BOOL fIsAsync)
 {
     return S_OK;
 }
@@ -213,7 +211,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingServerInvocationReturned()
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingServerSendingReply(GUID *pCookie, BOOL fIsAsync)
+HRESULT STDMETHODCALLTYPE CorProfilerBase::RemotingServerSendingReply(GUID* pCookie, BOOL fIsAsync)
 {
     return S_OK;
 }
@@ -365,13 +363,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::ExceptionCatcherLeave()
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::COMClassicVTableCreated(ClassID wrappedClassId, REFGUID implementedIID,
-                                                                   void *pVTable, ULONG cSlots)
+                                                                   void* pVTable, ULONG cSlots)
 {
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::COMClassicVTableDestroyed(ClassID wrappedClassId, REFGUID implementedIID,
-                                                                     void *pVTable)
+                                                                     void* pVTable)
 {
     return S_OK;
 }
@@ -431,7 +429,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::HandleDestroyed(GCHandleID handleId)
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::InitializeForAttach(IUnknown *pCorProfilerInfoUnk, void *pvClientData,
+HRESULT STDMETHODCALLTYPE CorProfilerBase::InitializeForAttach(IUnknown* pCorProfilerInfoUnk, void* pvClientData,
                                                                UINT cbClientData)
 {
     return S_OK;
@@ -454,7 +452,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::ReJITCompilationStarted(FunctionID fu
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
-                                                              ICorProfilerFunctionControl *pFunctionControl)
+                                                              ICorProfilerFunctionControl* pFunctionControl)
 {
     return S_OK;
 }
@@ -493,8 +491,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::ConditionalWeakTableElementReferences
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::GetAssemblyReferences(const WCHAR *wszAssemblyPath,
-                                                                 ICorProfilerAssemblyReferenceProvider *pAsmRefProvider)
+HRESULT STDMETHODCALLTYPE CorProfilerBase::GetAssemblyReferences(const WCHAR* wszAssemblyPath,
+                                                                 ICorProfilerAssemblyReferenceProvider* pAsmRefProvider)
 {
     return S_OK;
 }

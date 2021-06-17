@@ -5,22 +5,20 @@
 #include <corhlpr.h>
 #include <corprof.h>
 
-namespace trace
-{
+namespace trace {
 
-class CorProfilerBase : public ICorProfilerCallback10
-{
+class CorProfilerBase : public ICorProfilerCallback10 {
   private:
     std::atomic<int> ref_count_;
 
   protected:
-    ICorProfilerInfo4 *info_;
+    ICorProfilerInfo4* info_;
 
   public:
     CorProfilerBase();
     virtual ~CorProfilerBase();
 
-    HRESULT STDMETHODCALLTYPE Initialize(IUnknown *pICorProfilerInfoUnk) override;
+    HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
     HRESULT STDMETHODCALLTYPE Shutdown() override;
     HRESULT STDMETHODCALLTYPE AppDomainCreationStarted(AppDomainID appDomainId) override;
     HRESULT STDMETHODCALLTYPE AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus) override;
@@ -43,21 +41,21 @@ class CorProfilerBase : public ICorProfilerCallback10
     HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) override;
     HRESULT STDMETHODCALLTYPE JITCompilationFinished(FunctionID functionId, HRESULT hrStatus,
                                                      BOOL fIsSafeToBlock) override;
-    HRESULT STDMETHODCALLTYPE JITCachedFunctionSearchStarted(FunctionID functionId, BOOL *pbUseCachedFunction) override;
+    HRESULT STDMETHODCALLTYPE JITCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction) override;
     HRESULT STDMETHODCALLTYPE JITCachedFunctionSearchFinished(FunctionID functionId, COR_PRF_JIT_CACHE result) override;
     HRESULT STDMETHODCALLTYPE JITFunctionPitched(FunctionID functionId) override;
-    HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId, FunctionID calleeId, BOOL *pfShouldInline) override;
+    HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline) override;
     HRESULT STDMETHODCALLTYPE ThreadCreated(ThreadID threadId) override;
     HRESULT STDMETHODCALLTYPE ThreadDestroyed(ThreadID threadId) override;
     HRESULT STDMETHODCALLTYPE ThreadAssignedToOSThread(ThreadID managedThreadId, DWORD osThreadId) override;
     HRESULT STDMETHODCALLTYPE RemotingClientInvocationStarted() override;
-    HRESULT STDMETHODCALLTYPE RemotingClientSendingMessage(GUID *pCookie, BOOL fIsAsync) override;
-    HRESULT STDMETHODCALLTYPE RemotingClientReceivingReply(GUID *pCookie, BOOL fIsAsync) override;
+    HRESULT STDMETHODCALLTYPE RemotingClientSendingMessage(GUID* pCookie, BOOL fIsAsync) override;
+    HRESULT STDMETHODCALLTYPE RemotingClientReceivingReply(GUID* pCookie, BOOL fIsAsync) override;
     HRESULT STDMETHODCALLTYPE RemotingClientInvocationFinished() override;
-    HRESULT STDMETHODCALLTYPE RemotingServerReceivingMessage(GUID *pCookie, BOOL fIsAsync) override;
+    HRESULT STDMETHODCALLTYPE RemotingServerReceivingMessage(GUID* pCookie, BOOL fIsAsync) override;
     HRESULT STDMETHODCALLTYPE RemotingServerInvocationStarted() override;
     HRESULT STDMETHODCALLTYPE RemotingServerInvocationReturned() override;
-    HRESULT STDMETHODCALLTYPE RemotingServerSendingReply(GUID *pCookie, BOOL fIsAsync) override;
+    HRESULT STDMETHODCALLTYPE RemotingServerSendingReply(GUID* pCookie, BOOL fIsAsync) override;
     HRESULT STDMETHODCALLTYPE UnmanagedToManagedTransition(FunctionID functionId,
                                                            COR_PRF_TRANSITION_REASON reason) override;
     HRESULT STDMETHODCALLTYPE ManagedToUnmanagedTransition(FunctionID functionId,
@@ -90,10 +88,10 @@ class CorProfilerBase : public ICorProfilerCallback10
     HRESULT STDMETHODCALLTYPE ExceptionUnwindFinallyLeave() override;
     HRESULT STDMETHODCALLTYPE ExceptionCatcherEnter(FunctionID functionId, ObjectID objectId) override;
     HRESULT STDMETHODCALLTYPE ExceptionCatcherLeave() override;
-    HRESULT STDMETHODCALLTYPE COMClassicVTableCreated(ClassID wrappedClassId, REFGUID implementedIID, void *pVTable,
+    HRESULT STDMETHODCALLTYPE COMClassicVTableCreated(ClassID wrappedClassId, REFGUID implementedIID, void* pVTable,
                                                       ULONG cSlots) override;
     HRESULT STDMETHODCALLTYPE COMClassicVTableDestroyed(ClassID wrappedClassId, REFGUID implementedIID,
-                                                        void *pVTable) override;
+                                                        void* pVTable) override;
     HRESULT STDMETHODCALLTYPE ExceptionCLRCatcherFound() override;
     HRESULT STDMETHODCALLTYPE ExceptionCLRCatcherExecute() override;
     HRESULT STDMETHODCALLTYPE ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[]) override;
@@ -107,14 +105,14 @@ class CorProfilerBase : public ICorProfilerCallback10
                                               COR_PRF_GC_ROOT_FLAGS rootFlags[], UINT_PTR rootIds[]) override;
     HRESULT STDMETHODCALLTYPE HandleCreated(GCHandleID handleId, ObjectID initialObjectId) override;
     HRESULT STDMETHODCALLTYPE HandleDestroyed(GCHandleID handleId) override;
-    HRESULT STDMETHODCALLTYPE InitializeForAttach(IUnknown *pCorProfilerInfoUnk, void *pvClientData,
+    HRESULT STDMETHODCALLTYPE InitializeForAttach(IUnknown* pCorProfilerInfoUnk, void* pvClientData,
                                                   UINT cbClientData) override;
     HRESULT STDMETHODCALLTYPE ProfilerAttachComplete() override;
     HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
     HRESULT STDMETHODCALLTYPE ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId,
                                                       BOOL fIsSafeToBlock) override;
     HRESULT STDMETHODCALLTYPE GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
-                                                 ICorProfilerFunctionControl *pFunctionControl) override;
+                                                 ICorProfilerFunctionControl* pFunctionControl) override;
     HRESULT STDMETHODCALLTYPE ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
                                                        BOOL fIsSafeToBlock) override;
     HRESULT STDMETHODCALLTYPE ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
@@ -127,8 +125,8 @@ class CorProfilerBase : public ICorProfilerCallback10
     HRESULT STDMETHODCALLTYPE ConditionalWeakTableElementReferences(ULONG cRootRefs, ObjectID keyRefIds[],
                                                                     ObjectID valueRefIds[],
                                                                     GCHandleID rootIds[]) override;
-    HRESULT STDMETHODCALLTYPE GetAssemblyReferences(const WCHAR *wszAssemblyPath,
-                                                    ICorProfilerAssemblyReferenceProvider *pAsmRefProvider) override;
+    HRESULT STDMETHODCALLTYPE GetAssemblyReferences(const WCHAR* wszAssemblyPath,
+                                                    ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) override;
     HRESULT STDMETHODCALLTYPE ModuleInMemorySymbolsUpdated(ModuleID moduleId) override;
 
     HRESULT STDMETHODCALLTYPE DynamicMethodJITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock,
@@ -146,14 +144,13 @@ class CorProfilerBase : public ICorProfilerCallback10
 
     HRESULT STDMETHODCALLTYPE EventPipeProviderCreated(EVENTPIPE_PROVIDER provider) override;
 
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvObject) override
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
     {
         if (riid == __uuidof(ICorProfilerCallback10) || riid == __uuidof(ICorProfilerCallback9) ||
             riid == __uuidof(ICorProfilerCallback8) || riid == __uuidof(ICorProfilerCallback7) ||
             riid == __uuidof(ICorProfilerCallback6) || riid == __uuidof(ICorProfilerCallback5) ||
             riid == __uuidof(ICorProfilerCallback4) || riid == __uuidof(ICorProfilerCallback3) ||
-            riid == __uuidof(ICorProfilerCallback2) || riid == __uuidof(ICorProfilerCallback) || riid == IID_IUnknown)
-        {
+            riid == __uuidof(ICorProfilerCallback2) || riid == __uuidof(ICorProfilerCallback) || riid == IID_IUnknown) {
             *ppvObject = this;
             this->AddRef();
             return S_OK;

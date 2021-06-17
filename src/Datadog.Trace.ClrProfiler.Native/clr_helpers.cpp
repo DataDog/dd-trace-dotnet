@@ -11,10 +11,9 @@
 #include <set>
 #include <stack>
 
-namespace trace
-{
+namespace trace {
 
-RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4 *info)
+RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4* info)
 {
     COR_PRF_RUNTIME_TYPE runtime_type;
     USHORT major_version;
@@ -24,15 +23,14 @@ RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4 *info)
 
     auto hr = info->GetRuntimeInformation(nullptr, &runtime_type, &major_version, &minor_version, &build_version,
                                           &qfe_version, 0, nullptr, nullptr);
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         return {};
     }
 
     return {runtime_type, major_version, minor_version, build_version, qfe_version};
 }
 
-AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4 *info, const AssemblyID &assembly_id)
+AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4* info, const AssemblyID& assembly_id)
 {
     WCHAR assembly_name[kNameMaxSize];
     DWORD assembly_name_len = 0;
@@ -42,8 +40,7 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4 *info, const AssemblyID &assembly
     auto hr = info->GetAssemblyInfo(assembly_id, kNameMaxSize, &assembly_name_len, assembly_name, &app_domain_id,
                                     &manifest_module_id);
 
-    if (FAILED(hr) || assembly_name_len == 0)
-    {
+    if (FAILED(hr) || assembly_name_len == 0) {
         return {};
     }
 
@@ -52,20 +49,18 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4 *info, const AssemblyID &assembly
 
     hr = info->GetAppDomainInfo(app_domain_id, kNameMaxSize, &app_domain_name_len, app_domain_name, nullptr);
 
-    if (FAILED(hr) || app_domain_name_len == 0)
-    {
+    if (FAILED(hr) || app_domain_name_len == 0) {
         return {};
     }
 
     return {assembly_id, WSTRING(assembly_name), manifest_module_id, app_domain_id, WSTRING(app_domain_name)};
 }
 
-AssemblyMetadata GetAssemblyImportMetadata(const ComPtr<IMetaDataAssemblyImport> &assembly_import)
+AssemblyMetadata GetAssemblyImportMetadata(const ComPtr<IMetaDataAssemblyImport>& assembly_import)
 {
     mdAssembly current = mdAssemblyNil;
     auto hr = assembly_import->GetAssemblyFromScope(&current);
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         return {};
     }
     WCHAR name[kNameMaxSize];
@@ -76,8 +71,7 @@ AssemblyMetadata GetAssemblyImportMetadata(const ComPtr<IMetaDataAssemblyImport>
 
     hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr, name, kNameMaxSize, &name_len,
                                            &assembly_metadata, &assembly_flags);
-    if (FAILED(hr) || name_len == 0)
-    {
+    if (FAILED(hr) || name_len == 0) {
         return {};
     }
     return AssemblyMetadata(placeholder_module_id, name, current, assembly_metadata.usMajorVersion,
@@ -85,8 +79,8 @@ AssemblyMetadata GetAssemblyImportMetadata(const ComPtr<IMetaDataAssemblyImport>
                             assembly_metadata.usRevisionNumber);
 }
 
-AssemblyMetadata GetReferencedAssemblyMetadata(const ComPtr<IMetaDataAssemblyImport> &assembly_import,
-                                               const mdAssemblyRef &assembly_ref)
+AssemblyMetadata GetReferencedAssemblyMetadata(const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+                                               const mdAssemblyRef& assembly_ref)
 {
     WCHAR name[kNameMaxSize];
     DWORD name_len = 0;
@@ -95,8 +89,7 @@ AssemblyMetadata GetReferencedAssemblyMetadata(const ComPtr<IMetaDataAssemblyImp
     const ModuleID module_id_placeholder = 0;
     const auto hr = assembly_import->GetAssemblyRefProps(assembly_ref, nullptr, nullptr, name, kNameMaxSize, &name_len,
                                                          &assembly_metadata, nullptr, nullptr, &assembly_flags);
-    if (FAILED(hr) || name_len == 0)
-    {
+    if (FAILED(hr) || name_len == 0) {
         return {};
     }
     return AssemblyMetadata(module_id_placeholder, name, assembly_ref, assembly_metadata.usMajorVersion,
@@ -107,15 +100,14 @@ AssemblyMetadata GetReferencedAssemblyMetadata(const ComPtr<IMetaDataAssemblyImp
 std::vector<BYTE> GetSignatureByteRepresentation(ULONG signature_length, PCCOR_SIGNATURE raw_signature)
 {
     std::vector<BYTE> signature_data(signature_length);
-    for (ULONG i = 0; i < signature_length; i++)
-    {
+    for (ULONG i = 0; i < signature_length; i++) {
         signature_data[i] = raw_signature[i];
     }
 
     return signature_data;
 }
 
-FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2> &metadata_import, const mdToken &token)
+FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token)
 {
     mdToken parent_token = mdTokenNil;
     mdToken method_spec_token = mdTokenNil;
@@ -131,8 +123,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2> &metadata_import, co
 
     HRESULT hr = E_FAIL;
     const auto token_type = TypeFromToken(token);
-    switch (token_type)
-    {
+    switch (token_type) {
     case mdtMemberRef:
         hr = metadata_import->GetMemberRefProps(token, &parent_token, function_name, kNameMaxSize, &function_name_len,
                                                 &raw_signature, &raw_signature_len);
@@ -145,8 +136,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2> &metadata_import, co
     case mdtMethodSpec: {
         hr = metadata_import->GetMethodSpecProps(token, &parent_token, &raw_signature, &raw_signature_len);
         is_generic = true;
-        if (FAILED(hr))
-        {
+        if (FAILED(hr)) {
             return {};
         }
         const auto generic_info = GetFunctionInfo(metadata_import, parent_token);
@@ -156,22 +146,19 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2> &metadata_import, co
         function_name_len = DWORD(generic_info.name.length() + 1);
         method_spec_token = token;
         method_def_token = generic_info.id;
-    }
-    break;
+    } break;
     default:
         Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
         return {};
     }
-    if (FAILED(hr) || function_name_len == 0)
-    {
+    if (FAILED(hr) || function_name_len == 0) {
         return {};
     }
 
     // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
     const auto type_info = GetTypeInfo(metadata_import, parent_token);
 
-    if (is_generic)
-    {
+    if (is_generic) {
         // use the generic constructor and feed both method signatures
         return {method_spec_token,
                 WSTRING(function_name),
@@ -188,7 +175,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2> &metadata_import, co
             FunctionMethodSignature(raw_signature, raw_signature_len)};
 }
 
-ModuleInfo GetModuleInfo(ICorProfilerInfo4 *info, const ModuleID &module_id)
+ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id)
 {
     const DWORD module_path_size = 260;
     WCHAR module_path[module_path_size]{};
@@ -198,22 +185,21 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo4 *info, const ModuleID &module_id)
     DWORD module_flags = 0;
     const HRESULT hr = info->GetModuleInfo2(module_id, &base_load_address, module_path_size, &module_path_len,
                                             module_path, &assembly_id, &module_flags);
-    if (FAILED(hr) || module_path_len == 0)
-    {
+    if (FAILED(hr) || module_path_len == 0) {
         return {};
     }
     return {module_id, WSTRING(module_path), GetAssemblyInfo(info, assembly_id), module_flags};
 }
 
-TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2> &metadata_import, const mdToken &token)
+TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token)
 {
     mdToken parent_token = mdTokenNil;
-    TypeInfo *parentTypeInfo = nullptr;
+    TypeInfo* parentTypeInfo = nullptr;
     mdToken parent_type_token = mdTokenNil;
     WCHAR type_name[kNameMaxSize]{};
     DWORD type_name_len = 0;
     DWORD type_flags;
-    TypeInfo *extendsInfo = nullptr;
+    TypeInfo* extendsInfo = nullptr;
     mdToken type_extends = mdTokenNil;
     bool type_valueType = false;
     bool type_isGeneric = false;
@@ -221,20 +207,17 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2> &metadata_import, const mdTo
     HRESULT hr = E_FAIL;
     const auto token_type = TypeFromToken(token);
 
-    switch (token_type)
-    {
+    switch (token_type) {
     case mdtTypeDef:
         hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize, &type_name_len, &type_flags,
                                               &type_extends);
 
         metadata_import->GetNestedClassProps(token, &parent_type_token);
-        if (parent_type_token != mdTokenNil)
-        {
+        if (parent_type_token != mdTokenNil) {
             parentTypeInfo = new TypeInfo(GetTypeInfo(metadata_import, parent_type_token));
         }
 
-        if (type_extends != mdTokenNil)
-        {
+        if (type_extends != mdTokenNil) {
             extendsInfo = new TypeInfo(GetTypeInfo(metadata_import, type_extends));
             type_valueType = extendsInfo->name == WStr("System.ValueType") || extendsInfo->name == WStr("System.Enum");
         }
@@ -248,13 +231,11 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2> &metadata_import, const mdTo
 
         hr = metadata_import->GetTypeSpecFromToken(token, &signature, &signature_length);
 
-        if (FAILED(hr) || signature_length < 3)
-        {
+        if (FAILED(hr) || signature_length < 3) {
             return {};
         }
 
-        if (signature[0] & ELEMENT_TYPE_GENERICINST)
-        {
+        if (signature[0] & ELEMENT_TYPE_GENERICINST) {
             mdToken type_token;
             CorSigUncompressToken(&signature[2], &type_token);
             const auto baseType = GetTypeInfo(metadata_import, type_token);
@@ -262,8 +243,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2> &metadata_import, const mdTo
                     token_type,         baseType.extend_from, baseType.valueType,
                     baseType.isGeneric, baseType.parent_type};
         }
-    }
-    break;
+    } break;
     case mdtModuleRef:
         metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize, &type_name_len);
         break;
@@ -274,15 +254,13 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2> &metadata_import, const mdTo
         return GetFunctionInfo(metadata_import, token).type;
         break;
     }
-    if (FAILED(hr) || type_name_len == 0)
-    {
+    if (FAILED(hr) || type_name_len == 0) {
         return {};
     }
 
     const auto type_name_string = WSTRING(type_name);
     const auto generic_token_index = type_name_string.rfind(WStr("`"));
-    if (generic_token_index != std::string::npos)
-    {
+    if (generic_token_index != std::string::npos) {
         const auto idxFromRight = type_name_string.length() - generic_token_index - 1;
         type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
     }
@@ -291,38 +269,32 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2> &metadata_import, const mdTo
             extendsInfo, type_valueType,   type_isGeneric, parentTypeInfo};
 }
 
-mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport> &assembly_import, const WSTRING &assembly_name)
+mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const WSTRING& assembly_name)
 {
-    for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assembly_import))
-    {
-        if (GetReferencedAssemblyMetadata(assembly_import, assembly_ref).name == assembly_name)
-        {
+    for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assembly_import)) {
+        if (GetReferencedAssemblyMetadata(assembly_import, assembly_ref).name == assembly_name) {
             return assembly_ref;
         }
     }
     return mdAssemblyRefNil;
 }
 
-std::vector<Integration> FilterIntegrationsByName(const std::vector<Integration> &integrations,
-                                                  const std::vector<WSTRING> &disabled_integration_names)
+std::vector<Integration> FilterIntegrationsByName(const std::vector<Integration>& integrations,
+                                                  const std::vector<WSTRING>& disabled_integration_names)
 {
     std::vector<Integration> enabled;
 
-    for (auto &i : integrations)
-    {
+    for (auto& i : integrations) {
         bool disabled = false;
-        for (auto &disabled_integration : disabled_integration_names)
-        {
-            if (i.integration_name == disabled_integration)
-            {
+        for (auto& disabled_integration : disabled_integration_names) {
+            if (i.integration_name == disabled_integration) {
                 // this integration is disabled, skip it
                 disabled = true;
                 break;
             }
         }
 
-        if (!disabled)
-        {
+        if (!disabled) {
             enabled.push_back(i);
         }
     }
@@ -330,23 +302,18 @@ std::vector<Integration> FilterIntegrationsByName(const std::vector<Integration>
     return enabled;
 }
 
-std::vector<IntegrationMethod> FlattenIntegrations(const std::vector<Integration> &integrations,
+std::vector<IntegrationMethod> FlattenIntegrations(const std::vector<Integration>& integrations,
                                                    bool is_calltarget_enabled)
 {
     std::vector<IntegrationMethod> flattened;
 
-    for (auto &i : integrations)
-    {
-        for (auto &mr : i.method_replacements)
-        {
+    for (auto& i : integrations) {
+        for (auto& mr : i.method_replacements) {
             const auto isCallTargetIntegration = mr.wrapper_method.action == calltarget_modification_action;
 
-            if (is_calltarget_enabled && isCallTargetIntegration)
-            {
+            if (is_calltarget_enabled && isCallTargetIntegration) {
                 flattened.emplace_back(i.integration_name, mr);
-            }
-            else if (!is_calltarget_enabled && !isCallTargetIntegration)
-            {
+            } else if (!is_calltarget_enabled && !isCallTargetIntegration) {
                 flattened.emplace_back(i.integration_name, mr);
             }
         }
@@ -355,16 +322,14 @@ std::vector<IntegrationMethod> FlattenIntegrations(const std::vector<Integration
     return flattened;
 }
 
-std::vector<IntegrationMethod> FilterIntegrationsByCaller(const std::vector<IntegrationMethod> &integration_methods,
+std::vector<IntegrationMethod> FilterIntegrationsByCaller(const std::vector<IntegrationMethod>& integration_methods,
                                                           const AssemblyInfo assembly)
 {
     std::vector<IntegrationMethod> enabled;
 
-    for (auto &i : integration_methods)
-    {
+    for (auto& i : integration_methods) {
         if (i.replacement.caller_method.assembly.name.empty() ||
-            i.replacement.caller_method.assembly.name == assembly.name)
-        {
+            i.replacement.caller_method.assembly.name == assembly.name) {
             enabled.push_back(i);
         }
     }
@@ -376,54 +341,44 @@ bool AssemblyMeetsIntegrationRequirements(const AssemblyMetadata metadata, const
 {
     const auto target = method_replacement.target_method;
 
-    if (target.assembly.name != metadata.name)
-    {
+    if (target.assembly.name != metadata.name) {
         // not the expected assembly
         return false;
     }
 
-    if (target.min_version > metadata.version)
-    {
+    if (target.min_version > metadata.version) {
         return false;
     }
 
-    if (target.max_version < metadata.version)
-    {
+    if (target.max_version < metadata.version) {
         return false;
     }
 
     return true;
 }
 
-std::vector<IntegrationMethod> FilterIntegrationsByTarget(const std::vector<IntegrationMethod> &integration_methods,
-                                                          const ComPtr<IMetaDataAssemblyImport> &assembly_import)
+std::vector<IntegrationMethod> FilterIntegrationsByTarget(const std::vector<IntegrationMethod>& integration_methods,
+                                                          const ComPtr<IMetaDataAssemblyImport>& assembly_import)
 {
     std::vector<IntegrationMethod> enabled;
 
     const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
-    for (auto &i : integration_methods)
-    {
+    for (auto& i : integration_methods) {
         bool found = false;
-        if (AssemblyMeetsIntegrationRequirements(assembly_metadata, i.replacement))
-        {
+        if (AssemblyMeetsIntegrationRequirements(assembly_metadata, i.replacement)) {
             found = true;
-        }
-        else
-        {
-            for (auto &assembly_ref : EnumAssemblyRefs(assembly_import))
-            {
+        } else {
+            for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
                 const auto metadata_ref = GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
-                if (AssemblyMeetsIntegrationRequirements(metadata_ref, i.replacement))
-                {
+                if (AssemblyMeetsIntegrationRequirements(metadata_ref, i.replacement)) {
                     found = true;
                     break;
                 }
             }
         }
 
-        if (found)
-        {
+        if (found) {
             enabled.push_back(i);
         }
     }
@@ -432,25 +387,21 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(const std::vector<Inte
 }
 
 std::vector<IntegrationMethod> FilterIntegrationsByTargetAssemblyName(
-    const std::vector<IntegrationMethod> &integration_methods, const std::vector<WSTRING> &excluded_assembly_names)
+    const std::vector<IntegrationMethod>& integration_methods, const std::vector<WSTRING>& excluded_assembly_names)
 {
     std::vector<IntegrationMethod> methods;
 
-    for (auto &i : integration_methods)
-    {
+    for (auto& i : integration_methods) {
         bool assembly_excluded = false;
 
-        for (auto &excluded_assembly_name : excluded_assembly_names)
-        {
-            if (i.replacement.target_method.assembly.name == excluded_assembly_name)
-            {
+        for (auto& excluded_assembly_name : excluded_assembly_names) {
+            if (i.replacement.target_method.assembly.name == excluded_assembly_name) {
                 assembly_excluded = true;
                 break;
             }
         }
 
-        if (!assembly_excluded)
-        {
+        if (!assembly_excluded) {
             methods.emplace_back(i);
         }
     }
@@ -458,20 +409,19 @@ std::vector<IntegrationMethod> FilterIntegrationsByTargetAssemblyName(
     return methods;
 }
 
-mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2> &metadata_emit, const mdToken &token,
-                              const MethodSignature &signature)
+mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit, const mdToken& token,
+                              const MethodSignature& signature)
 {
     mdMethodSpec spec = mdMethodSpecNil;
     auto hr = metadata_emit->DefineMethodSpec(token, signature.data.data(), ULONG(signature.data.size()), &spec);
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         Warn("[DefineMethodSpec] failed to define method spec");
     }
     return spec;
 }
 
-TypeInfo RetrieveTypeForSignature(const ComPtr<IMetaDataImport2> &metadata_import, const FunctionInfo &function_info,
-                                  const size_t current_index, ULONG &token_length)
+TypeInfo RetrieveTypeForSignature(const ComPtr<IMetaDataImport2>& metadata_import, const FunctionInfo& function_info,
+                                  const size_t current_index, ULONG& token_length)
 {
     mdToken type_token;
     const auto type_token_start = PCCOR_SIGNATURE(&function_info.signature.data[current_index]);
@@ -480,18 +430,16 @@ TypeInfo RetrieveTypeForSignature(const ComPtr<IMetaDataImport2> &metadata_impor
     return type_data;
 }
 
-bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2> &metadata_import, const FunctionInfo &function_info,
-                            std::vector<WSTRING> &signature_result)
+bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import, const FunctionInfo& function_info,
+                            std::vector<WSTRING>& signature_result)
 {
-    try
-    {
+    try {
         const auto signature_size = function_info.signature.data.size();
         const auto generic_count = function_info.signature.NumberOfTypeArguments();
         const auto param_count = function_info.signature.NumberOfArguments();
         size_t current_index = 2; // Where the parameters actually start
 
-        if (generic_count > 0)
-        {
+        if (generic_count > 0) {
             current_index++; // offset by one because the method is generic
         }
 
@@ -503,15 +451,13 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2> &metadata_import, con
         WSTRING append_to_type = WStr("");
         WSTRING current_type_name = WStr("");
 
-        for (; current_index < signature_size; current_index++)
-        {
+        for (; current_index < signature_size; current_index++) {
             mdToken type_token;
             ULONG token_length;
             auto param_piece = function_info.signature.data[current_index];
             const auto cor_element_type = CorElementType(param_piece);
 
-            switch (cor_element_type)
-            {
+            switch (cor_element_type) {
             case ELEMENT_TYPE_VOID: {
                 current_type_name.append(WStr("System.Void"));
                 break;
@@ -597,14 +543,12 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2> &metadata_import, con
                 auto ongoing_type_name = examined_type_name;
 
                 // check for whether this may be a nested class
-                while (examined_type_name.find_first_of(WStr(".")) == std::string::npos)
-                {
+                while (examined_type_name.find_first_of(WStr(".")) == std::string::npos) {
                     // This may possibly be a nested class, check for the parent
                     mdToken potentialParentToken;
                     metadata_import->GetNestedClassProps(examined_type_token, &potentialParentToken);
 
-                    if (potentialParentToken == mdTokenNil)
-                    {
+                    if (potentialParentToken == mdTokenNil) {
                         break;
                     }
 
@@ -625,8 +569,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2> &metadata_import, con
 
             case ELEMENT_TYPE_SZARRAY: {
                 append_to_type.append(WStr("[]"));
-                while (function_info.signature.data[(current_index + 1)] == ELEMENT_TYPE_SZARRAY)
-                {
+                while (function_info.signature.data[(current_index + 1)] == ELEMENT_TYPE_SZARRAY) {
                     append_to_type.append(WStr("[]"));
                     current_index++;
                 }
@@ -668,8 +611,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2> &metadata_import, con
                 current_type_name.append(WStr("<")); // Begin generic args
 
                 // Because we are starting a new generic, decrement any existing level
-                if (!generic_arg_stack.empty())
-                {
+                if (!generic_arg_stack.empty()) {
                     generic_arg_stack.top()--;
                 }
 
@@ -701,44 +643,37 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2> &metadata_import, con
             }
             }
 
-            if (!append_to_type.empty())
-            {
+            if (!append_to_type.empty()) {
                 current_type_name.append(append_to_type);
                 append_to_type = WStr("");
             }
 
-            if (!generic_arg_stack.empty())
-            {
+            if (!generic_arg_stack.empty()) {
                 // decrement this level's args
                 generic_arg_stack.top()--;
 
-                if (generic_arg_stack.top() > 0)
-                {
+                if (generic_arg_stack.top() > 0) {
                     // we're in the middle of generic type args
                     current_type_name.append(WStr(", "));
                 }
             }
 
-            while (!generic_arg_stack.empty() && generic_arg_stack.top() == 0)
-            {
+            while (!generic_arg_stack.empty() && generic_arg_stack.top() == 0) {
                 // unwind the generics with no args left
                 generic_arg_stack.pop();
                 current_type_name.append(WStr(">"));
 
-                if (!generic_arg_stack.empty() && generic_arg_stack.top() > 0)
-                {
+                if (!generic_arg_stack.empty() && generic_arg_stack.top() > 0) {
                     // We are in a nested generic and we need a comma to separate args
                     current_type_name.append(WStr(", "));
                 }
             }
 
-            if (!generic_arg_stack.empty())
-            {
+            if (!generic_arg_stack.empty()) {
                 continue;
             }
 
-            if (current_type_index >= expected_number_of_types)
-            {
+            if (current_type_index >= expected_number_of_types) {
                 // We missed something, drop out for safety
                 return false;
             }
@@ -749,9 +684,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2> &metadata_import, con
         }
 
         signature_result = type_names;
-    }
-    catch (...)
-    {
+    } catch (...) {
         // TODO: Add precise exceptions and log
         // We were unable to parse for some reason
         // Return that we've failed
@@ -761,19 +694,16 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2> &metadata_import, con
     return true;
 }
 
-HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit> &assembly_emit, AssemblyProperty &corAssemblyProperty,
-                             mdAssemblyRef *corlib_ref)
+HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, AssemblyProperty& corAssemblyProperty,
+                             mdAssemblyRef* corlib_ref)
 {
-    if (corAssemblyProperty.ppbPublicKey != nullptr)
-    {
+    if (corAssemblyProperty.ppbPublicKey != nullptr) {
         // the corlib module is already loaded, use that information to create the assembly ref
         Debug("Using existing corlib reference: ", corAssemblyProperty.szName);
         return assembly_emit->DefineAssemblyRef(corAssemblyProperty.ppbPublicKey, corAssemblyProperty.pcbPublicKey,
                                                 corAssemblyProperty.szName.c_str(), &corAssemblyProperty.pMetaData,
                                                 NULL, 0, 0, corlib_ref);
-    }
-    else
-    {
+    } else {
         // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
         ASSEMBLYMETADATA metadata{};
         metadata.usMajorVersion = 4;
@@ -786,20 +716,18 @@ HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit> &assembly_emit,
     }
 }
 
-bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<IMetaDataEmit2> &metadata_emit,
-                                            const ComPtr<IMetaDataAssemblyEmit> &assembly_emit,
-                                            AssemblyProperty &corAssemblyProperty, mdToken *ret_type_token)
+bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<IMetaDataEmit2>& metadata_emit,
+                                            const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                                            AssemblyProperty& corAssemblyProperty, mdToken* ret_type_token)
 {
     const auto cor_element_type = CorElementType(*p_sig);
     WSTRING managed_type_name = WStr("");
 
-    switch (cor_element_type)
-    {
+    switch (cor_element_type) {
     case ELEMENT_TYPE_VALUETYPE: {
         ULONG result;
         result = CorSigUncompressToken(p_sig + 1, ret_type_token);
-        if (result == -1)
-        {
+        if (result == -1) {
             Warn("[trace::ReturnTypeTokenforElementType] ELEMENT_TYPE_VALUETYPE failed to find uncompress TypeRef or "
                  "TypeDef");
             return false;
@@ -865,23 +793,20 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<
     HRESULT hr;
     hr = GetCorLibAssemblyRef(assembly_emit, corAssemblyProperty, &mscorlib_ref);
 
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         Warn("[trace::ReturnTypeTokenforElementType] failed to define AssemblyRef to mscorlib");
         return false;
     }
 
     // Create/Get TypeRef to the listed type
-    if (managed_type_name == WStr(""))
-    {
+    if (managed_type_name == WStr("")) {
         Warn("[trace::ReturnTypeTokenforElementType] no managed type name given");
         return false;
     }
 
     hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, managed_type_name.c_str(), ret_type_token);
 
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         Warn("[trace::ReturnTypeTokenforElementType] unable to create type ref for managed_type_name=",
              managed_type_name);
         return false;
@@ -890,11 +815,11 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<
     return true;
 }
 
-bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_import,
-                                    const ComPtr<IMetaDataEmit2> &metadata_emit,
-                                    const ComPtr<IMetaDataAssemblyEmit> &assembly_emit,
-                                    AssemblyProperty &corAssemblyProperty, const mdToken targetFunctionToken,
-                                    const MethodSignature targetFunctionSignature, mdToken *ret_type_token)
+bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
+                                    const ComPtr<IMetaDataEmit2>& metadata_emit,
+                                    const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                                    AssemblyProperty& corAssemblyProperty, const mdToken targetFunctionToken,
+                                    const MethodSignature targetFunctionSignature, mdToken* ret_type_token)
 {
 
     // MethodDefSig Format: [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount) ParamCount RetType Param*
@@ -904,8 +829,7 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_imp
     auto ret_type_byte = targetFunctionSignature.data[method_def_sig_index];
     const auto ret_type = CorElementType(ret_type_byte);
 
-    switch (ret_type)
-    {
+    switch (ret_type) {
     case ELEMENT_TYPE_VOID:
         // No object is returned, so return false.
         return false;
@@ -913,15 +837,13 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_imp
     case ELEMENT_TYPE_GENERICINST: {
         // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
         // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
-        if (targetFunctionSignature.data[method_def_sig_index + 1] != ELEMENT_TYPE_VALUETYPE)
-        {
+        if (targetFunctionSignature.data[method_def_sig_index + 1] != ELEMENT_TYPE_VALUETYPE) {
             return false;
         }
 
         PCCOR_SIGNATURE p_start_byte = PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]);
         PCCOR_SIGNATURE p_end_byte = p_start_byte;
-        if (!ParseType(&p_end_byte))
-        {
+        if (!ParseType(&p_end_byte)) {
             return false;
         }
 
@@ -939,8 +861,7 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_imp
         method_def_sig_index++; // Advance the current_index to point to "number"
         ULONG generic_type_index;
         if (CorSigUncompressData(PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
-                                 &generic_type_index) == -1)
-        {
+                                 &generic_type_index) == -1) {
             Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": unable to read VAR|MVAR index");
             return false;
         }
@@ -953,22 +874,19 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_imp
         PCCOR_SIGNATURE spec_signature{};
         ULONG spec_signature_length{};
 
-        switch (token_type)
-        {
+        switch (token_type) {
         case mdtMemberRef:
             // The compiler will never make method calls to generic methods without
             // the generic context, so we never expect to hit this at
             // run-time. If we are evaluating the MethodDef/MethodRef of a generic
             // method return false because it is invalid.
-            if (generic_count > 0)
-            {
+            if (generic_count > 0) {
                 return false;
             }
 
             hr = metadata_import->GetMemberRefProps(targetFunctionToken, &parent_token, nullptr, 0, nullptr, nullptr,
                                                     nullptr);
-            if (SUCCEEDED(hr))
-            {
+            if (SUCCEEDED(hr)) {
                 hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature, &spec_signature_length);
             }
             break;
@@ -977,15 +895,13 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_imp
             // the generic context, so we never expect to hit this at
             // run-time. If we are evaluating the MethodDef/MethodRef of a generic
             // method return false because it is invalid.
-            if (generic_count > 0)
-            {
+            if (generic_count > 0) {
                 return false;
             }
 
             hr = metadata_import->GetMemberProps(targetFunctionToken, &parent_token, nullptr, 0, nullptr, nullptr,
                                                  nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
-            if (SUCCEEDED(hr))
-            {
+            if (SUCCEEDED(hr)) {
                 hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature, &spec_signature_length);
             }
             break;
@@ -999,8 +915,7 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_imp
             return false;
         }
 
-        if (FAILED(hr))
-        {
+        if (FAILED(hr)) {
             Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
                  ": failed to get parent token or signature");
             return false;
@@ -1008,22 +923,17 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_imp
 
         // Determine the index of GenArgCount in the signature
         size_t parent_token_index;
-        if (token_type == mdtMemberRef || token_type == mdtMethodDef)
-        {
+        if (token_type == mdtMemberRef || token_type == mdtMethodDef) {
             // TypeSpec Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
             // Skip over TypeDefOrRefEncoded by parsing the signature at index 2
             parent_token_index = 2;
             mdToken dummy_token;
             ULONG token_length = CorSigUncompressToken(&spec_signature[parent_token_index], &dummy_token);
             parent_token_index += token_length;
-        }
-        else if (token_type == mdtMethodSpec)
-        {
+        } else if (token_type == mdtMethodSpec) {
             // MethodSpec Format: GENRICINST GenArgCount Type Type*
             parent_token_index = 1;
-        }
-        else
-        {
+        } else {
             Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": token_type (", token_type,
                  ") not recognized");
             return false;
@@ -1037,49 +947,38 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_imp
         PCCOR_SIGNATURE p_current_byte = spec_signature + parent_token_index;
 
         // Iterate to specified generic type argument index and return the appropriate class token or TypeSpec
-        for (size_t i = 0; i < num_generic_arguments; i++)
-        {
-            if (i != generic_type_index)
-            {
-                if (!ParseType(&p_current_byte))
-                {
+        for (size_t i = 0; i < num_generic_arguments; i++) {
+            if (i != generic_type_index) {
+                if (!ParseType(&p_current_byte)) {
                     Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
                          ": Unable to parse "
                          "generic type argument ",
                          i, "from signature of parent_token:", parent_token);
                     return false;
                 }
-            }
-            else if (*p_current_byte == ELEMENT_TYPE_MVAR || *p_current_byte == ELEMENT_TYPE_VAR)
-            {
+            } else if (*p_current_byte == ELEMENT_TYPE_MVAR || *p_current_byte == ELEMENT_TYPE_VAR) {
                 // The method was defined with a method-level generic type argument from the caller. Return the TypeSpec
                 // token for the `M#` MVAR description, or The method was defined with a type-level generic type
                 // argument from the caller. Return the TypeSpec token for the `T#` VAR description
                 hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte, 2, ret_type_token);
                 return SUCCEEDED(hr);
-            }
-            else if (*p_current_byte == ELEMENT_TYPE_GENERICINST)
-            {
+            } else if (*p_current_byte == ELEMENT_TYPE_GENERICINST) {
                 // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
                 // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
-                if (*(p_current_byte + 1) != ELEMENT_TYPE_VALUETYPE)
-                {
+                if (*(p_current_byte + 1) != ELEMENT_TYPE_VALUETYPE) {
                     return false;
                 }
 
                 PCCOR_SIGNATURE p_start_byte = p_current_byte;
                 PCCOR_SIGNATURE p_end_byte = p_start_byte;
-                if (!ParseType(&p_end_byte))
-                {
+                if (!ParseType(&p_end_byte)) {
                     return false;
                 }
 
                 size_t length = p_end_byte - p_start_byte;
                 HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, (ULONG)length, ret_type_token);
                 return SUCCEEDED(hr);
-            }
-            else
-            {
+            } else {
                 return ReturnTypeTokenforValueTypeElementType(p_current_byte, metadata_emit, assembly_emit,
                                                               corAssemblyProperty, ret_type_token);
             }
@@ -1096,28 +995,25 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2> &metadata_imp
 }
 
 // FunctionMethodArgument
-int FunctionMethodArgument::GetTypeFlags(unsigned &elementType) const
+int FunctionMethodArgument::GetTypeFlags(unsigned& elementType) const
 {
     int flag = 0;
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
 
-    if (*pbCur == ELEMENT_TYPE_VOID)
-    {
+    if (*pbCur == ELEMENT_TYPE_VOID) {
         elementType = ELEMENT_TYPE_VOID;
         flag |= TypeFlagVoid;
         return flag;
     }
 
-    if (*pbCur == ELEMENT_TYPE_BYREF)
-    {
+    if (*pbCur == ELEMENT_TYPE_BYREF) {
         pbCur++;
         flag |= TypeFlagByRef;
     }
 
     elementType = *pbCur;
 
-    switch (*pbCur)
-    {
+    switch (*pbCur) {
     case ELEMENT_TYPE_BOOLEAN:
     case ELEMENT_TYPE_CHAR:
     case ELEMENT_TYPE_I1:
@@ -1139,8 +1035,7 @@ int FunctionMethodArgument::GetTypeFlags(unsigned &elementType) const
         break;
     case ELEMENT_TYPE_GENERICINST:
         pbCur++;
-        if (*pbCur == ELEMENT_TYPE_VALUETYPE)
-        {
+        if (*pbCur == ELEMENT_TYPE_VALUETYPE) {
             flag |= TypeFlagBoxedType;
         }
         break;
@@ -1150,19 +1045,17 @@ int FunctionMethodArgument::GetTypeFlags(unsigned &elementType) const
     return flag;
 }
 
-mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2> &pEmit, mdAssemblyRef corLibRef) const
+mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const
 {
     mdToken token = mdTokenNil;
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
     const PCCOR_SIGNATURE pStart = pbCur;
 
-    if (*pbCur == ELEMENT_TYPE_BYREF)
-    {
+    if (*pbCur == ELEMENT_TYPE_BYREF) {
         pbCur++;
     }
 
-    switch (*pbCur)
-    {
+    switch (*pbCur) {
     case ELEMENT_TYPE_BOOLEAN:
         pEmit->DefineTypeRefByName(corLibRef, SystemBoolean, &token);
         break;
@@ -1231,18 +1124,16 @@ mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2> &pEmit, mdAsse
     return token;
 }
 
-WSTRING GetSigTypeTokName(PCCOR_SIGNATURE &pbCur, const ComPtr<IMetaDataImport2> &pImport)
+WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport)
 {
     WSTRING tokenName = WStr("");
     bool ref_flag = false;
-    if (*pbCur == ELEMENT_TYPE_BYREF)
-    {
+    if (*pbCur == ELEMENT_TYPE_BYREF) {
         pbCur++;
         ref_flag = true;
     }
 
-    switch (*pbCur)
-    {
+    switch (*pbCur) {
     case ELEMENT_TYPE_BOOLEAN:
         tokenName = SystemBoolean;
         pbCur++;
@@ -1326,11 +1217,9 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE &pbCur, const ComPtr<IMetaDataImport2>
         tokenName += WStr("[");
         ULONG num = 0;
         pbCur += CorSigUncompressData(pbCur, &num);
-        for (ULONG i = 0; i < num; i++)
-        {
+        for (ULONG i = 0; i < num; i++) {
             tokenName += GetSigTypeTokName(pbCur, pImport);
-            if (i != num - 1)
-            {
+            if (i != num - 1) {
                 tokenName += WStr(",");
             }
         }
@@ -1355,30 +1244,28 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE &pbCur, const ComPtr<IMetaDataImport2>
         break;
     }
 
-    if (ref_flag)
-    {
+    if (ref_flag) {
         tokenName += WStr("&");
     }
     return tokenName;
 }
 
-WSTRING FunctionMethodArgument::GetTypeTokName(ComPtr<IMetaDataImport2> &pImport) const
+WSTRING FunctionMethodArgument::GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const
 {
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
     return GetSigTypeTokName(pbCur, pImport);
 }
 
-ULONG FunctionMethodArgument::GetSignature(PCCOR_SIGNATURE &data) const
+ULONG FunctionMethodArgument::GetSignature(PCCOR_SIGNATURE& data) const
 {
     data = &pbBase[offset];
     return length;
 }
 
 // FunctionMethodSignature
-bool ParseByte(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd, unsigned char *pbOut)
+bool ParseByte(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned char* pbOut)
 {
-    if (pbCur < pbEnd)
-    {
+    if (pbCur < pbEnd) {
         *pbOut = *pbCur;
         pbCur++;
         return true;
@@ -1387,7 +1274,7 @@ bool ParseByte(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd, unsigned char *pbO
     return false;
 }
 
-bool ParseNumber(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd, unsigned *pOut)
+bool ParseNumber(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned* pOut)
 {
     // parse the variable length number format (0-4 bytes)
 
@@ -1398,8 +1285,7 @@ bool ParseNumber(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd, unsigned *pOut)
     if (!ParseByte(pbCur, pbEnd, &b1))
         return false;
 
-    if (b1 == 0xff)
-    {
+    if (b1 == 0xff) {
         // special encoding of 'NULL'
         // not sure what this means as a number, don't expect to see it except for
         // string lengths which we don't encounter anyway so calling it an error
@@ -1407,8 +1293,7 @@ bool ParseNumber(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd, unsigned *pOut)
     }
 
     // early out on 1 byte encoding
-    if ((b1 & 0x80) == 0)
-    {
+    if ((b1 & 0x80) == 0) {
         *pOut = (int)b1;
         return true;
     }
@@ -1418,15 +1303,13 @@ bool ParseNumber(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd, unsigned *pOut)
         return false;
 
     // early out on 2 byte encoding
-    if ((b1 & 0x40) == 0)
-    {
+    if ((b1 & 0x40) == 0) {
         *pOut = (((b1 & 0x3f) << 8) | b2);
         return true;
     }
 
     // must be a 4 byte encoding
-    if ((b1 & 0x20) != 0)
-    {
+    if ((b1 & 0x20) != 0) {
         // 4 byte encoding has this bit clear -- error if not
         return false;
     }
@@ -1441,8 +1324,8 @@ bool ParseNumber(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd, unsigned *pOut)
     return true;
 }
 
-bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd, unsigned char *pIndexTypeOut,
-                              unsigned *pIndexOut)
+bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned char* pIndexTypeOut,
+                              unsigned* pIndexOut)
 {
     // parse an encoded typedef or typeref
     unsigned encoded = 0;
@@ -1463,7 +1346,7 @@ bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd, uns
     ARRAY Type ArrayShape
     SZARRAY CustomMod+ Type (but we do support SZARRAY Type)
  */
-bool ParseType(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd)
+bool ParseType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 {
     /*
     Type ::= ( BOOLEAN | CHAR | I1 | U1 | U2 | U2 | I4 | U4 | I8 | U8 | R4 | R8 |
@@ -1488,8 +1371,7 @@ bool ParseType(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd)
     if (!ParseByte(pbCur, pbEnd, &elem_type))
         return false;
 
-    switch (elem_type)
-    {
+    switch (elem_type) {
     case ELEMENT_TYPE_BOOLEAN:
     case ELEMENT_TYPE_CHAR:
     case ELEMENT_TYPE_I1:
@@ -1560,8 +1442,7 @@ bool ParseType(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd)
         if (!ParseNumber(pbCur, pbEnd, &number))
             return false;
 
-        for (unsigned i = 0; i < number; i++)
-        {
+        for (unsigned i = 0; i < number; i++) {
             if (!ParseType(pbCur, pbEnd))
                 return false;
         }
@@ -1587,10 +1468,9 @@ bool ParseType(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd)
 
 // Param ::= CustomMod* ( TYPEDBYREF | [BYREF] Type )
 // CustomMod* TYPEDBYREF we don't support
-bool ParseParam(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd)
+bool ParseParam(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 {
-    if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD)
-    {
+    if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD) {
         return false;
     }
 
@@ -1608,7 +1488,7 @@ bool ParseParam(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd)
 
 // RetType ::= CustomMod* ( VOID | TYPEDBYREF | [BYREF] Type )
 // CustomMod* TYPEDBYREF we don't support
-bool ParseRetType(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd)
+bool ParseRetType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 {
 
     if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD)
@@ -1620,8 +1500,7 @@ bool ParseRetType(PCCOR_SIGNATURE &pbCur, PCCOR_SIGNATURE pbEnd)
     if (*pbCur == ELEMENT_TYPE_TYPEDBYREF)
         return false;
 
-    if (*pbCur == ELEMENT_TYPE_VOID)
-    {
+    if (*pbCur == ELEMENT_TYPE_VOID) {
         pbCur++;
         return true;
     }
@@ -1640,8 +1519,7 @@ HRESULT FunctionMethodSignature::TryParse()
 
     IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &elem_type));
 
-    if (elem_type & IMAGE_CEE_CS_CALLCONV_GENERIC)
-    {
+    if (elem_type & IMAGE_CEE_CS_CALLCONV_GENERIC) {
         unsigned gen_param_count;
         IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &gen_param_count));
         numberOfTypeArguments = gen_param_count;
@@ -1659,13 +1537,11 @@ HRESULT FunctionMethodSignature::TryParse()
     ret.offset = (ULONG)(pbCur - pbBase - ret.length);
 
     auto fEncounteredSentinal = false;
-    for (unsigned i = 0; i < param_count; i++)
-    {
+    for (unsigned i = 0; i < param_count; i++) {
         if (pbCur >= pbEnd)
             return E_FAIL;
 
-        if (*pbCur == ELEMENT_TYPE_SENTINEL)
-        {
+        if (*pbCur == ELEMENT_TYPE_SENTINEL) {
             if (fEncounteredSentinal)
                 return E_FAIL;
 
@@ -1689,19 +1565,17 @@ HRESULT FunctionMethodSignature::TryParse()
 }
 
 bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName, const trace::WSTRING assemblyName,
-                       const ComPtr<IMetaDataImport2> &metadata_import, mdTypeDef &typeDef)
+                       const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef)
 {
     mdTypeDef parentTypeDef = mdTypeDefNil;
     auto nameParts = Split(instrumentationTargetMethodTypeName, '+');
     auto instrumentedMethodTypeName = instrumentationTargetMethodTypeName;
 
-    if (nameParts.size() == 2)
-    {
+    if (nameParts.size() == 2) {
         // We're instrumenting a nested class, find the parent first
         auto hr = metadata_import->FindTypeDefByName(nameParts[0].c_str(), mdTokenNil, &parentTypeDef);
 
-        if (FAILED(hr))
-        {
+        if (FAILED(hr)) {
             // This can happen between .NET framework and .NET core, not all apis are
             // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
             // System.Data
@@ -1710,9 +1584,7 @@ bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName,
             return false;
         }
         instrumentedMethodTypeName = nameParts[1];
-    }
-    else if (nameParts.size() > 2)
-    {
+    } else if (nameParts.size() > 2) {
         Warn("Invalid TypeDef-only one layer of nested classes are supported: ", instrumentationTargetMethodTypeName,
              ", Module: ", assemblyName);
         return false;
@@ -1720,8 +1592,7 @@ bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName,
 
     // Find the type we're instrumenting
     auto hr = metadata_import->FindTypeDefByName(instrumentedMethodTypeName.c_str(), parentTypeDef, &typeDef);
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         // This can happen between .NET framework and .NET core, not all apis are
         // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
         // System.Data

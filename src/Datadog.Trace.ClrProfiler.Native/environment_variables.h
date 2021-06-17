@@ -3,10 +3,8 @@
 
 #include "string.h" // NOLINT
 
-namespace trace
-{
-namespace environment
-{
+namespace trace {
+namespace environment {
 
 // Sets whether the profiler is enabled. Default is true.
 // Setting this to false disabled the profiler entirely.

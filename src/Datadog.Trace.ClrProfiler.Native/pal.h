@@ -22,15 +22,13 @@
 #include "string.h" // NOLINT
 #include "util.h"
 
-namespace trace
-{
+namespace trace {
 
-inline WSTRING DatadogLogFilePath(const std::string &file_name_suffix)
+inline WSTRING DatadogLogFilePath(const std::string& file_name_suffix)
 {
     WSTRING directory = GetEnvironmentValue(environment::log_directory);
 
-    if (directory.length() > 0)
-    {
+    if (directory.length() > 0) {
         return directory +
 #ifdef _WIN32
                WStr('\\') +
@@ -42,23 +40,19 @@ inline WSTRING DatadogLogFilePath(const std::string &file_name_suffix)
 
     WSTRING path = GetEnvironmentValue(environment::log_path);
 
-    if (path.length() > 0)
-    {
+    if (path.length() > 0) {
         return path;
     }
 
 #ifdef _WIN32
-    char *p_program_data;
+    char* p_program_data;
     size_t length;
     const errno_t result = _dupenv_s(&p_program_data, &length, "PROGRAMDATA");
     std::string program_data;
 
-    if (SUCCEEDED(result) && p_program_data != nullptr && length > 0)
-    {
+    if (SUCCEEDED(result) && p_program_data != nullptr && length > 0) {
         program_data = std::string(p_program_data);
-    }
-    else
-    {
+    } else {
         program_data = R"(C:\ProgramData)";
     }
 
@@ -79,7 +73,7 @@ inline WSTRING GetCurrentProcessName()
     return std::filesystem::path(current_process_path).filename();
 #elif MACOS
     const int length = 260;
-    char *buffer = new char[length];
+    char* buffer = new char[length];
     proc_name(getpid(), buffer, length);
     return ToWSTRING(std::string(buffer));
 #else

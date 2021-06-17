@@ -7,28 +7,26 @@
 #include <iostream>
 #include <memory>
 
-namespace trace
-{
+namespace trace {
 
 extern bool debug_logging_enabled;
 extern bool dump_il_rewrite_enabled;
 
-class Logger : public Singleton<Logger>
-{
+class Logger : public Singleton<Logger> {
     friend class Singleton<Logger>;
 
   private:
     std::shared_ptr<spdlog::logger> m_fileout;
-    static std::string GetLogPath(const std::string &file_name_suffix);
+    static std::string GetLogPath(const std::string& file_name_suffix);
     Logger();
     ~Logger();
 
   public:
-    void Debug(const std::string &str);
-    void Info(const std::string &str);
-    void Warn(const std::string &str);
-    void Error(const std::string &str);
-    void Critical(const std::string &str);
+    void Debug(const std::string& str);
+    void Info(const std::string& str);
+    void Warn(const std::string& str);
+    void Error(const std::string& str);
+    void Critical(const std::string& str);
     void Flush();
     static void Shutdown()
     {
@@ -36,12 +34,12 @@ class Logger : public Singleton<Logger>
     }
 };
 
-template <typename Arg> std::string LogToString(Arg const &arg)
+template <typename Arg> std::string LogToString(Arg const& arg)
 {
     return ToString(arg);
 }
 
-template <typename... Args> std::string LogToString(Args const &...args)
+template <typename... Args> std::string LogToString(Args const&... args)
 {
     std::ostringstream oss;
     int a[] = {0, ((void)(oss << LogToString(args)), 0)...};
@@ -50,8 +48,7 @@ template <typename... Args> std::string LogToString(Args const &...args)
 
 template <typename... Args> void Debug(const Args... args)
 {
-    if (debug_logging_enabled)
-    {
+    if (debug_logging_enabled) {
         Logger::Instance()->Debug(LogToString(args...));
     }
 }

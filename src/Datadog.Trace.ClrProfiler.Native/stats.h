@@ -5,16 +5,14 @@
 
 #include "util.h"
 
-namespace trace
-{
+namespace trace {
 
-class SWStat
-{
-    std::atomic_ullong *_value;
+class SWStat {
+    std::atomic_ullong* _value;
     std::chrono::steady_clock::time_point _startTime;
 
   public:
-    SWStat(std::atomic_ullong *value)
+    SWStat(std::atomic_ullong* value)
     {
         _value = value;
         _startTime = std::chrono::steady_clock::now();
@@ -26,8 +24,7 @@ class SWStat
     }
 };
 
-class Stats : public Singleton<Stats>
-{
+class Stats : public Singleton<Stats> {
     friend class Singleton<Stats>;
 
   private:
