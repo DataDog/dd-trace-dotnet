@@ -270,49 +270,6 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 #endif
 
-        private static Dictionary<string, object> PrepareArgsForWaf(HttpRequest request)
-        {
-            var url = GetUrl(request);
-
-            var headersDic = new Dictionary<string, string>();
-            foreach (var k in request.Headers.Keys)
-            {
-                headersDic.Add(k, request.Headers[k]);
-            }
-
-            var cookiesDic = new Dictionary<string, string>();
-            foreach (var k in request.Cookies.Keys)
-            {
-                cookiesDic.Add(k, request.Cookies[k]);
-            }
-
-            var dict = new Dictionary<string, object>()
-            {
-                { AddressesConstants.RequestMethod, request.Method },
-                { AddressesConstants.RequestUriRaw, url },
-                { AddressesConstants.RequestQuery, request.QueryString.ToString() },
-                { AddressesConstants.RequestHeaderNoCookies, headersDic },
-                { AddressesConstants.RequestCookies, cookiesDic },
-            };
-
-            return dict;
-        }
-
-        private static string GetUrl(HttpRequest request)
-        {
-            if (request.Host.HasValue)
-            {
-                return $"{request.Scheme}://{request.Host.Value}{request.PathBase.Value}{request.Path.Value}";
-            }
-
-            // HTTP 1.0 requests are not required to provide a Host to be valid
-            // Since this is just for display, we can provide a string that is
-            // not an actual Uri with only the fields that are specified.
-            // request.GetDisplayUrl(), used above, will throw an exception
-            // if request.Host is null.
-            return $"{request.Scheme}://{NoHostSpecified}{request.PathBase.Value}{request.Path.Value}";
-        }
-
         private static SpanContext ExtractPropagatedContext(HttpRequest request)
         {
             try
@@ -536,7 +493,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (isFirstExecution)
             {
                 trackingFeature.IsFirstPipelineExecution = false;
-                var url = GetUrl(httpContext.Request);
+                var url = httpContext.Request.GetUrl();
                 if (!string.Equals(url, trackingFeature.OriginalUrl))
                 {
                     // URL has changed from original, so treat this execution as a "subsequent" request
@@ -628,7 +585,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string url = GetUrl(request);
+            string url = request.GetUrl();
 
             if (tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
@@ -694,19 +651,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request)
         {
-            var dic = PrepareArgsForWaf(request);
-
+            var dic = request.PrepareArgsForWaf();
             security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
         }
 
         private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, RouteData routeDatas)
         {
-            var dic = PrepareArgsForWaf(request);
-            if (routeDatas.Values.Any())
-            {
-                dic.Add(AddressesConstants.RequestPathParams, routeDatas.Values.ToDictionary(c => c.Key, c => c.Value));
-            }
-
+            var dic = request.PrepareArgsForWaf(routeDatas);
             security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
         }
 
@@ -739,7 +690,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     trackingFeature.IsUsingEndpointRouting = true;
                     trackingFeature.IsFirstPipelineExecution = false;
 
-                    var url = GetUrl(httpContext.Request);
+                    var url = httpContext.Request.GetUrl();
                     if (!string.Equals(url, trackingFeature.OriginalUrl))
                     {
                         // URL has changed from original, so treat this execution as a "subsequent" request

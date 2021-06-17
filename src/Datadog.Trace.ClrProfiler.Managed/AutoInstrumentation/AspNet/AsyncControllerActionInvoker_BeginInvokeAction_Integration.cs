@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -56,7 +57,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 if (HttpContext.Current != null)
                 {
-                    scope = AspNetMvcIntegration.CreateScope(controllerContext.DuckCast<ControllerContextStruct>());
+                    var duckedControllerContext = controllerContext.DuckCast<ControllerContextStruct>();
+                    scope = AspNetMvcIntegration.CreateScope(duckedControllerContext);
+                    HttpContext.Current.Request.PrepareArgsForWaf(duckedControllerContext.RouteData);
                     HttpContext.Current.Items[AspNetMvcIntegration.HttpContextKey] = scope;
                 }
             }

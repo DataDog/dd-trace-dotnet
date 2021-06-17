@@ -4,13 +4,17 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.Diagnostics;
 using System.Web;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Transport.Http
 {
     internal class HttpTransport : ITransport
     {
+        private const string WafKey = "waf";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpTransport>();
         private readonly System.Web.HttpContext context;
 
         public HttpTransport(HttpContext context)
@@ -29,12 +33,13 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public IAdditiveContext GetAdditiveContext()
         {
-            throw new System.NotImplementedException();
+            return context.Items[WafKey] as IAdditiveContext;
         }
 
         public void SetAdditiveContext(IAdditiveContext additiveContext)
         {
-            throw new System.NotImplementedException();
+            context.DisposeOnPipelineCompleted(additiveContext);
+            context.Items[WafKey] = additiveContext;
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿@echo off
-SET fmk=net45
-SET mode=Release
+SET fmk=net461
+SET mode=Debug
 echo framework is %fmk%
 gacutil -u Datadog.Trace
 gacutil -u Datadog.Trace.ClrProfiler.Managed
