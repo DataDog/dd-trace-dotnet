@@ -149,6 +149,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         public async Task<List<MockTracerAgent.Span>> RunTraceTestOnSelfHosted(string packageVersion)
         {
+            var spans = await RunTraceTestOnSelfHosted(packageVersion, WaitForSpans);
+            SpanTestHelpers.AssertExpectationsMet(Expectations, spans);
+            return spans;
+
+            List<MockTracerAgent.Span> WaitForSpans(MockTracerAgent agent, DateTimeOffset testStart)
+            {
+                var list =
+                    agent.WaitForSpans(
+                              Expectations.Count,
+                              operationName: TopLevelOperationName,
+                              minDateTime: testStart)
+                         .OrderBy(s => s.Start)
+                         .ToList();
+                return list;
+            }
+        }
+
+        public async Task<T> RunTraceTestOnSelfHosted<T>(
+            string packageVersion,
+            Func<MockTracerAgent, DateTimeOffset, T> waitForResults)
+        {
             var agentPort = TcpPortProvider.GetOpenPort();
             var aspNetCorePort = TcpPortProvider.GetOpenPort();
 
@@ -220,13 +241,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 var paths = Expectations.Select(e => e.OriginalUri).ToArray();
                 await SubmitRequests(aspNetCorePort, paths);
 
-                var spans =
-                    agent.WaitForSpans(
-                              Expectations.Count,
-                              operationName: TopLevelOperationName,
-                              minDateTime: testStart)
-                         .OrderBy(s => s.Start)
-                         .ToList();
+                var results = waitForResults(agent, testStart);
 
                 if (!process.HasExited)
                 {
@@ -235,22 +250,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                     if (!process.WaitForExit(5000))
                     {
+                        process.CloseMainWindow();
                         process.Kill();
                     }
                 }
 
-                SpanTestHelpers.AssertExpectationsMet(Expectations, spans);
-                return spans;
+                return results;
             }
         }
 
         public void RunLogInjectionTest(List<MockTracerAgent.Span> spans)
         {
-            // direct ILogger output log file
-            var logFile = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(), "log", "Karambolo", "log.txt");
-            File.Exists(logFile).Should().BeTrue($"'{logFile}' should exist");
-
-            var logs = File.ReadAllLines(logFile);
+            var logs = GetLogFileContents();
             logs.Should().NotBeNullOrEmpty();
 
             using var s = new AssertionScope();
@@ -259,8 +270,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var tracedLogs = logs.Where(log => !log.Contains("Building pipeline")).ToList();
 
             // all spans should be represented in the traced logs
-            var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct();
-            string.Join(",", tracedLogs).Should().ContainAll(traceIds);
+            var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
+            if (traceIds.Any())
+            {
+                string.Join(",", tracedLogs).Should().ContainAll(traceIds);
+            }
 
             foreach (var log in tracedLogs)
             {
@@ -280,6 +294,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                    .And.NotMatchRegex("dd_service")
                    .And.NotMatchRegex("dd_trace_id");
             }
+        }
+
+        public string[] GetLogFileContents()
+        {
+            // direct ILogger output log file
+            var logFile = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(), "log", "Karambolo", "log.txt");
+            File.Exists(logFile).Should().BeTrue($"'{logFile}' should exist");
+
+            // may have a lingering lock, so retry
+            var retryCount = 5;
+            var millisecondsToWait = 15_000 / retryCount;
+            Exception ex = null;
+            while (retryCount > 0)
+            {
+                try
+                {
+                    return File.ReadAllLines(logFile);
+                }
+                catch (Exception e)
+                {
+                    ex = e;
+                    Thread.Sleep(millisecondsToWait);
+                }
+
+                retryCount--;
+            }
+
+            throw new Exception("Unable to Fetch Log File Contents", ex);
         }
 
         protected void CreateTopLevelExpectation(
