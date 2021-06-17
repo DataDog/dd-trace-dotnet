@@ -5,4 +5,4 @@
 
 extern HINSTANCE DllHandle;
 
-#endif  // DD_CLR_PROFILER_DLLMAIN_H_
+#endif // DD_CLR_PROFILER_DLLMAIN_H_

@@ -7,69 +7,79 @@
 #include "logging.h"
 #include "version.h"
 
-ClassFactory::ClassFactory() : refCount(0) {}
-
-ClassFactory::~ClassFactory() {}
-
-HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid,
-                                                       void** ppvObject) {
-  if (riid == IID_IUnknown || riid == IID_IClassFactory) {
-    *ppvObject = this;
-    this->AddRef();
-    return S_OK;
-  }
-
-  *ppvObject = nullptr;
-  return E_NOINTERFACE;
+ClassFactory::ClassFactory() : refCount(0)
+{
 }
 
-ULONG STDMETHODCALLTYPE ClassFactory::AddRef() {
-  return std::atomic_fetch_add(&this->refCount, 1) + 1;
+ClassFactory::~ClassFactory()
+{
 }
 
-ULONG STDMETHODCALLTYPE ClassFactory::Release() {
-  int count = std::atomic_fetch_sub(&this->refCount, 1) - 1;
-  if (count <= 0) {
-    delete this;
-  }
+HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid, void** ppvObject)
+{
+    if (riid == IID_IUnknown || riid == IID_IClassFactory) {
+        *ppvObject = this;
+        this->AddRef();
+        return S_OK;
+    }
 
-  return count;
+    *ppvObject = nullptr;
+    return E_NOINTERFACE;
+}
+
+ULONG STDMETHODCALLTYPE ClassFactory::AddRef()
+{
+    return std::atomic_fetch_add(&this->refCount, 1) + 1;
+}
+
+ULONG STDMETHODCALLTYPE ClassFactory::Release()
+{
+    int count = std::atomic_fetch_sub(&this->refCount, 1) - 1;
+    if (count <= 0) {
+        delete this;
+    }
+
+    return count;
 }
 
 // profiler entry point
-HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
-                                                       REFIID riid,
-                                                       void** ppvObject) {
-  if (pUnkOuter != nullptr) {
-    *ppvObject = nullptr;
-    return CLASS_E_NOAGGREGATION;
-  }
+HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** ppvObject)
+{
+    if (pUnkOuter != nullptr) {
+        *ppvObject = nullptr;
+        return CLASS_E_NOAGGREGATION;
+    }
 
-  trace::Info("Datadog CLR Profiler ", PROFILER_VERSION,
-              " on",
+    trace::Info("Datadog CLR Profiler ", PROFILER_VERSION, " on",
 
 #ifdef _WIN32
-              " Windows"
+                " Windows"
 #elif MACOS
-              " macOS"
+                " macOS"
 #else
-              " Linux"
+                " Linux"
 #endif
 
 #ifdef AMD64
-            , " (amd64)"
+                ,
+                " (amd64)"
 #elif X86
-            , " (x86)"
+                ,
+                " (x86)"
 #elif ARM64
-            , " (arm64)"
+                ,
+                " (arm64)"
 #elif ARM
-            , " (arm)"
+                , " (arm)"
 #endif
-  );
-  trace::Debug("ClassFactory::CreateInstance");
+    );
+    trace::Debug("ClassFactory::CreateInstance");
 
-  auto profiler = new trace::CorProfiler();
-  return profiler->QueryInterface(riid, ppvObject);
+    auto profiler = new trace::CorProfiler();
+    return profiler->QueryInterface(riid, ppvObject);
 }
 
-HRESULT STDMETHODCALLTYPE ClassFactory::LockServer(BOOL fLock) { return S_OK; }
+HRESULT STDMETHODCALLTYPE ClassFactory::LockServer(BOOL fLock)
+{
+    return S_OK;
+}
