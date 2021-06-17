@@ -17,6 +17,8 @@ namespace Datadog.Trace.Tagging
         private static byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
         private static byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
         private static byte[] _originBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
+        private static byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
+        private static byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
@@ -303,6 +305,13 @@ namespace Datadog.Trace.Tagging
                     count++;
                     WriteTag(ref bytes, ref offset, property.Key, value);
                 }
+            }
+
+            if (span.IsTopLevel)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
             }
 
             string origin = span.Context.Origin;

@@ -403,5 +403,7 @@ namespace Datadog.Trace
         internal const string ElasticsearchMethod = "elasticsearch.method";
 
         internal const string ElasticsearchUrl = "elasticsearch.url";
+
+        internal const string RuntimeId = "runtime-id";
     }
 }
