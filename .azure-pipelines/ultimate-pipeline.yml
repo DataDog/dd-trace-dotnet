@@ -951,7 +951,7 @@ stages:
         DD_SERVICE: dd-trace-dotnet
 - stage: coverage
   condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
-  dependsOn: [integration_tests_windows, integration_tests_windows_iis]
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows]
   jobs:
     - job: Windows
       timeoutInMinutes: 30
