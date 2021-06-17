@@ -17,6 +17,7 @@ namespace Datadog.Trace.AspNetCore
         private readonly string _env;
         private readonly string _version;
         private readonly string _traceId;
+        private readonly int _count;
 
         private string _cachedToString;
 
@@ -30,14 +31,16 @@ namespace Datadog.Trace.AspNetCore
             _service = tracer.DefaultServiceName ?? string.Empty;
             _env = tracer.Settings.Environment ?? string.Empty;
             _version = tracer.Settings.ServiceVersion ?? string.Empty;
-            _traceId = tracer.ActiveScope?.Span?.TraceId.ToString() ?? "0";
+            var traceId = tracer.ActiveScope?.Span?.TraceId.ToString();
+            _traceId = traceId ?? "0";
+            _count = traceId is null ? 3 : 4;
         }
 
         public int Count
         {
             get
             {
-                return 4;
+                return _count;
             }
         }
 

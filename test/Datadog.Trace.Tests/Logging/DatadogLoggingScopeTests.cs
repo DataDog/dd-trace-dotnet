@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.AspNetCore;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -125,6 +126,32 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             _logEvents.RemoveAll(log => !log.Message.ToString().Contains(LogPrefix));
             Assert.All(_logEvents, e => LogEventContains(e, _tracer.DefaultServiceName, _tracer.Settings.ServiceVersion, _tracer.Settings.Environment, scope));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabledWhenNoActiveTracerDoesNotAddTraceId()
+        {
+            using (_logger.BeginScope(CustomScope))
+            using (_logger.BeginScope(new DatadogLoggingScope(_tracer)))
+            {
+                _logger.LogInformation($"{LogPrefix}Entered single scope with a different service name.");
+            }
+
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.Message.ToString().Contains(LogPrefix));
+            Assert.All(_logEvents, logEvent =>
+            {
+                Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogServiceKey));
+                Assert.Equal(_tracer.DefaultServiceName, logEvent.Properties[CorrelationIdentifier.SerilogServiceKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+
+                Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogVersionKey));
+                Assert.Equal(_tracer.Settings.ServiceVersion, logEvent.Properties[CorrelationIdentifier.SerilogVersionKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+
+                Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogEnvKey));
+                Assert.Equal(_tracer.Settings.Environment, logEvent.Properties[CorrelationIdentifier.SerilogEnvKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+
+                Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogTraceIdKey));
+            });
         }
 
         internal static void LogEventContains(LogEvent logEvent, string service, string version, string env, Scope scope)
