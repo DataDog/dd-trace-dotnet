@@ -2,180 +2,187 @@
 
 namespace trace {
 
-bool ParseNumber(PCCOR_SIGNATURE* p_sig, ULONG* number) {
-  ULONG result = CorSigUncompressData(*p_sig, number);
-  if (result == -1) {
+bool ParseNumber(PCCOR_SIGNATURE* p_sig, ULONG* number)
+{
+    ULONG result = CorSigUncompressData(*p_sig, number);
+    if (result == -1) {
+        return false;
+    }
+
+    *p_sig += result;
+    return true;
+}
+
+bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE* p_sig)
+{
+    mdToken type_token;
+    ULONG result;
+    result = CorSigUncompressToken(*p_sig, &type_token);
+    if (result == -1) {
+        return false;
+    }
+
+    *p_sig += result;
+    return true;
+}
+
+bool ParseCustomMod(PCCOR_SIGNATURE* p_sig)
+{
+    if (**p_sig == ELEMENT_TYPE_CMOD_OPT || **p_sig == ELEMENT_TYPE_CMOD_REQD) {
+        *p_sig += 1;
+        return ParseTypeDefOrRefEncoded(p_sig);
+    }
+
     return false;
-  }
-
-  *p_sig += result;
-  return true;
 }
 
-bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE* p_sig) {
-  mdToken type_token;
-  ULONG result;
-  result = CorSigUncompressToken(*p_sig, &type_token);
-  if (result == -1) {
-    return false;
-  }
-
-  *p_sig += result;
-  return true;
-}
-
-bool ParseCustomMod(PCCOR_SIGNATURE* p_sig) {
-  if (**p_sig == ELEMENT_TYPE_CMOD_OPT || **p_sig == ELEMENT_TYPE_CMOD_REQD) {
-    *p_sig += 1;
-    return ParseTypeDefOrRefEncoded(p_sig);
-  }
-
-  return false;
-}
-
-bool ParseOptionalCustomMods(PCCOR_SIGNATURE* p_sig) {
-  while (true) {
-    switch (**p_sig) {
-      case ELEMENT_TYPE_CMOD_OPT:
-      case ELEMENT_TYPE_CMOD_REQD:
-        if (!ParseCustomMod(p_sig)) {
-          return false;
+bool ParseOptionalCustomMods(PCCOR_SIGNATURE* p_sig)
+{
+    while (true) {
+        switch (**p_sig) {
+        case ELEMENT_TYPE_CMOD_OPT:
+        case ELEMENT_TYPE_CMOD_REQD:
+            if (!ParseCustomMod(p_sig)) {
+                return false;
+            }
+            break;
+        default:
+            return true;
         }
-        break;
-      default:
+    }
+
+    return false;
+}
+
+bool ParseRetType(PCCOR_SIGNATURE* p_sig)
+{
+    if (!ParseOptionalCustomMods(p_sig)) {
+        return false;
+    }
+
+    if (**p_sig == ELEMENT_TYPE_TYPEDBYREF || **p_sig == ELEMENT_TYPE_VOID) {
+        *p_sig += 1;
         return true;
     }
-  }
 
-  return false;
-}
-
-bool ParseRetType(PCCOR_SIGNATURE* p_sig) {
-  if (!ParseOptionalCustomMods(p_sig)) {
-    return false;
-  }
-
-  if (**p_sig == ELEMENT_TYPE_TYPEDBYREF ||
-      **p_sig == ELEMENT_TYPE_VOID) {
-    *p_sig += 1;
-    return true;
-  }
-
-  if (**p_sig == ELEMENT_TYPE_BYREF) {
-    *p_sig += 1;
-  }
-
-  return ParseType(p_sig);
-}
-
-bool ParseParam(PCCOR_SIGNATURE* p_sig) {
-  if (!ParseOptionalCustomMods(p_sig)) {
-    return false;
-  }
-
-  if (**p_sig == ELEMENT_TYPE_TYPEDBYREF) {
-    *p_sig += 1;
-    return true;
-  }
-
-  if (**p_sig == ELEMENT_TYPE_BYREF) {
-    *p_sig += 1;
-  }
-
-  return ParseType(p_sig);
-}
-
-bool ParseMethod(PCCOR_SIGNATURE* p_sig) {
-  // Format:  [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount)
-  //                    ParamCount RetType Param* [SENTINEL Param+]
-  if (**p_sig == IMAGE_CEE_CS_CALLCONV_GENERIC) {
-    *p_sig += 1;
-
-    ULONG generic_count = 0;
-    if (!ParseNumber(p_sig, &generic_count)) {
-      return false;
+    if (**p_sig == ELEMENT_TYPE_BYREF) {
+        *p_sig += 1;
     }
-  }
 
-  ULONG param_count = 0;
-  if (!ParseNumber(p_sig, &param_count)) {
-    return false;
-  }
+    return ParseType(p_sig);
+}
 
-  if (!ParseRetType(p_sig)) {
-    return false;
-  }
-
-  bool sentinel_found = false;
-  for (ULONG i = 0; i < param_count; i++) {
-    if (**p_sig == ELEMENT_TYPE_SENTINEL) {
-      if (sentinel_found) {
+bool ParseParam(PCCOR_SIGNATURE* p_sig)
+{
+    if (!ParseOptionalCustomMods(p_sig)) {
         return false;
-      }
-
-      sentinel_found = true;
-      *p_sig += 1;
     }
 
-
-    if (!ParseParam(p_sig)) {
-      return false;
+    if (**p_sig == ELEMENT_TYPE_TYPEDBYREF) {
+        *p_sig += 1;
+        return true;
     }
-  }
 
-  return true;
+    if (**p_sig == ELEMENT_TYPE_BYREF) {
+        *p_sig += 1;
+    }
+
+    return ParseType(p_sig);
 }
 
-bool ParseArrayShape(PCCOR_SIGNATURE* p_sig) {
-  // Format: Rank NumSizes Size* NumLoBounds LoBound*
-  ULONG rank = 0, numsizes = 0, size = 0;
-  if (!ParseNumber(p_sig, &rank) || !ParseNumber(p_sig, &numsizes)) {
-    return false;
-  }
+bool ParseMethod(PCCOR_SIGNATURE* p_sig)
+{
+    // Format:  [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount)
+    //                    ParamCount RetType Param* [SENTINEL Param+]
+    if (**p_sig == IMAGE_CEE_CS_CALLCONV_GENERIC) {
+        *p_sig += 1;
 
-  for (ULONG i = 0; i < numsizes; i++) {
-    if (!ParseNumber(p_sig, &size)) {
-      return false;
+        ULONG generic_count = 0;
+        if (!ParseNumber(p_sig, &generic_count)) {
+            return false;
+        }
     }
-  }
 
-  if (!ParseNumber(p_sig, &numsizes)) {
-    return false;
-  }
-
-  for (ULONG i = 0; i < numsizes; i++) {
-    if (!ParseNumber(p_sig, &size)) {
-      return false;
+    ULONG param_count = 0;
+    if (!ParseNumber(p_sig, &param_count)) {
+        return false;
     }
-  }
 
-  return true;
+    if (!ParseRetType(p_sig)) {
+        return false;
+    }
+
+    bool sentinel_found = false;
+    for (ULONG i = 0; i < param_count; i++) {
+        if (**p_sig == ELEMENT_TYPE_SENTINEL) {
+            if (sentinel_found) {
+                return false;
+            }
+
+            sentinel_found = true;
+            *p_sig += 1;
+        }
+
+        if (!ParseParam(p_sig)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool ParseArrayShape(PCCOR_SIGNATURE* p_sig)
+{
+    // Format: Rank NumSizes Size* NumLoBounds LoBound*
+    ULONG rank = 0, numsizes = 0, size = 0;
+    if (!ParseNumber(p_sig, &rank) || !ParseNumber(p_sig, &numsizes)) {
+        return false;
+    }
+
+    for (ULONG i = 0; i < numsizes; i++) {
+        if (!ParseNumber(p_sig, &size)) {
+            return false;
+        }
+    }
+
+    if (!ParseNumber(p_sig, &numsizes)) {
+        return false;
+    }
+
+    for (ULONG i = 0; i < numsizes; i++) {
+        if (!ParseNumber(p_sig, &size)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 // Returns whether or not the Type signature at the given address could be parsed.
 // If successful, the input pointer will point to the next byte following the Type signature.
 // If not, the input pointer may point to invalid data.
-bool ParseType(PCCOR_SIGNATURE* p_sig) {
-  /*
-  Format = BOOLEAN | CHAR | I1 | U1 | U2 | U2 | I4 | U4 | I8 | U8 | R4 | R8 | I | U | STRING | OBJECT
-               | VALUETYPE TypeDefOrRefEncoded
-               | CLASS TypeDefOrRefEncoded
-               | PTR CustomMod* VOID
-               | PTR CustomMod* Type
-               | FNPTR MethodDefSig
-               | FNPTR MethodRefSig
-               | ARRAY Type ArrayShape
-               | SZARRAY CustomMod* Type
-               | GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
-               | VAR Number
-               | MVAR Number
-  */
+bool ParseType(PCCOR_SIGNATURE* p_sig)
+{
+    /*
+    Format = BOOLEAN | CHAR | I1 | U1 | U2 | U2 | I4 | U4 | I8 | U8 | R4 | R8 | I | U | STRING | OBJECT
+                 | VALUETYPE TypeDefOrRefEncoded
+                 | CLASS TypeDefOrRefEncoded
+                 | PTR CustomMod* VOID
+                 | PTR CustomMod* Type
+                 | FNPTR MethodDefSig
+                 | FNPTR MethodRefSig
+                 | ARRAY Type ArrayShape
+                 | SZARRAY CustomMod* Type
+                 | GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+                 | VAR Number
+                 | MVAR Number
+    */
 
-  const auto cor_element_type = CorElementType(**p_sig);
-  ULONG number = 0;
-  *p_sig += 1;
+    const auto cor_element_type = CorElementType(**p_sig);
+    ULONG number = 0;
+    *p_sig += 1;
 
-  switch (cor_element_type) {
+    switch (cor_element_type) {
     case ELEMENT_TYPE_VOID:
     case ELEMENT_TYPE_BOOLEAN:
     case ELEMENT_TYPE_CHAR:
@@ -191,76 +198,76 @@ bool ParseType(PCCOR_SIGNATURE* p_sig) {
     case ELEMENT_TYPE_R8:
     case ELEMENT_TYPE_STRING:
     case ELEMENT_TYPE_OBJECT:
-      return true;
+        return true;
 
     case ELEMENT_TYPE_PTR:
-      // Format: PTR CustomMod* VOID
-      // Format: PTR CustomMod* Type
-      if (!ParseOptionalCustomMods(p_sig)) {
-        return false;
-      }
+        // Format: PTR CustomMod* VOID
+        // Format: PTR CustomMod* Type
+        if (!ParseOptionalCustomMods(p_sig)) {
+            return false;
+        }
 
-      if (**p_sig == ELEMENT_TYPE_VOID) {
-        *p_sig += 1;
-        return true;
-      } else {
-        return ParseType(p_sig);
-      }
+        if (**p_sig == ELEMENT_TYPE_VOID) {
+            *p_sig += 1;
+            return true;
+        } else {
+            return ParseType(p_sig);
+        }
 
     case ELEMENT_TYPE_VALUETYPE:
     case ELEMENT_TYPE_CLASS:
-      // Format: CLASS TypeDefOrRefEncoded
-      // Format: VALUETYPE TypeDefOrRefEncoded
-      return ParseTypeDefOrRefEncoded(p_sig);
+        // Format: CLASS TypeDefOrRefEncoded
+        // Format: VALUETYPE TypeDefOrRefEncoded
+        return ParseTypeDefOrRefEncoded(p_sig);
 
     case ELEMENT_TYPE_FNPTR:
-      // Format: FNPTR MethodDefSig
-      // Format: FNPTR MethodRefSig
-      return ParseMethod(p_sig);
+        // Format: FNPTR MethodDefSig
+        // Format: FNPTR MethodRefSig
+        return ParseMethod(p_sig);
 
     case ELEMENT_TYPE_ARRAY:
-      // Format: ARRAY Type ArrayShape
-      if (!ParseType(p_sig)) {
-        return false;
-      }
-      return ParseArrayShape(p_sig);
+        // Format: ARRAY Type ArrayShape
+        if (!ParseType(p_sig)) {
+            return false;
+        }
+        return ParseArrayShape(p_sig);
 
     case ELEMENT_TYPE_SZARRAY:
-      // Format: SZARRAY CustomMod* Type
-      if (!ParseOptionalCustomMods(p_sig)) {
-        return false;
-      }
-      return ParseType(p_sig);
+        // Format: SZARRAY CustomMod* Type
+        if (!ParseOptionalCustomMods(p_sig)) {
+            return false;
+        }
+        return ParseType(p_sig);
 
     case ELEMENT_TYPE_GENERICINST:
-      if (**p_sig != ELEMENT_TYPE_VALUETYPE && **p_sig != ELEMENT_TYPE_CLASS) {
-        return false;
-      }
-
-      *p_sig += 1;
-      if (!ParseTypeDefOrRefEncoded(p_sig)) {
-        return false;
-      }
-
-      if (!ParseNumber(p_sig, &number)) {
-        return false;
-      }
-
-      for (ULONG i = 0; i < number; i++) {
-        if (!ParseType(p_sig)) {
-          return false;
+        if (**p_sig != ELEMENT_TYPE_VALUETYPE && **p_sig != ELEMENT_TYPE_CLASS) {
+            return false;
         }
-      }
-      return true;
+
+        *p_sig += 1;
+        if (!ParseTypeDefOrRefEncoded(p_sig)) {
+            return false;
+        }
+
+        if (!ParseNumber(p_sig, &number)) {
+            return false;
+        }
+
+        for (ULONG i = 0; i < number; i++) {
+            if (!ParseType(p_sig)) {
+                return false;
+            }
+        }
+        return true;
 
     case ELEMENT_TYPE_VAR:
     case ELEMENT_TYPE_MVAR:
-      // Format: VAR Number
-      // Format: MVAR Number
-      return ParseNumber(p_sig, &number);
+        // Format: VAR Number
+        // Format: MVAR Number
+        return ParseNumber(p_sig, &number);
 
     default:
-      return false;
-  }
+        return false;
+    }
 }
-}
+} // namespace trace

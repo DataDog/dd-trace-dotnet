@@ -1,3 +1,5 @@
 ---
-# We'll use defaults from the LLVM style, but with 4 columns indentation.
-BasedOnStyle: Google
+BasedOnStyle: Microsoft
+BreakBeforeBraces: WebKit
+PointerAlignment: Left
+ColumnLimit: '120'

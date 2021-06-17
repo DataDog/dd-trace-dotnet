@@ -6,4 +6,4 @@ namespace trace {
 
 bool ParseType(PCCOR_SIGNATURE* p_sig);
 
-}  // namespace trace
+} // namespace trace
