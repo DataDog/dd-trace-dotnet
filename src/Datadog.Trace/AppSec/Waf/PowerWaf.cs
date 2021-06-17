@@ -18,7 +18,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PowerWaf));
 
-        private Rule rule;
+        private readonly Rule rule;
         private bool disposed = false;
 
         public PowerWaf()

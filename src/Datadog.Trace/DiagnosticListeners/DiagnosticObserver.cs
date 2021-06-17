@@ -48,7 +48,6 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             try
             {
-                Log.Debug(value.Key + " " + value.Value);
                 OnNext(value.Key, value.Value);
             }
             catch (Exception ex)
