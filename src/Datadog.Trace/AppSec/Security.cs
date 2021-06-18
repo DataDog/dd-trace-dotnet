@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec
 {
@@ -17,6 +17,8 @@ namespace Datadog.Trace.AppSec
     /// </summary>
     public class Security : IDatadogSecurity
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
+
         private static Security _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
@@ -91,9 +93,13 @@ namespace Datadog.Trace.AppSec
                 additiveContext = _powerWaf.CreateAdditiveContext();
                 transport.SetAdditiveContext(additiveContext);
             }
-
             // run the WAF and execute the results
             using var result = additiveContext.Run(args);
+            if (result.ReturnCode == ReturnCode.Monitor || result.ReturnCode == ReturnCode.Block)
+            {
+                Log.Warning($"Attack detetected! Action: {result.ReturnCode} " + string.Join(", ", args.Select(x => $"{x.Key}: {x.Value}")));
+            }
+
             if (result.ReturnCode == ReturnCode.Block)
             {
                 transport.Block();
