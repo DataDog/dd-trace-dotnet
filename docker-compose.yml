@@ -618,6 +618,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
+      - PerformComprehensiveTesting=${performComprehensiveTesting:-false}
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
@@ -683,6 +684,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}
+      - PerformComprehensiveTesting=${performComprehensiveTesting:-false}
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
