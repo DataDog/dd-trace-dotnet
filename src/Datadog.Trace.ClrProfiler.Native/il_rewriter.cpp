@@ -259,63 +259,63 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL)
 
         switch (flags)
         {
-        case 0:
-            break;
-        case 1:
-            pInstr->m_Arg8 = *(UNALIGNED INT8*) &(pIL[offset]);
-            break;
-        case 2:
-            pInstr->m_Arg16 = *(UNALIGNED INT16*) &(pIL[offset]);
-            break;
-        case 4:
-            pInstr->m_Arg32 = *(UNALIGNED INT32*) &(pIL[offset]);
-            break;
-        case 8:
-            pInstr->m_Arg64 = *(UNALIGNED INT64*) &(pIL[offset]);
-            break;
-        case 1 | OPCODEFLAGS_BranchTarget:
-            pInstr->m_Arg32 = offset + 1 + *(UNALIGNED INT8*) &(pIL[offset]);
-            fBranch = true;
-            break;
-        case 4 | OPCODEFLAGS_BranchTarget:
-            pInstr->m_Arg32 = offset + 4 + *(UNALIGNED INT32*) &(pIL[offset]);
-            fBranch = true;
-            break;
-        case 0 | OPCODEFLAGS_Switch:
-        {
-            if (offset + sizeof(INT32) > m_CodeSize)
-            {
-                return COR_E_INVALIDPROGRAM;
-            }
-
-            unsigned nTargets = *(UNALIGNED INT32*) &(pIL[offset]);
-            pInstr->m_Arg32 = nTargets;
-            offset += sizeof(INT32);
-
-            unsigned base = offset + nTargets * sizeof(INT32);
-
-            for (unsigned iTarget = 0; iTarget < nTargets; iTarget++)
+            case 0:
+                break;
+            case 1:
+                pInstr->m_Arg8 = *(UNALIGNED INT8*) &(pIL[offset]);
+                break;
+            case 2:
+                pInstr->m_Arg16 = *(UNALIGNED INT16*) &(pIL[offset]);
+                break;
+            case 4:
+                pInstr->m_Arg32 = *(UNALIGNED INT32*) &(pIL[offset]);
+                break;
+            case 8:
+                pInstr->m_Arg64 = *(UNALIGNED INT64*) &(pIL[offset]);
+                break;
+            case 1 | OPCODEFLAGS_BranchTarget:
+                pInstr->m_Arg32 = offset + 1 + *(UNALIGNED INT8*) &(pIL[offset]);
+                fBranch = true;
+                break;
+            case 4 | OPCODEFLAGS_BranchTarget:
+                pInstr->m_Arg32 = offset + 4 + *(UNALIGNED INT32*) &(pIL[offset]);
+                fBranch = true;
+                break;
+            case 0 | OPCODEFLAGS_Switch:
             {
                 if (offset + sizeof(INT32) > m_CodeSize)
                 {
                     return COR_E_INVALIDPROGRAM;
                 }
 
-                pInstr = NewILInstr();
-                IfNullRet(pInstr);
-
-                pInstr->m_opcode = CEE_SWITCH_ARG;
-
-                pInstr->m_Arg32 = base + *(UNALIGNED INT32*) &(pIL[offset]);
+                unsigned nTargets = *(UNALIGNED INT32*) &(pIL[offset]);
+                pInstr->m_Arg32 = nTargets;
                 offset += sizeof(INT32);
 
-                InsertBefore(&m_IL, pInstr);
+                unsigned base = offset + nTargets * sizeof(INT32);
+
+                for (unsigned iTarget = 0; iTarget < nTargets; iTarget++)
+                {
+                    if (offset + sizeof(INT32) > m_CodeSize)
+                    {
+                        return COR_E_INVALIDPROGRAM;
+                    }
+
+                    pInstr = NewILInstr();
+                    IfNullRet(pInstr);
+
+                    pInstr->m_opcode = CEE_SWITCH_ARG;
+
+                    pInstr->m_Arg32 = base + *(UNALIGNED INT32*) &(pIL[offset]);
+                    offset += sizeof(INT32);
+
+                    InsertBefore(&m_IL, pInstr);
+                }
+                fBranch = true;
+                break;
             }
-            fBranch = true;
-            break;
-        }
-        default:
-            return COR_E_INVALIDPROGRAM;
+            default:
+                return COR_E_INVALIDPROGRAM;
         }
         offset += size;
     }
@@ -494,32 +494,32 @@ again:
         BYTE flags = s_OpCodeFlags[pInstr->m_opcode];
         switch (flags)
         {
-        case 0:
-            break;
-        case 1:
-            *(UNALIGNED INT8*) &(pIL[offset]) = pInstr->m_Arg8;
-            break;
-        case 2:
-            *(UNALIGNED INT16*) &(pIL[offset]) = pInstr->m_Arg16;
-            break;
-        case 4:
-            *(UNALIGNED INT32*) &(pIL[offset]) = pInstr->m_Arg32;
-            break;
-        case 8:
-            *(UNALIGNED INT64*) &(pIL[offset]) = pInstr->m_Arg64;
-            break;
-        case 1 | OPCODEFLAGS_BranchTarget:
-            fBranch = true;
-            break;
-        case 4 | OPCODEFLAGS_BranchTarget:
-            fBranch = true;
-            break;
-        case 0 | OPCODEFLAGS_Switch:
-            *(UNALIGNED INT32*) &(pIL[offset]) = pInstr->m_Arg32;
-            offset += sizeof(INT32);
-            break;
-        default:
-            return COR_E_INVALIDPROGRAM;
+            case 0:
+                break;
+            case 1:
+                *(UNALIGNED INT8*) &(pIL[offset]) = pInstr->m_Arg8;
+                break;
+            case 2:
+                *(UNALIGNED INT16*) &(pIL[offset]) = pInstr->m_Arg16;
+                break;
+            case 4:
+                *(UNALIGNED INT32*) &(pIL[offset]) = pInstr->m_Arg32;
+                break;
+            case 8:
+                *(UNALIGNED INT64*) &(pIL[offset]) = pInstr->m_Arg64;
+                break;
+            case 1 | OPCODEFLAGS_BranchTarget:
+                fBranch = true;
+                break;
+            case 4 | OPCODEFLAGS_BranchTarget:
+                fBranch = true;
+                break;
+            case 0 | OPCODEFLAGS_Switch:
+                *(UNALIGNED INT32*) &(pIL[offset]) = pInstr->m_Arg32;
+                offset += sizeof(INT32);
+                break;
+            default:
+                return COR_E_INVALIDPROGRAM;
         }
         offset += (flags & OPCODEFLAGS_SizeMask);
     }
@@ -555,40 +555,40 @@ again:
 
                 switch (flags)
                 {
-                case 1 | OPCODEFLAGS_BranchTarget:
-                    // Check if delta is too big to fit into an INT8.
-                    //
-                    // (see #pragma at top of file)
-                    if ((INT8) delta != delta)
-                    {
-                        if (opcode == CEE_LEAVE_S)
+                    case 1 | OPCODEFLAGS_BranchTarget:
+                        // Check if delta is too big to fit into an INT8.
+                        //
+                        // (see #pragma at top of file)
+                        if ((INT8) delta != delta)
                         {
-                            pInstr->m_opcode = CEE_LEAVE;
-                        }
-                        else
-                        {
-                            if (!(opcode >= CEE_BR_S && opcode <= CEE_BLT_UN_S))
+                            if (opcode == CEE_LEAVE_S)
                             {
-                                return COR_E_INVALIDPROGRAM;
+                                pInstr->m_opcode = CEE_LEAVE;
                             }
-
-                            pInstr->m_opcode = opcode - CEE_BR_S + CEE_BR;
-
-                            if (!(pInstr->m_opcode >= CEE_BR && pInstr->m_opcode <= CEE_BLT_UN))
+                            else
                             {
-                                return COR_E_INVALIDPROGRAM;
+                                if (!(opcode >= CEE_BR_S && opcode <= CEE_BLT_UN_S))
+                                {
+                                    return COR_E_INVALIDPROGRAM;
+                                }
+
+                                pInstr->m_opcode = opcode - CEE_BR_S + CEE_BR;
+
+                                if (!(pInstr->m_opcode >= CEE_BR && pInstr->m_opcode <= CEE_BLT_UN))
+                                {
+                                    return COR_E_INVALIDPROGRAM;
+                                }
                             }
+                            fTryAgain = true;
+                            continue;
                         }
-                        fTryAgain = true;
-                        continue;
-                    }
-                    *(UNALIGNED INT8*) &(pIL[pInstr->m_pNext->m_offset - sizeof(INT8)]) = delta;
-                    break;
-                case 4 | OPCODEFLAGS_BranchTarget:
-                    *(UNALIGNED INT32*) &(pIL[pInstr->m_pNext->m_offset - sizeof(INT32)]) = delta;
-                    break;
-                default:
-                    return COR_E_INVALIDPROGRAM;
+                        *(UNALIGNED INT8*) &(pIL[pInstr->m_pNext->m_offset - sizeof(INT8)]) = delta;
+                        break;
+                    case 4 | OPCODEFLAGS_BranchTarget:
+                        *(UNALIGNED INT32*) &(pIL[pInstr->m_pNext->m_offset - sizeof(INT32)]) = delta;
+                        break;
+                    default:
+                        return COR_E_INVALIDPROGRAM;
                 }
             }
         }

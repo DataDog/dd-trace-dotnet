@@ -3415,22 +3415,22 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     {
         switch (pInstr->m_opcode)
         {
-        case CEE_RET:
-        {
-            if (pInstr != methodReturnInstr)
+            case CEE_RET:
             {
-                if (!isVoid)
+                if (pInstr != methodReturnInstr)
                 {
-                    reWriterWrapper.SetILPosition(pInstr);
-                    reWriterWrapper.StLocal(returnValueIndex);
+                    if (!isVoid)
+                    {
+                        reWriterWrapper.SetILPosition(pInstr);
+                        reWriterWrapper.StLocal(returnValueIndex);
+                    }
+                    pInstr->m_opcode = CEE_LEAVE_S;
+                    pInstr->m_pTarget = endFinallyInstr->m_pNext;
                 }
-                pInstr->m_opcode = CEE_LEAVE_S;
-                pInstr->m_pTarget = endFinallyInstr->m_pNext;
+                break;
             }
-            break;
-        }
-        default:
-            break;
+            default:
+                break;
         }
     }
 

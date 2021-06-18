@@ -133,35 +133,35 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, co
     const auto token_type = TypeFromToken(token);
     switch (token_type)
     {
-    case mdtMemberRef:
-        hr = metadata_import->GetMemberRefProps(token, &parent_token, function_name, kNameMaxSize, &function_name_len,
-                                                &raw_signature, &raw_signature_len);
-        break;
-    case mdtMethodDef:
-        hr = metadata_import->GetMemberProps(token, &parent_token, function_name, kNameMaxSize, &function_name_len,
-                                             nullptr, &raw_signature, &raw_signature_len, nullptr, nullptr, nullptr,
-                                             nullptr, nullptr);
-        break;
-    case mdtMethodSpec:
-    {
-        hr = metadata_import->GetMethodSpecProps(token, &parent_token, &raw_signature, &raw_signature_len);
-        is_generic = true;
-        if (FAILED(hr))
+        case mdtMemberRef:
+            hr = metadata_import->GetMemberRefProps(token, &parent_token, function_name, kNameMaxSize,
+                                                    &function_name_len, &raw_signature, &raw_signature_len);
+            break;
+        case mdtMethodDef:
+            hr = metadata_import->GetMemberProps(token, &parent_token, function_name, kNameMaxSize, &function_name_len,
+                                                 nullptr, &raw_signature, &raw_signature_len, nullptr, nullptr, nullptr,
+                                                 nullptr, nullptr);
+            break;
+        case mdtMethodSpec:
         {
-            return {};
+            hr = metadata_import->GetMethodSpecProps(token, &parent_token, &raw_signature, &raw_signature_len);
+            is_generic = true;
+            if (FAILED(hr))
+            {
+                return {};
+            }
+            const auto generic_info = GetFunctionInfo(metadata_import, parent_token);
+            final_signature_bytes = generic_info.signature.data;
+            method_spec_signature = GetSignatureByteRepresentation(raw_signature_len, raw_signature);
+            std::memcpy(function_name, generic_info.name.c_str(), sizeof(WCHAR) * (generic_info.name.length() + 1));
+            function_name_len = DWORD(generic_info.name.length() + 1);
+            method_spec_token = token;
+            method_def_token = generic_info.id;
         }
-        const auto generic_info = GetFunctionInfo(metadata_import, parent_token);
-        final_signature_bytes = generic_info.signature.data;
-        method_spec_signature = GetSignatureByteRepresentation(raw_signature_len, raw_signature);
-        std::memcpy(function_name, generic_info.name.c_str(), sizeof(WCHAR) * (generic_info.name.length() + 1));
-        function_name_len = DWORD(generic_info.name.length() + 1);
-        method_spec_token = token;
-        method_def_token = generic_info.id;
-    }
-    break;
-    default:
-        Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
-        return {};
+        break;
+        default:
+            Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
+            return {};
     }
     if (FAILED(hr) || function_name_len == 0)
     {
@@ -224,57 +224,58 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
 
     switch (token_type)
     {
-    case mdtTypeDef:
-        hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize, &type_name_len, &type_flags,
-                                              &type_extends);
+        case mdtTypeDef:
+            hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize, &type_name_len, &type_flags,
+                                                  &type_extends);
 
-        metadata_import->GetNestedClassProps(token, &parent_type_token);
-        if (parent_type_token != mdTokenNil)
+            metadata_import->GetNestedClassProps(token, &parent_type_token);
+            if (parent_type_token != mdTokenNil)
+            {
+                parentTypeInfo = new TypeInfo(GetTypeInfo(metadata_import, parent_type_token));
+            }
+
+            if (type_extends != mdTokenNil)
+            {
+                extendsInfo = new TypeInfo(GetTypeInfo(metadata_import, type_extends));
+                type_valueType =
+                    extendsInfo->name == WStr("System.ValueType") || extendsInfo->name == WStr("System.Enum");
+            }
+            break;
+        case mdtTypeRef:
+            hr = metadata_import->GetTypeRefProps(token, &parent_token, type_name, kNameMaxSize, &type_name_len);
+            break;
+        case mdtTypeSpec:
         {
-            parentTypeInfo = new TypeInfo(GetTypeInfo(metadata_import, parent_type_token));
-        }
+            PCCOR_SIGNATURE signature{};
+            ULONG signature_length{};
 
-        if (type_extends != mdTokenNil)
-        {
-            extendsInfo = new TypeInfo(GetTypeInfo(metadata_import, type_extends));
-            type_valueType = extendsInfo->name == WStr("System.ValueType") || extendsInfo->name == WStr("System.Enum");
+            hr = metadata_import->GetTypeSpecFromToken(token, &signature, &signature_length);
+
+            if (FAILED(hr) || signature_length < 3)
+            {
+                return {};
+            }
+
+            if (signature[0] & ELEMENT_TYPE_GENERICINST)
+            {
+                mdToken type_token;
+                CorSigUncompressToken(&signature[2], &type_token);
+                const auto baseType = GetTypeInfo(metadata_import, type_token);
+                return {baseType.id,        baseType.name,        token,
+                        token_type,         baseType.extend_from, baseType.valueType,
+                        baseType.isGeneric, baseType.parent_type};
+            }
         }
         break;
-    case mdtTypeRef:
-        hr = metadata_import->GetTypeRefProps(token, &parent_token, type_name, kNameMaxSize, &type_name_len);
-        break;
-    case mdtTypeSpec:
-    {
-        PCCOR_SIGNATURE signature{};
-        ULONG signature_length{};
-
-        hr = metadata_import->GetTypeSpecFromToken(token, &signature, &signature_length);
-
-        if (FAILED(hr) || signature_length < 3)
-        {
-            return {};
-        }
-
-        if (signature[0] & ELEMENT_TYPE_GENERICINST)
-        {
-            mdToken type_token;
-            CorSigUncompressToken(&signature[2], &type_token);
-            const auto baseType = GetTypeInfo(metadata_import, type_token);
-            return {baseType.id,        baseType.name,        token,
-                    token_type,         baseType.extend_from, baseType.valueType,
-                    baseType.isGeneric, baseType.parent_type};
-        }
-    }
-    break;
-    case mdtModuleRef:
-        metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize, &type_name_len);
-        break;
-    case mdtMemberRef:
-        return GetFunctionInfo(metadata_import, token).type;
-        break;
-    case mdtMethodDef:
-        return GetFunctionInfo(metadata_import, token).type;
-        break;
+        case mdtModuleRef:
+            metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize, &type_name_len);
+            break;
+        case mdtMemberRef:
+            return GetFunctionInfo(metadata_import, token).type;
+            break;
+        case mdtMethodDef:
+            return GetFunctionInfo(metadata_import, token).type;
+            break;
     }
     if (FAILED(hr) || type_name_len == 0)
     {
@@ -515,216 +516,217 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import, con
 
             switch (cor_element_type)
             {
-            case ELEMENT_TYPE_VOID:
-            {
-                current_type_name.append(WStr("System.Void"));
-                break;
-            }
-
-            case ELEMENT_TYPE_BOOLEAN:
-            {
-                current_type_name.append(WStr("System.Boolean"));
-                break;
-            }
-
-            case ELEMENT_TYPE_CHAR:
-            {
-                current_type_name.append(WStr("System.Char16"));
-                break;
-            }
-
-            case ELEMENT_TYPE_I1:
-            {
-                current_type_name.append(WStr("System.SByte"));
-                break;
-            }
-
-            case ELEMENT_TYPE_U1:
-            {
-                current_type_name.append(WStr("System.Byte"));
-                break;
-            }
-
-            case ELEMENT_TYPE_I2:
-            {
-                current_type_name.append(WStr("System.Int16"));
-                break;
-            }
-
-            case ELEMENT_TYPE_U2:
-            {
-                current_type_name.append(WStr("System.UInt16"));
-                break;
-            }
-
-            case ELEMENT_TYPE_I4:
-            {
-                current_type_name.append(WStr("System.Int32"));
-                break;
-            }
-
-            case ELEMENT_TYPE_U4:
-            {
-                current_type_name.append(WStr("System.UInt32"));
-                break;
-            }
-
-            case ELEMENT_TYPE_I8:
-            {
-                current_type_name.append(WStr("System.Int64"));
-                break;
-            }
-
-            case ELEMENT_TYPE_U8:
-            {
-                current_type_name.append(WStr("System.UInt64"));
-                break;
-            }
-
-            case ELEMENT_TYPE_R4:
-            {
-                current_type_name.append(WStr("System.Single"));
-                break;
-            }
-
-            case ELEMENT_TYPE_R8:
-            {
-                current_type_name.append(WStr("System.Double"));
-                break;
-            }
-
-            case ELEMENT_TYPE_STRING:
-            {
-                current_type_name.append(WStr("System.String"));
-                break;
-            }
-
-            case ELEMENT_TYPE_OBJECT:
-            {
-                current_type_name.append(WStr("System.Object"));
-                break;
-            }
-
-            case ELEMENT_TYPE_VALUETYPE:
-            case ELEMENT_TYPE_CLASS:
-            {
-                current_index++;
-                auto type_data = RetrieveTypeForSignature(metadata_import, function_info, current_index, token_length);
-
-                mdToken examined_type_token = type_data.id;
-                auto examined_type_name = type_data.name;
-                auto ongoing_type_name = examined_type_name;
-
-                // check for whether this may be a nested class
-                while (examined_type_name.find_first_of(WStr(".")) == std::string::npos)
+                case ELEMENT_TYPE_VOID:
                 {
-                    // This may possibly be a nested class, check for the parent
-                    mdToken potentialParentToken;
-                    metadata_import->GetNestedClassProps(examined_type_token, &potentialParentToken);
+                    current_type_name.append(WStr("System.Void"));
+                    break;
+                }
 
-                    if (potentialParentToken == mdTokenNil)
+                case ELEMENT_TYPE_BOOLEAN:
+                {
+                    current_type_name.append(WStr("System.Boolean"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_CHAR:
+                {
+                    current_type_name.append(WStr("System.Char16"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_I1:
+                {
+                    current_type_name.append(WStr("System.SByte"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_U1:
+                {
+                    current_type_name.append(WStr("System.Byte"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_I2:
+                {
+                    current_type_name.append(WStr("System.Int16"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_U2:
+                {
+                    current_type_name.append(WStr("System.UInt16"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_I4:
+                {
+                    current_type_name.append(WStr("System.Int32"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_U4:
+                {
+                    current_type_name.append(WStr("System.UInt32"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_I8:
+                {
+                    current_type_name.append(WStr("System.Int64"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_U8:
+                {
+                    current_type_name.append(WStr("System.UInt64"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_R4:
+                {
+                    current_type_name.append(WStr("System.Single"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_R8:
+                {
+                    current_type_name.append(WStr("System.Double"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_STRING:
+                {
+                    current_type_name.append(WStr("System.String"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_OBJECT:
+                {
+                    current_type_name.append(WStr("System.Object"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_VALUETYPE:
+                case ELEMENT_TYPE_CLASS:
+                {
+                    current_index++;
+                    auto type_data =
+                        RetrieveTypeForSignature(metadata_import, function_info, current_index, token_length);
+
+                    mdToken examined_type_token = type_data.id;
+                    auto examined_type_name = type_data.name;
+                    auto ongoing_type_name = examined_type_name;
+
+                    // check for whether this may be a nested class
+                    while (examined_type_name.find_first_of(WStr(".")) == std::string::npos)
                     {
-                        break;
+                        // This may possibly be a nested class, check for the parent
+                        mdToken potentialParentToken;
+                        metadata_import->GetNestedClassProps(examined_type_token, &potentialParentToken);
+
+                        if (potentialParentToken == mdTokenNil)
+                        {
+                            break;
+                        }
+
+                        auto nesting_type = GetTypeInfo(metadata_import, potentialParentToken);
+
+                        examined_type_token = nesting_type.id;
+                        examined_type_name = nesting_type.name;
+
+                        ongoing_type_name = examined_type_name + WStr("+") + ongoing_type_name;
                     }
 
-                    auto nesting_type = GetTypeInfo(metadata_import, potentialParentToken);
-
-                    examined_type_token = nesting_type.id;
-                    examined_type_name = nesting_type.name;
-
-                    ongoing_type_name = examined_type_name + WStr("+") + ongoing_type_name;
+                    // index will be moved up one on every loop
+                    // handle tokens which have more than one byte
+                    current_index += token_length - 1;
+                    current_type_name.append(ongoing_type_name);
+                    break;
                 }
 
-                // index will be moved up one on every loop
-                // handle tokens which have more than one byte
-                current_index += token_length - 1;
-                current_type_name.append(ongoing_type_name);
-                break;
-            }
-
-            case ELEMENT_TYPE_SZARRAY:
-            {
-                append_to_type.append(WStr("[]"));
-                while (function_info.signature.data[(current_index + 1)] == ELEMENT_TYPE_SZARRAY)
+                case ELEMENT_TYPE_SZARRAY:
                 {
                     append_to_type.append(WStr("[]"));
-                    current_index++;
+                    while (function_info.signature.data[(current_index + 1)] == ELEMENT_TYPE_SZARRAY)
+                    {
+                        append_to_type.append(WStr("[]"));
+                        current_index++;
+                    }
+                    // Next will be the type of the array(s)
+                    continue;
                 }
-                // Next will be the type of the array(s)
-                continue;
-            }
 
-            case ELEMENT_TYPE_MVAR:
-            {
-                // We are likely parsing a standalone generic param
-                token_length =
-                    CorSigUncompressToken(PCCOR_SIGNATURE(&function_info.signature.data[current_index]), &type_token);
-                current_type_name.append(WStr("T"));
-                current_index += token_length;
-                // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
-                // current_type_name.append(std::to_wstring(type_token));
-                break;
-            }
-
-            case ELEMENT_TYPE_VAR:
-            {
-                // We are likely within a generic variant
-                token_length =
-                    CorSigUncompressToken(PCCOR_SIGNATURE(&function_info.signature.data[current_index]), &type_token);
-                current_type_name.append(WStr("T"));
-                current_index += token_length;
-                // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
-                // current_type_name.append(std::to_wstring(type_token));
-                break;
-            }
-
-            case ELEMENT_TYPE_GENERICINST:
-            {
-                // skip past generic type indicator token
-                current_index++;
-                // skip past actual generic type token (probably a class)
-                current_index++;
-                const auto generic_type_data =
-                    RetrieveTypeForSignature(metadata_import, function_info, current_index, token_length);
-                auto type_name = generic_type_data.name;
-                current_type_name.append(type_name);
-                current_type_name.append(WStr("<")); // Begin generic args
-
-                // Because we are starting a new generic, decrement any existing level
-                if (!generic_arg_stack.empty())
+                case ELEMENT_TYPE_MVAR:
                 {
-                    generic_arg_stack.top()--;
+                    // We are likely parsing a standalone generic param
+                    token_length = CorSigUncompressToken(PCCOR_SIGNATURE(&function_info.signature.data[current_index]),
+                                                         &type_token);
+                    current_type_name.append(WStr("T"));
+                    current_index += token_length;
+                    // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
+                    // current_type_name.append(std::to_wstring(type_token));
+                    break;
                 }
 
-                // figure out how many generic args this type has
-                const auto index_of_tick = type_name.find_last_of('`');
-                auto num_args_text = ToString(type_name.substr(index_of_tick + 1));
-                auto actual_arg_count = std::stoi(num_args_text, nullptr);
-                generic_arg_stack.push(actual_arg_count);
-                current_index += token_length;
-                // Next will be the variants
-                continue;
-            }
+                case ELEMENT_TYPE_VAR:
+                {
+                    // We are likely within a generic variant
+                    token_length = CorSigUncompressToken(PCCOR_SIGNATURE(&function_info.signature.data[current_index]),
+                                                         &type_token);
+                    current_type_name.append(WStr("T"));
+                    current_index += token_length;
+                    // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
+                    // current_type_name.append(std::to_wstring(type_token));
+                    break;
+                }
 
-            case ELEMENT_TYPE_BYREF:
-            {
-                // TODO: This hasn't been encountered yet
-                current_type_name.append(WStr("ref"));
-                break;
-            }
+                case ELEMENT_TYPE_GENERICINST:
+                {
+                    // skip past generic type indicator token
+                    current_index++;
+                    // skip past actual generic type token (probably a class)
+                    current_index++;
+                    const auto generic_type_data =
+                        RetrieveTypeForSignature(metadata_import, function_info, current_index, token_length);
+                    auto type_name = generic_type_data.name;
+                    current_type_name.append(type_name);
+                    current_type_name.append(WStr("<")); // Begin generic args
 
-            case ELEMENT_TYPE_END:
-            {
-                // we already handle the generic by counting args
-                continue;
-            }
+                    // Because we are starting a new generic, decrement any existing level
+                    if (!generic_arg_stack.empty())
+                    {
+                        generic_arg_stack.top()--;
+                    }
 
-            default:
-            {
-                // This is unexpected and we should report that, and not instrument
-                current_type_name.append(ToWSTRING(ToString(cor_element_type)));
-                break;
-            }
+                    // figure out how many generic args this type has
+                    const auto index_of_tick = type_name.find_last_of('`');
+                    auto num_args_text = ToString(type_name.substr(index_of_tick + 1));
+                    auto actual_arg_count = std::stoi(num_args_text, nullptr);
+                    generic_arg_stack.push(actual_arg_count);
+                    current_index += token_length;
+                    // Next will be the variants
+                    continue;
+                }
+
+                case ELEMENT_TYPE_BYREF:
+                {
+                    // TODO: This hasn't been encountered yet
+                    current_type_name.append(WStr("ref"));
+                    break;
+                }
+
+                case ELEMENT_TYPE_END:
+                {
+                    // we already handle the generic by counting args
+                    continue;
+                }
+
+                default:
+                {
+                    // This is unexpected and we should report that, and not instrument
+                    current_type_name.append(ToWSTRING(ToString(cor_element_type)));
+                    break;
+                }
             }
 
             if (!append_to_type.empty())
@@ -821,70 +823,71 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<
 
     switch (cor_element_type)
     {
-    case ELEMENT_TYPE_VALUETYPE:
-    {
-        ULONG result;
-        result = CorSigUncompressToken(p_sig + 1, ret_type_token);
-        if (result == -1)
+        case ELEMENT_TYPE_VALUETYPE:
         {
-            Warn("[trace::ReturnTypeTokenforElementType] ELEMENT_TYPE_VALUETYPE failed to find uncompress TypeRef or "
-                 "TypeDef");
-            return false;
+            ULONG result;
+            result = CorSigUncompressToken(p_sig + 1, ret_type_token);
+            if (result == -1)
+            {
+                Warn("[trace::ReturnTypeTokenforElementType] ELEMENT_TYPE_VALUETYPE failed to find uncompress TypeRef "
+                     "or "
+                     "TypeDef");
+                return false;
+            }
+
+            return true;
         }
 
-        return true;
-    }
-
-    case ELEMENT_TYPE_VOID: // 0x01  // System.Void (struct)
-        managed_type_name = WStr("System.Void");
-        break;
-    case ELEMENT_TYPE_BOOLEAN: // 0x02  // System.Boolean (struct)
-        managed_type_name = WStr("System.Boolean");
-        break;
-    case ELEMENT_TYPE_CHAR: // 0x03  // System.Char (struct)
-        managed_type_name = WStr("System.Char");
-        break;
-    case ELEMENT_TYPE_I1: // 0x04  // System.SByte (struct)
-        managed_type_name = WStr("System.SByte");
-        break;
-    case ELEMENT_TYPE_U1: // 0x05  // System.Byte (struct)
-        managed_type_name = WStr("System.Byte");
-        break;
-    case ELEMENT_TYPE_I2: // 0x06  // System.Int16 (struct)
-        managed_type_name = WStr("System.Int16");
-        break;
-    case ELEMENT_TYPE_U2: // 0x07  // System.UInt16 (struct)
-        managed_type_name = WStr("System.UInt16");
-        break;
-    case ELEMENT_TYPE_I4: // 0x08  // System.Int32 (struct)
-        managed_type_name = WStr("System.Int32");
-        break;
-    case ELEMENT_TYPE_U4: // 0x09  // System.UInt32 (struct)
-        managed_type_name = WStr("System.UInt32");
-        break;
-    case ELEMENT_TYPE_I8: // 0x0a  // System.Int64 (struct)
-        managed_type_name = WStr("System.Int64");
-        break;
-    case ELEMENT_TYPE_U8: // 0x0b  // System.UInt64 (struct)
-        managed_type_name = WStr("System.UInt64");
-        break;
-    case ELEMENT_TYPE_R4: // 0x0c  // System.Single (struct)
-        managed_type_name = WStr("System.Single");
-        break;
-    case ELEMENT_TYPE_R8: // 0x0d  // System.Double (struct)
-        managed_type_name = WStr("System.Double");
-        break;
-    case ELEMENT_TYPE_TYPEDBYREF: // 0X16  // System.TypedReference (struct)
-        managed_type_name = WStr("System.TypedReference");
-        break;
-    case ELEMENT_TYPE_I: // 0x18  // System.IntPtr (struct)
-        managed_type_name = WStr("System.IntPtr");
-        break;
-    case ELEMENT_TYPE_U: // 0x19  // System.UIntPtr (struct)
-        managed_type_name = WStr("System.UIntPtr");
-        break;
-    default:
-        return false;
+        case ELEMENT_TYPE_VOID: // 0x01  // System.Void (struct)
+            managed_type_name = WStr("System.Void");
+            break;
+        case ELEMENT_TYPE_BOOLEAN: // 0x02  // System.Boolean (struct)
+            managed_type_name = WStr("System.Boolean");
+            break;
+        case ELEMENT_TYPE_CHAR: // 0x03  // System.Char (struct)
+            managed_type_name = WStr("System.Char");
+            break;
+        case ELEMENT_TYPE_I1: // 0x04  // System.SByte (struct)
+            managed_type_name = WStr("System.SByte");
+            break;
+        case ELEMENT_TYPE_U1: // 0x05  // System.Byte (struct)
+            managed_type_name = WStr("System.Byte");
+            break;
+        case ELEMENT_TYPE_I2: // 0x06  // System.Int16 (struct)
+            managed_type_name = WStr("System.Int16");
+            break;
+        case ELEMENT_TYPE_U2: // 0x07  // System.UInt16 (struct)
+            managed_type_name = WStr("System.UInt16");
+            break;
+        case ELEMENT_TYPE_I4: // 0x08  // System.Int32 (struct)
+            managed_type_name = WStr("System.Int32");
+            break;
+        case ELEMENT_TYPE_U4: // 0x09  // System.UInt32 (struct)
+            managed_type_name = WStr("System.UInt32");
+            break;
+        case ELEMENT_TYPE_I8: // 0x0a  // System.Int64 (struct)
+            managed_type_name = WStr("System.Int64");
+            break;
+        case ELEMENT_TYPE_U8: // 0x0b  // System.UInt64 (struct)
+            managed_type_name = WStr("System.UInt64");
+            break;
+        case ELEMENT_TYPE_R4: // 0x0c  // System.Single (struct)
+            managed_type_name = WStr("System.Single");
+            break;
+        case ELEMENT_TYPE_R8: // 0x0d  // System.Double (struct)
+            managed_type_name = WStr("System.Double");
+            break;
+        case ELEMENT_TYPE_TYPEDBYREF: // 0X16  // System.TypedReference (struct)
+            managed_type_name = WStr("System.TypedReference");
+            break;
+        case ELEMENT_TYPE_I: // 0x18  // System.IntPtr (struct)
+            managed_type_name = WStr("System.IntPtr");
+            break;
+        case ELEMENT_TYPE_U: // 0x19  // System.UIntPtr (struct)
+            managed_type_name = WStr("System.UIntPtr");
+            break;
+        default:
+            return false;
     }
 
     // Create reference to Mscorlib
@@ -933,194 +936,198 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
 
     switch (ret_type)
     {
-    case ELEMENT_TYPE_VOID:
-        // No object is returned, so return false.
-        return false;
-
-    case ELEMENT_TYPE_GENERICINST:
-    {
-        // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
-        // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
-        if (targetFunctionSignature.data[method_def_sig_index + 1] != ELEMENT_TYPE_VALUETYPE)
-        {
+        case ELEMENT_TYPE_VOID:
+            // No object is returned, so return false.
             return false;
-        }
 
-        PCCOR_SIGNATURE p_start_byte = PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]);
-        PCCOR_SIGNATURE p_end_byte = p_start_byte;
-        if (!ParseType(&p_end_byte))
+        case ELEMENT_TYPE_GENERICINST:
         {
-            return false;
-        }
-
-        size_t length = p_end_byte - p_start_byte;
-        HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, (ULONG) length, ret_type_token);
-        return SUCCEEDED(hr);
-    }
-
-    case ELEMENT_TYPE_VAR:
-    case ELEMENT_TYPE_MVAR:
-    {
-        // Format: VAR number
-        // Format: MVAR number
-
-        // Extract the number, which is an index into the generic type arguments of the method or the type
-        method_def_sig_index++; // Advance the current_index to point to "number"
-        ULONG generic_type_index;
-        if (CorSigUncompressData(PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
-                                 &generic_type_index) == -1)
-        {
-            Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": unable to read VAR|MVAR index");
-            return false;
-        }
-
-        // Get the signature of the MethodSpec or the method's parent TypeSpec
-        // Each spec will clearly list the types used for the generic type variables
-        const auto token_type = TypeFromToken(targetFunctionToken);
-        mdToken parent_token = mdTokenNil;
-        HRESULT hr;
-        PCCOR_SIGNATURE spec_signature{};
-        ULONG spec_signature_length{};
-
-        switch (token_type)
-        {
-        case mdtMemberRef:
-            // The compiler will never make method calls to generic methods without
-            // the generic context, so we never expect to hit this at
-            // run-time. If we are evaluating the MethodDef/MethodRef of a generic
-            // method return false because it is invalid.
-            if (generic_count > 0)
+            // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+            // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
+            if (targetFunctionSignature.data[method_def_sig_index + 1] != ELEMENT_TYPE_VALUETYPE)
             {
                 return false;
             }
 
-            hr = metadata_import->GetMemberRefProps(targetFunctionToken, &parent_token, nullptr, 0, nullptr, nullptr,
-                                                    nullptr);
-            if (SUCCEEDED(hr))
-            {
-                hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature, &spec_signature_length);
-            }
-            break;
-        case mdtMethodDef:
-            // The compiler will never make method calls to generic methods without
-            // the generic context, so we never expect to hit this at
-            // run-time. If we are evaluating the MethodDef/MethodRef of a generic
-            // method return false because it is invalid.
-            if (generic_count > 0)
+            PCCOR_SIGNATURE p_start_byte = PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]);
+            PCCOR_SIGNATURE p_end_byte = p_start_byte;
+            if (!ParseType(&p_end_byte))
             {
                 return false;
             }
 
-            hr = metadata_import->GetMemberProps(targetFunctionToken, &parent_token, nullptr, 0, nullptr, nullptr,
-                                                 nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
-            if (SUCCEEDED(hr))
+            size_t length = p_end_byte - p_start_byte;
+            HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, (ULONG) length, ret_type_token);
+            return SUCCEEDED(hr);
+        }
+
+        case ELEMENT_TYPE_VAR:
+        case ELEMENT_TYPE_MVAR:
+        {
+            // Format: VAR number
+            // Format: MVAR number
+
+            // Extract the number, which is an index into the generic type arguments of the method or the type
+            method_def_sig_index++; // Advance the current_index to point to "number"
+            ULONG generic_type_index;
+            if (CorSigUncompressData(PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
+                                     &generic_type_index) == -1)
             {
-                hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature, &spec_signature_length);
+                Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
+                     ": unable to read VAR|MVAR index");
+                return false;
             }
-            break;
-        case mdtMethodSpec:
-            hr = metadata_import->GetMethodSpecProps(targetFunctionToken, &parent_token, &spec_signature,
-                                                     &spec_signature_length);
-            break;
-        default:
-            Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
-                 ": function token was not a MemberRef, MethodDef, or MethodSpec");
-            return false;
-        }
 
-        if (FAILED(hr))
-        {
-            Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
-                 ": failed to get parent token or signature");
-            return false;
-        }
+            // Get the signature of the MethodSpec or the method's parent TypeSpec
+            // Each spec will clearly list the types used for the generic type variables
+            const auto token_type = TypeFromToken(targetFunctionToken);
+            mdToken parent_token = mdTokenNil;
+            HRESULT hr;
+            PCCOR_SIGNATURE spec_signature{};
+            ULONG spec_signature_length{};
 
-        // Determine the index of GenArgCount in the signature
-        size_t parent_token_index;
-        if (token_type == mdtMemberRef || token_type == mdtMethodDef)
-        {
-            // TypeSpec Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
-            // Skip over TypeDefOrRefEncoded by parsing the signature at index 2
-            parent_token_index = 2;
-            mdToken dummy_token;
-            ULONG token_length = CorSigUncompressToken(&spec_signature[parent_token_index], &dummy_token);
-            parent_token_index += token_length;
-        }
-        else if (token_type == mdtMethodSpec)
-        {
-            // MethodSpec Format: GENRICINST GenArgCount Type Type*
-            parent_token_index = 1;
-        }
-        else
-        {
-            Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": token_type (", token_type,
-                 ") not recognized");
-            return false;
-        }
-
-        // Read the value of GenArgCount in the signature
-        ULONG num_generic_arguments;
-        parent_token_index += CorSigUncompressData(&spec_signature[parent_token_index], &num_generic_arguments);
-
-        // Get a pointer to first type after GenArgCount that we can increment to read the signature
-        PCCOR_SIGNATURE p_current_byte = spec_signature + parent_token_index;
-
-        // Iterate to specified generic type argument index and return the appropriate class token or TypeSpec
-        for (size_t i = 0; i < num_generic_arguments; i++)
-        {
-            if (i != generic_type_index)
+            switch (token_type)
             {
-                if (!ParseType(&p_current_byte))
-                {
+                case mdtMemberRef:
+                    // The compiler will never make method calls to generic methods without
+                    // the generic context, so we never expect to hit this at
+                    // run-time. If we are evaluating the MethodDef/MethodRef of a generic
+                    // method return false because it is invalid.
+                    if (generic_count > 0)
+                    {
+                        return false;
+                    }
+
+                    hr = metadata_import->GetMemberRefProps(targetFunctionToken, &parent_token, nullptr, 0, nullptr,
+                                                            nullptr, nullptr);
+                    if (SUCCEEDED(hr))
+                    {
+                        hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature,
+                                                                   &spec_signature_length);
+                    }
+                    break;
+                case mdtMethodDef:
+                    // The compiler will never make method calls to generic methods without
+                    // the generic context, so we never expect to hit this at
+                    // run-time. If we are evaluating the MethodDef/MethodRef of a generic
+                    // method return false because it is invalid.
+                    if (generic_count > 0)
+                    {
+                        return false;
+                    }
+
+                    hr = metadata_import->GetMemberProps(targetFunctionToken, &parent_token, nullptr, 0, nullptr,
+                                                         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                                                         nullptr);
+                    if (SUCCEEDED(hr))
+                    {
+                        hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature,
+                                                                   &spec_signature_length);
+                    }
+                    break;
+                case mdtMethodSpec:
+                    hr = metadata_import->GetMethodSpecProps(targetFunctionToken, &parent_token, &spec_signature,
+                                                             &spec_signature_length);
+                    break;
+                default:
                     Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
-                         ": Unable to parse "
-                         "generic type argument ",
-                         i, "from signature of parent_token:", parent_token);
+                         ": function token was not a MemberRef, MethodDef, or MethodSpec");
                     return false;
-                }
             }
-            else if (*p_current_byte == ELEMENT_TYPE_MVAR || *p_current_byte == ELEMENT_TYPE_VAR)
+
+            if (FAILED(hr))
             {
-                // The method was defined with a method-level generic type argument from the caller. Return the TypeSpec
-                // token for the `M#` MVAR description, or The method was defined with a type-level generic type
-                // argument from the caller. Return the TypeSpec token for the `T#` VAR description
-                hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte, 2, ret_type_token);
-                return SUCCEEDED(hr);
+                Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
+                     ": failed to get parent token or signature");
+                return false;
             }
-            else if (*p_current_byte == ELEMENT_TYPE_GENERICINST)
+
+            // Determine the index of GenArgCount in the signature
+            size_t parent_token_index;
+            if (token_type == mdtMemberRef || token_type == mdtMethodDef)
             {
-                // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
-                // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
-                if (*(p_current_byte + 1) != ELEMENT_TYPE_VALUETYPE)
-                {
-                    return false;
-                }
-
-                PCCOR_SIGNATURE p_start_byte = p_current_byte;
-                PCCOR_SIGNATURE p_end_byte = p_start_byte;
-                if (!ParseType(&p_end_byte))
-                {
-                    return false;
-                }
-
-                size_t length = p_end_byte - p_start_byte;
-                HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, (ULONG) length, ret_type_token);
-                return SUCCEEDED(hr);
+                // TypeSpec Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
+                // Skip over TypeDefOrRefEncoded by parsing the signature at index 2
+                parent_token_index = 2;
+                mdToken dummy_token;
+                ULONG token_length = CorSigUncompressToken(&spec_signature[parent_token_index], &dummy_token);
+                parent_token_index += token_length;
+            }
+            else if (token_type == mdtMethodSpec)
+            {
+                // MethodSpec Format: GENRICINST GenArgCount Type Type*
+                parent_token_index = 1;
             }
             else
             {
-                return ReturnTypeTokenforValueTypeElementType(p_current_byte, metadata_emit, assembly_emit,
-                                                              corAssemblyProperty, ret_type_token);
+                Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": token_type (", token_type,
+                     ") not recognized");
+                return false;
             }
+
+            // Read the value of GenArgCount in the signature
+            ULONG num_generic_arguments;
+            parent_token_index += CorSigUncompressData(&spec_signature[parent_token_index], &num_generic_arguments);
+
+            // Get a pointer to first type after GenArgCount that we can increment to read the signature
+            PCCOR_SIGNATURE p_current_byte = spec_signature + parent_token_index;
+
+            // Iterate to specified generic type argument index and return the appropriate class token or TypeSpec
+            for (size_t i = 0; i < num_generic_arguments; i++)
+            {
+                if (i != generic_type_index)
+                {
+                    if (!ParseType(&p_current_byte))
+                    {
+                        Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
+                             ": Unable to parse "
+                             "generic type argument ",
+                             i, "from signature of parent_token:", parent_token);
+                        return false;
+                    }
+                }
+                else if (*p_current_byte == ELEMENT_TYPE_MVAR || *p_current_byte == ELEMENT_TYPE_VAR)
+                {
+                    // The method was defined with a method-level generic type argument from the caller. Return the
+                    // TypeSpec token for the `M#` MVAR description, or The method was defined with a type-level generic
+                    // type argument from the caller. Return the TypeSpec token for the `T#` VAR description
+                    hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte, 2, ret_type_token);
+                    return SUCCEEDED(hr);
+                }
+                else if (*p_current_byte == ELEMENT_TYPE_GENERICINST)
+                {
+                    // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+                    // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
+                    if (*(p_current_byte + 1) != ELEMENT_TYPE_VALUETYPE)
+                    {
+                        return false;
+                    }
+
+                    PCCOR_SIGNATURE p_start_byte = p_current_byte;
+                    PCCOR_SIGNATURE p_end_byte = p_start_byte;
+                    if (!ParseType(&p_end_byte))
+                    {
+                        return false;
+                    }
+
+                    size_t length = p_end_byte - p_start_byte;
+                    HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, (ULONG) length, ret_type_token);
+                    return SUCCEEDED(hr);
+                }
+                else
+                {
+                    return ReturnTypeTokenforValueTypeElementType(p_current_byte, metadata_emit, assembly_emit,
+                                                                  corAssemblyProperty, ret_type_token);
+                }
+            }
+
+            return false;
         }
 
-        return false;
-    }
-
-    default:
-        return ReturnTypeTokenforValueTypeElementType(
-            PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]), metadata_emit, assembly_emit,
-            corAssemblyProperty, ret_type_token);
+        default:
+            return ReturnTypeTokenforValueTypeElementType(
+                PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]), metadata_emit, assembly_emit,
+                corAssemblyProperty, ret_type_token);
     }
 }
 
@@ -1147,34 +1154,34 @@ int FunctionMethodArgument::GetTypeFlags(unsigned& elementType) const
 
     switch (*pbCur)
     {
-    case ELEMENT_TYPE_BOOLEAN:
-    case ELEMENT_TYPE_CHAR:
-    case ELEMENT_TYPE_I1:
-    case ELEMENT_TYPE_U1:
-    case ELEMENT_TYPE_U2:
-    case ELEMENT_TYPE_I2:
-    case ELEMENT_TYPE_I4:
-    case ELEMENT_TYPE_U4:
-    case ELEMENT_TYPE_I8:
-    case ELEMENT_TYPE_U8:
-    case ELEMENT_TYPE_R4:
-    case ELEMENT_TYPE_R8:
-    case ELEMENT_TYPE_I:
-    case ELEMENT_TYPE_U:
-    case ELEMENT_TYPE_VALUETYPE:
-    case ELEMENT_TYPE_MVAR:
-    case ELEMENT_TYPE_VAR:
-        flag |= TypeFlagBoxedType;
-        break;
-    case ELEMENT_TYPE_GENERICINST:
-        pbCur++;
-        if (*pbCur == ELEMENT_TYPE_VALUETYPE)
-        {
+        case ELEMENT_TYPE_BOOLEAN:
+        case ELEMENT_TYPE_CHAR:
+        case ELEMENT_TYPE_I1:
+        case ELEMENT_TYPE_U1:
+        case ELEMENT_TYPE_U2:
+        case ELEMENT_TYPE_I2:
+        case ELEMENT_TYPE_I4:
+        case ELEMENT_TYPE_U4:
+        case ELEMENT_TYPE_I8:
+        case ELEMENT_TYPE_U8:
+        case ELEMENT_TYPE_R4:
+        case ELEMENT_TYPE_R8:
+        case ELEMENT_TYPE_I:
+        case ELEMENT_TYPE_U:
+        case ELEMENT_TYPE_VALUETYPE:
+        case ELEMENT_TYPE_MVAR:
+        case ELEMENT_TYPE_VAR:
             flag |= TypeFlagBoxedType;
-        }
-        break;
-    default:
-        break;
+            break;
+        case ELEMENT_TYPE_GENERICINST:
+            pbCur++;
+            if (*pbCur == ELEMENT_TYPE_VALUETYPE)
+            {
+                flag |= TypeFlagBoxedType;
+            }
+            break;
+        default:
+            break;
     }
     return flag;
 }
@@ -1192,70 +1199,70 @@ mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAsse
 
     switch (*pbCur)
     {
-    case ELEMENT_TYPE_BOOLEAN:
-        pEmit->DefineTypeRefByName(corLibRef, SystemBoolean, &token);
-        break;
-    case ELEMENT_TYPE_CHAR:
-        pEmit->DefineTypeRefByName(corLibRef, SystemChar, &token);
-        break;
-    case ELEMENT_TYPE_I1:
-        pEmit->DefineTypeRefByName(corLibRef, SystemSByte, &token);
-        break;
-    case ELEMENT_TYPE_U1:
-        pEmit->DefineTypeRefByName(corLibRef, SystemByte, &token);
-        break;
-    case ELEMENT_TYPE_U2:
-        pEmit->DefineTypeRefByName(corLibRef, SystemUInt16, &token);
-        break;
-    case ELEMENT_TYPE_I2:
-        pEmit->DefineTypeRefByName(corLibRef, SystemInt16, &token);
-        break;
-    case ELEMENT_TYPE_I4:
-        pEmit->DefineTypeRefByName(corLibRef, SystemInt32, &token);
-        break;
-    case ELEMENT_TYPE_U4:
-        pEmit->DefineTypeRefByName(corLibRef, SystemUInt32, &token);
-        break;
-    case ELEMENT_TYPE_I8:
-        pEmit->DefineTypeRefByName(corLibRef, SystemInt64, &token);
-        break;
-    case ELEMENT_TYPE_U8:
-        pEmit->DefineTypeRefByName(corLibRef, SystemUInt64, &token);
-        break;
-    case ELEMENT_TYPE_R4:
-        pEmit->DefineTypeRefByName(corLibRef, SystemSingle, &token);
-        break;
-    case ELEMENT_TYPE_R8:
-        pEmit->DefineTypeRefByName(corLibRef, SystemDouble, &token);
-        break;
-    case ELEMENT_TYPE_I:
-        pEmit->DefineTypeRefByName(corLibRef, SystemIntPtr, &token);
-        break;
-    case ELEMENT_TYPE_U:
-        pEmit->DefineTypeRefByName(corLibRef, SystemUIntPtr, &token);
-        break;
-    case ELEMENT_TYPE_STRING:
-        pEmit->DefineTypeRefByName(corLibRef, SystemString, &token);
-        break;
-    case ELEMENT_TYPE_OBJECT:
-        pEmit->DefineTypeRefByName(corLibRef, SystemObject, &token);
-        break;
-    case ELEMENT_TYPE_CLASS:
-        pbCur++;
-        token = CorSigUncompressToken(pbCur);
-        break;
-    case ELEMENT_TYPE_VALUETYPE:
-        pbCur++;
-        token = CorSigUncompressToken(pbCur);
-        break;
-    case ELEMENT_TYPE_GENERICINST:
-    case ELEMENT_TYPE_SZARRAY:
-    case ELEMENT_TYPE_MVAR:
-    case ELEMENT_TYPE_VAR:
-        pEmit->GetTokenFromTypeSpec(pbCur, length - static_cast<ULONG>(pbCur - pStart), &token);
-        break;
-    default:
-        break;
+        case ELEMENT_TYPE_BOOLEAN:
+            pEmit->DefineTypeRefByName(corLibRef, SystemBoolean, &token);
+            break;
+        case ELEMENT_TYPE_CHAR:
+            pEmit->DefineTypeRefByName(corLibRef, SystemChar, &token);
+            break;
+        case ELEMENT_TYPE_I1:
+            pEmit->DefineTypeRefByName(corLibRef, SystemSByte, &token);
+            break;
+        case ELEMENT_TYPE_U1:
+            pEmit->DefineTypeRefByName(corLibRef, SystemByte, &token);
+            break;
+        case ELEMENT_TYPE_U2:
+            pEmit->DefineTypeRefByName(corLibRef, SystemUInt16, &token);
+            break;
+        case ELEMENT_TYPE_I2:
+            pEmit->DefineTypeRefByName(corLibRef, SystemInt16, &token);
+            break;
+        case ELEMENT_TYPE_I4:
+            pEmit->DefineTypeRefByName(corLibRef, SystemInt32, &token);
+            break;
+        case ELEMENT_TYPE_U4:
+            pEmit->DefineTypeRefByName(corLibRef, SystemUInt32, &token);
+            break;
+        case ELEMENT_TYPE_I8:
+            pEmit->DefineTypeRefByName(corLibRef, SystemInt64, &token);
+            break;
+        case ELEMENT_TYPE_U8:
+            pEmit->DefineTypeRefByName(corLibRef, SystemUInt64, &token);
+            break;
+        case ELEMENT_TYPE_R4:
+            pEmit->DefineTypeRefByName(corLibRef, SystemSingle, &token);
+            break;
+        case ELEMENT_TYPE_R8:
+            pEmit->DefineTypeRefByName(corLibRef, SystemDouble, &token);
+            break;
+        case ELEMENT_TYPE_I:
+            pEmit->DefineTypeRefByName(corLibRef, SystemIntPtr, &token);
+            break;
+        case ELEMENT_TYPE_U:
+            pEmit->DefineTypeRefByName(corLibRef, SystemUIntPtr, &token);
+            break;
+        case ELEMENT_TYPE_STRING:
+            pEmit->DefineTypeRefByName(corLibRef, SystemString, &token);
+            break;
+        case ELEMENT_TYPE_OBJECT:
+            pEmit->DefineTypeRefByName(corLibRef, SystemObject, &token);
+            break;
+        case ELEMENT_TYPE_CLASS:
+            pbCur++;
+            token = CorSigUncompressToken(pbCur);
+            break;
+        case ELEMENT_TYPE_VALUETYPE:
+            pbCur++;
+            token = CorSigUncompressToken(pbCur);
+            break;
+        case ELEMENT_TYPE_GENERICINST:
+        case ELEMENT_TYPE_SZARRAY:
+        case ELEMENT_TYPE_MVAR:
+        case ELEMENT_TYPE_VAR:
+            pEmit->GetTokenFromTypeSpec(pbCur, length - static_cast<ULONG>(pbCur - pStart), &token);
+            break;
+        default:
+            break;
     }
     return token;
 }
@@ -1272,121 +1279,121 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
 
     switch (*pbCur)
     {
-    case ELEMENT_TYPE_BOOLEAN:
-        tokenName = SystemBoolean;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_CHAR:
-        tokenName = SystemChar;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_I1:
-        tokenName = SystemSByte;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_U1:
-        tokenName = SystemByte;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_U2:
-        tokenName = SystemUInt16;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_I2:
-        tokenName = SystemInt16;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_I4:
-        tokenName = SystemInt32;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_U4:
-        tokenName = SystemUInt32;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_I8:
-        tokenName = SystemInt64;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_U8:
-        tokenName = SystemUInt64;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_R4:
-        tokenName = SystemSingle;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_R8:
-        tokenName = SystemDouble;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_I:
-        tokenName = SystemIntPtr;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_U:
-        tokenName = SystemUIntPtr;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_STRING:
-        tokenName = SystemString;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_OBJECT:
-        tokenName = SystemObject;
-        pbCur++;
-        break;
-    case ELEMENT_TYPE_CLASS:
-    case ELEMENT_TYPE_VALUETYPE:
-    {
-        pbCur++;
-        mdToken token;
-        pbCur += CorSigUncompressToken(pbCur, &token);
-        tokenName = GetTypeInfo(pImport, token).name;
-        break;
-    }
-    case ELEMENT_TYPE_SZARRAY:
-    {
-        pbCur++;
-        tokenName = GetSigTypeTokName(pbCur, pImport) + WStr("[]");
-        break;
-    }
-    case ELEMENT_TYPE_GENERICINST:
-    {
-        pbCur++;
-        tokenName = GetSigTypeTokName(pbCur, pImport);
-        tokenName += WStr("[");
-        ULONG num = 0;
-        pbCur += CorSigUncompressData(pbCur, &num);
-        for (ULONG i = 0; i < num; i++)
+        case ELEMENT_TYPE_BOOLEAN:
+            tokenName = SystemBoolean;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_CHAR:
+            tokenName = SystemChar;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I1:
+            tokenName = SystemSByte;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U1:
+            tokenName = SystemByte;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U2:
+            tokenName = SystemUInt16;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I2:
+            tokenName = SystemInt16;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I4:
+            tokenName = SystemInt32;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U4:
+            tokenName = SystemUInt32;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I8:
+            tokenName = SystemInt64;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U8:
+            tokenName = SystemUInt64;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_R4:
+            tokenName = SystemSingle;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_R8:
+            tokenName = SystemDouble;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I:
+            tokenName = SystemIntPtr;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U:
+            tokenName = SystemUIntPtr;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_STRING:
+            tokenName = SystemString;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_OBJECT:
+            tokenName = SystemObject;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_CLASS:
+        case ELEMENT_TYPE_VALUETYPE:
         {
-            tokenName += GetSigTypeTokName(pbCur, pImport);
-            if (i != num - 1)
-            {
-                tokenName += WStr(",");
-            }
+            pbCur++;
+            mdToken token;
+            pbCur += CorSigUncompressToken(pbCur, &token);
+            tokenName = GetTypeInfo(pImport, token).name;
+            break;
         }
-        tokenName += WStr("]");
-        break;
-    }
-    case ELEMENT_TYPE_MVAR:
-    {
-        pbCur++;
-        ULONG num = 0;
-        pbCur += CorSigUncompressData(pbCur, &num);
-        tokenName = WStr("!!") + ToWSTRING(std::to_string(num));
-        break;
-    }
-    case ELEMENT_TYPE_VAR:
-    {
-        pbCur++;
-        ULONG num = 0;
-        pbCur += CorSigUncompressData(pbCur, &num);
-        tokenName = WStr("!") + ToWSTRING(std::to_string(num));
-        break;
-    }
-    default:
-        break;
+        case ELEMENT_TYPE_SZARRAY:
+        {
+            pbCur++;
+            tokenName = GetSigTypeTokName(pbCur, pImport) + WStr("[]");
+            break;
+        }
+        case ELEMENT_TYPE_GENERICINST:
+        {
+            pbCur++;
+            tokenName = GetSigTypeTokName(pbCur, pImport);
+            tokenName += WStr("[");
+            ULONG num = 0;
+            pbCur += CorSigUncompressData(pbCur, &num);
+            for (ULONG i = 0; i < num; i++)
+            {
+                tokenName += GetSigTypeTokName(pbCur, pImport);
+                if (i != num - 1)
+                {
+                    tokenName += WStr(",");
+                }
+            }
+            tokenName += WStr("]");
+            break;
+        }
+        case ELEMENT_TYPE_MVAR:
+        {
+            pbCur++;
+            ULONG num = 0;
+            pbCur += CorSigUncompressData(pbCur, &num);
+            tokenName = WStr("!!") + ToWSTRING(std::to_string(num));
+            break;
+        }
+        case ELEMENT_TYPE_VAR:
+        {
+            pbCur++;
+            ULONG num = 0;
+            pbCur += CorSigUncompressData(pbCur, &num);
+            tokenName = WStr("!") + ToWSTRING(std::to_string(num));
+            break;
+        }
+        default:
+            break;
     }
 
     if (ref_flag)
@@ -1518,85 +1525,85 @@ bool ParseType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 
     switch (elem_type)
     {
-    case ELEMENT_TYPE_BOOLEAN:
-    case ELEMENT_TYPE_CHAR:
-    case ELEMENT_TYPE_I1:
-    case ELEMENT_TYPE_U1:
-    case ELEMENT_TYPE_U2:
-    case ELEMENT_TYPE_I2:
-    case ELEMENT_TYPE_I4:
-    case ELEMENT_TYPE_U4:
-    case ELEMENT_TYPE_I8:
-    case ELEMENT_TYPE_U8:
-    case ELEMENT_TYPE_R4:
-    case ELEMENT_TYPE_R8:
-    case ELEMENT_TYPE_I:
-    case ELEMENT_TYPE_U:
-    case ELEMENT_TYPE_STRING:
-    case ELEMENT_TYPE_OBJECT:
-        // simple types
-        break;
+        case ELEMENT_TYPE_BOOLEAN:
+        case ELEMENT_TYPE_CHAR:
+        case ELEMENT_TYPE_I1:
+        case ELEMENT_TYPE_U1:
+        case ELEMENT_TYPE_U2:
+        case ELEMENT_TYPE_I2:
+        case ELEMENT_TYPE_I4:
+        case ELEMENT_TYPE_U4:
+        case ELEMENT_TYPE_I8:
+        case ELEMENT_TYPE_U8:
+        case ELEMENT_TYPE_R4:
+        case ELEMENT_TYPE_R8:
+        case ELEMENT_TYPE_I:
+        case ELEMENT_TYPE_U:
+        case ELEMENT_TYPE_STRING:
+        case ELEMENT_TYPE_OBJECT:
+            // simple types
+            break;
 
-    case ELEMENT_TYPE_PTR:
-        return false;
+        case ELEMENT_TYPE_PTR:
+            return false;
 
-    case ELEMENT_TYPE_CLASS:
-        // CLASS TypeDefOrRefEncoded
-        if (!ParseTypeDefOrRefEncoded(pbCur, pbEnd, &indexType, &index)) return false;
-        break;
+        case ELEMENT_TYPE_CLASS:
+            // CLASS TypeDefOrRefEncoded
+            if (!ParseTypeDefOrRefEncoded(pbCur, pbEnd, &indexType, &index)) return false;
+            break;
 
-    case ELEMENT_TYPE_VALUETYPE:
-        // VALUETYPE TypeDefOrRefEncoded
-        if (!ParseTypeDefOrRefEncoded(pbCur, pbEnd, &indexType, &index)) return false;
+        case ELEMENT_TYPE_VALUETYPE:
+            // VALUETYPE TypeDefOrRefEncoded
+            if (!ParseTypeDefOrRefEncoded(pbCur, pbEnd, &indexType, &index)) return false;
 
-        break;
+            break;
 
-    case ELEMENT_TYPE_FNPTR:
-        // FNPTR MethodDefSig
-        // FNPTR MethodRefSig
+        case ELEMENT_TYPE_FNPTR:
+            // FNPTR MethodDefSig
+            // FNPTR MethodRefSig
 
-        return false;
+            return false;
 
-    case ELEMENT_TYPE_ARRAY:
-        // ARRAY Type ArrayShape
-        return false;
+        case ELEMENT_TYPE_ARRAY:
+            // ARRAY Type ArrayShape
+            return false;
 
-    case ELEMENT_TYPE_SZARRAY:
-        // SZARRAY Type
+        case ELEMENT_TYPE_SZARRAY:
+            // SZARRAY Type
 
-        if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD) return false;
+            if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD) return false;
 
-        if (!ParseType(pbCur, pbEnd)) return false;
-
-        break;
-
-    case ELEMENT_TYPE_GENERICINST:
-        // GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
-        if (!ParseByte(pbCur, pbEnd, &elem_type)) return false;
-
-        if (elem_type != ELEMENT_TYPE_CLASS && elem_type != ELEMENT_TYPE_VALUETYPE) return false;
-
-        if (!ParseTypeDefOrRefEncoded(pbCur, pbEnd, &indexType, &index)) return false;
-
-        if (!ParseNumber(pbCur, pbEnd, &number)) return false;
-
-        for (unsigned i = 0; i < number; i++)
-        {
             if (!ParseType(pbCur, pbEnd)) return false;
-        }
-        break;
 
-    case ELEMENT_TYPE_VAR:
-        // VAR Number
-        if (!ParseNumber(pbCur, pbEnd, &number)) return false;
+            break;
 
-        break;
+        case ELEMENT_TYPE_GENERICINST:
+            // GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+            if (!ParseByte(pbCur, pbEnd, &elem_type)) return false;
 
-    case ELEMENT_TYPE_MVAR:
-        // MVAR Number
-        if (!ParseNumber(pbCur, pbEnd, &number)) return false;
+            if (elem_type != ELEMENT_TYPE_CLASS && elem_type != ELEMENT_TYPE_VALUETYPE) return false;
 
-        break;
+            if (!ParseTypeDefOrRefEncoded(pbCur, pbEnd, &indexType, &index)) return false;
+
+            if (!ParseNumber(pbCur, pbEnd, &number)) return false;
+
+            for (unsigned i = 0; i < number; i++)
+            {
+                if (!ParseType(pbCur, pbEnd)) return false;
+            }
+            break;
+
+        case ELEMENT_TYPE_VAR:
+            // VAR Number
+            if (!ParseNumber(pbCur, pbEnd, &number)) return false;
+
+            break;
+
+        case ELEMENT_TYPE_MVAR:
+            // MVAR Number
+            if (!ParseNumber(pbCur, pbEnd, &number)) return false;
+
+            break;
     }
 
     return true;

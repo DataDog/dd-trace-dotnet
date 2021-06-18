@@ -46,15 +46,15 @@ bool ParseOptionalCustomMods(PCCOR_SIGNATURE* p_sig)
     {
         switch (**p_sig)
         {
-        case ELEMENT_TYPE_CMOD_OPT:
-        case ELEMENT_TYPE_CMOD_REQD:
-            if (!ParseCustomMod(p_sig))
-            {
-                return false;
-            }
-            break;
-        default:
-            return true;
+            case ELEMENT_TYPE_CMOD_OPT:
+            case ELEMENT_TYPE_CMOD_REQD:
+                if (!ParseCustomMod(p_sig))
+                {
+                    return false;
+                }
+                break;
+            default:
+                return true;
         }
     }
 
@@ -211,102 +211,102 @@ bool ParseType(PCCOR_SIGNATURE* p_sig)
 
     switch (cor_element_type)
     {
-    case ELEMENT_TYPE_VOID:
-    case ELEMENT_TYPE_BOOLEAN:
-    case ELEMENT_TYPE_CHAR:
-    case ELEMENT_TYPE_I1:
-    case ELEMENT_TYPE_U1:
-    case ELEMENT_TYPE_I2:
-    case ELEMENT_TYPE_U2:
-    case ELEMENT_TYPE_I4:
-    case ELEMENT_TYPE_U4:
-    case ELEMENT_TYPE_I8:
-    case ELEMENT_TYPE_U8:
-    case ELEMENT_TYPE_R4:
-    case ELEMENT_TYPE_R8:
-    case ELEMENT_TYPE_STRING:
-    case ELEMENT_TYPE_OBJECT:
-        return true;
-
-    case ELEMENT_TYPE_PTR:
-        // Format: PTR CustomMod* VOID
-        // Format: PTR CustomMod* Type
-        if (!ParseOptionalCustomMods(p_sig))
-        {
-            return false;
-        }
-
-        if (**p_sig == ELEMENT_TYPE_VOID)
-        {
-            *p_sig += 1;
+        case ELEMENT_TYPE_VOID:
+        case ELEMENT_TYPE_BOOLEAN:
+        case ELEMENT_TYPE_CHAR:
+        case ELEMENT_TYPE_I1:
+        case ELEMENT_TYPE_U1:
+        case ELEMENT_TYPE_I2:
+        case ELEMENT_TYPE_U2:
+        case ELEMENT_TYPE_I4:
+        case ELEMENT_TYPE_U4:
+        case ELEMENT_TYPE_I8:
+        case ELEMENT_TYPE_U8:
+        case ELEMENT_TYPE_R4:
+        case ELEMENT_TYPE_R8:
+        case ELEMENT_TYPE_STRING:
+        case ELEMENT_TYPE_OBJECT:
             return true;
-        }
-        else
-        {
-            return ParseType(p_sig);
-        }
 
-    case ELEMENT_TYPE_VALUETYPE:
-    case ELEMENT_TYPE_CLASS:
-        // Format: CLASS TypeDefOrRefEncoded
-        // Format: VALUETYPE TypeDefOrRefEncoded
-        return ParseTypeDefOrRefEncoded(p_sig);
+        case ELEMENT_TYPE_PTR:
+            // Format: PTR CustomMod* VOID
+            // Format: PTR CustomMod* Type
+            if (!ParseOptionalCustomMods(p_sig))
+            {
+                return false;
+            }
 
-    case ELEMENT_TYPE_FNPTR:
-        // Format: FNPTR MethodDefSig
-        // Format: FNPTR MethodRefSig
-        return ParseMethod(p_sig);
+            if (**p_sig == ELEMENT_TYPE_VOID)
+            {
+                *p_sig += 1;
+                return true;
+            }
+            else
+            {
+                return ParseType(p_sig);
+            }
 
-    case ELEMENT_TYPE_ARRAY:
-        // Format: ARRAY Type ArrayShape
-        if (!ParseType(p_sig))
-        {
-            return false;
-        }
-        return ParseArrayShape(p_sig);
+        case ELEMENT_TYPE_VALUETYPE:
+        case ELEMENT_TYPE_CLASS:
+            // Format: CLASS TypeDefOrRefEncoded
+            // Format: VALUETYPE TypeDefOrRefEncoded
+            return ParseTypeDefOrRefEncoded(p_sig);
 
-    case ELEMENT_TYPE_SZARRAY:
-        // Format: SZARRAY CustomMod* Type
-        if (!ParseOptionalCustomMods(p_sig))
-        {
-            return false;
-        }
-        return ParseType(p_sig);
+        case ELEMENT_TYPE_FNPTR:
+            // Format: FNPTR MethodDefSig
+            // Format: FNPTR MethodRefSig
+            return ParseMethod(p_sig);
 
-    case ELEMENT_TYPE_GENERICINST:
-        if (**p_sig != ELEMENT_TYPE_VALUETYPE && **p_sig != ELEMENT_TYPE_CLASS)
-        {
-            return false;
-        }
-
-        *p_sig += 1;
-        if (!ParseTypeDefOrRefEncoded(p_sig))
-        {
-            return false;
-        }
-
-        if (!ParseNumber(p_sig, &number))
-        {
-            return false;
-        }
-
-        for (ULONG i = 0; i < number; i++)
-        {
+        case ELEMENT_TYPE_ARRAY:
+            // Format: ARRAY Type ArrayShape
             if (!ParseType(p_sig))
             {
                 return false;
             }
-        }
-        return true;
+            return ParseArrayShape(p_sig);
 
-    case ELEMENT_TYPE_VAR:
-    case ELEMENT_TYPE_MVAR:
-        // Format: VAR Number
-        // Format: MVAR Number
-        return ParseNumber(p_sig, &number);
+        case ELEMENT_TYPE_SZARRAY:
+            // Format: SZARRAY CustomMod* Type
+            if (!ParseOptionalCustomMods(p_sig))
+            {
+                return false;
+            }
+            return ParseType(p_sig);
 
-    default:
-        return false;
+        case ELEMENT_TYPE_GENERICINST:
+            if (**p_sig != ELEMENT_TYPE_VALUETYPE && **p_sig != ELEMENT_TYPE_CLASS)
+            {
+                return false;
+            }
+
+            *p_sig += 1;
+            if (!ParseTypeDefOrRefEncoded(p_sig))
+            {
+                return false;
+            }
+
+            if (!ParseNumber(p_sig, &number))
+            {
+                return false;
+            }
+
+            for (ULONG i = 0; i < number; i++)
+            {
+                if (!ParseType(p_sig))
+                {
+                    return false;
+                }
+            }
+            return true;
+
+        case ELEMENT_TYPE_VAR:
+        case ELEMENT_TYPE_MVAR:
+            // Format: VAR Number
+            // Format: MVAR Number
+            return ParseNumber(p_sig, &number);
+
+        default:
+            return false;
     }
 }
 } // namespace trace

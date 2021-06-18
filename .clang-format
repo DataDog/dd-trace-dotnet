@@ -1,6 +1,5 @@
 ---
 ColumnLimit: 120
-
 UseTab: Never
 IndentWidth: 4
 AccessModifierOffset: -4
@@ -27,7 +26,6 @@ BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: AfterColon
 CompactNamespaces: false
 EmptyLineBeforeAccessModifier: LogicalBlock
-
 AlwaysBreakTemplateDeclarations: true
 BreakConstructorInitializersBeforeComma: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
@@ -35,10 +33,10 @@ AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
-
 PointerAlignment: Left
 AlignConsecutiveAssignments: false
 AlignTrailingComments: true
-
 SpaceAfterCStyleCast: true
 CommentPragmas: '^ NO-FORMAT:'
+IndentCaseLabels: true
+IndentGotoLabels: true
