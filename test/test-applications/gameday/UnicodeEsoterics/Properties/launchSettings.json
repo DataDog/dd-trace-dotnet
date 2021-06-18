@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "UnicodeEsoterics": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_TRACE_CALLTARGET_ENABLED": "true"
+      }
+    }
+  }
+}
