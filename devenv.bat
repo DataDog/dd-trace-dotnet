@@ -12,7 +12,7 @@ set start_visual_studio=true
 :next_argument
 set arg1=%1
 set devenv_arg1=
-set vs_sln_name=Datadog.Trace.sln
+set vs_sln_name=Datadog.Trace.Security.sln
 
 if "%arg1:~-3%" == "sln" (
     set vs_sln_name=%1
