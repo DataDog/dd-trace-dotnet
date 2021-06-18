@@ -21,11 +21,9 @@ BraceWrapping:
   AfterExternBlock: true
   BeforeCatch: true
 
-BreakBeforeConceptDeclarations: true
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: AfterColon
 CompactNamespaces: false
-EmptyLineBeforeAccessModifier: LogicalBlock
 AlwaysBreakTemplateDeclarations: true
 BreakConstructorInitializersBeforeComma: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
@@ -40,3 +38,7 @@ SpaceAfterCStyleCast: true
 CommentPragmas: '^ NO-FORMAT:'
 IndentCaseLabels: true
 IndentGotoLabels: true
+
+# The following doesn't work pre clang-format version 13
+#BreakBeforeConceptDeclarations: true
+#EmptyLineBeforeAccessModifier: LogicalBlock

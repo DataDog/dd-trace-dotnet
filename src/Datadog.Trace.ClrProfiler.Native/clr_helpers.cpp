@@ -1672,8 +1672,8 @@ HRESULT FunctionMethodSignature::TryParse()
 
     IfFalseRetFAIL(ParseRetType(pbCur, pbEnd));
     ret.pbBase = pbBase;
-    ret.length = (ULONG) (pbCur - pbRet);
-    ret.offset = (ULONG) (pbCur - pbBase - ret.length);
+    ret.length = (ULONG)(pbCur - pbRet);
+    ret.offset = (ULONG)(pbCur - pbBase - ret.length);
 
     auto fEncounteredSentinal = false;
     for (unsigned i = 0; i < param_count; i++)
@@ -1694,8 +1694,8 @@ HRESULT FunctionMethodSignature::TryParse()
 
         FunctionMethodArgument argument{};
         argument.pbBase = pbBase;
-        argument.length = (ULONG) (pbCur - pbParam);
-        argument.offset = (ULONG) (pbCur - pbBase - argument.length);
+        argument.length = (ULONG)(pbCur - pbParam);
+        argument.offset = (ULONG)(pbCur - pbBase - argument.length);
 
         params.push_back(argument);
     }

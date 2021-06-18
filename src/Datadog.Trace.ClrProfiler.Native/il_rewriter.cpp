@@ -612,7 +612,7 @@ again:
         BYTE* pCurrent = pBody;
 
         // Here's the tiny header
-        *pCurrent = (BYTE) (CorILMethod_TinyFormat | (codeSize << 2));
+        *pCurrent = (BYTE)(CorILMethod_TinyFormat | (codeSize << 2));
         pCurrent += sizeof(IMAGE_COR_ILMETHOD_TINY);
 
         // And the body

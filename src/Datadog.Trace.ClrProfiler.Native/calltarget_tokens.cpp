@@ -151,7 +151,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         else
         {
             assembly_metadata.szLocale = const_cast<WCHAR*>(assemblyReference.locale.c_str());
-            assembly_metadata.cbLocale = (DWORD) (assemblyReference.locale.size());
+            assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
         }
 
         DWORD public_key_size = 8;

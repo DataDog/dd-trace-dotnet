@@ -960,7 +960,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
     else
     {
         assembly_metadata.szLocale = const_cast<WCHAR*>(assemblyReference.locale.c_str());
-        assembly_metadata.cbLocale = (DWORD) (assemblyReference.locale.size());
+        assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
     }
 
     DWORD public_key_size = 8;
@@ -2110,7 +2110,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
         Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
     }
-#else  // BIT64
+#else // BIT64
     WSTRING native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
     Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
     if (native_profiler_file == WStr(""))

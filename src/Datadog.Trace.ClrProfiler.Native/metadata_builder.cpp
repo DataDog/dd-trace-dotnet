@@ -24,7 +24,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(const trace::AssemblyReference& assembl
     else
     {
         assembly_metadata.szLocale = const_cast<WCHAR*>(assembly_ref.locale.c_str());
-        assembly_metadata.cbLocale = (DWORD) (assembly_ref.locale.size());
+        assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
     }
 
     DWORD public_key_size = 8;
@@ -136,13 +136,13 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(const MethodReplacement& method_r
     {
         // callsite integrations do this path.
         hr = metadata_import_->FindMemberRef(type_ref, method_replacement.wrapper_method.method_name.c_str(),
-                                             signature_data.data(), (DWORD) (signature_data.size()), &member_ref);
+                                             signature_data.data(), (DWORD)(signature_data.size()), &member_ref);
 
         if (hr == HRESULT(0x80131130) /* record not found on lookup */)
         {
             // if memberRef not found, create it by emitting a metadata token
             hr = metadata_emit_->DefineMemberRef(type_ref, method_replacement.wrapper_method.method_name.c_str(),
-                                                 signature_data.data(), (DWORD) (signature_data.size()), &member_ref);
+                                                 signature_data.data(), (DWORD)(signature_data.size()), &member_ref);
         }
 
         if (FAILED(hr))
