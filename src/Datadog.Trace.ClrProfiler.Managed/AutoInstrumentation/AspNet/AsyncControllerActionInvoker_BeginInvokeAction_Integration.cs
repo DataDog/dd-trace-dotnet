@@ -59,7 +59,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (HttpContext.Current != null)
                 {
                     var duckedControllerContext = controllerContext.DuckCast<ControllerContextStruct>();
-                    HttpContext.Current.Request.PrepareArgsForWaf(duckedControllerContext.RouteData);
                     HttpContext.Current.Items[AspNetMvcIntegration.HttpContextKey] = scope;
 
                     var security = Security.Instance;

@@ -56,7 +56,7 @@ SET CORECLR_PROFILER_PATH=%~dp0\src\Datadog.Trace.ClrProfiler.Native\bin\%profil
 set DD_TRACE_CALLTARGET_ENABLED=0
 
 rem Enable Security features
-SET DD_ENABLE_SECURITY=1
+SET DD_ENABLE_SECURITY=true
 
 rem Don't attach the profiler to these processes
 SET DD_PROFILER_EXCLUDE_PROCESSES=devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;vstest.console.exe;ServiceHub.RoslynCodeAnalysisService32.exe;testhost.x86.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe

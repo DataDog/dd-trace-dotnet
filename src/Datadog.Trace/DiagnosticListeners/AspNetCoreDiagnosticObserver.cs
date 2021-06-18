@@ -649,15 +649,9 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request)
+        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, RouteData routeData = null)
         {
-            var dic = request.PrepareArgsForWaf();
-            security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
-        }
-
-        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, RouteData routeDatas)
-        {
-            var dic = request.PrepareArgsForWaf(routeDatas);
+            var dic = request.PrepareArgsForWaf(routeData);
             security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
         }
 
