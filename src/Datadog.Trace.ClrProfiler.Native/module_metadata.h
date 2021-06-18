@@ -46,7 +46,8 @@ public:
         module_version_id(module_version_id),
         integrations(integrations),
         corAssemblyProperty(corAssemblyProperty)
-    {}
+    {
+    }
 
     bool TryGetWrapperMemberRef(const WSTRING& keyIn, mdMemberRef& valueOut) const
     {

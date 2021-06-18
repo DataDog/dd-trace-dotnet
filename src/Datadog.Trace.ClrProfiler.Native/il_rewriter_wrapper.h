@@ -12,7 +12,8 @@ private:
 
 public:
     ILRewriterWrapper(ILRewriter* const il_rewriter) : m_ILRewriter(il_rewriter), m_ILInstr(nullptr)
-    {}
+    {
+    }
 
     ILRewriter* GetILRewriter() const;
     ILInstr* GetCurrentILInstr() const;

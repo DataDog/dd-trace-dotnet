@@ -56,7 +56,8 @@ private:
 public:
     Enumerator(std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback, std::function<void(HCORENUM)> close) :
         callback_(callback), close_(close), ptr_(nullptr)
-    {}
+    {
+    }
 
     Enumerator(const Enumerator& other) = default;
 
@@ -204,7 +205,8 @@ struct RuntimeInformation
 
     RuntimeInformation() :
         runtime_type((COR_PRF_RUNTIME_TYPE) 0x0), major_version(0), minor_version(0), build_version(0), qfe_version(0)
-    {}
+    {
+    }
 
     RuntimeInformation(COR_PRF_RUNTIME_TYPE runtime_type, USHORT major_version, USHORT minor_version,
                        USHORT build_version, USHORT qfe_version) :
@@ -213,7 +215,8 @@ struct RuntimeInformation
         minor_version(minor_version),
         build_version(build_version),
         qfe_version(qfe_version)
-    {}
+    {
+    }
 
     RuntimeInformation& operator=(const RuntimeInformation& other)
     {
@@ -244,7 +247,8 @@ struct AssemblyInfo
     const WSTRING app_domain_name;
 
     AssemblyInfo() : id(0), name(WStr("")), manifest_module_id(0), app_domain_id(0), app_domain_name(WStr(""))
-    {}
+    {
+    }
 
     AssemblyInfo(AssemblyID id, WSTRING name, ModuleID manifest_module_id, AppDomainID app_domain_id,
                  WSTRING app_domain_name) :
@@ -253,7 +257,8 @@ struct AssemblyInfo
         manifest_module_id(manifest_module_id),
         app_domain_id(app_domain_id),
         app_domain_name(app_domain_name)
-    {}
+    {
+    }
 
     bool IsValid() const
     {
@@ -269,7 +274,8 @@ struct AssemblyMetadata
     const Version version;
 
     AssemblyMetadata() : module_id(0), name(WStr("")), assembly_token(mdTokenNil)
-    {}
+    {
+    }
 
     AssemblyMetadata(ModuleID module_id, WSTRING name, mdAssembly assembly_token, USHORT major, USHORT minor,
                      USHORT build, USHORT revision) :
@@ -277,7 +283,8 @@ struct AssemblyMetadata
         name(name),
         assembly_token(assembly_token),
         version(Version(major, minor, build, revision))
-    {}
+    {
+    }
 
     bool IsValid() const
     {
@@ -295,7 +302,8 @@ struct AssemblyProperty
     DWORD assemblyFlags = 0;
 
     AssemblyProperty() : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(WStr(""))
-    {}
+    {
+    }
 };
 
 struct ModuleInfo
@@ -306,10 +314,12 @@ struct ModuleInfo
     const DWORD flags;
 
     ModuleInfo() : id(0), path(WStr("")), assembly({}), flags(0)
-    {}
+    {
+    }
     ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags) :
         id(id), path(path), assembly(assembly), flags(flags)
-    {}
+    {
+    }
 
     bool IsValid() const
     {
@@ -342,7 +352,8 @@ struct TypeInfo
         valueType(false),
         isGeneric(false),
         parent_type(nullptr)
-    {}
+    {
+    }
     TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, const TypeInfo* extend_from,
              bool valueType, bool isGeneric, const TypeInfo* parent_type) :
         id(id),
@@ -353,7 +364,8 @@ struct TypeInfo
         valueType(valueType),
         isGeneric(isGeneric),
         parent_type(parent_type)
-    {}
+    {
+    }
 
     bool IsValid() const
     {
@@ -391,7 +403,8 @@ private:
 
 public:
     FunctionMethodSignature() : pbBase(nullptr), len(0)
-    {}
+    {
+    }
     FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer)
     {
         pbBase = pb;
@@ -444,7 +457,8 @@ struct FunctionInfo
     FunctionMethodSignature method_signature;
 
     FunctionInfo() : id(0), name(WStr("")), type({}), is_generic(false), method_def_id(0), method_signature({})
-    {}
+    {
+    }
 
     FunctionInfo(mdToken id, WSTRING name, TypeInfo type, MethodSignature signature,
                  MethodSignature function_spec_signature, mdToken method_def_id,
@@ -457,7 +471,8 @@ struct FunctionInfo
         function_spec_signature(function_spec_signature),
         method_def_id(method_def_id),
         method_signature(method_signature)
-    {}
+    {
+    }
 
     FunctionInfo(mdToken id, WSTRING name, TypeInfo type, MethodSignature signature,
                  FunctionMethodSignature method_signature) :
@@ -468,7 +483,8 @@ struct FunctionInfo
         signature(signature),
         method_def_id(0),
         method_signature(method_signature)
-    {}
+    {
+    }
 
     bool IsValid() const
     {

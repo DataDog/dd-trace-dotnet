@@ -31,7 +31,8 @@ public:
         metadata_emit_(metadata_emit),
         assembly_import_(assembly_import),
         assembly_emit_(assembly_emit)
-    {}
+    {
+    }
 
     HRESULT StoreWrapperMethodRef(const MethodReplacement& method_replacement) const;
 

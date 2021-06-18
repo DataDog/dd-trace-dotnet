@@ -8,10 +8,12 @@
 #include "version.h"
 
 ClassFactory::ClassFactory() : refCount(0)
-{}
+{
+}
 
 ClassFactory::~ClassFactory()
-{}
+{
+}
 
 HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid, void** ppvObject)
 {

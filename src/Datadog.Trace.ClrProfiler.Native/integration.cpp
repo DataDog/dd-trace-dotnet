@@ -18,7 +18,8 @@ AssemblyReference::AssemblyReference(const WSTRING& str) :
     version(GetVersionFromAssemblyReferenceString(str)),
     locale(GetLocaleFromAssemblyReferenceString(str)),
     public_key(GetPublicKeyFromAssemblyReferenceString(str))
-{}
+{
+}
 
 namespace
 {

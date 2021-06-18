@@ -23,9 +23,11 @@ struct PublicKey
     const BYTE data[kPublicKeySize];
 
     PublicKey() : data{0}
-    {}
+    {
+    }
     PublicKey(const BYTE (&arr)[kPublicKeySize]) : data{arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7]}
-    {}
+    {
+    }
 
     inline bool operator==(const PublicKey& other) const
     {
@@ -60,11 +62,13 @@ struct Version
     const unsigned short revision;
 
     Version() : major(0), minor(0), build(0), revision(0)
-    {}
+    {
+    }
     Version(const unsigned short major, const unsigned short minor, const unsigned short build,
             const unsigned short revision) :
         major(major), minor(minor), build(build), revision(revision)
-    {}
+    {
+    }
 
     inline bool operator==(const Version& other) const
     {
@@ -125,7 +129,8 @@ struct AssemblyReference
     const PublicKey public_key;
 
     AssemblyReference()
-    {}
+    {
+    }
     AssemblyReference(const WSTRING& str);
 
     inline bool operator==(const AssemblyReference& other) const
@@ -151,9 +156,11 @@ public:
     const std::vector<BYTE> data;
 
     MethodSignature()
-    {}
+    {
+    }
     MethodSignature(const std::vector<BYTE>& data) : data(data)
-    {}
+    {
+    }
 
     inline bool operator==(const MethodSignature& other) const
     {
@@ -243,7 +250,8 @@ struct MethodReference
 
     MethodReference() :
         min_version(Version(0, 0, 0, 0)), max_version(Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX))
-    {}
+    {
+    }
 
     MethodReference(const WSTRING& assembly_name, WSTRING type_name, WSTRING method_name, WSTRING action,
                     Version min_version, Version max_version, const std::vector<BYTE>& method_signature,
@@ -256,7 +264,8 @@ struct MethodReference
         min_version(min_version),
         max_version(max_version),
         signature_types(signature_types)
-    {}
+    {
+    }
 
     inline WSTRING get_type_cache_key() const
     {
@@ -285,11 +294,13 @@ struct MethodReplacement
     const MethodReference wrapper_method;
 
     MethodReplacement()
-    {}
+    {
+    }
 
     MethodReplacement(MethodReference caller_method, MethodReference target_method, MethodReference wrapper_method) :
         caller_method(caller_method), target_method(target_method), wrapper_method(wrapper_method)
-    {}
+    {
+    }
 
     inline bool operator==(const MethodReplacement& other) const
     {
@@ -304,11 +315,13 @@ struct Integration
     std::vector<MethodReplacement> method_replacements;
 
     Integration() : integration_name(WStr("")), method_replacements({})
-    {}
+    {
+    }
 
     Integration(WSTRING integration_name, std::vector<MethodReplacement> method_replacements) :
         integration_name(integration_name), method_replacements(method_replacements)
-    {}
+    {
+    }
 
     inline bool operator==(const Integration& other) const
     {
@@ -322,11 +335,13 @@ struct IntegrationMethod
     MethodReplacement replacement;
 
     IntegrationMethod() : integration_name(WStr("")), replacement({})
-    {}
+    {
+    }
 
     IntegrationMethod(WSTRING integration_name, MethodReplacement replacement) :
         integration_name(integration_name), replacement(replacement)
-    {}
+    {
+    }
 
     inline bool operator==(const IntegrationMethod& other) const
     {
