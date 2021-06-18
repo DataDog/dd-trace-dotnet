@@ -555,21 +555,34 @@ namespace Datadog.Trace.DuckTyping
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
                 string name = proxyMethodDuckAttribute.Name;
+                bool useRelaxedNameComparison = false;
 
                 // If there is an explicit interface type name we add it to the name
                 if (!string.IsNullOrEmpty(proxyMethodDuckAttribute.ExplicitInterfaceTypeName))
                 {
                     string interfaceTypeName = proxyMethodDuckAttribute.ExplicitInterfaceTypeName;
-                    // Nested types are separated with a "." on explicit implementation.
-                    interfaceTypeName = interfaceTypeName.Replace("+", ".");
 
-                    name = interfaceTypeName + "." + name;
+                    if (interfaceTypeName == "*")
+                    {
+                        // If a wildcard is use, then we relax the name comparison so it can be an implicit or explicity implementation
+                        useRelaxedNameComparison = true;
+                    }
+                    else
+                    {
+                        // Nested types are separated with a "." on explicit implementation.
+                        interfaceTypeName = interfaceTypeName.Replace("+", ".");
+
+                        name = interfaceTypeName + "." + name;
+                    }
                 }
 
                 // We omit target methods with different names.
                 if (candidateMethod.Name != name)
                 {
-                    continue;
+                    if (!useRelaxedNameComparison || !candidateMethod.Name.EndsWith("." + name))
+                    {
+                        continue;
+                    }
                 }
 
                 // Check if the candidate method is a reverse mapped method

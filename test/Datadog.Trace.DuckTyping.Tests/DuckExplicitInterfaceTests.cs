@@ -19,6 +19,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             var proxy = targetObject.DuckCast<IProxyDefinition>();
 
             proxy.SayHi().Should().Equals("Hello World");
+            proxy.SayHiWithWildcard().Should().Equals("Hello World (*)");
         }
 
         public class TargetObject : ITarget
@@ -27,17 +28,27 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 return "Hello World";
             }
+
+            string ITarget.SayHiWithWildcard()
+            {
+                return "Hello World (*)";
+            }
         }
 
         public interface ITarget
         {
             string SayHi();
+
+            string SayHiWithWildcard();
         }
 
         public interface IProxyDefinition
         {
             [Duck(ExplicitInterfaceTypeName = "Datadog.Trace.DuckTyping.Tests.DuckExplicitInterfaceTests+ITarget")]
             string SayHi();
+
+            [Duck(ExplicitInterfaceTypeName = "*")]
+            string SayHiWithWildcard();
         }
     }
 }
