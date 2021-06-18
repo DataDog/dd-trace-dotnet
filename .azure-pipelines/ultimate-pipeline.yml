@@ -484,6 +484,7 @@ stages:
       name: $(poolName)
       vmImage: $(vmImage)
 
+    timeoutInMinutes: 360
     steps:
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
     # Can't do a full clean, as otherwise restore-working-directory fails
@@ -519,7 +520,6 @@ stages:
 
     - task: DockerCompose@0
       displayName: docker-compose run NukeIntegrationTests
-      timeoutInMinutes: 360
       inputs:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
