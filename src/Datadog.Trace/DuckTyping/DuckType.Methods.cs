@@ -554,8 +554,20 @@ namespace Datadog.Trace.DuckTyping
             MethodInfo[] allTargetMethods = targetType.GetMethods(DuckAttribute.DefaultFlags);
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
+                string name = proxyMethodDuckAttribute.Name;
+
+                // If there is an explicit interface type name we add it to the name
+                if (!string.IsNullOrEmpty(proxyMethodDuckAttribute.ExplicitInterfaceTypeName))
+                {
+                    string interfaceTypeName = proxyMethodDuckAttribute.ExplicitInterfaceTypeName;
+                    // Nested types are separated with a "." on explicit implementation.
+                    interfaceTypeName = interfaceTypeName.Replace("+", ".");
+
+                    name = interfaceTypeName + "." + name;
+                }
+
                 // We omit target methods with different names.
-                if (candidateMethod.Name != proxyMethodDuckAttribute.Name)
+                if (candidateMethod.Name != name)
                 {
                     continue;
                 }
