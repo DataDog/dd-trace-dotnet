@@ -980,9 +980,8 @@ partial class Build
                     .SetFramework(Framework)
                     // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
-                    .When(TestAllPackageVersions, o => o
-                        .SetProperty("TestAllPackageVersions", "true"))
-                    .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
+                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                    .When(PerformComprehensiveTesting, o => o.SetProperty("PerformComprehensiveTesting", "true"))
                     .AddProcessEnvironmentVariable("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory))
@@ -1032,8 +1031,8 @@ partial class Build
                         .SetFramework(Framework)
                         .EnableMemoryDumps()
                         .SetFilter(filter)
-                        .When(TestAllPackageVersions, o => o
-                            .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                        .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                        .When(PerformComprehensiveTesting, o => o.SetProcessEnvironmentVariable("PerformComprehensiveTesting", "true"))
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
                             .SetProjectFile(project)),
@@ -1048,8 +1047,8 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableMemoryDumps()
                     .SetFilter(filter)
-                    .When(TestAllPackageVersions, o => o
-                        .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(PerformComprehensiveTesting, o => o.SetProcessEnvironmentVariable("PerformComprehensiveTesting", "true"))
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project))
