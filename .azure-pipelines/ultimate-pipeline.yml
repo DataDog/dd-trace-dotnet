@@ -503,7 +503,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) -PerformComprehensiveTesting $(performComprehensiveTesting)"
+        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) -PerformComprehensiveTesting True"
 
     - task: DockerCompose@0
       displayName: docker-compose build NukeIntegrationTests
@@ -519,8 +519,7 @@ stages:
 
     - task: DockerCompose@0
       displayName: docker-compose run NukeIntegrationTests
-      ${{ if eq(variables['performComprehensiveTesting'], 'True') }}:
-        timeoutInMinutes: 360
+      timeoutInMinutes: 360
       inputs:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
