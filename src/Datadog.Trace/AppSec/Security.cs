@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
@@ -93,6 +94,7 @@ namespace Datadog.Trace.AppSec
                 additiveContext = _powerWaf.CreateAdditiveContext();
                 transport.SetAdditiveContext(additiveContext);
             }
+
             // run the WAF and execute the results
             using var result = additiveContext.Run(args);
             if (result.ReturnCode == ReturnCode.Monitor || result.ReturnCode == ReturnCode.Block)
